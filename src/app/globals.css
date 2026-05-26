@@ -8,3 +8,18 @@
     height: 100%;
   }
 }
+
+/*
+ * Keep Radix dropdown panels (used by WuMenu) inside the viewport so long
+ * lists scroll internally instead of overflowing parent modals.
+ *
+ * --radix-dropdown-menu-content-available-height is set on the content
+ * element by Radix and represents the max space without collision.
+ */
+[data-radix-popper-content-wrapper] > * {
+  max-height: min(
+    var(--radix-dropdown-menu-content-available-height, 70vh),
+    70vh
+  );
+  overflow-y: auto;
+}

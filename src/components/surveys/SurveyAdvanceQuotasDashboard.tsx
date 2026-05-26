@@ -37,28 +37,46 @@ function slugForId(value: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
-function buildCriteriaQuota(data: CriteriaQuotaSubmit): AdvanceQuota {
-  const now = Date.now();
-  const parts: string[] = [];
-  if (data.criteria.length === 0) {
-    parts.push('Custom criteria');
-  } else {
-    for (const c of data.criteria) {
-      const label = c.questionCode ? `[${c.questionCode}]` : c.questionText || 'Question';
-      parts.push(`${label} ${c.operator} "${c.value}"`);
+function buildCriteriaQuota(data: CriteriaQuotaSubmit, offset = 0): AdvanceQuota {
+  const now = Date.now() + offset;
+  const criterionParts: string[] = [];
+  for (const criterion of data.criteria) {
+    if (criterion.conditions.length === 0) continue;
+    const conditionDescription = criterion.conditions
+      .map((cond, idx) => {
+        const head = cond.source !== 'Question'
+          ? `${cond.source} ${cond.operator} "${cond.value}"`
+          : (() => {
+              const qLabel = cond.questionCode
+                ? `[${cond.questionCode}]`
+                : cond.questionText || 'Question';
+              return `${qLabel} ${cond.operator} "${cond.value}"`;
+            })();
+        return idx === 0 ? head : `${cond.connector} ${head}`;
+      })
+      .join(' ');
+    if (criterion.name) {
+      criterionParts.push(`${criterion.name}: ${conditionDescription}`);
+    } else {
+      criterionParts.push(conditionDescription);
     }
   }
-  const checks: string[] = [];
-  checks.push(`Checked after [${data.firstCheck.questionCode}]`);
+  const descriptionParts: string[] = [];
+  if (criterionParts.length === 0) {
+    descriptionParts.push('Custom criteria');
+  } else {
+    descriptionParts.push(criterionParts.join(' | '));
+  }
+  const checks: string[] = [`Checked after [${data.firstCheck.questionCode}]`];
   if (data.secondCheck) {
     checks.push(`re-checked after [${data.secondCheck.questionCode}]`);
   }
-  parts.push(checks.join(', '));
+  descriptionParts.push(checks.join(', '));
   return {
     id: `user-criteria-${now}`,
     name: data.name,
     quotaType: 'Criteria based',
-    description: parts.join(' and '),
+    description: descriptionParts.join(' and '),
     quotaGroup: 'NA',
     multipleQuotaHandling: 'NA',
     target: Math.max(0, Math.round(data.target)),
@@ -604,9 +622,12 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
           setCriteriaQuotaOpen(false);
           setAddQuotaOpen(true);
         }}
-        onSave={(data: CriteriaQuotaSubmit) => {
-          const quota = buildCriteriaQuota(data);
-          setAddedQuotas((prev) => [quota, ...prev]);
+        onSave={(submissions: CriteriaQuotaSubmit[]) => {
+          if (submissions.length === 0) return;
+          const newQuotas = submissions.map((data, idx) =>
+            buildCriteriaQuota(data, idx)
+          );
+          setAddedQuotas((prev) => [...newQuotas, ...prev]);
         }}
       />
     </div>
