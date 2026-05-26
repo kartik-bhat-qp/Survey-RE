@@ -26,25 +26,35 @@ const WuMenu = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
   { ssr: false }
 );
-const WuMenuItem = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
+const WuMenuCheckboxItem = dynamic(
+  () =>
+    import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuCheckboxItem })),
+  { ssr: false }
+);
+const WuMenuSeparatorItem = dynamic(
+  () =>
+    import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuSeparatorItem })),
   { ssr: false }
 );
 
-const ALL_FILTER = 'all';
-
 function QuotaTargetCell({ quota }: { quota: AdvanceQuota }) {
-  const current = quota.current;
-  const hasCurrent = current !== undefined;
-  const progress = hasCurrent ? Math.min(current / quota.target, 1) : 1;
-  const label = hasCurrent ? `${current}/${quota.target}` : String(quota.target);
+  const current = quota.current ?? quota.target;
+  const progress = Math.min(current / quota.target, 1);
+  const label = `${current}/${quota.target}`;
 
   return (
-    <div className={styles.targetCell}>
+    <div
+      className={styles.targetCell}
+      title={label}
+      aria-label={`Target ${label}`}
+      tabIndex={0}
+    >
       <div className={styles.progressTrack} aria-hidden>
         <div className={styles.progressFill} style={{ width: `${progress * 100}%` }} />
       </div>
-      <span className={styles.targetLabel}>{label}</span>
+      <span className={styles.targetLabel} aria-hidden>
+        {label}
+      </span>
     </div>
   );
 }
@@ -75,36 +85,121 @@ function FilterableColumnHeader({
   leadingIcon,
 }: {
   label: string;
-  value: string;
+  value: string[];
   options: string[];
-  onChange: (value: string) => void;
+  onChange: (value: string[]) => void;
   leadingIcon?: string;
 }) {
-  const isActive = value !== ALL_FILTER;
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<string[]>(value);
+  const isActive = value.length > 0;
+  const chipTitle = isActive ? `Filtered by ${value.join(', ')}` : '';
+  const draftChanged =
+    draft.length !== value.length || draft.some((v) => !value.includes(v));
+
+  function handleOpenChange(next: boolean) {
+    if (next) {
+      setDraft(value);
+    }
+    setOpen(next);
+  }
+
+  function toggleDraft(option: string) {
+    setDraft((prev) =>
+      prev.includes(option) ? prev.filter((v) => v !== option) : [...prev, option]
+    );
+  }
+
+  function resetDraft() {
+    setDraft([]);
+  }
+
+  function applyDraft() {
+    onChange(draft);
+    setOpen(false);
+  }
+
+  function clearAppliedFilter() {
+    onChange([]);
+    setDraft([]);
+  }
 
   return (
-    <span className={styles.columnHeader}>
+    <span
+      className={styles.columnHeader}
+      data-filtered={isActive ? 'true' : undefined}
+    >
       {leadingIcon ? <span className={leadingIcon} aria-hidden /> : null}
       {label}
+      {isActive ? (
+        <span className={styles.filterChip} title={chipTitle}>
+          <span className={styles.filterChipCount}>{value.length}</span>
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label={`Clear ${label} filter`}
+            className={styles.filterChipClear}
+            onClick={(event) => {
+              event.stopPropagation();
+              clearAppliedFilter();
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                event.stopPropagation();
+                clearAppliedFilter();
+              }
+            }}
+          >
+            <span className="wm-close" aria-hidden />
+          </span>
+        </span>
+      ) : null}
       <WuMenu
+        open={open}
+        onOpenChange={handleOpenChange}
         Trigger={
-          <button
-            type="button"
+          <span
+            role="button"
+            tabIndex={0}
             className={styles.filterBtn}
             data-active={isActive ? 'true' : undefined}
             aria-label={`Filter ${label}`}
           >
             <span className="wm-filter-list" aria-hidden />
-          </button>
+          </span>
         }
         align="start"
       >
-        <WuMenuItem onSelect={() => onChange(ALL_FILTER)}>All</WuMenuItem>
         {options.map((option) => (
-          <WuMenuItem key={option} onSelect={() => onChange(option)}>
+          <WuMenuCheckboxItem
+            key={option}
+            checked={draft.includes(option)}
+            onSelect={() => toggleDraft(option)}
+            preventCloseOnSelect
+          >
             {option}
-          </WuMenuItem>
+          </WuMenuCheckboxItem>
         ))}
+        <WuMenuSeparatorItem />
+        <div className={styles.filterMenuFooter}>
+          <button
+            type="button"
+            className={styles.filterMenuClearBtn}
+            onClick={resetDraft}
+            disabled={draft.length === 0}
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            className={styles.filterMenuApplyBtn}
+            onClick={applyDraft}
+            disabled={!draftChanged}
+          >
+            Apply
+          </button>
+        </div>
       </WuMenu>
     </span>
   );
@@ -113,17 +208,17 @@ function FilterableColumnHeader({
 export function SurveyAdvanceQuotasDashboard() {
   const wick = useWickUILib();
   const [addQuotaOpen, setAddQuotaOpen] = useState(false);
-  const [quotaTypeFilter, setQuotaTypeFilter] = useState(ALL_FILTER);
-  const [quotaGroupFilter, setQuotaGroupFilter] = useState(ALL_FILTER);
+  const [quotaTypeFilter, setQuotaTypeFilter] = useState<string[]>([]);
+  const [quotaGroupFilter, setQuotaGroupFilter] = useState<string[]>([]);
 
   const quotaGroupOptions = useMemo(() => getAdvanceQuotaGroupOptions(), []);
 
   const filteredQuotas = useMemo(() => {
     return MOCK_ADVANCE_QUOTAS.filter((quota) => {
-      if (quotaTypeFilter !== ALL_FILTER && quota.quotaType !== quotaTypeFilter) {
+      if (quotaTypeFilter.length > 0 && !quotaTypeFilter.includes(quota.quotaType)) {
         return false;
       }
-      if (quotaGroupFilter !== ALL_FILTER && quota.quotaGroup !== quotaGroupFilter) {
+      if (quotaGroupFilter.length > 0 && !quotaGroupFilter.includes(quota.quotaGroup)) {
         return false;
       }
       return true;
@@ -137,7 +232,11 @@ export function SurveyAdvanceQuotasDashboard() {
         header: () => <ColumnHeader label="NAME" icons={['sort']} />,
         enableSorting: true,
         size: 180,
-        cell: ({ row }) => <span className={styles.nameCell}>{row.original.name}</span>,
+        cell: ({ row }) => (
+          <span className={styles.nameCell} title={row.original.name}>
+            {row.original.name}
+          </span>
+        ),
       },
       {
         accessorKey: 'quotaType',
@@ -150,14 +249,23 @@ export function SurveyAdvanceQuotasDashboard() {
           />
         ),
         filterable: true,
-        enableSorting: true,
+        enableSorting: false,
         size: 140,
+        cell: ({ row }) => (
+          <span className={styles.clamp} title={row.original.quotaType}>
+            {row.original.quotaType}
+          </span>
+        ),
       },
       {
         accessorKey: 'description',
         header: () => <ColumnHeader label="DESCRIPTION" icons={['info']} />,
         size: 320,
-        cell: ({ row }) => <span className={styles.descriptionCell}>{row.original.description}</span>,
+        cell: ({ row }) => (
+          <span className={styles.descriptionCell} title={row.original.description}>
+            {row.original.description}
+          </span>
+        ),
       },
       {
         accessorKey: 'quotaGroup',
@@ -171,8 +279,13 @@ export function SurveyAdvanceQuotasDashboard() {
           />
         ),
         filterable: true,
-        enableSorting: true,
+        enableSorting: false,
         size: 150,
+        cell: ({ row }) => (
+          <span className={styles.clamp} title={row.original.quotaGroup}>
+            {row.original.quotaGroup}
+          </span>
+        ),
       },
       {
         accessorKey: 'multipleQuotaHandling',
@@ -181,6 +294,11 @@ export function SurveyAdvanceQuotasDashboard() {
         ),
         enableSorting: true,
         size: 190,
+        cell: ({ row }) => (
+          <span className={styles.clamp} title={row.original.multipleQuotaHandling}>
+            {row.original.multipleQuotaHandling}
+          </span>
+        ),
       },
       {
         accessorKey: 'target',

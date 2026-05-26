@@ -69,36 +69,40 @@ export function SurveyEditorWorkspaceToolbar({
     [activeTool, handleToolClickStable]
   );
 
+  const showPublishArea = activeTool !== 'advance-quotas';
+
   return (
     <WuSecondaryNavbar Links={links} className={styles.navbar}>
-      <div className={styles.publishArea}>
-        <div className={styles.statusToggle} role="group" aria-label="Survey status">
+      {showPublishArea ? (
+        <div className={styles.publishArea}>
+          <div className={styles.statusToggle} role="group" aria-label="Survey status">
+            <button
+              type="button"
+              className={mode === 'draft' ? styles.toggleActive : styles.toggleInactive}
+              aria-pressed={mode === 'draft'}
+              onClick={() => selectMode('draft')}
+            >
+              Draft
+            </button>
+            <button
+              type="button"
+              className={mode === 'publish' ? styles.toggleActive : styles.toggleInactive}
+              aria-pressed={mode === 'publish'}
+              onClick={() => selectMode('publish')}
+            >
+              Publish
+            </button>
+          </div>
           <button
             type="button"
-            className={mode === 'draft' ? styles.toggleActive : styles.toggleInactive}
-            aria-pressed={mode === 'draft'}
-            onClick={() => selectMode('draft')}
+            className={styles.previewBtn}
+            aria-label="Preview survey"
+            onClick={() => showToast({ message: 'Preview survey', variant: 'success' })}
           >
-            Draft
-          </button>
-          <button
-            type="button"
-            className={mode === 'publish' ? styles.toggleActive : styles.toggleInactive}
-            aria-pressed={mode === 'publish'}
-            onClick={() => selectMode('publish')}
-          >
-            Publish
+            <span className="wm-visibility" />
           </button>
         </div>
-        <button
-          type="button"
-          className={styles.previewBtn}
-          aria-label="Preview survey"
-          onClick={() => showToast({ message: 'Preview survey', variant: 'success' })}
-        >
-          <span className="wm-visibility" />
-        </button>
-      </div>
+      ) : null}
     </WuSecondaryNavbar>
   );
 }
