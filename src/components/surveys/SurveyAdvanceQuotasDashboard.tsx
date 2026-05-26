@@ -2,17 +2,125 @@
 
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { AddQuotaModal } from '@/components/surveys/AddQuotaModal';
+import { QuestionBasedQuotaModal } from '@/components/surveys/QuestionBasedQuotaModal';
+import {
+  CriteriaBasedQuotaModal,
+  type CriteriaQuotaSubmit,
+} from '@/components/surveys/CriteriaBasedQuotaModal';
+import type { QuotaDimensionState } from '@/components/surveys/QuotaDimensionStep';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
   ADVANCE_QUOTA_TYPE_OPTIONS,
+  flattenQuotasForTable,
   getAdvanceQuotaGroupOptions,
   MOCK_ADVANCE_QUOTAS,
   type AdvanceQuota,
+  type AdvanceQuotaRow,
+  type QuotaOption,
 } from '@/data/mock-advance-quotas';
+import type { AddQuotaType } from '@/data/mock-add-quota-options';
+import type { SurveyQuestion } from '@/data/mock-survey-questions';
 import { useWickUILib } from '@/components/ui/useWickUILib';
+import {
+  usePersistedState,
+  usePersistedStringSet,
+} from '@/hooks/usePersistedState';
 import styles from './SurveyAdvanceQuotasDashboard.module.css';
+
+function slugForId(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+function buildCriteriaQuota(data: {
+  name: string;
+  target: number;
+  responseStatus: string;
+  dateFrom: string;
+  dateTo: string;
+  criteria: Array<{
+    questionCode: string;
+    questionText: string;
+    operator: string;
+    value: string;
+  }>;
+}): AdvanceQuota {
+  const now = Date.now();
+  const parts: string[] = [];
+  if (data.criteria.length === 0) {
+    parts.push('Custom criteria');
+  } else {
+    for (const c of data.criteria) {
+      const label = c.questionCode ? `[${c.questionCode}]` : c.questionText || 'Question';
+      parts.push(`${label} ${c.operator} "${c.value}"`);
+    }
+  }
+  if (data.responseStatus && data.responseStatus !== 'All') {
+    parts.push(`Response status: ${data.responseStatus}`);
+  }
+  if (data.dateFrom || data.dateTo) {
+    const from = data.dateFrom || '…';
+    const to = data.dateTo || '…';
+    parts.push(`Between ${from} and ${to}`);
+  }
+  return {
+    id: `user-criteria-${now}`,
+    name: data.name,
+    quotaType: 'Criteria based',
+    description: parts.join(' and '),
+    quotaGroup: 'NA',
+    multipleQuotaHandling: 'NA',
+    target: Math.max(0, Math.round(data.target)),
+    current: 0,
+  };
+}
+
+function buildQuotasFromSelection(
+  questions: SurveyQuestion[],
+  distribution: QuotaDimensionState
+): AdvanceQuota[] {
+  const now = Date.now();
+  const quotas: AdvanceQuota[] = [];
+  questions.forEach((question, qIdx) => {
+    const entry = distribution[question.id];
+    if (!entry) return;
+    const optionLabels = Object.keys(entry.values);
+    if (optionLabels.length === 0) return;
+    const options: QuotaOption[] = optionLabels.map((label, idx) => {
+      const raw = entry.values[label] ?? 0;
+      const target =
+        entry.scope === 'min-pct' && entry.target
+          ? Math.round((entry.target * raw) / 100)
+          : Math.round(raw);
+      return {
+        id: `${slugForId(label) || 'opt'}-${idx}`,
+        label,
+        target,
+        current: 0,
+      };
+    });
+    const totalTarget = options.reduce((sum, o) => sum + o.target, 0);
+    quotas.push({
+      id: `user-${now}-${qIdx}-${question.id}`,
+      name: question.text,
+      quotaType: 'Question Based',
+      description: `Options in ${question.code} ${question.text}`,
+      quotaGroup: 'NA',
+      multipleQuotaHandling: 'NA',
+      target: totalTarget,
+      current: 0,
+      questionCode: question.code,
+      questionText: question.text,
+      options,
+    });
+  });
+  return quotas;
+}
 
 const WuTable = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTable })),
@@ -37,25 +145,30 @@ const WuMenuSeparatorItem = dynamic(
   { ssr: false }
 );
 
-function QuotaTargetCell({ quota }: { quota: AdvanceQuota }) {
+function QuotaTargetCell({ quota }: { quota: AdvanceQuota | AdvanceQuotaRow }) {
   const current = quota.current ?? quota.target;
-  const progress = Math.min(current / quota.target, 1);
+  const progress = quota.target === 0 ? 0 : Math.min(current / quota.target, 1);
+  const pct = progress * 100;
+  const tone: 'low' | 'mid' | 'high' =
+    pct > 80 ? 'high' : pct > 50 ? 'mid' : 'low';
   const label = `${current}/${quota.target}`;
 
+  const valueClass = `${styles.targetValue} ${
+    tone === 'high'
+      ? styles.targetValueHigh
+      : tone === 'mid'
+      ? styles.targetValueMid
+      : styles.targetValueLow
+  }`;
+
   return (
-    <div
+    <span
       className={styles.targetCell}
-      title={label}
+      title={`${label} (${Math.round(pct)}%)`}
       aria-label={`Target ${label}`}
-      tabIndex={0}
     >
-      <div className={styles.progressTrack} aria-hidden>
-        <div className={styles.progressFill} style={{ width: `${progress * 100}%` }} />
-      </div>
-      <span className={styles.targetLabel} aria-hidden>
-        {label}
-      </span>
-    </div>
+      <span className={valueClass}>{label}</span>
+    </span>
   );
 }
 
@@ -205,16 +318,53 @@ function FilterableColumnHeader({
   );
 }
 
-export function SurveyAdvanceQuotasDashboard() {
+interface SurveyAdvanceQuotasDashboardProps {
+  surveyId: number;
+}
+
+export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDashboardProps) {
   const wick = useWickUILib();
+  const { showToast } = useWuShowToast();
   const [addQuotaOpen, setAddQuotaOpen] = useState(false);
-  const [quotaTypeFilter, setQuotaTypeFilter] = useState<string[]>([]);
-  const [quotaGroupFilter, setQuotaGroupFilter] = useState<string[]>([]);
+  const [questionQuotaOpen, setQuestionQuotaOpen] = useState(false);
+  const [criteriaQuotaOpen, setCriteriaQuotaOpen] = useState(false);
+  const [quotaTypeFilter, setQuotaTypeFilter] = usePersistedState<string[]>(
+    `advance-quotas:${surveyId}:type-filter`,
+    []
+  );
+  const [quotaGroupFilter, setQuotaGroupFilter] = usePersistedState<string[]>(
+    `advance-quotas:${surveyId}:group-filter`,
+    []
+  );
+  const [expandedQuotaIds, setExpandedQuotaIds] = usePersistedStringSet(
+    `advance-quotas:${surveyId}:expanded`
+  );
+  const [addedQuotas, setAddedQuotas] = usePersistedState<AdvanceQuota[]>(
+    `advance-quotas:${surveyId}:added`,
+    []
+  );
+
+  const allQuotas = useMemo<AdvanceQuota[]>(
+    () => [...addedQuotas, ...MOCK_ADVANCE_QUOTAS],
+    [addedQuotas]
+  );
+
+  function toggleQuotaExpand(quotaId: string): void {
+    setExpandedQuotaIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(quotaId)) {
+        next.delete(quotaId);
+      } else {
+        next.add(quotaId);
+      }
+      return next;
+    });
+  }
 
   const quotaGroupOptions = useMemo(() => getAdvanceQuotaGroupOptions(), []);
 
   const filteredQuotas = useMemo(() => {
-    return MOCK_ADVANCE_QUOTAS.filter((quota) => {
+    return allQuotas.filter((quota) => {
       if (quotaTypeFilter.length > 0 && !quotaTypeFilter.includes(quota.quotaType)) {
         return false;
       }
@@ -223,26 +373,77 @@ export function SurveyAdvanceQuotasDashboard() {
       }
       return true;
     });
-  }, [quotaTypeFilter, quotaGroupFilter]);
+  }, [allQuotas, quotaTypeFilter, quotaGroupFilter]);
 
-  const columns: IWuTableColumnDef<AdvanceQuota>[] = useMemo(
+  const tableRows = useMemo(
+    () => flattenQuotasForTable(filteredQuotas, expandedQuotaIds),
+    [filteredQuotas, expandedQuotaIds]
+  );
+
+  const columns: IWuTableColumnDef<AdvanceQuotaRow>[] = useMemo(
     () => [
       {
         accessorKey: 'name',
-        header: () => <ColumnHeader label="NAME" icons={['sort']} />,
+        header: () => <ColumnHeader label="Name" icons={['sort']} />,
         enableSorting: true,
-        size: 180,
-        cell: ({ row }) => (
-          <span className={styles.nameCell} title={row.original.name}>
-            {row.original.name}
-          </span>
-        ),
+        size: 220,
+        cell: ({ row }) => {
+          const quota = row.original;
+          const hasOptions = !!quota.options && quota.options.length > 0;
+          const isExpanded = hasOptions && expandedQuotaIds.has(quota.id);
+          if (quota.isOption) {
+            return (
+              <span
+                className={`${styles.nameCell} ${styles.optionNameCell}`}
+                title={quota.name}
+              >
+                <span className={styles.optionBullet} aria-hidden />
+                {quota.name}
+              </span>
+            );
+          }
+          if (hasOptions) {
+            return (
+              <span
+                role="button"
+                tabIndex={0}
+                className={`${styles.nameCell} ${styles.expandableNameCell}`}
+                title={quota.name}
+                aria-expanded={isExpanded}
+                aria-label={`${isExpanded ? 'Collapse' : 'Expand'} options for ${quota.name}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleQuotaExpand(quota.id);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    toggleQuotaExpand(quota.id);
+                  }
+                }}
+              >
+                <i
+                  className={`wm wm-chevron-right ${styles.expandChevron} ${
+                    isExpanded ? styles.expandChevronOpen : ''
+                  }`}
+                  aria-hidden
+                />
+                <span className={styles.expandableNameText}>{quota.name}</span>
+              </span>
+            );
+          }
+          return (
+            <span className={styles.nameCell} title={quota.name}>
+              {quota.name}
+            </span>
+          );
+        },
       },
       {
         accessorKey: 'quotaType',
         header: () => (
           <FilterableColumnHeader
-            label="QUOTA TYPE"
+            label="Quota type"
             value={quotaTypeFilter}
             options={ADVANCE_QUOTA_TYPE_OPTIONS}
             onChange={setQuotaTypeFilter}
@@ -251,27 +452,37 @@ export function SurveyAdvanceQuotasDashboard() {
         filterable: true,
         enableSorting: false,
         size: 140,
-        cell: ({ row }) => (
-          <span className={styles.clamp} title={row.original.quotaType}>
-            {row.original.quotaType}
-          </span>
-        ),
+        cell: ({ row }) => {
+          if (row.original.isOption) {
+            return <span className={styles.subRowMuted} aria-hidden />;
+          }
+          return (
+            <span className={styles.clamp} title={row.original.quotaType}>
+              {row.original.quotaType}
+            </span>
+          );
+        },
       },
       {
         accessorKey: 'description',
-        header: () => <ColumnHeader label="DESCRIPTION" icons={['info']} />,
+        header: () => <ColumnHeader label="Description" icons={['info']} />,
         size: 320,
-        cell: ({ row }) => (
-          <span className={styles.descriptionCell} title={row.original.description}>
-            {row.original.description}
-          </span>
-        ),
+        cell: ({ row }) => {
+          if (row.original.isOption) {
+            return <span className={styles.subRowMuted} aria-hidden />;
+          }
+          return (
+            <span className={styles.descriptionCell} title={row.original.description}>
+              {row.original.description}
+            </span>
+          );
+        },
       },
       {
         accessorKey: 'quotaGroup',
         header: () => (
           <FilterableColumnHeader
-            label="QUOTA GROUP"
+            label="Quota group"
             value={quotaGroupFilter}
             options={quotaGroupOptions}
             onChange={setQuotaGroupFilter}
@@ -281,35 +492,45 @@ export function SurveyAdvanceQuotasDashboard() {
         filterable: true,
         enableSorting: false,
         size: 150,
-        cell: ({ row }) => (
-          <span className={styles.clamp} title={row.original.quotaGroup}>
-            {row.original.quotaGroup}
-          </span>
-        ),
+        cell: ({ row }) => {
+          if (row.original.isOption) {
+            return <span className={styles.subRowMuted} aria-hidden />;
+          }
+          return (
+            <span className={styles.clamp} title={row.original.quotaGroup}>
+              {row.original.quotaGroup}
+            </span>
+          );
+        },
       },
       {
         accessorKey: 'multipleQuotaHandling',
         header: () => (
-          <span className={styles.columnHeader}>MULTIPLE QUOTA HANDLING</span>
+          <span className={styles.columnHeader}>Multiple quota handling</span>
         ),
         enableSorting: true,
         size: 190,
-        cell: ({ row }) => (
-          <span className={styles.clamp} title={row.original.multipleQuotaHandling}>
-            {row.original.multipleQuotaHandling}
-          </span>
-        ),
+        cell: ({ row }) => {
+          if (row.original.isOption) {
+            return <span className={styles.subRowMuted} aria-hidden />;
+          }
+          return (
+            <span className={styles.clamp} title={row.original.multipleQuotaHandling}>
+              {row.original.multipleQuotaHandling}
+            </span>
+          );
+        },
       },
       {
         accessorKey: 'target',
-        header: () => <ColumnHeader label="TARGET" icons={['settings', 'filter']} />,
+        header: () => <ColumnHeader label="Target" icons={['settings', 'filter']} />,
         headerAlign: 'right',
         cellAlign: 'right',
         size: 130,
         cell: ({ row }) => <QuotaTargetCell quota={row.original} />,
       },
     ],
-    [quotaGroupFilter, quotaGroupOptions, quotaTypeFilter]
+    [expandedQuotaIds, quotaGroupFilter, quotaGroupOptions, quotaTypeFilter]
   );
 
   if (!wick) {
@@ -334,7 +555,7 @@ export function SurveyAdvanceQuotasDashboard() {
 
       <div className={styles.tableWrap}>
         <WuTable
-          data={filteredQuotas as unknown[]}
+          data={tableRows as unknown[]}
           columns={columns as unknown as IWuTableColumnDef<unknown>[]}
           className={styles.quotaTable}
           tableLayout="fixed"
@@ -350,7 +571,58 @@ export function SurveyAdvanceQuotasDashboard() {
         />
       </div>
 
-      <AddQuotaModal open={addQuotaOpen} onOpenChange={setAddQuotaOpen} />
+      <AddQuotaModal
+        open={addQuotaOpen}
+        onOpenChange={setAddQuotaOpen}
+        onSelectType={(type: AddQuotaType) => {
+          if (type === 'question-based') {
+            setQuestionQuotaOpen(true);
+            return;
+          }
+          if (type === 'criteria-based') {
+            setCriteriaQuotaOpen(true);
+            return;
+          }
+          showToast({
+            message: 'Advanced quota is not available in this prototype',
+            variant: 'info',
+          });
+        }}
+      />
+
+      <QuestionBasedQuotaModal
+        open={questionQuotaOpen}
+        onOpenChange={setQuestionQuotaOpen}
+        surveyId={surveyId}
+        onBack={() => {
+          setQuestionQuotaOpen(false);
+          setAddQuotaOpen(true);
+        }}
+        onSave={(questions, distribution) => {
+          const newQuotas = buildQuotasFromSelection(questions, distribution);
+          if (newQuotas.length === 0) return;
+          setAddedQuotas((prev) => [...newQuotas, ...prev]);
+          setExpandedQuotaIds((prev) => {
+            const next = new Set(prev);
+            for (const q of newQuotas) next.add(q.id);
+            return next;
+          });
+        }}
+      />
+
+      <CriteriaBasedQuotaModal
+        open={criteriaQuotaOpen}
+        onOpenChange={setCriteriaQuotaOpen}
+        surveyId={surveyId}
+        onBack={() => {
+          setCriteriaQuotaOpen(false);
+          setAddQuotaOpen(true);
+        }}
+        onSave={(data: CriteriaQuotaSubmit) => {
+          const quota = buildCriteriaQuota(data);
+          setAddedQuotas((prev) => [quota, ...prev]);
+        }}
+      />
     </div>
   );
 }

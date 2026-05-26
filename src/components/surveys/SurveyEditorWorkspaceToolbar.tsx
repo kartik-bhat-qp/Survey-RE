@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { usePathname, useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { NavLink } from '@/components/surveys/NavLink';
 import {
@@ -17,16 +18,28 @@ const WuSecondaryNavbar = dynamic(
 
 type PublishMode = 'draft' | 'publish';
 
+function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null {
+  if (tool === 'workspace') return `/surveys/${surveyId}`;
+  if (tool === 'advance-quotas') return `/surveys/${surveyId}/advance-quotas`;
+  return null;
+}
+
+function getActiveTool(pathname: string, surveyId: number): SurveyWorkspaceTool {
+  if (pathname === `/surveys/${surveyId}/advance-quotas`) return 'advance-quotas';
+  return 'workspace';
+}
+
 interface SurveyEditorWorkspaceToolbarProps {
-  activeTool: SurveyWorkspaceTool;
-  onToolChange: (tool: SurveyWorkspaceTool) => void;
+  surveyId: number;
 }
 
 export function SurveyEditorWorkspaceToolbar({
-  activeTool,
-  onToolChange,
+  surveyId,
 }: SurveyEditorWorkspaceToolbarProps) {
   const { showToast } = useWuShowToast();
+  const router = useRouter();
+  const pathname = usePathname() ?? '';
+  const activeTool = getActiveTool(pathname, surveyId);
   const [mode, setMode] = useState<PublishMode>('draft');
 
   function selectMode(next: PublishMode) {
@@ -37,36 +50,40 @@ export function SurveyEditorWorkspaceToolbar({
     });
   }
 
-  function handleToolClick(tool: SurveyWorkspaceTool, label: string) {
-    if (tool === 'workspace' || tool === 'advance-quotas') {
-      onToolChange(tool);
-      return;
-    }
-
-    showToast({ message: `${label} is not available in this prototype`, variant: 'info' });
-  }
-
-  const handleToolClickStable = useCallback(handleToolClick, [onToolChange, showToast]);
+  const handleToolClick = useCallback(
+    (tool: SurveyWorkspaceTool, label: string) => {
+      const href = getToolHref(tool, surveyId);
+      if (href) {
+        router.push(href);
+        return;
+      }
+      showToast({ message: `${label} is not available in this prototype`, variant: 'info' });
+    },
+    [router, showToast, surveyId]
+  );
 
   const links = useMemo(
     () =>
-      SURVEY_WORKSPACE_TOOLS.map((tool) => ({
-        link: (
-          <NavLink
-            href="#"
-            variant="secondary"
-            active={activeTool === tool.id}
-            onClick={(event) => {
-              event.preventDefault();
-              handleToolClickStable(tool.id, tool.label);
-            }}
-          >
-            {tool.label}
-          </NavLink>
-        ),
-        imgOrIcon: <span className={tool.icon} aria-hidden />,
-      })),
-    [activeTool, handleToolClickStable]
+      SURVEY_WORKSPACE_TOOLS.map((tool) => {
+        const href = getToolHref(tool.id, surveyId);
+        return {
+          link: (
+            <NavLink
+              href={href ?? '#'}
+              variant="secondary"
+              active={activeTool === tool.id}
+              onClick={(event) => {
+                event.preventDefault();
+                handleToolClick(tool.id, tool.label);
+              }}
+            >
+              {tool.label}
+            </NavLink>
+          ),
+          imgOrIcon: <span className={tool.icon} aria-hidden />,
+        };
+      }),
+    [activeTool, handleToolClick, surveyId]
   );
 
   const showPublishArea = activeTool !== 'advance-quotas';

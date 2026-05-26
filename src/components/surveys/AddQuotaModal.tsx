@@ -9,9 +9,10 @@ import styles from './AddQuotaModal.module.css';
 interface AddQuotaModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSelectType?: (type: AddQuotaType) => void;
 }
 
-export function AddQuotaModal({ open, onOpenChange }: AddQuotaModalProps) {
+export function AddQuotaModal({ open, onOpenChange, onSelectType }: AddQuotaModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
 
@@ -23,6 +24,11 @@ export function AddQuotaModal({ open, onOpenChange }: AddQuotaModalProps) {
   );
 
   function handleSelect(type: AddQuotaType, title: string) {
+    if (onSelectType) {
+      onSelectType(type);
+      handleOpenChange(false);
+      return;
+    }
     handleOpenChange(false);
     showToast({ message: `Selected ${title}`, variant: 'success' });
   }
@@ -31,26 +37,32 @@ export function AddQuotaModal({ open, onOpenChange }: AddQuotaModalProps) {
     return null;
   }
 
-  const { WuModal, WuModalContent } = wick;
+  const { WuModal, WuModalContent, WuModalHeader } = wick;
 
   return (
     <WuModal open onOpenChange={handleOpenChange} className={styles.modal} variant="action">
       <WuModalContent className={styles.content}>
-        <div className={styles.cardGrid}>
-          {ADD_QUOTA_OPTIONS.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              className={styles.card}
-              onClick={() => handleSelect(option.id, option.title)}
-            >
-              <div className={styles.cardTitleRow}>
-                <span className={styles.cardTitle}>{option.title}</span>
-                <span className={`${option.icon} ${styles.cardIcon}`} aria-hidden />
-              </div>
-              <p className={styles.cardDescription}>{option.description}</p>
-            </button>
-          ))}
+        <WuModalHeader className={styles.header}>Add Quota</WuModalHeader>
+        <div className={styles.body}>
+          <p className={styles.instructions}>
+            Select the type of quota you would like to add.
+          </p>
+          <div className={styles.cardGrid}>
+            {ADD_QUOTA_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={styles.card}
+                onClick={() => handleSelect(option.id, option.title)}
+              >
+                <div className={styles.cardTitleRow}>
+                  <span className={styles.cardTitle}>{option.title}</span>
+                  <span className={`${option.icon} ${styles.cardIcon}`} aria-hidden />
+                </div>
+                <p className={styles.cardDescription}>{option.description}</p>
+              </button>
+            ))}
+          </div>
         </div>
       </WuModalContent>
     </WuModal>

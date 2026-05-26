@@ -1,0 +1,256 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.5rem 1.5rem;
+}
+
+.searchSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.searchInput {
+  width: 100%;
+}
+
+.emptySearch {
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-style: italic;
+  padding: 0.75rem 0;
+  text-align: center;
+}
+
+.dimensionHeader {
+  color: #67727E;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+
+.cardsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.cardHeader {
+  align-items: center;
+  background: #f5f7fa;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+}
+
+.cardTitle {
+  color: #1f2937;
+  flex: 1;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.cardActions {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+}
+
+.scopeTrigger {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  color: #67727E;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  gap: 0.5rem;
+  padding: 0.375rem 0.5rem 0.375rem 0.75rem;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.scopeTrigger:hover {
+  border-color: #1b87e6;
+  color: #1b87e6;
+}
+
+.scopeTrigger[data-state='open'] {
+  border-color: #1b87e6;
+  color: #1b87e6;
+}
+
+.scopeTriggerLabel {
+  white-space: nowrap;
+}
+
+.scopeTriggerCaret {
+  font-size: 1rem;
+  transition: transform 0.15s ease;
+}
+
+.scopeTrigger[data-state='open'] .scopeTriggerCaret {
+  transform: rotate(180deg);
+}
+
+.iconBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: #67727E;
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.75rem;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+  width: 1.75rem;
+}
+
+.iconBtn:hover {
+  background: rgb(103 114 126 / 8%);
+  color: #1b87e6;
+}
+
+.chevron {
+  display: inline-block;
+  font-size: 1.125rem;
+  transition: transform 0.15s ease;
+}
+
+.chevronCollapsed {
+  transform: rotate(180deg);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0;
+}
+
+.optionRow {
+  align-items: center;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 8rem;
+  padding: 0.5rem 1rem;
+}
+
+.optionLabel {
+  color: #67727E;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+}
+
+.percentInput {
+  background: #f3f4f6;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #1f2937;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  padding: 0.375rem 0.625rem;
+  text-align: right;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  width: 100%;
+}
+
+.percentInput:hover {
+  background: #eef0f3;
+}
+
+.percentInput:focus {
+  background: #fff;
+  border-color: #1b87e6;
+  outline: none;
+}
+
+.percentInputInvalid {
+  background: rgb(225 29 72 / 8%);
+  border-color: #e11d48;
+}
+
+.percentInputInvalid:focus {
+  background: #fff;
+  border-color: #e11d48;
+}
+
+.helperRow {
+  align-items: center;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 8rem;
+  padding: 0.25rem 1rem 0.5rem;
+}
+
+.helperText {
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  grid-column: 1 / -1;
+  justify-self: end;
+}
+
+.helperTextInvalid {
+  color: #e11d48;
+}
+
+.totalRow {
+  align-items: center;
+  border-top: 1px solid #e5e7eb;
+  color: #1f2937;
+  display: grid;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  gap: 1rem;
+  grid-template-columns: 1fr 8rem;
+  margin-top: 0.25rem;
+  padding: 0.625rem 1rem;
+}
+
+.totalLabel {
+  color: #67727E;
+}
+
+.totalValue {
+  text-align: right;
+}
+
+.totalInvalid .totalValue {
+  color: #e11d48;
+}
+
+.emptyOptions {
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-style: italic;
+  padding: 1rem;
+}
+
+@media (max-width: 639px) {
+  .root {
+    padding: 1rem;
+  }
+
+  .optionRow,
+  .totalRow {
+    grid-template-columns: 1fr 6rem;
+  }
+}

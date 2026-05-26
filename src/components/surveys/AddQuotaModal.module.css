@@ -5,7 +5,23 @@
 }
 
 .content {
-  padding: 1.5rem !important;
+  padding: 0 !important;
+}
+
+.header {
+  padding-right: 3rem !important;
+}
+
+.body {
+  padding: 1.5rem;
+}
+
+.instructions {
+  color: #67727E;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin: 0 0 1rem;
 }
 
 .cardGrid {
@@ -73,7 +89,7 @@
 }
 
 @media (max-width: 767px) {
-  .content {
-    padding: 1rem !important;
+  .body {
+    padding: 1rem;
   }
 }

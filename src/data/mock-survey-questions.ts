@@ -16,41 +16,65 @@ export interface SurveyQuestion {
   matrixRows?: string[];
   /** Parent question id when this row is an expanded matrix sub-row. */
   parentQuestionId?: number;
+  /** Answer options used for quota and weighting dimension flows. */
+  options?: string[];
 }
 
 const DEMO_QUESTIONS: Omit<SurveyQuestion, 'id' | 'surveyId'>[] = [
-  { code: 'Q1', text: 'What is your age group?', type: 'Single Select' },
-  { code: 'Q2', text: 'What is your age?', type: 'Single Select' },
+  {
+    code: 'Q1',
+    text: 'What is your gender?',
+    type: 'Single Select',
+    options: ['Male', 'Female', 'Other', 'NA'],
+  },
+  {
+    code: 'Q2',
+    text: 'What is your age?',
+    type: 'Single Select',
+    options: ['Under 18', '18-24', '25-34', '35-44', '45-54', '55-64', 'Above 64'],
+  },
   {
     code: 'Q2a',
     text: 'Which district of West Bengal do you reside in?',
     type: 'Single Select',
+    options: ['Kolkata', 'Howrah', 'North 24 Parganas', 'South 24 Parganas', 'Darjeeling'],
   },
   {
     code: 'Q7',
     text: 'Who did you vote for in the previous elections?',
     type: 'Matrix Uni choice',
     matrixRows: ['Computer Science', 'Mathematics'],
+    options: ['Party A', 'Party B', 'Party C', 'Did not vote'],
   },
   {
     code: 'Q3',
     text: 'Which sports do you follow regularly?',
     type: 'Multiple Select',
+    options: ['Cricket', 'Football', 'Tennis', 'Basketball', 'Hockey'],
   },
   {
     code: 'Q4',
     text: 'How likely are you to recommend this service to a friend or colleague?',
     type: 'NPS',
+    options: ['0-6 (Detractors)', '7-8 (Passives)', '9-10 (Promoters)'],
   },
   {
     code: 'Q5',
     text: 'Please rank the following factors in order of importance.',
     type: 'Rank order',
+    options: ['Price', 'Quality', 'Brand', 'Support'],
   },
   {
     code: 'Q6',
     text: 'What is your overall satisfaction with the product?',
     type: 'Single Select',
+    options: [
+      'Very dissatisfied',
+      'Dissatisfied',
+      'Neutral',
+      'Satisfied',
+      'Very satisfied',
+    ],
   },
   {
     code: 'Q8',
@@ -61,22 +85,26 @@ const DEMO_QUESTIONS: Omit<SurveyQuestion, 'id' | 'surveyId'>[] = [
     code: 'Q9',
     text: 'How often do you use online streaming services?',
     type: 'Single Select',
+    options: ['Daily', 'Weekly', 'Monthly', 'Rarely', 'Never'],
   },
   {
     code: 'Q10',
     text: 'Select all media channels you use weekly.',
     type: 'Multiple Select',
+    options: ['TV', 'Radio', 'Print', 'Online', 'Social Media'],
   },
   {
     code: 'Q11',
     text: 'Rate each brand on quality and value.',
     type: 'Matrix Uni choice',
     matrixRows: ['Brand A', 'Brand B', 'Brand C'],
+    options: ['Poor', 'Average', 'Good', 'Excellent'],
   },
   {
     code: 'Q14',
     text: 'Please select the state you live in.',
     type: 'Single Select',
+    options: ['Maharashtra', 'Karnataka', 'Delhi', 'Tamil Nadu', 'West Bengal'],
   },
 ];
 
