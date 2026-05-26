@@ -1,0 +1,60 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+.header {
+  flex-shrink: 0;
+  position: relative;
+  width: 100%;
+  z-index: 50;
+}
+
+/* Keep sidebar content below the app header on desktop */
+.sidebar {
+  border-left: 1px solid #e5e7eb;
+}
+
+.sidebarArea {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* WickUI SidebarProvider defaults to min-h below header; fill remaining shell height */
+.sidebarArea :global(.wu-group\/sidebar-wrapper) {
+  flex: 1;
+  height: 100% !important;
+  min-height: 0 !important;
+  width: 100%;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile drawer: WickUI offsets sidebar with top-12 on desktop; drawer must be full viewport */
+@media (max-width: 767px) {
+  .shell :global([data-sidebar='sidebar'][data-mobile='true']) {
+    top: 0 !important;
+    bottom: 0 !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    z-index: 60 !important;
+  }
+
+  .shell :global(.wu-drawer-overlay) {
+    z-index: 55 !important;
+  }
+}

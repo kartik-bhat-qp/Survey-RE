@@ -1,0 +1,35 @@
+.questionContext {
+  color: #545e6b;
+  font-size: 12px;
+  line-height: 16px;
+  margin-bottom: 12px;
+}
+
+.singleSelectGrid {
+  display: grid !important;
+  flex: none !important;
+  gap: 8px 4px;
+  grid-template-columns: repeat(5, 1fr);
+  max-width: 54% !important;
+  min-width: 54% !important;
+}
+
+.singleSelectGrid > * {
+  box-sizing: border-box;
+  margin: 0 !important;
+  width: 100%;
+}
+
+@media (max-width: 639px) {
+  .singleSelectGrid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .singleSelectGrid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}

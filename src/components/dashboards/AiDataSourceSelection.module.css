@@ -1,0 +1,190 @@
+.folderColor {
+  color: #234693;
+}
+
+.folderIcon {
+  color: #234693;
+  flex-shrink: 0;
+}
+
+.folderItem {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #234693;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 14px;
+  gap: 8px;
+  padding: 8px 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.folderItem:hover,
+.folderItemSelected {
+  background: #e8f3fc;
+  color: #234693;
+}
+
+.folderItem:hover .folderIcon,
+.folderItemSelected .folderIcon {
+  color: #234693;
+}
+
+.sharedSurveys {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-top: 1px solid #f0f0f0;
+  color: #234693;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 14px;
+  gap: 8px;
+  padding: 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.sharedSurveys:hover,
+.sharedSurveysSelected {
+  background: #e8f3fc;
+}
+
+.sharedIcon {
+  color: #234693;
+  flex-shrink: 0;
+}
+
+.surveyName {
+  background: none;
+  border: none;
+  color: #90bef2;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.surveyName:hover {
+  text-decoration: underline;
+}
+
+.surveyNameSelected {
+  color: #90bef2;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.surveyNameSelected:hover {
+  text-decoration: underline;
+}
+
+.root {
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  min-height: 360px;
+}
+
+.sidebar {
+  background: #fafafa;
+  border-right: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 220px;
+}
+
+.sidebarHeader {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 12px;
+}
+
+.folderList {
+  padding: 4px 0;
+}
+
+.surveyPanel {
+  flex: 1;
+  min-width: 0;
+  padding: 16px;
+}
+
+.searchInputWrapper {
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.searchInput {
+  display: block;
+  width: 100%;
+}
+
+.tableArea {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.tableArea :global(table) {
+  min-width: 28rem;
+}
+
+@media (max-width: 639px) {
+  .root {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .sidebar {
+    border-bottom: 1px solid #f0f0f0;
+    border-right: none;
+    flex-shrink: 0;
+    max-height: none;
+    width: 100%;
+  }
+
+  .sidebarHeader {
+    padding: 10px 12px;
+  }
+
+  .folderList {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 12px;
+    scrollbar-width: thin;
+  }
+
+  .folderList li {
+    flex-shrink: 0;
+    list-style: none;
+  }
+
+  .folderItem {
+    border: 1px solid #e8e8e8;
+    border-radius: 6px;
+    padding: 8px 12px;
+    white-space: nowrap;
+    width: auto;
+  }
+
+  .sharedSurveys {
+    border-top: 1px solid #f0f0f0;
+    flex-shrink: 0;
+  }
+
+  .surveyPanel {
+    min-height: 240px;
+    padding: 12px;
+  }
+
+  .searchInputWrapper {
+    margin-bottom: 12px;
+  }
+}

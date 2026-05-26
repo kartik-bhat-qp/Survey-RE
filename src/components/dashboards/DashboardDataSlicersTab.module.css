@@ -1,0 +1,119 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.toolbarRow {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  justify-content: space-between;
+}
+
+.searchWrap {
+  flex: 1;
+  min-width: min(100%, 280px);
+}
+
+.createBtnWrap {
+  cursor: not-allowed;
+  display: inline-flex;
+}
+
+.actionsRow {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.manageLink {
+  align-items: center;
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 14px;
+  gap: 6px;
+  line-height: 1.4;
+  padding: 0;
+}
+
+.manageLink:hover {
+  text-decoration: underline;
+}
+
+.tableWrap {
+  max-height: min(360px, calc(70dvh - 18rem));
+  min-height: 12rem;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.tableWrap :global(table) {
+  min-width: 36rem;
+}
+
+.tableWrap :global(td) {
+  vertical-align: top;
+}
+
+.slicerName {
+  display: block;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.detailsBtn {
+  align-items: center;
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 14px;
+  gap: 4px;
+  line-height: 1.4;
+  padding: 0;
+}
+
+.detailsBtn:hover {
+  text-decoration: underline;
+}
+
+.detailsPanel {
+  color: #545e6b;
+  font-size: 13px;
+  line-height: 1.4;
+  margin-top: 6px;
+  word-break: break-word;
+}
+
+.tableWrap :global(thead th:nth-child(3)),
+.tableWrap :global(tbody td:nth-child(3)) {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.checkboxCell {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  margin-inline: auto;
+  width: 100%;
+}
+
+.checkboxCell :global(button) {
+  margin-inline: auto;
+}

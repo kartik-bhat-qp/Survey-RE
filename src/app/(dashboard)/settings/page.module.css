@@ -1,0 +1,62 @@
+.pageTitle {
+  color: #545e6b;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.2;
+  margin: 0 0 1.5rem;
+}
+
+.settingsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 48rem;
+}
+
+.settingRow {
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  min-height: 3.5rem;
+  padding: 0.75rem 0;
+}
+
+.settingRow:first-child {
+  border-top: 1px solid #f0f0f0;
+}
+
+.settingLabel {
+  align-items: center;
+  color: #545e6b;
+  display: inline-flex;
+  font-size: 14px;
+  gap: 0.5rem;
+}
+
+.settingIcon {
+  color: #9b9b9b;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.infoIconWrap {
+  align-items: center;
+  color: #9b9b9b;
+  cursor: help;
+  display: inline-flex;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.infoIconWrap:hover {
+  color: #545e6b;
+}
+
+.creditValue {
+  color: #f8b100;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}

@@ -1,0 +1,22 @@
+.matrixGrid {
+  align-content: flex-start;
+  display: grid !important;
+  flex: none !important;
+  gap: 8px 4px;
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 50% !important;
+  min-width: 50% !important;
+}
+
+.matrixGrid > * {
+  box-sizing: border-box;
+  margin: 0 !important;
+  width: 100%;
+}
+
+@media (max-width: 639px) {
+  .matrixGrid {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}

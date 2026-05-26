@@ -1,0 +1,66 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.25rem 0;
+}
+
+.fieldBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fieldLabel {
+  color: #545e6b;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.languageSelect {
+  max-width: 10rem;
+}
+
+.goalTextarea {
+  min-height: 7rem;
+  width: 100%;
+}
+
+.codebookFieldset {
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+}
+
+.codebookOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.codebookOption {
+  align-items: center;
+  color: #545e6b;
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  gap: 0.5rem;
+}
+
+.codebookRadio {
+  accent-color: #1b87e6;
+  cursor: pointer;
+  height: 16px;
+  margin: 0;
+  width: 16px;
+}
+
+@media (max-width: 639px) {
+  .languageSelect {
+    max-width: none;
+    width: 100%;
+  }
+}

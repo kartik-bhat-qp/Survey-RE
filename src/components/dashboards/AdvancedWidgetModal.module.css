@@ -1,0 +1,73 @@
+.modal {
+  max-width: min(960px, calc(100vw - 1.5rem)) !important;
+  width: 100%;
+}
+
+.modalTitle :global(h2) {
+  color: #1b3380;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.25;
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .modalTitle :global(h2) {
+    font-size: 18px;
+  }
+}
+
+.stepContent {
+  max-height: min(75vh, calc(100dvh - 11rem));
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.stepPlaceholder {
+  color: #545e6b;
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 16px;
+}
+
+@media (min-width: 640px) {
+  .stepPlaceholder {
+    padding: 24px;
+  }
+}
+
+.wizardFooter {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.wizardActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+@media (min-width: 640px) {
+  .wizardFooter {
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 639px) {
+  .wizardActions {
+    width: 100%;
+  }
+
+  .wizardActions :global(button) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

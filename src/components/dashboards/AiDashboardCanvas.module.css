@@ -1,0 +1,95 @@
+.canvas {
+  background: #eef1f4;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+  position: relative;
+}
+
+.gridLayout {
+  min-height: 100%;
+}
+
+.gridItem {
+  height: 100%;
+}
+
+.dragHandle {
+  cursor: grab;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+/* react-resizable: hide default grip image; use wm-resize via custom handle */
+.gridItem :global(.react-resizable-handle-se) {
+  background-image: none;
+  padding: 0;
+  z-index: 30;
+}
+
+.resizeHandle {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 2px 0 2px 0;
+  bottom: 6px;
+  box-sizing: border-box;
+  color: #757575;
+  cursor: se-resize;
+  display: flex;
+  font-size: 16px;
+  height: 22px;
+  justify-content: center;
+  line-height: 1;
+  position: absolute;
+  right: 6px;
+  touch-action: none;
+  user-select: none;
+  width: 22px;
+  z-index: 30;
+}
+
+.resizeHandle:active {
+  color: #1b87e6;
+}
+
+.aiFab {
+  align-items: center;
+  background: #1b87e6;
+  border: none;
+  border-radius: 50%;
+  bottom: 24px;
+  box-shadow: 0 4px 12px rgba(27, 135, 230, 0.45);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  font-size: 28px;
+  height: 52px;
+  justify-content: center;
+  position: fixed;
+  right: 24px;
+  width: 52px;
+  z-index: 20;
+}
+
+.canvasMobile {
+  padding: 12px;
+  padding-bottom: 5.5rem;
+}
+
+@media (max-width: 767px) {
+  .gridItem {
+    max-width: 100%;
+  }
+
+  .aiFab {
+    bottom: 4.5rem;
+    font-size: 24px;
+    height: 48px;
+    right: 16px;
+    width: 48px;
+  }
+}

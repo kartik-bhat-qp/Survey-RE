@@ -1,0 +1,157 @@
+.page {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.headerBlock {
+  flex-shrink: 0;
+  margin-bottom: 1rem;
+}
+
+.title {
+  color: #545e6b;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.createBtn {
+  margin-top: 0.75rem;
+}
+
+.toolbar {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.searchInput {
+  max-width: 16rem;
+  width: 100%;
+}
+
+.tableWrap {
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+.tableWrap :global(table) {
+  min-width: 40rem;
+}
+
+.tableWrap :global(thead th:nth-child(3)),
+.tableWrap :global(tbody td:nth-child(3)) {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.tableWrap :global(thead th:nth-child(3) button) {
+  justify-content: center;
+}
+
+.commentCountCell {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  min-width: 4.25rem;
+  text-align: right;
+}
+
+.nameCell {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.nameCellSub {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  min-height: 3rem;
+  padding-left: 8px;
+  position: relative;
+  width: 100%;
+}
+
+.questionLinkWide {
+  align-items: center;
+  bottom: 0;
+  display: flex;
+  left: 36px;
+  overflow-wrap: break-word;
+  padding-right: 12px;
+  position: absolute;
+  right: -7rem;
+  top: 0;
+  white-space: normal;
+  z-index: 1;
+}
+
+.expandButton {
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  padding: 2px;
+}
+
+.expandIcon {
+  color: #9b9b9b;
+  display: inline-block;
+  font-size: 14px;
+  transition: transform 0.15s ease;
+}
+
+.expandIconOpen {
+  transform: rotate(90deg);
+}
+
+.expandSpacer {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 22px;
+}
+
+.questionLink {
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.questionLink:hover {
+  text-decoration: underline;
+}
+
+.dashboardNameButton {
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 500;
+  padding: 0;
+  text-align: left;
+  word-break: break-word;
+}
+
+.dashboardNameButton:hover {
+  text-decoration: underline;
+}

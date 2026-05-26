@@ -1,0 +1,95 @@
+.modalTitle :global(h2) {
+  color: #1b3380;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.25;
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .modalTitle :global(h2) {
+    font-size: 18px;
+  }
+}
+
+.modal {
+  max-width: min(700px, calc(100vw - 1.5rem)) !important;
+  width: 100%;
+}
+
+.modalWide {
+  max-width: min(900px, calc(100vw - 1.5rem)) !important;
+  width: 100%;
+}
+
+.typeGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 1.25rem;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .typeGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+}
+
+.surveyContent {
+  max-height: min(70vh, calc(100dvh - 11rem));
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 !important;
+}
+
+.wizardFooter {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.wizardActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 639px) {
+  .wizardActions {
+    width: 100%;
+  }
+
+  .wizardActions :global(button) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+@media (min-width: 640px) {
+  .wizardFooter {
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+.typeFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+@media (max-width: 639px) {
+  .typeFooter :global(button) {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+  }
+}

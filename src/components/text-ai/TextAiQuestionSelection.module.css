@@ -1,0 +1,157 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.headingRow {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.heading {
+  color: #545e6b;
+  font-size: 14px;
+  margin: 0;
+}
+
+.credits {
+  color: #f8b100;
+  font-size: 14px;
+  margin-left: auto;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.searchRow {
+  width: 100%;
+}
+
+.searchInput {
+  width: 100%;
+}
+
+.metaRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.selectedCount {
+  color: #545e6b;
+  font-size: 14px;
+}
+
+.dashboardCountHint {
+  color: #1b87e6;
+  font-weight: 500;
+}
+
+.layoutOption {
+  background-color: #f8fafc;
+  border: 1px solid #e8e8e8;
+  border-radius: 2px;
+  padding: 0.75rem 0.875rem;
+}
+
+.layoutOptionLabel {
+  align-items: flex-start;
+  cursor: pointer;
+  display: flex;
+  gap: 0.625rem;
+}
+
+.layoutOptionText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.layoutOptionTitle {
+  color: #545e6b;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.layoutOptionDescription {
+  color: #909090;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.paginationBar {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.pageNavBtn {
+  align-items: center;
+  background: none;
+  border: none;
+  color: #545e6b;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 16px;
+  padding: 4px;
+}
+
+.pageNavBtn:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.pageRange {
+  color: #545e6b;
+  font-size: 14px;
+  min-width: 3rem;
+  text-align: center;
+}
+
+.pageSizeSelect {
+  max-width: 4rem;
+  min-width: 3.5rem;
+}
+
+.tableWrap {
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
+}
+
+.tableWrap :global(table) {
+  min-width: 36rem;
+}
+
+.checkboxHeader,
+.checkboxCell {
+  display: flex;
+  justify-content: center;
+}
+
+.codeCell {
+  color: #545e6b;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.questionCell {
+  color: #545e6b;
+  font-size: 14px;
+}
+
+.contextInput {
+  min-width: 12rem;
+  width: 100%;
+}
+
+.contextInput :global(input::placeholder) {
+  color: #b0b0b0;
+  font-style: italic;
+}

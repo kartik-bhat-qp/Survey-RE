@@ -1,0 +1,8 @@
+.headerContent {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  min-width: 0;
+  width: 100%;
+}

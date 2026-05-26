@@ -1,0 +1,14 @@
+.wrapper {
+  min-height: 0;
+  position: relative;
+}
+
+.overlay {
+  align-items: center;
+  background-color: rgb(255 255 255 / 0.65);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+  z-index: 11;
+}

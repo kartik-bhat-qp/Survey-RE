@@ -1,0 +1,112 @@
+.panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.toolbarRow {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.searchWrap {
+  flex: 1;
+  max-width: 320px;
+  min-width: min(100%, 200px);
+}
+
+.tableWrap {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.tableWrap :global(table) {
+  min-width: 40rem;
+}
+
+.tableWrap :global(td) {
+  vertical-align: middle;
+}
+
+.linkName {
+  display: block;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.shareUrlCell {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.linkIcon {
+  color: #545e6b;
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.urlText {
+  color: #545e6b;
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.4;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copyBtn {
+  align-items: center;
+  background: none;
+  border: none;
+  color: #545e6b;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px;
+}
+
+.copyBtn:hover {
+  color: #1b87e6;
+}
+
+.statusCell {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.tableWrap :global(thead th:nth-child(4)),
+.tableWrap :global(tbody td:nth-child(4)) {
+  text-align: center;
+}
+
+.rowActions {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  width: 100%;
+}
+
+.tableWrap :global(thead th:nth-child(5)),
+.tableWrap :global(tbody td:nth-child(5)) {
+  text-align: center;
+}

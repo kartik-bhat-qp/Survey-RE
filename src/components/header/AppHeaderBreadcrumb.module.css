@@ -1,0 +1,50 @@
+.nav {
+  align-items: center;
+  display: flex !important;
+  flex: 1;
+  min-width: 0;
+}
+
+.link {
+  cursor: pointer;
+  padding: 0 !important;
+  text-decoration: none;
+}
+
+.nav :global(.wu-breadcrumb-link) {
+  color: #90bef2;
+}
+
+.nav :global(.wu-breadcrumb-link:hover) {
+  color: #fff;
+}
+
+.nav :global(.wu-breadcrumb-page) {
+  color: #fff;
+  font-weight: 500;
+}
+
+.separator {
+  color: rgb(255 255 255 / 0.65);
+}
+
+.currentPage {
+  display: inline-flex;
+  max-width: 250px;
+  padding: 0.5rem;
+}
+
+.crumbSegment {
+  display: contents;
+}
+
+@media (max-width: 767px) {
+  .crumbSegment[data-hide-mobile='true'] {
+    display: none;
+  }
+
+  .currentPage {
+    max-width: 140px;
+    padding: 0.25rem;
+  }
+}

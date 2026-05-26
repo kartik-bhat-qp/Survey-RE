@@ -1,0 +1,10 @@
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.group :global(button) {
+  min-width: 36px;
+  padding: 0 !important;
+}

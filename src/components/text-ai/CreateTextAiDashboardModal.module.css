@@ -1,0 +1,35 @@
+.backBtn {
+  color: #1b87e6;
+}
+
+.modelSetupContent {
+  max-height: min(70vh, calc(100dvh - 11rem));
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.questionSelectionContent {
+  max-height: min(70vh, calc(100dvh - 11rem));
+  min-height: 0;
+  overflow-y: auto;
+  padding-top: 0.5rem !important;
+}
+
+.placeholderContent {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: center;
+  min-height: 200px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.placeholderText {
+  color: #545e6b;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 28rem;
+}

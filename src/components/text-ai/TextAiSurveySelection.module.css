@@ -1,0 +1,55 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  max-height: 420px;
+}
+
+.folderList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.paginationBar {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.pageNavBtn {
+  align-items: center;
+  background: none;
+  border: none;
+  color: #545e6b;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 16px;
+  padding: 4px;
+}
+
+.pageNavBtn:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.pageRange {
+  color: #545e6b;
+  font-size: 14px;
+  min-width: 4.5rem;
+  text-align: center;
+}
+
+.pageSizeSelect {
+  max-width: 5rem;
+  min-width: 4.5rem;
+}
+
+.emptySource {
+  color: #9b9b9b;
+  font-size: 14px;
+  margin: 2rem 0;
+  text-align: center;
+}

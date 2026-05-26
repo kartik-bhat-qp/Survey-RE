@@ -1,0 +1,278 @@
+.chartBlue {
+  fill: #1b4f9c;
+  stroke: #1b4f9c;
+}
+
+.chartLight {
+  fill: #90bef2;
+  stroke: #90bef2;
+}
+
+.chartMid {
+  fill: #3d7cc9;
+  stroke: #3d7cc9;
+}
+
+.muted {
+  color: #9b9b9b;
+  font-size: 12px;
+}
+
+/* Response info */
+.responseInfo {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  height: 100%;
+}
+
+.responseStat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+}
+
+.responseValue {
+  color: #1b4f9c;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.responseLabel {
+  color: #666;
+  font-size: 12px;
+}
+
+/* Bars */
+.barList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  justify-content: center;
+}
+
+.barRow {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 72px 1fr 40px;
+}
+
+.barTrack {
+  background: #eef3fb;
+  border-radius: 2px;
+  height: 18px;
+  overflow: hidden;
+}
+
+.barFill {
+  background: #1b4f9c;
+  border-radius: 2px;
+  height: 100%;
+}
+
+.barPct {
+  color: #545e6b;
+  font-size: 12px;
+  text-align: right;
+}
+
+/* Leaderboard */
+.leaderList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.leaderItem {
+  align-items: center;
+  display: grid;
+  font-size: 13px;
+  gap: 8px;
+  grid-template-columns: 24px 1fr auto;
+}
+
+.rank {
+  color: #1b4f9c;
+  font-weight: 600;
+}
+
+/* Tabular */
+.table {
+  border-collapse: collapse;
+  font-size: 12px;
+  width: 100%;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid #eee;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.table th {
+  color: #666;
+  font-weight: 600;
+}
+
+/* Stat highlight */
+.statHighlight {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+  text-align: center;
+}
+
+.statValue {
+  color: #1b4f9c;
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.statLabel {
+  color: #666;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.statDelta {
+  color: #2e7d32;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+/* Pictorial */
+.pictorialRow {
+  align-items: flex-end;
+  display: flex;
+  gap: 16px;
+  height: 100%;
+  justify-content: center;
+}
+
+.pictorialItem {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pictorialIcon {
+  color: #90bef2;
+  font-size: 48px;
+}
+
+.pictorialIconActive {
+  color: #1b4f9c;
+}
+
+.pictorialPct {
+  color: #545e6b;
+  font-size: 12px;
+}
+
+/* Image bar */
+.imageBarRow {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 28px 1fr 36px;
+  margin-bottom: 8px;
+}
+
+.imageSwatch {
+  border-radius: 4px;
+  height: 28px;
+  width: 28px;
+}
+
+/* Map */
+.mapWrap {
+  height: 100%;
+  position: relative;
+}
+
+.mapSvg {
+  height: 100%;
+  width: 100%;
+}
+
+.mapLegend {
+  bottom: 4px;
+  color: #545e6b;
+  font-size: 11px;
+  left: 4px;
+  position: absolute;
+}
+
+.mapPin {
+  fill: #e53935;
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.mapPinLabel {
+  fill: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+/* Stack bar */
+.stackTrack {
+  background: #eef3fb;
+  border-radius: 2px;
+  display: flex;
+  height: 22px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.stackSeg {
+  height: 100%;
+}
+
+.stackLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.stackLegendItem {
+  align-items: center;
+  color: #545e6b;
+  display: flex;
+  font-size: 11px;
+  gap: 4px;
+}
+
+.dot {
+  border-radius: 50%;
+  height: 8px;
+  width: 8px;
+}
+
+.chartCenter {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+}
+
+.svgChart {
+  height: auto;
+  max-height: 100%;
+  max-width: 100%;
+  width: 100%;
+}
