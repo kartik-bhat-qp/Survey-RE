@@ -1,0 +1,21 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+.header {
+  flex-shrink: 0;
+  position: relative;
+  width: 100%;
+  z-index: 50;
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}

@@ -1,0 +1,36 @@
+.nav {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.link {
+  color: #90bef2;
+  padding: 0 !important;
+  text-decoration: none;
+}
+
+.link:hover {
+  color: #fff;
+}
+
+.nav :global(.wu-breadcrumb-page) {
+  color: #fff;
+}
+
+.separator {
+  color: rgb(255 255 255 / 0.65);
+}
+
+.current {
+  display: inline-flex;
+  max-width: 280px;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .current {
+    max-width: 140px;
+  }
+}

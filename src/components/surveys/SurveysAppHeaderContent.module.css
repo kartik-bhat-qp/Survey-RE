@@ -1,0 +1,19 @@
+.listBar {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.editorBar {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: 1rem;
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .editorBar {
+    flex-wrap: wrap;
+  }
+}

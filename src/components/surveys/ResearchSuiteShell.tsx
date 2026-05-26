@@ -1,24 +1,17 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { AppHeaderBreadcrumb } from '@/components/header/AppHeaderBreadcrumb';
 import { AppHeaderContent } from '@/components/header/AppHeaderContent';
-import { GlobalFooter } from '@/components/GlobalFooter';
-import { SideNav } from '@/components/SideNav';
+import { SurveysAppHeaderContent } from '@/components/surveys/SurveysAppHeaderContent';
 import {
   HEADER_BRAND_COLOR,
-  HEADER_PRODUCT_NAME,
   MOCK_HEADER_CATEGORIES,
 } from '@/data/mock-header-categories';
 import { MOCK_HEADER_USER } from '@/data/mock-header-user';
-import styles from './DashboardShell.module.css';
+import styles from './ResearchSuiteShell.module.css';
 
 const WuAppHeader = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuAppHeader })),
-  { ssr: false }
-);
-const WuSidebar = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSidebar })),
   { ssr: false }
 );
 const WuToast = dynamic(
@@ -26,30 +19,23 @@ const WuToast = dynamic(
   { ssr: false }
 );
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+export function ResearchSuiteShell({ children }: { children: React.ReactNode }) {
   return (
     <div className={styles.shell}>
       <WuToast />
       <header className={styles.header}>
         <WuAppHeader
-          productName={HEADER_PRODUCT_NAME}
+          productName="Surveys"
           categories={MOCK_HEADER_CATEGORIES}
           brandColor={HEADER_BRAND_COLOR}
           user={MOCK_HEADER_USER}
         >
           <AppHeaderContent>
-            <AppHeaderBreadcrumb />
+            <SurveysAppHeaderContent />
           </AppHeaderContent>
         </WuAppHeader>
       </header>
-      <div className={styles.sidebarArea}>
-        <WuSidebar Sidebar={<SideNav />} className={styles.sidebar}>
-          <main className={styles.main}>
-            <div className="flex-1 min-h-0">{children}</div>
-            <GlobalFooter />
-          </main>
-        </WuSidebar>
-      </div>
+      <div className={styles.content}>{children}</div>
     </div>
   );
 }
