@@ -258,53 +258,7 @@ export function CriteriaBasedQuotaModal({
             />
           </div>
 
-          <div className={styles.fieldGrid}>
-            <div className={styles.field}>
-              <label className={styles.label}>Response status</label>
-              <WuMenu
-                Trigger={
-                  <button type="button" className={styles.menuTrigger}>
-                    <span className={styles.menuTriggerLabel}>{responseStatus}</span>
-                    <span
-                      className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
-                      aria-hidden
-                    />
-                  </button>
-                }
-                align="start"
-              >
-                {RESPONSE_STATUS_OPTIONS.map((option) => (
-                  <WuMenuItem key={option} onSelect={() => setResponseStatus(option)}>
-                    {option}
-                  </WuMenuItem>
-                ))}
-              </WuMenu>
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.label}>Filter by date</label>
-              <div className={styles.dateRange}>
-                <input
-                  type="date"
-                  className={styles.dateInput}
-                  value={dateFrom}
-                  onChange={(event) => setDateFrom(event.target.value)}
-                  aria-label="Start date"
-                />
-                <span className={styles.dateSeparator} aria-hidden>
-                  —
-                </span>
-                <input
-                  type="date"
-                  className={styles.dateInput}
-                  value={dateTo}
-                  min={dateFrom || undefined}
-                  onChange={(event) => setDateTo(event.target.value)}
-                  aria-label="End date"
-                />
-              </div>
-            </div>
-
+          <div className={styles.targetRow}>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="quota-target">
                 Target (count)
@@ -421,6 +375,96 @@ export function CriteriaBasedQuotaModal({
                 })}
               </div>
             )}
+          </div>
+
+          <div className={styles.checksSection}>
+            <div className={styles.field}>
+              <label className={styles.label}>First quota check</label>
+              <p className={styles.checkHint}>
+                The quota will be checked after the respondent answers this question.
+              </p>
+              <WuMenu
+                Trigger={
+                  <button type="button" className={styles.menuTrigger}>
+                    <span className={styles.menuTriggerLabel}>
+                      {firstCheckQuestion
+                        ? `${firstCheckQuestion.code} – ${firstCheckQuestion.text}`
+                        : 'Select question'}
+                    </span>
+                    <span
+                      className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                      aria-hidden
+                    />
+                  </button>
+                }
+                align="start"
+              >
+                {questions.map((question) => (
+                  <WuMenuItem
+                    key={question.id}
+                    onSelect={() => handleFirstCheckChange(question.id)}
+                  >
+                    {question.code} – {question.text}
+                  </WuMenuItem>
+                ))}
+              </WuMenu>
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>
+                Second quota check{' '}
+                <span className={styles.optionalTag}>(Optional)</span>
+              </label>
+              <p className={styles.checkHint}>
+                Must be the same question or one that comes after the first quota check.
+              </p>
+              <WuMenu
+                Trigger={
+                  <button
+                    type="button"
+                    className={styles.menuTrigger}
+                    disabled={firstCheckId === null}
+                    aria-disabled={firstCheckId === null}
+                  >
+                    <span className={styles.menuTriggerLabel}>
+                      {secondCheckQuestion
+                        ? `${secondCheckQuestion.code} – ${secondCheckQuestion.text}`
+                        : firstCheckId === null
+                          ? 'Select first quota check first'
+                          : 'Select question (optional)'}
+                    </span>
+                    {secondCheckQuestion ? (
+                      <button
+                        type="button"
+                        className={styles.menuClear}
+                        aria-label="Clear second quota check"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSecondCheckId(null);
+                        }}
+                      >
+                        <span className="wm-close" aria-hidden />
+                      </button>
+                    ) : (
+                      <span
+                        className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                        aria-hidden
+                      />
+                    )}
+                  </button>
+                }
+                align="start"
+              >
+                {secondCheckOptions.map((question) => (
+                  <WuMenuItem
+                    key={question.id}
+                    onSelect={() => setSecondCheckId(question.id)}
+                  >
+                    {question.code} – {question.text}
+                  </WuMenuItem>
+                ))}
+              </WuMenu>
+            </div>
           </div>
         </div>
       </WuModalContent>

@@ -60,6 +60,67 @@
   }
 }
 
+.targetRow {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 12rem);
+}
+
+.checksSection {
+  border-top: 1px solid #e5e7eb;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+}
+
+@media (max-width: 767px) {
+  .checksSection {
+    grid-template-columns: 1fr;
+  }
+}
+
+.checkHint {
+  color: #67727E;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 0 0 0.125rem;
+}
+
+.optionalTag {
+  color: #67727E;
+  font-weight: 400;
+}
+
+.menuTrigger:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.menuClear {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 9999px;
+  color: #67727E;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 1.25rem;
+  justify-content: center;
+  padding: 0;
+  width: 1.25rem;
+}
+
+.menuClear:hover,
+.menuClear:focus-visible {
+  background: rgb(103 114 126 / 12%);
+  outline: none;
+}
+
 .menuTrigger {
   align-items: center;
   background: #ffffff;
@@ -97,35 +158,6 @@
   color: #67727E;
   flex-shrink: 0;
   font-size: 1rem;
-}
-
-.dateRange {
-  align-items: center;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.dateInput {
-  background: #ffffff;
-  border: 1px solid #d0d5dd;
-  border-radius: 4px;
-  color: #1f2937;
-  flex: 1;
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 0.875rem;
-  height: 2.25rem;
-  min-width: 0;
-  padding: 0 0.5rem;
-}
-
-.dateInput:focus-visible {
-  border-color: #1b87e6;
-  outline: none;
-}
-
-.dateSeparator {
-  color: #67727E;
-  flex-shrink: 0;
 }
 
 .numberInput {

@@ -37,19 +37,7 @@ function slugForId(value: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
-function buildCriteriaQuota(data: {
-  name: string;
-  target: number;
-  responseStatus: string;
-  dateFrom: string;
-  dateTo: string;
-  criteria: Array<{
-    questionCode: string;
-    questionText: string;
-    operator: string;
-    value: string;
-  }>;
-}): AdvanceQuota {
+function buildCriteriaQuota(data: CriteriaQuotaSubmit): AdvanceQuota {
   const now = Date.now();
   const parts: string[] = [];
   if (data.criteria.length === 0) {
@@ -60,14 +48,12 @@ function buildCriteriaQuota(data: {
       parts.push(`${label} ${c.operator} "${c.value}"`);
     }
   }
-  if (data.responseStatus && data.responseStatus !== 'All') {
-    parts.push(`Response status: ${data.responseStatus}`);
+  const checks: string[] = [];
+  checks.push(`Checked after [${data.firstCheck.questionCode}]`);
+  if (data.secondCheck) {
+    checks.push(`re-checked after [${data.secondCheck.questionCode}]`);
   }
-  if (data.dateFrom || data.dateTo) {
-    const from = data.dateFrom || '…';
-    const to = data.dateTo || '…';
-    parts.push(`Between ${from} and ${to}`);
-  }
+  parts.push(checks.join(', '));
   return {
     id: `user-criteria-${now}`,
     name: data.name,
