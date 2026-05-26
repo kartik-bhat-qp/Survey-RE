@@ -1,12 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { NavLink } from '@/components/surveys/NavLink';
 import {
   SURVEY_WORKSPACE_TOOLS,
   type SurveyWorkspaceTool,
 } from '@/components/surveys/survey-workspace-tools';
 import styles from './SurveyEditorWorkspaceToolbar.module.css';
+
+const WuSecondaryNavbar = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSecondaryNavbar })),
+  { ssr: false }
+);
 
 type PublishMode = 'draft' | 'publish';
 
@@ -39,22 +46,31 @@ export function SurveyEditorWorkspaceToolbar({
     showToast({ message: `${label} is not available in this prototype`, variant: 'info' });
   }
 
-  return (
-    <div className={styles.toolbar}>
-      <div className={styles.tools}>
-        {SURVEY_WORKSPACE_TOOLS.map((tool) => (
-          <button
-            key={tool.id}
-            type="button"
-            className={styles.toolBtn}
-            data-active={activeTool === tool.id ? 'true' : undefined}
-            onClick={() => handleToolClick(tool.id, tool.label)}
+  const handleToolClickStable = useCallback(handleToolClick, [onToolChange, showToast]);
+
+  const links = useMemo(
+    () =>
+      SURVEY_WORKSPACE_TOOLS.map((tool) => ({
+        link: (
+          <NavLink
+            href="#"
+            variant="secondary"
+            active={activeTool === tool.id}
+            onClick={(event) => {
+              event.preventDefault();
+              handleToolClickStable(tool.id, tool.label);
+            }}
           >
-            <span className={tool.icon} aria-hidden />
             {tool.label}
-          </button>
-        ))}
-      </div>
+          </NavLink>
+        ),
+        imgOrIcon: <span className={tool.icon} aria-hidden />,
+      })),
+    [activeTool, handleToolClickStable]
+  );
+
+  return (
+    <WuSecondaryNavbar Links={links} className={styles.navbar}>
       <div className={styles.publishArea}>
         <div className={styles.statusToggle} role="group" aria-label="Survey status">
           <button
@@ -83,6 +99,6 @@ export function SurveyEditorWorkspaceToolbar({
           <span className="wm-visibility" />
         </button>
       </div>
-    </div>
+    </WuSecondaryNavbar>
   );
 }

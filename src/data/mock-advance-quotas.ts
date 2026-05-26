@@ -112,3 +112,13 @@ export const MOCK_ADVANCE_QUOTAS: AdvanceQuota[] = [
     current: 67,
   },
 ];
+
+export const ADVANCE_QUOTA_TYPE_OPTIONS: QuotaType[] = [
+  'Question Based',
+  'Advanced',
+  'Criteria based',
+];
+
+export function getAdvanceQuotaGroupOptions(): string[] {
+  return Array.from(new Set(MOCK_ADVANCE_QUOTAS.map((quota) => quota.quotaGroup))).sort();
+}
