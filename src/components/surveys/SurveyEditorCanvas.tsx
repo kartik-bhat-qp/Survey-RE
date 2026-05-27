@@ -1,14 +1,25 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type {
   SurveyDetail,
   SurveyQuestion,
+  SurveyQuestionOption,
   SurveySection,
 } from '@/data/mock-survey-detail';
 import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
+import { BulkEditOptionsModal } from '@/components/surveys/BulkEditOptionsModal';
+import { QuestionSettingsPanel } from '@/components/surveys/QuestionSettingsPanel';
+import {
+  QuestionRichTextField,
+  plainTextFromRichValue,
+} from '@/components/surveys/QuestionRichTextField';
+import {
+  getDefaultSettingsForQuestion,
+  type QuestionSettings,
+} from '@/data/mock-question-settings';
 import styles from './SurveyEditorCanvas.module.css';
 
 const WuButton = dynamic(
@@ -28,6 +39,48 @@ function cloneSections(sections: SurveySection[]): SurveySection[] {
       options: q.options.map((o) => ({ ...o })),
     })),
   }));
+}
+
+function isOtherOptionLabel(label: string): boolean {
+  return /^other$/i.test(label.trim());
+}
+
+function isNotApplicableOptionLabel(label: string): boolean {
+  return /^(na|n\/a|not applicable)$/i.test(label.trim());
+}
+
+function questionHasOtherOption(question: SurveyQuestion): boolean {
+  return question.options.some((option) => isOtherOptionLabel(option.label));
+}
+
+function questionHasNotApplicableOption(question: SurveyQuestion): boolean {
+  return question.options.some((option) => isNotApplicableOptionLabel(option.label));
+}
+
+function applyBulkOptionLabels(
+  existing: SurveyQuestionOption[],
+  labels: string[],
+  otherOption: boolean,
+  notApplicableOption: boolean
+): SurveyQuestionOption[] {
+  const lines = [...labels];
+  if (otherOption && !lines.some(isOtherOptionLabel)) {
+    lines.push('Other');
+  }
+  if (notApplicableOption && !lines.some(isNotApplicableOptionLabel)) {
+    lines.push('NA');
+  }
+
+  return lines.map((label, index) => {
+    const previous = existing[index];
+    return previous
+      ? { ...previous, label }
+      : { id: `opt-${Date.now()}-${index}`, label };
+  });
+}
+
+function stopQuestionEvent(event: SyntheticEvent): void {
+  event.stopPropagation();
 }
 
 function QuestionCodeField({
@@ -105,25 +158,57 @@ function AddQuestionToolbar({
 
 function QuestionRow({
   question,
+  sectionId,
   onAction,
+  onOpenSettings,
+  onQuestionTextChange,
+  onOptionLabelChange,
 }: {
   question: SurveyQuestion;
+  sectionId: string;
   onAction: (label: string) => void;
+  onOpenSettings: () => void;
+  onQuestionTextChange: (sectionId: string, questionId: string, text: string) => void;
+  onOptionLabelChange: (
+    sectionId: string,
+    questionId: string,
+    optionId: string,
+    label: string
+  ) => void;
 }) {
   return (
     <article className={styles.questionRow}>
       <div className={styles.questionBody}>
-        <p className={styles.questionText}>
+        <div className={styles.questionTextWrap}>
           {question.required ? <span className={styles.required}>*</span> : null}
-          {question.text}
-        </p>
+          <QuestionRichTextField
+            value={question.text}
+            onChange={(text) => onQuestionTextChange(sectionId, question.id, text)}
+            ariaLabel="Question text"
+            placeholder="Enter question text"
+            onPointerDown={stopQuestionEvent}
+          />
+        </div>
         <ul className={styles.options}>
           {question.options.map((option) => (
             <li key={option.id} className={styles.optionItem}>
-              <label className={styles.optionLabel}>
-                <input type="radio" name={question.id} disabled />
-                <span>{option.label}</span>
-              </label>
+              <input
+                type="radio"
+                className={styles.optionRadio}
+                name={question.id}
+                disabled
+                aria-label={`${plainTextFromRichValue(option.label)} radio`}
+              />
+              <QuestionRichTextField
+                variant="option"
+                value={option.label}
+                onChange={(label) =>
+                  onOptionLabelChange(sectionId, question.id, option.id, label)
+                }
+                ariaLabel="Answer option"
+                placeholder="Option"
+                onPointerDown={stopQuestionEvent}
+              />
               {option.logicLabel ? (
                 <span className={styles.logicTag}>
                   <span className="wm-call-split" aria-hidden />
@@ -145,7 +230,14 @@ function QuestionRow({
         <button type="button" className={styles.actionLink} onClick={() => onAction('Logic')}>
           Logic
         </button>
-        <button type="button" className={styles.actionLink} onClick={() => onAction('Settings')}>
+        <button
+          type="button"
+          className={styles.actionLink}
+          onClick={(event) => {
+            event.stopPropagation();
+            onOpenSettings();
+          }}
+        >
           Settings
         </button>
         <button
@@ -165,14 +257,25 @@ function SelectManyQuestionRow({
   question,
   sectionId,
   onAction,
+  onOpenSettings,
   onAddOption,
   onBulkEdit,
+  onQuestionTextChange,
+  onOptionLabelChange,
 }: {
   question: SurveyQuestion;
   sectionId: string;
   onAction: (label: string) => void;
+  onOpenSettings: () => void;
   onAddOption: (sectionId: string, questionId: string) => void;
   onBulkEdit: (sectionId: string, questionId: string) => void;
+  onQuestionTextChange: (sectionId: string, questionId: string, text: string) => void;
+  onOptionLabelChange: (
+    sectionId: string,
+    questionId: string,
+    optionId: string,
+    label: string
+  ) => void;
 }) {
   return (
     <article className={styles.selectManyBlock}>
@@ -198,7 +301,10 @@ function SelectManyQuestionRow({
               <button
                 type="button"
                 className={styles.actionLink}
-                onClick={() => onAction('Settings')}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onOpenSettings();
+                }}
               >
                 Settings
               </button>
@@ -212,17 +318,39 @@ function SelectManyQuestionRow({
               </button>
             </div>
           </div>
-          <p className={styles.selectManyQuestionText}>
+          <div className={styles.selectManyQuestionTextWrap}>
             {question.required ? <span className={styles.required}>*</span> : null}
-            {question.text}
-          </p>
+            <QuestionRichTextField
+              value={question.text}
+              onChange={(text) => onQuestionTextChange(sectionId, question.id, text)}
+              ariaLabel="Question text"
+              placeholder="Enter question text"
+              onPointerDown={stopQuestionEvent}
+            />
+          </div>
           <ul className={styles.selectManyOptions}>
             {question.options.map((option) => (
               <li key={option.id} className={styles.selectManyOptionItem}>
-                <label className={styles.selectManyOptionLabel}>
-                  <input type="checkbox" disabled name={`${question.id}-${option.id}`} />
-                  <span>{option.label}</span>
-                </label>
+                <span className={styles.selectManyOptionCheckbox}>
+                  <input
+                    type="checkbox"
+                    disabled
+                    name={`${question.id}-${option.id}`}
+                    aria-label={`${plainTextFromRichValue(option.label)} checkbox`}
+                  />
+                </span>
+                <div className={styles.selectManyOptionEditor}>
+                  <QuestionRichTextField
+                    variant="option"
+                    value={option.label}
+                    onChange={(label) =>
+                      onOptionLabelChange(sectionId, question.id, option.id, label)
+                    }
+                    ariaLabel="Answer option"
+                    placeholder="Option"
+                    onPointerDown={stopQuestionEvent}
+                  />
+                </div>
               </li>
             ))}
           </ul>
@@ -243,7 +371,10 @@ function SelectManyQuestionRow({
             <button
               type="button"
               className={styles.bulkEditLink}
-              onClick={() => onBulkEdit(sectionId, question.id)}
+              onClick={(event) => {
+                event.stopPropagation();
+                onBulkEdit(sectionId, question.id);
+              }}
             >
               Bulk Edit
             </button>
@@ -265,6 +396,17 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   const { showToast } = useWuShowToast();
   const [sections, setSections] = useState<SurveySection[]>(() => cloneSections(detail.sections));
   const [selectedQuestionKey, setSelectedQuestionKey] = useState<string | null>(null);
+  const [bulkEditTarget, setBulkEditTarget] = useState<{
+    sectionId: string;
+    questionId: string;
+  } | null>(null);
+  const [settingsTarget, setSettingsTarget] = useState<{
+    sectionId: string;
+    questionId: string;
+  } | null>(null);
+  const [questionSettingsByKey, setQuestionSettingsByKey] = useState<
+    Record<string, QuestionSettings>
+  >({});
   const pendingScrollQuestionRef = useRef<{ sectionId: string; questionId: string } | null>(
     null
   );
@@ -279,6 +421,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   useEffect(() => {
     setSections(cloneSections(detail.sections));
     setSelectedQuestionKey(null);
+    setSettingsTarget(null);
+    setQuestionSettingsByKey({});
   }, [detail.survey.id]);
 
   useEffect(() => {
@@ -330,11 +474,120 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     [toast]
   );
 
-  const handleBulkEdit = useCallback(
-    (sectionId: string, questionId: string) => {
-      toast(`Bulk Edit: ${sectionId} / ${questionId}`);
+  const handleBulkEdit = useCallback((sectionId: string, questionId: string) => {
+    setBulkEditTarget({ sectionId, questionId });
+  }, []);
+
+  const handleQuestionTextChange = useCallback(
+    (sectionId: string, questionId: string, text: string) => {
+      setSections((prev) =>
+        prev.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            questions: sec.questions.map((q) =>
+              q.id === questionId ? { ...q, text } : q
+            ),
+          };
+        })
+      );
     },
-    [toast]
+    []
+  );
+
+  const handleOptionLabelChange = useCallback(
+    (sectionId: string, questionId: string, optionId: string, label: string) => {
+      setSections((prev) =>
+        prev.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            questions: sec.questions.map((q) => {
+              if (q.id !== questionId) return q;
+              return {
+                ...q,
+                options: q.options.map((option) =>
+                  option.id === optionId ? { ...option, label } : option
+                ),
+              };
+            }),
+          };
+        })
+      );
+    },
+    []
+  );
+
+  const handleBulkEditSave = useCallback(
+    (payload: {
+      optionLabels: string[];
+      otherOption: boolean;
+      notApplicableOption: boolean;
+    }) => {
+      if (!bulkEditTarget) return;
+      const { sectionId, questionId } = bulkEditTarget;
+      setSections((prev) =>
+        prev.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            questions: sec.questions.map((q) => {
+              if (q.id !== questionId) return q;
+              return {
+                ...q,
+                options: applyBulkOptionLabels(
+                  q.options,
+                  payload.optionLabels,
+                  payload.otherOption,
+                  payload.notApplicableOption
+                ),
+              };
+            }),
+          };
+        })
+      );
+      setBulkEditTarget(null);
+    },
+    [bulkEditTarget]
+  );
+
+  const bulkEditQuestion = bulkEditTarget
+    ? sections
+        .find((sec) => sec.id === bulkEditTarget.sectionId)
+        ?.questions.find((q) => q.id === bulkEditTarget.questionId)
+    : undefined;
+
+  const settingsQuestionKey = settingsTarget
+    ? `${settingsTarget.sectionId}:${settingsTarget.questionId}`
+    : null;
+
+  const settingsQuestion = settingsTarget
+    ? sections
+        .find((sec) => sec.id === settingsTarget.sectionId)
+        ?.questions.find((q) => q.id === settingsTarget.questionId)
+    : undefined;
+
+  const handleOpenSettings = useCallback((sectionId: string, questionId: string) => {
+    const questionKey = `${sectionId}:${questionId}`;
+    setSelectedQuestionKey(questionKey);
+    setSettingsTarget({ sectionId, questionId });
+  }, []);
+
+  const handleSettingsChange = useCallback(
+    (questionKey: string, settings: QuestionSettings) => {
+      setQuestionSettingsByKey((prev) => ({ ...prev, [questionKey]: settings }));
+    },
+    []
+  );
+
+  const getQuestionSettings = useCallback(
+    (question: SurveyQuestion, questionKey: string): QuestionSettings => {
+      return (
+        questionSettingsByKey[questionKey] ??
+        getDefaultSettingsForQuestion(question.inputKind)
+      );
+    },
+    [questionSettingsByKey]
   );
 
   const handleQuestionCodeChange = useCallback(
@@ -390,7 +643,12 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   );
 
   return (
-    <div className={styles.canvas}>
+    <div
+      className={`${styles.canvas} ${
+        settingsQuestion ? styles.canvasWithSettings : ''
+      }`}
+    >
+      <div className={styles.canvasMain}>
       <div className={styles.workspace}>
         <div className={styles.titleCard}>
           <button type="button" className={styles.addLogoBtn} onClick={() => toast('Add logo')}>
@@ -437,8 +695,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                         <div
                           id={`survey-question-${section.id}-${question.id}`}
                           className={`${styles.questionBlock} ${
-                            isSelected ? styles.questionBlockSelected : ''
-                          }`}
+                            question.inputKind === 'checkbox' ? styles.questionBlockSelectMany : ''
+                          } ${isSelected ? styles.questionBlockSelected : ''}`}
                         >
                           <div
                             className={styles.questionCodeColumn}
@@ -458,14 +716,29 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                               <SelectManyQuestionRow
                                 question={question}
                                 sectionId={section.id}
-                                onAction={(label) => toast(`${label}: ${question.text}`)}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
                                 onAddOption={handleAddOption}
                                 onBulkEdit={handleBulkEdit}
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onOptionLabelChange={handleOptionLabelChange}
                               />
                             ) : (
                               <QuestionRow
                                 question={question}
-                                onAction={(label) => toast(`${label}: ${question.text}`)}
+                                sectionId={section.id}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onOptionLabelChange={handleOptionLabelChange}
                               />
                             )}
                           </div>
@@ -494,6 +767,35 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       >
         <span className="wm-add" />
       </button>
+      </div>
+
+      {settingsQuestion && settingsQuestionKey ? (
+        <QuestionSettingsPanel
+          question={settingsQuestion}
+          settings={getQuestionSettings(settingsQuestion, settingsQuestionKey)}
+          onChange={(next) => handleSettingsChange(settingsQuestionKey, next)}
+          onClose={() => setSettingsTarget(null)}
+        />
+      ) : null}
+
+      <BulkEditOptionsModal
+        open={bulkEditTarget !== null && bulkEditQuestion !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setBulkEditTarget(null);
+        }}
+        optionLabels={
+          bulkEditQuestion?.options.map((option) =>
+            plainTextFromRichValue(option.label)
+          ) ?? []
+        }
+        otherOption={
+          bulkEditQuestion ? questionHasOtherOption(bulkEditQuestion) : false
+        }
+        notApplicableOption={
+          bulkEditQuestion ? questionHasNotApplicableOption(bulkEditQuestion) : false
+        }
+        onSave={handleBulkEditSave}
+      />
     </div>
   );
 }

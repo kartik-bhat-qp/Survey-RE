@@ -1,0 +1,144 @@
+.field {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  position: relative;
+}
+
+.editorRow {
+  align-items: stretch;
+  display: flex;
+  gap: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.editorRowFocused {
+  border-bottom: 2px solid #1b87e6;
+  padding-bottom: 0.25rem;
+}
+
+.editor {
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: #1e293b;
+  flex: 1;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.45;
+  min-height: 1.45em;
+  min-width: 0;
+  outline: none;
+  padding: 0.125rem 0.25rem;
+  word-break: break-word;
+}
+
+.editor :global(p),
+.editor :global(div),
+.editor :global(ul),
+.editor :global(ol),
+.editor :global(li) {
+  margin: 0;
+  padding: 0;
+}
+
+.editorOption {
+  color: #334155;
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.editorOption :global(p),
+.editorOption :global(div),
+.editorOption :global(ul),
+.editorOption :global(ol),
+.editorOption :global(li) {
+  margin: 0;
+  padding: 0;
+}
+
+.editorOption :global(ul),
+.editorOption :global(ol) {
+  list-style-position: inside;
+  padding-left: 0;
+}
+
+.editor:focus {
+  background: #eff6ff;
+}
+
+.editor:empty::before {
+  color: #94a3b8;
+  content: attr(data-placeholder);
+  font-weight: 400;
+  pointer-events: none;
+}
+
+.toolbar {
+  background: #fff;
+  border: 1px solid #d5dde6;
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 12%);
+  display: inline-flex;
+  gap: 0.125rem;
+  left: 0;
+  margin-top: 0.25rem;
+  padding: 0.25rem 0.375rem;
+  pointer-events: auto;
+  position: absolute;
+  top: 100%;
+  z-index: 30;
+}
+
+.fieldOption .toolbar {
+  margin-top: 0.125rem;
+}
+
+.toolbarBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.2rem;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  height: 1.75rem;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0 0.35rem;
+}
+
+.toolbarBtn:hover {
+  background: #f1f5f9;
+  color: #1b87e6;
+}
+
+.toolbarBtnActive {
+  background: #e8f4fd;
+  color: #1b87e6;
+}
+
+.toolbarBtnItalic {
+  font-style: italic;
+}
+
+.toolbarBtnUnderline {
+  text-decoration: underline;
+}
+
+.toolbarDivider {
+  align-self: stretch;
+  background: #e2e8f0;
+  margin: 0.25rem 0.125rem;
+  width: 1px;
+}
+
+.toolbarIcon {
+  font-size: 1.125rem;
+}
