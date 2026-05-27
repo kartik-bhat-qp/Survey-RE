@@ -9,6 +9,11 @@ import {
   type QuotaStep,
 } from '@/components/surveys/QuotaStepBreadcrumb';
 import {
+  getExistingCriteriaById,
+  MOCK_EXISTING_CRITERIA,
+  type ExistingCriteriaTemplate,
+} from '@/data/mock-existing-criteria';
+import {
   getQuestionsBySurvey,
   type SurveyQuestion,
 } from '@/data/mock-survey-questions';
@@ -33,9 +38,64 @@ const WuMenuCheckboxItem = dynamic(
     })),
   { ssr: false }
 );
+const WuMenuSeparatorItem = dynamic(
+  () =>
+    import('@npm-questionpro/wick-ui-lib').then((m) => ({
+      default: m.WuMenuSeparatorItem,
+    })),
+  { ssr: false }
+);
 
-const OPERATORS = ['is', 'is not', 'contains', 'does not contain'] as const;
-type Operator = (typeof OPERATORS)[number];
+const QUESTION_OPERATORS = ['is', 'is not', 'contains', 'does not contain'] as const;
+
+const SYSTEM_VARIABLE_TEXT_OPERATORS = [
+  'equals',
+  'contains',
+  'does not contain',
+  'starts with',
+  'ends with',
+  'is blank',
+  'is not blank',
+] as const;
+
+const SYSTEM_VARIABLE_NUMERIC_OPERATORS = [
+  'Is equal to',
+  'is greater than or equal to',
+  'is less than or equal to',
+  'is greater than',
+  'is less than',
+  'is not equal to',
+  'is between',
+] as const;
+
+const DEFAULT_SYSTEM_VARIABLE_OPERATOR = SYSTEM_VARIABLE_TEXT_OPERATORS[0];
+
+function isSystemVariableOperator(op: string): boolean {
+  return (
+    (SYSTEM_VARIABLE_TEXT_OPERATORS as readonly string[]).includes(op) ||
+    (SYSTEM_VARIABLE_NUMERIC_OPERATORS as readonly string[]).includes(op)
+  );
+}
+
+function systemVariableOperatorNeedsValue(operator: string): boolean {
+  return operator !== 'is blank' && operator !== 'is not blank';
+}
+
+function isBetweenOperator(operator: string): boolean {
+  return operator === 'is between';
+}
+
+function isSystemVariableNumericOperator(operator: string): boolean {
+  return (SYSTEM_VARIABLE_NUMERIC_OPERATORS as readonly string[]).includes(operator);
+}
+
+function systemVariableValueInputClass(operator: string): string {
+  const base = styles.conditionValueInput;
+  if (isBetweenOperator(operator) || isSystemVariableNumericOperator(operator)) {
+    return `${base} ${styles.conditionValueInputNumeric}`;
+  }
+  return base;
+}
 
 const CONDITION_SOURCES = [
   'Question',
@@ -49,6 +109,9 @@ type ConditionSource = (typeof CONDITION_SOURCES)[number];
 const CONNECTORS = ['AND', 'OR'] as const;
 type ConditionConnector = (typeof CONNECTORS)[number];
 
+const CRITERIA_MODES = ['new', 'existing'] as const;
+type CriteriaMode = (typeof CRITERIA_MODES)[number];
+
 const SYSTEM_VARIABLES: string[] = Array.from(
   { length: 255 },
   (_, i) => `Custom ${i + 1}`
@@ -60,14 +123,22 @@ interface CriterionCondition {
   questionId: number | null;
   /** Selected name when source is `System Variable`. */
   systemVariable: string | null;
-  operator: Operator;
+  operator: string;
   value: string;
+  /** Upper bound when operator is `is between` (system variable). */
+  valueEnd: string;
   connector: ConditionConnector;
 }
 
 interface Criterion {
   id: string;
   name: string;
+  mode: CriteriaMode;
+  existingCriteriaId: string | null;
+  /** Serialized conditions when loaded from an existing template; used to detect edits. */
+  existingConditionsSnapshot: string | null;
+  /** After editing a loaded existing criteria, user must provide a new name. */
+  requiresRename: boolean;
   conditions: CriterionCondition[];
 }
 
@@ -94,8 +165,9 @@ export interface CriteriaQuotaCondition {
   questionText: string;
   /** Display label for the condition subject (question text or system variable name). */
   subject: string;
-  operator: Operator;
+  operator: string;
   value: string;
+  valueEnd?: string;
   /** Logical connector to the previous condition. Ignored for the first condition. */
   connector: ConditionConnector;
 }
@@ -113,11 +185,16 @@ export interface CriteriaQuotaSubmit {
   secondCheck?: CriteriaQuotaCheck;
 }
 
+export type CriteriaQuotaFlow = 'standalone' | 'advanced-group';
+
 interface CriteriaBasedQuotaModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   surveyId: number;
+  flow?: CriteriaQuotaFlow;
+  quotaGroupSelection?: { name: string; handlingType: string } | null;
   onBack?: () => void;
+  onBackToQuotaGroup?: () => void;
   onSave?: (quotas: CriteriaQuotaSubmit[]) => void;
 }
 
@@ -163,8 +240,69 @@ function newCondition(): CriterionCondition {
     systemVariable: null,
     operator: 'is',
     value: '',
+    valueEnd: '',
     connector: 'AND',
   };
+}
+
+function resolveOperatorForSource(source: ConditionSource, current: string): string {
+  if (source === 'System Variable') {
+    return isSystemVariableOperator(current) ? current : DEFAULT_SYSTEM_VARIABLE_OPERATOR;
+  }
+  if (source === 'Question') {
+    return (QUESTION_OPERATORS as readonly string[]).includes(current) ? current : 'is';
+  }
+  return current;
+}
+
+interface SystemVariableOperatorMenuProps {
+  operator: string;
+  triggerClassName: string;
+  caretClassName: string;
+  labelClassName: string;
+  onSelect: (operator: string) => void;
+}
+
+function SystemVariableOperatorMenu({
+  operator,
+  triggerClassName,
+  caretClassName,
+  labelClassName,
+  onSelect,
+}: SystemVariableOperatorMenuProps) {
+  const displayOperator = isSystemVariableOperator(operator)
+    ? operator
+    : DEFAULT_SYSTEM_VARIABLE_OPERATOR;
+
+  return (
+    <WuMenu
+      Trigger={
+        <button type="button" className={triggerClassName}>
+          <span className={labelClassName}>{displayOperator}</span>
+          <span className={caretClassName} aria-hidden />
+        </button>
+      }
+      align="start"
+    >
+      <div className={styles.operatorMenuHeader} role="presentation">
+        Text
+      </div>
+      {SYSTEM_VARIABLE_TEXT_OPERATORS.map((op) => (
+        <WuMenuItem key={op} onSelect={() => onSelect(op)}>
+          {op}
+        </WuMenuItem>
+      ))}
+      <WuMenuSeparatorItem />
+      <div className={styles.operatorMenuHeader} role="presentation">
+        Numeric
+      </div>
+      {SYSTEM_VARIABLE_NUMERIC_OPERATORS.map((op) => (
+        <WuMenuItem key={op} onSelect={() => onSelect(op)}>
+          {op}
+        </WuMenuItem>
+      ))}
+    </WuMenu>
+  );
 }
 
 interface ValueMultiSelectProps {
@@ -270,7 +408,65 @@ function newCriterion(): Criterion {
   return {
     id: uniqueId('crit'),
     name: '',
+    mode: 'new',
+    existingCriteriaId: null,
+    existingConditionsSnapshot: null,
+    requiresRename: false,
     conditions: [newCondition()],
+  };
+}
+
+function serializeConditions(conditions: CriterionCondition[]): string {
+  return JSON.stringify(
+    conditions.map((cond) => ({
+      source: cond.source,
+      questionId: cond.questionId,
+      systemVariable: cond.systemVariable,
+      operator: cond.operator,
+      value: cond.value,
+      valueEnd: cond.valueEnd,
+      connector: cond.connector,
+    }))
+  );
+}
+
+function templateToCriterionConditions(
+  template: ExistingCriteriaTemplate,
+  questions: SurveyQuestion[]
+): CriterionCondition[] {
+  return template.conditions.map((cond) => {
+    const question =
+      cond.source === 'Question' && cond.questionCode
+        ? questions.find((q) => q.code === cond.questionCode)
+        : undefined;
+    return {
+      id: uniqueId('cond'),
+      source: cond.source as ConditionSource,
+      questionId: question?.id ?? null,
+      systemVariable:
+        cond.source === 'System Variable' ? cond.subject : null,
+      operator: cond.operator,
+      value: cond.value,
+      valueEnd: cond.valueEnd ?? '',
+      connector: cond.connector,
+    };
+  });
+}
+
+function promoteExistingToNewIfModified(prev: Criterion, next: Criterion): Criterion {
+  if (prev.mode !== 'existing' || prev.existingConditionsSnapshot === null) {
+    return next;
+  }
+  if (serializeConditions(next.conditions) === prev.existingConditionsSnapshot) {
+    return next;
+  }
+  return {
+    ...next,
+    mode: 'new',
+    existingCriteriaId: null,
+    existingConditionsSnapshot: null,
+    name: '',
+    requiresRename: true,
   };
 }
 
@@ -309,7 +505,12 @@ function validateBlock(
             return cond.questionId !== null && cond.value.trim() !== '';
           }
           if (cond.source === 'System Variable') {
-            return cond.systemVariable !== null && cond.value.trim() !== '';
+            if (cond.systemVariable === null) return false;
+            if (!systemVariableOperatorNeedsValue(cond.operator)) return true;
+            if (isBetweenOperator(cond.operator)) {
+              return cond.value.trim() !== '' && cond.valueEnd.trim() !== '';
+            }
+            return cond.value.trim() !== '';
           }
           return cond.value.trim() !== '';
         })
@@ -331,12 +532,13 @@ function validateBlock(
             subject,
             operator: cond.operator,
             value: cond.value.trim(),
+            valueEnd: isBetweenOperator(cond.operator) ? cond.valueEnd.trim() : undefined,
             connector: cond.connector,
           };
         });
       return { name: crit.name.trim(), conditions };
     })
-    .filter((crit) => crit.conditions.length > 0);
+    .filter((crit) => crit.conditions.length > 0 && crit.name.length > 0);
   return {
     name: trimmedName,
     target: block.target,
@@ -400,10 +602,6 @@ function QuotaBlockEditor({
     update({ firstCheckId: nextId, secondCheckId: nextSecond });
   };
 
-  const handleAddCriterion = () => {
-    update({ criteria: [...block.criteria, newCriterion()] });
-  };
-
   const handleRemoveCriterion = (critId: string) => {
     const next = new Set(block.collapsedCriterionIds);
     next.delete(critId);
@@ -417,8 +615,25 @@ function QuotaBlockEditor({
   const handleUpdateCriterionName = (critId: string, value: string) => {
     update({
       criteria: block.criteria.map((c) =>
-        c.id === critId ? { ...c, name: value } : c
+        c.id === critId && c.mode === 'new'
+          ? {
+              ...c,
+              name: value,
+              requiresRename: value.trim().length > 0 ? false : c.requiresRename,
+            }
+          : c
       ),
+    });
+  };
+
+  const updateCriterion = (critId: string, updater: (criterion: Criterion) => Criterion) => {
+    update({
+      criteria: block.criteria.map((c) => {
+        if (c.id !== critId) return c;
+        const prev = c;
+        const next = updater(c);
+        return promoteExistingToNewIfModified(prev, next);
+      }),
     });
   };
 
@@ -430,27 +645,20 @@ function QuotaBlockEditor({
   };
 
   const handleAddCondition = (critId: string) => {
-    update({
-      criteria: block.criteria.map((c) =>
-        c.id === critId ? { ...c, conditions: [...c.conditions, newCondition()] } : c
-      ),
-    });
+    updateCriterion(critId, (c) => ({
+      ...c,
+      conditions: [...c.conditions, newCondition()],
+    }));
   };
 
   const handleRemoveCondition = (critId: string, condId: string) => {
-    update({
-      criteria: block.criteria.map((c) =>
-        c.id === critId
-          ? {
-              ...c,
-              conditions:
-                c.conditions.length > 1
-                  ? c.conditions.filter((cond) => cond.id !== condId)
-                  : c.conditions,
-            }
-          : c
-      ),
-    });
+    updateCriterion(critId, (c) => ({
+      ...c,
+      conditions:
+        c.conditions.length > 1
+          ? c.conditions.filter((cond) => cond.id !== condId)
+          : c.conditions,
+    }));
   };
 
   const handleUpdateCondition = (
@@ -458,14 +666,58 @@ function QuotaBlockEditor({
     condId: string,
     patch: Partial<CriterionCondition>
   ) => {
+    updateCriterion(critId, (c) => ({
+      ...c,
+      conditions: c.conditions.map((cond) =>
+        cond.id === condId ? { ...cond, ...patch } : cond
+      ),
+    }));
+  };
+
+  const handleCriterionModeChange = (critId: string, mode: CriteriaMode) => {
+    update({
+      criteria: block.criteria.map((c) => {
+        if (c.id !== critId) return c;
+        if (mode === c.mode) return c;
+        if (mode === 'existing') {
+          return {
+            ...c,
+            mode: 'existing',
+            existingCriteriaId: null,
+            existingConditionsSnapshot: null,
+            requiresRename: false,
+            name: '',
+            conditions: [],
+          };
+        }
+        return {
+          ...c,
+          mode: 'new',
+          existingCriteriaId: null,
+          existingConditionsSnapshot: null,
+          requiresRename: false,
+          conditions: c.conditions.length > 0 ? c.conditions : [newCondition()],
+        };
+      }),
+    });
+  };
+
+  const handleExistingCriteriaSelect = (critId: string, templateId: string) => {
+    const template = getExistingCriteriaById(templateId);
+    if (!template) return;
+    const conditions = templateToCriterionConditions(template, questions);
+    const snapshot = serializeConditions(conditions);
     update({
       criteria: block.criteria.map((c) =>
         c.id === critId
           ? {
               ...c,
-              conditions: c.conditions.map((cond) =>
-                cond.id === condId ? { ...cond, ...patch } : cond
-              ),
+              mode: 'existing',
+              existingCriteriaId: templateId,
+              existingConditionsSnapshot: snapshot,
+              requiresRename: false,
+              name: template.name,
+              conditions,
             }
           : c
       ),
@@ -549,13 +801,17 @@ function QuotaBlockEditor({
               {block.criteria.map((criterion, critIdx) => {
                 const collapsed = block.collapsedCriterionIds.has(criterion.id);
                 const conditionCount = criterion.conditions.length;
+                const selectedExistingTemplate =
+                  criterion.existingCriteriaId !== null
+                    ? getExistingCriteriaById(criterion.existingCriteriaId)
+                    : undefined;
                 return (
                   <section key={criterion.id} className={styles.criterionCard}>
                     <header className={styles.criterionHeader}>
                       <div className={styles.criterionHeaderLeft}>
                         <span className={styles.criterionTag}>
                           <span className={styles.criterionTagLabel}>
-                            {criterion.name.trim() || `Criteria ${critIdx + 1}`}
+                            {criterion.name.trim() || 'Criteria'}
                           </span>
                         </span>
                         <WuInput
@@ -565,7 +821,12 @@ function QuotaBlockEditor({
                           onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                             handleUpdateCriterionName(criterion.id, event.target.value)
                           }
-                          className={styles.criterionNameInput}
+                          disabled={criterion.mode === 'existing'}
+                          className={`${styles.criterionNameInput} ${
+                            criterion.mode === 'existing'
+                              ? styles.criterionNameInputReadOnly
+                              : ''
+                          }`}
                         />
                       </div>
                       <div className={styles.criterionHeaderRight}>
@@ -600,7 +861,81 @@ function QuotaBlockEditor({
 
                     {!collapsed ? (
                       <div className={styles.criterionBody}>
-                        {criterion.conditions.map((cond, condIdx) => {
+                        <div className={styles.criteriaModeRow}>
+                          <span className={styles.label}>Use</span>
+                          <div
+                            className={styles.criteriaModeToggle}
+                            role="group"
+                            aria-label="New or existing criteria"
+                          >
+                            {CRITERIA_MODES.map((mode) => (
+                              <button
+                                key={mode}
+                                type="button"
+                                className={
+                                  criterion.mode === mode
+                                    ? styles.modeToggleActive
+                                    : styles.modeToggleInactive
+                                }
+                                onClick={() =>
+                                  handleCriterionModeChange(criterion.id, mode)
+                                }
+                                aria-pressed={criterion.mode === mode}
+                              >
+                                {mode === 'new' ? 'New' : 'Existing'}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {criterion.mode === 'existing' ? (
+                          <div className={styles.existingCriteriaPanel}>
+                            <div className={styles.field}>
+                              <label className={styles.label}>Select criteria</label>
+                              <WuMenu
+                                Trigger={
+                                  <button
+                                    type="button"
+                                    className={`${styles.menuTrigger} ${styles.existingCriteriaTrigger}`}
+                                  >
+                                    <span className={styles.menuTriggerLabel}>
+                                      {selectedExistingTemplate
+                                        ? selectedExistingTemplate.name
+                                        : 'Select existing criteria'}
+                                    </span>
+                                    <span
+                                      className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                                      aria-hidden
+                                    />
+                                  </button>
+                                }
+                                align="start"
+                              >
+                                {MOCK_EXISTING_CRITERIA.map((template) => (
+                                  <WuMenuItem
+                                    key={template.id}
+                                    onSelect={() =>
+                                      handleExistingCriteriaSelect(
+                                        criterion.id,
+                                        template.id
+                                      )
+                                    }
+                                  >
+                                    {template.name}
+                                  </WuMenuItem>
+                                ))}
+                              </WuMenu>
+                            </div>
+                            {!criterion.existingCriteriaId ? (
+                              <p className={styles.existingCriteriaHint}>
+                                Choose a saved criteria set from your survey library.
+                              </p>
+                            ) : null}
+                          </div>
+                        ) : null}
+
+                        {(criterion.mode === 'new' || criterion.existingCriteriaId) &&
+                          criterion.conditions.map((cond, condIdx) => {
                           const selectedQuestion =
                             cond.questionId !== null
                               ? questions.find((q) => q.id === cond.questionId)
@@ -679,7 +1014,9 @@ function QuotaBlockEditor({
                                           source === 'System Variable'
                                             ? cond.systemVariable
                                             : null,
+                                        operator: resolveOperatorForSource(source, cond.operator),
                                         value: '',
+                                        valueEnd: '',
                                       })
                                     }
                                   >
@@ -753,37 +1090,113 @@ function QuotaBlockEditor({
                                   ))}
                                 </WuMenu>
                               )}
-                              <WuMenu
-                                Trigger={
-                                  <button
-                                    type="button"
-                                    className={`${styles.menuTrigger} ${styles.conditionOperator}`}
-                                  >
-                                    <span className={styles.menuTriggerLabel}>
-                                      {cond.operator}
-                                    </span>
-                                    <span
-                                      className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
-                                      aria-hidden
+                              {cond.source === 'System Variable' ? (
+                                <SystemVariableOperatorMenu
+                                  operator={cond.operator}
+                                  triggerClassName={`${styles.menuTrigger} ${styles.conditionOperator}`}
+                                  caretClassName={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                                  labelClassName={styles.menuTriggerLabel}
+                                  onSelect={(op) =>
+                                    handleUpdateCondition(criterion.id, cond.id, {
+                                      operator: op,
+                                      value: systemVariableOperatorNeedsValue(op)
+                                        ? cond.value
+                                        : '',
+                                      valueEnd: isBetweenOperator(op) ? cond.valueEnd : '',
+                                    })
+                                  }
+                                />
+                              ) : (
+                                <WuMenu
+                                  Trigger={
+                                    <button
+                                      type="button"
+                                      className={`${styles.menuTrigger} ${styles.conditionOperator}`}
+                                      disabled={!isQuestionSource}
+                                      aria-disabled={!isQuestionSource}
+                                    >
+                                      <span className={styles.menuTriggerLabel}>
+                                        {isQuestionSource ? cond.operator : '— n/a —'}
+                                      </span>
+                                      <span
+                                        className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                                        aria-hidden
+                                      />
+                                    </button>
+                                  }
+                                  align="start"
+                                >
+                                  {QUESTION_OPERATORS.map((op) => (
+                                    <WuMenuItem
+                                      key={op}
+                                      onSelect={() =>
+                                        handleUpdateCondition(criterion.id, cond.id, {
+                                          operator: op,
+                                        })
+                                      }
+                                    >
+                                      {op}
+                                    </WuMenuItem>
+                                  ))}
+                                </WuMenu>
+                              )}
+                              {cond.source === 'System Variable' ? (
+                                systemVariableOperatorNeedsValue(cond.operator) ? (
+                                  isBetweenOperator(cond.operator) ? (
+                                    <div className={styles.betweenInputs}>
+                                      <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        className={systemVariableValueInputClass(cond.operator)}
+                                        placeholder="From"
+                                        value={cond.value}
+                                        onChange={(event) =>
+                                          handleUpdateCondition(criterion.id, cond.id, {
+                                            value: event.target.value,
+                                          })
+                                        }
+                                        aria-label="Range start"
+                                      />
+                                      <span className={styles.betweenSeparator} aria-hidden>
+                                        and
+                                      </span>
+                                      <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        className={systemVariableValueInputClass(cond.operator)}
+                                        placeholder="To"
+                                        value={cond.valueEnd}
+                                        onChange={(event) =>
+                                          handleUpdateCondition(criterion.id, cond.id, {
+                                            valueEnd: event.target.value,
+                                          })
+                                        }
+                                        aria-label="Range end"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <input
+                                      type="text"
+                                      inputMode={
+                                        isSystemVariableNumericOperator(cond.operator)
+                                          ? 'decimal'
+                                          : 'text'
+                                      }
+                                      className={systemVariableValueInputClass(cond.operator)}
+                                      placeholder="Enter value"
+                                      value={cond.value}
+                                      onChange={(event) =>
+                                        handleUpdateCondition(criterion.id, cond.id, {
+                                          value: event.target.value,
+                                        })
+                                      }
+                                      aria-label="Condition value"
                                     />
-                                  </button>
-                                }
-                                align="start"
-                              >
-                                {OPERATORS.map((op) => (
-                                  <WuMenuItem
-                                    key={op}
-                                    onSelect={() =>
-                                      handleUpdateCondition(criterion.id, cond.id, {
-                                        operator: op,
-                                      })
-                                    }
-                                  >
-                                    {op}
-                                  </WuMenuItem>
-                                ))}
-                              </WuMenu>
-                              {valueOptions.length > 0 ? (
+                                  )
+                                ) : (
+                                  <span className={styles.conditionValueEmpty} aria-hidden />
+                                )
+                              ) : valueOptions.length > 0 ? (
                                 <ValueMultiSelect
                                   options={valueOptions}
                                   value={cond.value}
@@ -836,21 +1249,18 @@ function QuotaBlockEditor({
                             </div>
                           );
                         })}
+
+                        {criterion.requiresRename ? (
+                          <p className={styles.criteriaRenameHint}>
+                            Criteria modified — enter a new criteria name to save.
+                          </p>
+                        ) : null}
                       </div>
                     ) : null}
                   </section>
                 );
               })}
             </div>
-
-            <button
-              type="button"
-              className={styles.addCriteriaBtn}
-              onClick={handleAddCriterion}
-            >
-              <span className="wm-add" aria-hidden />
-              <span>Criteria</span>
-            </button>
           </div>
 
           <div className={styles.checksSection}>
@@ -894,52 +1304,50 @@ function QuotaBlockEditor({
               <p className={styles.checkHint}>
                 Must be the same question or one that comes after the first quota check.
               </p>
-              <WuMenu
-                Trigger={
-                  <button
-                    type="button"
-                    className={styles.menuTrigger}
-                    disabled={block.firstCheckId === null}
-                    aria-disabled={block.firstCheckId === null}
-                  >
-                    <span className={styles.menuTriggerLabel}>
-                      {secondCheckQuestion
-                        ? `${secondCheckQuestion.code} – ${secondCheckQuestion.text}`
-                        : block.firstCheckId === null
-                          ? 'Select first quota check first'
-                          : 'Select question (optional)'}
-                    </span>
-                    {secondCheckQuestion ? (
-                      <button
-                        type="button"
-                        className={styles.menuClear}
-                        aria-label="Clear second quota check"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          update({ secondCheckId: null });
-                        }}
-                      >
-                        <span className="wm-close" aria-hidden />
-                      </button>
-                    ) : (
+              <div className={styles.menuTriggerGroup}>
+                <WuMenu
+                  Trigger={
+                    <button
+                      type="button"
+                      className={`${styles.menuTrigger} ${styles.menuTriggerInGroup}`}
+                      disabled={block.firstCheckId === null}
+                      aria-disabled={block.firstCheckId === null}
+                    >
+                      <span className={styles.menuTriggerLabel}>
+                        {secondCheckQuestion
+                          ? `${secondCheckQuestion.code} – ${secondCheckQuestion.text}`
+                          : block.firstCheckId === null
+                            ? 'Select first quota check first'
+                            : 'Select question (optional)'}
+                      </span>
                       <span
                         className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
                         aria-hidden
                       />
-                    )}
-                  </button>
-                }
-                align="start"
-              >
-                {secondCheckOptions.map((question) => (
-                  <WuMenuItem
-                    key={question.id}
-                    onSelect={() => update({ secondCheckId: question.id })}
+                    </button>
+                  }
+                  align="start"
+                >
+                  {secondCheckOptions.map((question) => (
+                    <WuMenuItem
+                      key={question.id}
+                      onSelect={() => update({ secondCheckId: question.id })}
+                    >
+                      {question.code} – {question.text}
+                    </WuMenuItem>
+                  ))}
+                </WuMenu>
+                {secondCheckQuestion ? (
+                  <button
+                    type="button"
+                    className={styles.menuClearAdjacent}
+                    aria-label="Clear second quota check"
+                    onClick={() => update({ secondCheckId: null })}
                   >
-                    {question.code} – {question.text}
-                  </WuMenuItem>
-                ))}
-              </WuMenu>
+                    <span className="wm-close" aria-hidden />
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
@@ -952,12 +1360,20 @@ export function CriteriaBasedQuotaModal({
   open,
   onOpenChange,
   surveyId,
+  flow = 'standalone',
+  quotaGroupSelection = null,
   onBack,
+  onBackToQuotaGroup,
   onSave,
 }: CriteriaBasedQuotaModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
   const [blocks, setBlocks] = useState<QuotaBlock[]>(() => [newQuotaBlock()]);
+
+  const isAdvancedGroupFlow = flow === 'advanced-group' && quotaGroupSelection !== null;
+  const breadcrumbSteps: QuotaStep[] = isAdvancedGroupFlow
+    ? ['quota-type', 'advanced', 'quota-group', 'criteria']
+    : ['quota-type', 'criteria'];
 
   const questions = useMemo(
     () => getQuestionsBySurvey(surveyId).filter((q) => q.parentQuestionId === undefined),
@@ -977,6 +1393,11 @@ export function CriteriaBasedQuotaModal({
   );
 
   function handleBack(): void {
+    if (isAdvancedGroupFlow && onBackToQuotaGroup) {
+      resetState();
+      onBackToQuotaGroup();
+      return;
+    }
     if (onBack) {
       resetState();
       onBack();
@@ -986,6 +1407,21 @@ export function CriteriaBasedQuotaModal({
   }
 
   function handleBreadcrumbClick(step: QuotaStep): void {
+    if (step === 'criteria') return;
+    if (isAdvancedGroupFlow) {
+      if (step === 'quota-group' && onBackToQuotaGroup) {
+        resetState();
+        onBackToQuotaGroup();
+        return;
+      }
+      if (step === 'quota-type' || step === 'advanced') {
+        if (onBack) {
+          resetState();
+          onBack();
+        }
+      }
+      return;
+    }
     if (step === 'quota-type') {
       handleBack();
     }
@@ -1018,11 +1454,16 @@ export function CriteriaBasedQuotaModal({
   function handleSave(): void {
     if (!canSave) return;
     onSave?.(validQuotas);
+    const groupLabel = quotaGroupSelection?.name;
     showToast({
       message:
         validQuotas.length === 1
-          ? `Criteria based quota "${validQuotas[0].name}" created`
-          : `${validQuotas.length} criteria based quotas created`,
+          ? isAdvancedGroupFlow && groupLabel
+            ? `Quota "${validQuotas[0].name}" added to ${groupLabel}`
+            : `Criteria based quota "${validQuotas[0].name}" created`
+          : isAdvancedGroupFlow && groupLabel
+            ? `${validQuotas.length} quotas added to ${groupLabel}`
+            : `${validQuotas.length} criteria based quotas created`,
       variant: 'success',
     });
     resetState();
@@ -1046,8 +1487,18 @@ export function CriteriaBasedQuotaModal({
       <WuModalContent className={styles.content}>
         <div className={styles.body}>
           <p className={styles.instructions}>
-            Define one or more criteria based quotas. Each quota has its own name, target,
-            criteria, and check points.
+            {isAdvancedGroupFlow && quotaGroupSelection ? (
+              <>
+                Define one or more criteria quotas for{' '}
+                <strong>{quotaGroupSelection.name}</strong> ({quotaGroupSelection.handlingType}
+                ). Each quota has its own name, target, criteria, and check points.
+              </>
+            ) : (
+              <>
+                Define one or more criteria based quotas. Each quota has its own name, target,
+                criteria, and check points.
+              </>
+            )}
           </p>
 
           <div className={styles.quotaList}>
@@ -1077,7 +1528,7 @@ export function CriteriaBasedQuotaModal({
       <WuModalFooter>
         <div className={styles.footerActions}>
           <QuotaStepBreadcrumb
-            steps={['quota-type', 'criteria']}
+            steps={breadcrumbSteps}
             currentStep="criteria"
             onStepClick={handleBreadcrumbClick}
           />

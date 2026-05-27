@@ -121,6 +121,41 @@
   outline: none;
 }
 
+.menuTriggerGroup {
+  align-items: stretch;
+  display: flex;
+  width: 100%;
+}
+
+.menuTriggerInGroup {
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.menuClearAdjacent {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #d0d5dd;
+  border-bottom-right-radius: 4px;
+  border-left: none;
+  border-top-right-radius: 4px;
+  color: #67727E;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  padding: 0 0.5rem;
+}
+
+.menuClearAdjacent:hover,
+.menuClearAdjacent:focus-visible {
+  background: rgb(103 114 126 / 12%);
+  color: #1f2937;
+  outline: none;
+}
+
 .menuTrigger {
   align-items: center;
   background: #ffffff;
@@ -335,6 +370,11 @@
   min-width: 0;
 }
 
+.criterionNameInputReadOnly {
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
 .criterionHeaderRight {
   align-items: center;
   display: flex;
@@ -380,6 +420,70 @@
   padding: 0.75rem;
 }
 
+.criteriaModeRow {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-start;
+  margin-bottom: 0.25rem;
+}
+
+.criteriaModeToggle {
+  align-items: center;
+  background: #e8edf2;
+  border-radius: 9999px;
+  display: inline-flex;
+  padding: 0.125rem;
+}
+
+.modeToggleActive,
+.modeToggleInactive {
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  padding: 0.3125rem 1rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.modeToggleActive {
+  background: #1b87e6;
+  color: #fff;
+  font-weight: 500;
+}
+
+.modeToggleInactive {
+  background: transparent;
+  color: #64748b;
+  font-weight: 400;
+}
+
+.modeToggleInactive:hover {
+  color: #334155;
+}
+
+.existingCriteriaPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.existingCriteriaTrigger {
+  width: 100%;
+}
+
+.existingCriteriaHint,
+.criteriaRenameHint {
+  color: #67727E;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
 .conditionRow {
   align-items: center;
   display: grid;
@@ -410,6 +514,67 @@
 .conditionOperator,
 .conditionValue {
   width: 100%;
+}
+
+.conditionValueInput {
+  background: #ffffff;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  color: #1f2937;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  height: 2.25rem;
+  min-width: 0;
+  padding: 0 0.75rem;
+  width: 100%;
+}
+
+.conditionValueInputNumeric {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.conditionValueInput:focus-visible {
+  border-color: #1b87e6;
+  outline: none;
+}
+
+.conditionValueInput:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.betweenInputs {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.betweenInputs .conditionValueInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.betweenSeparator {
+  color: #67727E;
+  flex-shrink: 0;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+}
+
+.conditionValueEmpty {
+  display: block;
+  min-height: 2.25rem;
+  width: 100%;
+}
+
+@media (max-width: 899px) {
+  .betweenInputs {
+    flex-wrap: wrap;
+  }
 }
 
 .conditionConnector {
@@ -468,6 +633,17 @@
   padding: 0.5rem 0.75rem;
 }
 
+.operatorMenuHeader {
+  color: #67727E;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.375rem 0.75rem 0.25rem;
+  text-transform: uppercase;
+  user-select: none;
+}
+
 .conditionActions {
   display: flex;
   flex-shrink: 0;
@@ -492,28 +668,6 @@
 .conditionActionBtn:focus-visible {
   background: #ebf5fd;
   outline: none;
-}
-
-.addCriteriaBtn {
-  align-items: center;
-  align-self: flex-start;
-  background: none;
-  border: none;
-  color: #1b87e6;
-  cursor: pointer;
-  display: inline-flex;
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 500;
-  gap: 0.375rem;
-  padding: 0.25rem 0;
-}
-
-.addCriteriaBtn:hover,
-.addCriteriaBtn:focus-visible {
-  color: #1366b3;
-  outline: none;
-  text-decoration: underline;
 }
 
 .footerActions {

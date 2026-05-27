@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const STORAGE_PREFIX = 'survey-re:';
 
@@ -26,28 +26,32 @@ function writeToStorage<T>(key: string, value: T): void {
 
 /**
  * Persists state to localStorage under `survey-re:<key>`.
- * Initial render returns `initialValue` to avoid SSR/CSR hydration mismatches,
- * then hydrates from storage on mount.
+ * On the client, the initial state is read from storage so saves are not
+ * overwritten by a late hydration pass.
  */
 export function usePersistedState<T>(
   key: string,
   initialValue: T
 ): [T, React.Dispatch<React.SetStateAction<T>>] {
-  const [value, setValue] = useState<T>(initialValue);
-  const hydratedRef = useRef(false);
+  const [value, setValue] = useState<T>(() => readFromStorage(key, initialValue));
+
+  const setPersistedValue = useCallback<React.Dispatch<React.SetStateAction<T>>>(
+    (next) => {
+      setValue((prev) => {
+        const resolved =
+          typeof next === 'function' ? (next as (current: T) => T)(prev) : next;
+        writeToStorage(key, resolved);
+        return resolved;
+      });
+    },
+    [key]
+  );
 
   useEffect(() => {
-    const stored = readFromStorage<T>(key, initialValue);
-    setValue(stored);
-    hydratedRef.current = true;
-  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!hydratedRef.current) return;
     writeToStorage(key, value);
   }, [key, value]);
 
-  return [value, setValue];
+  return [value, setPersistedValue];
 }
 
 /**

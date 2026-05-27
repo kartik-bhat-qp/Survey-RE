@@ -41,7 +41,6 @@ export function SurveyEditorWorkspaceToolbar({
   const pathname = usePathname() ?? '';
   const activeTool = getActiveTool(pathname, surveyId);
   const [mode, setMode] = useState<PublishMode>('draft');
-
   function selectMode(next: PublishMode) {
     setMode(next);
     showToast({

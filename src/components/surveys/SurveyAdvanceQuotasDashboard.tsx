@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
+import { AdvanceQuotaGroupModal } from '@/components/surveys/AdvanceQuotaGroupModal';
 import { AddQuotaModal } from '@/components/surveys/AddQuotaModal';
 import { QuestionBasedQuotaModal } from '@/components/surveys/QuestionBasedQuotaModal';
 import {
@@ -11,6 +12,7 @@ import {
   type CriteriaQuotaSubmit,
 } from '@/components/surveys/CriteriaBasedQuotaModal';
 import type { QuotaDimensionState } from '@/components/surveys/QuotaDimensionStep';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
   ADVANCE_QUOTA_TYPE_OPTIONS,
@@ -21,6 +23,11 @@ import {
   type AdvanceQuotaRow,
   type QuotaOption,
 } from '@/data/mock-advance-quotas';
+import {
+  advanceQuotaActiveGroupKey,
+  type QuotaGroupSelection,
+} from '@/data/mock-quota-groups';
+import type { CriteriaQuotaFlow } from '@/components/surveys/CriteriaBasedQuotaModal';
 import type { AddQuotaType } from '@/data/mock-add-quota-options';
 import type { SurveyQuestion } from '@/data/mock-survey-questions';
 import { useWickUILib } from '@/components/ui/useWickUILib';
@@ -37,7 +44,24 @@ function slugForId(value: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
-function buildCriteriaQuota(data: CriteriaQuotaSubmit, offset = 0): AdvanceQuota {
+function buildAdvancedGroupQuota(
+  data: CriteriaQuotaSubmit,
+  selection: QuotaGroupSelection,
+  offset = 0
+): AdvanceQuota {
+  const quota = buildCriteriaQuota(data, selection.name, offset);
+  return {
+    ...quota,
+    quotaType: 'Advanced',
+    multipleQuotaHandling: selection.handlingType,
+  };
+}
+
+function buildCriteriaQuota(
+  data: CriteriaQuotaSubmit,
+  quotaGroup: string,
+  offset = 0
+): AdvanceQuota {
   const now = Date.now() + offset;
   const criterionParts: string[] = [];
   for (const criterion of data.criteria) {
@@ -52,7 +76,11 @@ function buildCriteriaQuota(data: CriteriaQuotaSubmit, offset = 0): AdvanceQuota
           head = `${qLabel} ${cond.operator} "${cond.value}"`;
         } else if (cond.source === 'System Variable') {
           const label = cond.subject || 'System Variable';
-          head = `[${label}] ${cond.operator} "${cond.value}"`;
+          if (cond.operator === 'is between' && cond.valueEnd) {
+            head = `[${label}] is between "${cond.value}" and "${cond.valueEnd}"`;
+          } else {
+            head = `[${label}] ${cond.operator} "${cond.value}"`;
+          }
         } else {
           const label = cond.subject || cond.source;
           head = `${label} ${cond.operator} "${cond.value}"`;
@@ -82,7 +110,7 @@ function buildCriteriaQuota(data: CriteriaQuotaSubmit, offset = 0): AdvanceQuota
     name: data.name,
     quotaType: 'Criteria based',
     description: descriptionParts.join(' and '),
-    quotaGroup: 'NA',
+    quotaGroup,
     multipleQuotaHandling: 'NA',
     target: Math.max(0, Math.round(data.target)),
     current: 0,
@@ -91,7 +119,8 @@ function buildCriteriaQuota(data: CriteriaQuotaSubmit, offset = 0): AdvanceQuota
 
 function buildQuotasFromSelection(
   questions: SurveyQuestion[],
-  distribution: QuotaDimensionState
+  distribution: QuotaDimensionState,
+  quotaGroup: string
 ): AdvanceQuota[] {
   const now = Date.now();
   const quotas: AdvanceQuota[] = [];
@@ -119,7 +148,7 @@ function buildQuotasFromSelection(
       name: question.text,
       quotaType: 'Question Based',
       description: `Options in ${question.code} ${question.text}`,
-      quotaGroup: 'NA',
+      quotaGroup,
       multipleQuotaHandling: 'NA',
       target: totalTarget,
       current: 0,
@@ -137,6 +166,10 @@ const WuTable = dynamic(
 );
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
+  { ssr: false }
+);
+const WuCheckbox = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCheckbox })),
   { ssr: false }
 );
 const WuMenu = dynamic(
@@ -199,23 +232,34 @@ function ColumnHeader({
   );
 }
 
+function isColumnFilterActive(selected: string[], options: string[]): boolean {
+  if (options.length === 0) return false;
+  return options.some((option) => !selected.includes(option));
+}
+
 function FilterableColumnHeader({
   label,
   value,
   options,
   onChange,
   leadingIcon,
+  showSort,
 }: {
   label: string;
   value: string[];
   options: string[];
   onChange: (value: string[]) => void;
   leadingIcon?: string;
+  showSort?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<string[]>(value);
-  const isActive = value.length > 0;
-  const chipTitle = isActive ? `Filtered by ${value.join(', ')}` : '';
+  const isActive = isColumnFilterActive(value, options);
+  const chipTitle = isActive
+    ? value.length === 0
+      ? 'No options selected'
+      : `Showing ${value.join(', ')}`
+    : '';
   const draftChanged =
     draft.length !== value.length || draft.some((v) => !value.includes(v));
 
@@ -232,8 +276,12 @@ function FilterableColumnHeader({
     );
   }
 
-  function resetDraft() {
+  function deselectAllDraft() {
     setDraft([]);
+  }
+
+  function selectAllDraft() {
+    setDraft([...options]);
   }
 
   function applyDraft() {
@@ -241,9 +289,10 @@ function FilterableColumnHeader({
     setOpen(false);
   }
 
-  function clearAppliedFilter() {
-    onChange([]);
-    setDraft([]);
+  function resetToAllSelected() {
+    const all = [...options];
+    onChange(all);
+    setDraft(all);
   }
 
   return (
@@ -253,23 +302,24 @@ function FilterableColumnHeader({
     >
       {leadingIcon ? <span className={leadingIcon} aria-hidden /> : null}
       {label}
+      {showSort ? <span className="wm-unfold-more" aria-hidden /> : null}
       {isActive ? (
         <span className={styles.filterChip} title={chipTitle}>
           <span className={styles.filterChipCount}>{value.length}</span>
           <span
             role="button"
             tabIndex={0}
-            aria-label={`Clear ${label} filter`}
+            aria-label={`Reset ${label} filter to all`}
             className={styles.filterChipClear}
             onClick={(event) => {
               event.stopPropagation();
-              clearAppliedFilter();
+              resetToAllSelected();
             }}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
                 event.stopPropagation();
-                clearAppliedFilter();
+                resetToAllSelected();
               }
             }}
           >
@@ -293,6 +343,25 @@ function FilterableColumnHeader({
         }
         align="start"
       >
+        <div className={styles.filterMenuHeader}>
+          <button
+            type="button"
+            className={styles.filterMenuClearBtn}
+            onClick={deselectAllDraft}
+            disabled={draft.length === 0}
+          >
+            Deselect all
+          </button>
+          <button
+            type="button"
+            className={styles.filterMenuClearBtn}
+            onClick={selectAllDraft}
+            disabled={draft.length === options.length}
+          >
+            Select all
+          </button>
+        </div>
+        <WuMenuSeparatorItem />
         {options.map((option) => (
           <WuMenuCheckboxItem
             key={option}
@@ -305,14 +374,6 @@ function FilterableColumnHeader({
         ))}
         <WuMenuSeparatorItem />
         <div className={styles.filterMenuFooter}>
-          <button
-            type="button"
-            className={styles.filterMenuClearBtn}
-            onClick={resetDraft}
-            disabled={draft.length === 0}
-          >
-            Clear
-          </button>
           <button
             type="button"
             className={styles.filterMenuApplyBtn}
@@ -339,11 +400,11 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
   const [criteriaQuotaOpen, setCriteriaQuotaOpen] = useState(false);
   const [quotaTypeFilter, setQuotaTypeFilter] = usePersistedState<string[]>(
     `advance-quotas:${surveyId}:type-filter`,
-    []
+    [...ADVANCE_QUOTA_TYPE_OPTIONS]
   );
   const [quotaGroupFilter, setQuotaGroupFilter] = usePersistedState<string[]>(
     `advance-quotas:${surveyId}:group-filter`,
-    []
+    [...getAdvanceQuotaGroupOptions()]
   );
   const [expandedQuotaIds, setExpandedQuotaIds] = usePersistedStringSet(
     `advance-quotas:${surveyId}:expanded`
@@ -352,10 +413,32 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
     `advance-quotas:${surveyId}:added`,
     []
   );
+  const [, setActiveQuotaGroup] = usePersistedState<QuotaGroupSelection | null>(
+    advanceQuotaActiveGroupKey(surveyId),
+    null
+  );
+  const [quotaGroupModalOpen, setQuotaGroupModalOpen] = useState(false);
+  const [criteriaFlow, setCriteriaFlow] = useState<CriteriaQuotaFlow>('standalone');
+  const [criteriaQuotaGroup, setCriteriaQuotaGroup] = useState<QuotaGroupSelection | null>(
+    null
+  );
+  const [selectedQuotaIds, setSelectedQuotaIds] = useState<Set<string>>(() => new Set());
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletedMockQuotaIds, setDeletedMockQuotaIds] = usePersistedStringSet(
+    `advance-quotas:${surveyId}:deleted-mock`
+  );
+
+  const mockQuotaIdSet = useMemo(
+    () => new Set(MOCK_ADVANCE_QUOTAS.map((quota) => quota.id)),
+    []
+  );
 
   const allQuotas = useMemo<AdvanceQuota[]>(
-    () => [...addedQuotas, ...MOCK_ADVANCE_QUOTAS],
-    [addedQuotas]
+    () => [
+      ...addedQuotas,
+      ...MOCK_ADVANCE_QUOTAS.filter((quota) => !deletedMockQuotaIds.has(quota.id)),
+    ],
+    [addedQuotas, deletedMockQuotaIds]
   );
 
   function toggleQuotaExpand(quotaId: string): void {
@@ -374,23 +457,120 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
 
   const filteredQuotas = useMemo(() => {
     return allQuotas.filter((quota) => {
-      if (quotaTypeFilter.length > 0 && !quotaTypeFilter.includes(quota.quotaType)) {
+      if (!quotaTypeFilter.includes(quota.quotaType)) {
         return false;
       }
-      if (quotaGroupFilter.length > 0 && !quotaGroupFilter.includes(quota.quotaGroup)) {
+      if (!quotaGroupFilter.includes(quota.quotaGroup)) {
         return false;
       }
       return true;
     });
-  }, [allQuotas, quotaTypeFilter, quotaGroupFilter]);
+  }, [allQuotas, quotaGroupFilter, quotaTypeFilter]);
 
   const tableRows = useMemo(
     () => flattenQuotasForTable(filteredQuotas, expandedQuotaIds),
     [filteredQuotas, expandedQuotaIds]
   );
 
+  const selectableParentRows = useMemo(
+    () => tableRows.filter((row) => !row.isOption),
+    [tableRows]
+  );
+
+  const allSelectableSelected =
+    selectableParentRows.length > 0 &&
+    selectableParentRows.every((row) => selectedQuotaIds.has(row.id));
+
+  const selectedCount = selectedQuotaIds.size;
+
+  useEffect(() => {
+    const visibleIds = new Set(selectableParentRows.map((row) => row.id));
+    setSelectedQuotaIds((prev) => {
+      const next = new Set([...prev].filter((id) => visibleIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [selectableParentRows]);
+
+  function toggleSelectAll(checked: boolean): void {
+    if (checked) {
+      setSelectedQuotaIds(new Set(selectableParentRows.map((row) => row.id)));
+      return;
+    }
+    setSelectedQuotaIds(new Set());
+  }
+
+  function toggleQuotaSelected(quotaId: string, checked: boolean): void {
+    setSelectedQuotaIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(quotaId);
+      else next.delete(quotaId);
+      return next;
+    });
+  }
+
+  function handleConfirmDelete(): void {
+    const idsToDelete = selectedQuotaIds;
+    setAddedQuotas((prev) => prev.filter((quota) => !idsToDelete.has(quota.id)));
+    setDeletedMockQuotaIds((prev) => {
+      const next = new Set(prev);
+      for (const id of idsToDelete) {
+        if (mockQuotaIdSet.has(id)) next.add(id);
+      }
+      return next;
+    });
+    setExpandedQuotaIds((prev) => {
+      const next = new Set(prev);
+      for (const id of idsToDelete) next.delete(id);
+      return next;
+    });
+    setSelectedQuotaIds(new Set());
+    showToast({
+      message:
+        idsToDelete.size === 1
+          ? '1 quota deleted'
+          : `${idsToDelete.size} quotas deleted`,
+      variant: 'success',
+    });
+  }
+
   const columns: IWuTableColumnDef<AdvanceQuotaRow>[] = useMemo(
     () => [
+      {
+        id: 'select',
+        accessorKey: 'name',
+        header: () => (
+          <div
+            className={styles.checkboxHeader}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <WuCheckbox
+              checked={allSelectableSelected}
+              disabled={selectableParentRows.length === 0}
+              onChange={toggleSelectAll}
+              aria-label="Select all quotas"
+            />
+          </div>
+        ),
+        enableSorting: false,
+        size: 48,
+        cell: ({ row }) => {
+          if (row.original.isOption) {
+            return <span className={styles.subRowMuted} aria-hidden />;
+          }
+          return (
+            <div
+              className={styles.checkboxCell}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <WuCheckbox
+                checked={selectedQuotaIds.has(row.original.id)}
+                onChange={(checked) => toggleQuotaSelected(row.original.id, checked)}
+                aria-label={`Select ${row.original.name}`}
+              />
+            </div>
+          );
+        },
+      },
       {
         accessorKey: 'name',
         header: () => <ColumnHeader label="Name" icons={['sort']} />,
@@ -496,11 +676,12 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
             options={quotaGroupOptions}
             onChange={setQuotaGroupFilter}
             leadingIcon="wm-group"
+            showSort
           />
         ),
         filterable: true,
-        enableSorting: false,
-        size: 150,
+        enableSorting: true,
+        size: 200,
         cell: ({ row }) => {
           if (row.original.isOption) {
             return <span className={styles.subRowMuted} aria-hidden />;
@@ -539,7 +720,15 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
         cell: ({ row }) => <QuotaTargetCell quota={row.original} />,
       },
     ],
-    [expandedQuotaIds, quotaGroupFilter, quotaGroupOptions, quotaTypeFilter]
+    [
+      allSelectableSelected,
+      expandedQuotaIds,
+      quotaGroupFilter,
+      quotaGroupOptions,
+      quotaTypeFilter,
+      selectableParentRows.length,
+      selectedQuotaIds,
+    ]
   );
 
   if (!wick) {
@@ -551,6 +740,16 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
       <div className={styles.header}>
         <h2 className={styles.title}>Dashboard</h2>
         <div className={styles.headerActions}>
+          {selectedCount > 0 ? (
+            <WuButton
+              size="sm"
+              variant="secondary"
+              onClick={() => setDeleteConfirmOpen(true)}
+            >
+              Delete
+              <span className={styles.selectionCount}>({selectedCount})</span>
+            </WuButton>
+          ) : null}
           <WuButton
             size="sm"
             variant="primary"
@@ -574,11 +773,42 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
             <EmptyState
               icon="wm-filter-list"
               title="No quotas match your filters"
-              description="Try changing the Quota Type or Quota Group filters"
+              description="Select one or more options in the Quota type or Quota group filters, or reset filters to show all"
             />
           }
         />
       </div>
+
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete quotas?"
+        description={
+          selectedCount === 1
+            ? 'This quota will be removed from the dashboard. This cannot be undone.'
+            : `${selectedCount} quotas will be removed from the dashboard. This cannot be undone.`
+        }
+        confirmLabel="Delete"
+        variant="critical"
+        onConfirm={handleConfirmDelete}
+      />
+
+      <AdvanceQuotaGroupModal
+        open={quotaGroupModalOpen}
+        onOpenChange={setQuotaGroupModalOpen}
+        surveyId={surveyId}
+        onBack={() => {
+          setQuotaGroupModalOpen(false);
+          setAddQuotaOpen(true);
+        }}
+        onConfirm={(selection) => {
+          setActiveQuotaGroup(selection);
+          setCriteriaQuotaGroup(selection);
+          setCriteriaFlow('advanced-group');
+          setQuotaGroupModalOpen(false);
+          setCriteriaQuotaOpen(true);
+        }}
+      />
 
       <AddQuotaModal
         open={addQuotaOpen}
@@ -589,13 +819,14 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
             return;
           }
           if (type === 'criteria-based') {
+            setCriteriaFlow('standalone');
+            setCriteriaQuotaGroup(null);
             setCriteriaQuotaOpen(true);
             return;
           }
-          showToast({
-            message: 'Advanced quota is not available in this prototype',
-            variant: 'info',
-          });
+          if (type === 'advanced') {
+            setQuotaGroupModalOpen(true);
+          }
         }}
       />
 
@@ -608,7 +839,7 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
           setAddQuotaOpen(true);
         }}
         onSave={(questions, distribution) => {
-          const newQuotas = buildQuotasFromSelection(questions, distribution);
+          const newQuotas = buildQuotasFromSelection(questions, distribution, 'NA');
           if (newQuotas.length === 0) return;
           setAddedQuotas((prev) => [...newQuotas, ...prev]);
           setExpandedQuotaIds((prev) => {
@@ -621,17 +852,34 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
 
       <CriteriaBasedQuotaModal
         open={criteriaQuotaOpen}
-        onOpenChange={setCriteriaQuotaOpen}
+        onOpenChange={(open) => {
+          setCriteriaQuotaOpen(open);
+          if (!open) {
+            setCriteriaFlow('standalone');
+            setCriteriaQuotaGroup(null);
+          }
+        }}
         surveyId={surveyId}
+        flow={criteriaFlow}
+        quotaGroupSelection={criteriaQuotaGroup}
         onBack={() => {
           setCriteriaQuotaOpen(false);
+          setCriteriaFlow('standalone');
+          setCriteriaQuotaGroup(null);
           setAddQuotaOpen(true);
+        }}
+        onBackToQuotaGroup={() => {
+          setCriteriaQuotaOpen(false);
+          setQuotaGroupModalOpen(true);
         }}
         onSave={(submissions: CriteriaQuotaSubmit[]) => {
           if (submissions.length === 0) return;
-          const newQuotas = submissions.map((data, idx) =>
-            buildCriteriaQuota(data, idx)
-          );
+          const newQuotas =
+            criteriaFlow === 'advanced-group' && criteriaQuotaGroup
+              ? submissions.map((data, idx) =>
+                  buildAdvancedGroupQuota(data, criteriaQuotaGroup, idx)
+                )
+              : submissions.map((data, idx) => buildCriteriaQuota(data, 'NA', idx));
           setAddedQuotas((prev) => [...newQuotas, ...prev]);
         }}
       />

@@ -2,13 +2,21 @@
 
 import styles from './QuotaStepBreadcrumb.module.css';
 
-export type QuotaStep = 'quota-type' | 'question' | 'dimension' | 'criteria';
+export type QuotaStep =
+  | 'quota-type'
+  | 'question'
+  | 'dimension'
+  | 'criteria'
+  | 'advanced'
+  | 'quota-group';
 
 const STEP_META: Record<QuotaStep, { label: string; icon: string }> = {
   'quota-type': { label: 'Quota type', icon: 'wm-grid-view' },
   question: { label: 'Question', icon: 'wm-list' },
   dimension: { label: 'Quota #', icon: 'wm-tune' },
   criteria: { label: 'Criteria', icon: 'wm-call-split' },
+  advanced: { label: 'Advanced quota', icon: 'wm-tune' },
+  'quota-group': { label: 'Quota group', icon: 'wm-group' },
 };
 
 const DEFAULT_STEPS: QuotaStep[] = ['quota-type', 'question', 'dimension'];

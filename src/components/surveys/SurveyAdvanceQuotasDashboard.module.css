@@ -16,10 +16,69 @@
   padding: 1rem 1.5rem 0.75rem;
 }
 
+.headerTitles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.subtitle {
+  align-items: center;
+  color: #67727e;
+  display: flex;
+  flex-wrap: wrap;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  gap: 0.5rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.groupName {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.changeGroupBtn {
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.changeGroupBtn:hover,
+.changeGroupBtn:focus-visible {
+  color: #1565b8;
+  outline: none;
+}
+
 .headerActions {
+  align-items: center;
   display: flex;
   flex-shrink: 0;
+  gap: 0.5rem;
   justify-content: flex-end;
+}
+
+.selectionCount {
+  margin-left: 0.125rem;
+}
+
+.checkboxHeader,
+.checkboxCell {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.checkboxCell :global(button) {
+  flex-shrink: 0;
 }
 
 .title {
@@ -134,10 +193,20 @@
   font-size: 0.6875rem;
 }
 
+.filterMenuHeader {
+  background: #fff;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 .filterMenuFooter {
   background: #fff;
   display: flex;
-  gap: 0.5rem;
   justify-content: flex-end;
   padding: 0.5rem 0.75rem;
   position: sticky;
@@ -281,6 +350,7 @@
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   line-height: 1.2;
+  text-align: right;
 }
 
 .targetValueLow {
