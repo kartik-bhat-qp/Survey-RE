@@ -110,7 +110,12 @@ export function ClientShareLinkModal({
 
   return (
     <WuModal open onOpenChange={onOpenChange} size="md">
-      <WuModalHeader>Client link</WuModalHeader>
+      <WuModalHeader>
+        <span className={styles.modalTitleRow}>
+          <span>Client link</span>
+          <span className={styles.comingSoonBadge}>Coming soon</span>
+        </span>
+      </WuModalHeader>
       <WuModalContent>
         <p className={styles.intro}>
           Choose which quotas appear on the shared client dashboard. Clients cannot add or

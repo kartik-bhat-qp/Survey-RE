@@ -28,7 +28,7 @@ const WuButton = dynamic(
 );
 
 export interface AddQuestionMenuProps {
-  onSelect: (category: string, typeLabel: string) => void;
+  onSelect: (category: string, typeLabel: string, typeId: string) => void;
 }
 
 type DrawerTab = 'all' | 'library';
@@ -123,7 +123,7 @@ function TierSection({
 }: {
   tier: QuestionTypeTier;
   categories: AddQuestionCategory[];
-  onSelectType: (category: string, typeLabel: string) => void;
+  onSelectType: (categoryTitle: string, typeLabel: string, typeId: string) => void;
   hoveredTypeId: string | null;
   onTypePointerEnter: (
     categoryTitle: string,
@@ -152,7 +152,7 @@ function TierSection({
                     className={`${styles.typeBtn} ${
                       hoveredTypeId === type.id ? styles.typeBtnHovered : ''
                     }`}
-                    onClick={() => onSelectType(category.title, type.label)}
+                    onClick={() => onSelectType(category.title, type.label, type.id)}
                     onPointerEnter={(event) =>
                       onTypePointerEnter(category.title, type, event)
                     }
@@ -269,8 +269,8 @@ export function AddQuestionMenu({ onSelect }: AddQuestionMenuProps) {
     setOpen(false);
   }
 
-  function handleSelect(category: string, typeLabel: string): void {
-    onSelect(category, typeLabel);
+  function handleSelect(category: string, typeLabel: string, typeId: string): void {
+    onSelect(category, typeLabel, typeId);
     closeDrawer();
   }
 

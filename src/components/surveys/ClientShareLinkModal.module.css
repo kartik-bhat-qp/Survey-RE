@@ -1,3 +1,25 @@
+.modalTitleRow {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.comingSoonBadge {
+  background: rgb(234 179 8 / 14%);
+  border: 1px solid rgb(234 179 8 / 35%);
+  border-radius: 999px;
+  color: #b45309;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.2rem 0.45rem;
+  text-transform: none;
+  white-space: nowrap;
+}
+
 .intro {
   color: #545e6b;
   font-family: 'Fira Sans', sans-serif;

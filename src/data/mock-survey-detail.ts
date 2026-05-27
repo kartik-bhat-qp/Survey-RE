@@ -1,6 +1,8 @@
 import type { Survey } from '@/data/mock-surveys';
 import { getSurveyEditorTitle } from '@/data/get-survey-by-id';
 
+export type SurveyQuestionInputKind = 'radio' | 'checkbox';
+
 export interface SurveyQuestionOption {
   id: string;
   label: string;
@@ -9,9 +11,13 @@ export interface SurveyQuestionOption {
 
 export interface SurveyQuestion {
   id: string;
+  /** Question code shown in the workspace gutter (e.g. Q5). */
+  code: string;
   number: number;
   text: string;
   required?: boolean;
+  /** How options render; default `radio` when omitted (existing mock questions). */
+  inputKind?: SurveyQuestionInputKind;
   options: SurveyQuestionOption[];
 }
 
@@ -31,10 +37,11 @@ export interface SurveyDetail {
 const DEFAULT_SECTIONS: SurveySection[] = [
   {
     id: 'section-demo',
-    title: 'Demo',
+    title: 'Block 1',
     questions: [
       {
         id: 'q1',
+        code: 'Q1',
         number: 1,
         text: 'What is your gender?',
         required: true,
@@ -47,6 +54,7 @@ const DEFAULT_SECTIONS: SurveySection[] = [
       },
       {
         id: 'q5',
+        code: 'Q5',
         number: 5,
         text: 'Age',
         required: true,
@@ -58,6 +66,20 @@ const DEFAULT_SECTIONS: SurveySection[] = [
           { id: '45-54', label: '45-54' },
           { id: '55-64', label: '55-64' },
           { id: 'above-64', label: 'Above 64' },
+        ],
+      },
+      {
+        id: 'q6',
+        code: 'Q6',
+        number: 6,
+        text: 'Household income (optional)',
+        required: false,
+        options: [
+          { id: 'inc-1', label: 'Under $25,000' },
+          { id: 'inc-2', label: '$25,000–$49,999' },
+          { id: 'inc-3', label: '$50,000–$99,999' },
+          { id: 'inc-4', label: '$100,000 or more' },
+          { id: 'inc-pref', label: 'Prefer not to say' },
         ],
       },
     ],
