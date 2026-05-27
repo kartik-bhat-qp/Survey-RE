@@ -13,13 +13,21 @@
  * Keep Radix dropdown panels (used by WuMenu) inside the viewport so long
  * lists scroll internally instead of overflowing parent modals.
  *
- * --radix-dropdown-menu-content-available-height is set on the content
- * element by Radix and represents the max space without collision.
+ * Radix's --radix-popper-available-height is the collision-aware space.
+ * We fall back to a hard 18rem cap so the menu always fits comfortably.
  */
-[data-radix-popper-content-wrapper] > * {
-  max-height: min(
-    var(--radix-dropdown-menu-content-available-height, 70vh),
-    70vh
-  );
-  overflow-y: auto;
+[data-radix-popper-content-wrapper] {
+  max-height: min(var(--radix-popper-available-height, 18rem), 18rem) !important;
+  overflow: hidden !important;
+}
+
+[data-radix-popper-content-wrapper] > *,
+[data-radix-popper-content-wrapper] [role="menu"],
+[data-radix-popper-content-wrapper] [role="listbox"] {
+  box-sizing: border-box !important;
+  max-height: min(var(--radix-popper-available-height, 18rem), 18rem) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }

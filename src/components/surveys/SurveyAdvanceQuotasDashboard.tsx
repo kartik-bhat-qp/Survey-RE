@@ -44,14 +44,19 @@ function buildCriteriaQuota(data: CriteriaQuotaSubmit, offset = 0): AdvanceQuota
     if (criterion.conditions.length === 0) continue;
     const conditionDescription = criterion.conditions
       .map((cond, idx) => {
-        const head = cond.source !== 'Question'
-          ? `${cond.source} ${cond.operator} "${cond.value}"`
-          : (() => {
-              const qLabel = cond.questionCode
-                ? `[${cond.questionCode}]`
-                : cond.questionText || 'Question';
-              return `${qLabel} ${cond.operator} "${cond.value}"`;
-            })();
+        let head: string;
+        if (cond.source === 'Question') {
+          const qLabel = cond.questionCode
+            ? `[${cond.questionCode}]`
+            : cond.questionText || 'Question';
+          head = `${qLabel} ${cond.operator} "${cond.value}"`;
+        } else if (cond.source === 'System Variable') {
+          const label = cond.subject || 'System Variable';
+          head = `[${label}] ${cond.operator} "${cond.value}"`;
+        } else {
+          const label = cond.subject || cond.source;
+          head = `${label} ${cond.operator} "${cond.value}"`;
+        }
         return idx === 0 ? head : `${cond.connector} ${head}`;
       })
       .join(' ');

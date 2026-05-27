@@ -384,7 +384,7 @@
   align-items: center;
   display: grid;
   gap: 0.5rem;
-  grid-template-columns: 4rem minmax(0, 0.9fr) minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1fr) auto;
+  grid-template-columns: 5.5rem minmax(0, 0.9fr) minmax(0, 1.6fr) minmax(0, 0.7fr) minmax(0, 1fr) auto;
 }
 
 @media (max-width: 899px) {
@@ -427,6 +427,45 @@
 
 .conditionConnector .menuTriggerLabel {
   flex: 0 0 auto;
+}
+
+.valueSearchRow {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.5rem 0.625rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.valueSearchInput {
+  background: #f8fafc;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  color: #1f2937;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  height: 1.875rem;
+  outline: none;
+  padding: 0 0.5rem;
+  width: 100%;
+}
+
+.valueSearchInput:focus {
+  border-color: #1b87e6;
+  background: #ffffff;
+}
+
+.selectAllLabel {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.valueEmpty {
+  color: #67727E;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  padding: 0.5rem 0.75rem;
 }
 
 .conditionActions {

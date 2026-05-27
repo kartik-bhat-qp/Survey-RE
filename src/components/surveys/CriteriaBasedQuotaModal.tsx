@@ -26,6 +26,13 @@ const WuMenuItem = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
   { ssr: false }
 );
+const WuMenuCheckboxItem = dynamic(
+  () =>
+    import('@npm-questionpro/wick-ui-lib').then((m) => ({
+      default: m.WuMenuCheckboxItem,
+    })),
+  { ssr: false }
+);
 
 const OPERATORS = ['is', 'is not', 'contains', 'does not contain'] as const;
 type Operator = (typeof OPERATORS)[number];
@@ -42,10 +49,17 @@ type ConditionSource = (typeof CONDITION_SOURCES)[number];
 const CONNECTORS = ['AND', 'OR'] as const;
 type ConditionConnector = (typeof CONNECTORS)[number];
 
+const SYSTEM_VARIABLES: string[] = Array.from(
+  { length: 255 },
+  (_, i) => `Custom ${i + 1}`
+);
+
 interface CriterionCondition {
   id: string;
   source: ConditionSource;
   questionId: number | null;
+  /** Selected name when source is `System Variable`. */
+  systemVariable: string | null;
   operator: Operator;
   value: string;
   connector: ConditionConnector;
@@ -78,6 +92,8 @@ export interface CriteriaQuotaCondition {
   source: ConditionSource;
   questionCode: string;
   questionText: string;
+  /** Display label for the condition subject (question text or system variable name). */
+  subject: string;
   operator: Operator;
   value: string;
   /** Logical connector to the previous condition. Ignored for the first condition. */
@@ -121,15 +137,133 @@ function uniqueId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+const VALUE_SEPARATOR = ', ';
+
+function parseSelectedValues(raw: string): string[] {
+  return raw
+    .split(',')
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0);
+}
+
+function toggleValueSelection(raw: string, option: string): string {
+  const selected = parseSelectedValues(raw);
+  const without = selected.filter((v) => v !== option);
+  if (without.length === selected.length) {
+    return [...selected, option].join(VALUE_SEPARATOR);
+  }
+  return without.join(VALUE_SEPARATOR);
+}
+
 function newCondition(): CriterionCondition {
   return {
     id: uniqueId('cond'),
     source: 'Question',
     questionId: null,
+    systemVariable: null,
     operator: 'is',
     value: '',
     connector: 'AND',
   };
+}
+
+interface ValueMultiSelectProps {
+  options: string[];
+  value: string;
+  onChange: (next: string) => void;
+  triggerClassName: string;
+  caretClassName: string;
+  labelClassName: string;
+}
+
+function ValueMultiSelect({
+  options,
+  value,
+  onChange,
+  triggerClassName,
+  caretClassName,
+  labelClassName,
+}: ValueMultiSelectProps) {
+  const [search, setSearch] = useState('');
+  const selectedValues = parseSelectedValues(value);
+  const filtered = options.filter((opt) =>
+    opt.toLowerCase().includes(search.trim().toLowerCase())
+  );
+  const allFilteredSelected =
+    filtered.length > 0 && filtered.every((opt) => selectedValues.includes(opt));
+  const triggerLabel =
+    selectedValues.length === 0
+      ? '- Select -'
+      : selectedValues.length === 1
+        ? selectedValues[0]
+        : `${selectedValues.length} selected`;
+
+  function handleSelectAllToggle(): void {
+    if (allFilteredSelected) {
+      const remaining = selectedValues.filter((v) => !filtered.includes(v));
+      onChange(remaining.join(VALUE_SEPARATOR));
+    } else {
+      const merged = Array.from(new Set([...selectedValues, ...filtered]));
+      onChange(merged.join(VALUE_SEPARATOR));
+    }
+  }
+
+  return (
+    <WuMenu
+      Trigger={
+        <button
+          type="button"
+          className={triggerClassName}
+          title={selectedValues.length > 0 ? selectedValues.join(', ') : undefined}
+        >
+          <span className={labelClassName}>{triggerLabel}</span>
+          <span className={caretClassName} aria-hidden />
+        </button>
+      }
+      align="start"
+    >
+      <div
+        className={styles.valueSearchRow}
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <input
+          type="text"
+          placeholder="Search options"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          onKeyDown={(event) => event.stopPropagation()}
+          className={styles.valueSearchInput}
+          aria-label="Search options"
+        />
+      </div>
+      {options.length > 0 ? (
+        <WuMenuCheckboxItem
+          checked={allFilteredSelected}
+          onSelect={handleSelectAllToggle}
+          preventCloseOnSelect
+        >
+          <span className={styles.selectAllLabel}>
+            {search.trim() ? 'Select all matching' : 'Select all'}
+          </span>
+        </WuMenuCheckboxItem>
+      ) : null}
+      {filtered.length === 0 ? (
+        <div className={styles.valueEmpty}>No options match the search</div>
+      ) : (
+        filtered.map((opt) => (
+          <WuMenuCheckboxItem
+            key={opt}
+            checked={selectedValues.includes(opt)}
+            onSelect={() => onChange(toggleValueSelection(value, opt))}
+            preventCloseOnSelect
+          >
+            {opt}
+          </WuMenuCheckboxItem>
+        ))
+      )}
+    </WuMenu>
+  );
 }
 
 function newCriterion(): Criterion {
@@ -170,20 +304,31 @@ function validateBlock(
   const criteria: CriteriaQuotaCriterion[] = block.criteria
     .map((crit) => {
       const conditions: CriteriaQuotaCondition[] = crit.conditions
-        .filter(
-          (cond) =>
-            cond.source !== 'Question' ||
-            (cond.questionId !== null && cond.value.trim() !== '')
-        )
+        .filter((cond) => {
+          if (cond.source === 'Question') {
+            return cond.questionId !== null && cond.value.trim() !== '';
+          }
+          if (cond.source === 'System Variable') {
+            return cond.systemVariable !== null && cond.value.trim() !== '';
+          }
+          return cond.value.trim() !== '';
+        })
         .map((cond) => {
           const question =
             cond.questionId !== null
               ? questions.find((q) => q.id === cond.questionId)
               : undefined;
+          const subject =
+            cond.source === 'Question'
+              ? question?.text ?? ''
+              : cond.source === 'System Variable'
+                ? cond.systemVariable ?? ''
+                : cond.source;
           return {
             source: cond.source,
             questionCode: question?.code ?? '',
             questionText: question?.text ?? '',
+            subject,
             operator: cond.operator,
             value: cond.value.trim(),
             connector: cond.connector,
@@ -467,7 +612,6 @@ function QuotaBlockEditor({
                             cond.source === 'Question' && selectedQuestion?.options
                               ? selectedQuestion.options
                               : [];
-                          const valueLabel = cond.value.trim() || '- Select -';
                           const isQuestionSource = cond.source === 'Question';
                           return (
                             <div key={cond.id} className={styles.conditionRow}>
@@ -531,6 +675,10 @@ function QuotaBlockEditor({
                                         source,
                                         questionId:
                                           source === 'Question' ? cond.questionId : null,
+                                        systemVariable:
+                                          source === 'System Variable'
+                                            ? cond.systemVariable
+                                            : null,
                                         value: '',
                                       })
                                     }
@@ -539,39 +687,72 @@ function QuotaBlockEditor({
                                   </WuMenuItem>
                                 ))}
                               </WuMenu>
-                              <WuMenu
-                                Trigger={
-                                  <button
-                                    type="button"
-                                    className={`${styles.menuTrigger} ${styles.conditionQuestion}`}
-                                    disabled={!isQuestionSource}
-                                    aria-disabled={!isQuestionSource}
-                                  >
-                                    <span className={styles.menuTriggerLabel}>
-                                      {isQuestionSource ? questionLabel : '— n/a —'}
-                                    </span>
-                                    <span
-                                      className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
-                                      aria-hidden
-                                    />
-                                  </button>
-                                }
-                                align="start"
-                              >
-                                {questions.map((question) => (
-                                  <WuMenuItem
-                                    key={question.id}
-                                    onSelect={() =>
-                                      handleUpdateCondition(criterion.id, cond.id, {
-                                        questionId: question.id,
-                                        value: '',
-                                      })
-                                    }
-                                  >
-                                    [{question.code}] {question.text}
-                                  </WuMenuItem>
-                                ))}
-                              </WuMenu>
+                              {cond.source === 'System Variable' ? (
+                                <WuMenu
+                                  Trigger={
+                                    <button
+                                      type="button"
+                                      className={`${styles.menuTrigger} ${styles.conditionQuestion}`}
+                                    >
+                                      <span className={styles.menuTriggerLabel}>
+                                        {cond.systemVariable ?? '- Select -'}
+                                      </span>
+                                      <span
+                                        className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                                        aria-hidden
+                                      />
+                                    </button>
+                                  }
+                                  align="start"
+                                >
+                                  {SYSTEM_VARIABLES.map((sv) => (
+                                    <WuMenuItem
+                                      key={sv}
+                                      onSelect={() =>
+                                        handleUpdateCondition(criterion.id, cond.id, {
+                                          systemVariable: sv,
+                                        })
+                                      }
+                                    >
+                                      {sv}
+                                    </WuMenuItem>
+                                  ))}
+                                </WuMenu>
+                              ) : (
+                                <WuMenu
+                                  Trigger={
+                                    <button
+                                      type="button"
+                                      className={`${styles.menuTrigger} ${styles.conditionQuestion}`}
+                                      disabled={!isQuestionSource}
+                                      aria-disabled={!isQuestionSource}
+                                    >
+                                      <span className={styles.menuTriggerLabel}>
+                                        {isQuestionSource ? questionLabel : '— n/a —'}
+                                      </span>
+                                      <span
+                                        className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                                        aria-hidden
+                                      />
+                                    </button>
+                                  }
+                                  align="start"
+                                >
+                                  {questions.map((question) => (
+                                    <WuMenuItem
+                                      key={question.id}
+                                      onSelect={() =>
+                                        handleUpdateCondition(criterion.id, cond.id, {
+                                          questionId: question.id,
+                                          value: '',
+                                        })
+                                      }
+                                    >
+                                      [{question.code}] {question.text}
+                                    </WuMenuItem>
+                                  ))}
+                                </WuMenu>
+                              )}
                               <WuMenu
                                 Trigger={
                                   <button
@@ -603,36 +784,18 @@ function QuotaBlockEditor({
                                 ))}
                               </WuMenu>
                               {valueOptions.length > 0 ? (
-                                <WuMenu
-                                  Trigger={
-                                    <button
-                                      type="button"
-                                      className={`${styles.menuTrigger} ${styles.conditionValue}`}
-                                    >
-                                      <span className={styles.menuTriggerLabel}>
-                                        {valueLabel}
-                                      </span>
-                                      <span
-                                        className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
-                                        aria-hidden
-                                      />
-                                    </button>
+                                <ValueMultiSelect
+                                  options={valueOptions}
+                                  value={cond.value}
+                                  onChange={(next) =>
+                                    handleUpdateCondition(criterion.id, cond.id, {
+                                      value: next,
+                                    })
                                   }
-                                  align="start"
-                                >
-                                  {valueOptions.map((opt) => (
-                                    <WuMenuItem
-                                      key={opt}
-                                      onSelect={() =>
-                                        handleUpdateCondition(criterion.id, cond.id, {
-                                          value: opt,
-                                        })
-                                      }
-                                    >
-                                      {opt}
-                                    </WuMenuItem>
-                                  ))}
-                                </WuMenu>
+                                  triggerClassName={`${styles.menuTrigger} ${styles.conditionValue}`}
+                                  caretClassName={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                                  labelClassName={styles.menuTriggerLabel}
+                                />
                               ) : (
                                 <WuInput
                                   variant="outlined"
