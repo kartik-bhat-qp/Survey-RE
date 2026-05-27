@@ -9,35 +9,10 @@ const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false }
 );
-const WuMenu = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
-  { ssr: false }
-);
-const WuMenuItem = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
-  { ssr: false }
-);
+import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
 
 interface SurveyEditorCanvasProps {
   detail: SurveyDetail;
-}
-
-function AddQuestionButton({ onSelect }: { onSelect: (type: string) => void }) {
-  return (
-    <WuMenu
-      Trigger={
-        <WuButton size="sm" variant="primary">
-          Add Question
-          <span className="wm-arrow-drop-down" />
-        </WuButton>
-      }
-      align="center"
-    >
-      <WuMenuItem onSelect={() => onSelect('Multiple Choice')}>Multiple Choice</WuMenuItem>
-      <WuMenuItem onSelect={() => onSelect('Text')}>Text</WuMenuItem>
-      <WuMenuItem onSelect={() => onSelect('Matrix')}>Matrix</WuMenuItem>
-    </WuMenu>
-  );
 }
 
 function QuestionRow({
@@ -134,7 +109,11 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             </header>
 
             <div className={styles.addQuestionRow}>
-              <AddQuestionButton onSelect={(type) => toast(`Add ${type} question`)} />
+              <AddQuestionMenu
+                onSelect={(category, typeLabel) =>
+                  toast(`Add ${typeLabel} (${category})`)
+                }
+              />
             </div>
 
             {section.questions.map((question, index) => (
@@ -176,7 +155,11 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             ))}
 
             <div className={styles.addQuestionRow}>
-              <AddQuestionButton onSelect={(type) => toast(`Add ${type} question`)} />
+              <AddQuestionMenu
+                onSelect={(category, typeLabel) =>
+                  toast(`Add ${typeLabel} (${category})`)
+                }
+              />
             </div>
           </section>
         ))}
