@@ -18,6 +18,12 @@ import {
   type SurveyQuestion,
 } from '@/data/mock-survey-questions';
 import type { QuotaGroupSelection } from '@/data/mock-quota-groups';
+import type { AdvanceQuota, AdvanceQuotaCriterionBlock } from '@/data/mock-advance-quotas';
+import { getQuotaDisplayRules } from '@/data/mock-advance-quotas';
+import {
+  buildCriteriaRuleRows,
+  CriteriaRulesExpanded,
+} from '@/components/surveys/CriteriaRulesExpanded';
 import styles from './CriteriaBasedQuotaModal.module.css';
 
 const WuInput = dynamic(
@@ -194,6 +200,8 @@ interface CriteriaBasedQuotaModalProps {
   surveyId: number;
   flow?: CriteriaQuotaFlow;
   quotaGroupSelection?: QuotaGroupSelection | null;
+  /** Advanced flow: quotas already in the selected group (shown read-only on the criteria step). */
+  existingQuotasInSelectedGroup?: AdvanceQuota[];
   onBack?: () => void;
   onBackToQuotaGroup?: () => void;
   onSave?: (quotas: CriteriaQuotaSubmit[]) => void;
@@ -612,6 +620,92 @@ function validateBlock(
     firstCheck,
     secondCheck,
   };
+}
+
+function getReadOnlyDisplayBlocks(quota: AdvanceQuota): AdvanceQuotaCriterionBlock[] {
+  const { blocks } = getQuotaDisplayRules(quota);
+  return blocks
+    .map((block) => ({
+      ...block,
+      conditions: block.conditions.filter((c) => c.source !== 'Summary'),
+    }))
+    .filter((block) => block.conditions.length > 0);
+}
+
+function formatGroupQuotaChecksHint(sel: QuotaGroupSelection): string | null {
+  if (!sel.firstCheck?.questionCode) return null;
+  const first = sel.firstCheck.questionCode;
+  const second = sel.secondCheck?.questionCode;
+  if (!second) return `Checked after [${first}]`;
+  return `Checked after [${first}], re-checked after [${second}]`;
+}
+
+function ExistingGroupQuotasReadOnly({
+  quotas,
+  groupSelection,
+}: {
+  quotas: AdvanceQuota[];
+  groupSelection: QuotaGroupSelection;
+}) {
+  const checksHint = formatGroupQuotaChecksHint(groupSelection);
+
+  return (
+    <section
+      className={styles.existingGroupSection}
+      aria-labelledby="existing-group-criteria-heading"
+    >
+      <div className={styles.existingGroupSectionHeader}>
+        <h3 id="existing-group-criteria-heading" className={styles.existingGroupHeading}>
+          Quotas already in this group
+        </h3>
+        <span className={styles.readOnlyPill}>Read-only</span>
+      </div>
+      {checksHint ? (
+        <p className={styles.groupChecksHint} role="note">
+          {checksHint}
+        </p>
+      ) : null}
+      <p className={styles.existingGroupHint}>
+        These criteria cannot be edited here. Use the dashboard to manage existing quotas, or add
+        a new quota below.
+      </p>
+
+      {quotas.length === 0 ? (
+        <p className={styles.existingGroupEmpty}>No quotas in this group yet.</p>
+      ) : (
+        <ul className={styles.existingQuotaList}>
+          {quotas.map((quota) => {
+            const blocks = getReadOnlyDisplayBlocks(quota);
+            const rowCount = buildCriteriaRuleRows(blocks).length;
+            return (
+              <li key={quota.id} className={styles.existingQuotaCard}>
+                <div className={styles.existingQuotaCardHeader}>
+                  <span className={styles.existingQuotaName}>{quota.name}</span>
+                  <span className={styles.existingQuotaMeta}>
+                    {quota.quotaType}
+                    {typeof quota.target === 'number' ? ` · Target ${quota.target}` : ''}
+                  </span>
+                </div>
+                <div
+                  className={styles.readonlyCriteriaShell}
+                  aria-readonly="true"
+                  tabIndex={-1}
+                >
+                  {rowCount > 0 ? (
+                    <CriteriaRulesExpanded blocks={blocks} showHeader variant="panel" />
+                  ) : (
+                    <p className={styles.readonlyDescriptionFallback}>
+                      {quota.description?.trim() || 'No criteria defined.'}
+                    </p>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
 }
 
 interface QuotaBlockEditorProps {
@@ -1422,6 +1516,7 @@ export function CriteriaBasedQuotaModal({
   surveyId,
   flow = 'standalone',
   quotaGroupSelection = null,
+  existingQuotasInSelectedGroup,
   onBack,
   onBackToQuotaGroup,
   onSave,
@@ -1573,8 +1668,8 @@ export function CriteriaBasedQuotaModal({
               <>
                 Define one or more criteria quotas for{' '}
                 <strong>{quotaGroupSelection.name}</strong> ({quotaGroupSelection.handlingType}
-                ). Each quota has its own name, target, and criteria. Quota checks are set at
-                the group level.
+                ). Quota checks are set at the group level. Existing quotas in the group are listed
+                below (read-only). Add your new quota under <strong>New quota</strong>.
               </>
             ) : (
               <>
@@ -1583,6 +1678,19 @@ export function CriteriaBasedQuotaModal({
               </>
             )}
           </p>
+
+            {isAdvancedGroupFlow &&
+            quotaGroupSelection &&
+            existingQuotasInSelectedGroup !== undefined ? (
+              <>
+                <ExistingGroupQuotasReadOnly
+                  quotas={existingQuotasInSelectedGroup}
+                  groupSelection={quotaGroupSelection}
+                />
+                <div className={styles.newQuotaDivider} role="separator" />
+                <p className={styles.newQuotaLabel}>New quota</p>
+              </>
+            ) : null}
 
           <div className={styles.quotaList}>
             {blocks.map((block, index) => (

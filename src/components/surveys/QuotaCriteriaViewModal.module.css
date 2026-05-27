@@ -69,6 +69,31 @@
   margin: 0 0 0.75rem;
 }
 
+.quotaChecksList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.quotaChecksList li {
+  line-height: 1.4;
+}
+
+.checkCode {
+  color: #1b87e6;
+  font-weight: 500;
+}
+
+.checkRole {
+  color: #64748b;
+  display: block;
+  font-size: 0.6875rem;
+  margin-top: 0.125rem;
+}
+
 /* Table description cell */
 .cell {
   align-items: center;

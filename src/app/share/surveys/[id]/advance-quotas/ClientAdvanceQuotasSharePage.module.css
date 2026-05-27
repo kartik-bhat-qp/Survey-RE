@@ -1,0 +1,68 @@
+.topAccent {
+  background: #1b87e6;
+  height: 4px;
+  width: 100%;
+}
+
+.page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin: 0 auto;
+  max-width: 1400px;
+  min-height: calc(100vh - 4px);
+  width: 100%;
+}
+
+.topBar {
+  flex-shrink: 0;
+  padding: 1.5rem 1.5rem 1.25rem;
+}
+
+.pageTitle {
+  color: #1b87e6;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1.375rem;
+  font-weight: 500;
+  line-height: 1.35;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboardWrap {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 1.5rem;
+}
+
+.footer {
+  flex-shrink: 0;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  padding: 2.5rem 1.5rem 2rem;
+  text-align: center;
+}
+
+.poweredBy {
+  color: #9aa5b1;
+}
+
+.brand {
+  color: #1b87e6;
+  font-weight: 500;
+}
+
+.notFound {
+  align-items: center;
+  background: #fff;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+}

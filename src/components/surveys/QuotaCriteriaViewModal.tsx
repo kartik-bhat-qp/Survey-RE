@@ -3,8 +3,18 @@
 import { useMemo } from 'react';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import { CriteriaRulesExpanded } from '@/components/surveys/CriteriaRulesExpanded';
-import type { AdvanceQuota, AdvanceQuotaCriterionBlock } from '@/data/mock-advance-quotas';
-import { getQuotaDisplayRules } from '@/data/mock-advance-quotas';
+import type {
+  AdvanceQuota,
+  AdvanceQuotaCheckPoint,
+  AdvanceQuotaCriterionBlock,
+} from '@/data/mock-advance-quotas';
+import {
+  formatQuestionQuotaScope,
+  getQuestionOptionMinSum,
+  getQuotaDisplayRules,
+  isMinQuestionQuotaScope,
+  resolveQuotaCheckPointsForDisplay,
+} from '@/data/mock-advance-quotas';
 import styles from './QuotaCriteriaViewModal.module.css';
 
 export interface QuotaCriteriaViewModalProps {
@@ -15,9 +25,7 @@ export interface QuotaCriteriaViewModalProps {
   groupCheckCodes?: ReadonlyArray<{ questionCode: string; questionText?: string }>;
 }
 
-function buildChecksSuffix(
-  checks: ReadonlyArray<{ questionCode: string }>
-): string {
+function buildChecksSuffix(checks: ReadonlyArray<{ questionCode: string }>): string {
   if (checks.length === 0) return '';
   const first = checks[0]?.questionCode;
   const second = checks[1]?.questionCode;
@@ -25,6 +33,10 @@ function buildChecksSuffix(
   return second
     ? `Checked after [${first}], re-checked after [${second}]`
     : `Checked after [${first}]`;
+}
+
+function getCheckRoleLabel(index: number): string {
+  return index === 0 ? 'Checked after' : 'Re-checked after';
 }
 
 function getModalCriterionBlocks(quota: AdvanceQuota): AdvanceQuotaCriterionBlock[] {
@@ -51,14 +63,15 @@ export function QuotaCriteriaViewModal({
     [quota]
   );
 
-  const checksSuffix = useMemo(() => {
-    if (!quota) return '';
-    if (quota.quotaType === 'Advanced' && groupCheckCodes.length > 0) {
-      return buildChecksSuffix(groupCheckCodes);
-    }
-    const checks = getQuotaDisplayRules(quota).checks;
-    return buildChecksSuffix(checks);
+  const quotaChecks = useMemo((): AdvanceQuotaCheckPoint[] => {
+    if (!quota) return [];
+    return resolveQuotaCheckPointsForDisplay(quota, groupCheckCodes);
   }, [groupCheckCodes, quota]);
+
+  const checksSuffix = useMemo(
+    () => buildChecksSuffix(quotaChecks),
+    [quotaChecks]
+  );
 
   if (!wick || !open || !quota) {
     return null;
@@ -86,10 +99,50 @@ export function QuotaCriteriaViewModal({
               <span className={styles.typeBadge}>{quota.quotaType}</span>
             </dd>
           </div>
+          {quota.quotaType === 'Question Based' ? (
+            <div className={styles.metaRow}>
+              <dt className={styles.metaLabel}>Quota mode</dt>
+              <dd className={styles.metaValue}>{formatQuestionQuotaScope(quota.questionQuotaScope)}</dd>
+            </div>
+          ) : null}
+          {quota.quotaType === 'Question Based' &&
+          isMinQuestionQuotaScope(quota.questionQuotaScope) ? (
+            <>
+              <div className={styles.metaRow}>
+                <dt className={styles.metaLabel}>Total target (count)</dt>
+                <dd className={styles.metaValue}>{quota.target}</dd>
+              </div>
+              <div className={styles.metaRow}>
+                <dt className={styles.metaLabel}>Sum of minimums</dt>
+                <dd className={styles.metaValue}>{getQuestionOptionMinSum(quota)}</dd>
+              </div>
+            </>
+          ) : null}
           {quota.quotaGroup !== 'NA' ? (
             <div className={styles.metaRow}>
               <dt className={styles.metaLabel}>Quota group</dt>
               <dd className={styles.metaValue}>{quota.quotaGroup}</dd>
+            </div>
+          ) : null}
+          {quotaChecks.length > 0 ? (
+            <div className={styles.metaRow}>
+              <dt className={styles.metaLabel}>Quota checks</dt>
+              <dd className={styles.metaValue}>
+                <ul className={styles.quotaChecksList}>
+                  {quotaChecks.map((check, index) => (
+                    <li key={`${check.questionCode}-${index}`}>
+                      <span className={styles.checkCode}>[{check.questionCode}]</span>
+                      {check.questionText ? (
+                        <>
+                          {' '}
+                          {check.questionText}
+                        </>
+                      ) : null}
+                      <span className={styles.checkRole}>{getCheckRoleLabel(index)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </dd>
             </div>
           ) : null}
         </dl>
@@ -98,7 +151,11 @@ export function QuotaCriteriaViewModal({
           <h3 className={styles.rulesHeading}>Rules</h3>
           <CriteriaRulesExpanded
             blocks={blocks}
-            checksSuffix={checksSuffix || undefined}
+            checksSuffix={
+              quotaChecks.length > 0
+                ? undefined
+                : checksSuffix || undefined
+            }
             variant="panel"
           />
         </div>

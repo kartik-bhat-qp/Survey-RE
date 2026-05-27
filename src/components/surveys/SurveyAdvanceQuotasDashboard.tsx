@@ -26,9 +26,14 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import {
   ADVANCE_QUOTA_TYPE_OPTIONS,
   flattenQuotasForTable,
+  formatQuestionQuotaScope,
   getAdvanceQuotaGroupOptions,
+  getQuestionOptionMinSum,
+  isMinQuestionQuotaScope,
   isRemovedDashboardQuota,
   MOCK_ADVANCE_QUOTAS,
+  normalizeQuestionBasedMinQuota,
+  resolveQuotaCheckPoints,
   type AdvanceQuota,
   type AdvanceQuotaCheckPoint,
   type AdvanceQuotaCriterionBlock,
@@ -54,6 +59,13 @@ import {
   usePersistedState,
   usePersistedStringSet,
 } from '@/hooks/usePersistedState';
+import { ClientShareLinkModal } from '@/components/surveys/ClientShareLinkModal';
+import {
+  advanceQuotaClientShareVisibleIdsKey,
+  filterQuotasForClientShare,
+  getClientShareSelectionLabel,
+  type ClientShareVisibleQuotaIds,
+} from '@/data/mock-advance-quota-share';
 import styles from './SurveyAdvanceQuotasDashboard.module.css';
 
 function slugForId(value: string): string {
@@ -195,7 +207,12 @@ function buildQuotasFromSelection(
         current: 0,
       };
     });
-    const totalTarget = options.reduce((sum, o) => sum + o.target, 0);
+    const minSum = options.reduce((sum, o) => sum + o.target, 0);
+    const isMinScope = isMinQuestionQuotaScope(entry.scope);
+    const sampleTarget = Math.round(entry.target ?? 0);
+    const totalTarget = isMinScope
+      ? Math.max(sampleTarget, minSum)
+      : minSum;
     quotas.push({
       id: `user-${now}-${qIdx}-${question.id}`,
       name: question.text,
@@ -207,6 +224,8 @@ function buildQuotasFromSelection(
       current: 0,
       questionCode: question.code,
       questionText: question.text,
+      questionQuotaScope: entry.scope,
+      questionQuotaTotalTarget: isMinScope ? totalTarget : undefined,
       options,
     });
   });
@@ -265,17 +284,29 @@ function getDescriptionSummary(
   groupChecks: ReadonlyArray<{ questionCode: string }>
 ): string {
   const blocks = quota.criterionBlocks ?? [];
-  const checksText = buildGroupChecksSuffix(groupChecks);
   const isAdvanced = quota.quotaType === 'Advanced';
   const isCriteria = quota.quotaType === 'Criteria based';
+  const checksText = isAdvanced
+    ? buildGroupChecksSuffix(groupChecks)
+    : buildGroupChecksSuffix(resolveQuotaCheckPoints(quota));
 
   if (isAdvanced || isCriteria) {
     const criteriaOnly =
       getCriteriaPreviewLine(blocks) || getCriteriaCollapsedLine(blocks) || getCriteriaTitle(quota);
     if (!criteriaOnly) return checksText || '—';
-    if (!checksText || !isAdvanced) return criteriaOnly;
+    if (!checksText) return criteriaOnly;
     const dot = criteriaOnly.endsWith('.') ? '' : '.';
     return `${criteriaOnly}${dot} ${checksText}`;
+  }
+
+  if (quota.quotaType === 'Question Based') {
+    const modeLabel = formatQuestionQuotaScope(quota.questionQuotaScope);
+    const base = applyGroupChecksToDescription(quota.description, groupChecks);
+    if (isMinQuestionQuotaScope(quota.questionQuotaScope)) {
+      const minSum = getQuestionOptionMinSum(quota);
+      return `${modeLabel}. Target ${quota.target}. Sum of minimums ${minSum}. ${base}`;
+    }
+    return `${modeLabel}. ${base}`;
   }
 
   return applyGroupChecksToDescription(quota.description, groupChecks);
@@ -334,13 +365,23 @@ const WuTooltip = dynamic(
   { ssr: false }
 );
 
-function QuotaTargetCell({ quota }: { quota: AdvanceQuota | AdvanceQuotaRow }) {
-  const current = quota.current ?? quota.target;
-  const progress = quota.target === 0 ? 0 : Math.min(current / quota.target, 1);
+function QuotaTargetCell({ quota }: { quota: AdvanceQuotaRow }) {
+  const isOptionRow = Boolean(quota.isOption);
+  const isMinParent =
+    !isOptionRow && isMinQuestionQuotaScope(quota.questionQuotaScope);
+  const minSum = isMinParent ? getQuestionOptionMinSum(quota) : 0;
+
+  const progressTarget = quota.target;
+  const current = isOptionRow
+    ? (quota.current ?? 0)
+    : (quota.current ?? (isMinParent ? 0 : progressTarget));
+
+  const progress =
+    progressTarget === 0 ? 0 : Math.min(current / progressTarget, 1);
   const pct = progress * 100;
   const tone: 'low' | 'mid' | 'high' =
     pct > 80 ? 'high' : pct > 50 ? 'mid' : 'low';
-  const label = `${current}/${quota.target}`;
+  const label = `${current}/${progressTarget}`;
 
   const valueClass = `${styles.targetValue} ${
     tone === 'high'
@@ -350,10 +391,23 @@ function QuotaTargetCell({ quota }: { quota: AdvanceQuota | AdvanceQuotaRow }) {
       : styles.targetValueLow
   }`;
 
+  const titleParts = [`${label} (${Math.round(pct)}% of total target)`];
+  if (isMinParent && minSum !== progressTarget) {
+    titleParts.push(`Sum of minimums: ${minSum}`);
+  }
+  if (isOptionRow && isMinQuestionQuotaScope(quota.questionQuotaScope)) {
+    titleParts.length = 0;
+    titleParts.push(
+      `${current}/${progressTarget} minimum (${Math.round(
+        progressTarget === 0 ? 0 : (current / progressTarget) * 100
+      )}% of min)`
+    );
+  }
+
   return (
     <span
       className={styles.targetCell}
-      title={`${label} (${Math.round(pct)}%)`}
+      title={titleParts.join('. ')}
       aria-label={`Target ${label}`}
     >
       <span className={valueClass}>{label}</span>
@@ -382,6 +436,17 @@ function ColumnHeader({
 function isColumnFilterActive(selected: string[], options: string[]): boolean {
   if (options.length === 0) return false;
   return options.some((option) => !selected.includes(option));
+}
+
+/** When new filter options appear, keep them visible if the user had every prior option selected. */
+function mergeFilterWithNewOptions(selected: string[], options: string[]): string[] {
+  const missing = options.filter((option) => !selected.includes(option));
+  if (missing.length === 0) return selected;
+  const knownOptions = options.filter((option) => !missing.includes(option));
+  const hadAllKnown =
+    knownOptions.length > 0 && knownOptions.every((option) => selected.includes(option));
+  if (!hadAllKnown) return selected;
+  return [...selected, ...missing];
 }
 
 function FilterableColumnHeader({
@@ -537,22 +602,25 @@ function FilterableColumnHeader({
 
 interface SurveyAdvanceQuotasDashboardProps {
   surveyId: number;
+  /** Read-only client share link — no add, delete, or row selection. */
+  clientView?: boolean;
 }
 
-export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDashboardProps) {
+export function SurveyAdvanceQuotasDashboard({
+  surveyId,
+  clientView = false,
+}: SurveyAdvanceQuotasDashboardProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
   const [addQuotaOpen, setAddQuotaOpen] = useState(false);
   const [questionQuotaOpen, setQuestionQuotaOpen] = useState(false);
   const [criteriaQuotaOpen, setCriteriaQuotaOpen] = useState(false);
-  const [quotaTypeFilter, setQuotaTypeFilter] = usePersistedState<string[]>(
-    `advance-quotas:${surveyId}:type-filter`,
-    [...ADVANCE_QUOTA_TYPE_OPTIONS]
-  );
-  const [quotaGroupFilter, setQuotaGroupFilter] = usePersistedState<string[]>(
-    `advance-quotas:${surveyId}:group-filter`,
-    [...getAdvanceQuotaGroupOptions()]
-  );
+  const [quotaTypeFilter, setQuotaTypeFilter] = useState<string[]>(() => [
+    ...ADVANCE_QUOTA_TYPE_OPTIONS,
+  ]);
+  const [quotaGroupFilter, setQuotaGroupFilter] = useState<string[]>(() => [
+    ...getAdvanceQuotaGroupOptions(),
+  ]);
   const [expandedQuotaIds, setExpandedQuotaIds] = usePersistedStringSet(
     `advance-quotas:${surveyId}:expanded`
   );
@@ -584,6 +652,12 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
   const [deletedMockQuotaIds, setDeletedMockQuotaIds] = usePersistedStringSet(
     `advance-quotas:${surveyId}:deleted-mock`
   );
+  const [clientShareVisibleIds, setClientShareVisibleIds] =
+    usePersistedState<ClientShareVisibleQuotaIds>(
+      advanceQuotaClientShareVisibleIdsKey(surveyId),
+      null
+    );
+  const [clientShareModalOpen, setClientShareModalOpen] = useState(false);
 
   const mockQuotaIdSet = useMemo(
     () => new Set(MOCK_ADVANCE_QUOTAS.map((quota) => quota.id)),
@@ -591,12 +665,50 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
   );
 
   const allQuotas = useMemo<AdvanceQuota[]>(
-    () => [
-      ...addedQuotas.filter((quota) => !isRemovedDashboardQuota(quota)),
-      ...MOCK_ADVANCE_QUOTAS.filter((quota) => !deletedMockQuotaIds.has(quota.id)),
-    ],
+    () =>
+      [
+        ...addedQuotas.filter((quota) => !isRemovedDashboardQuota(quota)),
+        ...MOCK_ADVANCE_QUOTAS.filter((quota) => !deletedMockQuotaIds.has(quota.id)),
+      ].map(normalizeQuestionBasedMinQuota),
     [addedQuotas, deletedMockQuotaIds]
   );
+
+  const displayQuotas = useMemo(
+    () =>
+      clientView
+        ? filterQuotasForClientShare(allQuotas, clientShareVisibleIds)
+        : allQuotas,
+    [allQuotas, clientShareVisibleIds, clientView]
+  );
+
+  const clientShareSelectionLabel = useMemo(
+    () => getClientShareSelectionLabel(allQuotas, clientShareVisibleIds),
+    [allQuotas, clientShareVisibleIds]
+  );
+
+  useEffect(() => {
+    if (clientShareVisibleIds === null) return;
+    setClientShareVisibleIds((prev) => {
+      if (prev === null) return prev;
+      const validIds = new Set(allQuotas.map((quota) => quota.id));
+      const next = prev.filter((id) => validIds.has(id));
+      if (next.length === prev.length) return prev;
+      if (next.length === 0) return null;
+      if (next.length === allQuotas.length) return null;
+      return next;
+    });
+  }, [allQuotas, setClientShareVisibleIds]);
+
+  const existingQuotasForAdvancedCriteriaModal = useMemo((): AdvanceQuota[] | undefined => {
+    if (!criteriaQuotaGroup || criteriaFlow !== 'advanced-group') return undefined;
+    const nameNorm = criteriaQuotaGroup.name.trim().toLowerCase();
+    return allQuotas.filter(
+      (q) =>
+        q.quotaGroup !== 'NA' &&
+        q.quotaGroup.trim().toLowerCase() === nameNorm &&
+        (q.quotaType === 'Advanced' || q.quotaType === 'Criteria based')
+    );
+  }, [allQuotas, criteriaFlow, criteriaQuotaGroup]);
 
   useEffect(() => {
     setAddedQuotas((prev) => {
@@ -617,10 +729,35 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
     });
   }
 
-  const quotaGroupOptions = useMemo(() => getAdvanceQuotaGroupOptions(), []);
+  const quotaTypeOptions = useMemo(
+    () =>
+      Array.from(
+        new Set([...ADVANCE_QUOTA_TYPE_OPTIONS, ...displayQuotas.map((q) => q.quotaType)])
+      ).sort(),
+    [displayQuotas]
+  );
+
+  const quotaGroupOptions = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...getAdvanceQuotaGroupOptions(),
+          ...displayQuotas.map((q) => q.quotaGroup),
+        ])
+      ).sort(),
+    [displayQuotas]
+  );
+
+  useEffect(() => {
+    setQuotaTypeFilter((prev) => mergeFilterWithNewOptions(prev, quotaTypeOptions));
+  }, [quotaTypeOptions]);
+
+  useEffect(() => {
+    setQuotaGroupFilter((prev) => mergeFilterWithNewOptions(prev, quotaGroupOptions));
+  }, [quotaGroupOptions]);
 
   const filteredQuotas = useMemo(() => {
-    return allQuotas.filter((quota) => {
+    return displayQuotas.filter((quota) => {
       if (!quotaTypeFilter.includes(quota.quotaType)) {
         return false;
       }
@@ -629,7 +766,7 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
       }
       return true;
     });
-  }, [allQuotas, quotaGroupFilter, quotaTypeFilter]);
+  }, [displayQuotas, quotaGroupFilter, quotaTypeFilter]);
 
   const quotaGroupChecksByName = useMemo(() => {
     const groups = applyQuotaGroupCheckOverrides(
@@ -647,8 +784,8 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
   }, [customGroups, groupCheckOverrides]);
 
   const viewCriteriaQuota = useMemo(
-    () => allQuotas.find((quota) => quota.id === viewCriteriaQuotaId) ?? null,
-    [allQuotas, viewCriteriaQuotaId]
+    () => displayQuotas.find((quota) => quota.id === viewCriteriaQuotaId) ?? null,
+    [displayQuotas, viewCriteriaQuotaId]
   );
 
   const viewCriteriaGroupChecks = useMemo(() => {
@@ -662,7 +799,11 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
     () =>
       flattenQuotasForTable(filteredQuotas, expandedQuotaIds).map((row) => {
         const target = row.target;
-        const current = row.current ?? row.target;
+        const isMinParent =
+          !row.isOption && isMinQuestionQuotaScope(row.questionQuotaScope);
+        const current = row.isOption
+          ? (row.current ?? 0)
+          : (row.current ?? (isMinParent ? 0 : target));
         const completionPct = target === 0 ? 0 : (current / target) * 100;
         return { ...row, completionPct };
       }),
@@ -731,44 +872,49 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
   }
 
   const columns: IWuTableColumnDef<AdvanceQuotaRow>[] = useMemo(
-    () => [
-      {
-        id: 'select',
-        accessorKey: 'name',
-        header: () => (
-          <div
-            className={styles.checkboxHeader}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <WuCheckbox
-              checked={allSelectableSelected}
-              disabled={selectableParentRows.length === 0}
-              onChange={toggleSelectAll}
-              aria-label="Select all quotas"
-            />
-          </div>
-        ),
-        enableSorting: false,
-        size: 48,
-        cell: ({ row }) => {
-          if (row.original.isOption) {
-            return <span className={styles.subRowMuted} aria-hidden />;
-          }
-          return (
+    () => {
+      const cols: IWuTableColumnDef<AdvanceQuotaRow>[] = [];
+
+      if (!clientView) {
+        cols.push({
+          id: 'select',
+          accessorKey: 'name',
+          header: () => (
             <div
-              className={styles.checkboxCell}
+              className={styles.checkboxHeader}
               onClick={(event) => event.stopPropagation()}
             >
               <WuCheckbox
-                checked={selectedQuotaIds.has(row.original.id)}
-                onChange={(checked) => toggleQuotaSelected(row.original.id, checked)}
-                aria-label={`Select ${row.original.name}`}
+                checked={allSelectableSelected}
+                disabled={selectableParentRows.length === 0}
+                onChange={toggleSelectAll}
+                aria-label="Select all quotas"
               />
             </div>
-          );
-        },
-      },
-      {
+          ),
+          enableSorting: false,
+          size: 48,
+          cell: ({ row }) => {
+            if (row.original.isOption) {
+              return <span className={styles.subRowMuted} aria-hidden />;
+            }
+            return (
+              <div
+                className={styles.checkboxCell}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <WuCheckbox
+                  checked={selectedQuotaIds.has(row.original.id)}
+                  onChange={(checked) => toggleQuotaSelected(row.original.id, checked)}
+                  aria-label={`Select ${row.original.name}`}
+                />
+              </div>
+            );
+          },
+        });
+      }
+
+      cols.push({
         accessorKey: 'name',
         header: () => <ColumnHeader label="Name" icons={['sort']} />,
         enableSorting: true,
@@ -824,14 +970,15 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
             </span>
           );
         },
-      },
-      {
+      });
+
+      cols.push({
         accessorKey: 'quotaType',
         header: () => (
           <FilterableColumnHeader
             label="Quota type"
             value={quotaTypeFilter}
-            options={ADVANCE_QUOTA_TYPE_OPTIONS}
+            options={quotaTypeOptions}
             onChange={setQuotaTypeFilter}
           />
         ),
@@ -862,8 +1009,9 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
             </WuTooltip>
           );
         },
-      },
-      {
+      });
+
+      cols.push({
         accessorKey: 'description',
         header: () => <ColumnHeader label="Description" icons={['info']} />,
         size: 320,
@@ -885,8 +1033,9 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
             />
           );
         },
-      },
-      {
+      });
+
+      cols.push({
         accessorKey: 'quotaGroup',
         header: () => (
           <FilterableColumnHeader
@@ -912,8 +1061,9 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
             />
           );
         },
-      },
-      {
+      });
+
+      cols.push({
         accessorKey: 'multipleQuotaHandling',
         header: () => (
           <span className={styles.columnHeader}>Multiple quota handling</span>
@@ -930,8 +1080,9 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
             </span>
           );
         },
-      },
-      {
+      });
+
+      cols.push({
         accessorKey: 'completionPct',
         header: () => <ColumnHeader label="Target" icons={['sort', 'filter']} />,
         headerAlign: 'right',
@@ -939,15 +1090,19 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
         cellAlign: 'right',
         size: 130,
         cell: ({ row }) => <QuotaTargetCell quota={row.original} />,
-      },
-    ],
+      });
+
+      return cols;
+    },
     [
       allSelectableSelected,
+      clientView,
       expandedQuotaIds,
       quotaGroupFilter,
       quotaGroupChecksByName,
       quotaGroupOptions,
       quotaTypeFilter,
+      quotaTypeOptions,
       selectableParentRows.length,
       selectedQuotaIds,
     ]
@@ -959,29 +1114,40 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
 
   return (
     <div className={styles.dashboard}>
-      <div className={styles.header}>
-        <h2 className={styles.title}>Dashboard</h2>
-        <div className={styles.headerActions}>
-          {selectedCount > 0 ? (
+      {!clientView ? (
+        <div className={styles.header}>
+          <h2 className={styles.title}>Dashboard</h2>
+          <div className={styles.headerActions}>
+            {selectedCount > 0 ? (
+              <WuButton
+                size="sm"
+                variant="secondary"
+                onClick={() => setDeleteConfirmOpen(true)}
+              >
+                Delete
+                <span className={styles.selectionCount}>({selectedCount})</span>
+              </WuButton>
+            ) : null}
             <WuButton
               size="sm"
               variant="secondary"
-              onClick={() => setDeleteConfirmOpen(true)}
+              onClick={() => setClientShareModalOpen(true)}
+              title={clientShareSelectionLabel}
             >
-              Delete
-              <span className={styles.selectionCount}>({selectedCount})</span>
+              <span className="wm-share" aria-hidden />
+              Client link
             </WuButton>
-          ) : null}
-          <WuButton
-            size="sm"
-            variant="primary"
-            onClick={() => setAddQuotaOpen(true)}
-          >
-            Add Quota
-            <span className="wm-add" />
-          </WuButton>
+            <WuButton
+              size="sm"
+              variant="primary"
+              onClick={() => setAddQuotaOpen(true)}
+            >
+              Add Quota
+              <span className="wm-add" />
+            </WuButton>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className={styles.tableWrap}>
         <WuTable
@@ -994,8 +1160,16 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
           NoDataContent={
             <EmptyState
               icon="wm-filter-list"
-              title="No quotas match your filters"
-              description="Select one or more options in the Quota type or Quota group filters, or reset filters to show all"
+              title={
+                clientView && displayQuotas.length === 0
+                  ? 'No quotas on this client dashboard'
+                  : 'No quotas match your filters'
+              }
+              description={
+                clientView && displayQuotas.length === 0
+                  ? 'The survey owner has not shared any quotas on this link yet.'
+                  : 'Select one or more options in the Quota type or Quota group filters, or reset filters to show all'
+              }
             />
           }
         />
@@ -1007,7 +1181,7 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
           if (!open) setViewQuotaGroupName(null);
         }}
         groupName={viewQuotaGroupName}
-        allQuotas={allQuotas}
+        allQuotas={displayQuotas}
         customGroups={customGroups}
         groupCheckOverrides={groupCheckOverrides}
       />
@@ -1021,21 +1195,35 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
         groupCheckCodes={viewCriteriaGroupChecks}
       />
 
-      <ConfirmModal
-        open={deleteConfirmOpen}
-        onOpenChange={setDeleteConfirmOpen}
-        title="Delete quotas?"
-        description={
-          selectedCount === 1
-            ? 'This quota will be removed from the dashboard. This cannot be undone.'
-            : `${selectedCount} quotas will be removed from the dashboard. This cannot be undone.`
-        }
-        confirmLabel="Delete"
-        variant="critical"
-        onConfirm={handleConfirmDelete}
-      />
+      {!clientView ? (
+        <ClientShareLinkModal
+          open={clientShareModalOpen}
+          onOpenChange={setClientShareModalOpen}
+          surveyId={surveyId}
+          quotas={allQuotas}
+          visibleIds={clientShareVisibleIds}
+          onSaveVisibleIds={setClientShareVisibleIds}
+        />
+      ) : null}
 
-      <AdvanceQuotaGroupModal
+      {!clientView ? (
+        <ConfirmModal
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          title="Delete quotas?"
+          description={
+            selectedCount === 1
+              ? 'This quota will be removed from the dashboard. This cannot be undone.'
+              : `${selectedCount} quotas will be removed from the dashboard. This cannot be undone.`
+          }
+          confirmLabel="Delete"
+          variant="critical"
+          onConfirm={handleConfirmDelete}
+        />
+      ) : null}
+
+      {!clientView ? (
+        <AdvanceQuotaGroupModal
         open={quotaGroupModalOpen}
         onOpenChange={setQuotaGroupModalOpen}
         surveyId={surveyId}
@@ -1051,7 +1239,10 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
           setCriteriaQuotaOpen(true);
         }}
       />
+      ) : null}
 
+      {!clientView ? (
+        <>
       <AddQuotaModal
         open={addQuotaOpen}
         onOpenChange={setAddQuotaOpen}
@@ -1104,6 +1295,7 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
         surveyId={surveyId}
         flow={criteriaFlow}
         quotaGroupSelection={criteriaQuotaGroup}
+        existingQuotasInSelectedGroup={existingQuotasForAdvancedCriteriaModal}
         onBack={() => {
           setCriteriaQuotaOpen(false);
           setCriteriaFlow('standalone');
@@ -1125,6 +1317,8 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
           setAddedQuotas((prev) => [...newQuotas, ...prev]);
         }}
       />
+        </>
+      ) : null}
     </div>
   );
 }
