@@ -5,12 +5,21 @@ import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { AdvanceQuotaGroupModal } from '@/components/surveys/AdvanceQuotaGroupModal';
+import { QuotaGroupCell, QuotaGroupViewModal } from '@/components/surveys/QuotaGroupViewModal';
+import {
+  DescriptionCriteriaCell,
+  QuotaCriteriaViewModal,
+} from '@/components/surveys/QuotaCriteriaViewModal';
 import { AddQuotaModal } from '@/components/surveys/AddQuotaModal';
 import { QuestionBasedQuotaModal } from '@/components/surveys/QuestionBasedQuotaModal';
 import {
   CriteriaBasedQuotaModal,
   type CriteriaQuotaSubmit,
 } from '@/components/surveys/CriteriaBasedQuotaModal';
+import {
+  getCriteriaCollapsedLine,
+  getCriteriaPreviewLine,
+} from '@/components/surveys/CriteriaRulesExpanded';
 import type { QuotaDimensionState } from '@/components/surveys/QuotaDimensionStep';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -18,13 +27,23 @@ import {
   ADVANCE_QUOTA_TYPE_OPTIONS,
   flattenQuotasForTable,
   getAdvanceQuotaGroupOptions,
+  isRemovedDashboardQuota,
   MOCK_ADVANCE_QUOTAS,
   type AdvanceQuota,
+  type AdvanceQuotaCheckPoint,
+  type AdvanceQuotaCriterionBlock,
   type AdvanceQuotaRow,
+  type AdvanceQuotaRuleCondition,
   type QuotaOption,
 } from '@/data/mock-advance-quotas';
 import {
+  applyQuotaGroupCheckOverrides,
   advanceQuotaActiveGroupKey,
+  advanceQuotaCustomGroupsKey,
+  advanceQuotaGroupCheckOverridesKey,
+  getQuotaGroupCheckPoints,
+  mergeQuotaGroups,
+  type QuotaGroup,
   type QuotaGroupSelection,
 } from '@/data/mock-quota-groups';
 import type { CriteriaQuotaFlow } from '@/components/surveys/CriteriaBasedQuotaModal';
@@ -95,16 +114,48 @@ function buildCriteriaQuota(
     }
   }
   const descriptionParts: string[] = [];
-  if (criterionParts.length === 0) {
-    descriptionParts.push('Custom criteria');
-  } else {
+  if (criterionParts.length > 0) {
     descriptionParts.push(criterionParts.join(' | '));
+  } else if (data.name.trim()) {
+    descriptionParts.push(data.name.trim());
   }
   const checks: string[] = [`Checked after [${data.firstCheck.questionCode}]`];
   if (data.secondCheck) {
     checks.push(`re-checked after [${data.secondCheck.questionCode}]`);
   }
   descriptionParts.push(checks.join(', '));
+
+  const criterionBlocks: AdvanceQuotaCriterionBlock[] = data.criteria
+    .filter((criterion) => criterion.conditions.length > 0)
+    .map((criterion) => ({
+      name: criterion.name || data.name,
+      conditions: criterion.conditions.map(
+        (cond): AdvanceQuotaRuleCondition => ({
+          source: cond.source,
+          questionCode: cond.questionCode || undefined,
+          questionText: cond.questionText || undefined,
+          subject: cond.subject,
+          operator: cond.operator,
+          value: cond.value,
+          valueEnd: cond.valueEnd,
+          connector: cond.connector,
+        })
+      ),
+    }));
+
+  const quotaChecks: AdvanceQuotaCheckPoint[] = [
+    {
+      questionCode: data.firstCheck.questionCode,
+      questionText: data.firstCheck.questionText,
+    },
+  ];
+  if (data.secondCheck) {
+    quotaChecks.push({
+      questionCode: data.secondCheck.questionCode,
+      questionText: data.secondCheck.questionText,
+    });
+  }
+
   return {
     id: `user-criteria-${now}`,
     name: data.name,
@@ -114,6 +165,8 @@ function buildCriteriaQuota(
     multipleQuotaHandling: 'NA',
     target: Math.max(0, Math.round(data.target)),
     current: 0,
+    criterionBlocks: criterionBlocks.length > 0 ? criterionBlocks : undefined,
+    quotaChecks: quotaChecks.length > 0 ? quotaChecks : undefined,
   };
 }
 
@@ -160,6 +213,96 @@ function buildQuotasFromSelection(
   return quotas;
 }
 
+function applyGroupChecksToDescription(
+  description: string,
+  checks: ReadonlyArray<{ questionCode: string }>
+): string {
+  if (checks.length === 0) return description;
+
+  const first = checks[0]?.questionCode;
+  const second = checks[1]?.questionCode;
+  if (!first) return description;
+
+  const replacement = second
+    ? `Checked after [${first}], re-checked after [${second}]`
+    : `Checked after [${first}]`;
+
+  // Swap the "Checked after [...]" part with the quota-group configured check points
+  // while keeping the actual criteria portion intact.
+  const updated = description.replace(
+    /Checked after \[[^\]]+\](?:,\s*re-checked after \[[^\]]+\])?/,
+    replacement
+  );
+
+  return updated;
+}
+
+function stripLegacyDescriptionCriteria(text: string): string {
+  return text
+    .replace(/^Custom criteria\s*(and\s*)?/i, '')
+    .replace(/\s+and\s*$/i, '')
+    .trim();
+}
+
+function getCriteriaTitle(quota: AdvanceQuota | AdvanceQuotaRow): string {
+  const blocks = quota.criterionBlocks ?? [];
+  const fromBlocks = getCriteriaCollapsedLine(blocks);
+  if (fromBlocks) return fromBlocks;
+
+  const desc = quota.description ?? '';
+  const idx = desc.indexOf('Checked after [');
+  const before = idx >= 0 ? desc.slice(0, idx) : desc;
+  const criteriaFromDesc = stripLegacyDescriptionCriteria(before);
+  if (criteriaFromDesc) return criteriaFromDesc;
+  if (quota.quotaType === 'Advanced' || quota.quotaType === 'Criteria based') {
+    return desc;
+  }
+  return quota.name || desc;
+}
+
+function getDescriptionSummary(
+  quota: AdvanceQuota | AdvanceQuotaRow,
+  groupChecks: ReadonlyArray<{ questionCode: string }>
+): string {
+  const blocks = quota.criterionBlocks ?? [];
+  const checksText = buildGroupChecksSuffix(groupChecks);
+  const isAdvanced = quota.quotaType === 'Advanced';
+  const isCriteria = quota.quotaType === 'Criteria based';
+
+  if (isAdvanced || isCriteria) {
+    const criteriaOnly =
+      getCriteriaPreviewLine(blocks) || getCriteriaCollapsedLine(blocks) || getCriteriaTitle(quota);
+    if (!criteriaOnly) return checksText || '—';
+    if (!checksText || !isAdvanced) return criteriaOnly;
+    const dot = criteriaOnly.endsWith('.') ? '' : '.';
+    return `${criteriaOnly}${dot} ${checksText}`;
+  }
+
+  return applyGroupChecksToDescription(quota.description, groupChecks);
+}
+
+function canViewQuotaCriteria(quota: AdvanceQuota): boolean {
+  if (quota.quotaType === 'Question Based') {
+    return Boolean(
+      quota.options?.length ||
+        quota.criterionBlocks?.some((block) => block.conditions.length > 0)
+    );
+  }
+  return quota.quotaType === 'Advanced' || quota.quotaType === 'Criteria based';
+}
+
+function buildGroupChecksSuffix(
+  checks: ReadonlyArray<{ questionCode: string }>
+): string {
+  if (checks.length === 0) return '';
+  const first = checks[0]?.questionCode;
+  const second = checks[1]?.questionCode;
+  if (!first) return '';
+  return second
+    ? `Checked after [${first}], re-checked after [${second}]`
+    : `Checked after [${first}]`;
+}
+
 const WuTable = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTable })),
   { ssr: false }
@@ -184,6 +327,10 @@ const WuMenuCheckboxItem = dynamic(
 const WuMenuSeparatorItem = dynamic(
   () =>
     import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuSeparatorItem })),
+  { ssr: false }
+);
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
 
@@ -424,6 +571,16 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
   );
   const [selectedQuotaIds, setSelectedQuotaIds] = useState<Set<string>>(() => new Set());
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [viewQuotaGroupName, setViewQuotaGroupName] = useState<string | null>(null);
+  const [viewCriteriaQuotaId, setViewCriteriaQuotaId] = useState<string | null>(null);
+  const [customGroups] = usePersistedState<QuotaGroup[]>(
+    advanceQuotaCustomGroupsKey(surveyId),
+    []
+  );
+  const [groupCheckOverrides] = usePersistedState(
+    advanceQuotaGroupCheckOverridesKey(surveyId),
+    {}
+  );
   const [deletedMockQuotaIds, setDeletedMockQuotaIds] = usePersistedStringSet(
     `advance-quotas:${surveyId}:deleted-mock`
   );
@@ -435,11 +592,18 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
 
   const allQuotas = useMemo<AdvanceQuota[]>(
     () => [
-      ...addedQuotas,
+      ...addedQuotas.filter((quota) => !isRemovedDashboardQuota(quota)),
       ...MOCK_ADVANCE_QUOTAS.filter((quota) => !deletedMockQuotaIds.has(quota.id)),
     ],
     [addedQuotas, deletedMockQuotaIds]
   );
+
+  useEffect(() => {
+    setAddedQuotas((prev) => {
+      const next = prev.filter((quota) => !isRemovedDashboardQuota(quota));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [setAddedQuotas]);
 
   function toggleQuotaExpand(quotaId: string): void {
     setExpandedQuotaIds((prev) => {
@@ -467,8 +631,41 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
     });
   }, [allQuotas, quotaGroupFilter, quotaTypeFilter]);
 
+  const quotaGroupChecksByName = useMemo(() => {
+    const groups = applyQuotaGroupCheckOverrides(
+      mergeQuotaGroups(customGroups),
+      groupCheckOverrides
+    );
+    const byName = new Map<string, ReturnType<typeof getQuotaGroupCheckPoints>>();
+    for (const group of groups) {
+      byName.set(
+        group.name.toLowerCase(),
+        getQuotaGroupCheckPoints(group)
+      );
+    }
+    return byName;
+  }, [customGroups, groupCheckOverrides]);
+
+  const viewCriteriaQuota = useMemo(
+    () => allQuotas.find((quota) => quota.id === viewCriteriaQuotaId) ?? null,
+    [allQuotas, viewCriteriaQuotaId]
+  );
+
+  const viewCriteriaGroupChecks = useMemo(() => {
+    if (!viewCriteriaQuota || viewCriteriaQuota.quotaGroup === 'NA') return [];
+    return (
+      quotaGroupChecksByName.get(viewCriteriaQuota.quotaGroup.toLowerCase()) ?? []
+    );
+  }, [viewCriteriaQuota, quotaGroupChecksByName]);
+
   const tableRows = useMemo(
-    () => flattenQuotasForTable(filteredQuotas, expandedQuotaIds),
+    () =>
+      flattenQuotasForTable(filteredQuotas, expandedQuotaIds).map((row) => {
+        const target = row.target;
+        const current = row.current ?? row.target;
+        const completionPct = target === 0 ? 0 : (current / target) * 100;
+        return { ...row, completionPct };
+      }),
     [filteredQuotas, expandedQuotaIds]
   );
 
@@ -645,10 +842,24 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
           if (row.original.isOption) {
             return <span className={styles.subRowMuted} aria-hidden />;
           }
+
+          const quotaType = row.original.quotaType;
+          const iconClass =
+            quotaType === 'Question Based'
+              ? 'wm-list'
+              : quotaType === 'Advanced'
+                ? 'wm-tune'
+                : 'wm-call-split';
+
           return (
-            <span className={styles.clamp} title={row.original.quotaType}>
-              {row.original.quotaType}
-            </span>
+            <WuTooltip content={quotaType} position="top">
+              <span className={styles.quotaTypeIconWrap} aria-label={quotaType}>
+                <span
+                  className={`${iconClass} ${styles.quotaTypeIcon}`}
+                  aria-hidden
+                />
+              </span>
+            </WuTooltip>
           );
         },
       },
@@ -660,10 +871,18 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
           if (row.original.isOption) {
             return <span className={styles.subRowMuted} aria-hidden />;
           }
+          const groupChecks =
+            row.original.quotaType === 'Advanced' && row.original.quotaGroup !== 'NA'
+              ? quotaGroupChecksByName.get(row.original.quotaGroup.toLowerCase()) ?? []
+              : [];
+          const summary = getDescriptionSummary(row.original, groupChecks);
+
           return (
-            <span className={styles.descriptionCell} title={row.original.description}>
-              {row.original.description}
-            </span>
+            <DescriptionCriteriaCell
+              summary={summary}
+              canView={canViewQuotaCriteria(row.original)}
+              onView={() => setViewCriteriaQuotaId(row.original.id)}
+            />
           );
         },
       },
@@ -687,9 +906,10 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
             return <span className={styles.subRowMuted} aria-hidden />;
           }
           return (
-            <span className={styles.clamp} title={row.original.quotaGroup}>
-              {row.original.quotaGroup}
-            </span>
+            <QuotaGroupCell
+              groupName={row.original.quotaGroup}
+              onView={setViewQuotaGroupName}
+            />
           );
         },
       },
@@ -712,9 +932,10 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
         },
       },
       {
-        accessorKey: 'target',
-        header: () => <ColumnHeader label="Target" icons={['settings', 'filter']} />,
+        accessorKey: 'completionPct',
+        header: () => <ColumnHeader label="Target" icons={['sort', 'filter']} />,
         headerAlign: 'right',
+        enableSorting: true,
         cellAlign: 'right',
         size: 130,
         cell: ({ row }) => <QuotaTargetCell quota={row.original} />,
@@ -724,6 +945,7 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
       allSelectableSelected,
       expandedQuotaIds,
       quotaGroupFilter,
+      quotaGroupChecksByName,
       quotaGroupOptions,
       quotaTypeFilter,
       selectableParentRows.length,
@@ -778,6 +1000,26 @@ export function SurveyAdvanceQuotasDashboard({ surveyId }: SurveyAdvanceQuotasDa
           }
         />
       </div>
+
+      <QuotaGroupViewModal
+        open={viewQuotaGroupName !== null}
+        onOpenChange={(open) => {
+          if (!open) setViewQuotaGroupName(null);
+        }}
+        groupName={viewQuotaGroupName}
+        allQuotas={allQuotas}
+        customGroups={customGroups}
+        groupCheckOverrides={groupCheckOverrides}
+      />
+
+      <QuotaCriteriaViewModal
+        open={viewCriteriaQuotaId !== null}
+        onOpenChange={(open) => {
+          if (!open) setViewCriteriaQuotaId(null);
+        }}
+        quota={viewCriteriaQuota}
+        groupCheckCodes={viewCriteriaGroupChecks}
+      />
 
       <ConfirmModal
         open={deleteConfirmOpen}

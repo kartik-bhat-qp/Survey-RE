@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useWickUILib } from '@/components/ui/useWickUILib';
@@ -17,6 +17,7 @@ import {
   getQuestionsBySurvey,
   type SurveyQuestion,
 } from '@/data/mock-survey-questions';
+import type { QuotaGroupSelection } from '@/data/mock-quota-groups';
 import styles from './CriteriaBasedQuotaModal.module.css';
 
 const WuInput = dynamic(
@@ -192,7 +193,7 @@ interface CriteriaBasedQuotaModalProps {
   onOpenChange: (open: boolean) => void;
   surveyId: number;
   flow?: CriteriaQuotaFlow;
-  quotaGroupSelection?: { name: string; handlingType: string } | null;
+  quotaGroupSelection?: QuotaGroupSelection | null;
   onBack?: () => void;
   onBackToQuotaGroup?: () => void;
   onSave?: (quotas: CriteriaQuotaSubmit[]) => void;
@@ -470,33 +471,96 @@ function promoteExistingToNewIfModified(prev: Criterion, next: Criterion): Crite
   };
 }
 
-function newQuotaBlock(): QuotaBlock {
+function newQuotaBlock(checks?: {
+  firstCheckId?: number | null;
+  secondCheckId?: number | null;
+}): QuotaBlock {
   return {
     id: uniqueId('quota'),
     name: '',
     target: 100,
     criteria: [newCriterion()],
     collapsedCriterionIds: new Set(),
-    firstCheckId: null,
-    secondCheckId: null,
+    firstCheckId: checks?.firstCheckId ?? null,
+    secondCheckId: checks?.secondCheckId ?? null,
     collapsed: false,
+  };
+}
+
+function quotaBlockFromGroupSelection(
+  selection: QuotaGroupSelection | null | undefined
+): QuotaBlock {
+  if (!selection?.firstCheck) {
+    return newQuotaBlock();
+  }
+  return newQuotaBlock({
+    firstCheckId: selection.firstCheck.questionId,
+    secondCheckId: selection.secondCheck?.questionId ?? null,
+  });
+}
+
+function groupCheckToQuotaCheck(
+  check: QuotaGroupSelection['firstCheck'],
+  questions: SurveyQuestion[]
+): CriteriaQuotaCheck | null {
+  if (!check) return null;
+  const question =
+    questions.find((q) => q.id === check.questionId) ??
+    questions.find((q) => q.code === check.questionCode);
+  if (question) {
+    return {
+      questionId: question.id,
+      questionCode: question.code,
+      questionText: question.text,
+    };
+  }
+  return {
+    questionId: check.questionId,
+    questionCode: check.questionCode,
+    questionText: check.questionText,
   };
 }
 
 function validateBlock(
   block: QuotaBlock,
-  questions: SurveyQuestion[]
+  questions: SurveyQuestion[],
+  groupSelection?: QuotaGroupSelection | null
 ): CriteriaQuotaSubmit | null {
   const trimmedName = block.name.trim();
   if (trimmedName.length === 0) return null;
   if (block.target <= 0) return null;
-  if (block.firstCheckId === null) return null;
-  const firstCheckQuestion = questions.find((q) => q.id === block.firstCheckId);
-  if (!firstCheckQuestion) return null;
-  const secondCheckQuestion =
-    block.secondCheckId !== null
-      ? questions.find((q) => q.id === block.secondCheckId)
+
+  const groupFirstCheck = groupSelection?.firstCheck
+    ? groupCheckToQuotaCheck(groupSelection.firstCheck, questions)
+    : null;
+  const groupSecondCheck = groupSelection?.secondCheck
+    ? groupCheckToQuotaCheck(groupSelection.secondCheck, questions)
+    : undefined;
+
+  let firstCheck: CriteriaQuotaCheck | null = groupFirstCheck;
+  let secondCheck: CriteriaQuotaCheck | undefined = groupSecondCheck ?? undefined;
+
+  if (!firstCheck) {
+    if (block.firstCheckId === null) return null;
+    const firstCheckQuestion = questions.find((q) => q.id === block.firstCheckId);
+    if (!firstCheckQuestion) return null;
+    firstCheck = {
+      questionId: firstCheckQuestion.id,
+      questionCode: firstCheckQuestion.code,
+      questionText: firstCheckQuestion.text,
+    };
+    const secondCheckQuestion =
+      block.secondCheckId !== null
+        ? questions.find((q) => q.id === block.secondCheckId)
+        : undefined;
+    secondCheck = secondCheckQuestion
+      ? {
+          questionId: secondCheckQuestion.id,
+          questionCode: secondCheckQuestion.code,
+          questionText: secondCheckQuestion.text,
+        }
       : undefined;
+  }
   const criteria: CriteriaQuotaCriterion[] = block.criteria
     .map((crit) => {
       const conditions: CriteriaQuotaCondition[] = crit.conditions
@@ -538,23 +602,15 @@ function validateBlock(
         });
       return { name: crit.name.trim(), conditions };
     })
-    .filter((crit) => crit.conditions.length > 0 && crit.name.length > 0);
+    // Criteria name is optional in the prototype; we still want to keep the
+    // conditions so advanced-group quotas can show the actual rules.
+    .filter((crit) => crit.conditions.length > 0);
   return {
     name: trimmedName,
     target: block.target,
     criteria,
-    firstCheck: {
-      questionId: firstCheckQuestion.id,
-      questionCode: firstCheckQuestion.code,
-      questionText: firstCheckQuestion.text,
-    },
-    secondCheck: secondCheckQuestion
-      ? {
-          questionId: secondCheckQuestion.id,
-          questionCode: secondCheckQuestion.code,
-          questionText: secondCheckQuestion.text,
-        }
-      : undefined,
+    firstCheck,
+    secondCheck,
   };
 }
 
@@ -563,6 +619,7 @@ interface QuotaBlockEditorProps {
   blockIndex: number;
   questions: SurveyQuestion[];
   removable: boolean;
+  hideQuotaChecks?: boolean;
   onChange: (next: QuotaBlock) => void;
   onRemove: () => void;
 }
@@ -572,6 +629,7 @@ function QuotaBlockEditor({
   blockIndex,
   questions,
   removable,
+  hideQuotaChecks = false,
   onChange,
   onRemove,
 }: QuotaBlockEditorProps) {
@@ -951,7 +1009,7 @@ function QuotaBlockEditor({
                           return (
                             <div key={cond.id} className={styles.conditionRow}>
                               {condIdx === 0 ? (
-                                <span className={styles.conditionPrefix}>IF</span>
+                                <span className={styles.conditionPrefix}>If</span>
                               ) : (
                                 <WuMenu
                                   Trigger={
@@ -1263,6 +1321,7 @@ function QuotaBlockEditor({
             </div>
           </div>
 
+          {!hideQuotaChecks ? (
           <div className={styles.checksSection}>
             <div className={styles.field}>
               <label className={styles.label}>First quota check</label>
@@ -1350,6 +1409,7 @@ function QuotaBlockEditor({
               </div>
             </div>
           </div>
+          ) : null}
         </div>
       ) : null}
     </section>
@@ -1381,15 +1441,27 @@ export function CriteriaBasedQuotaModal({
   );
 
   const resetState = useCallback(() => {
+    if (flow === 'advanced-group' && quotaGroupSelection) {
+      setBlocks([quotaBlockFromGroupSelection(quotaGroupSelection)]);
+      return;
+    }
     setBlocks([newQuotaBlock()]);
-  }, []);
+  }, [flow, quotaGroupSelection]);
+
+  useEffect(() => {
+    if (!open) {
+      setBlocks([newQuotaBlock()]);
+      return;
+    }
+    resetState();
+  }, [open, resetState]);
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
-      if (!nextOpen) resetState();
+      if (!nextOpen) setBlocks([newQuotaBlock()]);
       onOpenChange(nextOpen);
     },
-    [onOpenChange, resetState]
+    [onOpenChange]
   );
 
   function handleBack(): void {
@@ -1430,7 +1502,9 @@ export function CriteriaBasedQuotaModal({
   function handleAddBlock(): void {
     setBlocks((prev) => [
       ...prev.map((b) => ({ ...b, collapsed: true })),
-      newQuotaBlock(),
+      quotaBlockFromGroupSelection(
+        isAdvancedGroupFlow ? quotaGroupSelection : null
+      ),
     ]);
   }
 
@@ -1443,8 +1517,16 @@ export function CriteriaBasedQuotaModal({
   }
 
   const validatedBlocks = useMemo(
-    () => blocks.map((b) => ({ block: b, submit: validateBlock(b, questions) })),
-    [blocks, questions]
+    () =>
+      blocks.map((b) => ({
+        block: b,
+        submit: validateBlock(
+          b,
+          questions,
+          isAdvancedGroupFlow ? quotaGroupSelection : null
+        ),
+      })),
+    [blocks, isAdvancedGroupFlow, questions, quotaGroupSelection]
   );
   const validQuotas = validatedBlocks
     .map((entry) => entry.submit)
@@ -1491,7 +1573,8 @@ export function CriteriaBasedQuotaModal({
               <>
                 Define one or more criteria quotas for{' '}
                 <strong>{quotaGroupSelection.name}</strong> ({quotaGroupSelection.handlingType}
-                ). Each quota has its own name, target, criteria, and check points.
+                ). Each quota has its own name, target, and criteria. Quota checks are set at
+                the group level.
               </>
             ) : (
               <>
@@ -1509,6 +1592,7 @@ export function CriteriaBasedQuotaModal({
                 blockIndex={index}
                 questions={questions}
                 removable={blocks.length > 1}
+                hideQuotaChecks={isAdvancedGroupFlow}
                 onChange={(next) => handleUpdateBlock(block.id, next)}
                 onRemove={() => handleRemoveBlock(block.id)}
               />

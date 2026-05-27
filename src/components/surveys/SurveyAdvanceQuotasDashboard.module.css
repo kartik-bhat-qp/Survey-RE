@@ -100,6 +100,15 @@
   width: 100%;
 }
 
+/* WickUI table headers default to all caps — use sentence case for quota columns */
+.quotaTable :global(thead th),
+.quotaTable :global(thead th *),
+.tableWrap :global(thead th),
+.tableWrap :global(thead th *) {
+  letter-spacing: normal;
+  text-transform: none !important;
+}
+
 .columnHeader {
   align-items: center;
   color: #67727E;
@@ -275,6 +284,75 @@
   composes: clamp;
 }
 
+.descriptionExpandableWrap {
+  align-items: flex-start;
+  display: inline-flex;
+  gap: 0.25rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.descriptionExpandedWrap {
+  align-items: stretch;
+  flex-direction: column;
+  padding-bottom: 0.5rem;
+}
+
+.descriptionExpandedWrap .descriptionExpandBtn {
+  align-self: flex-end;
+}
+
+.descriptionClamp1 {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  color: #67727E;
+  display: -webkit-box;
+  line-clamp: 1;
+  line-height: 1.4;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: normal;
+  width: 100%;
+}
+
+.descriptionFull {
+  color: #67727E;
+  display: block;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  width: 100%;
+}
+
+.descriptionExpandBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+  padding: 0;
+}
+
+.descriptionExpandBtn:hover,
+.descriptionExpandBtn:focus-visible {
+  color: #1672c4;
+  outline: none;
+}
+
+.descriptionExpandIcon {
+  font-size: 0.75rem;
+  line-height: 1;
+  transition: transform 0.15s ease-in-out;
+}
+
+.descriptionExpandIconOpen {
+  transform: rotate(90deg);
+}
+
 .expandableNameCell {
   align-items: flex-start;
   cursor: pointer;
@@ -334,6 +412,21 @@
 .subRowMuted::before {
   content: '–';
   color: #C5CBD2;
+}
+
+.quotaTypeIconWrap {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.25rem;
+  line-height: 1;
+  justify-content: center;
+  width: 100%;
+}
+
+.quotaTypeIcon {
+  color: #67727E;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .targetCell {

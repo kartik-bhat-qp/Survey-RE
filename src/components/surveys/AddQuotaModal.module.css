@@ -74,6 +74,21 @@
   line-height: 1.35;
 }
 
+.comingSoonBadge {
+  background: rgb(234 179 8 / 14%);
+  border: 1px solid rgb(234 179 8 / 35%);
+  border-radius: 999px;
+  color: #b45309;
+  display: inline-flex;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-left: 0.5rem;
+  padding: 0.2rem 0.45rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 .cardIcon {
   color: #64748b;
   flex-shrink: 0;

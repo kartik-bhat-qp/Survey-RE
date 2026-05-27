@@ -56,7 +56,12 @@ export function AddQuotaModal({ open, onOpenChange, onSelectType }: AddQuotaModa
                 onClick={() => handleSelect(option.id, option.title)}
               >
                 <div className={styles.cardTitleRow}>
-                  <span className={styles.cardTitle}>{option.title}</span>
+                  <span className={styles.cardTitle}>
+                    {option.title}
+                    {option.id === 'advanced' ? (
+                      <span className={styles.comingSoonBadge}>Coming soon</span>
+                    ) : null}
+                  </span>
                   <span className={`${option.icon} ${styles.cardIcon}`} aria-hidden />
                 </div>
                 <p className={styles.cardDescription}>{option.description}</p>

@@ -1,5 +1,26 @@
 export type QuotaType = 'Question Based' | 'Advanced' | 'Criteria based';
 
+export interface AdvanceQuotaRuleCondition {
+  source: string;
+  questionCode?: string;
+  questionText?: string;
+  subject: string;
+  operator: string;
+  value: string;
+  valueEnd?: string;
+  connector?: 'AND' | 'OR';
+}
+
+export interface AdvanceQuotaCriterionBlock {
+  name: string;
+  conditions: AdvanceQuotaRuleCondition[];
+}
+
+export interface AdvanceQuotaCheckPoint {
+  questionCode: string;
+  questionText: string;
+}
+
 export interface QuotaOption {
   id: string;
   label: string;
@@ -16,12 +37,18 @@ export interface AdvanceQuota {
   multipleQuotaHandling: string;
   target: number;
   current?: number;
+  /** Computed as `(current / target) * 100` for sorting / display. */
+  completionPct?: number;
   /** For Question Based quotas, the question code (e.g. Q1). */
   questionCode?: string;
   /** For Question Based quotas, the full question text. */
   questionText?: string;
   /** For Question Based quotas, per-option targets shown as expandable child rows. */
   options?: QuotaOption[];
+  /** Structured criteria rules for view / detail surfaces. */
+  criterionBlocks?: AdvanceQuotaCriterionBlock[];
+  /** When quota is evaluated in the survey flow. */
+  quotaChecks?: AdvanceQuotaCheckPoint[];
 }
 
 /** Row representation including expanded option sub-rows. */
@@ -95,6 +122,43 @@ export const MOCK_ADVANCE_QUOTAS: AdvanceQuota[] = [
     multipleQuotaHandling: 'Least filled',
     target: 120,
     current: 80,
+    criterionBlocks: [
+      {
+        name: 'Male who drink',
+        conditions: [
+          {
+            source: 'Question',
+            questionCode: 'Q1',
+            questionText: 'What is your gender?',
+            subject: 'What is your gender?',
+            operator: 'is',
+            value: 'Male',
+          },
+          {
+            source: 'Question',
+            questionCode: 'Q10',
+            questionText:
+              'Which beverage do you prefer most often on weekends?',
+            subject:
+              'Which beverage do you prefer most often on weekends?',
+            operator: 'is',
+            value: 'Beer',
+            connector: 'AND',
+          },
+        ],
+      },
+    ],
+    quotaChecks: [
+      {
+        questionCode: 'Q1',
+        questionText: 'What is your gender?',
+      },
+      {
+        questionCode: 'Q10',
+        questionText:
+          'Which beverage do you prefer most often on weekends?',
+      },
+    ],
   },
   buildQuestionBasedQuota({
     id: 'quota-q5-age',
@@ -121,6 +185,40 @@ export const MOCK_ADVANCE_QUOTAS: AdvanceQuota[] = [
     multipleQuotaHandling: 'Priority order',
     target: 50,
     current: 12,
+    criterionBlocks: [
+      {
+        name: 'Female non-drinkers in Northeast region',
+        conditions: [
+          {
+            source: 'Question',
+            questionCode: 'Q1',
+            questionText: 'What is your gender?',
+            subject: 'What is your gender?',
+            operator: 'is',
+            value: 'Female',
+          },
+          {
+            source: 'Question',
+            questionCode: 'Q12',
+            questionText: 'How often do you consume alcohol?',
+            subject: 'How often do you consume alcohol?',
+            operator: 'is',
+            value: 'Never',
+            connector: 'AND',
+          },
+          {
+            source: 'Geo Location',
+            subject: 'Geo Location',
+            operator: 'contains',
+            value: 'Northeast',
+            connector: 'AND',
+          },
+        ],
+      },
+    ],
+    quotaChecks: [
+      { questionCode: 'Q12', questionText: 'How often do you consume alcohol?' },
+    ],
   },
   {
     id: 'quota-7',
@@ -154,6 +252,34 @@ export const MOCK_ADVANCE_QUOTAS: AdvanceQuota[] = [
     multipleQuotaHandling: 'Least filled',
     target: 40,
     current: 9,
+    criterionBlocks: [
+      {
+        name: 'High-income household with children under 12',
+        conditions: [
+          {
+            source: 'System Variable',
+            subject: 'Household income',
+            operator: 'is greater than',
+            value: '$100,000',
+          },
+          {
+            source: 'Question',
+            questionCode: 'Q15',
+            questionText: 'Do you have children under 12 at home?',
+            subject: 'Do you have children under 12 at home?',
+            operator: 'is',
+            value: 'Yes',
+            connector: 'AND',
+          },
+        ],
+      },
+    ],
+    quotaChecks: [
+      {
+        questionCode: 'Q15',
+        questionText: 'Do you have children under 12 at home?',
+      },
+    ],
   },
   {
     id: 'quota-10',
@@ -199,6 +325,23 @@ export function flattenQuotasForTable(
   return rows;
 }
 
+/** User-created quotas removed from the dashboard (cleared from localStorage on load). */
+export const REMOVED_DASHBOARD_QUOTA_NAMES: readonly string[] = [
+  'testng again',
+  'Did it happe',
+  'Group together',
+  'Beer kartik',
+  'Drink beer',
+];
+
+const removedDashboardQuotaNameSet = new Set(
+  REMOVED_DASHBOARD_QUOTA_NAMES.map((name) => name.trim().toLowerCase())
+);
+
+export function isRemovedDashboardQuota(quota: Pick<AdvanceQuota, 'name'>): boolean {
+  return removedDashboardQuotaNameSet.has(quota.name.trim().toLowerCase());
+}
+
 export const ADVANCE_QUOTA_TYPE_OPTIONS: QuotaType[] = [
   'Question Based',
   'Advanced',
@@ -207,4 +350,81 @@ export const ADVANCE_QUOTA_TYPE_OPTIONS: QuotaType[] = [
 
 export function getAdvanceQuotaGroupOptions(): string[] {
   return Array.from(new Set(MOCK_ADVANCE_QUOTAS.map((quota) => quota.quotaGroup))).sort();
+}
+
+export function formatAdvanceQuotaCondition(
+  cond: AdvanceQuotaRuleCondition,
+  isFirst: boolean
+): string {
+  const connectorPrefix =
+    !isFirst && cond.connector ? `${cond.connector} ` : '';
+
+  if (cond.source === 'Question' && cond.questionCode) {
+    const questionRef = `[${cond.questionCode}] ${cond.subject}`;
+    if (cond.operator === 'option target') {
+      return `${connectorPrefix}${questionRef} — ${cond.value}`;
+    }
+    return `${connectorPrefix}${questionRef} ${cond.operator} "${cond.value}"`;
+  }
+
+  if (cond.source === 'System Variable') {
+    const label = cond.subject || 'System Variable';
+    if (cond.operator === 'is between' && cond.valueEnd) {
+      return `${connectorPrefix}[${label}] is between "${cond.value}" and "${cond.valueEnd}"`;
+    }
+    return `${connectorPrefix}[${label}] ${cond.operator} "${cond.value}"`;
+  }
+
+  const label = cond.subject || cond.source;
+  return `${connectorPrefix}${label} ${cond.operator} "${cond.value}"`;
+}
+
+/** Rules shown when expanding a criteria row in the quota group view. */
+export function getQuotaDisplayRules(quota: AdvanceQuota): {
+  blocks: AdvanceQuotaCriterionBlock[];
+  checks: AdvanceQuotaCheckPoint[];
+} {
+  if (quota.criterionBlocks && quota.criterionBlocks.length > 0) {
+    return {
+      blocks: quota.criterionBlocks,
+      checks: quota.quotaChecks ?? [],
+    };
+  }
+
+  if (quota.options && quota.options.length > 0 && quota.questionCode) {
+    return {
+      blocks: [
+        {
+          name: quota.name,
+          conditions: quota.options.map((option, index) => ({
+            source: 'Question',
+            questionCode: quota.questionCode,
+            questionText: quota.questionText,
+            subject: quota.questionText ?? quota.questionCode ?? '',
+            operator: 'option target',
+            value: `${option.label}: target ${option.target}`,
+            connector: index === 0 ? undefined : 'AND',
+          })),
+        },
+      ],
+      checks: [],
+    };
+  }
+
+  return {
+    blocks: [
+      {
+        name: quota.name,
+        conditions: [
+          {
+            source: 'Summary',
+            subject: 'Rule',
+            operator: 'is',
+            value: quota.description || 'No rules defined',
+          },
+        ],
+      },
+    ],
+    checks: quota.quotaChecks ?? [],
+  };
 }

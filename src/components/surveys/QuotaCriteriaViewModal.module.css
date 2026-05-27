@@ -1,0 +1,131 @@
+.modal {
+  max-width: min(640px, calc(100vw - 1.5rem)) !important;
+  width: 100%;
+}
+
+.header {
+  padding-right: 3rem !important;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0 1.5rem 1.5rem !important;
+}
+
+.metaList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.metaRow {
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: 7rem 1fr;
+}
+
+.metaLabel {
+  color: #67727e;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.metaValue {
+  color: #1f2937;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin: 0;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.typeBadge {
+  background: #e8f4fd;
+  border-radius: 4px;
+  color: #1b87e6;
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.25;
+  padding: 0.125rem 0.5rem;
+}
+
+.rulesSection {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1rem;
+}
+
+.rulesHeading {
+  color: #1f2937;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+/* Table description cell */
+.cell {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.25rem;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.cellLabel {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  color: #67727e;
+  display: -webkit-box;
+  flex: 1;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-clamp: 1;
+  line-height: 1.4;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+
+.viewBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #1b87e6;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0;
+  padding: 0.125rem;
+  pointer-events: none;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.cell:hover .viewBtn,
+.cell:focus-within .viewBtn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.viewBtn:hover {
+  background: rgb(27 135 230 / 10%);
+}
+
+.viewBtn:focus-visible {
+  opacity: 1;
+  outline: 2px solid #1b87e6;
+  outline-offset: 1px;
+  pointer-events: auto;
+}
