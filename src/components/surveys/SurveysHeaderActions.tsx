@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import styles from './SurveysHeaderBar.module.css';
 
@@ -23,6 +24,7 @@ const WuMenuItem = dynamic(
 );
 
 export function SurveysHeaderActions({ compact }: { compact?: boolean }) {
+  const router = useRouter();
   const { showToast } = useWuShowToast();
 
   return (
@@ -54,6 +56,9 @@ export function SurveysHeaderActions({ compact }: { compact?: boolean }) {
             onSelect={() => showToast({ message: 'Account settings', variant: 'success' })}
           >
             Account settings
+          </WuMenuItem>
+          <WuMenuItem onSelect={() => router.push('/surveys/create')}>
+            New survey creation flow
           </WuMenuItem>
         </WuMenu>
         <WuButton
