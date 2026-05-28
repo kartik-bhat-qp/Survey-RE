@@ -176,13 +176,32 @@ export function QuestionSettingsPanel({
               data={QUESTION_DISPLAY_OPTIONS}
               accessorKey={{ value: 'value', label: 'label' }}
               value={questionDisplayValue}
-              onSelect={(item) =>
-                patch({ questionDisplay: (item as { value: QuestionDisplayMode }).value })
-              }
+              onSelect={(item) => {
+                const questionDisplay = (item as { value: QuestionDisplayMode }).value;
+                patch({
+                  questionDisplay,
+                  ...(questionDisplay !== 'hide-question'
+                    ? { autoSelectShownOptions: false }
+                    : {}),
+                });
+              }}
               variant="outlined"
             />
           </div>
         </div>
+
+        {settings.questionDisplay === 'hide-question' ? (
+          <div className={styles.field}>
+            <div className={styles.toggleRow}>
+              <WuToggle
+                Label="Auto select shown options"
+                labelPosition="left"
+                checked={settings.autoSelectShownOptions}
+                onChange={(autoSelectShownOptions) => patch({ autoSelectShownOptions })}
+              />
+            </div>
+          </div>
+        ) : null}
 
         <div className={styles.field}>
           <div className={styles.toggleRow}>

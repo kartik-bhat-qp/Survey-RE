@@ -21,6 +21,8 @@ export interface QuestionSettings {
   answerDisplayOrder: AnswerDisplayOrder;
   alternateColors: boolean;
   questionDisplay: QuestionDisplayMode;
+  /** When question is hidden, auto-select options shown to the respondent. */
+  autoSelectShownOptions: boolean;
   questionTips: boolean;
   video: VideoOption;
   reportLabel: string;
@@ -34,6 +36,7 @@ export const DEFAULT_QUESTION_SETTINGS: QuestionSettings = {
   answerDisplayOrder: 'default',
   alternateColors: false,
   questionDisplay: 'show-question',
+  autoSelectShownOptions: false,
   questionTips: false,
   video: 'none',
   reportLabel: '',
