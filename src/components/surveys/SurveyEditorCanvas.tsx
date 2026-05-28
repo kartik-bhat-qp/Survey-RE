@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Fragment, useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type {
   SurveyDetail,
@@ -11,6 +11,7 @@ import type {
 } from '@/data/mock-survey-detail';
 import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
 import { BulkEditOptionsModal } from '@/components/surveys/BulkEditOptionsModal';
+import { QuestionLogicModal } from '@/components/surveys/QuestionLogicModal';
 import { QuestionSettingsPanel } from '@/components/surveys/QuestionSettingsPanel';
 import {
   QuestionRichTextField,
@@ -160,6 +161,7 @@ function QuestionRow({
   question,
   sectionId,
   onAction,
+  onOpenLogic,
   onOpenSettings,
   onQuestionTextChange,
   onOptionLabelChange,
@@ -167,6 +169,7 @@ function QuestionRow({
   question: SurveyQuestion;
   sectionId: string;
   onAction: (label: string) => void;
+  onOpenLogic: () => void;
   onOpenSettings: () => void;
   onQuestionTextChange: (sectionId: string, questionId: string, text: string) => void;
   onOptionLabelChange: (
@@ -227,7 +230,7 @@ function QuestionRow({
         <button type="button" className={styles.actionLink} onClick={() => onAction('Validation')}>
           Validation
         </button>
-        <button type="button" className={styles.actionLink} onClick={() => onAction('Logic')}>
+        <button type="button" className={styles.actionLink} onClick={() => onOpenLogic()}>
           Logic
         </button>
         <button
@@ -257,6 +260,7 @@ function SelectManyQuestionRow({
   question,
   sectionId,
   onAction,
+  onOpenLogic,
   onOpenSettings,
   onAddOption,
   onBulkEdit,
@@ -266,6 +270,7 @@ function SelectManyQuestionRow({
   question: SurveyQuestion;
   sectionId: string;
   onAction: (label: string) => void;
+  onOpenLogic: () => void;
   onOpenSettings: () => void;
   onAddOption: (sectionId: string, questionId: string) => void;
   onBulkEdit: (sectionId: string, questionId: string) => void;
@@ -295,7 +300,7 @@ function SelectManyQuestionRow({
               >
                 Validation
               </button>
-              <button type="button" className={styles.actionLink} onClick={() => onAction('Logic')}>
+              <button type="button" className={styles.actionLink} onClick={() => onOpenLogic()}>
                 Logic
               </button>
               <button
@@ -400,6 +405,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     sectionId: string;
     questionId: string;
   } | null>(null);
+  const [logicTarget, setLogicTarget] = useState<{
+    sectionId: string;
+    questionId: string;
+  } | null>(null);
   const [settingsTarget, setSettingsTarget] = useState<{
     sectionId: string;
     questionId: string;
@@ -422,6 +431,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     setSections(cloneSections(detail.sections));
     setSelectedQuestionKey(null);
     setSettingsTarget(null);
+    setLogicTarget(null);
     setQuestionSettingsByKey({});
   }, [detail.survey.id]);
 
@@ -557,6 +567,17 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         ?.questions.find((q) => q.id === bulkEditTarget.questionId)
     : undefined;
 
+  const logicQuestion = logicTarget
+    ? sections
+        .find((sec) => sec.id === logicTarget.sectionId)
+        ?.questions.find((q) => q.id === logicTarget.questionId)
+    : undefined;
+
+  const allQuestions = useMemo(
+    () => sections.flatMap((section) => section.questions),
+    [sections]
+  );
+
   const settingsQuestionKey = settingsTarget
     ? `${settingsTarget.sectionId}:${settingsTarget.questionId}`
     : null;
@@ -566,6 +587,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         .find((sec) => sec.id === settingsTarget.sectionId)
         ?.questions.find((q) => q.id === settingsTarget.questionId)
     : undefined;
+
+  const handleOpenLogic = useCallback((sectionId: string, questionId: string) => {
+    setLogicTarget({ sectionId, questionId });
+  }, []);
 
   const handleOpenSettings = useCallback((sectionId: string, questionId: string) => {
     const questionKey = `${sectionId}:${questionId}`;
@@ -719,6 +744,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
                                 onOpenSettings={() =>
                                   handleOpenSettings(section.id, question.id)
                                 }
@@ -734,6 +760,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
                                 onOpenSettings={() =>
                                   handleOpenSettings(section.id, question.id)
                                 }
@@ -775,6 +802,18 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           settings={getQuestionSettings(settingsQuestion, settingsQuestionKey)}
           onChange={(next) => handleSettingsChange(settingsQuestionKey, next)}
           onClose={() => setSettingsTarget(null)}
+        />
+      ) : null}
+
+      {logicQuestion ? (
+        <QuestionLogicModal
+          open={logicTarget !== null}
+          onOpenChange={(open) => {
+            if (!open) setLogicTarget(null);
+          }}
+          question={logicQuestion}
+          allQuestions={allQuestions}
+          surveyId={detail.survey.id}
         />
       ) : null}
 

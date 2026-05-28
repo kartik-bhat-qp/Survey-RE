@@ -303,6 +303,24 @@
   outline: none;
 }
 
+.addCriteriaBtn {
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  margin-top: 0.25rem;
+  padding: 0.25rem 0;
+}
+
+.addCriteriaBtn:hover,
+.addCriteriaBtn:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
 .criteriaSection {
   display: flex;
   flex-direction: column;

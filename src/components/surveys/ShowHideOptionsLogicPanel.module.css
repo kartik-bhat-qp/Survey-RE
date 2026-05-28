@@ -1,0 +1,222 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem 1rem;
+}
+
+.defaultRow {
+  align-items: center;
+  border-top: 1px solid #eef2f6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-start;
+  margin-top: 0.25rem;
+  padding-top: 0.75rem;
+}
+
+.defaultLabel {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+}
+
+.defaultLabelActive {
+  color: #1b87e6;
+  font-weight: 500;
+}
+
+.deprecatingSoonBadge {
+  background: rgb(234 179 8 / 14%);
+  border: 1px solid rgb(234 179 8 / 35%);
+  border-radius: 999px;
+  color: #b45309;
+  cursor: default;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.2rem 0.45rem;
+  white-space: nowrap;
+}
+
+.criteriaCard {
+  background: #fff;
+  border: 1px solid #d5dde6;
+  border-left: 3px solid #1b87e6;
+}
+
+.criteriaHeader {
+  align-items: center;
+  border-bottom: 1px solid #eef2f6;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.625rem 0.75rem;
+}
+
+.criteriaHeaderFields {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.criteriaModeSelect {
+  min-width: 10rem;
+}
+
+.criteriaNameInput {
+  background: #fff;
+  border: 1px solid #d5dde6;
+  border-radius: 0.25rem;
+  color: #334155;
+  flex: 1;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  min-width: 8rem;
+  padding: 0.4375rem 0.625rem;
+}
+
+.collapseBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+}
+
+.collapsedIcon {
+  transform: rotate(180deg);
+}
+
+.ifRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+
+.ifLabel {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  min-width: 1.5rem;
+}
+
+.ifSelect {
+  min-width: 8rem;
+}
+
+.ifSelectWide {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.addConditionBtn {
+  align-items: center;
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.25rem;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.actionRow {
+  align-items: center;
+  background: #f1f5f9;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+}
+
+.actionSelect {
+  min-width: 14rem;
+}
+
+.actionSelectWide {
+  flex: 1;
+  min-width: 10rem;
+}
+
+.targetOptionTrigger {
+  width: 100%;
+}
+
+.addCriteriaBtn {
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  padding: 0.25rem 0;
+}
+
+.addCriteriaBtn:hover {
+  text-decoration: underline;
+}
+
+.uncoveredRow {
+  align-items: center;
+  border-top: 1px solid #eef2f6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-top: 0.25rem;
+  padding-top: 0.75rem;
+}
+
+.uncoveredLabel {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+}
+
+.uncoveredSelect {
+  min-width: 10rem;
+}
+
+.legacyToggleRow {
+  border-top: 1px solid #eef2f6;
+  margin-top: 0.25rem;
+  padding-top: 0.75rem;
+}
+
+@media (max-width: 767px) {
+  .defaultRow {
+    justify-content: flex-start;
+  }
+
+  .ifRow,
+  .actionRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ifSelect,
+  .ifSelectWide,
+  .actionSelect,
+  .actionSelectWide,
+  .uncoveredSelect {
+    min-width: 0;
+    width: 100%;
+  }
+}
