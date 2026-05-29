@@ -1,0 +1,20 @@
+.logo {
+  display: flex;
+}
+
+.logoCentered {
+  justify-content: center;
+  width: 100%;
+}
+
+.logoCompact .image {
+  height: auto;
+  max-width: 10rem;
+  width: auto;
+}
+
+.image {
+  height: auto;
+  max-width: 13.75rem;
+  width: auto;
+}

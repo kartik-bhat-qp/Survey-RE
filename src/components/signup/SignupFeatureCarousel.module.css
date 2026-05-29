@@ -1,0 +1,119 @@
+.featureCard {
+  background: #fff;
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 50px rgb(0 0 0 / 18%);
+  overflow: hidden;
+  padding: 1.75rem 1.5rem 1.5rem;
+  width: 100%;
+}
+
+.slideViewport {
+  min-height: 15.5rem;
+  position: relative;
+}
+
+.slideContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.slideFadeOut {
+  animation: slideFadeOut 0.4s ease forwards;
+}
+
+.slideFadeIn {
+  animation: slideFadeIn 0.4s ease forwards;
+}
+
+.featureEyebrow {
+  color: #1a2b6d;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.featureTitle {
+  color: #0f172a;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.carouselNav {
+  align-items: center;
+  display: flex;
+  gap: 0.875rem;
+  justify-content: center;
+  width: 100%;
+}
+
+.carouselBtn {
+  align-items: center;
+  background: none;
+  border: none;
+  color: rgb(255 255 255 / 85%);
+  cursor: pointer;
+  display: flex;
+  font-size: 1.125rem;
+  height: 2rem;
+  justify-content: center;
+  transition: color 0.15s;
+  width: 2rem;
+}
+
+.carouselBtn:hover {
+  color: #fff;
+}
+
+.carouselDots {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.carouselDot {
+  background: rgb(255 255 255 / 35%);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  height: 0.5rem;
+  padding: 0;
+  transition: background 0.15s, transform 0.15s;
+  width: 0.5rem;
+}
+
+.carouselDotActive {
+  background: #fff;
+  transform: scale(1.15);
+}
+
+@keyframes slideFadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slideFadeOut,
+  .slideFadeIn {
+    animation: none;
+  }
+}

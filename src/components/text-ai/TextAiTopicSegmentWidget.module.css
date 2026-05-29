@@ -1,0 +1,270 @@
+.card {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cardHeader {
+  align-items: flex-start;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.875rem 1rem;
+}
+
+.cardHeaderMain {
+  align-items: flex-start;
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  min-width: 0;
+}
+
+.chiToggle {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 3px;
+  color: #64748b;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+}
+
+.chiToggle:hover {
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.chiToggleActive {
+  background: #e8f4fd;
+  border-color: #9ecae8;
+  color: #1b87e6;
+}
+
+.cardTitle {
+  color: #545e6b;
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+  margin: 0;
+  min-width: 0;
+}
+
+.tableWrap {
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
+}
+
+.table {
+  border-collapse: collapse;
+  min-width: 50rem;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.table thead th {
+  background: #fafafa;
+  border-bottom: 1px solid #e8e8e8;
+  color: #545e6b;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0.625rem 0.875rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table thead th:not(:first-child) {
+  text-align: center;
+  width: 13%;
+}
+
+.table tbody td {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0.75rem 0.875rem;
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.topicCell {
+  background: #fafafa;
+  min-width: 14rem;
+  width: 36%;
+}
+
+.topicBtn {
+  background: none;
+  border: none;
+  color: #545e6b;
+  cursor: pointer;
+  display: block;
+  font-family: inherit;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.topicBtn:hover {
+  color: #1b87e6;
+}
+
+.topicRowInner {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.375rem;
+}
+
+.topicLeading {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  width: 1rem;
+}
+
+.topicLabel {
+  color: #545e6b;
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.topicChevron {
+  color: #909090;
+  flex-shrink: 0;
+  font-size: 1rem;
+  transition: transform 0.15s ease;
+}
+
+.topicChevronExpanded {
+  transform: rotate(90deg);
+}
+
+.headerLetter {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 0.125rem;
+}
+
+.segmentCell {
+  text-align: center;
+}
+
+.significanceMarkers {
+  margin-left: 0.125rem;
+  white-space: nowrap;
+}
+
+.comparisonHigher {
+  color: #15803d;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 0;
+  margin-left: 0.0625rem;
+}
+
+.comparisonLower {
+  color: #dc2626;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 0;
+  margin-left: 0.0625rem;
+}
+
+.metricRow {
+  align-items: baseline;
+  display: flex;
+  gap: 0.375rem;
+  justify-content: center;
+  margin-bottom: 0.375rem;
+}
+
+.count {
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.percentage {
+  color: #909090;
+  font-size: 12px;
+}
+
+.barTrack {
+  background: #eceff1;
+  border-radius: 1px;
+  height: 4px;
+  margin: 0 auto;
+  max-width: 8.5rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.barFill {
+  border-radius: 1px;
+  height: 100%;
+  min-width: 2px;
+  transition: width 0.2s ease;
+}
+
+.barOverall,
+.barMale {
+  background: #3d5a80;
+}
+
+.barFemale {
+  background: #14b8a6;
+}
+
+.barOtherGender {
+  background: #8b5cf6;
+}
+
+.subtopicCell {
+  background: #fff;
+}
+
+.subtopicLabel {
+  color: #64748b;
+  flex: 1;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.subtopicRow td {
+  background: #fff;
+  border-bottom-color: #f5f5f5;
+}
+
+.subtopicRow:hover td {
+  background: #f0f7fc;
+}
+
+.chiLegend {
+  border-top: 1px solid #f0f0f0;
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+  padding: 0.5rem 1rem 0.75rem;
+}
+
+.chiLegendNote {
+  font-style: italic;
+}

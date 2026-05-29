@@ -1,128 +1,235 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import {
+  createSurveyBriefFile,
+  DEFAULT_SURVEY_CREATION_LANGUAGE,
+  getSurveyCreationLanguageShortLabel,
+  SURVEY_BRIEF_ACCEPT,
+  SURVEY_CREATION_LANGUAGES,
+  SURVEY_CREATION_PROMPT_PLACEHOLDER,
+  SURVEY_CREATION_TEMPLATES,
+  formatSurveyBriefFileSize,
+  validateSurveyBriefFile,
+  type SurveyCreationBriefFile,
+} from '@/data/mock-survey-creation-flow';
 import styles from './NewSurveyCreationFlowPage.module.css';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false }
 );
-const WuInput = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
+const WuMenu = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
+  { ssr: false }
+);
+const WuMenuItem = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
   { ssr: false }
 );
 
 export default function NewSurveyCreationFlowPage() {
   const router = useRouter();
   const { showToast } = useWuShowToast();
-  const [surveyName, setSurveyName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [prompt, setPrompt] = useState('');
+  const [attachedBriefs, setAttachedBriefs] = useState<SurveyCreationBriefFile[]>([]);
+  const [language, setLanguage] = useState(DEFAULT_SURVEY_CREATION_LANGUAGE);
+
+  const trimmedPrompt = prompt.trim();
+  const canCreate = trimmedPrompt.length > 0;
+  const selectedLanguageLabel = getSurveyCreationLanguageShortLabel(language);
 
   function handleCreateSurvey() {
-    const trimmed = surveyName.trim();
-    if (trimmed.length === 0) {
-      showToast({ message: 'Enter a survey name to continue', variant: 'error' });
+    if (!canCreate) {
+      showToast({ message: 'Describe what you want to learn to continue', variant: 'error' });
       return;
     }
-    showToast({ message: `"${trimmed}" created`, variant: 'success' });
+    showToast({ message: 'Prism is drafting your survey…', variant: 'success' });
     router.push('/surveys/1');
+  }
+
+  function handleTemplateSelect(templateLabel: string, templatePrompt: string) {
+    setPrompt(templatePrompt);
+    showToast({ message: `${templateLabel} template applied`, variant: 'success' });
+  }
+
+  function handleAttachBriefClick() {
+    fileInputRef.current?.click();
+  }
+
+  function handleBriefFilesSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const selectedFiles = Array.from(event.target.files ?? []);
+    event.target.value = '';
+
+    if (selectedFiles.length === 0) return;
+
+    const nextBriefs: SurveyCreationBriefFile[] = [];
+    const errors: string[] = [];
+
+    for (const file of selectedFiles) {
+      const validationError = validateSurveyBriefFile(file);
+      if (validationError) {
+        errors.push(`${file.name}: ${validationError}`);
+        continue;
+      }
+      if (attachedBriefs.some((brief) => brief.name === file.name && brief.size === file.size)) {
+        errors.push(`${file.name} is already attached.`);
+        continue;
+      }
+      nextBriefs.push(createSurveyBriefFile(file));
+    }
+
+    if (nextBriefs.length > 0) {
+      setAttachedBriefs((prev) => [...prev, ...nextBriefs]);
+      showToast({
+        message:
+          nextBriefs.length === 1
+            ? `"${nextBriefs[0].name}" attached`
+            : `${nextBriefs.length} files attached`,
+        variant: 'success',
+      });
+    }
+
+    if (errors.length > 0) {
+      showToast({ message: errors[0], variant: 'error' });
+    }
+  }
+
+  function handleRemoveBrief(briefId: string) {
+    setAttachedBriefs((prev) => prev.filter((brief) => brief.id !== briefId));
   }
 
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <h1 className={styles.title}>Welcome to QuestionPro!</h1>
-
-        <div className={styles.sections}>
-          <section className={styles.section}>
-            <div className={styles.iconWrap} aria-hidden>
-              <span className={`wm-directions-run ${styles.sectionIcon}`} />
-            </div>
-            <div className={styles.sectionBody}>
-              <p className={styles.sectionText}>
-                Getting started is easy! Create your first survey now.
-              </p>
-              <div className={styles.createRow}>
-                <WuInput
-                  variant="outlined"
-                  placeholder="Enter Survey Name"
-                  value={surveyName}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                    setSurveyName(event.target.value)
-                  }
-                  className={styles.nameInput}
-                  aria-label="Survey name"
-                />
-                <WuButton onClick={handleCreateSurvey}>Create Survey</WuButton>
-              </div>
-            </div>
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.iconWrap} aria-hidden>
-              <span className={`wm-groups ${styles.sectionIcon}`} />
-            </div>
-            <div className={styles.sectionBody}>
-              <p className={styles.sectionText}>
-                Need help getting started? Use a professionally written survey template.
-              </p>
-              <button
-                type="button"
-                className={styles.textLink}
-                onClick={() =>
-                  showToast({ message: 'Survey template library opened', variant: 'success' })
-                }
-              >
-                Browse Templates
-                <span className={`wm-arrow-drop-down ${styles.linkCaret}`} aria-hidden />
-              </button>
-            </div>
-          </section>
-
-          <section className={styles.section}>
-            <div className={styles.iconWrap} aria-hidden>
-              <span className={`wm-rocket-launch ${styles.sectionIcon}`} />
-            </div>
-            <div className={styles.sectionBody}>
-              <p className={styles.sectionText}>
-                Need advanced features? Try our full platform, no credit card required.
-              </p>
-              <button
-                type="button"
-                className={styles.textLink}
-                onClick={() =>
-                  showToast({ message: '10-day trial started', variant: 'success' })
-                }
-              >
-                Start 10 Days Trial
-                <span className={`wm-arrow-drop-down ${styles.linkCaret}`} aria-hidden />
-              </button>
-            </div>
-          </section>
+        <div className={styles.hero}>
+          <h1 className={styles.title}>
+            <span className={`wc-ai ${styles.titleAiIcon}`} aria-hidden />
+            Let&apos;s create your first survey
+          </h1>
+          <p className={styles.subtitle}>
+            Describe it in your own words. Prism will draft the questions, pick the right scales,
+            and hand you a survey you can edit, tweak, or send.
+          </p>
         </div>
-      </main>
 
-      <footer className={styles.footer}>
-        <span className={styles.footerLabel}>QuestionPro Essentials</span>
-        <div className={styles.footerActions}>
-          <Link href="/surveys" className={styles.footerIconBtn} aria-label="My surveys">
-            <span className="wm-home" aria-hidden />
-          </Link>
+        <section className={styles.promptCard} aria-label="Survey creation prompt">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={SURVEY_BRIEF_ACCEPT}
+            multiple
+            className={styles.hiddenFileInput}
+            aria-hidden
+            tabIndex={-1}
+            onChange={handleBriefFilesSelected}
+          />
+          <textarea
+            className={styles.promptInput}
+            placeholder={SURVEY_CREATION_PROMPT_PLACEHOLDER}
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            rows={5}
+            aria-label="Describe your survey goals"
+          />
+          {attachedBriefs.length > 0 ? (
+            <ul className={styles.attachedBriefList} aria-label="Attached briefs">
+              {attachedBriefs.map((brief) => (
+                <li key={brief.id} className={styles.attachedBriefItem}>
+                  <span className="wm-insert-drive-file" aria-hidden />
+                  <span className={styles.attachedBriefName} title={brief.name}>
+                    {brief.name}
+                  </span>
+                  <span className={styles.attachedBriefSize}>
+                    {formatSurveyBriefFileSize(brief.size)}
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.removeBriefBtn}
+                    aria-label={`Remove ${brief.name}`}
+                    onClick={() => handleRemoveBrief(brief.id)}
+                  >
+                    <span className="wm-close" aria-hidden />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <div className={styles.promptFooter}>
+            <div className={styles.promptMeta}>
+              <button
+                type="button"
+                className={styles.metaBtn}
+                onClick={handleAttachBriefClick}
+              >
+                <span className="wm-attach-file" aria-hidden />
+                Attach a brief
+              </button>
+              <WuMenu
+                Trigger={
+                  <button type="button" className={styles.metaBtn}>
+                    <span className="wm-language" aria-hidden />
+                    {selectedLanguageLabel}
+                    <span className={`wm-keyboard-arrow-down ${styles.metaCaret}`} aria-hidden />
+                  </button>
+                }
+                align="start"
+              >
+                {SURVEY_CREATION_LANGUAGES.map((item) => (
+                  <WuMenuItem key={item.value} onSelect={() => setLanguage(item.value)}>
+                    {item.label}
+                  </WuMenuItem>
+                ))}
+              </WuMenu>
+            </div>
+            <WuButton
+              className={styles.createBtn}
+              disabled={!canCreate}
+              onClick={handleCreateSurvey}
+            >
+              Create my first survey
+              <span className="wm-arrow-forward" aria-hidden />
+            </WuButton>
+          </div>
+        </section>
+
+        <div className={styles.templatesBlock}>
+          <p className={styles.templatesLabel}>Or start from</p>
+          <div className={styles.templateList}>
+            {SURVEY_CREATION_TEMPLATES.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                className={styles.templatePill}
+                onClick={() => handleTemplateSelect(template.label, template.prompt)}
+              >
+                {template.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.bottomLinks}>
           <button
             type="button"
-            className={styles.footerIconBtn}
-            aria-label="Recent activity"
-            onClick={() =>
-              showToast({ message: 'Recent activity is not available in this prototype', variant: 'info' })
-            }
+            className={styles.bottomLink}
+            onClick={() => {
+              showToast({ message: 'Starting from a blank survey', variant: 'success' });
+              router.push('/surveys/1');
+            }}
           >
-            <span className="wm-history" aria-hidden />
+            Start from blank
           </button>
+          <Link href="/surveys" className={styles.bottomLink}>
+            Skip for now
+          </Link>
         </div>
-      </footer>
+      </main>
     </div>
   );
 }

@@ -60,6 +60,9 @@ export function SurveysHeaderActions({ compact }: { compact?: boolean }) {
           <WuMenuItem onSelect={() => router.push('/surveys/create')}>
             New survey creation flow
           </WuMenuItem>
+          <WuMenuItem onSelect={() => router.push('/signup')}>
+            Sign up free
+          </WuMenuItem>
         </WuMenu>
         <WuButton
           variant="rounded"
