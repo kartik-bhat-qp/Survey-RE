@@ -1,0 +1,75 @@
+.footer {
+  background: #fff;
+  border-top: 1px solid #e8edf2;
+  flex-shrink: 0;
+  padding: 2.5rem 2rem 2.75rem;
+  width: 100%;
+}
+
+.headline {
+  color: #5a6a85;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 0 auto 1.75rem;
+  max-width: 36rem;
+  text-align: center;
+}
+
+.logoViewport {
+  margin: 0 auto;
+  max-width: 64rem;
+  min-height: 2.75rem;
+}
+
+.logoRow {
+  align-items: center;
+  display: grid;
+  gap: 1.5rem 2rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  justify-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.logoRowVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.logoRowHidden {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.logoItem {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 2.25rem;
+  width: 100%;
+}
+
+.logoItemSpacer {
+  visibility: hidden;
+}
+
+@media (max-width: 900px) {
+  .logoRow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .footer {
+    padding: 2rem 1.25rem;
+  }
+
+  .logoRow {
+    gap: 1.25rem 1.5rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

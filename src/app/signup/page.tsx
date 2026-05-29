@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { QuestionProLogo } from '@/components/signup/QuestionProLogo';
+import { SignupAiHighlights } from '@/components/signup/SignupAiHighlights';
 import { SignupFeatureCarousel } from '@/components/signup/SignupFeatureCarousel';
+import { TrustedBrandsFooter } from '@/components/signup/TrustedBrandsFooter';
 import {
-  SIGNUP_COUNTRY_CODES,
-  SIGNUP_COOKIE_CONSENT,
   SIGNUP_LANGUAGES,
   SIGNUP_SOCIAL_PROVIDERS,
   SIGNUP_TAGLINE,
-  type SignupCountryCode,
   type SignupLanguage,
 } from '@/data/mock-signup-page';
 import styles from './SignupPage.module.css';
@@ -34,23 +34,16 @@ const WuSelect = dynamic(
 );
 
 type SignupFormState = {
-  firstName: string;
-  lastName: string;
-  phone: string;
+  name: string;
   email: string;
   password: string;
 };
-
-const DEFAULT_COUNTRY: SignupCountryCode =
-  SIGNUP_COUNTRY_CODES.find((c) => c.value === '+91') ?? SIGNUP_COUNTRY_CODES[0];
 
 const DEFAULT_LANGUAGE: SignupLanguage =
   SIGNUP_LANGUAGES.find((l) => l.value === 'en') ?? SIGNUP_LANGUAGES[0];
 
 const INITIAL_FORM: SignupFormState = {
-  firstName: '',
-  lastName: '',
-  phone: '',
+  name: '',
   email: '',
   password: '',
 };
@@ -95,21 +88,20 @@ const SOCIAL_ICONS = {
 } as const;
 
 export default function SignupPage() {
+  const router = useRouter();
   const { showToast } = useWuShowToast();
   const [form, setForm] = useState<SignupFormState>(INITIAL_FORM);
-  const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY);
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
-  const [showCookieBanner, setShowCookieBanner] = useState(true);
 
   function updateField<K extends keyof SignupFormState>(key: K, value: SignupFormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
   function handleCreateAccount() {
-    if (!form.firstName.trim() || !form.lastName.trim()) {
-      showToast({ message: 'First name and last name are required', variant: 'error' });
+    if (!form.name.trim()) {
+      showToast({ message: 'Please enter your name', variant: 'error' });
       return;
     }
     if (!form.email.trim()) {
@@ -121,6 +113,7 @@ export default function SignupPage() {
       return;
     }
     showToast({ message: 'Account created — welcome to QuestionPro!', variant: 'success' });
+    router.push('/surveys/create');
   }
 
   function handleLogin() {
@@ -137,13 +130,19 @@ export default function SignupPage() {
 
   return (
     <div className={styles.page}>
-      <aside className={styles.brandPanel} aria-label="Product highlights">
-        <div className={styles.brandPanelInner}>
-          <SignupFeatureCarousel />
-        </div>
-      </aside>
+      <div className={styles.split}>
+        <aside className={styles.brandPanel} aria-label="Product highlights">
+          <div className={styles.brandPanelGlow} aria-hidden />
+          <div className={styles.brandPanelInner}>
+            <p className={styles.brandPanelKicker}>
+              <span className={`wc-ai ${styles.brandPanelKickerIcon}`} aria-hidden />
+              AI-ready research platform
+            </p>
+            <SignupFeatureCarousel />
+          </div>
+        </aside>
 
-      <main className={styles.formPanel}>
+        <main className={styles.formPanel}>
         <header className={styles.topBar}>
           <div className={styles.languageWrap}>
             <span className={`wm-language ${styles.languageIcon}`} aria-hidden />
@@ -159,17 +158,19 @@ export default function SignupPage() {
           </div>
           <p className={styles.topLogin}>
             Already have an account?{' '}
-            <WuButton type="button" variant="secondary" size="sm" onClick={handleLogin}>
+            <button type="button" className={styles.textLink} onClick={handleLogin}>
               Log in
-            </WuButton>
+            </button>
           </p>
         </header>
 
         <div className={styles.formContent}>
           {!showEmailForm ? (
             <div className={styles.choiceView}>
-              <QuestionProLogo centered />
+              <QuestionProLogo centered showAiStar />
               <p className={styles.tagline}>{SIGNUP_TAGLINE}</p>
+
+              <SignupAiHighlights />
 
               <div className={styles.socialStack}>
                 {SIGNUP_SOCIAL_PROVIDERS.map((provider) => {
@@ -189,7 +190,7 @@ export default function SignupPage() {
               </div>
 
               <div className={styles.divider} aria-hidden>
-                OR
+                <span>or</span>
               </div>
 
               <WuButton
@@ -198,7 +199,7 @@ export default function SignupPage() {
                 className={styles.emailCta}
                 onClick={() => setShowEmailForm(true)}
               >
-                Sign up with email
+                Continue with email
               </WuButton>
             </div>
           ) : (
@@ -212,8 +213,13 @@ export default function SignupPage() {
                 Back
               </button>
 
-              <QuestionProLogo centered compact />
-              <h1 className={styles.formHeading}>Create your free account</h1>
+              <div className={styles.formIntro}>
+                <QuestionProLogo centered compact showAiStar />
+                <h1 className={styles.formHeading}>Create your free account</h1>
+                <p className={styles.formSubheading}>
+                  QuestionPro AI can draft your first survey after signup — no credit card required.
+                </p>
+              </div>
 
               <form
                 className={styles.form}
@@ -222,100 +228,43 @@ export default function SignupPage() {
                   handleCreateAccount();
                 }}
               >
-                <div className={styles.nameRow}>
-                  <div>
-                    <label className={styles.fieldLabel} htmlFor="signup-first-name">
-                      First Name <span className={styles.required}>*</span>
-                    </label>
-                    <WuFormGroup
-                      Input={
-                        <WuInput
-                          id="signup-first-name"
-                          variant="outlined"
-                          placeholder="John"
-                          value={form.firstName}
-                          autoFocus
-                          onChange={(e) => updateField('firstName', e.target.value)}
-                        />
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className={styles.fieldLabel} htmlFor="signup-last-name">
-                      Last Name <span className={styles.required}>*</span>
-                    </label>
-                    <WuFormGroup
-                      Input={
-                        <WuInput
-                          id="signup-last-name"
-                          variant="outlined"
-                          placeholder="Doe"
-                          value={form.lastName}
-                          onChange={(e) => updateField('lastName', e.target.value)}
-                        />
-                      }
-                    />
-                  </div>
-                </div>
+                  <WuFormGroup
+                    Input={
+                      <WuInput
+                        id="signup-name"
+                        Label="Name"
+                        variant="outlined"
+                        placeholder="Your name"
+                        value={form.name}
+                        autoFocus
+                        onChange={(e) => updateField('name', e.target.value)}
+                      />
+                    }
+                  />
 
-                <div>
-                  <label className={styles.fieldLabel} htmlFor="signup-phone">
-                    Phone
-                  </label>
-                  <div className={styles.phoneRow}>
-                    <WuSelect
-                      data={SIGNUP_COUNTRY_CODES}
-                      accessorKey={{ value: 'value', label: 'label' }}
-                      value={countryCode}
-                      variant="outlined"
-                      onSelect={(option) => {
-                        if (option) setCountryCode(option as SignupCountryCode);
-                      }}
-                    />
-                    <WuFormGroup
-                      Input={
-                        <WuInput
-                          id="signup-phone"
-                          variant="outlined"
-                          placeholder="Phone number"
-                          value={form.phone}
-                          onChange={(e) => updateField('phone', e.target.value)}
-                        />
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className={styles.fieldLabel} htmlFor="signup-email">
-                    Email <span className={styles.required}>*</span>
-                  </label>
                   <WuFormGroup
                     Input={
                       <WuInput
                         id="signup-email"
+                        Label="Work email"
                         variant="outlined"
                         type="email"
-                        placeholder="Please enter your email address"
+                        placeholder="you@company.com"
                         value={form.email}
                         onChange={(e) => updateField('email', e.target.value)}
                       />
                     }
                   />
-                </div>
 
-                <div>
-                  <label className={styles.fieldLabel} htmlFor="signup-password">
-                    Password <span className={styles.required}>*</span>
-                  </label>
                   <div className={styles.passwordWrap}>
                     <WuFormGroup
                       Input={
                         <WuInput
                           id="signup-password"
+                          Label="Password"
                           variant="outlined"
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="At least 8 characters"
+                          placeholder="8+ characters"
                           value={form.password}
                           onChange={(e) => updateField('password', e.target.value)}
                         />
@@ -330,63 +279,38 @@ export default function SignupPage() {
                       <span className={showPassword ? 'wm-visibility-off' : 'wm-visibility'} />
                     </button>
                   </div>
-                </div>
 
-                <WuButton type="submit" variant="primary" className={styles.submitBtn}>
-                  Create Account
-                </WuButton>
+                  <WuButton type="submit" variant="primary" className={styles.submitBtn}>
+                    Create account
+                  </WuButton>
 
-                <p className={styles.legalText}>
-                  By creating an account, you are agreeing to our{' '}
-                  <button
-                    type="button"
-                    className={styles.legalLink}
-                    onClick={() => handleLegalLink('Terms of Service')}
-                  >
-                    Terms of Service
-                  </button>{' '}
-                  and{' '}
-                  <button
-                    type="button"
-                    className={styles.legalLink}
-                    onClick={() => handleLegalLink('Privacy Policy')}
-                  >
-                    Privacy Policy
-                  </button>
-                </p>
+                  <p className={styles.legalText}>
+                    By continuing, you agree to our{' '}
+                    <button
+                      type="button"
+                      className={styles.legalLink}
+                      onClick={() => handleLegalLink('Terms of Service')}
+                    >
+                      Terms of Service
+                    </button>{' '}
+                    and{' '}
+                    <button
+                      type="button"
+                      className={styles.legalLink}
+                      onClick={() => handleLegalLink('Privacy Policy')}
+                    >
+                      Privacy Policy
+                    </button>
+                    .
+                  </p>
               </form>
             </div>
           )}
         </div>
-      </main>
+        </main>
+      </div>
 
-      {showCookieBanner && (
-        <footer className={styles.cookieBanner} role="region" aria-label="Cookie consent">
-          <div className={styles.cookieText}>
-            <p className={styles.cookieTitle}>{SIGNUP_COOKIE_CONSENT.title}</p>
-            <p className={styles.cookieDescription}>{SIGNUP_COOKIE_CONSENT.description}</p>
-          </div>
-          <div className={styles.cookieActions}>
-            <WuButton
-              type="button"
-              variant="primary"
-              onClick={() => {
-                setShowCookieBanner(false);
-                showToast({ message: 'Cookie preferences saved', variant: 'success' });
-              }}
-            >
-              {SIGNUP_COOKIE_CONSENT.acceptLabel}
-            </WuButton>
-            <button
-              type="button"
-              className={styles.cookieSettings}
-              onClick={() => handleLegalLink(SIGNUP_COOKIE_CONSENT.settingsLabel)}
-            >
-              {SIGNUP_COOKIE_CONSENT.settingsLabel}
-            </button>
-          </div>
-        </footer>
-      )}
+      <TrustedBrandsFooter />
     </div>
   );
 }

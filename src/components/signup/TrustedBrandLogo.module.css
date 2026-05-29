@@ -1,0 +1,16 @@
+.logo {
+  display: block;
+  height: 2rem;
+  max-width: 8.5rem;
+  object-fit: contain;
+  width: auto;
+}
+
+.fallback {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}

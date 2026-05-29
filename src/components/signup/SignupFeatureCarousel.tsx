@@ -105,7 +105,22 @@ export function SignupFeatureCarousel() {
             className={slideClassName}
             onAnimationEnd={phase !== 'idle' ? handleSlideAnimationEnd : undefined}
           >
-            <p className={styles.featureEyebrow}>{activeSlide.eyebrow}</p>
+            <p
+              className={
+                activeSlide.aiFeatured
+                  ? `${styles.featureEyebrow} ${styles.featureEyebrowAi}`
+                  : styles.featureEyebrow
+              }
+            >
+              {activeSlide.aiFeatured ? (
+                <>
+                  <span className={`wc-ai ${styles.featureEyebrowAiIcon}`} aria-hidden />
+                  {activeSlide.eyebrow}
+                </>
+              ) : (
+                activeSlide.eyebrow
+              )}
+            </p>
             <h2 className={styles.featureTitle}>{activeSlide.title}</h2>
             <SignupFeaturePreview slide={activeSlide} />
           </div>

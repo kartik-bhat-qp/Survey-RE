@@ -1,10 +1,27 @@
 .logo {
+  align-items: center;
   display: flex;
+  gap: 0.5rem;
+}
+
+.logoWithAiStar {
+  gap: 0.625rem;
 }
 
 .logoCentered {
   justify-content: center;
   width: 100%;
+}
+
+.aiStar {
+  color: #1b87e6;
+  flex-shrink: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.logoCompact .aiStar {
+  font-size: 1.25rem;
 }
 
 .logoCompact .image {

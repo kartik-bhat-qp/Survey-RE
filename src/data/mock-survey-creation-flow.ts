@@ -36,6 +36,16 @@ export { SURVEY_CREATION_LANGUAGES, DEFAULT_SURVEY_CREATION_LANGUAGE, getSurveyC
 export const SURVEY_CREATION_PROMPT_PLACEHOLDER =
   'e.g. A short feedback survey for customers who just finished onboarding…';
 
+/** Simulated AI drafting delay before opening the survey workspace. */
+export const SURVEY_AI_DRAFT_DELAY_MS = 5000;
+
+export const SURVEY_AI_THINKING_STEPS = [
+  'Understanding your research goals…',
+  'Drafting questions…',
+  'Selecting scales and layout…',
+  'Finalizing your survey…',
+] as const;
+
 export interface SurveyCreationBriefFile {
   id: string;
   name: string;
@@ -90,4 +100,41 @@ export function validateSurveyBriefFile(file: File): string | null {
     return 'Each file must be 25 MB or smaller.';
   }
   return null;
+}
+
+/** Route id for a one-off blank survey created from the creation flow (not in MOCK_SURVEYS). */
+export const NEW_BLANK_SURVEY_ID = 0;
+
+const BLANK_SURVEY_DRAFT_STORAGE_KEY = 'qp-blank-survey-draft';
+
+export interface BlankSurveyDraft {
+  name: string;
+  createdAt: string;
+}
+
+export function saveBlankSurveyDraft(name: string): void {
+  if (typeof window === 'undefined') return;
+  const draft: BlankSurveyDraft = {
+    name: name.trim(),
+    createdAt: new Date().toISOString(),
+  };
+  sessionStorage.setItem(BLANK_SURVEY_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+}
+
+export function readBlankSurveyDraft(): BlankSurveyDraft | null {
+  if (typeof window === 'undefined') return null;
+  const raw = sessionStorage.getItem(BLANK_SURVEY_DRAFT_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as BlankSurveyDraft;
+    if (!parsed.name?.trim()) return null;
+    return { ...parsed, name: parsed.name.trim() };
+  } catch {
+    return null;
+  }
+}
+
+export function clearBlankSurveyDraft(): void {
+  if (typeof window === 'undefined') return;
+  sessionStorage.removeItem(BLANK_SURVEY_DRAFT_STORAGE_KEY);
 }

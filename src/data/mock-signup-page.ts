@@ -8,6 +8,14 @@ export type SignupFeatureSlide = {
   eyebrow: string;
   title: string;
   description: string;
+  /** Shows QuestionPro AI styling in the feature carousel eyebrow. */
+  aiFeatured?: boolean;
+};
+
+export type SignupAiCapability = {
+  id: string;
+  label: string;
+  icon: string;
 };
 
 export const SIGNUP_SOCIAL_PROVIDERS: SignupSocialProvider[] = [
@@ -16,7 +24,13 @@ export const SIGNUP_SOCIAL_PROVIDERS: SignupSocialProvider[] = [
 ];
 
 export const SIGNUP_TAGLINE =
-  'Get better data with surveys, quizzes, panels, and research tools built for teams.';
+  'Research-grade surveys with QuestionPro AI, simply describe what you need and let us do the rest.';
+
+export const SIGNUP_AI_CAPABILITIES: SignupAiCapability[] = [
+  { id: 'draft', label: 'Draft surveys from a prompt', icon: 'wm-auto-awesome' },
+  { id: 'scales', label: 'Smart scales & question types', icon: 'wm-tune' },
+  { id: 'insights', label: 'AI-powered insights', icon: 'wm-insights' },
+];
 
 export const SIGNUP_LANGUAGES = [
   { value: 'en', label: 'English' },
@@ -27,15 +41,15 @@ export const SIGNUP_LANGUAGES = [
 
 export type SignupLanguage = (typeof SIGNUP_LANGUAGES)[number];
 
-export const SIGNUP_COOKIE_CONSENT = {
-  title: 'Cookie consent',
-  description:
-    'We use cookies to improve your experience, analyze site traffic, and personalize content. You can manage your preferences at any time.',
-  acceptLabel: 'Accept all cookies',
-  settingsLabel: 'Cookie settings',
-};
-
 export const SIGNUP_FEATURE_SLIDES: SignupFeatureSlide[] = [
+  {
+    id: 'prism-ai',
+    eyebrow: 'QuestionPro AI',
+    title: 'Go from idea to survey in minutes',
+    description:
+      'Tell QuestionPro AI your research goals — it drafts questions, picks scales, and hands you an editable survey.',
+    aiFeatured: true,
+  },
   {
     id: 'surveys',
     eyebrow: 'Survey builder',
@@ -56,12 +70,3 @@ export const SIGNUP_FEATURE_SLIDES: SignupFeatureSlide[] = [
   },
 ];
 
-export const SIGNUP_COUNTRY_CODES = [
-  { value: '+1', label: 'US +1' },
-  { value: '+44', label: 'UK +44' },
-  { value: '+91', label: 'IN +91' },
-  { value: '+61', label: 'AU +61' },
-  { value: '+49', label: 'DE +49' },
-];
-
-export type SignupCountryCode = (typeof SIGNUP_COUNTRY_CODES)[number];

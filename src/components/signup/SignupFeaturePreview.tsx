@@ -147,7 +147,42 @@ function DistributionPreview() {
   );
 }
 
+function PrismAiPreview() {
+  return (
+    <div className={styles.preview} aria-hidden>
+      <div className={`${styles.scene} ${styles.prismScene}`}>
+        <div className={styles.prismPromptCard}>
+          <span className={`wc-ai ${styles.prismPromptIcon}`} />
+          <div className={styles.prismPromptLines}>
+            <span className={styles.prismPromptLine} />
+            <span className={`${styles.prismPromptLine} ${styles.prismPromptLineShort}`} />
+          </div>
+        </div>
+
+        <div className={styles.prismConnector}>
+          <span className={styles.prismConnectorDot} />
+          <span className={styles.prismConnectorLine} />
+          <span className={styles.prismConnectorDot} />
+        </div>
+
+        <div className={styles.prismOutputStack}>
+          <div className={styles.prismQuestionStub}>
+            <span className={styles.prismStubLabel} />
+            <span className={styles.prismStubOption} />
+            <span className={styles.prismStubOption} />
+          </div>
+          <div className={`${styles.prismQuestionStub} ${styles.prismQuestionStubDelayed}`}>
+            <span className={styles.prismStubLabel} />
+            <span className={styles.prismStubScale} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const PREVIEW_BY_SLIDE: Record<SignupFeatureSlide['id'], () => React.ReactNode> = {
+  'prism-ai': PrismAiPreview,
   surveys: SurveyBuilderPreview,
   insights: AnalyticsPreview,
   distribution: DistributionPreview,

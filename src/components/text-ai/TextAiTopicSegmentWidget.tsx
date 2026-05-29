@@ -5,6 +5,12 @@ import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { StandardLoader } from '@/components/ui/StandardLoader';
 import { useWickUILib } from '@/components/ui/useWickUILib';
+import { TextAiSentimentResponsesModal } from '@/components/text-ai/TextAiSentimentResponsesModal';
+import {
+  TEXT_AI_SEGMENT_LABELS,
+  type TextAiSegmentKey,
+  type TextAiVerbatimModalContext,
+} from '@/data/mock-text-ai-sentiment-verbatims';
 import {
   formatTopicSegmentPercentage,
   GENDER_COLUMN_LABELS,
@@ -35,12 +41,14 @@ function SegmentCell({
   maxPercentage,
   significanceMarkers,
   showChiSquare,
+  onCountClick,
 }: {
   cell: TextAiTopicSegmentCell;
   barClassName: string;
   maxPercentage: number;
   significanceMarkers?: { higherThan: string; lowerThan: string };
   showChiSquare?: boolean;
+  onCountClick?: () => void;
 }) {
   const barWidth = `${Math.max(4, (cell.percentage / maxPercentage) * 100)}%`;
   const hasMarkers =
@@ -51,7 +59,18 @@ function SegmentCell({
   return (
     <div className={styles.segmentCell}>
       <div className={styles.metricRow}>
-        <span className={styles.count}>{cell.count.toLocaleString()}</span>
+        {onCountClick ? (
+          <button
+            type="button"
+            className={styles.countBtn}
+            onClick={onCountClick}
+            aria-label={`View ${cell.count.toLocaleString()} responses`}
+          >
+            {cell.count.toLocaleString()}
+          </button>
+        ) : (
+          <span className={styles.count}>{cell.count.toLocaleString()}</span>
+        )}
         <span className={styles.percentage}>
           {formatTopicSegmentPercentage(cell.percentage)}
           {hasMarkers ? (
@@ -91,6 +110,7 @@ function TopicSegmentRow({
   isSubtopic = false,
   isExpandable = false,
   showChiSquare = false,
+  onCountClick,
 }: {
   row: TextAiTopicSegmentRow;
   maxPercentage: number;
@@ -99,7 +119,13 @@ function TopicSegmentRow({
   isSubtopic?: boolean;
   isExpandable?: boolean;
   showChiSquare?: boolean;
+  parentTopicLabel?: string | null;
+  onCountClick?: (segment: TextAiSegmentKey, cell: TextAiTopicSegmentCell) => void;
 }) {
+  function handleCountClick(segment: TextAiSegmentKey, cell: TextAiTopicSegmentCell) {
+    if (cell.count <= 0) return;
+    onCountClick?.(segment, cell);
+  }
   const hasSubtopics = topicRowHasSubtopics(row);
   const showExpandControl = isExpandable && hasSubtopics;
   const { genderChiSquare: chi } = row;
@@ -138,6 +164,9 @@ function TopicSegmentRow({
           cell={row.overall}
           barClassName={styles.barOverall}
           maxPercentage={maxPercentage}
+          onCountClick={
+            onCountClick ? () => handleCountClick('overall', row.overall) : undefined
+          }
         />
       </td>
       {TEXT_AI_GENDER_KEYS.map((genderKey) => {
@@ -156,6 +185,9 @@ function TopicSegmentRow({
               maxPercentage={maxPercentage}
               significanceMarkers={markers}
               showChiSquare={showChiSquare}
+              onCountClick={
+                onCountClick ? () => handleCountClick(genderKey, row[genderKey]) : undefined
+              }
             />
           </td>
         );
@@ -170,12 +202,19 @@ function TopicSegmentGroup({
   expandedRowIds,
   onToggle,
   showChiSquare,
+  onCountClick,
 }: {
   row: TextAiTopicSegmentRow;
   maxPercentage: number;
   expandedRowIds: Set<string>;
   onToggle: (rowId: string) => void;
   showChiSquare: boolean;
+  onCountClick: (
+    row: TextAiTopicSegmentRow,
+    parentTopicLabel: string | null,
+    segment: TextAiSegmentKey,
+    cell: TextAiTopicSegmentCell
+  ) => void;
 }) {
   const isExpanded = expandedRowIds.has(row.id);
 
@@ -188,6 +227,7 @@ function TopicSegmentGroup({
         isExpandable
         showChiSquare={showChiSquare}
         onToggle={() => onToggle(row.id)}
+        onCountClick={(segment, cell) => onCountClick(row, null, segment, cell)}
       />
       {isExpanded &&
         row.subtopics?.map((subtopic) => (
@@ -196,7 +236,9 @@ function TopicSegmentGroup({
             row={subtopic}
             maxPercentage={maxPercentage}
             isSubtopic
+            parentTopicLabel={row.topic}
             showChiSquare={showChiSquare}
+            onCountClick={(segment, cell) => onCountClick(subtopic, row.topic, segment, cell)}
           />
         ))}
     </>
@@ -217,6 +259,27 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
   const { showToast } = useWuShowToast();
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
   const [showChiSquare, setShowChiSquare] = useState(true);
+  const [verbatimModalOpen, setVerbatimModalOpen] = useState(false);
+  const [verbatimContext, setVerbatimContext] = useState<TextAiVerbatimModalContext | null>(
+    null
+  );
+
+  function openVerbatimModal(
+    row: TextAiTopicSegmentRow,
+    parentTopicLabel: string | null,
+    segment: TextAiSegmentKey,
+    cell: TextAiTopicSegmentCell
+  ) {
+    setVerbatimContext({
+      rowId: row.id,
+      topicLabel: row.topic,
+      parentTopicLabel,
+      segment,
+      segmentLabel: TEXT_AI_SEGMENT_LABELS[segment],
+      count: cell.count,
+    });
+    setVerbatimModalOpen(true);
+  }
 
   const maxPercentage = useMemo(
     () => getTopicSegmentMaxPercentage(widget.rows),
@@ -292,6 +355,7 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
                 expandedRowIds={expandedRowIds}
                 onToggle={toggleRow}
                 showChiSquare={showChiSquare}
+                onCountClick={openVerbatimModal}
               />
             ))}
           </tbody>
@@ -310,6 +374,12 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
           </em>
         </p>
       ) : null}
+
+      <TextAiSentimentResponsesModal
+        open={verbatimModalOpen}
+        onOpenChange={setVerbatimModalOpen}
+        context={verbatimContext}
+      />
     </article>
   );
 }

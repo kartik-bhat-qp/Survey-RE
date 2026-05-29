@@ -4,13 +4,16 @@ import styles from './QuestionProLogo.module.css';
 type QuestionProLogoProps = {
   centered?: boolean;
   compact?: boolean;
+  /** Shows the QuestionPro AI sparkle beside the logo. */
+  showAiStar?: boolean;
 };
 
-export function QuestionProLogo({ centered, compact }: QuestionProLogoProps) {
+export function QuestionProLogo({ centered, compact, showAiStar }: QuestionProLogoProps) {
   const className = [
     styles.logo,
     centered && styles.logoCentered,
     compact && styles.logoCompact,
+    showAiStar && styles.logoWithAiStar,
   ]
     .filter(Boolean)
     .join(' ');
@@ -25,6 +28,13 @@ export function QuestionProLogo({ centered, compact }: QuestionProLogoProps) {
         className={styles.image}
         priority
       />
+      {showAiStar ? (
+        <span
+          className={`wc-ai ${styles.aiStar}`}
+          aria-label="QuestionPro AI"
+          title="QuestionPro AI"
+        />
+      ) : null}
     </div>
   );
 }

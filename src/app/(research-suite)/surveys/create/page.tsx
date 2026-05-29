@@ -1,14 +1,19 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { SurveyCreationAiThinkingOverlay } from '@/components/surveys/SurveyCreationAiThinkingOverlay';
+import { SurveyCreationTracerTitle } from '@/components/surveys/SurveyCreationTracerTitle';
 import {
   createSurveyBriefFile,
   DEFAULT_SURVEY_CREATION_LANGUAGE,
   getSurveyCreationLanguageShortLabel,
+  NEW_BLANK_SURVEY_ID,
+  saveBlankSurveyDraft,
+  SURVEY_AI_DRAFT_DELAY_MS,
   SURVEY_BRIEF_ACCEPT,
   SURVEY_CREATION_LANGUAGES,
   SURVEY_CREATION_PROMPT_PLACEHOLDER,
@@ -39,6 +44,17 @@ export default function NewSurveyCreationFlowPage() {
   const [prompt, setPrompt] = useState('');
   const [attachedBriefs, setAttachedBriefs] = useState<SurveyCreationBriefFile[]>([]);
   const [language, setLanguage] = useState(DEFAULT_SURVEY_CREATION_LANGUAGE);
+  const [showBlankNameForm, setShowBlankNameForm] = useState(false);
+  const [blankSurveyName, setBlankSurveyName] = useState('');
+  const [blankNameError, setBlankNameError] = useState(false);
+  const [heroRevealed, setHeroRevealed] = useState(false);
+  const blankNameInputRef = useRef<HTMLInputElement>(null);
+  const aiDraftTimeoutRef = useRef<number | null>(null);
+  const [isAiDrafting, setIsAiDrafting] = useState(false);
+
+  const handleTracerComplete = useCallback(() => {
+    setHeroRevealed(true);
+  }, []);
 
   const trimmedPrompt = prompt.trim();
   const canCreate = trimmedPrompt.length > 0;
@@ -49,8 +65,15 @@ export default function NewSurveyCreationFlowPage() {
       showToast({ message: 'Describe what you want to learn to continue', variant: 'error' });
       return;
     }
-    showToast({ message: 'Prism is drafting your survey…', variant: 'success' });
-    router.push('/surveys/1');
+    if (isAiDrafting) return;
+
+    setIsAiDrafting(true);
+    aiDraftTimeoutRef.current = window.setTimeout(() => {
+      setIsAiDrafting(false);
+      aiDraftTimeoutRef.current = null;
+      showToast({ message: 'Your survey is ready to edit', variant: 'success' });
+      router.push('/surveys/1');
+    }, SURVEY_AI_DRAFT_DELAY_MS);
   }
 
   function handleTemplateSelect(templateLabel: string, templatePrompt: string) {
@@ -104,16 +127,64 @@ export default function NewSurveyCreationFlowPage() {
     setAttachedBriefs((prev) => prev.filter((brief) => brief.id !== briefId));
   }
 
+  function handleBlankSurveyCreate(name: string) {
+    saveBlankSurveyDraft(name);
+    showToast({ message: 'Blank survey created', variant: 'success' });
+    router.push(`/surveys/${NEW_BLANK_SURVEY_ID}`);
+  }
+
+  function handleStartFromBlank() {
+    setShowBlankNameForm(true);
+  }
+
+  function handleBlankFormCancel() {
+    setShowBlankNameForm(false);
+    setBlankSurveyName('');
+    setBlankNameError(false);
+  }
+
+  function handleBlankFormSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    const trimmed = blankSurveyName.trim();
+    if (!trimmed) {
+      setBlankNameError(true);
+      showToast({ message: 'Survey name is required', variant: 'error' });
+      return;
+    }
+    handleBlankSurveyCreate(trimmed);
+  }
+
+  useEffect(() => {
+    if (!showBlankNameForm) return;
+    blankNameInputRef.current?.focus();
+  }, [showBlankNameForm]);
+
+  useEffect(() => {
+    return () => {
+      if (aiDraftTimeoutRef.current !== null) {
+        window.clearTimeout(aiDraftTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className={styles.page}>
+      <SurveyCreationAiThinkingOverlay open={isAiDrafting} />
       <main className={styles.main}>
         <div className={styles.hero}>
           <h1 className={styles.title}>
             <span className={`wc-ai ${styles.titleAiIcon}`} aria-hidden />
-            Let&apos;s create your first survey
+            <SurveyCreationTracerTitle
+              text="Let's create your first survey"
+              onComplete={handleTracerComplete}
+            />
           </h1>
-          <p className={styles.subtitle}>
-            Describe it in your own words. Prism will draft the questions, pick the right scales,
+          <p
+            className={`${styles.subtitle} ${
+              heroRevealed ? styles.subtitleReveal : styles.subtitleHidden
+            }`}
+          >
+            Describe it in your own words. QuestionPro AI will draft the questions, pick the right scales,
             and hand you a survey you can edit, tweak, or send.
           </p>
         </div>
@@ -136,6 +207,7 @@ export default function NewSurveyCreationFlowPage() {
             onChange={(event) => setPrompt(event.target.value)}
             rows={5}
             aria-label="Describe your survey goals"
+            disabled={isAiDrafting}
           />
           {attachedBriefs.length > 0 ? (
             <ul className={styles.attachedBriefList} aria-label="Attached briefs">
@@ -189,11 +261,11 @@ export default function NewSurveyCreationFlowPage() {
             </div>
             <WuButton
               className={styles.createBtn}
-              disabled={!canCreate}
+              disabled={!canCreate || isAiDrafting}
               onClick={handleCreateSurvey}
             >
-              Create my first survey
-              <span className="wm-arrow-forward" aria-hidden />
+              {isAiDrafting ? 'Drafting survey…' : 'Create my first survey'}
+              {!isAiDrafting ? <span className="wm-arrow-forward" aria-hidden /> : null}
             </WuButton>
           </div>
         </section>
@@ -214,20 +286,62 @@ export default function NewSurveyCreationFlowPage() {
           </div>
         </div>
 
-        <div className={styles.bottomLinks}>
-          <button
-            type="button"
-            className={styles.bottomLink}
-            onClick={() => {
-              showToast({ message: 'Starting from a blank survey', variant: 'success' });
-              router.push('/surveys/1');
-            }}
-          >
-            Start from blank
-          </button>
-          <Link href="/surveys" className={styles.bottomLink}>
-            Skip for now
-          </Link>
+        <div className={styles.bottomSection}>
+          {showBlankNameForm ? (
+            <form
+              className={styles.blankNameForm}
+              onSubmit={handleBlankFormSubmit}
+              aria-label="Name your blank survey"
+            >
+              <div className={styles.blankNameRow}>
+                <input
+                  ref={blankNameInputRef}
+                  id="blank-survey-name"
+                  type="text"
+                  className={`${styles.blankNameInput} ${
+                    blankNameError ? styles.blankNameInputError : ''
+                  }`}
+                  placeholder="Enter Survey Name"
+                  value={blankSurveyName}
+                  maxLength={200}
+                  aria-invalid={blankNameError}
+                  aria-describedby={blankNameError ? 'blank-survey-name-error' : undefined}
+                  onChange={(event) => {
+                    if (blankNameError && event.target.value.trim()) {
+                      setBlankNameError(false);
+                    }
+                    setBlankSurveyName(event.target.value);
+                  }}
+                />
+                <div className={styles.blankNameActions}>
+                  <WuButton type="submit" className={styles.blankNameSubmit}>
+                    Create Survey
+                  </WuButton>
+                  <button
+                    type="button"
+                    className={styles.blankNameCancel}
+                    onClick={handleBlankFormCancel}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+              {blankNameError ? (
+                <p id="blank-survey-name-error" className={styles.blankNameError} role="alert">
+                  Survey name is required
+                </p>
+              ) : null}
+            </form>
+          ) : (
+            <div className={styles.bottomLinks}>
+              <button type="button" className={styles.bottomLink} onClick={handleStartFromBlank}>
+                Start from blank
+              </button>
+              <Link href="/surveys" className={styles.bottomLink}>
+                Skip for now
+              </Link>
+            </div>
+          )}
         </div>
       </main>
     </div>
