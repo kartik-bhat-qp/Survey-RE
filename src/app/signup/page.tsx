@@ -4,6 +4,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { setSurveyFooterBrand } from '@/lib/survey-suite-footer-brand';
 import { QuestionProLogo } from '@/components/signup/QuestionProLogo';
 import { SignupAiHighlights } from '@/components/signup/SignupAiHighlights';
 import { SignupFeatureCarousel } from '@/components/signup/SignupFeatureCarousel';
@@ -113,6 +114,7 @@ export default function SignupPage() {
       return;
     }
     showToast({ message: 'Account created — welcome to QuestionPro!', variant: 'success' });
+    setSurveyFooterBrand('essentials');
     router.push('/surveys/create');
   }
 

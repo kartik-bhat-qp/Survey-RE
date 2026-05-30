@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" role="img" aria-label="Butterscotch ice cream">
+  <rect width="160" height="120" fill="#f8fafc"/>
+  <ellipse cx="80" cy="98" rx="42" ry="10" fill="#e2e8f0"/>
+  <rect x="48" y="52" width="64" height="40" rx="4" fill="#fde68a" stroke="#d97706"/>
+  <path d="M52 52 Q80 42 108 52" fill="#fbbf24"/>
+  <circle cx="118" cy="78" r="8" fill="#fcd34d" stroke="#d97706"/>
+  <circle cx="130" cy="86" r="7" fill="#fde68a" stroke="#d97706"/>
+  <path d="M118 70 L118 58 Q122 52 128 58 L128 70" fill="#fef3c7" stroke="#d97706"/>
+</svg>

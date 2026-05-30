@@ -1,9 +1,13 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
 import { GlobalFooter } from '@/components/GlobalFooter';
 import { AppHeaderContent } from '@/components/header/AppHeaderContent';
+import { SurveyFooterBrandSync } from '@/components/surveys/SurveyFooterBrandSync';
 import { SurveysAppHeaderContent } from '@/components/surveys/SurveysAppHeaderContent';
+import { useSurveyFooterBrand } from '@/components/surveys/useSurveyFooterBrand';
+import { formatSurveySuiteFooterCopy } from '@/lib/survey-suite-footer-brand';
 import {
   HEADER_BRAND_COLOR,
   MOCK_HEADER_CATEGORIES,
@@ -21,8 +25,14 @@ const WuToast = dynamic(
 );
 
 export function ResearchSuiteShell({ children }: { children: React.ReactNode }) {
+  const footerBrand = useSurveyFooterBrand();
+  const footerCopy = formatSurveySuiteFooterCopy(footerBrand);
+
   return (
     <div className={styles.shell}>
+      <Suspense fallback={null}>
+        <SurveyFooterBrandSync />
+      </Suspense>
       <WuToast />
       <header className={styles.header}>
         <WuAppHeader
@@ -38,7 +48,7 @@ export function ResearchSuiteShell({ children }: { children: React.ReactNode }) 
       </header>
       <div className={styles.body}>
         <div className={styles.content}>{children}</div>
-        <GlobalFooter />
+        <GlobalFooter copy={footerCopy} />
       </div>
     </div>
   );

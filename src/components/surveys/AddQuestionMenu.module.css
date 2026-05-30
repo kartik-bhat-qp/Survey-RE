@@ -277,6 +277,33 @@
   line-height: 1.35;
 }
 
+.previewFakeInputWrap {
+  width: 100%;
+}
+
+.previewFakeInputWrapWithIcon {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d5dde6;
+  border-radius: 4px;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+}
+
+.previewInputIcon {
+  color: #64748b;
+  flex-shrink: 0;
+  font-size: 1.125rem;
+}
+
+.previewFakeInputWrapWithIcon .previewFakeInput {
+  border: none;
+  flex: 1;
+  min-width: 0;
+  padding: 0.625rem 0;
+}
+
 .previewFakeInput,
 .previewFakeSelect,
 .previewFakeTextarea {

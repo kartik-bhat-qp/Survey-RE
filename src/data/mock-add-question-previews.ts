@@ -11,6 +11,10 @@ export type QuestionPreviewVariant =
   | 'push-to-social'
   | 'text-slider'
   | 'numeric-slider'
+  | 'rank-order'
+  | 'constant-sum'
+  | 'drag-drop'
+  | 'image-chooser-select-one'
   | 'placeholder';
 
 export interface TextSliderPreviewData {
@@ -23,6 +27,41 @@ export interface NumericSliderPreviewData {
   rightAnchor: string;
   rows: string[];
   valuePlaceholder: string;
+}
+
+export interface RankOrderPreviewData {
+  items: string[];
+  selectPlaceholder: string;
+}
+
+export interface ConstantSumPreviewRow {
+  label: string;
+  value: string;
+}
+
+export interface ConstantSumPreviewData {
+  rows: ConstantSumPreviewRow[];
+}
+
+export interface DragDropPreviewItem {
+  label: string;
+  rank: number;
+}
+
+export interface DragDropPreviewData {
+  items: DragDropPreviewItem[];
+  leftAnchor: string;
+  rightAnchor: string;
+}
+
+export interface ImageChooserOptionPreview {
+  label: string;
+  imageSrc: string;
+  imageAlt: string;
+}
+
+export interface ImageChooserSelectOnePreviewData {
+  options: ImageChooserOptionPreview[];
 }
 
 export type PushToSocialPlatformBrand = 'facebook' | 'x' | 'yelp';
@@ -82,8 +121,20 @@ export interface QuestionTypePreviewContent {
   textSlider?: TextSliderPreviewData;
   /** Numeric slider matrix preview. */
   numericSlider?: NumericSliderPreviewData;
+  /** Rank order rows with rank dropdowns. */
+  rankOrder?: RankOrderPreviewData;
+  /** Constant sum sliders with point inputs. */
+  constantSum?: ConstantSumPreviewData;
+  /** Drag-and-drop ranked cards with anchors. */
+  dragDrop?: DragDropPreviewData;
+  /** Image chooser select-one options. */
+  imageChooserSelectOne?: ImageChooserSelectOnePreviewData;
   /** Secondary line under question (e.g. rating scale) */
   hint?: string;
+  /** Leading icon inside a text input preview (e.g. email). */
+  inputIcon?: string;
+  /** Placeholder for text input previews. */
+  inputPlaceholder?: string;
 }
 
 const SELECT_MANY: QuestionTypePreviewContent = {
@@ -126,9 +177,11 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
   },
   email: {
     variant: 'text-single',
-    headerIcon: 'wm-email',
+    headerIcon: 'wm-mail',
     headerLabel: 'Email Address',
     question: 'What email address should we use to send your receipt?',
+    inputIcon: 'wm-mail',
+    inputPlaceholder: 'name@example.com',
     hint: 'Validated email format.',
   },
   contact: {
@@ -233,11 +286,24 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     },
   },
   'image-select-one': {
-    variant: 'radios',
+    variant: 'image-chooser-select-one',
     headerIcon: 'wm-panorama',
-    headerLabel: 'Image Chooser — Select One',
-    question: 'Which package design do you prefer?',
-    options: ['Design A', 'Design B', 'Design C'],
+    headerLabel: 'Image Chooser (Select One)',
+    question: 'Please choose your favorite ice-cream flavor ?',
+    imageChooserSelectOne: {
+      options: [
+        {
+          label: 'Strawberry',
+          imageSrc: '/images/add-question-previews/ice-cream-strawberry.svg',
+          imageAlt: 'Strawberry sundae',
+        },
+        {
+          label: 'Butterscotch',
+          imageSrc: '/images/add-question-previews/ice-cream-butterscotch.svg',
+          imageAlt: 'Butterscotch ice cream',
+        },
+      ],
+    },
   },
   'image-select-many': {
     variant: 'checkboxes',
@@ -254,22 +320,42 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     hint: '★ ★ ★ ★ ★',
   },
   'rank-order': {
-    variant: 'placeholder',
+    variant: 'rank-order',
     headerIcon: 'wm-format-list-numbered',
-    headerLabel: 'Rank Order',
-    question: 'Drag items into order from most to least important.',
+    headerLabel: 'Ordering (Rank Order)',
+    question: 'Please rank (1-3) the following in order of interest',
+    rankOrder: {
+      items: ['Skiing', 'Snowboarding', 'Biking'],
+      selectPlaceholder: '-- Select --',
+    },
   },
   'constant-sum': {
-    variant: 'placeholder',
+    variant: 'constant-sum',
     headerIcon: 'wm-functions',
-    headerLabel: 'Constant Sum',
-    question: 'Distribute 100 points across the options below.',
+    headerLabel: 'Ordering (Constant Sum)',
+    question: 'Please allocate 100 points on how you spend your income',
+    constantSum: {
+      rows: [
+        { label: 'Essentials (Gas, Grocery etc.)', value: '0' },
+        { label: 'Entertainment (Movies, Clubs etc.)', value: '0' },
+        { label: 'Other', value: '0' },
+      ],
+    },
   },
   'drag-drop': {
-    variant: 'placeholder',
+    variant: 'drag-drop',
     headerIcon: 'wm-drag-indicator',
-    headerLabel: 'Drag and Drop',
-    question: 'Drag choices into buckets or a ranked list.',
+    headerLabel: 'Ordering (Drag and Drop)',
+    question: 'Please rank (1-3) the following in order of interest',
+    dragDrop: {
+      items: [
+        { label: 'Skiing', rank: 1 },
+        { label: 'Snowboarding', rank: 2 },
+        { label: 'Biking', rank: 3 },
+      ],
+      leftAnchor: 'Left Anchor',
+      rightAnchor: 'Right Anchor',
+    },
   },
   'multi-point': {
     variant: 'placeholder',

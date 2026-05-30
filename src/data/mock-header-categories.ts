@@ -12,7 +12,7 @@ export const MOCK_HEADER_CATEGORIES: IWuAppHeaderMenuItem[] = [
       {
         name: 'Surveys',
         icon: 'e308',
-        link: '/surveys',
+        link: '/surveys?from=product-switcher',
         active: true,
         logo: `${APP_NAV}/survey-product.png`,
         order: 1,

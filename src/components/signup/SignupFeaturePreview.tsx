@@ -117,7 +117,7 @@ function DistributionPreview() {
         <span className={`${styles.flyingDot} ${styles.flyingDot4}`} />
 
         <div className={`${styles.channelCard} ${styles.channelEmail}`}>
-          <span className={`wm-email ${styles.channelIcon}`} />
+          <span className={`wm-mail ${styles.channelIcon}`} />
           <span className={styles.channelLabel}>Email</span>
           <span className={`wm-check ${styles.channelCheck}`} />
         </div>

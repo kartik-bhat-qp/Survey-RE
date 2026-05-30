@@ -1,0 +1,60 @@
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem 1rem;
+  grid-template-columns: 1fr minmax(8.5rem, 9.5rem);
+}
+
+.itemLabel {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.selectBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.select {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d5dde6;
+  border-radius: 4px;
+  color: #94a3b8;
+  display: flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  justify-content: space-between;
+  line-height: 1.25;
+  padding: 0.4375rem 0.5rem 0.4375rem 0.625rem;
+}
+
+.selectText {
+  flex: 1;
+  min-width: 0;
+}
+
+.selectArrow {
+  color: #64748b;
+  flex-shrink: 0;
+  font-size: 1.25rem;
+}
+
+.selectUnderline {
+  background: #cbd5e1;
+  height: 1px;
+  width: 100%;
+}

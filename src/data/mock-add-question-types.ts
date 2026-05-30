@@ -32,7 +32,7 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
     types: [
       { id: 'comment-box', label: 'Comment Box', icon: 'wm-notes' },
       { id: 'single-row', label: 'Single Row Text', icon: 'wm-short-text' },
-      { id: 'email', label: 'Email Address', icon: 'wm-email' },
+      { id: 'email', label: 'Email Address', icon: 'wm-mail' },
       { id: 'contact', label: 'Contact Information', icon: 'wm-contact-page' },
     ],
   },

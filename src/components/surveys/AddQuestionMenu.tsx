@@ -26,6 +26,10 @@ import {
 import { BiDiamondIcon } from '@/components/ui/BiDiamondIcon';
 import { PushToSocialQuestionPreview } from '@/components/surveys/PushToSocialQuestionPreview';
 import { NumericSliderQuestionPreview } from '@/components/surveys/NumericSliderQuestionPreview';
+import { ConstantSumQuestionPreview } from '@/components/surveys/ConstantSumQuestionPreview';
+import { DragDropQuestionPreview } from '@/components/surveys/DragDropQuestionPreview';
+import { ImageChooserSelectOneQuestionPreview } from '@/components/surveys/ImageChooserSelectOneQuestionPreview';
+import { RankOrderQuestionPreview } from '@/components/surveys/RankOrderQuestionPreview';
 import { TextSliderQuestionPreview } from '@/components/surveys/TextSliderQuestionPreview';
 import styles from './AddQuestionMenu.module.css';
 
@@ -73,7 +77,9 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
   const isWidePreview =
     content.variant === 'push-to-social' ||
     content.variant === 'text-slider' ||
-    content.variant === 'numeric-slider';
+    content.variant === 'numeric-slider' ||
+    content.variant === 'constant-sum' ||
+    content.variant === 'image-chooser-select-one';
 
   return (
     <div
@@ -120,8 +126,20 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
         ) : null}
 
         {content.variant === 'text-single' ? (
-          <div className={styles.previewFakeInput} aria-hidden>
-            Type here…
+          <div
+            className={
+              content.inputIcon
+                ? `${styles.previewFakeInputWrap} ${styles.previewFakeInputWrapWithIcon}`
+                : styles.previewFakeInputWrap
+            }
+            aria-hidden
+          >
+            {content.inputIcon ? (
+              <span className={`${content.inputIcon} ${styles.previewInputIcon}`} aria-hidden />
+            ) : null}
+            <div className={styles.previewFakeInput}>
+              {content.inputPlaceholder ?? 'Type here…'}
+            </div>
           </div>
         ) : null}
 
@@ -187,6 +205,22 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
 
         {content.variant === 'numeric-slider' && content.numericSlider ? (
           <NumericSliderQuestionPreview data={content.numericSlider} />
+        ) : null}
+
+        {content.variant === 'rank-order' && content.rankOrder ? (
+          <RankOrderQuestionPreview data={content.rankOrder} />
+        ) : null}
+
+        {content.variant === 'constant-sum' && content.constantSum ? (
+          <ConstantSumQuestionPreview data={content.constantSum} />
+        ) : null}
+
+        {content.variant === 'drag-drop' && content.dragDrop ? (
+          <DragDropQuestionPreview data={content.dragDrop} />
+        ) : null}
+
+        {content.variant === 'image-chooser-select-one' && content.imageChooserSelectOne ? (
+          <ImageChooserSelectOneQuestionPreview data={content.imageChooserSelectOne} />
         ) : null}
 
         {content.variant === 'placeholder' && content.hint ? (

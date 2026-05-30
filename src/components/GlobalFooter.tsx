@@ -3,14 +3,14 @@
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import styles from './GlobalFooter.module.css';
 
-const FOOTER_COPY = 'Essentials ©2025 QuestionPro';
+const DEFAULT_FOOTER_COPY = 'Essentials ©2026 QuestionPro';
 
-export function GlobalFooter() {
+export function GlobalFooter({ copy = DEFAULT_FOOTER_COPY }: { copy?: string }) {
   const { showToast } = useWuShowToast();
 
   return (
     <footer className={styles.footer} aria-label="Application footer">
-      <span className={styles.copy}>{FOOTER_COPY}</span>
+      <span className={styles.copy}>{copy}</span>
       <div className={styles.actions}>
         <button
           type="button"
