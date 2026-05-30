@@ -1,5 +1,6 @@
 import type { Survey } from '@/data/mock-surveys';
 import { getSurveyEditorTitle } from '@/data/get-survey-by-id';
+import { NEW_AI_SURVEY_ID, readAiSurveyDraft } from '@/data/ai-survey-draft';
 import { NEW_BLANK_SURVEY_ID } from '@/data/mock-survey-creation-flow';
 
 export type SurveyQuestionInputKind = 'radio' | 'checkbox';
@@ -97,6 +98,16 @@ const BLANK_SURVEY_SECTIONS: SurveySection[] = [
 ];
 
 export function getSurveyDetail(survey: Survey): SurveyDetail {
+  if (survey.id === NEW_AI_SURVEY_ID) {
+    const draft = readAiSurveyDraft();
+    const sections = draft?.sections.length ? draft.sections : BLANK_SURVEY_SECTIONS;
+    return {
+      survey,
+      editorTitle: draft?.name ?? getSurveyEditorTitle(survey),
+      sections,
+    };
+  }
+
   const sections = survey.id === NEW_BLANK_SURVEY_ID ? BLANK_SURVEY_SECTIONS : DEFAULT_SECTIONS;
   return {
     survey,

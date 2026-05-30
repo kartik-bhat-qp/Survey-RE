@@ -7,13 +7,15 @@ import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { SurveyCreationAiThinkingOverlay } from '@/components/surveys/SurveyCreationAiThinkingOverlay';
 import { SurveyCreationTracerTitle } from '@/components/surveys/SurveyCreationTracerTitle';
+import { NEW_AI_SURVEY_ID, saveAiSurveyDraft } from '@/data/ai-survey-draft';
+import type { GeneratedSurveyPayload } from '@/lib/ai-survey-generation';
 import {
   createSurveyBriefFile,
   DEFAULT_SURVEY_CREATION_LANGUAGE,
+  getSurveyCreationLanguageLabel,
   getSurveyCreationLanguageShortLabel,
   NEW_BLANK_SURVEY_ID,
   saveBlankSurveyDraft,
-  SURVEY_AI_DRAFT_DELAY_MS,
   SURVEY_BRIEF_ACCEPT,
   SURVEY_CREATION_LANGUAGES,
   SURVEY_CREATION_PROMPT_PLACEHOLDER,
@@ -49,7 +51,6 @@ export default function NewSurveyCreationFlowPage() {
   const [blankNameError, setBlankNameError] = useState(false);
   const [heroRevealed, setHeroRevealed] = useState(false);
   const blankNameInputRef = useRef<HTMLInputElement>(null);
-  const aiDraftTimeoutRef = useRef<number | null>(null);
   const [isAiDrafting, setIsAiDrafting] = useState(false);
   const [templatePage, setTemplatePage] = useState(0);
 
@@ -70,8 +71,9 @@ export default function NewSurveyCreationFlowPage() {
   const trimmedPrompt = prompt.trim();
   const canCreate = trimmedPrompt.length > 0;
   const selectedLanguageLabel = getSurveyCreationLanguageShortLabel(language);
+  const surveyLanguageLabel = getSurveyCreationLanguageLabel(language);
 
-  function handleCreateSurvey() {
+  async function handleCreateSurvey() {
     if (!canCreate) {
       showToast({ message: 'Describe what you want to learn to continue', variant: 'error' });
       return;
@@ -79,12 +81,37 @@ export default function NewSurveyCreationFlowPage() {
     if (isAiDrafting) return;
 
     setIsAiDrafting(true);
-    aiDraftTimeoutRef.current = window.setTimeout(() => {
-      setIsAiDrafting(false);
-      aiDraftTimeoutRef.current = null;
+
+    try {
+      const response = await fetch('/api/generate-survey', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: trimmedPrompt,
+          languageLabel: surveyLanguageLabel,
+        }),
+      });
+
+      const data = (await response.json()) as {
+        success?: boolean;
+        error?: string;
+        survey?: GeneratedSurveyPayload;
+      };
+
+      if (!response.ok || !data.success || !data.survey) {
+        throw new Error(data.error ?? 'Failed to generate survey.');
+      }
+
+      saveAiSurveyDraft(data.survey, trimmedPrompt);
       showToast({ message: 'Your survey is ready to edit', variant: 'success' });
-      router.push('/surveys/1');
-    }, SURVEY_AI_DRAFT_DELAY_MS);
+      router.push(`/surveys/${NEW_AI_SURVEY_ID}`);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to generate survey.';
+      showToast({ message, variant: 'error' });
+    } finally {
+      setIsAiDrafting(false);
+    }
   }
 
   function handleTemplateSelect(templateLabel: string, templatePrompt: string) {
@@ -169,14 +196,6 @@ export default function NewSurveyCreationFlowPage() {
     if (!showBlankNameForm) return;
     blankNameInputRef.current?.focus();
   }, [showBlankNameForm]);
-
-  useEffect(() => {
-    return () => {
-      if (aiDraftTimeoutRef.current !== null) {
-        window.clearTimeout(aiDraftTimeoutRef.current);
-      }
-    };
-  }, []);
 
   return (
     <div className={styles.page}>

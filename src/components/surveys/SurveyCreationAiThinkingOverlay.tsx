@@ -1,13 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  SURVEY_AI_DRAFT_DELAY_MS,
-  SURVEY_AI_THINKING_STEPS,
-} from '@/data/mock-survey-creation-flow';
+import { SURVEY_AI_THINKING_STEPS } from '@/data/mock-survey-creation-flow';
 import styles from './SurveyCreationAiThinkingOverlay.module.css';
 
-const STEP_INTERVAL_MS = Math.floor(SURVEY_AI_DRAFT_DELAY_MS / SURVEY_AI_THINKING_STEPS.length);
+const STEP_INTERVAL_MS = 1400;
 
 interface SurveyCreationAiThinkingOverlayProps {
   open: boolean;
@@ -57,10 +54,7 @@ export function SurveyCreationAiThinkingOverlay({ open }: SurveyCreationAiThinki
         </h2>
         <p className={styles.step}>{stepMessage}</p>
         <div className={styles.progressTrack} aria-hidden>
-          <div
-            className={styles.progressFill}
-            style={{ animationDuration: `${SURVEY_AI_DRAFT_DELAY_MS}ms` }}
-          />
+          <div className={styles.progressFill} />
         </div>
       </div>
     </div>

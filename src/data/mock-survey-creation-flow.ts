@@ -130,7 +130,12 @@ export const SURVEY_CREATION_TEMPLATES: SurveyCreationTemplate[] = [
   },
 ];
 
-export { SURVEY_CREATION_LANGUAGES, DEFAULT_SURVEY_CREATION_LANGUAGE, getSurveyCreationLanguageShortLabel } from '@/data/mock-survey-creation-languages';
+export {
+  SURVEY_CREATION_LANGUAGES,
+  DEFAULT_SURVEY_CREATION_LANGUAGE,
+  getSurveyCreationLanguageLabel,
+  getSurveyCreationLanguageShortLabel,
+} from '@/data/mock-survey-creation-languages';
 
 export const SURVEY_CREATION_PROMPT_PLACEHOLDER =
   'e.g. A short feedback survey for customers who just finished onboarding…';
