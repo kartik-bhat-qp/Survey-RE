@@ -18,6 +18,7 @@ import {
   SURVEY_CREATION_LANGUAGES,
   SURVEY_CREATION_PROMPT_PLACEHOLDER,
   SURVEY_CREATION_TEMPLATES,
+  SURVEY_CREATION_TEMPLATES_PER_PAGE,
   formatSurveyBriefFileSize,
   validateSurveyBriefFile,
   type SurveyCreationBriefFile,
@@ -36,7 +37,6 @@ const WuMenuItem = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
   { ssr: false }
 );
-
 export default function NewSurveyCreationFlowPage() {
   const router = useRouter();
   const { showToast } = useWuShowToast();
@@ -51,6 +51,17 @@ export default function NewSurveyCreationFlowPage() {
   const blankNameInputRef = useRef<HTMLInputElement>(null);
   const aiDraftTimeoutRef = useRef<number | null>(null);
   const [isAiDrafting, setIsAiDrafting] = useState(false);
+  const [templatePage, setTemplatePage] = useState(0);
+
+  const templatePageCount = Math.ceil(
+    SURVEY_CREATION_TEMPLATES.length / SURVEY_CREATION_TEMPLATES_PER_PAGE
+  );
+  const visibleTemplates = SURVEY_CREATION_TEMPLATES.slice(
+    templatePage * SURVEY_CREATION_TEMPLATES_PER_PAGE,
+    templatePage * SURVEY_CREATION_TEMPLATES_PER_PAGE + SURVEY_CREATION_TEMPLATES_PER_PAGE
+  );
+  const canGoToPrevTemplates = templatePage > 0;
+  const canGoToNextTemplates = templatePage < templatePageCount - 1;
 
   const handleTracerComplete = useCallback(() => {
     setHeroRevealed(true);
@@ -264,7 +275,7 @@ export default function NewSurveyCreationFlowPage() {
               disabled={!canCreate || isAiDrafting}
               onClick={handleCreateSurvey}
             >
-              {isAiDrafting ? 'Drafting survey…' : 'Create my first survey'}
+              {isAiDrafting ? 'Drafting survey…' : 'create survey'}
               {!isAiDrafting ? <span className="wm-arrow-forward" aria-hidden /> : null}
             </WuButton>
           </div>
@@ -272,17 +283,44 @@ export default function NewSurveyCreationFlowPage() {
 
         <div className={styles.templatesBlock}>
           <p className={styles.templatesLabel}>Or start from</p>
-          <div className={styles.templateList}>
-            {SURVEY_CREATION_TEMPLATES.map((template) => (
-              <button
-                key={template.id}
-                type="button"
-                className={styles.templatePill}
-                onClick={() => handleTemplateSelect(template.label, template.prompt)}
-              >
-                {template.label}
-              </button>
-            ))}
+          <div
+            className={styles.templateCarousel}
+            role="group"
+            aria-label="Survey template categories"
+          >
+            <button
+              type="button"
+              className={styles.templateNavBtn}
+              aria-label="Previous templates"
+              disabled={!canGoToPrevTemplates || isAiDrafting}
+              onClick={() => setTemplatePage((page) => Math.max(0, page - 1))}
+            >
+              <span className="wm-chevron-left" aria-hidden />
+            </button>
+            <div className={styles.templateList}>
+              {visibleTemplates.map((template) => (
+                <button
+                  key={template.id}
+                  type="button"
+                  className={styles.templatePill}
+                  disabled={isAiDrafting}
+                  onClick={() => handleTemplateSelect(template.label, template.prompt)}
+                >
+                  {template.label}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className={styles.templateNavBtn}
+              aria-label="Next templates"
+              disabled={!canGoToNextTemplates || isAiDrafting}
+              onClick={() =>
+                setTemplatePage((page) => Math.min(templatePageCount - 1, page + 1))
+              }
+            >
+              <span className="wm-chevron-right" aria-hidden />
+            </button>
           </div>
         </div>
 

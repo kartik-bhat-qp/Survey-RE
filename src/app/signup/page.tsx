@@ -8,6 +8,7 @@ import { setSurveyFooterBrand } from '@/lib/survey-suite-footer-brand';
 import { QuestionProLogo } from '@/components/signup/QuestionProLogo';
 import { SignupAiHighlights } from '@/components/signup/SignupAiHighlights';
 import { SignupFeatureCarousel } from '@/components/signup/SignupFeatureCarousel';
+import { SignupPasswordField } from '@/components/signup/SignupPasswordField';
 import { TrustedBrandsFooter } from '@/components/signup/TrustedBrandsFooter';
 import {
   SIGNUP_LANGUAGES,
@@ -93,7 +94,6 @@ export default function SignupPage() {
   const { showToast } = useWuShowToast();
   const [form, setForm] = useState<SignupFormState>(INITIAL_FORM);
   const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
-  const [showPassword, setShowPassword] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
 
   function updateField<K extends keyof SignupFormState>(key: K, value: SignupFormState[K]) {
@@ -248,7 +248,7 @@ export default function SignupPage() {
                     Input={
                       <WuInput
                         id="signup-email"
-                        Label="Work email"
+                        Label="Email"
                         variant="outlined"
                         type="email"
                         placeholder="you@company.com"
@@ -258,29 +258,10 @@ export default function SignupPage() {
                     }
                   />
 
-                  <div className={styles.passwordWrap}>
-                    <WuFormGroup
-                      Input={
-                        <WuInput
-                          id="signup-password"
-                          Label="Password"
-                          variant="outlined"
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="8+ characters"
-                          value={form.password}
-                          onChange={(e) => updateField('password', e.target.value)}
-                        />
-                      }
-                    />
-                    <button
-                      type="button"
-                      className={styles.passwordToggle}
-                      onClick={() => setShowPassword((v) => !v)}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      <span className={showPassword ? 'wm-visibility-off' : 'wm-visibility'} />
-                    </button>
-                  </div>
+                  <SignupPasswordField
+                    value={form.password}
+                    onChange={(value) => updateField('password', value)}
+                  />
 
                   <WuButton type="submit" variant="primary" className={styles.submitBtn}>
                     Create account
