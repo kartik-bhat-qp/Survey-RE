@@ -1,0 +1,58 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.scale {
+  display: flex;
+  gap: 0.375rem;
+  justify-content: space-between;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.box {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #1b87e6;
+  border-radius: 4px;
+  color: #1b87e6;
+  display: flex;
+  flex: 1 1 0;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  justify-content: center;
+  line-height: 1;
+  max-width: 2.25rem;
+  min-height: 2rem;
+  min-width: 0;
+  padding: 0.375rem 0.125rem;
+}
+
+.anchorLabels {
+  display: flex;
+  justify-content: space-between;
+}
+
+.minLabel,
+.maxLabel {
+  color: #475569;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.minLabel {
+  max-width: 5rem;
+  text-align: left;
+}
+
+.maxLabel {
+  max-width: 5rem;
+  text-align: right;
+}

@@ -1,0 +1,19 @@
+.inputRow {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.underline {
+  background: #cbd5e1;
+  flex: 1;
+  height: 1px;
+  min-width: 0;
+}
+
+.calendarIcon {
+  color: #475569;
+  flex-shrink: 0;
+  font-size: 1.125rem;
+}

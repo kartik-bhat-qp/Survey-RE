@@ -24,14 +24,19 @@ import {
   type ThumbsPreviewDirection,
 } from '@/data/mock-add-question-previews';
 import { BiDiamondIcon } from '@/components/ui/BiDiamondIcon';
+import { useSurveyFooterBrand } from '@/components/surveys/useSurveyFooterBrand';
 import { PushToSocialQuestionPreview } from '@/components/surveys/PushToSocialQuestionPreview';
 import { NumericSliderQuestionPreview } from '@/components/surveys/NumericSliderQuestionPreview';
 import { ConstantSumQuestionPreview } from '@/components/surveys/ConstantSumQuestionPreview';
+import { CalendarQuestionPreview } from '@/components/surveys/CalendarQuestionPreview';
+import { DateTimeQuestionPreview } from '@/components/surveys/DateTimeQuestionPreview';
 import { DragDropQuestionPreview } from '@/components/surveys/DragDropQuestionPreview';
 import { ImageChooserRatingQuestionPreview } from '@/components/surveys/ImageChooserRatingQuestionPreview';
 import { MatrixMultiPointScalesQuestionPreview } from '@/components/surveys/MatrixMultiPointScalesQuestionPreview';
 import { MatrixMultiSelectQuestionPreview } from '@/components/surveys/MatrixMultiSelectQuestionPreview';
 import { MatrixSpreadsheetQuestionPreview } from '@/components/surveys/MatrixSpreadsheetQuestionPreview';
+import { MapsQuestionPreview } from '@/components/surveys/MapsQuestionPreview';
+import { NpsQuestionPreview } from '@/components/surveys/NpsQuestionPreview';
 import { ImageChooserSelectManyQuestionPreview } from '@/components/surveys/ImageChooserSelectManyQuestionPreview';
 import { ImageChooserSelectOneQuestionPreview } from '@/components/surveys/ImageChooserSelectOneQuestionPreview';
 import { RankOrderQuestionPreview } from '@/components/surveys/RankOrderQuestionPreview';
@@ -82,7 +87,8 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
   const isMatrixPreview =
     content.variant === 'matrix-multi-point' ||
     content.variant === 'matrix-multi-select' ||
-    content.variant === 'matrix-spreadsheet';
+    content.variant === 'matrix-spreadsheet' ||
+    content.variant === 'maps';
   const isWidePreview =
     content.variant === 'push-to-social' ||
     content.variant === 'text-slider' ||
@@ -91,6 +97,7 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
     content.variant === 'image-chooser-select-one' ||
     content.variant === 'image-chooser-select-many' ||
     content.variant === 'image-chooser-rating' ||
+    content.variant === 'nps' ||
     isMatrixPreview;
 
   const previewCardClass = isMatrixPreview
@@ -259,6 +266,20 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
           <MatrixSpreadsheetQuestionPreview data={content.matrixSpreadsheet} />
         ) : null}
 
+        {content.variant === 'date-time' && content.dateTime ? (
+          <DateTimeQuestionPreview data={content.dateTime} />
+        ) : null}
+
+        {content.variant === 'calendar' && content.calendar ? (
+          <CalendarQuestionPreview data={content.calendar} />
+        ) : null}
+
+        {content.variant === 'maps' ? <MapsQuestionPreview /> : null}
+
+        {content.variant === 'nps' && content.nps ? (
+          <NpsQuestionPreview data={content.nps} />
+        ) : null}
+
         {content.variant === 'placeholder' && content.hint ? (
           <p className={styles.previewHint}>{content.hint}</p>
         ) : null}
@@ -286,6 +307,9 @@ function TierSection({
   ) => void;
   onTypePointerLeave: () => void;
 }) {
+  const footerBrand = useSurveyFooterBrand();
+  const showLicenseDiamonds = footerBrand === 'essentials';
+
   if (categories.length === 0) return null;
 
   const heading = tier === 'basic' ? 'Basic' : 'Advanced';
@@ -319,7 +343,7 @@ function TierSection({
                       aria-hidden
                     />
                     <span className={styles.typeLabel}>{type.label}</span>
-                    {tier === 'advanced' ? (
+                    {tier === 'advanced' && showLicenseDiamonds ? (
                       <BiDiamondIcon
                         tooltip={getAddQuestionAdvancedLicenseTooltip(type.id)}
                         position="top"

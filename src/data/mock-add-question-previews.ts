@@ -20,6 +20,10 @@ export type QuestionPreviewVariant =
   | 'matrix-multi-point'
   | 'matrix-multi-select'
   | 'matrix-spreadsheet'
+  | 'date-time'
+  | 'calendar'
+  | 'maps'
+  | 'nps'
   | 'placeholder';
 
 export interface TextSliderPreviewData {
@@ -32,6 +36,27 @@ export type MatrixMultiPointPreviewData = TextSliderPreviewData;
 export type MatrixMultiSelectPreviewData = TextSliderPreviewData;
 
 export type MatrixSpreadsheetPreviewData = TextSliderPreviewData;
+
+export interface DateTimeFieldPreview {
+  label: string;
+}
+
+export interface DateTimePreviewData {
+  fields: DateTimeFieldPreview[];
+}
+
+export interface CalendarPreviewData {
+  inputIcon: string;
+}
+
+/** Maps preview uses {@link UsStatesChoroplethMap} — no extra data required. */
+export type MapsPreviewData = Record<string, never>;
+
+export interface NpsPreviewData {
+  minLabel: string;
+  maxLabel: string;
+  scores?: number[];
+}
 
 export interface NumericSliderPreviewData {
   leftAnchor: string;
@@ -162,6 +187,14 @@ export interface QuestionTypePreviewContent {
   matrixMultiSelect?: MatrixMultiSelectPreviewData;
   /** Basic matrix spreadsheet text-entry grid. */
   matrixSpreadsheet?: MatrixSpreadsheetPreviewData;
+  /** Date / time dropdown fields (e.g. Month, Day, Year). */
+  dateTime?: DateTimePreviewData;
+  /** Calendar single-line picker with trailing icon. */
+  calendar?: CalendarPreviewData;
+  /** US choropleth map image. */
+  maps?: MapsPreviewData;
+  /** Net Promoter Score 0–10 scale. */
+  nps?: NpsPreviewData;
   /** Secondary line under question (e.g. rating scale) */
   hint?: string;
   /** Leading icon inside a text input preview (e.g. email). */
@@ -500,10 +533,13 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     question: 'Secondary heading within a section.',
   },
   'date-time': {
-    variant: 'placeholder',
+    variant: 'date-time',
     headerIcon: 'wm-event',
-    headerLabel: 'Date / Time',
-    question: 'Pick a date, time, or both using a calendar control.',
+    headerLabel: 'Misc (Date / Time)',
+    question: 'What is your date of birth?',
+    dateTime: {
+      fields: [{ label: 'Month' }, { label: 'Day' }, { label: 'Year' }],
+    },
   },
   captcha: {
     variant: 'placeholder',
@@ -512,22 +548,31 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     question: 'Bot verification challenge before continuing.',
   },
   calendar: {
-    variant: 'placeholder',
+    variant: 'calendar',
     headerIcon: 'wm-calendar-month',
-    headerLabel: 'Calendar',
-    question: 'Calendar-based scheduling or availability.',
+    headerLabel: 'Misc (Calendar)',
+    question: 'What is your date of birth?',
+    calendar: {
+      inputIcon: 'wm-calendar-month',
+    },
   },
   maps: {
-    variant: 'placeholder',
+    variant: 'maps',
     headerIcon: 'wm-map',
-    headerLabel: 'Maps',
-    question: 'Location capture or map-based interaction.',
+    headerLabel: 'Misc (Maps)',
+    question: 'What state were you born in?',
+    maps: {},
   },
   nps: {
-    variant: 'placeholder',
+    variant: 'nps',
     headerIcon: 'wm-speed',
-    headerLabel: 'Net Promoter Score',
-    question: 'How likely are you to recommend us? (0–10 scale)',
+    headerLabel: 'Customer Satisfaction (Net Promoter Score)',
+    question:
+      'Considering your complete experience with our company, how likely would you be to recommend our products to a friend or colleague?',
+    nps: {
+      minLabel: 'Very Unlikely',
+      maxLabel: 'Very Likely',
+    },
   },
   homunculus: {
     variant: 'placeholder',
