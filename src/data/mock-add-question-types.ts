@@ -217,6 +217,28 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
   },
 ];
 
+/** Shown when hovering the diamond on select Advanced question types. */
+export const ADD_QUESTION_ADVANCED_LICENSE_TOOLTIP =
+  'This question is available with the Advanced license';
+
+const ADD_QUESTION_ADVANCED_LICENSE_TYPE_IDS = new Set([
+  'nps',
+  'reference-data',
+  'lookup-table',
+  'multi-tier-lookup',
+  'stop-watch',
+  'barcode',
+  'qr-reader',
+  'upload-file',
+  'signature',
+]);
+
+export function getAddQuestionAdvancedLicenseTooltip(typeId: string): string | undefined {
+  return ADD_QUESTION_ADVANCED_LICENSE_TYPE_IDS.has(typeId)
+    ? ADD_QUESTION_ADVANCED_LICENSE_TOOLTIP
+    : undefined;
+}
+
 export function filterAddQuestionCategories(
   categories: ReadonlyArray<AddQuestionCategory>,
   searchTerm: string

@@ -5,7 +5,64 @@ export type QuestionPreviewVariant =
   | 'text-single'
   | 'text-area'
   | 'star-rating'
+  | 'contact-fields'
+  | 'smiley-rating'
+  | 'thumbs-up-down'
+  | 'push-to-social'
+  | 'text-slider'
+  | 'numeric-slider'
   | 'placeholder';
+
+export interface TextSliderPreviewData {
+  scaleLabels: string[];
+  rows: string[];
+}
+
+export interface NumericSliderPreviewData {
+  leftAnchor: string;
+  rightAnchor: string;
+  rows: string[];
+  valuePlaceholder: string;
+}
+
+export type PushToSocialPlatformBrand = 'facebook' | 'x' | 'yelp';
+
+export interface PushToSocialPlatformPreview {
+  id: string;
+  brand: PushToSocialPlatformBrand;
+  brandLetter: string;
+  value: string;
+}
+
+export interface PushToSocialPreviewData {
+  ratingSubject: string;
+  pushIfRatingAtLeast: number;
+  shareMessagePrompt: string;
+  platforms: PushToSocialPlatformPreview[];
+  defaultShareMessage: string;
+  badReviewEnabled: boolean;
+  badReviewRatingAtMost: number;
+  commentBoxTitle: string;
+}
+
+export type SmileyRatingPreviewTone =
+  | 'very-unsatisfied'
+  | 'unsatisfied'
+  | 'neutral'
+  | 'satisfied'
+  | 'very-satisfied';
+
+export interface SmileyRatingPreviewOption {
+  label: string;
+  tone: SmileyRatingPreviewTone;
+}
+
+export type ThumbsPreviewDirection = 'up' | 'down';
+
+export interface ThumbsPreviewChoice {
+  label: string;
+  direction: ThumbsPreviewDirection;
+}
 
 export interface QuestionTypePreviewContent {
   variant: QuestionPreviewVariant;
@@ -13,6 +70,18 @@ export interface QuestionTypePreviewContent {
   headerLabel: string;
   question: string;
   options?: string[];
+  /** Labeled underline fields (e.g. Contact Information). */
+  fields?: string[];
+  /** Five-point smiley scale (Smiley - Rating). */
+  smileyScale?: SmileyRatingPreviewOption[];
+  /** Thumbs up / down choices. */
+  thumbsChoices?: ThumbsPreviewChoice[];
+  /** Push To Social configuration preview. */
+  pushToSocial?: PushToSocialPreviewData;
+  /** Text slider matrix preview. */
+  textSlider?: TextSliderPreviewData;
+  /** Numeric slider matrix preview. */
+  numericSlider?: NumericSliderPreviewData;
   /** Secondary line under question (e.g. rating scale) */
   hint?: string;
 }
@@ -63,11 +132,11 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     hint: 'Validated email format.',
   },
   contact: {
-    variant: 'placeholder',
+    variant: 'contact-fields',
     headerIcon: 'wm-contact-page',
-    headerLabel: 'Contact Information',
-    question:
-      'Collect name, phone, address, and other contact fields in one structured block.',
+    headerLabel: 'Text (Contact Information)',
+    question: 'Contact Information',
+    fields: ['First Name', 'Last Name', 'Phone', 'Email Address'],
   },
   'star-rating': {
     variant: 'star-rating',
@@ -77,34 +146,91 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     hint: '★ ★ ★ ★ ★',
   },
   'smiley-rating': {
-    variant: 'placeholder',
+    variant: 'smiley-rating',
     headerIcon: 'wm-sentiment-satisfied',
-    headerLabel: 'Smiley - Rating',
-    question: 'Visual smiley scale for quick sentiment capture.',
+    headerLabel: 'Graphical Rating (Smiley - Rating)',
+    question: 'How satisfied are you with our services?',
+    smileyScale: [
+      { label: 'Very Unsatisfied', tone: 'very-unsatisfied' },
+      { label: 'Unsatisfied', tone: 'unsatisfied' },
+      { label: 'Neutral', tone: 'neutral' },
+      { label: 'Satisfied', tone: 'satisfied' },
+      { label: 'Very Satisfied', tone: 'very-satisfied' },
+    ],
   },
   thumbs: {
-    variant: 'placeholder',
+    variant: 'thumbs-up-down',
     headerIcon: 'wm-thumb-up',
-    headerLabel: 'Thumbs Up/Down',
-    question: 'Binary agree / disagree style control.',
+    headerLabel: 'Graphical Rating (Thumbs Up/Down)',
+    question: 'What do you think of Starbucks?',
+    thumbsChoices: [
+      { label: 'Love it', direction: 'up' },
+      { label: 'Hate it', direction: 'down' },
+    ],
   },
   'push-social': {
-    variant: 'placeholder',
+    variant: 'push-to-social',
     headerIcon: 'wm-share',
-    headerLabel: 'Push To Social',
-    question: 'Encourage respondents to share on social networks.',
+    headerLabel: 'Graphical Rating (Push To Social)',
+    question: 'How satisfied are you with the following ?',
+    pushToSocial: {
+      ratingSubject: 'Customer Experience',
+      pushIfRatingAtLeast: 4,
+      shareMessagePrompt: 'Thanks for the great rating, please share with',
+      platforms: [
+        {
+          id: 'facebook',
+          brand: 'facebook',
+          brandLetter: 'f',
+          value: 'https://www.facebook.com/questionpro/',
+        },
+        {
+          id: 'x',
+          brand: 'x',
+          brandLetter: 'X',
+          value: '@questionpro',
+        },
+        {
+          id: 'yelp',
+          brand: 'yelp',
+          brandLetter: 'yelp',
+          value: 'https://www.yelp.com/yourcompany/',
+        },
+      ],
+      defaultShareMessage:
+        '[Your company] is great! I give them [#rating] stars. Check them',
+      badReviewEnabled: true,
+      badReviewRatingAtMost: 2,
+      commentBoxTitle: 'Please let us know what we could',
+    },
   },
   'text-slider': {
-    variant: 'placeholder',
+    variant: 'text-slider',
     headerIcon: 'wm-tune',
-    headerLabel: 'Text Slider',
-    question: 'Drag along a labeled scale between two anchor phrases.',
+    headerLabel: 'Graphical Rating (Text Slider)',
+    question: 'How satisfied are you with the following',
+    textSlider: {
+      scaleLabels: [
+        'Very Dissatisfied',
+        'Unsatisfied',
+        'Neutral',
+        'Satisfied',
+        'Very Satisfied',
+      ],
+      rows: ['Website', 'Customer Service', 'Overall'],
+    },
   },
   'numeric-slider': {
-    variant: 'placeholder',
+    variant: 'numeric-slider',
     headerIcon: 'wm-linear-scale',
-    headerLabel: 'Numeric Slider',
-    question: 'Numeric range selection with a draggable handle.',
+    headerLabel: 'Graphical Rating (Numeric Slider)',
+    question: 'How satisfied are you with the following',
+    numericSlider: {
+      leftAnchor: 'Left Anchor',
+      rightAnchor: 'Right Anchor',
+      rows: ['Row 1', 'Row 2'],
+      valuePlaceholder: '--',
+    },
   },
   'image-select-one': {
     variant: 'radios',

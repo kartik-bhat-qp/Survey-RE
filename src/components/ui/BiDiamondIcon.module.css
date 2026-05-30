@@ -1,0 +1,16 @@
+.wrap {
+  align-items: center;
+  display: inline-flex;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.icon {
+  color: #e6a700;
+  font-size: 0.875rem;
+}
+
+.wrapInteractive:hover .icon,
+.wrapInteractive:focus-visible .icon {
+  color: #c99200;
+}

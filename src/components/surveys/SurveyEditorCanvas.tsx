@@ -785,15 +785,6 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           </section>
         ))}
       </div>
-
-      <button
-        type="button"
-        className={styles.fab}
-        aria-label="Add"
-        onClick={() => toast('Quick add')}
-      >
-        <span className="wm-add" />
-      </button>
       </div>
 
       {settingsQuestion && settingsQuestionKey ? (

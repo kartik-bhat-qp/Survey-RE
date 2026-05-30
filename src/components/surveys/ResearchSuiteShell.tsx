@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { GlobalFooter } from '@/components/GlobalFooter';
 import { AppHeaderContent } from '@/components/header/AppHeaderContent';
 import { SurveysAppHeaderContent } from '@/components/surveys/SurveysAppHeaderContent';
 import {
@@ -35,7 +36,10 @@ export function ResearchSuiteShell({ children }: { children: React.ReactNode }) 
           </AppHeaderContent>
         </WuAppHeader>
       </header>
-      <div className={styles.content}>{children}</div>
+      <div className={styles.body}>
+        <div className={styles.content}>{children}</div>
+        <GlobalFooter />
+      </div>
     </div>
   );
 }

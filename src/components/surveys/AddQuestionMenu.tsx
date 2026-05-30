@@ -12,6 +12,7 @@ import dynamic from 'next/dynamic';
 import {
   ADD_QUESTION_CATEGORIES,
   filterAddQuestionCategories,
+  getAddQuestionAdvancedLicenseTooltip,
   type AddQuestionCategory,
   type AddQuestionTypeItem,
   type QuestionTypeTier,
@@ -19,7 +20,13 @@ import {
 import {
   getQuestionTypePreview,
   type QuestionTypePreviewContent,
+  type SmileyRatingPreviewTone,
+  type ThumbsPreviewDirection,
 } from '@/data/mock-add-question-previews';
+import { BiDiamondIcon } from '@/components/ui/BiDiamondIcon';
+import { PushToSocialQuestionPreview } from '@/components/surveys/PushToSocialQuestionPreview';
+import { NumericSliderQuestionPreview } from '@/components/surveys/NumericSliderQuestionPreview';
+import { TextSliderQuestionPreview } from '@/components/surveys/TextSliderQuestionPreview';
 import styles from './AddQuestionMenu.module.css';
 
 const WuButton = dynamic(
@@ -41,9 +48,37 @@ interface HoveredTypeState {
 
 const PREVIEW_LEAVE_MS = 140;
 
+const SMILEY_ICON_BY_TONE: Record<SmileyRatingPreviewTone, string> = {
+  'very-unsatisfied': 'wm-sentiment-very-dissatisfied',
+  unsatisfied: 'wm-sentiment-dissatisfied',
+  neutral: 'wm-sentiment-neutral',
+  satisfied: 'wm-sentiment-satisfied',
+  'very-satisfied': 'wm-sentiment-very-satisfied',
+};
+
+const SMILEY_FACE_CLASS_BY_TONE: Record<SmileyRatingPreviewTone, string> = {
+  'very-unsatisfied': styles.previewSmileyFaceVeryUnsatisfied,
+  unsatisfied: styles.previewSmileyFaceUnsatisfied,
+  neutral: styles.previewSmileyFaceNeutral,
+  satisfied: styles.previewSmileyFaceSatisfied,
+  'very-satisfied': styles.previewSmileyFaceVerySatisfied,
+};
+
+const THUMB_ICON_BY_DIRECTION: Record<ThumbsPreviewDirection, string> = {
+  up: 'wm-thumb-up',
+  down: 'wm-thumb-down',
+};
+
 function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewContent }) {
+  const isWidePreview =
+    content.variant === 'push-to-social' ||
+    content.variant === 'text-slider' ||
+    content.variant === 'numeric-slider';
+
   return (
-    <div className={styles.previewCard}>
+    <div
+      className={`${styles.previewCard} ${isWidePreview ? styles.previewCardWide : ''}`}
+    >
       <div className={styles.previewHeader}>
         <span className={`${content.headerIcon} ${styles.previewHeaderIcon}`} aria-hidden />
         <span>{content.headerLabel}</span>
@@ -101,8 +136,57 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
           />
         ) : null}
 
+        {content.variant === 'contact-fields' && content.fields ? (
+          <ul className={styles.previewContactFieldList}>
+            {content.fields.map((label) => (
+              <li key={label} className={styles.previewContactField}>
+                <span className={styles.previewContactFieldLabel}>{label}</span>
+                <div className={styles.previewContactFieldLine} aria-hidden />
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
         {content.variant === 'star-rating' && content.hint ? (
           <p className={styles.previewHint}>{content.hint}</p>
+        ) : null}
+
+        {content.variant === 'smiley-rating' && content.smileyScale ? (
+          <ul className={styles.previewSmileyScale} aria-hidden>
+            {content.smileyScale.map((option) => (
+              <li key={option.label} className={styles.previewSmileyItem}>
+                <span
+                  className={`${SMILEY_ICON_BY_TONE[option.tone]} ${styles.previewSmileyFace} ${SMILEY_FACE_CLASS_BY_TONE[option.tone]}`}
+                />
+                <span className={styles.previewSmileyLabel}>{option.label}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {content.variant === 'thumbs-up-down' && content.thumbsChoices ? (
+          <ul className={styles.previewThumbsScale} aria-hidden>
+            {content.thumbsChoices.map((choice) => (
+              <li key={choice.label} className={styles.previewThumbsItem}>
+                <span
+                  className={`${THUMB_ICON_BY_DIRECTION[choice.direction]} ${styles.previewThumbsIcon}`}
+                />
+                <span className={styles.previewThumbsLabel}>{choice.label}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {content.variant === 'push-to-social' && content.pushToSocial ? (
+          <PushToSocialQuestionPreview data={content.pushToSocial} />
+        ) : null}
+
+        {content.variant === 'text-slider' && content.textSlider ? (
+          <TextSliderQuestionPreview data={content.textSlider} />
+        ) : null}
+
+        {content.variant === 'numeric-slider' && content.numericSlider ? (
+          <NumericSliderQuestionPreview data={content.numericSlider} />
         ) : null}
 
         {content.variant === 'placeholder' && content.hint ? (
@@ -165,6 +249,12 @@ function TierSection({
                       aria-hidden
                     />
                     <span className={styles.typeLabel}>{type.label}</span>
+                    {tier === 'advanced' ? (
+                      <BiDiamondIcon
+                        tooltip={getAddQuestionAdvancedLicenseTooltip(type.id)}
+                        position="top"
+                      />
+                    ) : null}
                   </button>
                 </li>
               ))}
