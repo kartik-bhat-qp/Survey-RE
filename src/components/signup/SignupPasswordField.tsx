@@ -14,11 +14,13 @@ const WuInput = dynamic(
 
 const PASSWORD_TOGGLE_SELECTOR = '[data-slot="wu-input-password-toggle"]';
 
-function skipPasswordToggleInTabOrder(root: HTMLElement) {
+function skipPasswordToggleInTabOrder(root: HTMLElement): boolean {
   const toggle = root.querySelector<HTMLButtonElement>(PASSWORD_TOGGLE_SELECTOR);
-  if (toggle) {
+  if (!toggle) return false;
+  if (toggle.tabIndex !== -1) {
     toggle.tabIndex = -1;
   }
+  return true;
 }
 
 interface SignupPasswordFieldProps {
@@ -26,7 +28,10 @@ interface SignupPasswordFieldProps {
   onChange: (value: string) => void;
 }
 
-/** WickUI renders the visibility toggle before the input; keep it out of tab order. */
+/**
+ * WickUI password inputs render the visibility toggle before the field in the DOM.
+ * Remove the toggle from tab order so Email → Password input → Create account.
+ */
 export function SignupPasswordField({ value, onChange }: SignupPasswordFieldProps) {
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -37,8 +42,20 @@ export function SignupPasswordField({ value, onChange }: SignupPasswordFieldProp
     const apply = () => skipPasswordToggleInTabOrder(root);
 
     apply();
+
+    const observer = new MutationObserver(() => {
+      apply();
+    });
+    observer.observe(root, { childList: true, subtree: true });
+
     const frameId = window.requestAnimationFrame(apply);
-    return () => window.cancelAnimationFrame(frameId);
+    const timeoutId = window.setTimeout(apply, 0);
+
+    return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timeoutId);
+    };
   }, []);
 
   return (

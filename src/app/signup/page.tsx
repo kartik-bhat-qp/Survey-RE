@@ -113,7 +113,7 @@ export default function SignupPage() {
       showToast({ message: 'Password must be at least 8 characters', variant: 'error' });
       return;
     }
-    showToast({ message: 'Account created — welcome to QuestionPro!', variant: 'success' });
+    showToast({ message: 'Account created, welcome to QuestionPro!', variant: 'success' });
     setSurveyFooterBrand('essentials');
     router.push('/surveys/create');
   }
