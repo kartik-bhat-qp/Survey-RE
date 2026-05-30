@@ -55,8 +55,8 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
     tier: 'basic',
     types: [
       { id: 'image-select-one', label: 'Select One', icon: 'wm-panorama' },
-      { id: 'image-select-many', label: 'Select Many', icon: 'wm-collections' },
-      { id: 'image-rating', label: 'Rating', icon: 'wm-star-border' },
+      { id: 'image-select-many', label: 'Select Many', icon: 'wm-photo-library' },
+      { id: 'image-rating', label: 'Rating', icon: 'wc-image-chooser-2' },
     ],
   },
   {
@@ -74,8 +74,8 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
     title: 'Basic Matrix',
     tier: 'basic',
     types: [
-      { id: 'multi-point', label: 'Multi-Point Scales', icon: 'wm-grid-on' },
-      { id: 'multi-select-matrix', label: 'Multi-Select', icon: 'wm-apps' },
+      { id: 'multi-point', label: 'Multi-Point Scales', icon: 'wc-basic-matrix-1' },
+      { id: 'multi-select-matrix', label: 'Multi-Select', icon: 'wc-basic-matrix-2' },
       { id: 'spreadsheet', label: 'Spreadsheet', icon: 'wm-table-chart' },
     ],
   },

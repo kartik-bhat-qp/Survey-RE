@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" role="img" aria-label="Vanilla ice cream">
+  <rect width="160" height="120" fill="#f8fafc"/>
+  <ellipse cx="80" cy="98" rx="42" ry="10" fill="#e2e8f0"/>
+  <path d="M54 92 L58 46 Q80 36 102 46 L106 92 Z" fill="#fffbeb" stroke="#d6d3d1"/>
+  <circle cx="70" cy="58" r="11" fill="#fef3c7"/>
+  <circle cx="88" cy="52" r="13" fill="#fff7ed"/>
+  <circle cx="78" cy="70" r="10" fill="#ffedd5"/>
+</svg>

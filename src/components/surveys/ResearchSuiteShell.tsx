@@ -7,6 +7,7 @@ import { AppHeaderContent } from '@/components/header/AppHeaderContent';
 import { SurveyFooterBrandSync } from '@/components/surveys/SurveyFooterBrandSync';
 import { SurveysAppHeaderContent } from '@/components/surveys/SurveysAppHeaderContent';
 import { useSurveyFooterBrand } from '@/components/surveys/useSurveyFooterBrand';
+import { useMounted } from '@/hooks/useMounted';
 import { formatSurveySuiteFooterCopy } from '@/lib/survey-suite-footer-brand';
 import {
   HEADER_BRAND_COLOR,
@@ -25,26 +26,33 @@ const WuToast = dynamic(
 );
 
 export function ResearchSuiteShell({ children }: { children: React.ReactNode }) {
+  const mounted = useMounted();
   const footerBrand = useSurveyFooterBrand();
   const footerCopy = formatSurveySuiteFooterCopy(footerBrand);
 
   return (
     <div className={styles.shell}>
-      <Suspense fallback={null}>
-        <SurveyFooterBrandSync />
-      </Suspense>
-      <WuToast />
+      {mounted ? (
+        <Suspense fallback={null}>
+          <SurveyFooterBrandSync />
+        </Suspense>
+      ) : null}
+      {mounted ? <WuToast /> : null}
       <header className={styles.header}>
-        <WuAppHeader
-          productName="Surveys"
-          categories={MOCK_HEADER_CATEGORIES}
-          brandColor={HEADER_BRAND_COLOR}
-          user={MOCK_HEADER_USER}
-        >
-          <AppHeaderContent>
-            <SurveysAppHeaderContent />
-          </AppHeaderContent>
-        </WuAppHeader>
+        {mounted ? (
+          <WuAppHeader
+            productName="Surveys"
+            categories={MOCK_HEADER_CATEGORIES}
+            brandColor={HEADER_BRAND_COLOR}
+            user={MOCK_HEADER_USER}
+          >
+            <AppHeaderContent>
+              <SurveysAppHeaderContent />
+            </AppHeaderContent>
+          </WuAppHeader>
+        ) : (
+          <div className={styles.headerPlaceholder} aria-hidden />
+        )}
       </header>
       <div className={styles.body}>
         <div className={styles.content}>{children}</div>

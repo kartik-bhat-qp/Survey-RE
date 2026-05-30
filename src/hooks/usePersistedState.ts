@@ -26,14 +26,14 @@ function writeToStorage<T>(key: string, value: T): void {
 
 /**
  * Persists state to localStorage under `survey-re:<key>`.
- * On the client, the initial state is read from storage so saves are not
- * overwritten by a late hydration pass.
+ * Initial render always uses `initialValue` so server HTML matches the client.
  */
 export function usePersistedState<T>(
   key: string,
   initialValue: T
 ): [T, React.Dispatch<React.SetStateAction<T>>] {
-  const [value, setValue] = useState<T>(() => readFromStorage(key, initialValue));
+  const [value, setValue] = useState<T>(initialValue);
+  const [hydrated, setHydrated] = useState(false);
 
   const setPersistedValue = useCallback<React.Dispatch<React.SetStateAction<T>>>(
     (next) => {
@@ -48,8 +48,14 @@ export function usePersistedState<T>(
   );
 
   useEffect(() => {
+    setValue(readFromStorage(key, initialValue));
+    setHydrated(true);
+  }, [key, initialValue]);
+
+  useEffect(() => {
+    if (!hydrated) return;
     writeToStorage(key, value);
-  }, [key, value]);
+  }, [hydrated, key, value]);
 
   return [value, setPersistedValue];
 }

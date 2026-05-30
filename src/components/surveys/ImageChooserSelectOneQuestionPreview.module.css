@@ -40,3 +40,13 @@
   line-height: 1.35;
   text-align: center;
 }
+
+.optionsCompact {
+  gap: 0.75rem;
+}
+
+.optionCompact {
+  flex: 1 1 5.5rem;
+  max-width: 6.75rem;
+  min-width: 5.25rem;
+}

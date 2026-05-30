@@ -11,12 +11,11 @@ export function useSurveyFooterBrand(): SurveyFooterBrand {
   const [brand, setBrand] = useState<SurveyFooterBrand>('research');
 
   useEffect(() => {
-    setBrand(getSurveyFooterBrand());
-
     function sync() {
       setBrand(getSurveyFooterBrand());
     }
 
+    sync();
     window.addEventListener(SURVEY_FOOTER_BRAND_CHANGED, sync);
     return () => window.removeEventListener(SURVEY_FOOTER_BRAND_CHANGED, sync);
   }, []);

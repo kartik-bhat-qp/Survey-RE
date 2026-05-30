@@ -99,6 +99,10 @@
   min-width: min(32rem, 100%);
 }
 
+.previewCardMatrix {
+  min-width: min(38rem, 100%);
+}
+
 .previewHeader {
   align-items: center;
   background: #f1f5f9;

@@ -15,12 +15,23 @@ export type QuestionPreviewVariant =
   | 'constant-sum'
   | 'drag-drop'
   | 'image-chooser-select-one'
+  | 'image-chooser-select-many'
+  | 'image-chooser-rating'
+  | 'matrix-multi-point'
+  | 'matrix-multi-select'
+  | 'matrix-spreadsheet'
   | 'placeholder';
 
 export interface TextSliderPreviewData {
   scaleLabels: string[];
   rows: string[];
 }
+
+export type MatrixMultiPointPreviewData = TextSliderPreviewData;
+
+export type MatrixMultiSelectPreviewData = TextSliderPreviewData;
+
+export type MatrixSpreadsheetPreviewData = TextSliderPreviewData;
 
 export interface NumericSliderPreviewData {
   leftAnchor: string;
@@ -62,6 +73,18 @@ export interface ImageChooserOptionPreview {
 
 export interface ImageChooserSelectOnePreviewData {
   options: ImageChooserOptionPreview[];
+}
+
+export type ImageChooserSelectManyPreviewData = ImageChooserSelectOnePreviewData;
+
+export interface ImageChooserRatingOptionPreview {
+  imageSrc: string;
+  imageAlt: string;
+}
+
+export interface ImageChooserRatingPreviewData {
+  options: ImageChooserRatingOptionPreview[];
+  ratingPlaceholder: string;
 }
 
 export type PushToSocialPlatformBrand = 'facebook' | 'x' | 'yelp';
@@ -129,6 +152,16 @@ export interface QuestionTypePreviewContent {
   dragDrop?: DragDropPreviewData;
   /** Image chooser select-one options. */
   imageChooserSelectOne?: ImageChooserSelectOnePreviewData;
+  /** Image chooser select-many options. */
+  imageChooserSelectMany?: ImageChooserSelectManyPreviewData;
+  /** Image chooser rating options with scale dropdowns. */
+  imageChooserRating?: ImageChooserRatingPreviewData;
+  /** Basic matrix multi-point scale grid. */
+  matrixMultiPoint?: MatrixMultiPointPreviewData;
+  /** Basic matrix multi-select checkbox grid. */
+  matrixMultiSelect?: MatrixMultiSelectPreviewData;
+  /** Basic matrix spreadsheet text-entry grid. */
+  matrixSpreadsheet?: MatrixSpreadsheetPreviewData;
   /** Secondary line under question (e.g. rating scale) */
   hint?: string;
   /** Leading icon inside a text input preview (e.g. email). */
@@ -306,18 +339,61 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     },
   },
   'image-select-many': {
-    variant: 'checkboxes',
-    headerIcon: 'wm-collections',
-    headerLabel: 'Image Chooser — Select Many',
-    question: 'Which flavors would you consider purchasing? (Select all that apply)',
-    options: ['Classic', 'Spicy', 'Sweet', 'Savory', 'Seasonal'],
+    variant: 'image-chooser-select-many',
+    headerIcon: 'wm-photo-library',
+    headerLabel: 'Image Chooser (Select Many)',
+    question: 'Select all the flavors of icecream you like',
+    imageChooserSelectMany: {
+      options: [
+        {
+          label: 'Strawberry',
+          imageSrc: '/images/add-question-previews/ice-cream-strawberry.svg',
+          imageAlt: 'Strawberry sundae',
+        },
+        {
+          label: 'Butterscotch',
+          imageSrc: '/images/add-question-previews/ice-cream-butterscotch.svg',
+          imageAlt: 'Butterscotch ice cream',
+        },
+        {
+          label: 'Chocolate',
+          imageSrc: '/images/add-question-previews/ice-cream-chocolate.svg',
+          imageAlt: 'Chocolate ice cream',
+        },
+        {
+          label: 'Vanilla',
+          imageSrc: '/images/add-question-previews/ice-cream-vanilla.svg',
+          imageAlt: 'Vanilla ice cream',
+        },
+      ],
+    },
   },
   'image-rating': {
-    variant: 'star-rating',
-    headerIcon: 'wm-star-border',
-    headerLabel: 'Image Chooser — Rating',
-    question: 'Rate how appealing this product photo is.',
-    hint: '★ ★ ★ ★ ★',
+    variant: 'image-chooser-rating',
+    headerIcon: 'wc-image-chooser-2',
+    headerLabel: 'Image Chooser (Rating)',
+    question: 'Please rate the ice cream flavors',
+    imageChooserRating: {
+      ratingPlaceholder: 'Very Dissatisfied',
+      options: [
+        {
+          imageSrc: '/images/add-question-previews/ice-cream-strawberry.svg',
+          imageAlt: 'Strawberry sundae',
+        },
+        {
+          imageSrc: '/images/add-question-previews/ice-cream-butterscotch.svg',
+          imageAlt: 'Butterscotch ice cream',
+        },
+        {
+          imageSrc: '/images/add-question-previews/ice-cream-chocolate.svg',
+          imageAlt: 'Chocolate ice cream',
+        },
+        {
+          imageSrc: '/images/add-question-previews/ice-cream-vanilla.svg',
+          imageAlt: 'Vanilla ice cream',
+        },
+      ],
+    },
   },
   'rank-order': {
     variant: 'rank-order',
@@ -358,23 +434,52 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     },
   },
   'multi-point': {
-    variant: 'placeholder',
-    headerIcon: 'wm-grid-on',
-    headerLabel: 'Basic Matrix — Multi-Point Scales',
-    question: 'Rows and columns with a shared scale (e.g. satisfaction 1–5).',
+    variant: 'matrix-multi-point',
+    headerIcon: 'wc-basic-matrix-1',
+    headerLabel: 'Basic Matrix (Multi-Point Scales)',
+    question: 'How satisfied are you with the following',
+    matrixMultiPoint: {
+      scaleLabels: [
+        'Very Dissatisfied',
+        'Unsatisfied',
+        'Neutral',
+        'Satisfied',
+        'Very Satisfied',
+      ],
+      rows: ['Website', 'Customer Service', 'Overall'],
+    },
   },
   'multi-select-matrix': {
-    variant: 'checkboxes',
-    headerIcon: 'wm-apps',
-    headerLabel: 'Basic Matrix — Multi-Select',
-    question: 'For each row, select all columns that apply.',
-    options: ['Option A', 'Option B', 'Option C'],
+    variant: 'matrix-multi-select',
+    headerIcon: 'wc-basic-matrix-2',
+    headerLabel: 'Basic Matrix (Multi-Select)',
+    question: 'How satisfied are you with the following',
+    matrixMultiSelect: {
+      scaleLabels: [
+        'Very Dissatisfied',
+        'Unsatisfied',
+        'Neutral',
+        'Satisfied',
+        'Very Satisfied',
+      ],
+      rows: ['Website', 'Customer Service', 'Overall'],
+    },
   },
   spreadsheet: {
-    variant: 'placeholder',
+    variant: 'matrix-spreadsheet',
     headerIcon: 'wm-table-chart',
-    headerLabel: 'Spreadsheet',
-    question: 'Grid-style entry similar to a spreadsheet.',
+    headerLabel: 'Basic Matrix (Spreadsheet)',
+    question: 'How satisfied are you with the following',
+    matrixSpreadsheet: {
+      scaleLabels: [
+        'Very Dissatisfied',
+        'Unsatisfied',
+        'Neutral',
+        'Satisfied',
+        'Very Satisfied',
+      ],
+      rows: ['Website', 'Customer Service', 'Overall'],
+    },
   },
   presentation: {
     variant: 'placeholder',

@@ -13,6 +13,13 @@
   z-index: 50;
 }
 
+.headerPlaceholder {
+  background: #fff;
+  border-bottom: 1px solid #e5e9ef;
+  height: 3.5rem;
+  width: 100%;
+}
+
 .body {
   display: flex;
   flex: 1;

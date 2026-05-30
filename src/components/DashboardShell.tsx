@@ -11,6 +11,7 @@ import {
   MOCK_HEADER_CATEGORIES,
 } from '@/data/mock-header-categories';
 import { MOCK_HEADER_USER } from '@/data/mock-header-user';
+import { useMounted } from '@/hooks/useMounted';
 import styles from './DashboardShell.module.css';
 
 const WuAppHeader = dynamic(
@@ -27,28 +28,41 @@ const WuToast = dynamic(
 );
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
+  const mounted = useMounted();
+
   return (
     <div className={styles.shell}>
-      <WuToast />
+      {mounted ? <WuToast /> : null}
       <header className={styles.header}>
-        <WuAppHeader
-          productName={HEADER_PRODUCT_NAME}
-          categories={MOCK_HEADER_CATEGORIES}
-          brandColor={HEADER_BRAND_COLOR}
-          user={MOCK_HEADER_USER}
-        >
-          <AppHeaderContent>
-            <AppHeaderBreadcrumb />
-          </AppHeaderContent>
-        </WuAppHeader>
+        {mounted ? (
+          <WuAppHeader
+            productName={HEADER_PRODUCT_NAME}
+            categories={MOCK_HEADER_CATEGORIES}
+            brandColor={HEADER_BRAND_COLOR}
+            user={MOCK_HEADER_USER}
+          >
+            <AppHeaderContent>
+              <AppHeaderBreadcrumb />
+            </AppHeaderContent>
+          </WuAppHeader>
+        ) : (
+          <div className={styles.headerPlaceholder} aria-hidden />
+        )}
       </header>
       <div className={styles.sidebarArea}>
-        <WuSidebar Sidebar={<SideNav />} className={styles.sidebar}>
+        {mounted ? (
+          <WuSidebar Sidebar={<SideNav />} className={styles.sidebar}>
+            <main className={styles.main}>
+              <div className="flex-1 min-h-0">{children}</div>
+              <GlobalFooter />
+            </main>
+          </WuSidebar>
+        ) : (
           <main className={styles.main}>
             <div className="flex-1 min-h-0">{children}</div>
             <GlobalFooter />
           </main>
-        </WuSidebar>
+        )}
       </div>
     </div>
   );

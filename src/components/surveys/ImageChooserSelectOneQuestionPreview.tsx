@@ -6,15 +6,24 @@ import styles from './ImageChooserSelectOneQuestionPreview.module.css';
 
 interface ImageChooserSelectOneQuestionPreviewProps {
   data: ImageChooserSelectOnePreviewData;
+  /** Fits four image options in one row (Select Many). */
+  compactLayout?: boolean;
 }
 
 export function ImageChooserSelectOneQuestionPreview({
   data,
+  compactLayout = false,
 }: ImageChooserSelectOneQuestionPreviewProps) {
   return (
-    <ul className={styles.options} aria-hidden>
+    <ul
+      className={`${styles.options} ${compactLayout ? styles.optionsCompact : ''}`}
+      aria-hidden
+    >
       {data.options.map((option) => (
-        <li key={option.label} className={styles.option}>
+        <li
+          key={option.label}
+          className={`${styles.option} ${compactLayout ? styles.optionCompact : ''}`}
+        >
           <div className={styles.imageFrame}>
             <Image
               src={option.imageSrc}

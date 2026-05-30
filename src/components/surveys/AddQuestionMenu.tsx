@@ -28,6 +28,11 @@ import { PushToSocialQuestionPreview } from '@/components/surveys/PushToSocialQu
 import { NumericSliderQuestionPreview } from '@/components/surveys/NumericSliderQuestionPreview';
 import { ConstantSumQuestionPreview } from '@/components/surveys/ConstantSumQuestionPreview';
 import { DragDropQuestionPreview } from '@/components/surveys/DragDropQuestionPreview';
+import { ImageChooserRatingQuestionPreview } from '@/components/surveys/ImageChooserRatingQuestionPreview';
+import { MatrixMultiPointScalesQuestionPreview } from '@/components/surveys/MatrixMultiPointScalesQuestionPreview';
+import { MatrixMultiSelectQuestionPreview } from '@/components/surveys/MatrixMultiSelectQuestionPreview';
+import { MatrixSpreadsheetQuestionPreview } from '@/components/surveys/MatrixSpreadsheetQuestionPreview';
+import { ImageChooserSelectManyQuestionPreview } from '@/components/surveys/ImageChooserSelectManyQuestionPreview';
 import { ImageChooserSelectOneQuestionPreview } from '@/components/surveys/ImageChooserSelectOneQuestionPreview';
 import { RankOrderQuestionPreview } from '@/components/surveys/RankOrderQuestionPreview';
 import { TextSliderQuestionPreview } from '@/components/surveys/TextSliderQuestionPreview';
@@ -74,17 +79,28 @@ const THUMB_ICON_BY_DIRECTION: Record<ThumbsPreviewDirection, string> = {
 };
 
 function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewContent }) {
+  const isMatrixPreview =
+    content.variant === 'matrix-multi-point' ||
+    content.variant === 'matrix-multi-select' ||
+    content.variant === 'matrix-spreadsheet';
   const isWidePreview =
     content.variant === 'push-to-social' ||
     content.variant === 'text-slider' ||
     content.variant === 'numeric-slider' ||
     content.variant === 'constant-sum' ||
-    content.variant === 'image-chooser-select-one';
+    content.variant === 'image-chooser-select-one' ||
+    content.variant === 'image-chooser-select-many' ||
+    content.variant === 'image-chooser-rating' ||
+    isMatrixPreview;
+
+  const previewCardClass = isMatrixPreview
+    ? `${styles.previewCard} ${styles.previewCardWide} ${styles.previewCardMatrix}`
+    : isWidePreview
+      ? `${styles.previewCard} ${styles.previewCardWide}`
+      : styles.previewCard;
 
   return (
-    <div
-      className={`${styles.previewCard} ${isWidePreview ? styles.previewCardWide : ''}`}
-    >
+    <div className={previewCardClass}>
       <div className={styles.previewHeader}>
         <span className={`${content.headerIcon} ${styles.previewHeaderIcon}`} aria-hidden />
         <span>{content.headerLabel}</span>
@@ -221,6 +237,26 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
 
         {content.variant === 'image-chooser-select-one' && content.imageChooserSelectOne ? (
           <ImageChooserSelectOneQuestionPreview data={content.imageChooserSelectOne} />
+        ) : null}
+
+        {content.variant === 'image-chooser-select-many' && content.imageChooserSelectMany ? (
+          <ImageChooserSelectManyQuestionPreview data={content.imageChooserSelectMany} />
+        ) : null}
+
+        {content.variant === 'image-chooser-rating' && content.imageChooserRating ? (
+          <ImageChooserRatingQuestionPreview data={content.imageChooserRating} />
+        ) : null}
+
+        {content.variant === 'matrix-multi-point' && content.matrixMultiPoint ? (
+          <MatrixMultiPointScalesQuestionPreview data={content.matrixMultiPoint} />
+        ) : null}
+
+        {content.variant === 'matrix-multi-select' && content.matrixMultiSelect ? (
+          <MatrixMultiSelectQuestionPreview data={content.matrixMultiSelect} />
+        ) : null}
+
+        {content.variant === 'matrix-spreadsheet' && content.matrixSpreadsheet ? (
+          <MatrixSpreadsheetQuestionPreview data={content.matrixSpreadsheet} />
         ) : null}
 
         {content.variant === 'placeholder' && content.hint ? (
