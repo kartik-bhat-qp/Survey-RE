@@ -7,9 +7,10 @@ import { setSurveyFooterBrand } from '@/lib/survey-suite-footer-brand';
 /** Applies product-switcher entry from URL, then strips the query param from the address bar. */
 export function SurveyFooterBrandSync() {
   const searchParams = useSearchParams();
+  const fromProductSwitcher = searchParams.get('from') === 'product-switcher';
 
   useEffect(() => {
-    if (searchParams.get('from') !== 'product-switcher') return;
+    if (!fromProductSwitcher) return;
 
     setSurveyFooterBrand('research');
 
@@ -17,7 +18,7 @@ export function SurveyFooterBrandSync() {
     url.searchParams.delete('from');
     const next = `${url.pathname}${url.search}${url.hash}`;
     window.history.replaceState(window.history.state, '', next);
-  }, [searchParams]);
+  }, [fromProductSwitcher]);
 
   return null;
 }

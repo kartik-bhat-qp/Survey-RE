@@ -784,6 +784,40 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             </div>
           </section>
         ))}
+
+        <div className={styles.addBlockRow}>
+          <WuButton size="sm" variant="secondary" onClick={() => toast('Add block')}>
+            <span className="wm-add" />
+            Add Block
+          </WuButton>
+        </div>
+
+        <div className={styles.workspaceFooter} aria-label="Survey footer and thank you page">
+          <WuButton
+            size="sm"
+            variant="secondary"
+            className={styles.workspaceFooterBtn}
+            onClick={() => toast('Edit Footer')}
+          >
+            Edit Footer
+          </WuButton>
+          <WuButton
+            size="sm"
+            variant="secondary"
+            className={styles.workspaceFooterBtn}
+            onClick={() => toast('Edit Footer (Scripts)')}
+          >
+            Edit Footer (Scripts)
+          </WuButton>
+          <WuButton
+            size="sm"
+            variant="secondary"
+            className={styles.workspaceFooterBtn}
+            onClick={() => toast('Thank You Page')}
+          >
+            Thank You Page
+          </WuButton>
+        </div>
       </div>
       </div>
 

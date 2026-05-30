@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const STORAGE_PREFIX = 'survey-re:';
 
@@ -34,6 +34,8 @@ export function usePersistedState<T>(
 ): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [value, setValue] = useState<T>(initialValue);
   const [hydrated, setHydrated] = useState(false);
+  const initialValueRef = useRef(initialValue);
+  initialValueRef.current = initialValue;
 
   const setPersistedValue = useCallback<React.Dispatch<React.SetStateAction<T>>>(
     (next) => {
@@ -48,9 +50,9 @@ export function usePersistedState<T>(
   );
 
   useEffect(() => {
-    setValue(readFromStorage(key, initialValue));
+    setValue(readFromStorage(key, initialValueRef.current));
     setHydrated(true);
-  }, [key, initialValue]);
+  }, [key]);
 
   useEffect(() => {
     if (!hydrated) return;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 
 const WuFormGroup = dynamic(
@@ -30,17 +30,15 @@ interface SignupPasswordFieldProps {
 export function SignupPasswordField({ value, onChange }: SignupPasswordFieldProps) {
   const rootRef = useRef<HTMLDivElement>(null);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
 
-    const sync = () => skipPasswordToggleInTabOrder(root);
+    const apply = () => skipPasswordToggleInTabOrder(root);
 
-    sync();
-    const observer = new MutationObserver(sync);
-    observer.observe(root, { childList: true, subtree: true });
-
-    return () => observer.disconnect();
+    apply();
+    const frameId = window.requestAnimationFrame(apply);
+    return () => window.cancelAnimationFrame(frameId);
   }, []);
 
   return (
