@@ -1,0 +1,72 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+}
+
+.title {
+  color: #1e293b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.rowList {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  align-items: flex-start;
+  display: grid;
+  gap: 0.75rem 1.25rem;
+  grid-template-columns: minmax(0, 1fr) 5.5rem;
+}
+
+.prompt {
+  color: #475569;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.priceCol {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 0.25rem;
+  padding-top: 0.125rem;
+  width: 100%;
+}
+
+.priceLabel {
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.priceLine {
+  border-bottom: 1px dotted #94a3b8;
+  min-height: 1.25rem;
+  width: 100%;
+}
+
+@media (max-width: 520px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .priceCol {
+    align-items: flex-start;
+    max-width: 8rem;
+  }
+}

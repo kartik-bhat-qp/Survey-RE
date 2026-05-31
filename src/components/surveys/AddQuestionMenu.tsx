@@ -40,6 +40,14 @@ import { NpsQuestionPreview } from '@/components/surveys/NpsQuestionPreview';
 import { ImageChooserSelectManyQuestionPreview } from '@/components/surveys/ImageChooserSelectManyQuestionPreview';
 import { ImageChooserSelectOneQuestionPreview } from '@/components/surveys/ImageChooserSelectOneQuestionPreview';
 import { RankOrderQuestionPreview } from '@/components/surveys/RankOrderQuestionPreview';
+import { HomunculusQuestionPreview } from '@/components/surveys/HomunculusQuestionPreview';
+import { GaborGrangerQuestionPreview } from '@/components/surveys/GaborGrangerQuestionPreview';
+import { LookupTableQuestionPreview } from '@/components/surveys/LookupTableQuestionPreview';
+import { MultiTierLookupTableQuestionPreview } from '@/components/surveys/MultiTierLookupTableQuestionPreview';
+import { TubePulseQuestionPreview } from '@/components/surveys/TubePulseQuestionPreview';
+import { ReferenceDataQuestionPreview } from '@/components/surveys/ReferenceDataQuestionPreview';
+import { VanWestendorpQuestionPreview } from '@/components/surveys/VanWestendorpQuestionPreview';
+import { VerifiedSignatureQuestionPreview } from '@/components/surveys/VerifiedSignatureQuestionPreview';
 import { TextSliderQuestionPreview } from '@/components/surveys/TextSliderQuestionPreview';
 import styles from './AddQuestionMenu.module.css';
 
@@ -98,13 +106,21 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
     content.variant === 'image-chooser-select-many' ||
     content.variant === 'image-chooser-rating' ||
     content.variant === 'nps' ||
+    content.variant === 'verified-signature' ||
+    content.variant === 'van-westendorp' ||
+    content.variant === 'multi-tier-lookup' ||
+    content.variant === 'tubepulse' ||
     isMatrixPreview;
+
+  const isCompactPreview = content.variant === 'homunculus';
 
   const previewCardClass = isMatrixPreview
     ? `${styles.previewCard} ${styles.previewCardWide} ${styles.previewCardMatrix}`
     : isWidePreview
       ? `${styles.previewCard} ${styles.previewCardWide}`
-      : styles.previewCard;
+      : isCompactPreview
+        ? `${styles.previewCard} ${styles.previewCardCompact}`
+        : styles.previewCard;
 
   return (
     <div className={previewCardClass}>
@@ -113,7 +129,9 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
         <span>{content.headerLabel}</span>
       </div>
       <div className={styles.previewBody}>
-        <p className={styles.previewQuestion}>{content.question}</p>
+        {content.question ? (
+          <p className={styles.previewQuestion}>{content.question}</p>
+        ) : null}
 
         {content.variant === 'checkboxes' && content.options ? (
           <ul className={styles.previewOptionList}>
@@ -278,6 +296,36 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
 
         {content.variant === 'nps' && content.nps ? (
           <NpsQuestionPreview data={content.nps} />
+        ) : null}
+
+        {content.variant === 'homunculus' ? <HomunculusQuestionPreview /> : null}
+
+        {content.variant === 'verified-signature' && content.verifiedSignature ? (
+          <VerifiedSignatureQuestionPreview data={content.verifiedSignature} />
+        ) : null}
+
+        {content.variant === 'van-westendorp' && content.vanWestendorp ? (
+          <VanWestendorpQuestionPreview data={content.vanWestendorp} />
+        ) : null}
+
+        {content.variant === 'gabor-granger' && content.gaborGranger ? (
+          <GaborGrangerQuestionPreview data={content.gaborGranger} />
+        ) : null}
+
+        {content.variant === 'reference-data' && content.referenceData ? (
+          <ReferenceDataQuestionPreview data={content.referenceData} />
+        ) : null}
+
+        {content.variant === 'lookup-table' && content.lookupTable ? (
+          <LookupTableQuestionPreview data={content.lookupTable} />
+        ) : null}
+
+        {content.variant === 'multi-tier-lookup' && content.multiTierLookup ? (
+          <MultiTierLookupTableQuestionPreview data={content.multiTierLookup} />
+        ) : null}
+
+        {content.variant === 'tubepulse' && content.tubePulse ? (
+          <TubePulseQuestionPreview data={content.tubePulse} />
         ) : null}
 
         {content.variant === 'placeholder' && content.hint ? (
@@ -567,7 +615,9 @@ export function AddQuestionMenu({ onSelect }: AddQuestionMenuProps) {
           {tab === 'all' && previewContent ? (
             <div className={styles.previewRegion}>
               <aside
-                className={styles.hoverPreview}
+                className={`${styles.hoverPreview} ${
+                  hoveredType?.id === 'homunculus' ? styles.hoverPreviewCompact : ''
+                }`}
                 aria-label="Question type preview"
                 onPointerEnter={clearLeaveTimer}
                 onPointerLeave={schedulePreviewLeave}

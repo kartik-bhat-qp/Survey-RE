@@ -1,0 +1,47 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 20rem;
+}
+
+.question {
+  color: #1e293b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.select {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d5dde6;
+  border-radius: 4px;
+  color: #334155;
+  display: flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  justify-content: space-between;
+  line-height: 1.4;
+  min-height: 2.375rem;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+}
+
+.selectValue {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectCaret {
+  color: #64748b;
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  margin-left: 0.5rem;
+}

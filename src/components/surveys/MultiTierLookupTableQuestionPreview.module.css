@@ -1,0 +1,47 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  width: 100%;
+}
+
+.instructions {
+  color: #475569;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 0;
+  width: 100%;
+}
+
+.select {
+  align-items: center;
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid #d5dde6;
+  border-radius: 4px;
+  color: #94a3b8;
+  display: flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  justify-content: space-between;
+  line-height: 1.4;
+  min-height: 2.375rem;
+  min-width: min(14rem, 100%);
+  padding: 0.5rem 0.75rem;
+  width: min(14rem, 100%);
+}
+
+.selectPlaceholder {
+  flex: 1;
+  min-width: 0;
+}
+
+.selectCaret {
+  color: #64748b;
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  margin-left: 0.5rem;
+}

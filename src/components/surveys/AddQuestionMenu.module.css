@@ -75,6 +75,13 @@
   width: min(44rem, 100%);
 }
 
+.hoverPreviewCompact {
+  max-height: min(24rem, calc(100vh - 3rem));
+  max-width: min(22rem, calc(100vw - 2rem));
+  min-width: 0;
+  width: min(22rem, 100%);
+}
+
 @keyframes previewFadeIn {
   from {
     opacity: 0;
@@ -97,6 +104,30 @@
 
 .previewCardWide {
   min-width: min(32rem, 100%);
+}
+
+.previewCardCompact {
+  max-width: min(22rem, calc(100vw - 2rem));
+  width: min(22rem, 100%);
+}
+
+.previewCardCompact .previewHeader {
+  font-size: 0.8125rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.previewCardCompact .previewHeaderIcon {
+  font-size: 1.0625rem;
+}
+
+.previewCardCompact .previewBody {
+  padding: 0.75rem 0.875rem 0.875rem;
+}
+
+.previewCardCompact .previewQuestion {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.625rem;
 }
 
 .previewCardMatrix {

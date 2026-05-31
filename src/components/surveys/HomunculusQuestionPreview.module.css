@@ -1,0 +1,101 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.diagram {
+  border: 1px solid #e2e8f0;
+  border-radius: 3px;
+  line-height: 0;
+  max-height: 4.5rem;
+  overflow: hidden;
+}
+
+.diagramSvg {
+  display: block;
+  height: 4.5rem;
+  width: 100%;
+}
+
+.diagramInteractive {
+  max-height: 5.75rem;
+  position: relative;
+}
+
+.diagramInteractive .diagramSvg {
+  height: 5.75rem;
+}
+
+.painPopover {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 3px;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 10%);
+  left: 50%;
+  max-width: 11rem;
+  padding: 0.3125rem 0.4375rem 0.4375rem;
+  position: absolute;
+  top: 48%;
+  transform: translateX(-50%);
+  width: 84%;
+}
+
+.painPrompt {
+  color: #475569;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.5625rem;
+  line-height: 1.25;
+  margin: 0 0 0.25rem;
+  text-align: center;
+}
+
+.painOptions {
+  border: 1.5px solid #dc2626;
+  border-radius: 2px;
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+  padding: 0.25rem 0.3125rem;
+}
+
+.painOption {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.painDot {
+  border-radius: 50%;
+  flex-shrink: 0;
+  height: 0.625rem;
+  width: 0.625rem;
+}
+
+.painDotLow {
+  background: #22c55e;
+}
+
+.painDotMedium {
+  background: #eab308;
+}
+
+.painDotHigh {
+  background: #ef4444;
+}
+
+.painLabel {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.5rem;
+  line-height: 1.1;
+}

@@ -24,6 +24,14 @@ export type QuestionPreviewVariant =
   | 'calendar'
   | 'maps'
   | 'nps'
+  | 'homunculus'
+  | 'verified-signature'
+  | 'van-westendorp'
+  | 'gabor-granger'
+  | 'reference-data'
+  | 'lookup-table'
+  | 'multi-tier-lookup'
+  | 'tubepulse'
   | 'placeholder';
 
 export interface TextSliderPreviewData {
@@ -56,6 +64,54 @@ export interface NpsPreviewData {
   minLabel: string;
   maxLabel: string;
   scores?: number[];
+}
+
+/** Homunculus body-map preview — rendered by {@link HomunculusQuestionPreview}. */
+export type HomunculusPreviewData = Record<string, never>;
+
+export interface VerifiedSignaturePreviewData {
+  declaration: string;
+  fullNameLabel: string;
+  emailLabel: string;
+  signaturePrompt: string;
+  signaturePlaceholder: string;
+  agreeLabel: string;
+}
+
+export interface VanWestendorpPriceRow {
+  id: string;
+  prompt: string;
+}
+
+export interface VanWestendorpPreviewData {
+  title: string;
+  priceLabel: string;
+  rows: VanWestendorpPriceRow[];
+}
+
+export interface GaborGrangerPreviewData {
+  priceDisplay: string;
+  choices: string[];
+}
+
+export interface ReferenceDataPreviewData {
+  inputPlaceholder: string;
+}
+
+export interface LookupTablePreviewData {
+  question: string;
+  selectedValue: string;
+}
+
+export interface MultiTierLookupPreviewData {
+  instructions: string;
+  selectPlaceholder: string;
+}
+
+export interface TubePulsePreviewData {
+  scaleLabels: [string, string, string];
+  /** Slider thumb position along the track (0–100). */
+  thumbPositionPercent: number;
 }
 
 export interface NumericSliderPreviewData {
@@ -195,6 +251,22 @@ export interface QuestionTypePreviewContent {
   maps?: MapsPreviewData;
   /** Net Promoter Score 0–10 scale. */
   nps?: NpsPreviewData;
+  /** Health care homunculus body map. */
+  homunculus?: HomunculusPreviewData;
+  /** Verified signature declaration and capture fields. */
+  verifiedSignature?: VerifiedSignaturePreviewData;
+  /** Van Westendorp price sensitivity meter rows. */
+  vanWestendorp?: VanWestendorpPreviewData;
+  /** Gabor Granger price point with yes/no purchase intent. */
+  gaborGranger?: GaborGrangerPreviewData;
+  /** Reference data zip / lookup text field. */
+  referenceData?: ReferenceDataPreviewData;
+  /** Lookup table dropdown field. */
+  lookupTable?: LookupTablePreviewData;
+  /** Multi-tier cascading lookup dropdowns. */
+  multiTierLookup?: MultiTierLookupPreviewData;
+  /** TubePulse video player and sentiment slider. */
+  tubePulse?: TubePulsePreviewData;
   /** Secondary line under question (e.g. rating scale) */
   hint?: string;
   /** Leading icon inside a text input preview (e.g. email). */
@@ -575,46 +647,98 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     },
   },
   homunculus: {
-    variant: 'placeholder',
-    headerIcon: 'wm-accessibility',
-    headerLabel: 'Homunculus Question',
-    question: 'Body map selection for health-related surveys.',
+    variant: 'homunculus',
+    headerIcon: 'wm-local-hospital',
+    headerLabel: 'Health Care (Homunculus Question)',
+    question: 'Please click/tap on any areas of discomfort',
+    homunculus: {},
   },
   'verified-signature': {
-    variant: 'placeholder',
-    headerIcon: 'wm-draw',
-    headerLabel: 'Verified Signature',
-    question: 'Legally captured signature with verification.',
+    variant: 'verified-signature',
+    headerIcon: 'wm-verified-user',
+    headerLabel: 'Health Care (Verified Signature)',
+    question: '',
+    verifiedSignature: {
+      declaration:
+        'I hereby declare that above mentioned information is correct to the best of my knowledge and I bear the responsibility for the correctness of above mentioned particulars',
+      fullNameLabel: 'Full Name',
+      emailLabel: 'Email Address',
+      signaturePrompt: 'Please type your signature in the box',
+      signaturePlaceholder: 'Type your signature here',
+      agreeLabel: 'I Agree',
+    },
   },
   'van-westendorp': {
-    variant: 'placeholder',
-    headerIcon: 'wm-attach-money',
-    headerLabel: 'Van Westendorp',
-    question: 'Price sensitivity analysis (too cheap / cheap / expensive / too expensive).',
+    variant: 'van-westendorp',
+    headerIcon: 'wm-local-offer',
+    headerLabel: 'Pricing Analysis (Van Westendorp)',
+    question: '',
+    vanWestendorp: {
+      title: 'At what price would you consider the Product',
+      priceLabel: 'Price',
+      rows: [
+        {
+          id: 'too-expensive',
+          prompt:
+            'At what price would you consider the product to be so expensive that you would not consider buying it? (Too Expensive)',
+        },
+        {
+          id: 'expensive',
+          prompt:
+            'At what price would you consider the product starting to get expensive, so that it is not out of the question, but you would have to give some thought to buying it? (Expensive/High Side)',
+        },
+        {
+          id: 'cheap',
+          prompt:
+            'At what price would you consider the product to be a bargain - a great buy for the money? (Cheap/Good Value)',
+        },
+        {
+          id: 'too-cheap',
+          prompt:
+            "At what price would you consider the product to be priced so low that you would feel the quality couldn't be very good? (Too Cheap)",
+        },
+      ],
+    },
   },
   'gabor-granger': {
-    variant: 'placeholder',
-    headerIcon: 'wm-analytics',
-    headerLabel: 'Gabor Granger',
-    question: 'Willingness to pay at increasing price points.',
+    variant: 'gabor-granger',
+    headerIcon: 'wm-attach-money',
+    headerLabel: 'Pricing Analysis (Gabor Granger)',
+    question: "Would you buy 'Product Name' at :",
+    gaborGranger: {
+      priceDisplay: '$ 300 USD',
+      choices: ['Yes', 'No'],
+    },
   },
   'reference-data': {
-    variant: 'placeholder',
-    headerIcon: 'wm-storage',
-    headerLabel: 'Reference Data',
-    question: 'Pull answers from a reference list or database.',
+    variant: 'reference-data',
+    headerIcon: 'wm-folder',
+    headerLabel: 'Data Reference (Reference Data)',
+    question: '',
+    referenceData: {
+      inputPlaceholder: 'Enter a valid zip code',
+    },
   },
   'lookup-table': {
-    variant: 'placeholder',
-    headerIcon: 'wm-table-view',
-    headerLabel: 'Lookup Table',
-    question: 'Look up values from a configured table.',
+    variant: 'lookup-table',
+    headerIcon: 'wm-manage-search',
+    headerLabel: 'Data Reference (Lookup Table)',
+    question: '',
+    lookupTable: {
+      question: 'Please select the state you live in',
+      selectedValue: 'Alabama',
+    },
   },
   'multi-tier-lookup': {
-    variant: 'placeholder',
+    variant: 'multi-tier-lookup',
     headerIcon: 'wm-layers',
-    headerLabel: 'Multi Tier Lookup Table',
-    question: 'Cascading lookups across multiple tiers.',
+    headerLabel: 'Data Reference (Multi Tier Lookup Table)',
+    question: '',
+    multiTierLookup: {
+      instructions:
+        'Please select an option from the drop down menu below. After selecting an option, another drop down list will be displayed below. Select an appropriate option from that list as well.',
+      selectPlaceholder: '- Select -',
+    },
   },
   'store-locator': {
     variant: 'placeholder',
@@ -623,10 +747,14 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     question: 'Find nearby locations from a store database.',
   },
   tubepulse: {
-    variant: 'placeholder',
+    variant: 'tubepulse',
     headerIcon: 'wm-play-circle',
-    headerLabel: 'TubePulse™',
-    question: 'Video clip with timed questions or reactions.',
+    headerLabel: 'Image / Multimedia (TubePulse™)',
+    question: 'Please rate your views',
+    tubePulse: {
+      scaleLabels: ['Bad', 'Good', 'Excellent'],
+      thumbPositionPercent: 10,
+    },
   },
   heatmap: {
     variant: 'placeholder',
