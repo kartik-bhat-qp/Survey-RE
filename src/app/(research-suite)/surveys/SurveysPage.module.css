@@ -22,16 +22,17 @@
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
+  overflow: auto;
 }
 
-.toolbar {
+.tableFooter {
   align-items: center;
-  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
   display: flex;
   flex-shrink: 0;
-  gap: 1rem;
-  justify-content: space-between;
+  justify-content: flex-end;
+  margin-top: auto;
   padding: 0.625rem 1rem;
 }
 

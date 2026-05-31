@@ -392,7 +392,7 @@ export default function NewSurveyCreationFlowPage() {
           ) : (
             <div className={styles.bottomLinks}>
               <button type="button" className={styles.bottomLink} onClick={handleStartFromBlank}>
-                Start from blank
+                Start from scratch
               </button>
               <Link href="/surveys" className={styles.bottomLink}>
                 Skip for now

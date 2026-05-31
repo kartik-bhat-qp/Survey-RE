@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { SurveysAiFirstHero } from '@/components/surveys/SurveysAiFirstHero';
 import { SurveyFolderSidebar } from '@/components/surveys/SurveyFolderSidebar';
 import { SurveysSubNav } from '@/components/surveys/SurveysSubNav';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -39,6 +40,43 @@ const WuMenuItem = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
   { ssr: false }
 );
+
+function SurveysPagination({
+  rangeEnd,
+  displayTotal,
+}: {
+  rangeEnd: number;
+  displayTotal: number;
+}) {
+  const { showToast } = useWuShowToast();
+
+  return (
+    <nav className={styles.pagination} aria-label="Survey list pagination">
+      <span className={styles.paginationLabel}>
+        1 - {rangeEnd} of {displayTotal}
+      </span>
+      <button type="button" className={styles.pageBtn} aria-label="Previous page" disabled>
+        <span className="wm-chevron-left" />
+      </button>
+      <button
+        type="button"
+        className={styles.pageBtn}
+        aria-label="Next page"
+        onClick={() => showToast({ message: 'Next page', variant: 'info' })}
+      >
+        <span className="wm-chevron-right" />
+      </button>
+      <button
+        type="button"
+        className={styles.pageBtn}
+        aria-label="Page size"
+        onClick={() => showToast({ message: 'Page size', variant: 'info' })}
+      >
+        <span className="wm-arrow-drop-down" />
+      </button>
+    </nav>
+  );
+}
 
 function formatSurveyDate(date: string): string {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -114,7 +152,6 @@ function SurveyRowActions({ survey }: { survey: Survey }) {
 
 export default function SurveysPage() {
   const wick = useWickUILib();
-  const { showToast } = useWuShowToast();
   const [selectedFolderId, setSelectedFolderId] = useState('all');
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
@@ -223,28 +260,7 @@ export default function SurveysPage() {
           onSelectFolder={setSelectedFolderId}
         />
         <div className={styles.main}>
-          <div className={styles.toolbar}>
-            <WuButton
-              Icon={<span className="wm-add-2" />}
-              onClick={() => showToast({ message: 'New survey', variant: 'success' })}
-            >
-              New Survey
-            </WuButton>
-            <div className={styles.pagination}>
-              <span className={styles.paginationLabel}>
-                1 - {rangeEnd} of {displayTotal}
-              </span>
-              <button type="button" className={styles.pageBtn} aria-label="Previous page" disabled>
-                <span className="wm-chevron-left" />
-              </button>
-              <button type="button" className={styles.pageBtn} aria-label="Next page">
-                <span className="wm-chevron-right" />
-              </button>
-              <button type="button" className={styles.pageBtn} aria-label="Page size">
-                <span className="wm-arrow-drop-down" />
-              </button>
-            </div>
-          </div>
+          <SurveysAiFirstHero />
 
           <div className={styles.tableWrap}>
             <WuTable
@@ -262,6 +278,10 @@ export default function SurveysPage() {
               }
             />
           </div>
+
+          <footer className={styles.tableFooter}>
+            <SurveysPagination rangeEnd={rangeEnd} displayTotal={displayTotal} />
+          </footer>
         </div>
       </div>
     </div>

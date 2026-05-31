@@ -3,13 +3,18 @@
 import { useParams } from 'next/navigation';
 import { SurveyAdvanceQuotasDashboard } from '@/components/surveys/SurveyAdvanceQuotasDashboard';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { getSurveyById, getSurveyEditorTitle } from '@/data/get-survey-by-id';
+import { getSurveyEditorTitle } from '@/data/get-survey-by-id';
+import { useSurveyById } from '@/hooks/useSurveyById';
 import styles from './ClientAdvanceQuotasSharePage.module.css';
 
 export default function ClientAdvanceQuotasSharePage() {
   const params = useParams();
   const surveyId = Number(params.id);
-  const survey = getSurveyById(surveyId);
+  const { survey, ready } = useSurveyById(surveyId);
+
+  if (!ready) {
+    return <div className={styles.loadingShell} aria-busy="true" aria-hidden />;
+  }
 
   if (!survey) {
     return (

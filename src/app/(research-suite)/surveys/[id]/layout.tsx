@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import { SurveyEditorPhaseTabs } from '@/components/surveys/SurveyEditorPhaseTabs';
 import { SurveyEditorWorkspaceToolbar } from '@/components/surveys/SurveyEditorWorkspaceToolbar';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { getSurveyById } from '@/data/get-survey-by-id';
+import { useSurveyById } from '@/hooks/useSurveyById';
 import styles from './SurveyEditorPage.module.css';
 
 export default function SurveyEditorLayout({
@@ -14,7 +14,17 @@ export default function SurveyEditorLayout({
 }) {
   const params = useParams();
   const surveyId = Number(params.id);
-  const survey = getSurveyById(surveyId);
+  const { survey, ready } = useSurveyById(surveyId);
+
+  if (!ready) {
+    return (
+      <div className={styles.page}>
+        <SurveyEditorPhaseTabs />
+        <SurveyEditorWorkspaceToolbar surveyId={surveyId} />
+        <div className={styles.loadingShell} aria-busy="true" aria-hidden />
+      </div>
+    );
+  }
 
   if (!survey) {
     return (

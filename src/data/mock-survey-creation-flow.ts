@@ -140,6 +140,10 @@ export {
 export const SURVEY_CREATION_PROMPT_PLACEHOLDER =
   'e.g. A short feedback survey for customers who just finished onboarding…';
 
+/** Placeholder for the AI-first prompt on the surveys list. */
+export const SURVEYS_LIST_AI_PROMPT_PLACEHOLDER =
+  "Describe what you're trying to learn, or paste your survey questions to get started";
+
 /** Simulated AI drafting delay before opening the survey workspace. */
 export const SURVEY_AI_DRAFT_DELAY_MS = 5000;
 

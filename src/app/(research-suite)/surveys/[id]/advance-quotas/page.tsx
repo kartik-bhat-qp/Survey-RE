@@ -2,14 +2,14 @@
 
 import { useParams } from 'next/navigation';
 import { SurveyAdvanceQuotasDashboard } from '@/components/surveys/SurveyAdvanceQuotasDashboard';
-import { getSurveyById } from '@/data/get-survey-by-id';
+import { useSurveyById } from '@/hooks/useSurveyById';
 
 export default function SurveyAdvanceQuotasPage() {
   const params = useParams();
   const surveyId = Number(params.id);
-  const survey = getSurveyById(surveyId);
+  const { survey, ready } = useSurveyById(surveyId);
 
-  if (!survey) {
+  if (!ready || !survey) {
     return null;
   }
 

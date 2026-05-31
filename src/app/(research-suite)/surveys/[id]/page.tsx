@@ -2,15 +2,15 @@
 
 import { useParams } from 'next/navigation';
 import { SurveyEditorCanvas } from '@/components/surveys/SurveyEditorCanvas';
-import { getSurveyById } from '@/data/get-survey-by-id';
 import { getSurveyDetail } from '@/data/mock-survey-detail';
+import { useSurveyById } from '@/hooks/useSurveyById';
 
 export default function SurveyEditorPage() {
   const params = useParams();
   const surveyId = Number(params.id);
-  const survey = getSurveyById(surveyId);
+  const { survey, ready } = useSurveyById(surveyId);
 
-  if (!survey) {
+  if (!ready || !survey) {
     return null;
   }
 
