@@ -1,0 +1,50 @@
+.root {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.videoFrame {
+  aspect-ratio: 16 / 10;
+  background: #e2e8f0;
+  border: 1px solid #e2e8f0;
+  border-radius: 2px;
+  line-height: 0;
+  max-width: 100%;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.previewImage {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  width: 100%;
+}
+
+.recordControl {
+  align-items: center;
+  background: #fff;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  bottom: 1.25rem;
+  box-shadow: 0 2px 12px rgb(15 23 42 / 0.25);
+  display: flex;
+  height: 3.5rem;
+  justify-content: center;
+  left: 50%;
+  outline: 3px solid rgb(255 255 255 / 0.85);
+  position: absolute;
+  transform: translateX(-50%);
+  width: 3.5rem;
+}
+
+.recordStop {
+  background: #e53935;
+  border-radius: 2px;
+  display: block;
+  height: 1.25rem;
+  width: 1.25rem;
+}

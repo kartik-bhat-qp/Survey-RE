@@ -32,6 +32,15 @@ export type QuestionPreviewVariant =
   | 'lookup-table'
   | 'multi-tier-lookup'
   | 'tubepulse'
+  | 'heatmap'
+  | 'hotspot'
+  | 'conjoint'
+  | 'text-highlighter'
+  | 'card-sorting'
+  | 'max-diff'
+  | 'upload-file'
+  | 'signature'
+  | 'video-ai'
   | 'placeholder';
 
 export interface TextSliderPreviewData {
@@ -59,6 +68,73 @@ export interface CalendarPreviewData {
 
 /** Maps preview uses {@link UsStatesChoroplethMap} — no extra data required. */
 export type MapsPreviewData = Record<string, never>;
+
+/** Heatmap preview uses {@link UsStatesHeatmapMap} — no extra data required. */
+export type HeatmapPreviewData = Record<string, never>;
+
+/** HotSpot image regions preview — no extra data required. */
+export type HotSpotPreviewData = Record<string, never>;
+
+export interface ConjointConfigTab {
+  id: string;
+  label: string;
+  suffix?: string;
+  active?: boolean;
+}
+
+export interface ConjointFeatureRow {
+  feature: string;
+  levels: string[];
+}
+
+export interface ConjointPreviewData {
+  configTabs: ConjointConfigTab[];
+  features: ConjointFeatureRow[];
+  taskCount: number;
+  conceptPerTask: number;
+}
+
+export interface TextHighlighterSegment {
+  text: string;
+  highlight?: 'like' | 'dislike';
+}
+
+export interface TextHighlighterPreviewData {
+  segments: TextHighlighterSegment[];
+  likeLabel: string;
+  dislikeLabel: string;
+}
+
+export interface CardSortingPreviewItem {
+  label: string;
+  rank: number;
+}
+
+export interface CardSortingPreviewData {
+  items: CardSortingPreviewItem[];
+  categoriesHeading: string;
+  categories: string[];
+}
+
+export interface MaxDiffPreviewData {
+  leastLabel: string;
+  mostLabel: string;
+  options: string[];
+}
+
+export interface UploadFilePreviewData {
+  dragLabel: string;
+  orLabel: string;
+  browseLabel: string;
+}
+
+export interface SignaturePreviewData {
+  clearLabel: string;
+}
+
+export interface VideoAiPreviewData {
+  previewImageSrc: string;
+}
 
 export interface NpsPreviewData {
   minLabel: string;
@@ -267,6 +343,24 @@ export interface QuestionTypePreviewContent {
   multiTierLookup?: MultiTierLookupPreviewData;
   /** TubePulse video player and sentiment slider. */
   tubePulse?: TubePulsePreviewData;
+  /** Image heatmap click map. */
+  heatmap?: HeatmapPreviewData;
+  /** HotSpot like/dislike regions on an image. */
+  hotSpot?: HotSpotPreviewData;
+  /** Choice-based conjoint features, levels, and task summary. */
+  conjoint?: ConjointPreviewData;
+  /** Text passage with like/dislike highlights. */
+  textHighlighter?: TextHighlighterPreviewData;
+  /** Card sorting items and category buckets. */
+  cardSorting?: CardSortingPreviewData;
+  /** Max-diff least / most choice grid. */
+  maxDiff?: MaxDiffPreviewData;
+  /** File upload dropzone. */
+  uploadFile?: UploadFilePreviewData;
+  /** Signature capture box. */
+  signature?: SignaturePreviewData;
+  /** VideoAI recording preview. */
+  videoAi?: VideoAiPreviewData;
   /** Secondary line under question (e.g. rating scale) */
   hint?: string;
   /** Leading icon inside a text input preview (e.g. email). */
@@ -757,22 +851,47 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     },
   },
   heatmap: {
-    variant: 'placeholder',
+    variant: 'heatmap',
     headerIcon: 'wm-whatshot',
-    headerLabel: 'Heatmap',
-    question: 'Click intensity on an image.',
+    headerLabel: 'Image / Multimedia (Heatmap)',
+    question: 'Please click the area of your interest on the image',
+    heatmap: {},
   },
   hotspot: {
-    variant: 'placeholder',
+    variant: 'hotspot',
     headerIcon: 'wm-touch-app',
-    headerLabel: 'HotSpot',
-    question: 'Clickable regions on an image.',
+    headerLabel: 'Image / Multimedia (HotSpot)',
+    question:
+      'Please like/dislike predefined selected areas on the image considered for Hot Spots:',
+    hotSpot: {},
   },
   'text-highlighter': {
-    variant: 'placeholder',
+    variant: 'text-highlighter',
     headerIcon: 'wm-format-color-fill',
-    headerLabel: 'Text Highlighter',
-    question: 'Highlight phrases in a passage.',
+    headerLabel: 'Image / Multimedia (Text Highlighter)',
+    question:
+      'Please provide your feedback on the text that you like or dislike by highlighting the text and selecting from the given choices.',
+    textHighlighter: {
+      segments: [
+        {
+          text: 'QuestionPro is the leader in providing businesses with comprehensive survey software and services for ',
+        },
+        { text: 'customer satisfaction', highlight: 'like' },
+        { text: ', ' },
+        { text: 'market research', highlight: 'like' },
+        {
+          text: ', and competitive intelligence. Our survey software includes advanced features such as ',
+        },
+        { text: 'skip logic', highlight: 'dislike' },
+        { text: ', ' },
+        { text: 'multi-lingual surveys', highlight: 'like' },
+        {
+          text: ', and real-time reporting. We also offer enterprise-level solutions for large organizations.',
+        },
+      ],
+      likeLabel: 'Like',
+      dislikeLabel: 'Dislike',
+    },
   },
   'stop-watch': {
     variant: 'placeholder',
@@ -793,40 +912,83 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     question: 'Read QR codes in the survey flow.',
   },
   'card-sorting': {
-    variant: 'placeholder',
+    variant: 'card-sorting',
     headerIcon: 'wm-style',
-    headerLabel: 'Card Sorting',
-    question: 'Sort cards into categories.',
+    headerLabel: 'Ordering (Card Sorting)',
+    question: 'Card Sorting',
+    cardSorting: {
+      items: [
+        { label: 'Apples', rank: 1 },
+        { label: 'Oranges', rank: 2 },
+        { label: 'Bananas', rank: 3 },
+        { label: 'Lettuce', rank: 4 },
+        { label: 'Spinach', rank: 5 },
+        { label: 'Broccoli', rank: 6 },
+      ],
+      categoriesHeading: 'Categories',
+      categories: ['Fruits', 'Vegetables'],
+    },
   },
   'upload-file': {
-    variant: 'placeholder',
+    variant: 'upload-file',
     headerIcon: 'wm-attach-file',
-    headerLabel: 'Attach/Upload File',
-    question: 'Allow respondents to upload a file.',
+    headerLabel: 'Upload (Attach/Upload file)',
+    question: 'Upload your file below',
+    uploadFile: {
+      dragLabel: 'Drag your file here',
+      orLabel: 'or',
+      browseLabel: 'Browse',
+    },
   },
   signature: {
-    variant: 'placeholder',
+    variant: 'signature',
     headerIcon: 'wm-gesture',
-    headerLabel: 'Signature',
-    question: 'Draw or type a signature.',
+    headerLabel: 'Upload (Signature)',
+    question: 'Please sign here',
+    signature: {
+      clearLabel: 'Clear',
+    },
   },
   'video-ai': {
-    variant: 'placeholder',
+    variant: 'video-ai',
     headerIcon: 'wm-videocam',
-    headerLabel: 'VideoAI',
-    question: 'Video response with AI-assisted analysis.',
+    headerLabel: 'Upload (VideoAI)',
+    question: 'Please share your thoughts with us by recording a short video',
+    videoAi: {
+      previewImageSrc: '/images/add-question-previews/video-ai-preview.jpg',
+    },
   },
   conjoint: {
-    variant: 'placeholder',
+    variant: 'conjoint',
     headerIcon: 'wm-account-tree',
-    headerLabel: 'Conjoint',
-    question: 'Choice-based conjoint profiles.',
+    headerLabel: 'Choice Models (Conjoint)',
+    question:
+      'If you were to buy a TV, select the most likely feature set that you would go with.',
+    conjoint: {
+      configTabs: [
+        { id: 'design-type', label: 'Design Type', suffix: 'Random', active: true },
+        { id: 'prohibited', label: 'Prohibited Concepts' },
+        { id: 'fixed-tasks', label: 'Add Fixed Tasks' },
+      ],
+      features: [
+        { feature: 'Brand', levels: ['Sony', 'LG', 'Vizio'] },
+        { feature: 'Price', levels: ['USD 800', 'USD 1200', 'USD 1500'] },
+      ],
+      taskCount: 2,
+      conceptPerTask: 2,
+    },
   },
   'max-diff': {
-    variant: 'placeholder',
+    variant: 'max-diff',
     headerIcon: 'wm-compare-arrows',
-    headerLabel: 'Max-Diff',
-    question: 'Best / worst scaling across sets.',
+    headerLabel: 'Choice Models (Max-Diff)',
+    question:
+      'For each of the questions below, please choose your most and least preferred option',
+    maxDiff: {
+      leastLabel: 'Least',
+      mostLabel: 'Most',
+      options: ['Visa', 'Mastercard', 'American Express', 'Discover'],
+    },
   },
   'custom-logic': {
     variant: 'placeholder',

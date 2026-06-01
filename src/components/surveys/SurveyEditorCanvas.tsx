@@ -805,14 +805,6 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             size="sm"
             variant="secondary"
             className={styles.workspaceFooterBtn}
-            onClick={() => toast('Edit Footer (Scripts)')}
-          >
-            Edit Footer (Scripts)
-          </WuButton>
-          <WuButton
-            size="sm"
-            variant="secondary"
-            className={styles.workspaceFooterBtn}
             onClick={() => toast('Thank You Page')}
           >
             Thank You Page

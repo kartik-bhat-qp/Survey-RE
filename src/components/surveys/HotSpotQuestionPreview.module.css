@@ -1,0 +1,65 @@
+.root {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.scene {
+  line-height: 0;
+  max-width: min(18rem, 100%);
+  position: relative;
+  width: min(18rem, 100%);
+}
+
+.carImage {
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+.region {
+  align-items: center;
+  border-radius: 3px;
+  display: flex;
+  justify-content: center;
+  position: absolute;
+}
+
+.regionDislike {
+  background: rgb(239 68 68 / 0.45);
+  border: 1.5px solid #dc2626;
+  height: 22%;
+  left: 22%;
+  top: 44%;
+  width: 22%;
+}
+
+.regionLike {
+  background: rgb(250 204 21 / 0.5);
+  border: 1.5px solid #ca8a04;
+  height: 20%;
+  right: 20%;
+  top: 46%;
+  width: 20%;
+}
+
+.regionIcon {
+  align-items: center;
+  background: #fff;
+  border-radius: 50%;
+  color: #545e6b;
+  display: flex;
+  font-size: 1.125rem;
+  height: 1.75rem;
+  justify-content: center;
+  line-height: 1;
+  width: 1.75rem;
+}
+
+.regionDislike .regionIcon {
+  color: #dc2626;
+}
+
+.regionLike .regionIcon {
+  color: #16a34a;
+}

@@ -1,0 +1,13 @@
+.root {
+  background: #fff;
+  line-height: 0;
+  margin: 0 auto;
+  max-width: 16rem;
+  width: 100%;
+}
+
+.mapImage {
+  display: block;
+  height: auto;
+  width: 100%;
+}

@@ -1,0 +1,86 @@
+.root {
+  align-items: start;
+  display: grid;
+  gap: 1.5rem 2rem;
+  grid-template-columns: 1fr auto;
+  width: 100%;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.card {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d5dde6;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  min-height: 2.25rem;
+  padding: 0.4375rem 0.625rem 0.4375rem 0.75rem;
+}
+
+.itemLabel {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.rankBadge {
+  align-items: center;
+  background: #334155;
+  border-radius: 50%;
+  color: #fff;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  height: 1.375rem;
+  justify-content: center;
+  line-height: 1;
+  width: 1.375rem;
+}
+
+.categories {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 5.5rem;
+  padding-top: 0.125rem;
+}
+
+.categoriesHeading {
+  color: #1e293b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.categoryList {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.categoryLabel {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.35;
+}

@@ -45,6 +45,15 @@ import { GaborGrangerQuestionPreview } from '@/components/surveys/GaborGrangerQu
 import { LookupTableQuestionPreview } from '@/components/surveys/LookupTableQuestionPreview';
 import { MultiTierLookupTableQuestionPreview } from '@/components/surveys/MultiTierLookupTableQuestionPreview';
 import { TubePulseQuestionPreview } from '@/components/surveys/TubePulseQuestionPreview';
+import { HeatmapQuestionPreview } from '@/components/surveys/HeatmapQuestionPreview';
+import { HotSpotQuestionPreview } from '@/components/surveys/HotSpotQuestionPreview';
+import { ConjointQuestionPreview } from '@/components/surveys/ConjointQuestionPreview';
+import { TextHighlighterQuestionPreview } from '@/components/surveys/TextHighlighterQuestionPreview';
+import { CardSortingQuestionPreview } from '@/components/surveys/CardSortingQuestionPreview';
+import { MaxDiffQuestionPreview } from '@/components/surveys/MaxDiffQuestionPreview';
+import { UploadFileQuestionPreview } from '@/components/surveys/UploadFileQuestionPreview';
+import { SignatureQuestionPreview } from '@/components/surveys/SignatureQuestionPreview';
+import { VideoAiQuestionPreview } from '@/components/surveys/VideoAiQuestionPreview';
 import { ReferenceDataQuestionPreview } from '@/components/surveys/ReferenceDataQuestionPreview';
 import { VanWestendorpQuestionPreview } from '@/components/surveys/VanWestendorpQuestionPreview';
 import { VerifiedSignatureQuestionPreview } from '@/components/surveys/VerifiedSignatureQuestionPreview';
@@ -110,17 +119,36 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
     content.variant === 'van-westendorp' ||
     content.variant === 'multi-tier-lookup' ||
     content.variant === 'tubepulse' ||
+    content.variant === 'hotspot' ||
+    content.variant === 'conjoint' ||
+    content.variant === 'card-sorting' ||
+    content.variant === 'max-diff' ||
     isMatrixPreview;
 
-  const isCompactPreview = content.variant === 'homunculus';
+  const isHomunculusPreview = content.variant === 'homunculus';
+  const isHeatmapPreview = content.variant === 'heatmap';
+  const isTextHighlighterPreview = content.variant === 'text-highlighter';
+  const isUploadFilePreview = content.variant === 'upload-file';
+  const isSignaturePreview = content.variant === 'signature';
+  const isVideoAiPreview = content.variant === 'video-ai';
 
   const previewCardClass = isMatrixPreview
     ? `${styles.previewCard} ${styles.previewCardWide} ${styles.previewCardMatrix}`
     : isWidePreview
       ? `${styles.previewCard} ${styles.previewCardWide}`
-      : isCompactPreview
-        ? `${styles.previewCard} ${styles.previewCardCompact}`
-        : styles.previewCard;
+      : isHomunculusPreview
+        ? `${styles.previewCard} ${styles.previewCardHomunculus}`
+        : isHeatmapPreview
+          ? `${styles.previewCard} ${styles.previewCardHeatmap}`
+          : isTextHighlighterPreview
+            ? `${styles.previewCard} ${styles.previewCardTextHighlighter}`
+            : isUploadFilePreview
+              ? `${styles.previewCard} ${styles.previewCardUploadFile}`
+              : isSignaturePreview
+                ? `${styles.previewCard} ${styles.previewCardSignature}`
+                : isVideoAiPreview
+                  ? `${styles.previewCard} ${styles.previewCardVideoAi}`
+                  : styles.previewCard;
 
   return (
     <div className={previewCardClass}>
@@ -328,10 +356,99 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
           <TubePulseQuestionPreview data={content.tubePulse} />
         ) : null}
 
+        {content.variant === 'heatmap' ? <HeatmapQuestionPreview /> : null}
+
+        {content.variant === 'hotspot' ? <HotSpotQuestionPreview /> : null}
+
+        {content.variant === 'conjoint' && content.conjoint ? (
+          <ConjointQuestionPreview data={content.conjoint} />
+        ) : null}
+
+        {content.variant === 'text-highlighter' && content.textHighlighter ? (
+          <TextHighlighterQuestionPreview data={content.textHighlighter} />
+        ) : null}
+
+        {content.variant === 'card-sorting' && content.cardSorting ? (
+          <CardSortingQuestionPreview data={content.cardSorting} />
+        ) : null}
+
+        {content.variant === 'max-diff' && content.maxDiff ? (
+          <MaxDiffQuestionPreview data={content.maxDiff} />
+        ) : null}
+
+        {content.variant === 'upload-file' && content.uploadFile ? (
+          <UploadFileQuestionPreview data={content.uploadFile} />
+        ) : null}
+
+        {content.variant === 'signature' && content.signature ? (
+          <SignatureQuestionPreview data={content.signature} />
+        ) : null}
+
+        {content.variant === 'video-ai' && content.videoAi ? (
+          <VideoAiQuestionPreview data={content.videoAi} />
+        ) : null}
+
         {content.variant === 'placeholder' && content.hint ? (
           <p className={styles.previewHint}>{content.hint}</p>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function CategoryBlock({
+  category,
+  tier,
+  showLicenseDiamonds,
+  hoveredTypeId,
+  onSelectType,
+  onTypePointerEnter,
+  onTypePointerLeave,
+}: {
+  category: AddQuestionCategory;
+  tier: QuestionTypeTier;
+  showLicenseDiamonds: boolean;
+  hoveredTypeId: string | null;
+  onSelectType: (categoryTitle: string, typeLabel: string, typeId: string) => void;
+  onTypePointerEnter: (
+    categoryTitle: string,
+    type: AddQuestionTypeItem,
+    event: PointerEvent<HTMLButtonElement>
+  ) => void;
+  onTypePointerLeave: () => void;
+}) {
+  return (
+    <div className={styles.categoryBlock}>
+      <h4 className={styles.categoryTitle}>{category.title}</h4>
+      <ul className={styles.typeList}>
+        {category.types.map((type) => (
+          <li key={type.id}>
+            <button
+              type="button"
+              className={`${styles.typeBtn} ${
+                hoveredTypeId === type.id ? styles.typeBtnHovered : ''
+              }`}
+              onClick={() => onSelectType(category.title, type.label, type.id)}
+              onPointerEnter={(event) => onTypePointerEnter(category.title, type, event)}
+              onPointerLeave={onTypePointerLeave}
+            >
+              <span
+                className={`${type.icon} ${styles.typeIcon} ${
+                  type.highlight ? styles.typeIconHighlight : ''
+                }`}
+                aria-hidden
+              />
+              <span className={styles.typeLabel}>{type.label}</span>
+              {tier === 'advanced' && showLicenseDiamonds ? (
+                <BiDiamondIcon
+                  tooltip={getAddQuestionAdvancedLicenseTooltip(type.id)}
+                  position="top"
+                />
+              ) : null}
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -361,48 +478,33 @@ function TierSection({
   if (categories.length === 0) return null;
 
   const heading = tier === 'basic' ? 'Basic' : 'Advanced';
+  const leftColumnCategories = categories.filter((_, index) => index % 2 === 0);
+  const rightColumnCategories = categories.filter((_, index) => index % 2 === 1);
+
+  const categoryBlockProps = {
+    tier,
+    showLicenseDiamonds,
+    hoveredTypeId,
+    onSelectType,
+    onTypePointerEnter,
+    onTypePointerLeave,
+  };
 
   return (
     <section className={styles.tierSection} aria-label={`${heading} question types`}>
       <h3 className={styles.tierHeading}>{heading}</h3>
       <hr className={styles.tierRule} />
-      <div className={styles.categoryGrid}>
-        {categories.map((category) => (
-          <div key={category.id} className={styles.categoryBlock}>
-            <h4 className={styles.categoryTitle}>{category.title}</h4>
-            <ul className={styles.typeList}>
-              {category.types.map((type) => (
-                <li key={type.id}>
-                  <button
-                    type="button"
-                    className={`${styles.typeBtn} ${
-                      hoveredTypeId === type.id ? styles.typeBtnHovered : ''
-                    }`}
-                    onClick={() => onSelectType(category.title, type.label, type.id)}
-                    onPointerEnter={(event) =>
-                      onTypePointerEnter(category.title, type, event)
-                    }
-                    onPointerLeave={onTypePointerLeave}
-                  >
-                    <span
-                      className={`${type.icon} ${styles.typeIcon} ${
-                        type.highlight ? styles.typeIconHighlight : ''
-                      }`}
-                      aria-hidden
-                    />
-                    <span className={styles.typeLabel}>{type.label}</span>
-                    {tier === 'advanced' && showLicenseDiamonds ? (
-                      <BiDiamondIcon
-                        tooltip={getAddQuestionAdvancedLicenseTooltip(type.id)}
-                        position="top"
-                      />
-                    ) : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+      <div className={styles.categoryColumns}>
+        <div className={styles.categoryColumn}>
+          {leftColumnCategories.map((category) => (
+            <CategoryBlock key={category.id} category={category} {...categoryBlockProps} />
+          ))}
+        </div>
+        <div className={styles.categoryColumn}>
+          {rightColumnCategories.map((category) => (
+            <CategoryBlock key={category.id} category={category} {...categoryBlockProps} />
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -616,8 +718,12 @@ export function AddQuestionMenu({ onSelect }: AddQuestionMenuProps) {
             <div className={styles.previewRegion}>
               <aside
                 className={`${styles.hoverPreview} ${
-                  hoveredType?.id === 'homunculus' ? styles.hoverPreviewCompact : ''
-                }`}
+                  hoveredType?.id === 'homunculus' ? styles.hoverPreviewHomunculus : ''
+                } ${hoveredType?.id === 'heatmap' ? styles.hoverPreviewHeatmap : ''} ${
+                  hoveredType?.id === 'text-highlighter' ? styles.hoverPreviewTextHighlighter : ''
+                } ${hoveredType?.id === 'upload-file' ? styles.hoverPreviewUploadFile : ''} ${
+                  hoveredType?.id === 'signature' ? styles.hoverPreviewSignature : ''
+                } ${hoveredType?.id === 'video-ai' ? styles.hoverPreviewVideoAi : ''}`}
                 aria-label="Question type preview"
                 onPointerEnter={clearLeaveTimer}
                 onPointerLeave={schedulePreviewLeave}

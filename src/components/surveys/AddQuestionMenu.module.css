@@ -75,11 +75,17 @@
   width: min(44rem, 100%);
 }
 
-.hoverPreviewCompact {
-  max-height: min(24rem, calc(100vh - 3rem));
-  max-width: min(22rem, calc(100vw - 2rem));
+.hoverPreviewHomunculus {
+  max-height: min(36rem, calc(100vh - 3rem));
+  max-width: min(32rem, calc(100vw - 2rem));
+  min-width: min(28rem, 100%);
+  width: min(32rem, 100%);
+}
+
+.hoverPreviewHeatmap {
+  max-width: min(28rem, calc(100vw - 2rem));
   min-width: 0;
-  width: min(22rem, 100%);
+  width: min(28rem, 100%);
 }
 
 @keyframes previewFadeIn {
@@ -106,28 +112,101 @@
   min-width: min(32rem, 100%);
 }
 
-.previewCardCompact {
-  max-width: min(22rem, calc(100vw - 2rem));
-  width: min(22rem, 100%);
+.previewCardHomunculus {
+  max-width: min(32rem, calc(100vw - 2rem));
+  min-width: min(28rem, 100%);
+  width: min(32rem, 100%);
 }
 
-.previewCardCompact .previewHeader {
-  font-size: 0.8125rem;
-  padding: 0.5rem 0.75rem;
+.previewCardHeatmap {
+  max-width: min(28rem, calc(100vw - 2rem));
+  width: min(28rem, 100%);
 }
 
-.previewCardCompact .previewHeaderIcon {
+.previewCardHeatmap .previewQuestion {
+  margin-bottom: 1rem;
+}
+
+.previewCardTextHighlighter {
+  max-width: min(38rem, calc(100vw - 2rem));
+  width: min(38rem, 100%);
+}
+
+.previewCardTextHighlighter .previewBody {
+  padding: 1.5rem 1.75rem 1.75rem;
+}
+
+.previewCardTextHighlighter .previewQuestion {
+  font-size: 1.125rem;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.hoverPreviewTextHighlighter {
+  max-width: min(38rem, calc(100vw - 2rem));
+  min-width: min(34rem, 100%);
+  width: min(38rem, 100%);
+}
+
+.previewCardUploadFile {
+  max-width: min(38rem, calc(100vw - 2rem));
+  width: min(38rem, 100%);
+}
+
+.previewCardUploadFile .previewBody {
+  padding: 1.5rem 1.75rem 1.75rem;
+}
+
+.previewCardUploadFile .previewQuestion {
   font-size: 1.0625rem;
+  margin-bottom: 1.5rem;
 }
 
-.previewCardCompact .previewBody {
-  padding: 0.75rem 0.875rem 0.875rem;
+.hoverPreviewUploadFile {
+  max-width: min(38rem, calc(100vw - 2rem));
+  min-width: min(34rem, 100%);
+  width: min(38rem, 100%);
 }
 
-.previewCardCompact .previewQuestion {
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 0.625rem;
+.previewCardSignature {
+  max-width: min(32rem, calc(100vw - 2rem));
+  width: min(32rem, 100%);
+}
+
+.previewCardSignature .previewQuestion {
+  color: #64748b;
+  font-weight: 400;
+  margin-bottom: 1rem;
+}
+
+.hoverPreviewSignature {
+  max-width: min(32rem, calc(100vw - 2rem));
+  min-width: 0;
+  width: min(32rem, 100%);
+}
+
+.previewCardVideoAi {
+  max-width: min(40rem, calc(100vw - 2rem));
+  width: min(40rem, 100%);
+}
+
+.previewCardVideoAi .previewBody {
+  padding: 1.5rem 2rem 2rem;
+}
+
+.previewCardVideoAi .previewQuestion {
+  color: #64748b;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.hoverPreviewVideoAi {
+  max-width: min(40rem, calc(100vw - 2rem));
+  min-width: min(36rem, 100%);
+  width: min(40rem, 100%);
 }
 
 .previewCardMatrix {
@@ -528,10 +607,17 @@
   margin: 0 0 0.75rem;
 }
 
-.categoryGrid {
+.categoryColumns {
   display: grid;
-  gap: 1rem 1.25rem;
+  gap: 0 1.25rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.categoryColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .categoryBlock {
@@ -629,7 +715,7 @@
 }
 
 @media (max-width: 480px) {
-  .categoryGrid {
+  .categoryColumns {
     grid-template-columns: 1fr;
   }
 }

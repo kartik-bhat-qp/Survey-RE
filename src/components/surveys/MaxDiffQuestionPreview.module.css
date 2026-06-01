@@ -1,0 +1,69 @@
+.root {
+  width: 100%;
+}
+
+.table {
+  border-collapse: collapse;
+  font-family: 'Fira Sans', sans-serif;
+  width: 100%;
+}
+
+.headerRow {
+  background: #e8f4fd;
+}
+
+.edgeHeader {
+  color: #475569;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  padding: 0.5rem 0.75rem;
+  text-align: center;
+  width: 4.5rem;
+}
+
+.optionHeader {
+  padding: 0.5rem 0.75rem;
+}
+
+.headerRow .edgeHeader:first-child {
+  text-align: left;
+}
+
+.headerRow .edgeHeader:last-child {
+  text-align: right;
+}
+
+.dataRow {
+  border-top: 1px solid #e2e8f0;
+}
+
+.radioCell {
+  padding: 0.625rem 0.75rem;
+  text-align: center;
+  vertical-align: middle;
+  width: 4.5rem;
+}
+
+.radioCell input {
+  accent-color: #1b87e6;
+  height: 1.125rem;
+  width: 1.125rem;
+}
+
+.dataRow .radioCell:first-child {
+  text-align: left;
+}
+
+.dataRow .radioCell:last-child {
+  text-align: right;
+}
+
+.optionCell {
+  color: #334155;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.4;
+  padding: 0.625rem 0.75rem;
+  text-align: center;
+}

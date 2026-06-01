@@ -68,16 +68,18 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.625rem;
+  gap: 0.5rem;
   justify-content: center;
   margin-top: 0.25rem;
   padding-bottom: 0.5rem;
 }
 
 .workspaceFooterBtn {
+  flex: 0 0 auto;
   font-family: 'Fira Sans', sans-serif !important;
   font-size: 0.8125rem !important;
-  min-width: 9.5rem;
+  min-width: unset !important;
+  width: auto !important;
 }
 
 .sectionCard {
