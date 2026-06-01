@@ -7,6 +7,7 @@ import type {
   MultiPointAnswerType,
 } from '@/data/mock-multi-point-settings';
 import { plainTextFromRichValue } from '@/components/surveys/QuestionRichTextField';
+import { isHtmlContent, toEditorHtml } from '@/components/surveys/rich-text-utils';
 import { SurveyPreviewFollowUpQuestion } from '@/components/surveys/SurveyPreviewFollowUpQuestion';
 import type { SurveyQuestionPreviewFollowUp } from '@/data/survey-question-preview-session';
 import styles from './MultiPointCardsCarouselPreview.module.css';
@@ -33,6 +34,28 @@ function columnDisplayLabel(label: string, index: number): string {
   const plain = plainTextFromRichValue(label).trim();
   if (plain) return plain;
   return String(index + 1);
+}
+
+function CardRowLabel({ label }: { label: string }) {
+  const plain = plainTextFromRichValue(label);
+  if (!plain) return null;
+
+  if (isHtmlContent(label)) {
+    return (
+      <div className={styles.cardLabelWrap}>
+        <div
+          className={styles.cardLabel}
+          dangerouslySetInnerHTML={{ __html: toEditorHtml(label) }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.cardLabelWrap}>
+      <p className={styles.cardLabel}>{plain}</p>
+    </div>
+  );
 }
 
 function chunkColumns(columns: SurveyMatrixColumn[], size: number): SurveyMatrixColumn[][] {
@@ -158,12 +181,14 @@ export function MultiPointCardsCarouselPreview({
 
   const cardStackStyle: CSSProperties = { width: '100%' };
 
-  const horizontalWrapStyle: CSSProperties = isFullWidth
+  const horizontalCardBlockStyle: CSSProperties = isFullWidth
     ? { width: '100%', maxWidth: '100%' }
     : {
         width: `${questionWidthPercent}%`,
         maxWidth: `${questionWidthPercent}%`,
+        minWidth: 0,
       };
+
   const activeRow = matrix.rows[activeRowIndex];
   const inputType = answerType === 'checkbox' ? 'checkbox' : 'radio';
   const isHorizontal =
@@ -217,32 +242,12 @@ export function MultiPointCardsCarouselPreview({
     }, ADVANCE_AFTER_SELECT_MS);
   }
 
-  function renderScaleOption(
-    column: SurveyMatrixColumn,
-    globalIndex: number,
-    layout: 'vertical' | 'horizontal'
-  ) {
+  function renderVerticalScaleOption(column: SurveyMatrixColumn, globalIndex: number) {
     if (!activeRow) return null;
     const isChecked = selectionsByRowId[activeRow.id] === column.id;
-    const isFirstColumn = globalIndex === 0;
-    const isLastColumn = globalIndex === matrix.columns.length - 1;
 
     return (
-      <li
-        key={column.id}
-        className={layout === 'horizontal' ? styles.scaleOptionHorizontal : styles.scaleOption}
-      >
-        {layout === 'horizontal' && isFirstColumn ? (
-          <span className={styles.scaleEndLabel}>
-            {plainTextFromRichValue(matrix.leftAnchor)}
-          </span>
-        ) : layout === 'horizontal' && isLastColumn ? (
-          <span className={styles.scaleEndLabel}>
-            {plainTextFromRichValue(matrix.rightAnchor)}
-          </span>
-        ) : layout === 'horizontal' ? (
-          <span className={styles.scaleEndLabelSpacer} aria-hidden />
-        ) : null}
+      <li key={column.id} className={styles.scaleOption}>
         <label
           className={`${styles.scaleInputLabel} ${
             isChecked ? styles.scaleInputLabelSelected : ''
@@ -261,29 +266,93 @@ export function MultiPointCardsCarouselPreview({
     );
   }
 
+  function renderHorizontalScaleRow(rowColumns: SurveyMatrixColumn[], rowStartIndex: number) {
+    if (!activeRow) return null;
+    const gridStyle = { '--scale-cols': rowColumns.length } as CSSProperties;
+
+    return (
+      <div
+        key={`scale-block-${rowStartIndex}`}
+        className={styles.horizontalScaleBlock}
+        style={gridStyle}
+      >
+        <ul className={`${styles.scaleHorizontalGridRow} ${styles.scaleAnchorRow}`}>
+          {rowColumns.map((column, indexInRow) => {
+            const globalIndex = rowStartIndex + indexInRow;
+            const isFirstColumn = globalIndex === 0;
+            const isLastColumn = globalIndex === matrix.columns.length - 1;
+            return (
+              <li key={`anchor-${column.id}`} className={styles.scaleGridCell}>
+                {isFirstColumn ? (
+                  <span className={styles.scaleEndLabel}>
+                    {plainTextFromRichValue(matrix.leftAnchor)}
+                  </span>
+                ) : isLastColumn ? (
+                  <span className={styles.scaleEndLabel}>
+                    {plainTextFromRichValue(matrix.rightAnchor)}
+                  </span>
+                ) : (
+                  <span className={styles.scaleEndLabelSpacer} aria-hidden />
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        <ul className={`${styles.scaleHorizontalGridRow} ${styles.scaleRadioRow}`}>
+          {rowColumns.map((column, indexInRow) => {
+            const globalIndex = rowStartIndex + indexInRow;
+            const isChecked = selectionsByRowId[activeRow.id] === column.id;
+            return (
+              <li key={`radio-${column.id}`} className={styles.scaleGridCell}>
+                <label
+                  className={`${styles.scaleRadioOnly} ${
+                    isChecked ? styles.scaleInputLabelSelected : ''
+                  }`}
+                >
+                  <input
+                    type={inputType}
+                    name={`preview-${activeRow.id}`}
+                    checked={isChecked}
+                    aria-label={columnDisplayLabel(column.label, globalIndex)}
+                    onChange={() => handleOptionSelect(activeRow.id, column.id)}
+                  />
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+        <ul className={`${styles.scaleHorizontalGridRow} ${styles.scaleLabelRow}`}>
+          {rowColumns.map((column, indexInRow) => {
+            const globalIndex = rowStartIndex + indexInRow;
+            const isChecked = selectionsByRowId[activeRow.id] === column.id;
+            return (
+              <li key={`label-${column.id}`} className={styles.scaleGridCell}>
+                <span
+                  className={`${styles.scaleColumnLabel} ${
+                    isChecked ? styles.scaleColumnLabelSelected : ''
+                  }`}
+                >
+                  {columnDisplayLabel(column.label, globalIndex)}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    );
+  }
+
   const verticalScaleOptions = activeRow && !isHorizontal ? (
     <ul className={styles.scaleOptions} aria-label="Rating scale">
-      {matrix.columns.map((column, index) => renderScaleOption(column, index, 'vertical'))}
+      {matrix.columns.map((column, index) => renderVerticalScaleOption(column, index))}
     </ul>
   ) : null;
 
   const horizontalScaleOptions = activeRow && isHorizontal ? (
-    <div className={styles.scaleRowsWrap}>
-      {chunkColumns(matrix.columns, HORIZONTAL_SCALE_POINTS_PER_ROW).map((rowColumns, rowIndex) => (
-        <ul
-          key={`scale-row-${rowIndex}`}
-          className={styles.scaleOptionsHorizontal}
-          aria-label={rowIndex === 0 ? 'Rating scale' : undefined}
-        >
-          {rowColumns.map((column, indexInRow) =>
-            renderScaleOption(
-              column,
-              rowIndex * HORIZONTAL_SCALE_POINTS_PER_ROW + indexInRow,
-              'horizontal'
-            )
-          )}
-        </ul>
-      ))}
+    <div className={styles.scaleRowsWrap} aria-label="Rating scale">
+      {chunkColumns(matrix.columns, HORIZONTAL_SCALE_POINTS_PER_ROW).map((rowColumns, rowIndex) =>
+        renderHorizontalScaleRow(rowColumns, rowIndex * HORIZONTAL_SCALE_POINTS_PER_ROW)
+      )}
     </div>
   ) : null;
 
@@ -329,22 +398,21 @@ export function MultiPointCardsCarouselPreview({
                   slideKey={activeRow?.id ?? String(activeRowIndex)}
                   direction={slideDirection}
                   className={styles.horizontalSlideWrap}
-                  style={horizontalWrapStyle}
                 >
                   <div className={styles.horizontalCarouselUnit}>
-                    <div className={styles.cardStackWrap}>
-                      <div className={styles.cardBack} aria-hidden />
-                      <div className={styles.cardBack2} aria-hidden />
-                      <article className={styles.cardHorizontal}>
-                        <span className={styles.cardProgress}>
-                          {activeRowIndex + 1}/{rowCount}
-                        </span>
-                        <p className={styles.cardLabel}>
-                          {activeRow ? plainTextFromRichValue(activeRow.label) : ''}
-                        </p>
-                      </article>
+                    <div className={styles.horizontalCardBlock} style={horizontalCardBlockStyle}>
+                      <div className={styles.cardStackWrap}>
+                        <div className={styles.cardBack} aria-hidden />
+                        <div className={styles.cardBack2} aria-hidden />
+                        <article className={styles.cardHorizontal}>
+                          <span className={styles.cardProgress}>
+                            {activeRowIndex + 1}/{rowCount}
+                          </span>
+                          {activeRow ? <CardRowLabel label={activeRow.label} /> : null}
+                        </article>
+                      </div>
+                      {cardNav}
                     </div>
-                    {cardNav}
                     <div className={styles.scaleBelowCard}>{horizontalScaleOptions}</div>
                   </div>
                 </CarouselSlide>
@@ -363,9 +431,7 @@ export function MultiPointCardsCarouselPreview({
                       <span className={styles.cardProgress}>
                         {activeRowIndex + 1}/{rowCount}
                       </span>
-                      <p className={styles.cardLabel}>
-                        {activeRow ? plainTextFromRichValue(activeRow.label) : ''}
-                      </p>
+                      {activeRow ? <CardRowLabel label={activeRow.label} /> : null}
                     </article>
                   </div>
                   {cardNav}
