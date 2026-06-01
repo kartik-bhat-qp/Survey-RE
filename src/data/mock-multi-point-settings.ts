@@ -62,6 +62,13 @@ export const DEFAULT_MULTI_POINT_SETTINGS: MultiPointScalesSettings = {
   scaleType: 'undefined',
 };
 
+/** Defaults applied when adding a new Basic Matrix (Multi-Point Scales) question. */
+export const DEFAULT_NEW_MULTI_POINT_QUESTION_SETTINGS: MultiPointScalesSettings = {
+  ...DEFAULT_MULTI_POINT_SETTINGS,
+  layout: 'cards-carousel',
+  questionWidthPercent: 50,
+};
+
 export const MULTI_POINT_ANSWER_TYPE_OPTIONS: {
   value: MultiPointAnswerType;
   label: string;

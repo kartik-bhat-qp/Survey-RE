@@ -10,7 +10,10 @@ import type {
   SurveyQuestionOption,
   SurveySection,
 } from '@/data/mock-survey-detail';
-import { createDefaultMultiPointMatrix } from '@/data/mock-survey-detail';
+import {
+  createDefaultMultiPointMatrix,
+  DEFAULT_MULTI_POINT_QUESTION_TEXT,
+} from '@/data/mock-survey-detail';
 import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
 import { BulkEditLinesModal } from '@/components/surveys/BulkEditLinesModal';
 import { BulkEditOptionsModal } from '@/components/surveys/BulkEditOptionsModal';
@@ -31,6 +34,7 @@ import {
 } from '@/data/mock-question-settings';
 import {
   DEFAULT_MULTI_POINT_SETTINGS,
+  DEFAULT_NEW_MULTI_POINT_QUESTION_SETTINGS,
   isCardsCarouselPreview,
   type MultiPointScalesSettings,
 } from '@/data/mock-multi-point-settings';
@@ -1001,7 +1005,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
               id: newId,
               code: `Q${nextNum}`,
               number: nextNum,
-              text: `Question ${nextNum}`,
+              text: DEFAULT_MULTI_POINT_QUESTION_TEXT,
               required: true,
               kind: 'multi-point-scales',
               options: [],
@@ -1015,7 +1019,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         );
         setMultiPointSettingsByKey((prev) => ({
           ...prev,
-          [questionKey]: DEFAULT_MULTI_POINT_SETTINGS,
+          [questionKey]: DEFAULT_NEW_MULTI_POINT_QUESTION_SETTINGS,
         }));
         showToast({ message: 'Multi-Point Scales question added', variant: 'success' });
         return;

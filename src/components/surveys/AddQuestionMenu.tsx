@@ -13,7 +13,6 @@ import {
   ADD_QUESTION_CATEGORIES,
   filterAddQuestionCategories,
   getAddQuestionAdvancedLicenseTooltip,
-  ADD_QUESTION_ADVANCED_LICENSE_PREVIEW_HEADER,
   type AddQuestionCategory,
   type AddQuestionTypeItem,
   type QuestionTypeTier,
@@ -105,9 +104,11 @@ const THUMB_ICON_BY_DIRECTION: Record<ThumbsPreviewDirection, string> = {
 function QuestionTypeHoverPreview({
   content,
   typeId,
+  typeLabel,
 }: {
   content: QuestionTypePreviewContent;
   typeId: string;
+  typeLabel: string;
 }) {
   const footerBrand = useSurveyFooterBrand();
   const advancedLicenseTooltip = getAddQuestionAdvancedLicenseTooltip(typeId);
@@ -181,7 +182,7 @@ function QuestionTypeHoverPreview({
               position="top"
               className={styles.previewHeaderDiamond}
             />
-            <span>{ADD_QUESTION_ADVANCED_LICENSE_PREVIEW_HEADER}</span>
+            <span>{typeLabel}</span>
           </>
         ) : (
           <>
@@ -773,6 +774,7 @@ export function AddQuestionMenu({ onSelect }: AddQuestionMenuProps) {
                 <QuestionTypeHoverPreview
                   content={previewContent}
                   typeId={hoveredType?.id ?? ''}
+                  typeLabel={hoveredType?.typeLabel ?? ''}
                 />
               </aside>
             </div>

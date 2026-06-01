@@ -46,19 +46,43 @@ export interface SurveyQuestion {
   matrix?: SurveyMatrix;
 }
 
+const DEFAULT_MULTI_POINT_ROW_LABELS = [
+  'Service',
+  'price',
+  'overall',
+  'Quality',
+  'Brand',
+] as const;
+
+const DEFAULT_MULTI_POINT_COLUMN_LABELS = [
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  '10',
+] as const;
+
+export const DEFAULT_MULTI_POINT_QUESTION_TEXT =
+  'Rate QuestionPro on the following';
+
 export function createDefaultMultiPointMatrix(): SurveyMatrix {
   const ts = Date.now();
   return {
-    leftAnchor: 'Left Anchor',
-    rightAnchor: 'Right Anchor',
-    columns: [
-      { id: `col-${ts}-1`, label: 'Column 1' },
-      { id: `col-${ts}-2`, label: 'Column 2' },
-    ],
-    rows: [
-      { id: `row-${ts}-1`, label: 'Row 1' },
-      { id: `row-${ts}-2`, label: 'Row 2' },
-    ],
+    leftAnchor: 'Bad',
+    rightAnchor: 'good',
+    columns: DEFAULT_MULTI_POINT_COLUMN_LABELS.map((label, index) => ({
+      id: `col-${ts}-${index + 1}`,
+      label,
+    })),
+    rows: DEFAULT_MULTI_POINT_ROW_LABELS.map((label, index) => ({
+      id: `row-${ts}-${index + 1}`,
+      label,
+    })),
   };
 }
 
