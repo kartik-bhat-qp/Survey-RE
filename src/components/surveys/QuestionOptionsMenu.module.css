@@ -1,0 +1,29 @@
+.menuBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.125rem;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+}
+
+.menuBtn:hover {
+  color: #1b87e6;
+}
+
+.menuItemContent {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+  min-width: 10rem;
+}
+
+.menuItemIcon {
+  color: #64748b;
+  flex-shrink: 0;
+  font-size: 1.125rem;
+}

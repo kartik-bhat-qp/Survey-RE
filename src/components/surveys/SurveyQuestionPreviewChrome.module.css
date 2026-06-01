@@ -1,0 +1,125 @@
+.root {
+  background: #eef2f6;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.toolbar {
+  align-items: center;
+  background: #3d4a57;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+}
+
+.toolbarToggles {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+.toggleItem {
+  align-items: center;
+  color: #e2e8f0;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  gap: 0.5rem;
+}
+
+.toggleLabel {
+  white-space: nowrap;
+}
+
+.toggleSwitch {
+  background: #64748b;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  height: 1.125rem;
+  padding: 0;
+  position: relative;
+  width: 2rem;
+}
+
+.toggleSwitchOn {
+  background: #1b87e6;
+}
+
+.toggleKnob {
+  background: #fff;
+  border-radius: 50%;
+  height: 0.875rem;
+  left: 0.125rem;
+  position: absolute;
+  top: 0.125rem;
+  transition: transform 0.15s ease;
+  width: 0.875rem;
+}
+
+.toggleSwitchOn .toggleKnob {
+  transform: translateX(0.875rem);
+}
+
+.toolbarActions {
+  align-items: center;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.toolbarIconBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: #e2e8f0;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.125rem;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.toolbarIconBtn:hover {
+  background: rgb(255 255 255 / 10%);
+  color: #fff;
+}
+
+.toolbarIconBtnActive {
+  background: rgb(27 135 230 / 35%);
+  color: #fff;
+}
+
+.draftBar {
+  background: #e85d4c;
+  color: #fff;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.25rem;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.deviceFrame {
+  flex: 1;
+  margin: 0 auto;
+  max-width: 100%;
+  width: 100%;
+}
+
+.deviceFrameTablet {
+  max-width: 48rem;
+  padding: 1rem;
+}
+
+.deviceFrameMobile {
+  max-width: 24rem;
+  padding: 1rem;
+}

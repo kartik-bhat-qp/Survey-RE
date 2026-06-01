@@ -205,7 +205,8 @@
   width: auto;
 }
 
-.questionBlockSelectMany .questionCodeColumn {
+.questionBlockSelectMany .questionCodeColumn,
+.questionBlockMultiPoint .questionCodeColumn {
   padding-top: 2.75rem;
 }
 

@@ -29,6 +29,8 @@ interface QuestionRichTextFieldProps {
   placeholder?: string;
   ariaLabel: string;
   onPointerDown?: (event: SyntheticEvent) => void;
+  /** Where the inline formatting toolbar anchors when focused. */
+  toolbarAlign?: 'start' | 'end';
 }
 
 interface FormatState {
@@ -52,6 +54,7 @@ export function QuestionRichTextField({
   placeholder,
   ariaLabel,
   onPointerDown,
+  toolbarAlign = 'start',
 }: QuestionRichTextFieldProps) {
   const { showToast } = useWuShowToast();
   const editorRef = useRef<HTMLDivElement>(null);
@@ -176,7 +179,9 @@ export function QuestionRichTextField({
         {focused ? (
           <div
             ref={toolbarRef}
-            className={styles.toolbar}
+            className={`${styles.toolbar} ${
+              toolbarAlign === 'end' ? styles.toolbarEnd : ''
+            }`}
             role="toolbar"
             aria-label="Text formatting"
             onMouseDown={handleToolbarMouseDown}

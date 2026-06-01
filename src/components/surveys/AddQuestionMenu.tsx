@@ -13,6 +13,7 @@ import {
   ADD_QUESTION_CATEGORIES,
   filterAddQuestionCategories,
   getAddQuestionAdvancedLicenseTooltip,
+  ADD_QUESTION_ADVANCED_LICENSE_PREVIEW_HEADER,
   type AddQuestionCategory,
   type AddQuestionTypeItem,
   type QuestionTypeTier,
@@ -54,6 +55,7 @@ import { MaxDiffQuestionPreview } from '@/components/surveys/MaxDiffQuestionPrev
 import { UploadFileQuestionPreview } from '@/components/surveys/UploadFileQuestionPreview';
 import { SignatureQuestionPreview } from '@/components/surveys/SignatureQuestionPreview';
 import { VideoAiQuestionPreview } from '@/components/surveys/VideoAiQuestionPreview';
+import { CommunityRecruitmentQuestionPreview } from '@/components/surveys/CommunityRecruitmentQuestionPreview';
 import { ReferenceDataQuestionPreview } from '@/components/surveys/ReferenceDataQuestionPreview';
 import { VanWestendorpQuestionPreview } from '@/components/surveys/VanWestendorpQuestionPreview';
 import { VerifiedSignatureQuestionPreview } from '@/components/surveys/VerifiedSignatureQuestionPreview';
@@ -100,7 +102,17 @@ const THUMB_ICON_BY_DIRECTION: Record<ThumbsPreviewDirection, string> = {
   down: 'wm-thumb-down',
 };
 
-function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewContent }) {
+function QuestionTypeHoverPreview({
+  content,
+  typeId,
+}: {
+  content: QuestionTypePreviewContent;
+  typeId: string;
+}) {
+  const footerBrand = useSurveyFooterBrand();
+  const advancedLicenseTooltip = getAddQuestionAdvancedLicenseTooltip(typeId);
+  const showAdvancedLicenseHeader =
+    footerBrand === 'essentials' && Boolean(advancedLicenseTooltip);
   const isMatrixPreview =
     content.variant === 'matrix-multi-point' ||
     content.variant === 'matrix-multi-select' ||
@@ -131,6 +143,7 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
   const isUploadFilePreview = content.variant === 'upload-file';
   const isSignaturePreview = content.variant === 'signature';
   const isVideoAiPreview = content.variant === 'video-ai';
+  const isCommunityRecruitmentPreview = content.variant === 'community-recruitment';
 
   const previewCardClass = isMatrixPreview
     ? `${styles.previewCard} ${styles.previewCardWide} ${styles.previewCardMatrix}`
@@ -148,13 +161,34 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
                 ? `${styles.previewCard} ${styles.previewCardSignature}`
                 : isVideoAiPreview
                   ? `${styles.previewCard} ${styles.previewCardVideoAi}`
-                  : styles.previewCard;
+                  : isCommunityRecruitmentPreview
+                    ? `${styles.previewCard} ${styles.previewCardCommunityRecruitment}`
+                    : styles.previewCard;
 
   return (
     <div className={previewCardClass}>
-      <div className={styles.previewHeader}>
-        <span className={`${content.headerIcon} ${styles.previewHeaderIcon}`} aria-hidden />
-        <span>{content.headerLabel}</span>
+      <div
+        className={
+          showAdvancedLicenseHeader
+            ? `${styles.previewHeader} ${styles.previewHeaderAdvancedLicense}`
+            : styles.previewHeader
+        }
+      >
+        {showAdvancedLicenseHeader ? (
+          <>
+            <BiDiamondIcon
+              tooltip={advancedLicenseTooltip}
+              position="top"
+              className={styles.previewHeaderDiamond}
+            />
+            <span>{ADD_QUESTION_ADVANCED_LICENSE_PREVIEW_HEADER}</span>
+          </>
+        ) : (
+          <>
+            <span className={`${content.headerIcon} ${styles.previewHeaderIcon}`} aria-hidden />
+            <span>{content.headerLabel}</span>
+          </>
+        )}
       </div>
       <div className={styles.previewBody}>
         {content.question ? (
@@ -386,6 +420,10 @@ function QuestionTypeHoverPreview({ content }: { content: QuestionTypePreviewCon
 
         {content.variant === 'video-ai' && content.videoAi ? (
           <VideoAiQuestionPreview data={content.videoAi} />
+        ) : null}
+
+        {content.variant === 'community-recruitment' && content.communityRecruitment ? (
+          <CommunityRecruitmentQuestionPreview data={content.communityRecruitment} />
         ) : null}
 
         {content.variant === 'placeholder' && content.hint ? (
@@ -723,12 +761,19 @@ export function AddQuestionMenu({ onSelect }: AddQuestionMenuProps) {
                   hoveredType?.id === 'text-highlighter' ? styles.hoverPreviewTextHighlighter : ''
                 } ${hoveredType?.id === 'upload-file' ? styles.hoverPreviewUploadFile : ''} ${
                   hoveredType?.id === 'signature' ? styles.hoverPreviewSignature : ''
-                } ${hoveredType?.id === 'video-ai' ? styles.hoverPreviewVideoAi : ''}`}
+                } ${hoveredType?.id === 'video-ai' ? styles.hoverPreviewVideoAi : ''} ${
+                  hoveredType?.id === 'community-recruitment'
+                    ? styles.hoverPreviewCommunityRecruitment
+                    : ''
+                }`}
                 aria-label="Question type preview"
                 onPointerEnter={clearLeaveTimer}
                 onPointerLeave={schedulePreviewLeave}
               >
-                <QuestionTypeHoverPreview content={previewContent} />
+                <QuestionTypeHoverPreview
+                  content={previewContent}
+                  typeId={hoveredType?.id ?? ''}
+                />
               </aside>
             </div>
           ) : null}

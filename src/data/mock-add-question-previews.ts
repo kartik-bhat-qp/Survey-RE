@@ -41,6 +41,7 @@ export type QuestionPreviewVariant =
   | 'upload-file'
   | 'signature'
   | 'video-ai'
+  | 'community-recruitment'
   | 'placeholder';
 
 export interface TextSliderPreviewData {
@@ -134,6 +135,10 @@ export interface SignaturePreviewData {
 
 export interface VideoAiPreviewData {
   previewImageSrc: string;
+}
+
+export interface CommunityRecruitmentPreviewData {
+  fields: string[];
 }
 
 export interface NpsPreviewData {
@@ -361,6 +366,8 @@ export interface QuestionTypePreviewContent {
   signature?: SignaturePreviewData;
   /** VideoAI recording preview. */
   videoAi?: VideoAiPreviewData;
+  /** Community recruitment name and email fields. */
+  communityRecruitment?: CommunityRecruitmentPreviewData;
   /** Secondary line under question (e.g. rating scale) */
   hint?: string;
   /** Leading icon inside a text input preview (e.g. email). */
@@ -1021,10 +1028,13 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     question: 'Countdown or elapsed time per page or question.',
   },
   'community-recruitment': {
-    variant: 'placeholder',
+    variant: 'community-recruitment',
     headerIcon: 'wm-groups',
-    headerLabel: 'Community Recruitment',
-    question: 'Invite respondents to join a community or panel.',
+    headerLabel: 'Misc (Community Recruitment)',
+    question: 'Community Recruitment',
+    communityRecruitment: {
+      fields: ['First Name', 'Last Name', 'Email Address'],
+    },
   },
 };
 

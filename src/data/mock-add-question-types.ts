@@ -221,6 +221,10 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
 export const ADD_QUESTION_ADVANCED_LICENSE_TOOLTIP =
   'This question is available with the Advanced license';
 
+/** Shown in the hover preview header (Essentials footer) for Advanced-gated types. */
+export const ADD_QUESTION_ADVANCED_LICENSE_PREVIEW_HEADER =
+  'Available with the Advanced license';
+
 const ADD_QUESTION_ADVANCED_LICENSE_TYPE_IDS = new Set([
   'nps',
   'reference-data',

@@ -98,6 +98,11 @@
   margin-top: 0.125rem;
 }
 
+.toolbarEnd {
+  left: auto;
+  right: 0;
+}
+
 .toolbarBtn {
   align-items: center;
   background: transparent;

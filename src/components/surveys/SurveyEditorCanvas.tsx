@@ -5,12 +5,20 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type Synth
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type {
   SurveyDetail,
+  SurveyMatrix,
   SurveyQuestion,
   SurveyQuestionOption,
   SurveySection,
 } from '@/data/mock-survey-detail';
+import { createDefaultMultiPointMatrix } from '@/data/mock-survey-detail';
 import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
+import { BulkEditLinesModal } from '@/components/surveys/BulkEditLinesModal';
 import { BulkEditOptionsModal } from '@/components/surveys/BulkEditOptionsModal';
+import { MultiPointScalesQuestionRow } from '@/components/surveys/MultiPointScalesQuestionRow';
+import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
+import { QuestionOptionsMenu } from '@/components/surveys/QuestionOptionsMenu';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { MultiPointScalesSettingsPanel } from '@/components/surveys/MultiPointScalesSettingsPanel';
 import { QuestionLogicModal } from '@/components/surveys/QuestionLogicModal';
 import { QuestionSettingsPanel } from '@/components/surveys/QuestionSettingsPanel';
 import {
@@ -21,6 +29,16 @@ import {
   getDefaultSettingsForQuestion,
   type QuestionSettings,
 } from '@/data/mock-question-settings';
+import {
+  DEFAULT_MULTI_POINT_SETTINGS,
+  isCardsCarouselPreview,
+  type MultiPointScalesSettings,
+} from '@/data/mock-multi-point-settings';
+import {
+  findNextSurveyQuestion,
+  toQuestionPreviewFollowUp,
+} from '@/data/survey-question-preview-utils';
+import { writeMultiPointQuestionPreviewSession } from '@/data/survey-question-preview-session';
 import styles from './SurveyEditorCanvas.module.css';
 
 const WuButton = dynamic(
@@ -32,14 +50,56 @@ interface SurveyEditorCanvasProps {
   detail: SurveyDetail;
 }
 
+function cloneMatrix(matrix: SurveyMatrix): SurveyMatrix {
+  return {
+    leftAnchor: matrix.leftAnchor,
+    rightAnchor: matrix.rightAnchor,
+    columns: matrix.columns.map((column) => ({ ...column })),
+    rows: matrix.rows.map((row) => ({ ...row })),
+  };
+}
+
 function cloneSections(sections: SurveySection[]): SurveySection[] {
   return sections.map((sec) => ({
     ...sec,
     questions: sec.questions.map((q) => ({
       ...q,
       options: q.options.map((o) => ({ ...o })),
+      ...(q.matrix ? { matrix: cloneMatrix(q.matrix) } : {}),
     })),
   }));
+}
+
+function isMultiPointScalesQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'multi-point-scales' && Boolean(question.matrix);
+}
+
+function cloneQuestionForCopy(question: SurveyQuestion): SurveyQuestion {
+  const ts = Date.now();
+  return {
+    ...question,
+    id: `q-copy-${ts}`,
+    options: question.options.map((option, index) => ({
+      ...option,
+      id: `opt-${ts}-${index}`,
+    })),
+    ...(question.matrix ? { matrix: cloneMatrix(question.matrix) } : {}),
+  };
+}
+
+function insertQuestionAtIndex(
+  questions: SurveyQuestion[],
+  insertIndex: number,
+  newQuestion: SurveyQuestion
+): SurveyQuestion[] {
+  const next = [...questions];
+  const index = Math.max(0, Math.min(insertIndex, next.length));
+  next.splice(index, 0, newQuestion);
+  return next;
+}
+
+function nextQuestionNumber(questions: SurveyQuestion[]): number {
+  return questions.reduce((max, question) => Math.max(max, question.number), 0) + 1;
 }
 
 function isOtherOptionLabel(label: string): boolean {
@@ -114,11 +174,20 @@ function QuestionCodeField({
 
 function AddQuestionToolbar({
   sectionId,
+  insertIndex,
   onSelect,
   onPageControl,
 }: {
   sectionId: string;
-  onSelect: (sectionId: string, category: string, typeLabel: string, typeId: string) => void;
+  /** Position in the section's question list where the new question is inserted. */
+  insertIndex: number;
+  onSelect: (
+    sectionId: string,
+    insertIndex: number,
+    category: string,
+    typeLabel: string,
+    typeId: string
+  ) => void;
   onPageControl: (action: string) => void;
 }) {
   return (
@@ -126,7 +195,7 @@ function AddQuestionToolbar({
       <div className={styles.addQuestionToolbarCenter}>
         <AddQuestionMenu
           onSelect={(category, typeLabel, typeId) =>
-            onSelect(sectionId, category, typeLabel, typeId)
+            onSelect(sectionId, insertIndex, category, typeLabel, typeId)
           }
         />
       </div>
@@ -163,12 +232,14 @@ function QuestionRow({
   onAction,
   onOpenLogic,
   onOpenSettings,
+  onMenuAction,
   onQuestionTextChange,
   onOptionLabelChange,
 }: {
   question: SurveyQuestion;
   sectionId: string;
   onAction: (label: string) => void;
+  onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
   onOpenSettings: () => void;
   onQuestionTextChange: (sectionId: string, questionId: string, text: string) => void;
@@ -243,14 +314,7 @@ function QuestionRow({
         >
           Settings
         </button>
-        <button
-          type="button"
-          className={styles.menuBtn}
-          aria-label="Question options"
-          onClick={() => onAction('More options')}
-        >
-          <span className="wm-more-vert" />
-        </button>
+        <QuestionOptionsMenu onAction={onMenuAction} triggerClassName={styles.menuBtn} />
       </div>
     </article>
   );
@@ -262,6 +326,7 @@ function SelectManyQuestionRow({
   onAction,
   onOpenLogic,
   onOpenSettings,
+  onMenuAction,
   onAddOption,
   onBulkEdit,
   onQuestionTextChange,
@@ -270,6 +335,7 @@ function SelectManyQuestionRow({
   question: SurveyQuestion;
   sectionId: string;
   onAction: (label: string) => void;
+  onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
   onOpenSettings: () => void;
   onAddOption: (sectionId: string, questionId: string) => void;
@@ -313,14 +379,7 @@ function SelectManyQuestionRow({
               >
                 Settings
               </button>
-              <button
-                type="button"
-                className={styles.menuBtn}
-                aria-label="Question options"
-                onClick={() => onAction('More options')}
-              >
-                <span className="wm-more-vert" />
-              </button>
+              <QuestionOptionsMenu onAction={onMenuAction} triggerClassName={styles.menuBtn} />
             </div>
           </div>
           <div className={styles.selectManyQuestionTextWrap}>
@@ -416,10 +475,21 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   const [questionSettingsByKey, setQuestionSettingsByKey] = useState<
     Record<string, QuestionSettings>
   >({});
+  const [multiPointSettingsByKey, setMultiPointSettingsByKey] = useState<
+    Record<string, MultiPointScalesSettings>
+  >({});
+  const [bulkEditMatrixTarget, setBulkEditMatrixTarget] = useState<{
+    sectionId: string;
+    questionId: string;
+    target: 'rows' | 'columns';
+  } | null>(null);
+  const [deleteQuestionTarget, setDeleteQuestionTarget] = useState<{
+    sectionId: string;
+    questionId: string;
+  } | null>(null);
   const pendingScrollQuestionRef = useRef<{ sectionId: string; questionId: string } | null>(
     null
   );
-
   const toast = useCallback(
     (message: string) => {
       showToast({ message, variant: 'success' });
@@ -433,6 +503,9 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     setSettingsTarget(null);
     setLogicTarget(null);
     setQuestionSettingsByKey({});
+    setMultiPointSettingsByKey({});
+    setBulkEditMatrixTarget(null);
+    setDeleteQuestionTarget(null);
   }, [detail.survey.id]);
 
   useEffect(() => {
@@ -567,6 +640,12 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         ?.questions.find((q) => q.id === bulkEditTarget.questionId)
     : undefined;
 
+  const bulkEditMatrixQuestion = bulkEditMatrixTarget
+    ? sections
+        .find((sec) => sec.id === bulkEditMatrixTarget.sectionId)
+        ?.questions.find((q) => q.id === bulkEditMatrixTarget.questionId)
+    : undefined;
+
   const logicQuestion = logicTarget
     ? sections
         .find((sec) => sec.id === logicTarget.sectionId)
@@ -615,6 +694,130 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     [questionSettingsByKey]
   );
 
+  const getMultiPointSettings = useCallback(
+    (questionKey: string): MultiPointScalesSettings => {
+      return {
+        ...DEFAULT_MULTI_POINT_SETTINGS,
+        ...multiPointSettingsByKey[questionKey],
+      };
+    },
+    [multiPointSettingsByKey]
+  );
+
+  const handleMultiPointSettingsChange = useCallback(
+    (questionKey: string, settings: MultiPointScalesSettings) => {
+      setMultiPointSettingsByKey((prev) => ({ ...prev, [questionKey]: settings }));
+    },
+    []
+  );
+
+  const updateQuestionMatrix = useCallback(
+    (
+      sectionId: string,
+      questionId: string,
+      updater: (matrix: SurveyMatrix) => SurveyMatrix
+    ) => {
+      setSections((prev) =>
+        prev.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            questions: sec.questions.map((q) => {
+              if (q.id !== questionId || !q.matrix) return q;
+              return { ...q, matrix: updater(q.matrix) };
+            }),
+          };
+        })
+      );
+    },
+    []
+  );
+
+  const handleMatrixAnchorChange = useCallback(
+    (
+      sectionId: string,
+      questionId: string,
+      anchor: 'leftAnchor' | 'rightAnchor',
+      value: string
+    ) => {
+      updateQuestionMatrix(sectionId, questionId, (matrix) => ({
+        ...matrix,
+        [anchor]: value,
+      }));
+    },
+    [updateQuestionMatrix]
+  );
+
+  const handleMatrixColumnLabelChange = useCallback(
+    (sectionId: string, questionId: string, columnId: string, label: string) => {
+      updateQuestionMatrix(sectionId, questionId, (matrix) => ({
+        ...matrix,
+        columns: matrix.columns.map((column) =>
+          column.id === columnId ? { ...column, label } : column
+        ),
+      }));
+    },
+    [updateQuestionMatrix]
+  );
+
+  const handleMatrixRowLabelChange = useCallback(
+    (sectionId: string, questionId: string, rowId: string, label: string) => {
+      updateQuestionMatrix(sectionId, questionId, (matrix) => ({
+        ...matrix,
+        rows: matrix.rows.map((row) => (row.id === rowId ? { ...row, label } : row)),
+      }));
+    },
+    [updateQuestionMatrix]
+  );
+
+  const handleAddMatrixRow = useCallback(
+    (sectionId: string, questionId: string) => {
+      updateQuestionMatrix(sectionId, questionId, (matrix) => {
+        const nextIndex = matrix.rows.length + 1;
+        return {
+          ...matrix,
+          rows: [
+            ...matrix.rows,
+            { id: `row-${Date.now()}`, label: `Row ${nextIndex}` },
+          ],
+        };
+      });
+      toast('Row added');
+    },
+    [toast, updateQuestionMatrix]
+  );
+
+  const handleBulkEditMatrixSave = useCallback(
+    (lines: string[]) => {
+      if (!bulkEditMatrixTarget) return;
+      const { sectionId, questionId, target } = bulkEditMatrixTarget;
+      updateQuestionMatrix(sectionId, questionId, (matrix) => {
+        if (target === 'rows') {
+          return {
+            ...matrix,
+            rows: lines.map((label, index) => {
+              const existing = matrix.rows[index];
+              return existing
+                ? { ...existing, label }
+                : { id: `row-${Date.now()}-${index}`, label };
+            }),
+          };
+        }
+        return {
+          ...matrix,
+          columns: lines.map((label, index) => {
+            const existing = matrix.columns[index];
+            return existing
+              ? { ...existing, label }
+              : { id: `col-${Date.now()}-${index}`, label };
+          }),
+        };
+      });
+      setBulkEditMatrixTarget(null);
+    },
+    [bulkEditMatrixTarget, updateQuestionMatrix]
+  );
+
   const handleQuestionCodeChange = useCallback(
     (sectionId: string, questionId: string, code: string) => {
       setSections((prev) =>
@@ -632,8 +835,126 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     []
   );
 
+  const handleQuestionMenuAction = useCallback(
+    (sectionId: string, questionId: string, action: QuestionMenuAction) => {
+      const section = sections.find((sec) => sec.id === sectionId);
+      const question = section?.questions.find((q) => q.id === questionId);
+      if (!question) return;
+
+      const questionLabel = plainTextFromRichValue(question.text) || question.code;
+
+      switch (action) {
+        case 'preview': {
+          if (isMultiPointScalesQuestion(question) && question.matrix) {
+            const questionKey = `${sectionId}:${questionId}`;
+            const mpSettings = getMultiPointSettings(questionKey);
+            if (isCardsCarouselPreview(mpSettings)) {
+              const nextQuestion = findNextSurveyQuestion(sections, sectionId, questionId);
+              writeMultiPointQuestionPreviewSession({
+                surveyId: detail.survey.id,
+                surveyTitle: detail.editorTitle,
+                questionText: question.text,
+                required: question.required,
+                matrix: question.matrix,
+                settings: mpSettings,
+                questionBelow: nextQuestion
+                  ? toQuestionPreviewFollowUp(nextQuestion)
+                  : null,
+              });
+              const previewUrl = `${window.location.origin}/surveys/preview/${detail.survey.id}`;
+              window.open(previewUrl, '_blank', 'noopener,noreferrer');
+              return;
+            }
+            showToast({
+              message: 'Preview requires Cards carousel layout',
+              variant: 'info',
+            });
+            return;
+          }
+          showToast({
+            message: `Preview is not available for ${questionLabel}`,
+            variant: 'info',
+          });
+          return;
+        }
+        case 'copy': {
+          const copy = cloneQuestionForCopy(question);
+          const sourceKey = `${sectionId}:${questionId}`;
+          setSections((prev) =>
+            prev.map((sec) => {
+              if (sec.id !== sectionId) return sec;
+              const index = sec.questions.findIndex((q) => q.id === questionId);
+              const maxNum = sec.questions.reduce((m, q) => Math.max(m, q.number), 0);
+              const inserted = {
+                ...copy,
+                number: maxNum + 1,
+                code: `Q${maxNum + 1}`,
+              };
+              const nextQuestions = [...sec.questions];
+              nextQuestions.splice(index + 1, 0, inserted);
+              return { ...sec, questions: nextQuestions };
+            })
+          );
+          if (isMultiPointScalesQuestion(question)) {
+            const sourceSettings = getMultiPointSettings(sourceKey);
+            setMultiPointSettingsByKey((prev) => ({
+              ...prev,
+              [`${sectionId}:${copy.id}`]: sourceSettings,
+            }));
+          }
+          toast('Question copied');
+          return;
+        }
+        case 'save-to-library':
+          toast('Question saved to library');
+          return;
+        case 'reorder':
+          toast('Reorder question');
+          return;
+        case 'delete':
+          setDeleteQuestionTarget({ sectionId, questionId });
+          return;
+        default:
+          return;
+      }
+    },
+    [detail.editorTitle, detail.survey.id, sections, showToast, getMultiPointSettings]
+  );
+
+  const handleConfirmDeleteQuestion = useCallback(() => {
+    if (!deleteQuestionTarget) return;
+    const { sectionId, questionId } = deleteQuestionTarget;
+    const questionKey = `${sectionId}:${questionId}`;
+    setSections((prev) =>
+      prev.map((sec) => {
+        if (sec.id !== sectionId) return sec;
+        return {
+          ...sec,
+          questions: sec.questions.filter((q) => q.id !== questionId),
+        };
+      })
+    );
+    if (selectedQuestionKey === questionKey) {
+      setSelectedQuestionKey(null);
+    }
+    if (settingsTarget?.sectionId === sectionId && settingsTarget.questionId === questionId) {
+      setSettingsTarget(null);
+    }
+    setLogicTarget((prev) =>
+      prev?.sectionId === sectionId && prev.questionId === questionId ? null : prev
+    );
+    setDeleteQuestionTarget(null);
+    toast('Question deleted');
+  }, [deleteQuestionTarget, selectedQuestionKey, settingsTarget, toast]);
+
   const handleAddQuestionSelect = useCallback(
-    (sectionId: string, category: string, typeLabel: string, typeId: string) => {
+    (
+      sectionId: string,
+      insertIndex: number,
+      category: string,
+      typeLabel: string,
+      typeId: string
+    ) => {
       if (typeId === 'select-many') {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
@@ -642,8 +963,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         setSections((prev) =>
           prev.map((sec) => {
             if (sec.id !== sectionId) return sec;
-            const maxNum = sec.questions.reduce((m, q) => Math.max(m, q.number), 0);
-            const nextNum = maxNum + 1;
+            const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
               code: `Q${nextNum}`,
@@ -656,12 +976,51 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                 { id: `opt-${ts}-2`, label: 'Option 2' },
               ],
             };
-            return { ...sec, questions: [...sec.questions, newQuestion] };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
           })
         );
         showToast({ message: 'Select Many question added', variant: 'success' });
         return;
       }
+
+      if (typeId === 'multi-point') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        const questionKey = `${sectionId}:${newId}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(questionKey);
+        setSettingsTarget({ sectionId, questionId: newId });
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: `Question ${nextNum}`,
+              required: true,
+              kind: 'multi-point-scales',
+              options: [],
+              matrix: createDefaultMultiPointMatrix(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        setMultiPointSettingsByKey((prev) => ({
+          ...prev,
+          [questionKey]: DEFAULT_MULTI_POINT_SETTINGS,
+        }));
+        showToast({ message: 'Multi-Point Scales question added', variant: 'success' });
+        return;
+      }
+
       showToast({ message: `Add ${typeLabel} (${category})`, variant: 'success' });
     },
     [showToast]
@@ -708,19 +1067,24 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                 <div className={styles.sectionQuestionSheet}>
                   <AddQuestionToolbar
                     sectionId={section.id}
+                    insertIndex={0}
                     onSelect={handleAddQuestionSelect}
                     onPageControl={handlePageControl}
                   />
 
-                  {section.questions.map((question) => {
+                  {section.questions.map((question, questionIndex) => {
                     const questionKey = `${section.id}:${question.id}`;
                     const isSelected = selectedQuestionKey === questionKey;
+                    const isMultiPoint = isMultiPointScalesQuestion(question);
+                    const multiPointSettings = getMultiPointSettings(questionKey);
                     return (
                       <Fragment key={question.id}>
                         <div
                           id={`survey-question-${section.id}-${question.id}`}
                           className={`${styles.questionBlock} ${
                             question.inputKind === 'checkbox' ? styles.questionBlockSelectMany : ''
+                          } ${
+                            isMultiPoint ? styles.questionBlockMultiPoint : ''
                           } ${isSelected ? styles.questionBlockSelected : ''}`}
                         >
                           <div
@@ -737,12 +1101,51 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                             className={styles.questionShell}
                             onClick={() => setSelectedQuestionKey(questionKey)}
                           >
-                            {question.inputKind === 'checkbox' ? (
+                            {isMultiPoint && question.matrix ? (
+                              <MultiPointScalesQuestionRow
+                                question={question}
+                                matrix={question.matrix}
+                                answerType={multiPointSettings.answerType}
+                                sectionId={section.id}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onMatrixAnchorChange={handleMatrixAnchorChange}
+                                onMatrixColumnLabelChange={handleMatrixColumnLabelChange}
+                                onMatrixRowLabelChange={handleMatrixRowLabelChange}
+                                onAddRow={handleAddMatrixRow}
+                                onBulkEditRows={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'rows',
+                                  })
+                                }
+                                onBulkEditColumns={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'columns',
+                                  })
+                                }
+                              />
+                            ) : question.inputKind === 'checkbox' ? (
                               <SelectManyQuestionRow
                                 question={question}
                                 sectionId={section.id}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
                                 }
                                 onOpenLogic={() => handleOpenLogic(section.id, question.id)}
                                 onOpenSettings={() =>
@@ -760,6 +1163,9 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
                                 onOpenLogic={() => handleOpenLogic(section.id, question.id)}
                                 onOpenSettings={() =>
                                   handleOpenSettings(section.id, question.id)
@@ -773,6 +1179,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
 
                         <AddQuestionToolbar
                           sectionId={section.id}
+                          insertIndex={questionIndex + 1}
                           onSelect={handleAddQuestionSelect}
                           onPageControl={handlePageControl}
                         />
@@ -814,12 +1221,20 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       </div>
 
       {settingsQuestion && settingsQuestionKey ? (
-        <QuestionSettingsPanel
-          question={settingsQuestion}
-          settings={getQuestionSettings(settingsQuestion, settingsQuestionKey)}
-          onChange={(next) => handleSettingsChange(settingsQuestionKey, next)}
-          onClose={() => setSettingsTarget(null)}
-        />
+        isMultiPointScalesQuestion(settingsQuestion) ? (
+          <MultiPointScalesSettingsPanel
+            settings={getMultiPointSettings(settingsQuestionKey)}
+            onChange={(next) => handleMultiPointSettingsChange(settingsQuestionKey, next)}
+            onClose={() => setSettingsTarget(null)}
+          />
+        ) : (
+          <QuestionSettingsPanel
+            question={settingsQuestion}
+            settings={getQuestionSettings(settingsQuestion, settingsQuestionKey)}
+            onChange={(next) => handleSettingsChange(settingsQuestionKey, next)}
+            onClose={() => setSettingsTarget(null)}
+          />
+        )
       ) : null}
 
       {logicQuestion ? (
@@ -833,6 +1248,31 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           surveyId={detail.survey.id}
         />
       ) : null}
+
+      <BulkEditLinesModal
+        open={bulkEditMatrixTarget !== null && bulkEditMatrixQuestion?.matrix !== undefined}
+        title={
+          bulkEditMatrixTarget?.target === 'columns' ? 'Bulk Edit Columns' : 'Bulk Edit Rows'
+        }
+        fieldLabel={
+          bulkEditMatrixTarget?.target === 'columns'
+            ? 'Columns — one per line'
+            : 'Rows — one per line'
+        }
+        lines={
+          bulkEditMatrixTarget?.target === 'columns'
+            ? (bulkEditMatrixQuestion?.matrix?.columns.map((column) =>
+                plainTextFromRichValue(column.label)
+              ) ?? [])
+            : (bulkEditMatrixQuestion?.matrix?.rows.map((row) =>
+                plainTextFromRichValue(row.label)
+              ) ?? [])
+        }
+        onOpenChange={(open) => {
+          if (!open) setBulkEditMatrixTarget(null);
+        }}
+        onSave={handleBulkEditMatrixSave}
+      />
 
       <BulkEditOptionsModal
         open={bulkEditTarget !== null && bulkEditQuestion !== undefined}
@@ -851,6 +1291,18 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           bulkEditQuestion ? questionHasNotApplicableOption(bulkEditQuestion) : false
         }
         onSave={handleBulkEditSave}
+      />
+
+      <ConfirmModal
+        open={deleteQuestionTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteQuestionTarget(null);
+        }}
+        title="Delete question?"
+        description="This question will be removed from the survey. This action cannot be undone in this prototype."
+        confirmLabel="Delete"
+        variant="critical"
+        onConfirm={handleConfirmDeleteQuestion}
       />
     </div>
   );

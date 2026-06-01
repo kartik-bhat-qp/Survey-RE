@@ -5,10 +5,29 @@ import { NEW_BLANK_SURVEY_ID } from '@/data/mock-survey-creation-flow';
 
 export type SurveyQuestionInputKind = 'radio' | 'checkbox';
 
+export type SurveyQuestionKind = 'standard' | 'multi-point-scales';
+
 export interface SurveyQuestionOption {
   id: string;
   label: string;
   logicLabel?: string;
+}
+
+export interface SurveyMatrixColumn {
+  id: string;
+  label: string;
+}
+
+export interface SurveyMatrixRow {
+  id: string;
+  label: string;
+}
+
+export interface SurveyMatrix {
+  leftAnchor: string;
+  rightAnchor: string;
+  columns: SurveyMatrixColumn[];
+  rows: SurveyMatrixRow[];
 }
 
 export interface SurveyQuestion {
@@ -18,9 +37,29 @@ export interface SurveyQuestion {
   number: number;
   text: string;
   required?: boolean;
+  /** Workspace question type; default `standard`. */
+  kind?: SurveyQuestionKind;
   /** How options render; default `radio` when omitted (existing mock questions). */
   inputKind?: SurveyQuestionInputKind;
   options: SurveyQuestionOption[];
+  /** Matrix grid for Basic Matrix multi-point scales. */
+  matrix?: SurveyMatrix;
+}
+
+export function createDefaultMultiPointMatrix(): SurveyMatrix {
+  const ts = Date.now();
+  return {
+    leftAnchor: 'Left Anchor',
+    rightAnchor: 'Right Anchor',
+    columns: [
+      { id: `col-${ts}-1`, label: 'Column 1' },
+      { id: `col-${ts}-2`, label: 'Column 2' },
+    ],
+    rows: [
+      { id: `row-${ts}-1`, label: 'Row 1' },
+      { id: `row-${ts}-2`, label: 'Row 2' },
+    ],
+  };
 }
 
 export interface SurveySection {

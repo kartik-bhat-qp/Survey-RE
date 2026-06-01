@@ -209,6 +209,29 @@
   width: min(40rem, 100%);
 }
 
+.previewCardCommunityRecruitment {
+  max-width: min(38rem, calc(100vw - 2rem));
+  width: min(38rem, 100%);
+}
+
+.previewCardCommunityRecruitment .previewBody {
+  padding: 1.5rem 1.75rem 1.75rem;
+}
+
+.previewCardCommunityRecruitment .previewQuestion {
+  color: #1e293b;
+  font-size: 1.375rem;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 1.5rem;
+}
+
+.hoverPreviewCommunityRecruitment {
+  max-width: min(38rem, calc(100vw - 2rem));
+  min-width: min(34rem, 100%);
+  width: min(38rem, 100%);
+}
+
 .previewCardMatrix {
   min-width: min(38rem, 100%);
 }
@@ -229,6 +252,18 @@
 .previewHeaderIcon {
   color: #64748b;
   font-size: 1.25rem;
+}
+
+.previewHeaderAdvancedLicense {
+  gap: 0.625rem;
+}
+
+.previewHeaderDiamond {
+  flex-shrink: 0;
+}
+
+.previewHeaderAdvancedLicense .previewHeaderDiamond :global(.wm-diamond) {
+  font-size: 1rem;
 }
 
 .previewBody {
