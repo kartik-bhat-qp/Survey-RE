@@ -141,6 +141,7 @@ export default function SignupPage() {
               AI-ready research platform
             </p>
             <SignupFeatureCarousel />
+            <TrustedBrandsFooter layout="panel" />
           </div>
         </aside>
 
@@ -293,7 +294,6 @@ export default function SignupPage() {
         </main>
       </div>
 
-      <TrustedBrandsFooter />
     </div>
   );
 }

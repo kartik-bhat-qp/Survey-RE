@@ -6,6 +6,12 @@
   width: 100%;
 }
 
+.footerPanel {
+  background: transparent;
+  border-top: none;
+  padding: 0;
+}
+
 .headline {
   color: #5a6a85;
   font-family: 'Fira Sans', sans-serif;
@@ -17,10 +23,22 @@
   text-align: center;
 }
 
+.headlinePanel {
+  color: rgb(255 255 255 / 78%);
+  margin: 0 0 1rem;
+  max-width: none;
+  text-align: left;
+}
+
 .logoViewport {
   margin: 0 auto;
   max-width: 64rem;
   min-height: 2.75rem;
+}
+
+.footerPanel .logoViewport {
+  margin: 0;
+  max-width: none;
 }
 
 .logoRow {
@@ -33,6 +51,11 @@
   margin: 0;
   padding: 0;
   transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.footerPanel .logoRow {
+  gap: 1rem 1.25rem;
+  justify-items: start;
 }
 
 .logoRowVisible {

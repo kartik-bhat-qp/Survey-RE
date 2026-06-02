@@ -14,7 +14,11 @@ import styles from './TrustedBrandsFooter.module.css';
 
 const GROUP_COUNT = getTrustedBrandGroupCount();
 
-export function TrustedBrandsFooter() {
+interface TrustedBrandsFooterProps {
+  layout?: 'footer' | 'panel';
+}
+
+export function TrustedBrandsFooter({ layout = 'footer' }: TrustedBrandsFooterProps) {
   const [groupIndex, setGroupIndex] = useState(0);
   const [visible, setVisible] = useState(true);
 
@@ -46,8 +50,13 @@ export function TrustedBrandsFooter() {
   const visibleBrands = getTrustedBrandsForGroup(groupIndex);
 
   return (
-    <footer className={styles.footer} aria-label="Trusted brands">
-      <p className={styles.headline}>{SIGNUP_TRUSTED_BRANDS_HEADLINE}</p>
+    <footer
+      className={`${styles.footer} ${layout === 'panel' ? styles.footerPanel : ''}`}
+      aria-label="Trusted brands"
+    >
+      <p className={`${styles.headline} ${layout === 'panel' ? styles.headlinePanel : ''}`}>
+        {SIGNUP_TRUSTED_BRANDS_HEADLINE}
+      </p>
       <div
         className={styles.logoViewport}
         aria-live="polite"
