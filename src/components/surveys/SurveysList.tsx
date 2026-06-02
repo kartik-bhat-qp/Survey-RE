@@ -186,7 +186,9 @@ export function SurveysList({
     if (!toolbar) return;
 
     function syncFolderFabPositions() {
-      const toolbarRect = toolbar.getBoundingClientRect();
+      const el = toolbarRef.current;
+      if (!el) return;
+      const toolbarRect = el.getBoundingClientRect();
 
       const collapsedShell = document.querySelector(
         SURVEY_FOLDERS_SHELL_COLLAPSED_SELECTOR
