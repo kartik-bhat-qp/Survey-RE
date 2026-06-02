@@ -8,7 +8,9 @@ export type QuotaStep =
   | 'dimension'
   | 'criteria'
   | 'advanced'
-  | 'quota-group';
+  | 'quota-group'
+  | 'primary-variables'
+  | 'secondary-variables';
 
 const STEP_META: Record<QuotaStep, { label: string; icon: string }> = {
   'quota-type': { label: 'Quota type', icon: 'wm-grid-view' },
@@ -17,7 +19,16 @@ const STEP_META: Record<QuotaStep, { label: string; icon: string }> = {
   criteria: { label: 'Criteria', icon: 'wm-call-split' },
   advanced: { label: 'Advanced quota', icon: 'wm-tune' },
   'quota-group': { label: 'Quota group', icon: 'wm-group' },
+  'primary-variables': { label: 'Primary variables', icon: 'wm-list' },
+  'secondary-variables': { label: 'Secondary variables', icon: 'wm-grid-on' },
 };
+
+export const CROSS_VARIABLE_QUOTA_STEPS: QuotaStep[] = [
+  'quota-type',
+  'primary-variables',
+  'secondary-variables',
+  'dimension',
+];
 
 const DEFAULT_STEPS: QuotaStep[] = ['quota-type', 'question', 'dimension'];
 

@@ -41,8 +41,8 @@ export function AddQuotaModal({ open, onOpenChange, onSelectType }: AddQuotaModa
 
   return (
     <WuModal open onOpenChange={handleOpenChange} className={styles.modal} variant="action">
+      <WuModalHeader className={styles.header}>Add Quota</WuModalHeader>
       <WuModalContent className={styles.content}>
-        <WuModalHeader className={styles.header}>Add Quota</WuModalHeader>
         <div className={styles.body}>
           <p className={styles.instructions}>
             Select the type of quota you would like to add.
@@ -58,7 +58,7 @@ export function AddQuotaModal({ open, onOpenChange, onSelectType }: AddQuotaModa
                 <div className={styles.cardTitleRow}>
                   <span className={styles.cardTitle}>
                     {option.title}
-                    {option.id === 'advanced' ? (
+                    {option.comingSoon ? (
                       <span className={styles.comingSoonBadge}>Coming soon</span>
                     ) : null}
                   </span>

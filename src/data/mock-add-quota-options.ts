@@ -1,10 +1,15 @@
-export type AddQuotaType = 'question-based' | 'criteria-based' | 'advanced';
+export type AddQuotaType =
+  | 'question-based'
+  | 'criteria-based'
+  | 'cross-variable'
+  | 'advanced';
 
 export interface AddQuotaOption {
   id: AddQuotaType;
   title: string;
   description: string;
   icon: string;
+  comingSoon?: boolean;
 }
 
 export const ADD_QUOTA_OPTIONS: AddQuotaOption[] = [
@@ -27,5 +32,14 @@ export const ADD_QUOTA_OPTIONS: AddQuotaOption[] = [
     description:
       'Create a group and add multiple criteria quotas to that group. You can then specify quota handling rules like least filled, quota priority, etc',
     icon: 'wm-tune',
+    comingSoon: true,
+  },
+  {
+    id: 'cross-variable',
+    title: 'Cross variable quota',
+    description:
+      'Quotas will be based on the combination of two or more survey variables.',
+    icon: 'wm-grid-on',
+    comingSoon: true,
   },
 ];

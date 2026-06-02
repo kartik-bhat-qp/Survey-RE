@@ -12,136 +12,17 @@
   flex: 1;
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
+  overflow-x: visible;
+  overflow-y: hidden;
+  position: relative;
 }
 
 .main {
-  background: #fff;
+  background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
   display: flex;
   flex: 1;
   flex-direction: column;
   min-height: 0;
   min-width: 0;
   overflow: auto;
-}
-
-.tableFooter {
-  align-items: center;
-  background: #fff;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  flex-shrink: 0;
-  justify-content: flex-end;
-  margin-top: auto;
-  padding: 0.625rem 1rem;
-}
-
-.pagination {
-  align-items: center;
-  display: flex;
-  gap: 0.25rem;
-}
-
-.paginationLabel {
-  color: #64748b;
-  font-size: 0.8125rem;
-  margin-right: 0.5rem;
-  white-space: nowrap;
-}
-
-.pageBtn {
-  align-items: center;
-  background: #fff;
-  border: 1px solid #d1d5db;
-  color: #475569;
-  cursor: pointer;
-  display: inline-flex;
-  height: 1.75rem;
-  justify-content: center;
-  width: 1.75rem;
-}
-
-.pageBtn:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.pageBtn:not(:disabled):hover {
-  background: #f8fafc;
-}
-
-.tableWrap {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.tableWrap :global(table) {
-  min-width: 52rem;
-}
-
-.tableWrap :global(tbody tr:hover) .rowActions,
-.tableWrap :global(tbody tr:focus-within) .rowActions {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.surveyName {
-  color: #1b87e6;
-  display: inline-block;
-  font: inherit;
-  text-align: left;
-  text-decoration: none;
-}
-
-.surveyName:hover {
-  text-decoration: underline;
-}
-
-.status {
-  color: #334155;
-  font-size: 0.8125rem;
-  white-space: nowrap;
-}
-
-.rowActions {
-  align-items: center;
-  display: flex;
-  gap: 0;
-  justify-content: flex-end;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
-}
-
-.rowActions :global(button) {
-  min-width: 0;
-}
-
-.moreBtn {
-  align-items: center;
-  background: transparent;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  display: inline-flex;
-  height: 2rem;
-  justify-content: center;
-  width: 2rem;
-}
-
-.moreBtn:hover {
-  background: #f1f5f9;
-}
-
-@media (max-width: 767px) {
-  .tableWrap :global(tbody tr) .rowActions {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .paginationLabel {
-    display: none;
-  }
 }

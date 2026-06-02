@@ -12,6 +12,7 @@ import {
 } from '@/components/surveys/QuotaCriteriaViewModal';
 import { AddQuotaModal } from '@/components/surveys/AddQuotaModal';
 import { QuestionBasedQuotaModal } from '@/components/surveys/QuestionBasedQuotaModal';
+import { CrossVariableQuotaModal } from '@/components/surveys/CrossVariableQuotaModal';
 import {
   CriteriaBasedQuotaModal,
   type CriteriaQuotaSubmit,
@@ -614,6 +615,7 @@ export function SurveyAdvanceQuotasDashboard({
   const { showToast } = useWuShowToast();
   const [addQuotaOpen, setAddQuotaOpen] = useState(false);
   const [questionQuotaOpen, setQuestionQuotaOpen] = useState(false);
+  const [crossVariableQuotaOpen, setCrossVariableQuotaOpen] = useState(false);
   const [criteriaQuotaOpen, setCriteriaQuotaOpen] = useState(false);
   const [quotaTypeFilter, setQuotaTypeFilter] = useState<string[]>(() => [
     ...ADVANCE_QUOTA_TYPE_OPTIONS,
@@ -1257,9 +1259,23 @@ export function SurveyAdvanceQuotasDashboard({
             setCriteriaQuotaOpen(true);
             return;
           }
+          if (type === 'cross-variable') {
+            setCrossVariableQuotaOpen(true);
+            return;
+          }
           if (type === 'advanced') {
             setQuotaGroupModalOpen(true);
           }
+        }}
+      />
+
+      <CrossVariableQuotaModal
+        open={crossVariableQuotaOpen}
+        onOpenChange={setCrossVariableQuotaOpen}
+        surveyId={surveyId}
+        onBack={() => {
+          setCrossVariableQuotaOpen(false);
+          setAddQuotaOpen(true);
         }}
       />
 
