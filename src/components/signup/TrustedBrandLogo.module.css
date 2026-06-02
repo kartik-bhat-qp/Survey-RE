@@ -14,3 +14,12 @@
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
+
+.fallbackPanel {
+  color: rgb(255 255 255 / 92%);
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}

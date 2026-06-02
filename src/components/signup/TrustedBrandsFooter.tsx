@@ -69,7 +69,10 @@ export function TrustedBrandsFooter({ layout = 'footer' }: TrustedBrandsFooterPr
         >
           {visibleBrands.map((brand) => (
             <li key={brand.id} className={styles.logoItem}>
-              <TrustedBrandLogo brand={brand} />
+              <TrustedBrandLogo
+                brand={brand}
+                variant={layout === 'panel' ? 'panel' : 'default'}
+              />
             </li>
           ))}
           {visibleBrands.length < SIGNUP_TRUSTED_BRANDS_VISIBLE_COUNT

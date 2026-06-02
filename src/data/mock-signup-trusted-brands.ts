@@ -51,8 +51,8 @@ export function getTrustedBrandLogoUrl(domain: string): string {
   return `https://logo.clearbit.com/${domain}`;
 }
 
-export function getTrustedBrandSimpleIconUrl(slug: string): string {
-  return `https://cdn.simpleicons.org/${slug}`;
+export function getTrustedBrandSimpleIconUrl(slug: string, color = '1e293b'): string {
+  return `https://cdn.simpleicons.org/${slug}/${color}`;
 }
 
 export function getTrustedBrandGroupCount(
