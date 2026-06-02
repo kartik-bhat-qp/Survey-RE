@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { formatNumber } from '@/data/mock-utils';
 import type { SurveyFolder } from '@/data/mock-surveys';
 import styles from './SurveyFolderSidebar.module.css';
 
@@ -52,7 +53,7 @@ export function SurveyFolderSidebar({
                 <span className={styles.folderIconLabel}>{folder.shortLabel}</span>
               </span>
               <span className={styles.folderName}>{folder.name}</span>
-              <span className={styles.folderCount}>{folder.count}</span>
+              <span className={styles.folderCount}>{formatNumber(folder.count)}</span>
             </button>
           </li>
         ))}

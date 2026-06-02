@@ -11,6 +11,7 @@ import { SurveyFolderSidebar } from '@/components/surveys/SurveyFolderSidebar';
 import { SurveysSubNav } from '@/components/surveys/SurveysSubNav';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useWickUILib } from '@/components/ui/useWickUILib';
+import { formatNumber } from '@/data/mock-utils';
 import {
   MOCK_SURVEY_FOLDERS,
   MOCK_SURVEYS,
@@ -53,7 +54,7 @@ function SurveysPagination({
   return (
     <nav className={styles.pagination} aria-label="Survey list pagination">
       <span className={styles.paginationLabel}>
-        1 - {rangeEnd} of {displayTotal}
+        1 - {formatNumber(rangeEnd)} of {formatNumber(displayTotal)}
       </span>
       <button type="button" className={styles.pageBtn} aria-label="Previous page" disabled>
         <span className="wm-chevron-left" />
@@ -233,7 +234,7 @@ export default function SurveysPage() {
       header: 'Responses',
       enableSorting: true,
       cellAlign: 'right',
-      cell: ({ row }) => row.original.responses,
+      cell: ({ row }) => formatNumber(row.original.responses),
     },
     {
       accessorKey: 'actions',

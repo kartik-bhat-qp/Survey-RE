@@ -44,9 +44,14 @@ export function truncate(str: string, maxLength: number): string {
   return str.slice(0, maxLength) + '…';
 }
 
+/** e.g. 1349 → "1,349" */
+export function formatNumber(value: number): string {
+  return value.toLocaleString('en-US');
+}
+
 /** e.g. 8200 → "8,200" for TextAI credit display */
 export function formatTextAiCredits(value: number): string {
-  return value.toLocaleString('en-US');
+  return formatNumber(value);
 }
 
 /** Matches Kryptonite getSmartDateString: relative if within 7 days, else MMM DD yyyy */
