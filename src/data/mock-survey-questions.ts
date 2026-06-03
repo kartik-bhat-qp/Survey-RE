@@ -34,6 +34,18 @@ const DEMO_QUESTIONS: Omit<SurveyQuestion, 'id' | 'surveyId'>[] = [
     options: ['Under 18', '18-24', '25-34', '35-44', '45-54', '55-64', 'Above 64'],
   },
   {
+    code: 'Q2b',
+    text: 'Which car do you drive?',
+    type: 'Single Select',
+    options: ['Sedan', 'SUV', 'Hatchback', 'Truck', 'Other'],
+  },
+  {
+    code: 'Q2c',
+    text: 'Which brand of car do you primarily use?',
+    type: 'Single Select',
+    options: ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra', 'Honda', 'Toyota'],
+  },
+  {
     code: 'Q2a',
     text: 'Which district of West Bengal do you reside in?',
     type: 'Single Select',

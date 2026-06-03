@@ -22,10 +22,6 @@ const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false }
 );
-const WuFormGroup = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuFormGroup })),
-  { ssr: false }
-);
 const WuInput = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
   { ssr: false }
@@ -220,7 +216,7 @@ export default function SignupPage() {
                 <QuestionProLogo centered compact showAiStar />
                 <h1 className={styles.formHeading}>Create your free account</h1>
                 <p className={styles.formSubheading}>
-                  QuestionPro AI can draft your first survey after signup — no credit card required.
+                  QuestionPro AI can draft your first survey after signup, no credit card required.
                 </p>
               </div>
 
@@ -231,32 +227,24 @@ export default function SignupPage() {
                   handleCreateAccount();
                 }}
               >
-                  <WuFormGroup
-                    Input={
-                      <WuInput
-                        id="signup-name"
-                        Label="Name"
-                        variant="outlined"
-                        placeholder="Your name"
-                        value={form.name}
-                        autoFocus
-                        onChange={(e) => updateField('name', e.target.value)}
-                      />
-                    }
+                  <WuInput
+                    id="signup-name"
+                    variant="outlined"
+                    placeholder="Name"
+                    aria-label="Name"
+                    value={form.name}
+                    autoFocus
+                    onChange={(e) => updateField('name', e.target.value)}
                   />
 
-                  <WuFormGroup
-                    Input={
-                      <WuInput
-                        id="signup-email"
-                        Label="Email"
-                        variant="outlined"
-                        type="email"
-                        placeholder="you@company.com"
-                        value={form.email}
-                        onChange={(e) => updateField('email', e.target.value)}
-                      />
-                    }
+                  <WuInput
+                    id="signup-email"
+                    variant="outlined"
+                    type="email"
+                    placeholder="Email"
+                    aria-label="Email"
+                    value={form.email}
+                    onChange={(e) => updateField('email', e.target.value)}
                   />
 
                   <SignupPasswordField

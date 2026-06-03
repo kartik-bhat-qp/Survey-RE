@@ -11,6 +11,20 @@ import {
   questionHasExpandableRows,
   type SurveyQuestion,
 } from '@/data/mock-survey-questions';
+import {
+  buildCombinationRows,
+  buildCrossVariableColumns,
+  buildCrossVariableQuotas,
+  type CrossVariableQuotaSaveResult,
+  buildInitialCrossVariableMatrix,
+  buildPrimaryDimensions,
+  CROSS_VARIABLE_MATRIX_INSTRUCTIONS,
+  CROSS_VARIABLE_PRIMARY_VARIABLES_INSTRUCTIONS,
+  CROSS_VARIABLE_SECONDARY_VARIABLES_INSTRUCTIONS,
+  getSelectedQuestionsByIds,
+  type CrossVariableMatrixState,
+} from '@/data/mock-cross-variable-quota';
+import { CrossVariableQuotaMatrixStep } from '@/components/surveys/CrossVariableQuotaMatrixStep';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
   CROSS_VARIABLE_QUOTA_STEPS,
@@ -28,13 +42,14 @@ const WuTable = dynamic(
   { ssr: false, loading: () => <StandardLoader className="min-h-[320px]" /> }
 );
 
-type ModalStep = 'primary-variables' | 'secondary-variables';
+type ModalStep = 'primary-variables' | 'secondary-variables' | 'dimension';
 
 interface CrossVariableQuotaModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   surveyId: number;
   onBack?: () => void;
+  onSave?: (result: CrossVariableQuotaSaveResult) => void;
 }
 
 export function CrossVariableQuotaModal({
@@ -42,6 +57,7 @@ export function CrossVariableQuotaModal({
   onOpenChange,
   surveyId,
   onBack,
+  onSave,
 }: CrossVariableQuotaModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
@@ -50,12 +66,38 @@ export function CrossVariableQuotaModal({
   const [expandedParentIds, setExpandedParentIds] = useState<Set<number>>(() => new Set());
   const [primarySelectedIds, setPrimarySelectedIds] = useState<Set<number>>(() => new Set());
   const [secondarySelectedIds, setSecondarySelectedIds] = useState<Set<number>>(() => new Set());
+  const [matrix, setMatrix] = useState<CrossVariableMatrixState>({ cells: {} });
 
   const questions = useMemo(() => getQuestionsBySurvey(surveyId), [surveyId]);
 
   const displayQuestions = useMemo(
     () => flattenQuestionsForPicker(questions, expandedParentIds),
     [questions, expandedParentIds]
+  );
+
+  const primaryQuestions = useMemo(
+    () => getSelectedQuestionsByIds(questions, primarySelectedIds),
+    [questions, primarySelectedIds]
+  );
+
+  const secondaryQuestions = useMemo(
+    () => getSelectedQuestionsByIds(questions, secondarySelectedIds),
+    [questions, secondarySelectedIds]
+  );
+
+  const primaryDimensions = useMemo(
+    () => buildPrimaryDimensions(primaryQuestions),
+    [primaryQuestions]
+  );
+
+  const combinationRows = useMemo(
+    () => buildCombinationRows(primaryDimensions),
+    [primaryDimensions]
+  );
+
+  const matrixColumns = useMemo(
+    () => buildCrossVariableColumns(secondaryQuestions),
+    [secondaryQuestions]
   );
 
   const selectableTotal = useMemo(
@@ -199,6 +241,7 @@ export function CrossVariableQuotaModal({
     setExpandedParentIds(new Set());
     setPrimarySelectedIds(new Set());
     setSecondarySelectedIds(new Set());
+    setMatrix({ cells: {} });
   }
 
   function handleOpenChange(nextOpen: boolean): void {
@@ -208,16 +251,33 @@ export function CrossVariableQuotaModal({
     onOpenChange(nextOpen);
   }
 
+  function initializeMatrix(): void {
+    setMatrix(buildInitialCrossVariableMatrix(combinationRows, matrixColumns));
+  }
+
   function handleNext(): void {
     if (step === 'primary-variables') {
-      if (primarySelectedIds.size === 0) return;
+      if (primarySelectedIds.size === 0 || primaryDimensions.length === 0) return;
       setSearch('');
       setStep('secondary-variables');
       return;
     }
-    if (secondarySelectedIds.size === 0) return;
+    if (step === 'secondary-variables') {
+      if (secondarySelectedIds.size === 0 || matrixColumns.length === 0) return;
+      initializeMatrix();
+      setStep('dimension');
+      return;
+    }
+    if (combinationRows.length === 0 || matrixColumns.length === 0) return;
+    const result = buildCrossVariableQuotas(
+      combinationRows,
+      matrixColumns,
+      matrix,
+      'NA'
+    );
+    onSave?.(result);
     showToast({
-      message: 'Cross variable quota assignment — coming soon',
+      message: `Created ${result.quotas.length} cross variable ${result.quotas.length === 1 ? 'quota' : 'quotas'}`,
       variant: 'success',
     });
     resetState();
@@ -225,6 +285,10 @@ export function CrossVariableQuotaModal({
   }
 
   function handleBack(): void {
+    if (step === 'dimension') {
+      setStep('secondary-variables');
+      return;
+    }
     if (step === 'secondary-variables') {
       setSearch('');
       setStep('primary-variables');
@@ -256,6 +320,10 @@ export function CrossVariableQuotaModal({
       setSearch('');
       setStep('secondary-variables');
     }
+    if (target === 'dimension' && secondarySelectedIds.size > 0) {
+      initializeMatrix();
+      setStep('dimension');
+    }
   }
 
   if (!open || !wick) {
@@ -266,78 +334,103 @@ export function CrossVariableQuotaModal({
   const selectedCount = activeSelectedIds.size;
   const instructions =
     step === 'primary-variables'
-      ? 'Select the primary variables.'
-      : 'Select the secondary variables.';
+      ? CROSS_VARIABLE_PRIMARY_VARIABLES_INSTRUCTIONS
+      : step === 'secondary-variables'
+        ? CROSS_VARIABLE_SECONDARY_VARIABLES_INSTRUCTIONS
+        : CROSS_VARIABLE_MATRIX_INSTRUCTIONS;
   const selectionLabel =
     step === 'primary-variables' ? 'Primary variables' : 'Secondary variables';
   const canProceed =
     step === 'primary-variables'
-      ? primarySelectedIds.size > 0
-      : secondarySelectedIds.size > 0;
+      ? primarySelectedIds.size > 0 && primaryDimensions.length > 0
+      : step === 'secondary-variables'
+        ? secondarySelectedIds.size > 0 && matrixColumns.length > 0
+        : combinationRows.length > 0 && matrixColumns.length > 0;
+  const breadcrumbStep: QuotaStep = step;
 
   return (
     <WuModal
       open
       onOpenChange={handleOpenChange}
-      className={styles.modal}
+      className={`${styles.modal} ${step === 'dimension' ? styles.modalWide : ''}`}
       variant="action"
     >
-      <WuModalHeader className={styles.header}>Cross variable quota</WuModalHeader>
+      <WuModalHeader className={styles.header}>
+        {step === 'dimension' ? 'Cross variable quota matrix' : 'Cross variable quota'}
+      </WuModalHeader>
       <WuModalContent className={styles.content}>
-        <div className={styles.body}>
-          <p className={styles.instructions}>{instructions}</p>
-          <div className={styles.searchRow}>
-            <WuInput
-              variant="outlined"
-              placeholder="Search"
-              Icon={<span className="wm-search" />}
-              iconPosition="left"
-              value={search}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                setSearch(event.target.value)
-              }
-              className={styles.searchInput}
+        {step === 'dimension' ? (
+          <div className={styles.body}>
+            <p className={styles.instructions}>{instructions}</p>
+            <p className={styles.matrixSummary}>
+              <strong>{combinationRows.length}</strong> primary combinations ·{' '}
+              <strong>{matrixColumns.length}</strong> column options across{' '}
+              <strong>{secondaryQuestions.length}</strong> secondary{' '}
+              {secondaryQuestions.length === 1 ? 'variable' : 'variables'}
+            </p>
+            <CrossVariableQuotaMatrixStep
+              rows={combinationRows}
+              columns={matrixColumns}
+              matrix={matrix}
+              onMatrixChange={setMatrix}
             />
           </div>
-          <div className={styles.tableArea}>
-            <WuTable
-              data={displayQuestions as unknown[]}
-              columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-              variant="striped"
-              sort={{ enabled: true }}
-              filterText={search}
-            />
-          </div>
-          <div className={styles.selectionCount}>
-            <strong>{selectedCount}</strong> / {selectableTotal} {selectionLabel} selected
-          </div>
-          {selectedVariables.length > 0 ? (
-            <div className={styles.selectedChips}>
-              {selectedVariables.map((question) => (
-                <span
-                  key={question.id}
-                  className={styles.selectedChip}
-                  title={question.text}
-                >
-                  <span className={styles.selectedChipText}>{question.text}</span>
-                  <button
-                    type="button"
-                    className={styles.selectedChipClear}
-                    aria-label={`Remove ${question.text}`}
-                    onClick={() => toggleSelect(question.id)}
-                  >
-                    <span className="wm-close" aria-hidden />
-                  </button>
-                </span>
-              ))}
+        ) : (
+          <div className={styles.body}>
+            <p className={styles.instructions}>{instructions}</p>
+            <div className={styles.searchRow}>
+              <WuInput
+                variant="outlined"
+                placeholder="Search"
+                Icon={<span className="wm-search" />}
+                iconPosition="left"
+                value={search}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  setSearch(event.target.value)
+                }
+                className={styles.searchInput}
+              />
             </div>
-          ) : null}
-        </div>
+            <div className={styles.tableArea}>
+              <WuTable
+                data={displayQuestions as unknown[]}
+                columns={columns as unknown as IWuTableColumnDef<unknown>[]}
+                variant="striped"
+                sort={{ enabled: true }}
+                filterText={search}
+              />
+            </div>
+            <div className={styles.selectionCount}>
+              <strong>{selectedCount}</strong> / {selectableTotal} {selectionLabel} selected
+            </div>
+            {selectedVariables.length > 0 ? (
+              <div className={styles.selectedChips}>
+                {selectedVariables.map((question) => (
+                  <span
+                    key={question.id}
+                    className={styles.selectedChip}
+                    title={question.text}
+                  >
+                    <span className={styles.selectedChipText}>{question.text}</span>
+                    <button
+                      type="button"
+                      className={styles.selectedChipClear}
+                      aria-label={`Remove ${question.text}`}
+                      onClick={() => toggleSelect(question.id)}
+                    >
+                      <span className="wm-close" aria-hidden />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        )}
       </WuModalContent>
       <WuModalFooter>
         <div className={styles.footerActions}>
           <QuotaStepBreadcrumb
-            currentStep={step}
+            currentStep={breadcrumbStep}
             steps={CROSS_VARIABLE_QUOTA_STEPS}
             onStepClick={handleBreadcrumbClick}
           />
@@ -346,7 +439,7 @@ export function CrossVariableQuotaModal({
               Back
             </WuButton>
             <WuButton onClick={handleNext} disabled={!canProceed}>
-              {step === 'secondary-variables' ? 'Save' : 'Next'}
+              {step === 'dimension' ? 'Save' : 'Next'}
             </WuButton>
           </div>
         </div>

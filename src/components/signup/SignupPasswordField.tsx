@@ -3,10 +3,6 @@
 import { useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 
-const WuFormGroup = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuFormGroup })),
-  { ssr: false }
-);
 const WuInput = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
   { ssr: false }
@@ -60,18 +56,14 @@ export function SignupPasswordField({ value, onChange }: SignupPasswordFieldProp
 
   return (
     <div ref={rootRef}>
-      <WuFormGroup
-        Input={
-          <WuInput
-            id="signup-password"
-            Label="Password"
-            variant="outlined"
-            type="password"
-            placeholder="8+ characters"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-          />
-        }
+      <WuInput
+        id="signup-password"
+        variant="outlined"
+        type="password"
+        placeholder="Password"
+        aria-label="Password"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
       />
     </div>
   );

@@ -13,6 +13,9 @@ import {
 import { AddQuotaModal } from '@/components/surveys/AddQuotaModal';
 import { QuestionBasedQuotaModal } from '@/components/surveys/QuestionBasedQuotaModal';
 import { CrossVariableQuotaModal } from '@/components/surveys/CrossVariableQuotaModal';
+import { CrossVariableQuotaTrackingPanel } from '@/components/surveys/CrossVariableQuotaTrackingPanel';
+import { QuotaAiAgentModal } from '@/components/surveys/QuotaAiAgentModal';
+import type { QuotaAiGenerationResult } from '@/data/mock-quota-ai-agent';
 import {
   CriteriaBasedQuotaModal,
   type CriteriaQuotaSubmit,
@@ -25,7 +28,7 @@ import type { QuotaDimensionState } from '@/components/surveys/QuotaDimensionSte
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
-  ADVANCE_QUOTA_TYPE_OPTIONS,
+  TABLE_QUOTA_TYPE_OPTIONS,
   flattenQuotasForTable,
   formatQuestionQuotaScope,
   getAdvanceQuotaGroupOptions,
@@ -42,6 +45,12 @@ import {
   type AdvanceQuotaRuleCondition,
   type QuotaOption,
 } from '@/data/mock-advance-quotas';
+import {
+  inferCrossVariableBatchId,
+  resolveCrossVariableTrackingSets,
+  type CrossVariableQuotaBatch,
+  type CrossVariableQuotaSaveResult,
+} from '@/data/mock-cross-variable-quota';
 import {
   applyQuotaGroupCheckOverrides,
   advanceQuotaActiveGroupKey,
@@ -616,9 +625,17 @@ export function SurveyAdvanceQuotasDashboard({
   const [addQuotaOpen, setAddQuotaOpen] = useState(false);
   const [questionQuotaOpen, setQuestionQuotaOpen] = useState(false);
   const [crossVariableQuotaOpen, setCrossVariableQuotaOpen] = useState(false);
+  const [quotaAiOpen, setQuotaAiOpen] = useState(false);
+  const [dashboardView, setDashboardView] = usePersistedState<'table' | 'cross-matrix'>(
+    `advance-quotas:${surveyId}:dashboard-view`,
+    'table'
+  );
+  const [crossVariableBatches, setCrossVariableBatches] = usePersistedState<
+    CrossVariableQuotaBatch[]
+  >(`advance-quotas:${surveyId}:cross-batches`, []);
   const [criteriaQuotaOpen, setCriteriaQuotaOpen] = useState(false);
   const [quotaTypeFilter, setQuotaTypeFilter] = useState<string[]>(() => [
-    ...ADVANCE_QUOTA_TYPE_OPTIONS,
+    ...TABLE_QUOTA_TYPE_OPTIONS,
   ]);
   const [quotaGroupFilter, setQuotaGroupFilter] = useState<string[]>(() => [
     ...getAdvanceQuotaGroupOptions(),
@@ -734,7 +751,12 @@ export function SurveyAdvanceQuotasDashboard({
   const quotaTypeOptions = useMemo(
     () =>
       Array.from(
-        new Set([...ADVANCE_QUOTA_TYPE_OPTIONS, ...displayQuotas.map((q) => q.quotaType)])
+        new Set([
+          ...TABLE_QUOTA_TYPE_OPTIONS,
+          ...displayQuotas
+            .map((q) => q.quotaType)
+            .filter((type) => type !== 'Cross variable'),
+        ])
       ).sort(),
     [displayQuotas]
   );
@@ -758,8 +780,11 @@ export function SurveyAdvanceQuotasDashboard({
     setQuotaGroupFilter((prev) => mergeFilterWithNewOptions(prev, quotaGroupOptions));
   }, [quotaGroupOptions]);
 
-  const filteredQuotas = useMemo(() => {
+  const filteredTableQuotas = useMemo(() => {
     return displayQuotas.filter((quota) => {
+      if (quota.quotaType === 'Cross variable') {
+        return false;
+      }
       if (!quotaTypeFilter.includes(quota.quotaType)) {
         return false;
       }
@@ -769,6 +794,68 @@ export function SurveyAdvanceQuotasDashboard({
       return true;
     });
   }, [displayQuotas, quotaGroupFilter, quotaTypeFilter]);
+
+  const crossVariableQuotas = useMemo(() => {
+    return displayQuotas.filter((quota) => {
+      if (quota.quotaType !== 'Cross variable') {
+        return false;
+      }
+      if (!quotaGroupFilter.includes(quota.quotaGroup)) {
+        return false;
+      }
+      return true;
+    });
+  }, [displayQuotas, quotaGroupFilter]);
+
+  const crossVariableTrackingSets = useMemo(
+    () => resolveCrossVariableTrackingSets(crossVariableQuotas, crossVariableBatches),
+    [crossVariableBatches, crossVariableQuotas]
+  );
+
+  const hasCrossVariableTracking = crossVariableTrackingSets.length > 0;
+
+  function handleCrossVariableBatchUpdate(result: CrossVariableQuotaSaveResult): void {
+    const batchId = result.batch.id;
+    setAddedQuotas((prev) => {
+      const rest = prev.filter((quota) => inferCrossVariableBatchId(quota) !== batchId);
+      return [...result.quotas, ...rest];
+    });
+    setCrossVariableBatches((prev) => {
+      const exists = prev.some((batch) => batch.id === batchId);
+      if (exists) {
+        return prev.map((batch) => (batch.id === batchId ? result.batch : batch));
+      }
+      return [...prev, result.batch];
+    });
+  }
+
+  function handleCrossVariableImportCurrents(
+    batchId: string,
+    quotas: AdvanceQuota[]
+  ): void {
+    const byId = new Map(quotas.map((quota) => [quota.id, quota]));
+    setAddedQuotas((prev) =>
+      prev.map((quota) => {
+        if (inferCrossVariableBatchId(quota) !== batchId) return quota;
+        return byId.get(quota.id) ?? quota;
+      })
+    );
+  }
+
+  function handleQuotaAiGenerated(result: QuotaAiGenerationResult): void {
+    if (result.kind === 'cross-variable') {
+      handleCrossVariableBatchUpdate(result.saveResult);
+      return;
+    }
+
+    setAddedQuotas((prev) => [...result.quotas, ...prev]);
+    setExpandedQuotaIds((prev) => {
+      const next = new Set(prev);
+      for (const quota of result.quotas) next.add(quota.id);
+      return next;
+    });
+    setDashboardView('table');
+  }
 
   const quotaGroupChecksByName = useMemo(() => {
     const groups = applyQuotaGroupCheckOverrides(
@@ -799,7 +886,7 @@ export function SurveyAdvanceQuotasDashboard({
 
   const tableRows = useMemo(
     () =>
-      flattenQuotasForTable(filteredQuotas, expandedQuotaIds).map((row) => {
+      flattenQuotasForTable(filteredTableQuotas, expandedQuotaIds).map((row) => {
         const target = row.target;
         const isMinParent =
           !row.isOption && isMinQuestionQuotaScope(row.questionQuotaScope);
@@ -809,7 +896,7 @@ export function SurveyAdvanceQuotasDashboard({
         const completionPct = target === 0 ? 0 : (current / target) * 100;
         return { ...row, completionPct };
       }),
-    [filteredQuotas, expandedQuotaIds]
+    [expandedQuotaIds, filteredTableQuotas]
   );
 
   const selectableParentRows = useMemo(
@@ -1118,7 +1205,35 @@ export function SurveyAdvanceQuotasDashboard({
     <div className={styles.dashboard}>
       {!clientView ? (
         <div className={styles.header}>
-          <h2 className={styles.title}>Dashboard</h2>
+          <div className={styles.headerTitles}>
+            <h2 className={styles.title}>Dashboard</h2>
+            {hasCrossVariableTracking ? (
+              <div className={styles.viewToggle} role="tablist" aria-label="Dashboard view">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={dashboardView === 'table'}
+                  className={`${styles.viewToggleBtn} ${
+                    dashboardView === 'table' ? styles.viewToggleBtnActive : ''
+                  }`}
+                  onClick={() => setDashboardView('table')}
+                >
+                  Table view
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={dashboardView === 'cross-matrix'}
+                  className={`${styles.viewToggleBtn} ${
+                    dashboardView === 'cross-matrix' ? styles.viewToggleBtnActive : ''
+                  }`}
+                  onClick={() => setDashboardView('cross-matrix')}
+                >
+                  Cross variable matrix
+                </button>
+              </div>
+            ) : null}
+          </div>
           <div className={styles.headerActions}>
             {selectedCount > 0 ? (
               <WuButton
@@ -1130,6 +1245,15 @@ export function SurveyAdvanceQuotasDashboard({
                 <span className={styles.selectionCount}>({selectedCount})</span>
               </WuButton>
             ) : null}
+            <WuTooltip content="Create quotas with AI" position="bottom">
+              <WuButton
+                size="sm"
+                variant="iconOnly"
+                aria-label="Create quotas with AI"
+                onClick={() => setQuotaAiOpen(true)}
+                Icon={<span className="wc-ai" />}
+              />
+            </WuTooltip>
             <WuButton
               size="sm"
               variant="secondary"
@@ -1151,31 +1275,70 @@ export function SurveyAdvanceQuotasDashboard({
         </div>
       ) : null}
 
-      <div className={styles.tableWrap}>
-        <WuTable
-          data={tableRows as unknown[]}
-          columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-          className={styles.quotaTable}
-          tableLayout="fixed"
-          sort={{ enabled: true }}
-          filterText=""
-          NoDataContent={
-            <EmptyState
-              icon="wm-filter-list"
-              title={
-                clientView && displayQuotas.length === 0
-                  ? 'No quotas on this client dashboard'
-                  : 'No quotas match your filters'
-              }
-              description={
-                clientView && displayQuotas.length === 0
-                  ? 'The survey owner has not shared any quotas on this link yet.'
-                  : 'Select one or more options in the Quota type or Quota group filters, or reset filters to show all'
-              }
-            />
-          }
+      {clientView && hasCrossVariableTracking ? (
+        <div className={styles.clientViewBar}>
+          <div className={styles.viewToggle} role="tablist" aria-label="Dashboard view">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={dashboardView === 'table'}
+              className={`${styles.viewToggleBtn} ${
+                dashboardView === 'table' ? styles.viewToggleBtnActive : ''
+              }`}
+              onClick={() => setDashboardView('table')}
+            >
+              Table view
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={dashboardView === 'cross-matrix'}
+              className={`${styles.viewToggleBtn} ${
+                dashboardView === 'cross-matrix' ? styles.viewToggleBtnActive : ''
+              }`}
+              onClick={() => setDashboardView('cross-matrix')}
+            >
+              Cross variable matrix
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {dashboardView === 'cross-matrix' && hasCrossVariableTracking ? (
+        <CrossVariableQuotaTrackingPanel
+          trackingSets={crossVariableTrackingSets}
+          batches={crossVariableBatches}
+          clientView={clientView}
+          onUpdateBatch={handleCrossVariableBatchUpdate}
+          onImportCurrents={handleCrossVariableImportCurrents}
         />
-      </div>
+      ) : (
+        <div className={styles.tableWrap}>
+          <WuTable
+            data={tableRows as unknown[]}
+            columns={columns as unknown as IWuTableColumnDef<unknown>[]}
+            className={styles.quotaTable}
+            tableLayout="fixed"
+            sort={{ enabled: true }}
+            filterText=""
+            NoDataContent={
+              <EmptyState
+                icon="wm-filter-list"
+                title={
+                  clientView && displayQuotas.length === 0
+                    ? 'No quotas on this client dashboard'
+                    : 'No quotas match your filters'
+                }
+                description={
+                  clientView && displayQuotas.length === 0
+                    ? 'The survey owner has not shared any quotas on this link yet.'
+                    : 'Select one or more options in the Quota type or Quota group filters, or reset filters to show all'
+                }
+              />
+            }
+          />
+        </div>
+      )}
 
       <QuotaGroupViewModal
         open={viewQuotaGroupName !== null}
@@ -1277,6 +1440,24 @@ export function SurveyAdvanceQuotasDashboard({
           setCrossVariableQuotaOpen(false);
           setAddQuotaOpen(true);
         }}
+        onSave={(result) => {
+          if (result.quotas.length === 0) return;
+          setAddedQuotas((prev) => [...result.quotas, ...prev]);
+          setCrossVariableBatches((prev) => [...prev, result.batch]);
+          setDashboardView('cross-matrix');
+          setExpandedQuotaIds((prev) => {
+            const next = new Set(prev);
+            for (const q of result.quotas) next.add(q.id);
+            return next;
+          });
+        }}
+      />
+
+      <QuotaAiAgentModal
+        open={quotaAiOpen}
+        onOpenChange={setQuotaAiOpen}
+        surveyId={surveyId}
+        onGenerated={handleQuotaAiGenerated}
       />
 
       <QuestionBasedQuotaModal

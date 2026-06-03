@@ -4,6 +4,10 @@
   width: 100%;
 }
 
+.modalWide {
+  max-width: min(1400px, calc(100vw - 1.5rem)) !important;
+}
+
 .header {
   padding-right: 3rem !important;
 }
@@ -28,6 +32,18 @@
   line-height: 1.4;
   margin: 0;
   padding: 1rem 1.5rem 0;
+}
+
+.matrixSummary {
+  color: #67727e;
+  font-size: 0.8125rem;
+  margin: 0;
+  padding: 0.5rem 1.5rem 0;
+}
+
+.matrixSummary strong {
+  color: #1b3380;
+  font-weight: 600;
 }
 
 .searchRow {

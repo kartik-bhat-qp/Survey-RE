@@ -1,4 +1,4 @@
-export type QuotaType = 'Question Based' | 'Advanced' | 'Criteria based';
+export type QuotaType = 'Question Based' | 'Advanced' | 'Criteria based' | 'Cross variable';
 
 /** Question-based quota distribution type (matches QuotaDimensionStep scope). */
 export type QuestionQuotaScope = 'max-count' | 'min-count' | 'min-pct';
@@ -112,6 +112,8 @@ export interface AdvanceQuota {
   criterionBlocks?: AdvanceQuotaCriterionBlock[];
   /** When quota is evaluated in the survey flow. */
   quotaChecks?: AdvanceQuotaCheckPoint[];
+  /** Links rows from the same cross variable matrix save. */
+  crossVariableBatchId?: string;
 }
 
 /** Row representation including expanded option sub-rows. */
@@ -444,10 +446,16 @@ export function isRemovedDashboardQuota(quota: Pick<AdvanceQuota, 'name'>): bool
   return removedDashboardQuotaNameSet.has(quota.name.trim().toLowerCase());
 }
 
-export const ADVANCE_QUOTA_TYPE_OPTIONS: QuotaType[] = [
+/** Quota types shown in the advance quotas table view. */
+export const TABLE_QUOTA_TYPE_OPTIONS: QuotaType[] = [
   'Question Based',
   'Advanced',
   'Criteria based',
+];
+
+export const ADVANCE_QUOTA_TYPE_OPTIONS: QuotaType[] = [
+  ...TABLE_QUOTA_TYPE_OPTIONS,
+  'Cross variable',
 ];
 
 export function getAdvanceQuotaGroupOptions(): string[] {
