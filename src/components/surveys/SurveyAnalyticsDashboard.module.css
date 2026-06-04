@@ -1,0 +1,329 @@
+.shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sidebar {
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  padding: 1rem 0.75rem;
+  width: 11.5rem;
+}
+
+.sidebarTitle {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+  padding: 0 0.5rem;
+}
+
+.newDashboardBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  gap: 0.25rem;
+  padding: 0.375rem 0.5rem;
+}
+
+.newDashboardBtn:hover {
+  text-decoration: underline;
+}
+
+.main {
+  background: #f1f5f9;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 1rem 1.25rem 2rem;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
+  margin-bottom: 1rem;
+}
+
+.cardHeader {
+  align-items: center;
+  border-bottom: 1px solid #eef2f6;
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+}
+
+.cardTitle {
+  color: #1e293b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.iconBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.iconBtn:hover {
+  color: #1b87e6;
+}
+
+.summaryMetrics {
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.metric {
+  border-right: 1px solid #eef2f6;
+  padding: 0.875rem 0.75rem;
+  text-align: center;
+}
+
+.metric:last-child {
+  border-right: none;
+}
+
+.metricHighlight {
+  border-top: 3px solid #f59e0b;
+}
+
+.metricLabel {
+  color: #64748b;
+  display: block;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.375rem;
+  text-transform: uppercase;
+}
+
+.metricValue {
+  color: #0f172a;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.distributionBody {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  padding: 1rem;
+}
+
+.mapPanel {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 12rem;
+  overflow: hidden;
+  padding: 0.5rem 0.5rem 0.25rem;
+}
+
+.mapTitle {
+  color: #475569;
+  flex-shrink: 0;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0.25rem;
+}
+
+.countriesTable {
+  border-collapse: collapse;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  width: 100%;
+}
+
+.countriesTable th {
+  border-bottom: 1px solid #e2e8f0;
+  color: #64748b;
+  font-weight: 600;
+  padding: 0.5rem 0.625rem;
+  text-align: left;
+}
+
+.countriesTable td {
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  padding: 0.5rem 0.625rem;
+}
+
+.questionHeader {
+  align-items: center;
+  border-bottom: 1px solid #eef2f6;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+}
+
+.questionTitle {
+  color: #1e293b;
+  flex: 1;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0;
+  min-width: 0;
+}
+
+.questionActions {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.125rem;
+}
+
+.questionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1rem 1.25rem;
+}
+
+.dataTable {
+  border-collapse: collapse;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  width: 100%;
+}
+
+.dataTable th {
+  border-bottom: 1px solid #e2e8f0;
+  color: #64748b;
+  font-weight: 600;
+  padding: 0.4375rem 0.5rem;
+  text-align: left;
+}
+
+.dataTable th.barScaleHeader {
+  color: #94a3b8;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-align: right;
+}
+
+.barScaleTicks {
+  display: inline-block;
+  letter-spacing: 0.12em;
+  width: 100%;
+}
+
+.dataTable td {
+  border-bottom: 1px solid #f8fafc;
+  color: #334155;
+  padding: 0.4375rem 0.5rem;
+  vertical-align: middle;
+}
+
+.countCell {
+  color: #1b87e6;
+  font-weight: 500;
+}
+
+.totalRow td {
+  border-top: 1px solid #e2e8f0;
+  font-weight: 600;
+}
+
+.dataTable tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.barCell {
+  min-width: 8rem;
+  width: 35%;
+}
+
+.barTrack {
+  background: #e2e8f0;
+  border-radius: 999px;
+  height: 0.375rem;
+  overflow: hidden;
+}
+
+.barFill {
+  background: #9ca3af;
+  border-radius: 999px;
+  height: 100%;
+}
+
+.barFillHighlight {
+  background: #1b87e6;
+}
+
+.srOnly {
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+@media (max-width: 1100px) {
+  .summaryMetrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .metric:nth-child(3) {
+    border-right: none;
+  }
+
+  .metric:nth-child(4),
+  .metric:nth-child(5),
+  .metric:nth-child(6) {
+    border-top: 1px solid #eef2f6;
+  }
+
+  .distributionBody {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+@media (max-width: 767px) {
+  .shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    border-bottom: 1px solid #e2e8f0;
+    border-right: none;
+    width: 100%;
+  }
+
+  .summaryMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -1,0 +1,20 @@
+.pieHost,
+.mapHost {
+  height: 100%;
+  min-height: 12rem;
+  width: 100%;
+}
+
+.pieHost :global(.highcharts-container),
+.mapHost :global(.highcharts-container) {
+  margin: 0 auto;
+}
+
+.pieHost {
+  max-width: 100%;
+  min-height: 18rem;
+}
+
+.mapHost {
+  min-height: 12rem;
+}

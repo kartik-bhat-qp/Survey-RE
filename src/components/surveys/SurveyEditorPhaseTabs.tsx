@@ -1,9 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { NavLink } from '@/components/surveys/NavLink';
+import {
+  useSurveyEditorPhase,
+  type SurveyEditorPhase,
+} from '@/components/surveys/SurveyEditorPhaseContext';
 import styles from './SurveyEditorPhaseTabs.module.css';
 
 const WuPrimaryNavbar = dynamic(
@@ -11,9 +15,7 @@ const WuPrimaryNavbar = dynamic(
   { ssr: false }
 );
 
-type PhaseTab = 'edit' | 'distribute' | 'analytics' | 'integration';
-
-const PHASE_TABS: { id: PhaseTab; label: string }[] = [
+const PHASE_TABS: { id: SurveyEditorPhase; label: string }[] = [
   { id: 'edit', label: 'Edit' },
   { id: 'distribute', label: 'Distribute' },
   { id: 'analytics', label: 'Analytics' },
@@ -22,7 +24,7 @@ const PHASE_TABS: { id: PhaseTab; label: string }[] = [
 
 export function SurveyEditorPhaseTabs() {
   const { showToast } = useWuShowToast();
-  const [activeTab, setActiveTab] = useState<PhaseTab>('edit');
+  const { activePhase, setActivePhase } = useSurveyEditorPhase();
 
   const links = useMemo(
     () =>
@@ -30,11 +32,11 @@ export function SurveyEditorPhaseTabs() {
         <NavLink
           key={tab.id}
           href="#"
-          active={activeTab === tab.id}
+          active={activePhase === tab.id}
           onClick={(event) => {
             event.preventDefault();
-            if (tab.id === 'edit') {
-              setActiveTab(tab.id);
+            if (tab.id === 'edit' || tab.id === 'analytics') {
+              setActivePhase(tab.id);
               return;
             }
             showToast({
@@ -46,7 +48,7 @@ export function SurveyEditorPhaseTabs() {
           {tab.label}
         </NavLink>
       )),
-    [activeTab, showToast]
+    [activePhase, setActivePhase, showToast]
   );
 
   return (

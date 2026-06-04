@@ -16,6 +16,32 @@ export const QUOTA_AI_PROMPT_SUGGESTIONS = [
   'Create a criteria quota for respondents in Maharashtra who are 25–34',
 ] as const;
 
+export const QUOTA_AI_EXAMPLE_PROMPTS = [
+  {
+    id: 'gender-split',
+    text: 'Set gender quotas at 50% male and 50% female for a sample of 200',
+  },
+  {
+    id: 'cross-matrix',
+    text: 'Create cross variable quotas for car type and brand by gender and age',
+  },
+  {
+    id: 'age-bands',
+    text: 'Add age quotas with 100 completes per age band',
+  },
+] as const;
+
+export const QUOTA_AI_CAPABILITY_PILLS = [
+  'Add question based quotas',
+  'Build cross variable matrices',
+  'Set criteria based screening rules',
+  'Balance quota targets across options',
+  'Import or adjust fill counts',
+] as const;
+
+export const QUOTA_AI_GREETING =
+  "Hi! I'm your quota agent. I can help you build and configure quotas for this survey. Try asking me to:";
+
 export const QUOTA_AI_THINKING_STEPS = [
   'Reviewing survey questions…',
   'Matching variables to your request…',

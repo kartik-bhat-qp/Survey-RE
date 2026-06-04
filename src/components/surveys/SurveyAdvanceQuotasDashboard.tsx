@@ -14,7 +14,7 @@ import { AddQuotaModal } from '@/components/surveys/AddQuotaModal';
 import { QuestionBasedQuotaModal } from '@/components/surveys/QuestionBasedQuotaModal';
 import { CrossVariableQuotaModal } from '@/components/surveys/CrossVariableQuotaModal';
 import { CrossVariableQuotaTrackingPanel } from '@/components/surveys/CrossVariableQuotaTrackingPanel';
-import { QuotaAiAgentModal } from '@/components/surveys/QuotaAiAgentModal';
+import { QuotaAiAgentSidebar } from '@/components/surveys/QuotaAiAgentSidebar';
 import type { QuotaAiGenerationResult } from '@/data/mock-quota-ai-agent';
 import {
   CriteriaBasedQuotaModal,
@@ -1202,7 +1202,19 @@ export function SurveyAdvanceQuotasDashboard({
   }
 
   return (
-    <div className={styles.dashboard}>
+    <div className={styles.workspace}>
+      {!clientView ? (
+        <QuotaAiAgentSidebar
+          open={quotaAiOpen}
+          surveyId={surveyId}
+          onClose={() => setQuotaAiOpen(false)}
+          onGenerated={handleQuotaAiGenerated}
+        />
+      ) : null}
+
+      <div
+        className={`${styles.dashboard} ${!clientView && !quotaAiOpen ? styles.dashboardWithAiFab : ''}`}
+      >
       {!clientView ? (
         <div className={styles.header}>
           <div className={styles.headerTitles}>
@@ -1245,15 +1257,6 @@ export function SurveyAdvanceQuotasDashboard({
                 <span className={styles.selectionCount}>({selectedCount})</span>
               </WuButton>
             ) : null}
-            <WuTooltip content="Create quotas with AI" position="bottom">
-              <WuButton
-                size="sm"
-                variant="iconOnly"
-                aria-label="Create quotas with AI"
-                onClick={() => setQuotaAiOpen(true)}
-                Icon={<span className="wc-ai" />}
-              />
-            </WuTooltip>
             <WuButton
               size="sm"
               variant="secondary"
@@ -1453,13 +1456,6 @@ export function SurveyAdvanceQuotasDashboard({
         }}
       />
 
-      <QuotaAiAgentModal
-        open={quotaAiOpen}
-        onOpenChange={setQuotaAiOpen}
-        surveyId={surveyId}
-        onGenerated={handleQuotaAiGenerated}
-      />
-
       <QuestionBasedQuotaModal
         open={questionQuotaOpen}
         onOpenChange={setQuestionQuotaOpen}
@@ -1516,6 +1512,19 @@ export function SurveyAdvanceQuotasDashboard({
       />
         </>
       ) : null}
+
+      {!clientView && !quotaAiOpen ? (
+        <button
+          type="button"
+          className={styles.quotaAiFab}
+          aria-label="Open quota agent"
+          title="Open quota agent"
+          onClick={() => setQuotaAiOpen(true)}
+        >
+          <span className={`wc-ai ${styles.quotaAiFabIcon}`} aria-hidden />
+        </button>
+      ) : null}
+      </div>
     </div>
   );
 }

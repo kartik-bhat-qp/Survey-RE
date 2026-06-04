@@ -5,7 +5,8 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { SurveyCreationAiThinkingOverlay } from '@/components/surveys/SurveyCreationAiThinkingOverlay';
-import { NEW_AI_SURVEY_ID, saveAiSurveyDraft } from '@/data/ai-survey-draft';
+import { SurveyCreationTemplatePicker } from '@/components/surveys/SurveyCreationTemplatePicker';
+import { NEW_AI_SURVEY_ID } from '@/data/ai-survey-draft';
 import {
   createSurveyBriefFile,
   DEFAULT_SURVEY_CREATION_LANGUAGE,
@@ -14,14 +15,14 @@ import {
   SURVEY_BRIEF_ACCEPT,
   NEW_BLANK_SURVEY_ID,
   saveBlankSurveyDraft,
-  SURVEY_CREATION_TEMPLATES,
-  SURVEY_CREATION_TEMPLATES_PER_PAGE,
+  SURVEY_TEMPLATE_BUILD_DELAY_MS,
   SURVEYS_LIST_AI_PROMPT_PLACEHOLDER,
+  type SurveyCreationAiOverlayVariant,
   validateSurveyBriefFile,
   type SurveyCreationBriefFile,
   type SurveyCreationTemplate,
 } from '@/data/mock-survey-creation-flow';
-import { requestAiSurveyGeneration } from '@/lib/request-ai-survey-generation';
+import { runAiSurveyCreationFlow } from '@/lib/request-ai-survey-generation';
 import styles from './SurveysAiFirstHero.module.css';
 
 const WuButton = dynamic(
@@ -44,19 +45,10 @@ export function SurveysAiFirstHero() {
   const [prompt, setPrompt] = useState('');
   const [attachedBriefs, setAttachedBriefs] = useState<SurveyCreationBriefFile[]>([]);
   const [promptExpanded, setPromptExpanded] = useState(false);
-  const [templatePage, setTemplatePage] = useState(0);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [isAiDrafting, setIsAiDrafting] = useState(false);
-
-  const templatePageCount = Math.ceil(
-    SURVEY_CREATION_TEMPLATES.length / SURVEY_CREATION_TEMPLATES_PER_PAGE
-  );
-  const visibleTemplates = SURVEY_CREATION_TEMPLATES.slice(
-    templatePage * SURVEY_CREATION_TEMPLATES_PER_PAGE,
-    templatePage * SURVEY_CREATION_TEMPLATES_PER_PAGE + SURVEY_CREATION_TEMPLATES_PER_PAGE
-  );
-  const canGoToPrevTemplates = templatePage > 0;
-  const canGoToNextTemplates = templatePage < templatePageCount - 1;
+  const [aiOverlayVariant, setAiOverlayVariant] =
+    useState<SurveyCreationAiOverlayVariant>('working');
 
   const trimmedPrompt = prompt.trim();
   const surveyLanguageLabel = getSurveyCreationLanguageLabel(DEFAULT_SURVEY_CREATION_LANGUAGE);
@@ -71,18 +63,23 @@ export function SurveysAiFirstHero() {
       return;
     }
 
+    setAiOverlayVariant('working');
     setIsAiDrafting(true);
+    let succeeded = false;
+
     try {
-      const result = await requestAiSurveyGeneration(trimmedPrompt, surveyLanguageLabel);
+      const result = await runAiSurveyCreationFlow(trimmedPrompt, surveyLanguageLabel);
       if (!result.ok) {
         showToast({ message: result.error, variant: 'error' });
         return;
       }
-      saveAiSurveyDraft(result.survey, trimmedPrompt);
+      succeeded = true;
       showToast({ message: 'Your survey is ready to edit', variant: 'success' });
       router.push(`/surveys/${NEW_AI_SURVEY_ID}`);
     } finally {
-      setIsAiDrafting(false);
+      if (!succeeded) {
+        setIsAiDrafting(false);
+      }
     }
   }
 
@@ -184,18 +181,37 @@ export function SurveysAiFirstHero() {
     blankNameInputRef.current?.focus();
   }, [mode]);
 
-  function handleTemplateSelect(template: SurveyCreationTemplate) {
+  async function handleTemplateSelect(template: SurveyCreationTemplate) {
+    if (isAiDrafting) return;
+
     setSelectedTemplateId(template.id);
-    setPrompt(template.prompt);
-    setMode('idea');
-    setPromptExpanded(true);
-    showToast({ message: `${template.label} template applied`, variant: 'success' });
-    requestAnimationFrame(() => promptRef.current?.focus());
+    setAiOverlayVariant('building');
+    setIsAiDrafting(true);
+    let succeeded = false;
+
+    try {
+      const result = await runAiSurveyCreationFlow(template.prompt, surveyLanguageLabel, {
+        minDelayMs: SURVEY_TEMPLATE_BUILD_DELAY_MS,
+      });
+
+      if (!result.ok) {
+        showToast({ message: result.error, variant: 'error' });
+        return;
+      }
+
+      succeeded = true;
+      showToast({ message: 'Your survey is ready to edit', variant: 'success' });
+      router.push(`/surveys/${NEW_AI_SURVEY_ID}`);
+    } finally {
+      if (!succeeded) {
+        setIsAiDrafting(false);
+      }
+    }
   }
 
   return (
     <section className={styles.hero} aria-label="Create a new survey">
-      <SurveyCreationAiThinkingOverlay open={isAiDrafting} />
+      <SurveyCreationAiThinkingOverlay open={isAiDrafting} variant={aiOverlayVariant} />
       <div className={styles.inner}>
         <h2 className={styles.headline}>Turn your thoughts into a survey</h2>
         <div className={styles.modeRow} role="tablist" aria-label="How to start your survey">
@@ -218,7 +234,6 @@ export function SurveysAiFirstHero() {
             onClick={() => {
               setMode('template');
               setPromptExpanded(false);
-              setTemplatePage(0);
             }}
             disabled={isAiDrafting}
           >
@@ -322,50 +337,11 @@ export function SurveysAiFirstHero() {
           ) : null}
 
           {mode === 'template' ? (
-            <div className={styles.templatesBlock}>
-              <p className={styles.templatesLabel}>Or start from</p>
-              <div
-                className={styles.templateCarousel}
-                role="group"
-                aria-label="Survey template categories"
-              >
-                <button
-                  type="button"
-                  className={styles.templateNavBtn}
-                  aria-label="Previous templates"
-                  disabled={!canGoToPrevTemplates || isAiDrafting}
-                  onClick={() => setTemplatePage((page) => Math.max(0, page - 1))}
-                >
-                  <span className="wm-chevron-left" aria-hidden />
-                </button>
-                <div className={styles.templateList}>
-                  {visibleTemplates.map((template) => (
-                    <button
-                      key={template.id}
-                      type="button"
-                      className={`${styles.templatePill} ${
-                        selectedTemplateId === template.id ? styles.templatePillSelected : ''
-                      }`}
-                      disabled={isAiDrafting}
-                      onClick={() => handleTemplateSelect(template)}
-                    >
-                      {template.label}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  className={styles.templateNavBtn}
-                  aria-label="Next templates"
-                  disabled={!canGoToNextTemplates || isAiDrafting}
-                  onClick={() =>
-                    setTemplatePage((page) => Math.min(templatePageCount - 1, page + 1))
-                  }
-                >
-                  <span className="wm-chevron-right" aria-hidden />
-                </button>
-              </div>
-            </div>
+            <SurveyCreationTemplatePicker
+              disabled={isAiDrafting}
+              selectedTemplateId={selectedTemplateId}
+              onSelect={handleTemplateSelect}
+            />
           ) : null}
 
           {mode === 'scratch' ? (

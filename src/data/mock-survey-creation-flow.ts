@@ -1,134 +1,12 @@
-export interface SurveyCreationTemplate {
-  id: string;
-  label: string;
-  prompt: string;
-}
-
-/** Templates shown per page in the create-survey “Or start from” carousel. */
+/** Templates shown per page in the create-survey template picker. */
 export const SURVEY_CREATION_TEMPLATES_PER_PAGE = 6;
 
-export const SURVEY_CREATION_TEMPLATES: SurveyCreationTemplate[] = [
-  {
-    id: 'csat',
-    label: 'CSAT Survey',
-    prompt:
-      'A Customer Satisfaction (CSAT) survey with overall satisfaction rating, key touchpoint ratings, and open feedback on what to improve.',
-  },
-  {
-    id: 'nps',
-    label: 'NPS Survey',
-    prompt:
-      'A Net Promoter Score survey asking likelihood to recommend, follow-up on the score, and optional comments on drivers of loyalty.',
-  },
-  {
-    id: 'customer-effort',
-    label: 'Customer Effort Survey',
-    prompt:
-      'A Customer Effort Score survey measuring how easy it was to get help, resolve an issue, or complete a task, with improvement suggestions.',
-  },
-  {
-    id: 'product-feedback',
-    label: 'Product Feedback Survey',
-    prompt:
-      'A product feedback survey on feature usefulness, ease of use, bugs or gaps, and priorities for the next release.',
-  },
-  {
-    id: 'support-satisfaction',
-    label: 'Support Satisfaction Survey',
-    prompt:
-      'A support satisfaction survey on agent helpfulness, resolution time, communication clarity, and overall support experience.',
-  },
-  {
-    id: 'employee-engagement',
-    label: 'Employee Engagement Survey',
-    prompt:
-      'An employee engagement survey covering motivation, alignment with company goals, growth opportunities, and culture.',
-  },
-  {
-    id: 'employee-pulse',
-    label: 'Employee Pulse Survey',
-    prompt:
-      'A short employee pulse survey on weekly morale, workload, manager support, and one open comment for leadership.',
-  },
-  {
-    id: 'onboarding-feedback',
-    label: 'Onboarding Feedback Survey',
-    prompt:
-      'An onboarding feedback survey for new hires on orientation clarity, tools and training, manager support, and readiness for the role.',
-  },
-  {
-    id: 'exit-interview',
-    label: 'Exit Interview Survey',
-    prompt:
-      'An exit interview survey on reasons for leaving, manager and team experience, compensation fairness, and suggestions to improve retention.',
-  },
-  {
-    id: 'training-feedback',
-    label: 'Training Feedback Survey',
-    prompt:
-      'A training feedback survey on content relevance, instructor quality, pace, materials, and confidence applying what was learned.',
-  },
-  {
-    id: 'market-research',
-    label: 'Market Research Survey',
-    prompt:
-      'A market research survey on category needs, buying behavior, brand consideration, and unmet problems in our target segment.',
-  },
-  {
-    id: 'brand-awareness',
-    label: 'Brand Awareness Survey',
-    prompt:
-      'A brand awareness survey measuring aided and unaided recall, associations, preference versus competitors, and message resonance.',
-  },
-  {
-    id: 'website-feedback',
-    label: 'Website Feedback Survey',
-    prompt:
-      'A website feedback survey on navigation, content clarity, design, performance, mobile experience, and suggested improvements.',
-  },
-  {
-    id: 'event-feedback',
-    label: 'Event Feedback Survey',
-    prompt:
-      'An event feedback survey on overall satisfaction, sessions, speakers, logistics, networking value, and ideas for future events.',
-  },
-  {
-    id: 'course-evaluation',
-    label: 'Course Evaluation Survey',
-    prompt:
-      'A course evaluation survey for students on learning outcomes, instructor effectiveness, materials, workload, and course improvements.',
-  },
-  {
-    id: 'patient-satisfaction',
-    label: 'Patient Satisfaction Survey',
-    prompt:
-      'A patient satisfaction survey on wait times, staff communication, care quality, facility cleanliness, and likelihood to recommend.',
-  },
-  {
-    id: 'restaurant-feedback',
-    label: 'Restaurant Feedback Survey',
-    prompt:
-      'A restaurant feedback survey on food quality, service, ambiance, value, wait time, and likelihood to return or recommend.',
-  },
-  {
-    id: 'hotel-guest',
-    label: 'Hotel Guest Survey',
-    prompt:
-      'A hotel guest survey on check-in, room comfort, amenities, staff service, cleanliness, and overall stay satisfaction.',
-  },
-  {
-    id: 'community-feedback',
-    label: 'Community Feedback Survey',
-    prompt:
-      'A community feedback survey on member needs, program value, communication, inclusivity, and priorities for the community.',
-  },
-  {
-    id: 'concept-testing',
-    label: 'Concept Testing Survey',
-    prompt:
-      'A concept testing survey presenting a new idea with appeal, purchase intent, pricing sensitivity, strengths, and concerns versus alternatives.',
-  },
-];
+export type { SurveyCreationTemplate } from '@/data/mock-survey-creation-templates';
+export {
+  SURVEY_CREATION_TEMPLATE_COUNT,
+  SURVEY_CREATION_TEMPLATES,
+  filterSurveyCreationTemplates,
+} from '@/data/mock-survey-creation-templates';
 
 export {
   SURVEY_CREATION_LANGUAGES,
@@ -144,8 +22,23 @@ export const SURVEY_CREATION_PROMPT_PLACEHOLDER =
 export const SURVEYS_LIST_AI_PROMPT_PLACEHOLDER =
   "Describe what you're trying to learn, or paste your survey questions to get started";
 
-/** Simulated AI drafting delay before opening the survey workspace. */
+export type SurveyCreationMode = 'idea' | 'template' | 'scratch';
+
+/** Hero subtitle copy on /surveys/create, keyed by the selected start mode. */
+export const SURVEY_CREATION_HERO_SUBTITLES: Record<SurveyCreationMode, string> = {
+  idea:
+    'Describe it in your own words. QuestionPro AI will draft the questions, pick the right scales, and hand you a survey you can edit, tweak, or send.',
+  template:
+    'Browse proven templates for CSAT, NPS, employee feedback, and more. Pick one and we’ll build your survey and open the workspace.',
+  scratch:
+    'Take things in your own hands and start from scratch. No AI required!',
+};
+
+/** Simulated AI drafting delay before opening the survey workspace (idea / prompt flow). */
 export const SURVEY_AI_DRAFT_DELAY_MS = 5000;
+
+/** Minimum overlay time when building from a template selection. */
+export const SURVEY_TEMPLATE_BUILD_DELAY_MS = 4000;
 
 export const SURVEY_AI_THINKING_STEPS = [
   'Understanding your research goals…',
@@ -153,6 +46,15 @@ export const SURVEY_AI_THINKING_STEPS = [
   'Selecting scales and layout…',
   'Finalizing your survey…',
 ] as const;
+
+export const SURVEY_TEMPLATE_BUILD_STEPS = [
+  'Applying your template…',
+  'Drafting questions…',
+  'Setting up scales and layout…',
+  'Opening your workspace…',
+] as const;
+
+export type SurveyCreationAiOverlayVariant = 'working' | 'building';
 
 export interface SurveyCreationBriefFile {
   id: string;

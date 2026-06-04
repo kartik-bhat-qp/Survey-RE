@@ -68,6 +68,22 @@
   width: 42%;
 }
 
+.progressFillBuilding {
+  animation: progressBuilding var(--build-duration-ms, 4000ms) ease-out forwards;
+  transform: translateX(0);
+  width: 0;
+}
+
+@keyframes progressBuilding {
+  from {
+    width: 0;
+  }
+
+  to {
+    width: 100%;
+  }
+}
+
 @keyframes overlayIn {
   from {
     opacity: 0;
@@ -121,7 +137,8 @@
     animation: none;
   }
 
-  .progressFill {
+  .progressFill,
+  .progressFillBuilding {
     animation: none;
     transform: none;
     width: 100%;
