@@ -7,10 +7,8 @@ import {
   QuestionRichTextField,
   plainTextFromRichValue,
 } from '@/components/surveys/QuestionRichTextField';
-import {
-  QuestionOptionsMenu,
-  type QuestionMenuAction,
-} from '@/components/surveys/QuestionOptionsMenu';
+import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
+import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import styles from './MultiPointScalesQuestionRow.module.css';
 
 function stopQuestionEvent(event: SyntheticEvent): void {
@@ -77,32 +75,14 @@ export function MultiPointScalesQuestionRow({
         <div className={styles.cardInner}>
           <div className={styles.topBar}>
             <span className={styles.topSpacer} aria-hidden />
-            <div
-              className={styles.actions}
-              onClick={stopQuestionEvent}
-              onKeyDown={stopQuestionEvent}
-            >
-              <button type="button" className={styles.actionLink} onClick={() => onAction('Validation')}>
-                Validation
-              </button>
-              <button type="button" className={styles.actionLink} onClick={() => onOpenLogic()}>
-                Logic
-              </button>
-              <button
-                type="button"
-                className={styles.actionLink}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onOpenSettings();
-                }}
-              >
-                Settings
-              </button>
-              <QuestionOptionsMenu
-                onAction={onMenuAction}
-                triggerClassName={styles.menuBtn}
-              />
-            </div>
+            <QuestionWorkspaceActions
+              question={question}
+              onAction={onAction}
+              onOpenLogic={onOpenLogic}
+              onOpenSettings={onOpenSettings}
+              onMenuAction={onMenuAction}
+              menuBtnClassName={styles.menuBtn}
+            />
           </div>
 
           <div className={styles.questionTextWrap}>

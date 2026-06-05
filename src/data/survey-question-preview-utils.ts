@@ -47,7 +47,10 @@ export function toQuestionPreviewFollowUp(
 }
 
 export function resolveQuestionKind(kind?: SurveyQuestionKind): SurveyQuestionKind {
-  return kind === 'multi-point-scales' ? 'multi-point-scales' : 'standard';
+  if (kind === 'multi-point-scales') return 'multi-point-scales';
+  if (kind === 'nps') return 'nps';
+  if (kind === 'van-westendorp') return 'van-westendorp';
+  return 'standard';
 }
 
 export function resolveInputKind(inputKind?: SurveyQuestionInputKind): SurveyQuestionInputKind {

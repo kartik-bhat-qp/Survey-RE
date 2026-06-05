@@ -1,10 +1,21 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { NavLink } from '@/components/surveys/NavLink';
+import {
+  PublishLicenseConflictModal,
+  type PublishLicenseModalView,
+} from '@/components/surveys/PublishLicenseConflictModal';
+import { useSurveyFooterBrand } from '@/components/surveys/useSurveyFooterBrand';
+import { useSurveyWorkspaceSections } from '@/components/surveys/SurveyWorkspaceSectionsContext';
+import {
+  collectSurveyLicenseConflicts,
+  getUserPlanLicense,
+  type SurveyLicenseConflict,
+} from '@/data/mock-add-question-types';
 import {
   SURVEY_WORKSPACE_TOOLS,
   type SurveyWorkspaceTool,
@@ -40,11 +51,75 @@ export function SurveyEditorWorkspaceToolbar({
   const router = useRouter();
   const pathname = usePathname() ?? '';
   const activeTool = getActiveTool(pathname, surveyId);
+  const footerBrand = useSurveyFooterBrand();
+  const { sections, removeQuestions } = useSurveyWorkspaceSections();
   const [mode, setMode] = useState<PublishMode>('draft');
+  const [licenseModalOpen, setLicenseModalOpen] = useState(false);
+  const [licenseModalView, setLicenseModalView] =
+    useState<PublishLicenseModalView>('conflicts');
+  const [licenseConflicts, setLicenseConflicts] = useState<SurveyLicenseConflict[]>([]);
+
+  useEffect(() => {
+    if (!licenseModalOpen || licenseModalView !== 'conflicts') return;
+    const nextConflicts = collectSurveyLicenseConflicts(
+      sections,
+      getUserPlanLicense(footerBrand)
+    );
+    setLicenseConflicts(nextConflicts);
+    if (nextConflicts.length === 0) {
+      setLicenseModalView('publish-confirm');
+    }
+  }, [sections, licenseModalOpen, licenseModalView, footerBrand]);
+
+  const handleLicenseModalOpenChange = useCallback((open: boolean) => {
+    setLicenseModalOpen(open);
+    if (!open) {
+      setLicenseModalView('conflicts');
+    }
+  }, []);
+
+  const handleConfirmPublish = useCallback(() => {
+    setMode('publish');
+    setLicenseModalOpen(false);
+    setLicenseModalView('conflicts');
+    showToast({ message: 'Survey published', variant: 'success' });
+  }, [showToast]);
+
+  const handleDeleteLicensedQuestion = useCallback(
+    (conflict: SurveyLicenseConflict) => {
+      removeQuestions([
+        { sectionId: conflict.sectionId, questionId: conflict.questionId },
+      ]);
+      showToast({
+        message: `${conflict.typeLabel} question deleted`,
+        variant: 'success',
+      });
+    },
+    [removeQuestions, showToast]
+  );
+
+  const handleUpgradeLicense = useCallback(() => {
+    setLicenseModalOpen(false);
+    showToast({ message: 'Upgrade options opened', variant: 'success' });
+  }, [showToast]);
+
   function selectMode(next: PublishMode) {
+    if (next === 'publish') {
+      const conflicts = collectSurveyLicenseConflicts(
+        sections,
+        getUserPlanLicense(footerBrand)
+      );
+      if (conflicts.length > 0) {
+        setLicenseConflicts(conflicts);
+        setLicenseModalView('conflicts');
+        setLicenseModalOpen(true);
+        return;
+      }
+    }
+
     setMode(next);
     showToast({
-      message: next === 'draft' ? 'Switched to Draft' : 'Switched to Publish',
+      message: next === 'draft' ? 'Switched to Draft' : 'Survey published',
       variant: 'success',
     });
   }
@@ -100,37 +175,48 @@ export function SurveyEditorWorkspaceToolbar({
   const showPublishArea = activeTool !== 'advance-quotas';
 
   return (
-    <WuSecondaryNavbar Links={links} className={styles.navbar}>
-      {showPublishArea ? (
-        <div className={styles.publishArea}>
-          <div className={styles.statusToggle} role="group" aria-label="Survey status">
+    <>
+      <WuSecondaryNavbar Links={links} className={styles.navbar}>
+        {showPublishArea ? (
+          <div className={styles.publishArea}>
+            <div className={styles.statusToggle} role="group" aria-label="Survey status">
+              <button
+                type="button"
+                className={mode === 'draft' ? styles.toggleActive : styles.toggleInactive}
+                aria-pressed={mode === 'draft'}
+                onClick={() => selectMode('draft')}
+              >
+                Draft
+              </button>
+              <button
+                type="button"
+                className={mode === 'publish' ? styles.toggleActive : styles.toggleInactive}
+                aria-pressed={mode === 'publish'}
+                onClick={() => selectMode('publish')}
+              >
+                Publish
+              </button>
+            </div>
             <button
               type="button"
-              className={mode === 'draft' ? styles.toggleActive : styles.toggleInactive}
-              aria-pressed={mode === 'draft'}
-              onClick={() => selectMode('draft')}
+              className={styles.previewBtn}
+              aria-label="Preview survey"
+              onClick={() => showToast({ message: 'Preview survey', variant: 'success' })}
             >
-              Draft
-            </button>
-            <button
-              type="button"
-              className={mode === 'publish' ? styles.toggleActive : styles.toggleInactive}
-              aria-pressed={mode === 'publish'}
-              onClick={() => selectMode('publish')}
-            >
-              Publish
+              <span className="wm-visibility" />
             </button>
           </div>
-          <button
-            type="button"
-            className={styles.previewBtn}
-            aria-label="Preview survey"
-            onClick={() => showToast({ message: 'Preview survey', variant: 'success' })}
-          >
-            <span className="wm-visibility" />
-          </button>
-        </div>
-      ) : null}
-    </WuSecondaryNavbar>
+        ) : null}
+      </WuSecondaryNavbar>
+      <PublishLicenseConflictModal
+        open={licenseModalOpen}
+        view={licenseModalView}
+        onOpenChange={handleLicenseModalOpenChange}
+        conflicts={licenseConflicts}
+        onDeleteQuestion={handleDeleteLicensedQuestion}
+        onUpgradeLicense={handleUpgradeLicense}
+        onConfirmPublish={handleConfirmPublish}
+      />
+    </>
   );
 }

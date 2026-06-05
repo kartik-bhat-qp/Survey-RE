@@ -1,0 +1,66 @@
+.actions {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+}
+
+.validationGroup {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.licenseDiamondWrap {
+  align-items: center;
+  display: inline-flex;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.licenseDiamondWrap > * {
+  align-items: center;
+  display: inline-flex;
+}
+
+.licenseDiamond {
+  flex-shrink: 0;
+}
+
+.licenseDiamondWrap :global(.wm-diamond) {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.actionLink {
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.125rem;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.actionLink:hover {
+  text-decoration: underline;
+}
+
+.menuBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.menuBtn:hover {
+  background: #f1f5f9;
+}

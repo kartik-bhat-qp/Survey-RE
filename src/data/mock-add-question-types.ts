@@ -1,3 +1,7 @@
+import type { SurveyFooterBrand } from '@/lib/survey-suite-footer-brand';
+import type { SurveySection } from '@/data/mock-survey-detail';
+import { resolveAddQuestionTypeId } from '@/data/mock-survey-detail';
+
 export type QuestionTypeTier = 'basic' | 'advanced';
 
 export interface AddQuestionTypeItem {
@@ -221,6 +225,10 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
 export const ADD_QUESTION_ADVANCED_LICENSE_TOOLTIP =
   'This question is available with the Advanced license';
 
+/** Shown when hovering the diamond on Research edition question types. */
+export const ADD_QUESTION_RESEARCH_EDITION_LICENSE_TOOLTIP =
+  'This question type is available with the Research edition license';
+
 const ADD_QUESTION_ADVANCED_LICENSE_TYPE_IDS = new Set([
   'nps',
   'reference-data',
@@ -233,10 +241,120 @@ const ADD_QUESTION_ADVANCED_LICENSE_TYPE_IDS = new Set([
   'signature',
 ]);
 
+const ADD_QUESTION_RESEARCH_EDITION_LICENSE_TYPE_IDS = new Set([
+  'van-westendorp',
+  'gabor-granger',
+]);
+
 export function getAddQuestionAdvancedLicenseTooltip(typeId: string): string | undefined {
-  return ADD_QUESTION_ADVANCED_LICENSE_TYPE_IDS.has(typeId)
-    ? ADD_QUESTION_ADVANCED_LICENSE_TOOLTIP
-    : undefined;
+  if (ADD_QUESTION_RESEARCH_EDITION_LICENSE_TYPE_IDS.has(typeId)) {
+    return ADD_QUESTION_RESEARCH_EDITION_LICENSE_TOOLTIP;
+  }
+  if (ADD_QUESTION_ADVANCED_LICENSE_TYPE_IDS.has(typeId)) {
+    return ADD_QUESTION_ADVANCED_LICENSE_TOOLTIP;
+  }
+  return undefined;
+}
+
+export function getAddQuestionTypeTier(typeId: string): QuestionTypeTier | undefined {
+  for (const category of ADD_QUESTION_CATEGORIES) {
+    if (category.types.some((type) => type.id === typeId)) {
+      return category.tier;
+    }
+  }
+  return undefined;
+}
+
+export type SurveyPlanLicense = 'essentials' | 'research' | 'advanced';
+
+export type QuestionLicenseRequirement = 'advanced' | 'research';
+
+export interface SurveyLicenseConflict {
+  sectionId: string;
+  questionId: string;
+  questionCode: string;
+  typeLabel: string;
+  requiredLicense: QuestionLicenseRequirement;
+  requiredLicenseLabel: string;
+}
+
+const LICENSE_RANK: Record<SurveyPlanLicense, number> = {
+  essentials: 0,
+  research: 1,
+  advanced: 2,
+};
+
+export function getUserPlanLicense(footerBrand: SurveyFooterBrand): SurveyPlanLicense {
+  return footerBrand === 'essentials' ? 'essentials' : 'research';
+}
+
+export function getQuestionLicenseRequirement(
+  typeId: string
+): QuestionLicenseRequirement | undefined {
+  if (ADD_QUESTION_RESEARCH_EDITION_LICENSE_TYPE_IDS.has(typeId)) {
+    return 'research';
+  }
+  if (ADD_QUESTION_ADVANCED_LICENSE_TYPE_IDS.has(typeId)) {
+    return 'advanced';
+  }
+  return undefined;
+}
+
+export function getLicenseRequirementLabel(requirement: QuestionLicenseRequirement): string {
+  return requirement === 'advanced' ? 'Advanced' : 'Research edition';
+}
+
+export function isLicenseSufficient(
+  userLicense: SurveyPlanLicense,
+  required: QuestionLicenseRequirement
+): boolean {
+  const requiredRank = required === 'advanced' ? LICENSE_RANK.advanced : LICENSE_RANK.research;
+  return LICENSE_RANK[userLicense] >= requiredRank;
+}
+
+export function getAddQuestionTypeLabel(typeId: string): string {
+  for (const category of ADD_QUESTION_CATEGORIES) {
+    const match = category.types.find((type) => type.id === typeId);
+    if (match) return match.label;
+  }
+  return typeId;
+}
+
+export function collectSurveyLicenseConflicts(
+  sections: SurveySection[],
+  userLicense: SurveyPlanLicense
+): SurveyLicenseConflict[] {
+  const conflicts: SurveyLicenseConflict[] = [];
+
+  for (const section of sections) {
+    for (const question of section.questions) {
+      const typeId = resolveAddQuestionTypeId(question);
+      if (!typeId) continue;
+
+      const required = getQuestionLicenseRequirement(typeId);
+      if (!required || isLicenseSufficient(userLicense, required)) continue;
+
+      conflicts.push({
+        sectionId: section.id,
+        questionId: question.id,
+        questionCode: question.code,
+        typeLabel: getAddQuestionTypeLabel(typeId),
+        requiredLicense: required,
+        requiredLicenseLabel: getLicenseRequirementLabel(required),
+      });
+    }
+  }
+
+  return conflicts;
+}
+
+/** Essentials plan: advanced question types show the license diamond in the workspace. */
+export function shouldShowWorkspaceLicenseDiamond(
+  typeId: string | undefined,
+  footerBrand: SurveyFooterBrand
+): boolean {
+  if (!typeId || footerBrand !== 'essentials') return false;
+  return getAddQuestionTypeTier(typeId) === 'advanced';
 }
 
 export function filterAddQuestionCategories(

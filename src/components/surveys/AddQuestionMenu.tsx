@@ -358,7 +358,7 @@ function QuestionTypeHoverPreview({
         {content.variant === 'maps' ? <MapsQuestionPreview /> : null}
 
         {content.variant === 'nps' && content.nps ? (
-          <NpsQuestionPreview data={content.nps} />
+          <NpsQuestionPreview data={content.nps} decorative />
         ) : null}
 
         {content.variant === 'homunculus' ? <HomunculusQuestionPreview /> : null}
@@ -368,7 +368,7 @@ function QuestionTypeHoverPreview({
         ) : null}
 
         {content.variant === 'van-westendorp' && content.vanWestendorp ? (
-          <VanWestendorpQuestionPreview data={content.vanWestendorp} />
+          <VanWestendorpQuestionPreview data={content.vanWestendorp} decorative />
         ) : null}
 
         {content.variant === 'gabor-granger' && content.gaborGranger ? (

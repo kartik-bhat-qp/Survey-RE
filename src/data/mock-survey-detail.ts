@@ -5,7 +5,59 @@ import { NEW_BLANK_SURVEY_ID } from '@/data/mock-survey-creation-flow';
 
 export type SurveyQuestionInputKind = 'radio' | 'checkbox';
 
-export type SurveyQuestionKind = 'standard' | 'multi-point-scales';
+export type SurveyQuestionKind =
+  | 'standard'
+  | 'multi-point-scales'
+  | 'nps'
+  | 'van-westendorp';
+
+export interface SurveyQuestionVanWestendorpRow {
+  id: string;
+  prompt: string;
+}
+
+export interface SurveyQuestionVanWestendorp {
+  priceLabel: string;
+  rows: SurveyQuestionVanWestendorpRow[];
+}
+
+export const DEFAULT_VAN_WESTENDORP_QUESTION_TEXT = 'At what price do you —';
+
+export function createDefaultVanWestendorpData(): SurveyQuestionVanWestendorp {
+  return {
+    priceLabel: 'Price',
+    rows: [
+      {
+        id: 'too-expensive',
+        prompt:
+          'At what price would you consider the product to be so expensive that you would not consider buying it? (Too Expensive)',
+      },
+      {
+        id: 'expensive',
+        prompt:
+          'At what price would you consider the product starting to get expensive, so that it is not out of the question, but you would have to give some thought to buying it? (Expensive/High Side)',
+      },
+      {
+        id: 'cheap',
+        prompt:
+          'At what price would you consider the product to be a bargain - a great buy for the money? (Cheap/Good Value)',
+      },
+      {
+        id: 'too-cheap',
+        prompt:
+          "At what price would you consider the product to be priced so low that you would feel the quality couldn't be very good? (Too Cheap)",
+      },
+    ],
+  };
+}
+
+export interface SurveyQuestionNps {
+  minLabel: string;
+  maxLabel: string;
+}
+
+export const DEFAULT_NPS_MIN_LABEL = 'Very Unlikely';
+export const DEFAULT_NPS_MAX_LABEL = 'Very Likely';
 
 export interface SurveyQuestionOption {
   id: string;
@@ -44,6 +96,22 @@ export interface SurveyQuestion {
   options: SurveyQuestionOption[];
   /** Matrix grid for Basic Matrix multi-point scales. */
   matrix?: SurveyMatrix;
+  /** 0–10 scale labels for Net Promoter Score questions. */
+  nps?: SurveyQuestionNps;
+  /** Price sensitivity rows for Van Westendorp questions. */
+  vanWestendorp?: SurveyQuestionVanWestendorp;
+  /** Add Question menu type id (e.g. `nps`, `select-many`) for license diamond display. */
+  addQuestionTypeId?: string;
+}
+
+/** Resolves the Add Question type id used for license diamond and tier checks. */
+export function resolveAddQuestionTypeId(question: SurveyQuestion): string | undefined {
+  if (question.addQuestionTypeId) return question.addQuestionTypeId;
+  if (question.kind === 'nps') return 'nps';
+  if (question.kind === 'van-westendorp') return 'van-westendorp';
+  if (question.kind === 'multi-point-scales') return 'multi-point';
+  if (question.inputKind === 'checkbox') return 'select-many';
+  return undefined;
 }
 
 const DEFAULT_MULTI_POINT_ROW_LABELS = [

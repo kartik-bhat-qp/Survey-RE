@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { SurveyAnalyticsSubNav } from '@/components/surveys/SurveyAnalyticsSubNav';
 import { SurveyEditorPhaseProvider, useSurveyEditorPhase } from '@/components/surveys/SurveyEditorPhaseContext';
+import { SurveyWorkspaceSectionsProvider } from '@/components/surveys/SurveyWorkspaceSectionsContext';
 import { SurveyEditorPhaseTabs } from '@/components/surveys/SurveyEditorPhaseTabs';
 import { SurveyEditorWorkspaceToolbar } from '@/components/surveys/SurveyEditorWorkspaceToolbar';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -65,7 +66,9 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
 export default function SurveyEditorLayout({ children }: { children: React.ReactNode }) {
   return (
     <SurveyEditorPhaseProvider>
-      <SurveyEditorLayoutBody>{children}</SurveyEditorLayoutBody>
+      <SurveyWorkspaceSectionsProvider>
+        <SurveyEditorLayoutBody>{children}</SurveyEditorLayoutBody>
+      </SurveyWorkspaceSectionsProvider>
     </SurveyEditorPhaseProvider>
   );
 }

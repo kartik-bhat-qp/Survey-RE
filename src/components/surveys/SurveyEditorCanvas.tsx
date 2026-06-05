@@ -12,14 +12,20 @@ import type {
 } from '@/data/mock-survey-detail';
 import {
   createDefaultMultiPointMatrix,
+  createDefaultVanWestendorpData,
   DEFAULT_MULTI_POINT_QUESTION_TEXT,
+  DEFAULT_NPS_MAX_LABEL,
+  DEFAULT_NPS_MIN_LABEL,
+  DEFAULT_VAN_WESTENDORP_QUESTION_TEXT,
 } from '@/data/mock-survey-detail';
+import { NpsQuestionRow } from '@/components/surveys/NpsQuestionRow';
+import { VanWestendorpQuestionRow } from '@/components/surveys/VanWestendorpQuestionRow';
 import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
 import { BulkEditLinesModal } from '@/components/surveys/BulkEditLinesModal';
 import { BulkEditOptionsModal } from '@/components/surveys/BulkEditOptionsModal';
 import { MultiPointScalesQuestionRow } from '@/components/surveys/MultiPointScalesQuestionRow';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
-import { QuestionOptionsMenu } from '@/components/surveys/QuestionOptionsMenu';
+import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { MultiPointScalesSettingsPanel } from '@/components/surveys/MultiPointScalesSettingsPanel';
 import { QuestionLogicModal } from '@/components/surveys/QuestionLogicModal';
@@ -43,6 +49,10 @@ import {
   toQuestionPreviewFollowUp,
 } from '@/data/survey-question-preview-utils';
 import { writeMultiPointQuestionPreviewSession } from '@/data/survey-question-preview-session';
+import {
+  useSurveyWorkspaceSections,
+  type SurveyQuestionTarget,
+} from '@/components/surveys/SurveyWorkspaceSectionsContext';
 import styles from './SurveyEditorCanvas.module.css';
 
 const WuButton = dynamic(
@@ -70,12 +80,29 @@ function cloneSections(sections: SurveySection[]): SurveySection[] {
       ...q,
       options: q.options.map((o) => ({ ...o })),
       ...(q.matrix ? { matrix: cloneMatrix(q.matrix) } : {}),
+      ...(q.nps ? { nps: { ...q.nps } } : {}),
+      ...(q.vanWestendorp
+        ? {
+            vanWestendorp: {
+              priceLabel: q.vanWestendorp.priceLabel,
+              rows: q.vanWestendorp.rows.map((row) => ({ ...row })),
+            },
+          }
+        : {}),
     })),
   }));
 }
 
 function isMultiPointScalesQuestion(question: SurveyQuestion): boolean {
   return question.kind === 'multi-point-scales' && Boolean(question.matrix);
+}
+
+function isNpsQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'nps';
+}
+
+function isVanWestendorpQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'van-westendorp';
 }
 
 function cloneQuestionForCopy(question: SurveyQuestion): SurveyQuestion {
@@ -88,6 +115,15 @@ function cloneQuestionForCopy(question: SurveyQuestion): SurveyQuestion {
       id: `opt-${ts}-${index}`,
     })),
     ...(question.matrix ? { matrix: cloneMatrix(question.matrix) } : {}),
+    ...(question.nps ? { nps: { ...question.nps } } : {}),
+    ...(question.vanWestendorp
+      ? {
+          vanWestendorp: {
+            priceLabel: question.vanWestendorp.priceLabel,
+            rows: question.vanWestendorp.rows.map((row) => ({ ...row })),
+          },
+        }
+      : {}),
   };
 }
 
@@ -297,29 +333,14 @@ function QuestionRow({
           ))}
         </ul>
       </div>
-      <div
-        className={styles.questionActions}
-        onClick={(event) => event.stopPropagation()}
-        onKeyDown={(event) => event.stopPropagation()}
-      >
-        <button type="button" className={styles.actionLink} onClick={() => onAction('Validation')}>
-          Validation
-        </button>
-        <button type="button" className={styles.actionLink} onClick={() => onOpenLogic()}>
-          Logic
-        </button>
-        <button
-          type="button"
-          className={styles.actionLink}
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpenSettings();
-          }}
-        >
-          Settings
-        </button>
-        <QuestionOptionsMenu onAction={onMenuAction} triggerClassName={styles.menuBtn} />
-      </div>
+      <QuestionWorkspaceActions
+        question={question}
+        onAction={onAction}
+        onOpenLogic={onOpenLogic}
+        onOpenSettings={onOpenSettings}
+        onMenuAction={onMenuAction}
+        menuBtnClassName={styles.menuBtn}
+      />
     </article>
   );
 }
@@ -358,33 +379,14 @@ function SelectManyQuestionRow({
         <div className={styles.selectManyCardInner}>
           <div className={styles.selectManyTopBar}>
             <span className={styles.selectManyTopSpacer} aria-hidden />
-            <div
-              className={styles.selectManyActions}
-              onClick={(event) => event.stopPropagation()}
-              onKeyDown={(event) => event.stopPropagation()}
-            >
-              <button
-                type="button"
-                className={styles.actionLink}
-                onClick={() => onAction('Validation')}
-              >
-                Validation
-              </button>
-              <button type="button" className={styles.actionLink} onClick={() => onOpenLogic()}>
-                Logic
-              </button>
-              <button
-                type="button"
-                className={styles.actionLink}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onOpenSettings();
-                }}
-              >
-                Settings
-              </button>
-              <QuestionOptionsMenu onAction={onMenuAction} triggerClassName={styles.menuBtn} />
-            </div>
+            <QuestionWorkspaceActions
+              question={question}
+              onAction={onAction}
+              onOpenLogic={onOpenLogic}
+              onOpenSettings={onOpenSettings}
+              onMenuAction={onMenuAction}
+              menuBtnClassName={styles.menuBtn}
+            />
           </div>
           <div className={styles.selectManyQuestionTextWrap}>
             {question.required ? <span className={styles.required}>*</span> : null}
@@ -462,6 +464,7 @@ function SelectManyQuestionRow({
 
 export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   const { showToast } = useWuShowToast();
+  const { setWorkspaceSections, registerRemoveQuestions } = useSurveyWorkspaceSections();
   const [sections, setSections] = useState<SurveySection[]>(() => cloneSections(detail.sections));
   const [selectedQuestionKey, setSelectedQuestionKey] = useState<string | null>(null);
   const [bulkEditTarget, setBulkEditTarget] = useState<{
@@ -511,6 +514,60 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     setBulkEditMatrixTarget(null);
     setDeleteQuestionTarget(null);
   }, [detail.survey.id]);
+
+  useEffect(() => {
+    setWorkspaceSections(sections);
+  }, [sections, setWorkspaceSections]);
+
+  const removeQuestionsByTarget = useCallback(
+    (targets: SurveyQuestionTarget[]) => {
+      if (targets.length === 0) return;
+
+      const targetKeys = new Set(
+        targets.map((target) => `${target.sectionId}:${target.questionId}`)
+      );
+      const targetIdsBySection = new Map<string, Set<string>>();
+      for (const target of targets) {
+        const ids = targetIdsBySection.get(target.sectionId) ?? new Set<string>();
+        ids.add(target.questionId);
+        targetIdsBySection.set(target.sectionId, ids);
+      }
+
+      setSections((prev) =>
+        prev.map((section) => {
+          const removeIds = targetIdsBySection.get(section.id);
+          if (!removeIds) return section;
+          return {
+            ...section,
+            questions: section.questions.filter((question) => !removeIds.has(question.id)),
+          };
+        })
+      );
+
+      setSelectedQuestionKey((prev) => (prev && targetKeys.has(prev) ? null : prev));
+      setSettingsTarget((prev) =>
+        prev && targetKeys.has(`${prev.sectionId}:${prev.questionId}`) ? null : prev
+      );
+      setLogicTarget((prev) =>
+        prev && targetKeys.has(`${prev.sectionId}:${prev.questionId}`) ? null : prev
+      );
+      setBulkEditTarget((prev) =>
+        prev && targetKeys.has(`${prev.sectionId}:${prev.questionId}`) ? null : prev
+      );
+      setBulkEditMatrixTarget((prev) =>
+        prev && targetKeys.has(`${prev.sectionId}:${prev.questionId}`) ? null : prev
+      );
+      setDeleteQuestionTarget((prev) =>
+        prev && targetKeys.has(`${prev.sectionId}:${prev.questionId}`) ? null : prev
+      );
+    },
+    []
+  );
+
+  useEffect(() => {
+    registerRemoveQuestions(removeQuestionsByTarget);
+    return () => registerRemoveQuestions(null);
+  }, [registerRemoveQuestions, removeQuestionsByTarget]);
 
   useEffect(() => {
     const pending = pendingScrollQuestionRef.current;
@@ -975,6 +1032,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
               text: `Question ${nextNum}`,
               required: true,
               inputKind: 'checkbox',
+              addQuestionTypeId: 'select-many',
               options: [
                 { id: `opt-${ts}-1`, label: 'Option 1' },
                 { id: `opt-${ts}-2`, label: 'Option 2' },
@@ -1008,6 +1066,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
               text: DEFAULT_MULTI_POINT_QUESTION_TEXT,
               required: true,
               kind: 'multi-point-scales',
+              addQuestionTypeId: 'multi-point',
               options: [],
               matrix: createDefaultMultiPointMatrix(),
             };
@@ -1022,6 +1081,69 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           [questionKey]: DEFAULT_NEW_MULTI_POINT_QUESTION_SETTINGS,
         }));
         showToast({ message: 'Multi-Point Scales question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'nps') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: `Question ${nextNum}`,
+              required: true,
+              kind: 'nps',
+              addQuestionTypeId: 'nps',
+              options: [],
+              nps: {
+                minLabel: DEFAULT_NPS_MIN_LABEL,
+                maxLabel: DEFAULT_NPS_MAX_LABEL,
+              },
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Net Promoter Score question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'van-westendorp') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_VAN_WESTENDORP_QUESTION_TEXT,
+              required: true,
+              kind: 'van-westendorp',
+              addQuestionTypeId: 'van-westendorp',
+              options: [],
+              vanWestendorp: createDefaultVanWestendorpData(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Van Westendorp question added', variant: 'success' });
         return;
       }
 
@@ -1080,6 +1202,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const questionKey = `${section.id}:${question.id}`;
                     const isSelected = selectedQuestionKey === questionKey;
                     const isMultiPoint = isMultiPointScalesQuestion(question);
+                    const isNps = isNpsQuestion(question);
+                    const isVanWestendorp = isVanWestendorpQuestion(question);
                     const multiPointSettings = getMultiPointSettings(questionKey);
                     return (
                       <Fragment key={question.id}>
@@ -1089,6 +1213,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                             question.inputKind === 'checkbox' ? styles.questionBlockSelectMany : ''
                           } ${
                             isMultiPoint ? styles.questionBlockMultiPoint : ''
+                          } ${isNps ? styles.questionBlockNps : ''} ${
+                            isVanWestendorp ? styles.questionBlockVanWestendorp : ''
                           } ${isSelected ? styles.questionBlockSelected : ''}`}
                         >
                           <div
@@ -1105,7 +1231,39 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                             className={styles.questionShell}
                             onClick={() => setSelectedQuestionKey(questionKey)}
                           >
-                            {isMultiPoint && question.matrix ? (
+                            {isNps ? (
+                              <NpsQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                              />
+                            ) : isVanWestendorp ? (
+                              <VanWestendorpQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                              />
+                            ) : isMultiPoint && question.matrix ? (
                               <MultiPointScalesQuestionRow
                                 question={question}
                                 matrix={question.matrix}

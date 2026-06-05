@@ -4,6 +4,14 @@
   gap: 1.125rem;
 }
 
+.rootWorkspace {
+  gap: 0.75rem;
+}
+
+.rootWorkspace .rowList {
+  gap: 1rem;
+}
+
 .title {
   color: #1e293b;
   font-family: 'Fira Sans', sans-serif;

@@ -206,7 +206,9 @@
 }
 
 .questionBlockSelectMany .questionCodeColumn,
-.questionBlockMultiPoint .questionCodeColumn {
+.questionBlockMultiPoint .questionCodeColumn,
+.questionBlockNps .questionCodeColumn,
+.questionBlockVanWestendorp .questionCodeColumn {
   padding-top: 2.75rem;
 }
 
@@ -223,7 +225,9 @@
 }
 
 .addQuestionToolbar + .questionBlock .questionRow,
-.addQuestionToolbar + .questionBlock .selectManyCard {
+.addQuestionToolbar + .questionBlock .selectManyCard,
+.addQuestionToolbar + .questionBlock .npsCard,
+.addQuestionToolbar + .questionBlock .vanWestendorpCard {
   border-top: none;
 }
 
