@@ -8,6 +8,7 @@ import {
   buildBranchTargetOptions,
   createDefaultQuestionLogicState,
   findBranchTargetOption,
+  isShowHideOptionsLogicApplied,
   isShowHideOptionsLogicComplete,
   QUESTION_LOGIC_TYPE_OPTIONS,
   RANDOMIZER_LIMIT_OPTIONS,
@@ -15,6 +16,7 @@ import {
   type QuestionLogicTypeOption,
 } from '@/data/mock-question-logic';
 import { HelpFileLink } from '@/components/surveys/HelpFileLink';
+import { ShowHideOptionsAppliedIcon } from '@/components/surveys/ShowHideOptionsAppliedIcon';
 import { ShowHideOptionsLogicPanel } from '@/components/surveys/ShowHideOptionsLogicPanel';
 import { plainTextFromRichValue } from '@/components/surveys/QuestionRichTextField';
 import { useWickUILib } from '@/components/ui/useWickUILib';
@@ -35,6 +37,7 @@ export interface QuestionLogicModalProps {
   question: SurveyQuestion;
   allQuestions: SurveyQuestion[];
   surveyId: number;
+  initialState?: QuestionLogicState;
   onSave?: (state: QuestionLogicState) => void;
 }
 
@@ -44,6 +47,7 @@ export function QuestionLogicModal({
   question,
   allQuestions,
   surveyId,
+  initialState,
   onSave,
 }: QuestionLogicModalProps) {
   const wick = useWickUILib();
@@ -53,6 +57,15 @@ export function QuestionLogicModal({
   );
 
   const isShowHideOptions = state.logicType === 'show-hide-options';
+  const optionIds = useMemo(
+    () => question.options.map((option) => option.id),
+    [question.options]
+  );
+  const showHideOptionsApplied = isShowHideOptionsLogicApplied(state, optionIds);
+  const savedShowHideOptionsApplied =
+    initialState != null && isShowHideOptionsLogicApplied(initialState, optionIds);
+  const canResetShowHideLogic =
+    isShowHideOptions && (showHideOptionsApplied || savedShowHideOptionsApplied);
 
   const branchTargets = useMemo(
     () =>
@@ -69,8 +82,8 @@ export function QuestionLogicModal({
 
   useEffect(() => {
     if (!open) return;
-    setState(createDefaultQuestionLogicState(question.options.map((option) => option.id)));
-  }, [open, question.id, question.options]);
+    setState(initialState ?? createDefaultQuestionLogicState(optionIds));
+  }, [open, question.id, initialState, optionIds]);
 
   const selectedLogicType =
     QUESTION_LOGIC_TYPE_OPTIONS.find((option) => option.value === state.logicType) ??
@@ -84,10 +97,7 @@ export function QuestionLogicModal({
     RANDOMIZER_LIMIT_OPTIONS[0];
 
   const canSave = isShowHideOptions
-    ? isShowHideOptionsLogicComplete(
-        state.showHideOptions,
-        question.options.map((option) => option.id)
-      )
+    ? isShowHideOptionsLogicComplete(state.showHideOptions, optionIds)
     : true;
 
   function handleSave() {
@@ -95,6 +105,14 @@ export function QuestionLogicModal({
     onSave?.(state);
     onOpenChange(false);
     showToast({ message: 'Logic saved', variant: 'success' });
+  }
+
+  function handleResetShowHideLogic() {
+    const defaultState = createDefaultQuestionLogicState(optionIds);
+    setState(defaultState);
+    onSave?.(defaultState);
+    onOpenChange(false);
+    showToast({ message: 'Show/Hide Options logic reset', variant: 'success' });
   }
 
   if (!open || !wick) {
@@ -134,6 +152,7 @@ export function QuestionLogicModal({
               variant="outlined"
             />
             <HelpFileLink topic="logicType" label="Logic type help" />
+            {showHideOptionsApplied ? <ShowHideOptionsAppliedIcon /> : null}
           </div>
           {!isShowHideOptions ? (
             <div className={styles.loopingField}>
@@ -268,7 +287,16 @@ export function QuestionLogicModal({
           </>
         )}
       </WuModalContent>
-      <WuModalFooter className={styles.modalFooter}>
+      <WuModalFooter
+        className={
+          canResetShowHideLogic ? styles.modalFooterWithReset : styles.modalFooter
+        }
+      >
+        {canResetShowHideLogic ? (
+          <WuButton variant="secondary" onClick={handleResetShowHideLogic}>
+            Reset
+          </WuButton>
+        ) : null}
         <WuButton variant="primary" disabled={!canSave} onClick={handleSave}>
           Save Logic
         </WuButton>

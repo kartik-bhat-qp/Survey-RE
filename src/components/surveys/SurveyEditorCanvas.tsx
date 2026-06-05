@@ -50,6 +50,12 @@ import {
 } from '@/data/survey-question-preview-utils';
 import { writeMultiPointQuestionPreviewSession } from '@/data/survey-question-preview-session';
 import {
+  createDefaultQuestionLogicState,
+  isShowHideOptionsLogicApplied,
+  type QuestionLogicState,
+} from '@/data/mock-question-logic';
+import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
+import {
   useSurveyWorkspaceSections,
   type SurveyQuestionTarget,
 } from '@/components/surveys/SurveyWorkspaceSectionsContext';
@@ -269,6 +275,7 @@ function AddQuestionToolbar({
 function QuestionRow({
   question,
   sectionId,
+  showHideOptionsApplied,
   onAction,
   onOpenLogic,
   onOpenSettings,
@@ -278,6 +285,7 @@ function QuestionRow({
 }: {
   question: SurveyQuestion;
   sectionId: string;
+  showHideOptionsApplied: boolean;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -292,54 +300,61 @@ function QuestionRow({
 }) {
   return (
     <article className={styles.questionRow}>
-      <div className={styles.questionBody}>
-        <div className={styles.questionTextWrap}>
-          {question.required ? <span className={styles.required}>*</span> : null}
-          <QuestionRichTextField
-            value={question.text}
-            onChange={(text) => onQuestionTextChange(sectionId, question.id, text)}
-            ariaLabel="Question text"
-            placeholder="Enter question text"
-            onPointerDown={stopQuestionEvent}
-          />
+      <div className={styles.questionRowMain}>
+        <div className={styles.questionBody}>
+          <div className={styles.questionTextWrap}>
+            {question.required ? <span className={styles.required}>*</span> : null}
+            <QuestionRichTextField
+              value={question.text}
+              onChange={(text) => onQuestionTextChange(sectionId, question.id, text)}
+              ariaLabel="Question text"
+              placeholder="Enter question text"
+              onPointerDown={stopQuestionEvent}
+            />
+          </div>
+          <ul className={styles.options}>
+            {question.options.map((option) => (
+              <li key={option.id} className={styles.optionItem}>
+                <input
+                  type="radio"
+                  className={styles.optionRadio}
+                  name={question.id}
+                  disabled
+                  aria-label={`${plainTextFromRichValue(option.label)} radio`}
+                />
+                <QuestionRichTextField
+                  variant="option"
+                  value={option.label}
+                  onChange={(label) =>
+                    onOptionLabelChange(sectionId, question.id, option.id, label)
+                  }
+                  ariaLabel="Answer option"
+                  placeholder="Option"
+                  onPointerDown={stopQuestionEvent}
+                />
+                {option.logicLabel ? (
+                  <span className={styles.logicTag}>
+                    <span className="wm-call-split" aria-hidden />
+                    {option.logicLabel}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul className={styles.options}>
-          {question.options.map((option) => (
-            <li key={option.id} className={styles.optionItem}>
-              <input
-                type="radio"
-                className={styles.optionRadio}
-                name={question.id}
-                disabled
-                aria-label={`${plainTextFromRichValue(option.label)} radio`}
-              />
-              <QuestionRichTextField
-                variant="option"
-                value={option.label}
-                onChange={(label) =>
-                  onOptionLabelChange(sectionId, question.id, option.id, label)
-                }
-                ariaLabel="Answer option"
-                placeholder="Option"
-                onPointerDown={stopQuestionEvent}
-              />
-              {option.logicLabel ? (
-                <span className={styles.logicTag}>
-                  <span className="wm-call-split" aria-hidden />
-                  {option.logicLabel}
-                </span>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+        <QuestionWorkspaceActions
+          question={question}
+          onAction={onAction}
+          onOpenLogic={onOpenLogic}
+          onOpenSettings={onOpenSettings}
+          onMenuAction={onMenuAction}
+          className={styles.questionActions}
+          menuBtnClassName={styles.menuBtn}
+        />
       </div>
-      <QuestionWorkspaceActions
-        question={question}
-        onAction={onAction}
-        onOpenLogic={onOpenLogic}
-        onOpenSettings={onOpenSettings}
-        onMenuAction={onMenuAction}
-        menuBtnClassName={styles.menuBtn}
+      <QuestionWorkspaceFooter
+        showHideOptionsApplied={showHideOptionsApplied}
+        className={styles.questionRowFooter}
       />
     </article>
   );
@@ -348,6 +363,7 @@ function QuestionRow({
 function SelectManyQuestionRow({
   question,
   sectionId,
+  showHideOptionsApplied,
   onAction,
   onOpenLogic,
   onOpenSettings,
@@ -359,6 +375,7 @@ function SelectManyQuestionRow({
 }: {
   question: SurveyQuestion;
   sectionId: string;
+  showHideOptionsApplied: boolean;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -450,13 +467,10 @@ function SelectManyQuestionRow({
             </button>
           </div>
         </div>
-        <div
+        <QuestionWorkspaceFooter
+          showHideOptionsApplied={showHideOptionsApplied}
           className={styles.selectManyFooter}
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <span className={`wm-check-circle ${styles.selectManyFooterIcon}`} aria-hidden />
-        </div>
+        />
       </div>
     </article>
   );
@@ -464,7 +478,12 @@ function SelectManyQuestionRow({
 
 export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   const { showToast } = useWuShowToast();
-  const { setWorkspaceSections, registerRemoveQuestions } = useSurveyWorkspaceSections();
+  const {
+    setWorkspaceSections,
+    setWorkspaceLogic,
+    registerRemoveQuestions,
+    registerClearShowHideLogic,
+  } = useSurveyWorkspaceSections();
   const [sections, setSections] = useState<SurveySection[]>(() => cloneSections(detail.sections));
   const [selectedQuestionKey, setSelectedQuestionKey] = useState<string | null>(null);
   const [bulkEditTarget, setBulkEditTarget] = useState<{
@@ -481,6 +500,9 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   } | null>(null);
   const [questionSettingsByKey, setQuestionSettingsByKey] = useState<
     Record<string, QuestionSettings>
+  >({});
+  const [logicByQuestionKey, setLogicByQuestionKey] = useState<
+    Record<string, QuestionLogicState>
   >({});
   const [multiPointSettingsByKey, setMultiPointSettingsByKey] = useState<
     Record<string, MultiPointScalesSettings>
@@ -510,6 +532,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     setSettingsTarget(null);
     setLogicTarget(null);
     setQuestionSettingsByKey({});
+    setLogicByQuestionKey({});
     setMultiPointSettingsByKey({});
     setBulkEditMatrixTarget(null);
     setDeleteQuestionTarget(null);
@@ -518,6 +541,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   useEffect(() => {
     setWorkspaceSections(sections);
   }, [sections, setWorkspaceSections]);
+
+  useEffect(() => {
+    setWorkspaceLogic(logicByQuestionKey);
+  }, [logicByQuestionKey, setWorkspaceLogic]);
 
   const removeQuestionsByTarget = useCallback(
     (targets: SurveyQuestionTarget[]) => {
@@ -551,6 +578,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       setLogicTarget((prev) =>
         prev && targetKeys.has(`${prev.sectionId}:${prev.questionId}`) ? null : prev
       );
+      setLogicByQuestionKey((prev) => {
+        const next = { ...prev };
+        for (const key of targetKeys) {
+          delete next[key];
+        }
+        return next;
+      });
       setBulkEditTarget((prev) =>
         prev && targetKeys.has(`${prev.sectionId}:${prev.questionId}`) ? null : prev
       );
@@ -564,10 +598,31 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     []
   );
 
+  const clearShowHideLogicByTarget = useCallback((targets: SurveyQuestionTarget[]) => {
+    if (targets.length === 0) return;
+
+    const targetKeys = new Set(
+      targets.map((target) => `${target.sectionId}:${target.questionId}`)
+    );
+
+    setLogicByQuestionKey((prev) => {
+      const next = { ...prev };
+      for (const key of targetKeys) {
+        delete next[key];
+      }
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     registerRemoveQuestions(removeQuestionsByTarget);
     return () => registerRemoveQuestions(null);
   }, [registerRemoveQuestions, removeQuestionsByTarget]);
+
+  useEffect(() => {
+    registerClearShowHideLogic(clearShowHideLogicByTarget);
+    return () => registerClearShowHideLogic(null);
+  }, [registerClearShowHideLogic, clearShowHideLogicByTarget]);
 
   useEffect(() => {
     const pending = pendingScrollQuestionRef.current;
@@ -713,6 +768,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         ?.questions.find((q) => q.id === logicTarget.questionId)
     : undefined;
 
+  const logicQuestionKey = logicTarget
+    ? `${logicTarget.sectionId}:${logicTarget.questionId}`
+    : null;
+
   const allQuestions = useMemo(
     () => sections.flatMap((section) => section.questions),
     [sections]
@@ -731,6 +790,24 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   const handleOpenLogic = useCallback((sectionId: string, questionId: string) => {
     setLogicTarget({ sectionId, questionId });
   }, []);
+
+  const getQuestionLogic = useCallback(
+    (questionKey: string, question: SurveyQuestion): QuestionLogicState =>
+      logicByQuestionKey[questionKey] ??
+      createDefaultQuestionLogicState(question.options.map((option) => option.id)),
+    [logicByQuestionKey]
+  );
+
+  const handleLogicSave = useCallback(
+    (sectionId: string, questionId: string, state: QuestionLogicState) => {
+      const questionKey = `${sectionId}:${questionId}`;
+      setLogicByQuestionKey((prev) => ({
+        ...prev,
+        [questionKey]: state,
+      }));
+    },
+    []
+  );
 
   const handleOpenSettings = useCallback((sectionId: string, questionId: string) => {
     const questionKey = `${sectionId}:${questionId}`;
@@ -1004,6 +1081,11 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     setLogicTarget((prev) =>
       prev?.sectionId === sectionId && prev.questionId === questionId ? null : prev
     );
+    setLogicByQuestionKey((prev) => {
+      const next = { ...prev };
+      delete next[questionKey];
+      return next;
+    });
     setDeleteQuestionTarget(null);
     toast('Question deleted');
   }, [deleteQuestionTarget, selectedQuestionKey, settingsTarget, toast]);
@@ -1205,6 +1287,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const isNps = isNpsQuestion(question);
                     const isVanWestendorp = isVanWestendorpQuestion(question);
                     const multiPointSettings = getMultiPointSettings(questionKey);
+                    const savedLogic = logicByQuestionKey[questionKey];
+                    const showHideOptionsApplied =
+                      savedLogic != null &&
+                      isShowHideOptionsLogicApplied(
+                        savedLogic,
+                        question.options.map((option) => option.id)
+                      );
                     return (
                       <Fragment key={question.id}>
                         <div
@@ -1235,6 +1324,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                               <NpsQuestionRow
                                 question={question}
                                 sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -1251,6 +1341,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                               <VanWestendorpQuestionRow
                                 question={question}
                                 sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -1269,6 +1360,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 matrix={question.matrix}
                                 answerType={multiPointSettings.answerType}
                                 sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -1303,6 +1395,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                               <SelectManyQuestionRow
                                 question={question}
                                 sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -1322,6 +1415,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                               <QuestionRow
                                 question={question}
                                 sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -1399,7 +1493,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         )
       ) : null}
 
-      {logicQuestion ? (
+      {logicQuestion && logicQuestionKey && logicTarget ? (
         <QuestionLogicModal
           open={logicTarget !== null}
           onOpenChange={(open) => {
@@ -1408,6 +1502,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           question={logicQuestion}
           allQuestions={allQuestions}
           surveyId={detail.survey.id}
+          initialState={getQuestionLogic(logicQuestionKey, logicQuestion)}
+          onSave={(state) =>
+            handleLogicSave(logicTarget.sectionId, logicTarget.questionId, state)
+          }
         />
       ) : null}
 

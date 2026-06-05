@@ -9,6 +9,7 @@ import {
 } from '@/components/surveys/QuestionRichTextField';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
+import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
 import styles from './MultiPointScalesQuestionRow.module.css';
 
 function stopQuestionEvent(event: SyntheticEvent): void {
@@ -20,6 +21,7 @@ export interface MultiPointScalesQuestionRowProps {
   matrix: SurveyMatrix;
   answerType: MultiPointAnswerType;
   sectionId: string;
+  showHideOptionsApplied?: boolean;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -53,6 +55,7 @@ export function MultiPointScalesQuestionRow({
   matrix,
   answerType,
   sectionId,
+  showHideOptionsApplied = false,
   onAction,
   onMenuAction,
   onOpenLogic,
@@ -209,6 +212,10 @@ export function MultiPointScalesQuestionRow({
             </div>
           </div>
         </div>
+        <QuestionWorkspaceFooter
+          showHideOptionsApplied={showHideOptionsApplied}
+          className={styles.footer}
+        />
       </div>
     </article>
   );

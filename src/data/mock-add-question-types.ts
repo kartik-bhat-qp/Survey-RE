@@ -1,6 +1,10 @@
 import type { SurveyFooterBrand } from '@/lib/survey-suite-footer-brand';
 import type { SurveySection } from '@/data/mock-survey-detail';
 import { resolveAddQuestionTypeId } from '@/data/mock-survey-detail';
+import {
+  isShowHideOptionsLogicApplied,
+  type QuestionLogicState,
+} from '@/data/mock-question-logic';
 
 export type QuestionTypeTier = 'basic' | 'advanced';
 
@@ -269,6 +273,10 @@ export type SurveyPlanLicense = 'essentials' | 'research' | 'advanced';
 
 export type QuestionLicenseRequirement = 'advanced' | 'research';
 
+export type SurveyLicenseConflictKind = 'question-type' | 'show-hide-logic';
+
+export const SHOW_HIDE_OPTIONS_LOGIC_LABEL = 'Show/Hide Options';
+
 export interface SurveyLicenseConflict {
   sectionId: string;
   questionId: string;
@@ -276,6 +284,7 @@ export interface SurveyLicenseConflict {
   typeLabel: string;
   requiredLicense: QuestionLicenseRequirement;
   requiredLicenseLabel: string;
+  conflictKind: SurveyLicenseConflictKind;
 }
 
 const LICENSE_RANK: Record<SurveyPlanLicense, number> = {
@@ -322,26 +331,48 @@ export function getAddQuestionTypeLabel(typeId: string): string {
 
 export function collectSurveyLicenseConflicts(
   sections: SurveySection[],
-  userLicense: SurveyPlanLicense
+  userLicense: SurveyPlanLicense,
+  logicByQuestionKey: Record<string, QuestionLogicState> = {}
 ): SurveyLicenseConflict[] {
   const conflicts: SurveyLicenseConflict[] = [];
 
   for (const section of sections) {
     for (const question of section.questions) {
       const typeId = resolveAddQuestionTypeId(question);
-      if (!typeId) continue;
+      if (typeId) {
+        const required = getQuestionLicenseRequirement(typeId);
+        if (required && !isLicenseSufficient(userLicense, required)) {
+          conflicts.push({
+            sectionId: section.id,
+            questionId: question.id,
+            questionCode: question.code,
+            typeLabel: getAddQuestionTypeLabel(typeId),
+            requiredLicense: required,
+            requiredLicenseLabel: getLicenseRequirementLabel(required),
+            conflictKind: 'question-type',
+          });
+        }
+      }
 
-      const required = getQuestionLicenseRequirement(typeId);
-      if (!required || isLicenseSufficient(userLicense, required)) continue;
-
-      conflicts.push({
-        sectionId: section.id,
-        questionId: question.id,
-        questionCode: question.code,
-        typeLabel: getAddQuestionTypeLabel(typeId),
-        requiredLicense: required,
-        requiredLicenseLabel: getLicenseRequirementLabel(required),
-      });
+      const questionKey = `${section.id}:${question.id}`;
+      const savedLogic = logicByQuestionKey[questionKey];
+      const optionIds = question.options.map((option) => option.id);
+      if (
+        savedLogic &&
+        optionIds.length > 0 &&
+        isShowHideOptionsLogicApplied(savedLogic, optionIds) &&
+        !isLicenseSufficient(userLicense, 'advanced')
+      ) {
+        conflicts.push({
+          sectionId: section.id,
+          questionId: question.id,
+          questionCode: question.code,
+          typeLabel: SHOW_HIDE_OPTIONS_LOGIC_LABEL,
+          requiredLicense: 'advanced',
+          requiredLicenseLabel: getLicenseRequirementLabel('advanced'),
+          conflictKind: 'show-hide-logic',
+        });
+      }
     }
   }
 

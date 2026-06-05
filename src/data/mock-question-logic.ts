@@ -128,6 +128,16 @@ export function createDefaultShowHideOptionsState(): ShowHideOptionsState {
   };
 }
 
+export function isShowHideOptionsLogicApplied(
+  state: QuestionLogicState,
+  optionIds: string[]
+): boolean {
+  return (
+    state.logicType === 'show-hide-options' &&
+    isShowHideOptionsLogicComplete(state.showHideOptions, optionIds)
+  );
+}
+
 export function isShowHideOptionsLogicComplete(
   state: ShowHideOptionsState,
   optionIds: string[]

@@ -205,3 +205,11 @@
 .bulkEditLink:hover {
   text-decoration: underline;
 }
+
+.footer {
+  align-items: center;
+  background: transparent;
+  border-top: none;
+  display: flex;
+  padding: 0.5rem 1rem 0.75rem;
+}

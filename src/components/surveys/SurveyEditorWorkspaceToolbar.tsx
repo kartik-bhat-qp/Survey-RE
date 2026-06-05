@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { NavLink } from '@/components/surveys/NavLink';
 import {
   PublishLicenseConflictModal,
@@ -52,24 +53,27 @@ export function SurveyEditorWorkspaceToolbar({
   const pathname = usePathname() ?? '';
   const activeTool = getActiveTool(pathname, surveyId);
   const footerBrand = useSurveyFooterBrand();
-  const { sections, removeQuestions } = useSurveyWorkspaceSections();
+  const { sections, logicByQuestionKey, removeQuestions, clearShowHideLogic } =
+    useSurveyWorkspaceSections();
   const [mode, setMode] = useState<PublishMode>('draft');
   const [licenseModalOpen, setLicenseModalOpen] = useState(false);
   const [licenseModalView, setLicenseModalView] =
     useState<PublishLicenseModalView>('conflicts');
   const [licenseConflicts, setLicenseConflicts] = useState<SurveyLicenseConflict[]>([]);
+  const [draftConfirmOpen, setDraftConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (!licenseModalOpen || licenseModalView !== 'conflicts') return;
     const nextConflicts = collectSurveyLicenseConflicts(
       sections,
-      getUserPlanLicense(footerBrand)
+      getUserPlanLicense(footerBrand),
+      logicByQuestionKey
     );
     setLicenseConflicts(nextConflicts);
     if (nextConflicts.length === 0) {
       setLicenseModalView('publish-confirm');
     }
-  }, [sections, licenseModalOpen, licenseModalView, footerBrand]);
+  }, [sections, logicByQuestionKey, licenseModalOpen, licenseModalView, footerBrand]);
 
   const handleLicenseModalOpenChange = useCallback((open: boolean) => {
     setLicenseModalOpen(open);
@@ -87,15 +91,24 @@ export function SurveyEditorWorkspaceToolbar({
 
   const handleDeleteLicensedQuestion = useCallback(
     (conflict: SurveyLicenseConflict) => {
-      removeQuestions([
-        { sectionId: conflict.sectionId, questionId: conflict.questionId },
-      ]);
+      const target = { sectionId: conflict.sectionId, questionId: conflict.questionId };
+
+      if (conflict.conflictKind === 'show-hide-logic') {
+        clearShowHideLogic([target]);
+        showToast({
+          message: 'Show/Hide Options logic removed',
+          variant: 'success',
+        });
+        return;
+      }
+
+      removeQuestions([target]);
       showToast({
         message: `${conflict.typeLabel} question deleted`,
         variant: 'success',
       });
     },
-    [removeQuestions, showToast]
+    [clearShowHideLogic, removeQuestions, showToast]
   );
 
   const handleUpgradeLicense = useCallback(() => {
@@ -103,11 +116,19 @@ export function SurveyEditorWorkspaceToolbar({
     showToast({ message: 'Upgrade options opened', variant: 'success' });
   }, [showToast]);
 
+  const handleConfirmDraft = useCallback(() => {
+    setMode('draft');
+    showToast({ message: 'Switched to Draft', variant: 'success' });
+  }, [showToast]);
+
   function selectMode(next: PublishMode) {
+    if (next === mode) return;
+
     if (next === 'publish') {
       const conflicts = collectSurveyLicenseConflicts(
         sections,
-        getUserPlanLicense(footerBrand)
+        getUserPlanLicense(footerBrand),
+        logicByQuestionKey
       );
       if (conflicts.length > 0) {
         setLicenseConflicts(conflicts);
@@ -115,13 +136,14 @@ export function SurveyEditorWorkspaceToolbar({
         setLicenseModalOpen(true);
         return;
       }
+
+      setLicenseConflicts([]);
+      setLicenseModalView('publish-confirm');
+      setLicenseModalOpen(true);
+      return;
     }
 
-    setMode(next);
-    showToast({
-      message: next === 'draft' ? 'Switched to Draft' : 'Survey published',
-      variant: 'success',
-    });
+    setDraftConfirmOpen(true);
   }
 
   const handleToolClick = useCallback(
@@ -216,6 +238,14 @@ export function SurveyEditorWorkspaceToolbar({
         onDeleteQuestion={handleDeleteLicensedQuestion}
         onUpgradeLicense={handleUpgradeLicense}
         onConfirmPublish={handleConfirmPublish}
+      />
+      <ConfirmModal
+        open={draftConfirmOpen}
+        onOpenChange={setDraftConfirmOpen}
+        title="Switch to draft"
+        description="Would you like to switch your survey to draft? Please note that data collection will be paused when the survey is in draft mode."
+        confirmLabel="Draft"
+        onConfirm={handleConfirmDraft}
       />
     </>
   );

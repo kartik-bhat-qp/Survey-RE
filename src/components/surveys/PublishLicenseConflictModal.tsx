@@ -44,7 +44,10 @@ export function PublishLicenseConflictModal({
       <WuModal open onOpenChange={onOpenChange} variant="action" size="sm">
         <WuModalHeader>Publish survey</WuModalHeader>
         <WuModalContent>
-          <p className={styles.confirmMessage}>Would you like to publish your survey?</p>
+          <p className={styles.confirmMessage}>
+            Would you like to publish your survey? Once the survey is published, you will not be
+            able to make any structural changes to the survey.
+          </p>
         </WuModalContent>
         <WuModalFooter>
           <WuModalClose variant="secondary">Cancel</WuModalClose>
@@ -65,7 +68,7 @@ export function PublishLicenseConflictModal({
         <ul className={styles.list}>
           {conflicts.map((conflict) => (
             <li
-              key={`${conflict.sectionId}-${conflict.questionId}`}
+              key={`${conflict.sectionId}-${conflict.questionId}-${conflict.conflictKind}`}
               className={styles.item}
             >
               <div className={styles.itemBody}>
@@ -81,7 +84,11 @@ export function PublishLicenseConflictModal({
                 size="sm"
                 variant="iconOnly"
                 className={styles.deleteBtn}
-                aria-label={`Delete ${conflict.typeLabel} question`}
+                aria-label={
+                  conflict.conflictKind === 'show-hide-logic'
+                    ? `Remove ${conflict.typeLabel} logic`
+                    : `Delete ${conflict.typeLabel} question`
+                }
                 Icon={<span className="wm-delete" />}
                 onClick={() => onDeleteQuestion(conflict)}
               />

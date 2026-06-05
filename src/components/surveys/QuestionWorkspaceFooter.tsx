@@ -1,0 +1,31 @@
+'use client';
+
+import type { PointerEvent } from 'react';
+import { ShowHideOptionsAppliedIcon } from '@/components/surveys/ShowHideOptionsAppliedIcon';
+import styles from './QuestionWorkspaceFooter.module.css';
+
+interface QuestionWorkspaceFooterProps {
+  showHideOptionsApplied?: boolean;
+  className?: string;
+  onPointerDown?: (event: PointerEvent<HTMLDivElement>) => void;
+}
+
+export function QuestionWorkspaceFooter({
+  showHideOptionsApplied = false,
+  className,
+  onPointerDown,
+}: QuestionWorkspaceFooterProps) {
+  const footerClassName = [styles.footer, className].filter(Boolean).join(' ');
+
+  return (
+    <div
+      className={footerClassName}
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()}
+      onPointerDown={onPointerDown}
+    >
+      <span className={`wm-check-circle ${styles.statusIcon}`} aria-hidden />
+      {showHideOptionsApplied ? <ShowHideOptionsAppliedIcon /> : null}
+    </div>
+  );
+}

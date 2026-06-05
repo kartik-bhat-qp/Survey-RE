@@ -6,6 +6,7 @@ import { createDefaultVanWestendorpData } from '@/data/mock-survey-detail';
 import { VanWestendorpQuestionPreview } from '@/components/surveys/VanWestendorpQuestionPreview';
 import { QuestionRichTextField } from '@/components/surveys/QuestionRichTextField';
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
+import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
 import styles from './VanWestendorpQuestionRow.module.css';
 
@@ -16,6 +17,7 @@ function stopQuestionEvent(event: SyntheticEvent): void {
 export interface VanWestendorpQuestionRowProps {
   question: SurveyQuestion;
   sectionId: string;
+  showHideOptionsApplied?: boolean;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -26,6 +28,7 @@ export interface VanWestendorpQuestionRowProps {
 export function VanWestendorpQuestionRow({
   question,
   sectionId,
+  showHideOptionsApplied = false,
   onAction,
   onMenuAction,
   onOpenLogic,
@@ -71,13 +74,10 @@ export function VanWestendorpQuestionRow({
             />
           </div>
         </div>
-        <div
+        <QuestionWorkspaceFooter
+          showHideOptionsApplied={showHideOptionsApplied}
           className={styles.footer}
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <span className={`wm-check-circle ${styles.footerIcon}`} aria-hidden />
-        </div>
+        />
       </div>
     </article>
   );

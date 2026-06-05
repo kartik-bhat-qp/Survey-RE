@@ -9,6 +9,7 @@ import {
 import { NpsQuestionPreview } from '@/components/surveys/NpsQuestionPreview';
 import { QuestionRichTextField } from '@/components/surveys/QuestionRichTextField';
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
+import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
 import styles from './NpsQuestionRow.module.css';
 
@@ -19,6 +20,7 @@ function stopQuestionEvent(event: SyntheticEvent): void {
 export interface NpsQuestionRowProps {
   question: SurveyQuestion;
   sectionId: string;
+  showHideOptionsApplied?: boolean;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -29,6 +31,7 @@ export interface NpsQuestionRowProps {
 export function NpsQuestionRow({
   question,
   sectionId,
+  showHideOptionsApplied = false,
   onAction,
   onMenuAction,
   onOpenLogic,
@@ -69,13 +72,10 @@ export function NpsQuestionRow({
             <NpsQuestionPreview data={npsData} />
           </div>
         </div>
-        <div
+        <QuestionWorkspaceFooter
+          showHideOptionsApplied={showHideOptionsApplied}
           className={styles.footer}
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <span className={`wm-check-circle ${styles.footerIcon}`} aria-hidden />
-        </div>
+        />
       </div>
     </article>
   );

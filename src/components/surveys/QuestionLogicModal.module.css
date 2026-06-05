@@ -155,6 +155,10 @@
   justify-content: flex-end !important;
 }
 
+.modalFooterWithReset {
+  justify-content: space-between !important;
+}
+
 @media (max-width: 767px) {
   .controlsRow {
     align-items: stretch;

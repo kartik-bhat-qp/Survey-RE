@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { SurveySection } from '@/data/mock-survey-detail';
+import type { QuestionLogicState } from '@/data/mock-question-logic';
 
 export interface SurveyQuestionTarget {
   sectionId: string;
@@ -17,12 +18,17 @@ export interface SurveyQuestionTarget {
 }
 
 type RemoveQuestionsHandler = (targets: SurveyQuestionTarget[]) => void;
+type ClearShowHideLogicHandler = (targets: SurveyQuestionTarget[]) => void;
 
 interface SurveyWorkspaceSectionsContextValue {
   sections: SurveySection[];
+  logicByQuestionKey: Record<string, QuestionLogicState>;
   setWorkspaceSections: (sections: SurveySection[]) => void;
+  setWorkspaceLogic: (logicByQuestionKey: Record<string, QuestionLogicState>) => void;
   registerRemoveQuestions: (handler: RemoveQuestionsHandler | null) => void;
+  registerClearShowHideLogic: (handler: ClearShowHideLogicHandler | null) => void;
   removeQuestions: (targets: SurveyQuestionTarget[]) => void;
+  clearShowHideLogic: (targets: SurveyQuestionTarget[]) => void;
 }
 
 const SurveyWorkspaceSectionsContext =
@@ -30,28 +36,57 @@ const SurveyWorkspaceSectionsContext =
 
 export function SurveyWorkspaceSectionsProvider({ children }: { children: ReactNode }) {
   const [sections, setSections] = useState<SurveySection[]>([]);
+  const [logicByQuestionKey, setLogicByQuestionKey] = useState<
+    Record<string, QuestionLogicState>
+  >({});
   const removeHandlerRef = useRef<RemoveQuestionsHandler | null>(null);
+  const clearShowHideLogicHandlerRef = useRef<ClearShowHideLogicHandler | null>(null);
 
   const setWorkspaceSections = useCallback((next: SurveySection[]) => {
     setSections(next);
+  }, []);
+
+  const setWorkspaceLogic = useCallback((next: Record<string, QuestionLogicState>) => {
+    setLogicByQuestionKey(next);
   }, []);
 
   const registerRemoveQuestions = useCallback((handler: RemoveQuestionsHandler | null) => {
     removeHandlerRef.current = handler;
   }, []);
 
+  const registerClearShowHideLogic = useCallback((handler: ClearShowHideLogicHandler | null) => {
+    clearShowHideLogicHandlerRef.current = handler;
+  }, []);
+
   const removeQuestions = useCallback((targets: SurveyQuestionTarget[]) => {
     removeHandlerRef.current?.(targets);
+  }, []);
+
+  const clearShowHideLogic = useCallback((targets: SurveyQuestionTarget[]) => {
+    clearShowHideLogicHandlerRef.current?.(targets);
   }, []);
 
   const value = useMemo(
     () => ({
       sections,
+      logicByQuestionKey,
       setWorkspaceSections,
+      setWorkspaceLogic,
       registerRemoveQuestions,
+      registerClearShowHideLogic,
       removeQuestions,
+      clearShowHideLogic,
     }),
-    [sections, setWorkspaceSections, registerRemoveQuestions, removeQuestions]
+    [
+      sections,
+      logicByQuestionKey,
+      setWorkspaceSections,
+      setWorkspaceLogic,
+      registerRemoveQuestions,
+      registerClearShowHideLogic,
+      removeQuestions,
+      clearShowHideLogic,
+    ]
   );
 
   return (
