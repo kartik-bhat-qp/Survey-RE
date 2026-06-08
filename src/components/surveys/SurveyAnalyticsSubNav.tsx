@@ -1,56 +1,79 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
-import { NavLink } from '@/components/surveys/NavLink';
+import {
+  SURVEY_ANALYTICS_NAV_TABS,
+  type SurveyAnalyticsNavTabId,
+} from '@/data/mock-survey-analytics';
 import styles from './SurveyAnalyticsSubNav.module.css';
 
-const WuSecondaryNavbar = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSecondaryNavbar })),
+const WuMenu = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
+  { ssr: false }
+);
+const WuMenuItem = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
   { ssr: false }
 );
 
-type AnalyticsTab = 'dashboard' | 'analysis' | 'net-insights' | 'manage-data';
-
-const ANALYTICS_TABS: { id: AnalyticsTab; label: string; icon: string }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'wm-dashboard' },
-  { id: 'analysis', label: 'Analysis', icon: 'wm-bar-chart' },
-  { id: 'net-insights', label: 'Net Insights', icon: 'wm-insights' },
-  { id: 'manage-data', label: 'Manage Data', icon: 'wm-storage' },
-];
-
 export function SurveyAnalyticsSubNav() {
   const { showToast } = useWuShowToast();
-  const [activeTab, setActiveTab] = useState<AnalyticsTab>('dashboard');
+  const [activeTab, setActiveTab] = useState<SurveyAnalyticsNavTabId>('dashboard');
 
-  const links = useMemo(
-    () =>
-      ANALYTICS_TABS.map((tab) => ({
-        link: (
-          <NavLink
-            href="#"
-            variant="secondary"
-            active={activeTab === tab.id}
-            onClick={(event) => {
-              event.preventDefault();
-              if (tab.id === 'dashboard') {
-                setActiveTab(tab.id);
-                return;
+  function handleMenuSelect(
+    tabId: SurveyAnalyticsNavTabId,
+    tabLabel: string,
+    itemLabel: string,
+    itemId: string
+  ) {
+    setActiveTab(tabId);
+    if (tabId === 'dashboard' && itemId === 'default') {
+      return;
+    }
+    showToast({ message: `${tabLabel}: ${itemLabel}`, variant: 'success' });
+  }
+
+  return (
+    <div className={styles.navWrap}>
+      <nav className={styles.nav} aria-label="Analytics views">
+        {SURVEY_ANALYTICS_NAV_TABS.map((tab) => {
+        const isActive = activeTab === tab.id;
+
+        return (
+          <div key={tab.id} className={styles.tabCell}>
+            <WuMenu
+              Trigger={
+                <button
+                  type="button"
+                  className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
+                  aria-haspopup="menu"
+                  aria-label={`${tab.label} menu`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  <span className={`${tab.icon} ${styles.tabIcon}`} aria-hidden />
+                  <span className={styles.tabLabelRow}>
+                    <span className={styles.tabLabel}>{tab.label}</span>
+                    <span className={`wm-arrow-drop-down ${styles.tabCaret}`} aria-hidden />
+                  </span>
+                </button>
               }
-              showToast({
-                message: `${tab.label} is not available in this prototype`,
-                variant: 'info',
-              });
-            }}
-          >
-            {tab.label}
-          </NavLink>
-        ),
-        imgOrIcon: <span className={tab.icon} aria-hidden />,
-      })),
-    [activeTab, showToast]
+              align="start"
+            >
+              {tab.menuItems.map((item) => (
+                <WuMenuItem
+                  key={item.id}
+                  onSelect={() => handleMenuSelect(tab.id, tab.label, item.label, item.id)}
+                >
+                  {item.label}
+                </WuMenuItem>
+              ))}
+            </WuMenu>
+          </div>
+        );
+        })}
+      </nav>
+    </div>
   );
-
-  return <WuSecondaryNavbar Links={links} className={styles.navbar} />;
 }

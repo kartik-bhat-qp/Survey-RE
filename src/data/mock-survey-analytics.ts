@@ -114,6 +114,63 @@ function questionCardFromSurveyQuestion(
   return buildQuestionCard(questionId, title, optionLabels, 1);
 }
 
+export type SurveyAnalyticsNavTabId = 'dashboard' | 'analysis' | 'text-analysis' | 'manage-data';
+
+export interface SurveyAnalyticsNavMenuItem {
+  id: string;
+  label: string;
+}
+
+export interface SurveyAnalyticsNavTab {
+  id: SurveyAnalyticsNavTabId;
+  label: string;
+  icon: string;
+  menuItems: SurveyAnalyticsNavMenuItem[];
+}
+
+export const SURVEY_ANALYTICS_NAV_TABS: SurveyAnalyticsNavTab[] = [
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: 'wm-show-chart',
+    menuItems: [
+      { id: 'default', label: 'Default dashboard' },
+      { id: 'new', label: 'New dashboard' },
+      { id: 'manage', label: 'Manage dashboards' },
+    ],
+  },
+  {
+    id: 'analysis',
+    label: 'Analysis',
+    icon: 'wm-analytics',
+    menuItems: [
+      { id: 'crosstab', label: 'Crosstab' },
+      { id: 'trend', label: 'Trend analysis' },
+      { id: 'comparison', label: 'Comparison' },
+    ],
+  },
+  {
+    id: 'text-analysis',
+    label: 'Text Analysis',
+    icon: 'wm-grid-view',
+    menuItems: [
+      { id: 'sentiment', label: 'Sentiment' },
+      { id: 'word-cloud', label: 'Word cloud' },
+      { id: 'topics', label: 'Topics' },
+    ],
+  },
+  {
+    id: 'manage-data',
+    label: 'Manage Data',
+    icon: 'wm-storage',
+    menuItems: [
+      { id: 'responses', label: 'View responses' },
+      { id: 'export', label: 'Export data' },
+      { id: 'filters', label: 'Response filters' },
+    ],
+  },
+];
+
 export function getSurveyAnalyticsDashboardData(detail: SurveyDetail): SurveyAnalyticsDashboardData {
   const questions: SurveyAnalyticsQuestionCard[] = [];
   const seen = new Set<string>();
