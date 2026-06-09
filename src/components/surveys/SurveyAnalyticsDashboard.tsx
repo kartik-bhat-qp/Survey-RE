@@ -4,8 +4,11 @@ import { useMemo } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { SurveyAnalyticsPieChart } from '@/components/surveys/analytics/SurveyAnalyticsPieChart';
 import { SurveyAnalyticsWorldMap } from '@/components/surveys/analytics/SurveyAnalyticsWorldMap';
+import { useSurveyAnalyticsView } from '@/components/surveys/SurveyAnalyticsViewContext';
+import { EmptyState } from '@/components/ui/EmptyState';
 import type { SurveyDetail } from '@/data/mock-survey-detail';
 import {
+  getAnalyticsViewLabel,
   getSurveyAnalyticsDashboardData,
   type SurveyAnalyticsQuestionCard,
 } from '@/data/mock-survey-analytics';
@@ -112,7 +115,10 @@ function QuestionAnalyticsCard({
 
 export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardProps) {
   const { showToast } = useWuShowToast();
+  const { activeTab, activeSubView } = useSurveyAnalyticsView();
   const data = useMemo(() => getSurveyAnalyticsDashboardData(detail), [detail]);
+  const activeViewLabel = getAnalyticsViewLabel(activeTab, activeSubView);
+  const showDashboardContent = activeTab === 'dashboard' && activeSubView === 'dashboard';
 
   function handleAction(label: string) {
     showToast({ message: label, variant: 'info' });
@@ -126,6 +132,34 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
     { label: 'Dropouts', value: data.summary.dropouts, highlight: false },
     { label: 'Average Time', value: data.summary.averageTimeLabel, highlight: false },
   ];
+
+  if (!showDashboardContent) {
+    return (
+      <div className={styles.shell}>
+        <aside className={styles.sidebar} aria-label="My dashboards">
+          <p className={styles.sidebarTitle}>My Dashboard</p>
+          <button
+            type="button"
+            className={styles.newDashboardBtn}
+            onClick={() => handleAction('New dashboard')}
+          >
+            <span aria-hidden>+</span> New Dashboard
+          </button>
+        </aside>
+
+        <div className={styles.main}>
+          <h1 className={styles.surveyTitle}>{detail.survey.name}</h1>
+          <div className={styles.placeholderCard}>
+            <EmptyState
+              icon="wm-dashboard"
+              title={activeViewLabel}
+              description={`${activeViewLabel} is not available in this prototype.`}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.shell}>
@@ -141,6 +175,7 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
       </aside>
 
       <div className={styles.main}>
+        <h1 className={styles.surveyTitle}>{detail.survey.name}</h1>
         <section className={styles.card} aria-labelledby="analytics-summary-title">
           <div className={styles.cardHeader}>
             <h2 id="analytics-summary-title" className={styles.cardTitle}>

@@ -1,5 +1,81 @@
 import type { SurveyDetail } from '@/data/mock-survey-detail';
 
+export type AnalyticsTabId = 'dashboard' | 'analysis' | 'net-insights' | 'manage-data';
+
+export interface AnalyticsNavItem {
+  id: string;
+  label: string;
+  requiresAdvancedLicense?: boolean;
+}
+
+export const ANALYTICS_TAB_CONFIG: Record<
+  AnalyticsTabId,
+  { label: string; icon: string; items: AnalyticsNavItem[] }
+> = {
+  dashboard: {
+    label: 'Dashboard',
+    icon: 'wm-dashboard',
+    items: [
+      { id: 'dashboard', label: 'Dashboard' },
+      { id: 'participant-statistics', label: 'Participant Statistics' },
+      { id: 'responses', label: 'Responses' },
+      { id: 'datapad', label: 'Datapad' },
+      { id: 'infographic', label: 'InfoGraphic', requiresAdvancedLicense: true },
+    ],
+  },
+  analysis: {
+    label: 'Analysis',
+    icon: 'wm-bar-chart',
+    items: [
+      { id: 'crosstab', label: 'Crosstab' },
+      { id: 'comparison-report', label: 'Comparison Report' },
+      { id: 'segmentation', label: 'Segmentation' },
+      { id: 'trend-analysis', label: 'Trend Analysis' },
+      {
+        id: 'statistical-analysis',
+        label: 'Statistical Analysis',
+        requiresAdvancedLicense: true,
+      },
+    ],
+  },
+  'net-insights': {
+    label: 'Text Analysis',
+    icon: 'wm-insights',
+    items: [
+      { id: 'text-analysis', label: 'Text Analysis' },
+      { id: 'topic-segmentation', label: 'Topic Segmentation' },
+      { id: 'sentiment-analysis', label: 'Sentiment Analysis' },
+      { id: 'word-cloud', label: 'Word Cloud' },
+      { id: 'open-ended-responses', label: 'Open-Ended Responses' },
+    ],
+  },
+  'manage-data': {
+    label: 'Manage Data',
+    icon: 'wm-storage',
+    items: [
+      { id: 'export-data', label: 'Export Data' },
+      { id: 'import-data', label: 'Import Data' },
+      { id: 'delete-responses', label: 'Delete Responses' },
+      { id: 'response-quality', label: 'Response Quality' },
+      { id: 'download-raw-data', label: 'Download Raw Data' },
+    ],
+  },
+};
+
+export const ANALYTICS_TAB_IDS = Object.keys(ANALYTICS_TAB_CONFIG) as AnalyticsTabId[];
+
+/** @deprecated Use ANALYTICS_TAB_CONFIG.dashboard.items */
+export const ANALYTICS_DASHBOARD_NAV_ITEMS = ANALYTICS_TAB_CONFIG.dashboard.items;
+
+export function getDefaultAnalyticsSubView(tabId: AnalyticsTabId): string {
+  return ANALYTICS_TAB_CONFIG[tabId].items[0]?.id ?? tabId;
+}
+
+export function getAnalyticsViewLabel(tabId: AnalyticsTabId, subViewId: string): string {
+  const item = ANALYTICS_TAB_CONFIG[tabId].items.find((entry) => entry.id === subViewId);
+  return item?.label ?? ANALYTICS_TAB_CONFIG[tabId].label;
+}
+
 export interface SurveyAnalyticsSummary {
   viewed: number;
   totalResponses: number;
@@ -113,63 +189,6 @@ function questionCardFromSurveyQuestion(
 ): SurveyAnalyticsQuestionCard {
   return buildQuestionCard(questionId, title, optionLabels, 1);
 }
-
-export type SurveyAnalyticsNavTabId = 'dashboard' | 'analysis' | 'text-analysis' | 'manage-data';
-
-export interface SurveyAnalyticsNavMenuItem {
-  id: string;
-  label: string;
-}
-
-export interface SurveyAnalyticsNavTab {
-  id: SurveyAnalyticsNavTabId;
-  label: string;
-  icon: string;
-  menuItems: SurveyAnalyticsNavMenuItem[];
-}
-
-export const SURVEY_ANALYTICS_NAV_TABS: SurveyAnalyticsNavTab[] = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: 'wm-show-chart',
-    menuItems: [
-      { id: 'default', label: 'Default dashboard' },
-      { id: 'new', label: 'New dashboard' },
-      { id: 'manage', label: 'Manage dashboards' },
-    ],
-  },
-  {
-    id: 'analysis',
-    label: 'Analysis',
-    icon: 'wm-analytics',
-    menuItems: [
-      { id: 'crosstab', label: 'Crosstab' },
-      { id: 'trend', label: 'Trend analysis' },
-      { id: 'comparison', label: 'Comparison' },
-    ],
-  },
-  {
-    id: 'text-analysis',
-    label: 'Text Analysis',
-    icon: 'wm-grid-view',
-    menuItems: [
-      { id: 'sentiment', label: 'Sentiment' },
-      { id: 'word-cloud', label: 'Word cloud' },
-      { id: 'topics', label: 'Topics' },
-    ],
-  },
-  {
-    id: 'manage-data',
-    label: 'Manage Data',
-    icon: 'wm-storage',
-    menuItems: [
-      { id: 'responses', label: 'View responses' },
-      { id: 'export', label: 'Export data' },
-      { id: 'filters', label: 'Response filters' },
-    ],
-  },
-];
 
 export function getSurveyAnalyticsDashboardData(detail: SurveyDetail): SurveyAnalyticsDashboardData {
   const questions: SurveyAnalyticsQuestionCard[] = [];

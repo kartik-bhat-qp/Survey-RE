@@ -1,79 +1,118 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { useSurveyAnalyticsView } from '@/components/surveys/SurveyAnalyticsViewContext';
 import {
-  SURVEY_ANALYTICS_NAV_TABS,
-  type SurveyAnalyticsNavTabId,
+  ANALYTICS_TAB_CONFIG,
+  ANALYTICS_TAB_IDS,
+  type AnalyticsNavItem,
+  type AnalyticsTabId,
 } from '@/data/mock-survey-analytics';
 import styles from './SurveyAnalyticsSubNav.module.css';
+
+const WuSecondaryNavbar = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSecondaryNavbar })),
+  { ssr: false }
+);
 
 const WuMenu = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
   { ssr: false }
 );
+
 const WuMenuItem = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
   { ssr: false }
 );
 
-export function SurveyAnalyticsSubNav() {
-  const { showToast } = useWuShowToast();
-  const [activeTab, setActiveTab] = useState<SurveyAnalyticsNavTabId>('dashboard');
+function AnalyticsTabNavMenu({
+  tabId,
+  label,
+  items,
+}: {
+  tabId: AnalyticsTabId;
+  label: string;
+  items: AnalyticsNavItem[];
+}) {
+  const { activeTab, activeSubView, setAnalyticsSelection } = useSurveyAnalyticsView();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const isActiveTab = activeTab === tabId;
 
-  function handleMenuSelect(
-    tabId: SurveyAnalyticsNavTabId,
-    tabLabel: string,
-    itemLabel: string,
-    itemId: string
-  ) {
-    setActiveTab(tabId);
-    if (tabId === 'dashboard' && itemId === 'default') {
-      return;
-    }
-    showToast({ message: `${tabLabel}: ${itemLabel}`, variant: 'success' });
+  function handleSelectView(subViewId: string) {
+    setAnalyticsSelection(tabId, subViewId);
+    setMenuOpen(false);
   }
 
   return (
-    <div className={styles.navWrap}>
-      <nav className={styles.nav} aria-label="Analytics views">
-        {SURVEY_ANALYTICS_NAV_TABS.map((tab) => {
-        const isActive = activeTab === tab.id;
-
-        return (
-          <div key={tab.id} className={styles.tabCell}>
-            <WuMenu
-              Trigger={
-                <button
-                  type="button"
-                  className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
-                  aria-haspopup="menu"
-                  aria-label={`${tab.label} menu`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
-                  <span className={`${tab.icon} ${styles.tabIcon}`} aria-hidden />
-                  <span className={styles.tabLabelRow}>
-                    <span className={styles.tabLabel}>{tab.label}</span>
-                    <span className={`wm-arrow-drop-down ${styles.tabCaret}`} aria-hidden />
-                  </span>
-                </button>
-              }
-              align="start"
-            >
-              {tab.menuItems.map((item) => (
-                <WuMenuItem
-                  key={item.id}
-                  onSelect={() => handleMenuSelect(tab.id, tab.label, item.label, item.id)}
-                >
-                  {item.label}
-                </WuMenuItem>
-              ))}
-            </WuMenu>
-          </div>
-        );
-        })}
-      </nav>
-    </div>
+    <WuMenu
+      open={menuOpen}
+      onOpenChange={setMenuOpen}
+      Trigger={
+        <button
+          type="button"
+          className={`${styles.tabTrigger} ${styles.tabNavGrid} ${
+            isActiveTab ? 'wu-secondary-nav-active-link' : ''
+          }`}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+        >
+          <span className={styles.tabGridSpacer} aria-hidden />
+          <span className={styles.tabLabel}>{label}</span>
+          <span className={`wm-arrow-drop-down ${styles.tabChevron}`} aria-hidden />
+        </button>
+      }
+      align="start"
+      className={styles.tabMenu}
+    >
+      {items.map((item) => (
+        <WuMenuItem
+          key={item.id}
+          className={
+            isActiveTab && activeSubView === item.id
+              ? styles.tabMenuItemActive
+              : styles.tabMenuItem
+          }
+          onSelect={() => handleSelectView(item.id)}
+        >
+          <span className={styles.tabMenuItemContent}>
+            <span>{item.label}</span>
+            {item.requiresAdvancedLicense ? (
+              <span className={styles.advancedBadge} aria-label="Advanced license required">
+                <span className="wm-science" aria-hidden />
+              </span>
+            ) : null}
+          </span>
+        </WuMenuItem>
+      ))}
+    </WuMenu>
   );
+}
+
+export function SurveyAnalyticsSubNav() {
+  const links = useMemo(
+    () =>
+      ANALYTICS_TAB_IDS.map((tabId) => {
+        const tab = ANALYTICS_TAB_CONFIG[tabId];
+        return {
+          link: (
+            <div className={styles.tabLinkWrap}>
+              <AnalyticsTabNavMenu tabId={tabId} label={tab.label} items={tab.items} />
+            </div>
+          ),
+          imgOrIcon: (
+            <div className={styles.tabIconWrap}>
+              <div className={styles.tabNavGrid}>
+                <span className={styles.tabGridSpacer} aria-hidden />
+                <span className={`${tab.icon} ${styles.tabIcon}`} aria-hidden />
+                <span className={styles.tabGridSpacer} aria-hidden />
+              </div>
+            </div>
+          ),
+        };
+      }),
+    []
+  );
+
+  return <WuSecondaryNavbar Links={links} className={styles.navbar} />;
 }

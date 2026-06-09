@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { SurveyAnalyticsSubNav } from '@/components/surveys/SurveyAnalyticsSubNav';
+import { SurveyAnalyticsViewProvider } from '@/components/surveys/SurveyAnalyticsViewContext';
 import { SurveyEditorPhaseProvider, useSurveyEditorPhase } from '@/components/surveys/SurveyEditorPhaseContext';
 import { SurveyWorkspaceSectionsProvider } from '@/components/surveys/SurveyWorkspaceSectionsContext';
 import { SurveyEditorPhaseTabs } from '@/components/surveys/SurveyEditorPhaseTabs';
@@ -67,7 +68,9 @@ export default function SurveyEditorLayout({ children }: { children: React.React
   return (
     <SurveyEditorPhaseProvider>
       <SurveyWorkspaceSectionsProvider>
-        <SurveyEditorLayoutBody>{children}</SurveyEditorLayoutBody>
+        <SurveyAnalyticsViewProvider>
+          <SurveyEditorLayoutBody>{children}</SurveyEditorLayoutBody>
+        </SurveyAnalyticsViewProvider>
       </SurveyWorkspaceSectionsProvider>
     </SurveyEditorPhaseProvider>
   );

@@ -47,6 +47,7 @@
   display: flex;
   flex-shrink: 0;
   gap: 0.375rem;
+  padding-right: 0.75rem;
 }
 
 .statusToggle {
