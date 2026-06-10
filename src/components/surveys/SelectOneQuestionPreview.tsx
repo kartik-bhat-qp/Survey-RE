@@ -6,6 +6,7 @@ import { useSurveyPreviewPagination } from '@/components/surveys/useSurveyPrevie
 import {
   DEFAULT_QUESTION_SETTINGS,
   type AnswerDisplayOrder,
+  type RandomizeAnswerCount,
 } from '@/data/mock-question-settings';
 import type { SurveyQuestionInputKind } from '@/data/mock-survey-detail';
 import type { SurveyQuestionPreviewFollowUp } from '@/data/survey-question-preview-session';
@@ -22,9 +23,10 @@ export interface SelectOneQuestionPreviewProps {
   options: { id: string; label: string }[];
   inputKind?: SurveyQuestionInputKind;
   answerDisplayOrder?: AnswerDisplayOrder;
+  randomizeAnswerCount?: RandomizeAnswerCount;
+  alternateFlipReversed?: boolean;
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
   isFirstQuestion?: boolean;
-  priorPages?: SurveyQuestionPreviewFollowUp[][];
   samePageFollowUps?: SurveyQuestionPreviewFollowUp[];
   nextPages?: SurveyQuestionPreviewFollowUp[][];
   onDone?: () => void;
@@ -40,9 +42,10 @@ export function SelectOneQuestionPreview({
   options,
   inputKind = 'radio',
   answerDisplayOrder = DEFAULT_QUESTION_SETTINGS.answerDisplayOrder,
+  randomizeAnswerCount = DEFAULT_QUESTION_SETTINGS.randomizeAnswerCount,
+  alternateFlipReversed,
   showHideOptions = null,
   isFirstQuestion = false,
-  priorPages = [],
   samePageFollowUps = [],
   nextPages = [],
   onDone,
@@ -57,16 +60,19 @@ export function SelectOneQuestionPreview({
       inputKind,
       options,
       answerDisplayOrder,
+      randomizeAnswerCount,
+      alternateFlipReversed,
       showHideOptions,
     };
 
-    return [...priorPages, [anchorPage, ...samePageFollowUps], ...nextPages];
+    return [[anchorPage, ...samePageFollowUps], ...nextPages];
   }, [
+    alternateFlipReversed,
     answerDisplayOrder,
+    randomizeAnswerCount,
     inputKind,
     nextPages,
     options,
-    priorPages,
     questionCode,
     questionText,
     required,
@@ -74,7 +80,7 @@ export function SelectOneQuestionPreview({
     showHideOptions,
   ]);
 
-  const startsFromSurveyBeginning = priorPages.length > 0 || isFirstQuestion;
+  const startsFromSurveyBeginning = isFirstQuestion;
   const { pageIndex, getFooterLabel, handleFooterAction } = useSurveyPreviewPagination(
     pages.length,
     0

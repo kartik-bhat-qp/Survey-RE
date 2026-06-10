@@ -41,13 +41,22 @@ export function SurveyPreviewFollowUpQuestion({
     question.showHideOptions ?? null,
     surveyId
   );
+  const visibleOptionIdsKey = visibleOptions.map((option) => option.id).join('|');
   const displayOptions = useMemo(
     () =>
       orderAnswerOptions(
         visibleOptions,
-        question.answerDisplayOrder ?? DEFAULT_QUESTION_SETTINGS.answerDisplayOrder
+        question.answerDisplayOrder ?? DEFAULT_QUESTION_SETTINGS.answerDisplayOrder,
+        question.alternateFlipReversed ?? false,
+        question.randomizeAnswerCount ?? DEFAULT_QUESTION_SETTINGS.randomizeAnswerCount
       ),
-    [question.answerDisplayOrder, visibleOptions]
+    [
+      question.alternateFlipReversed,
+      question.answerDisplayOrder,
+      question.randomizeAnswerCount,
+      visibleOptionIdsKey,
+      visibleOptions,
+    ]
   );
 
   const [selectedMatrixColumnId, setSelectedMatrixColumnId] = useState<string | null>(null);

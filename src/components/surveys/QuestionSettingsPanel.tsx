@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { SurveyQuestion } from '@/data/mock-survey-detail';
 import {
   ANSWER_DISPLAY_ORDER_OPTIONS,
+  buildRandomizeAnswerCountOptions,
   getQuestionTypeLabel,
+  normalizeRandomizeAnswerCount,
   QUESTION_DISPLAY_OPTIONS,
   SCALE_TYPE_OPTIONS,
   VIDEO_OPTIONS,
@@ -14,6 +16,7 @@ import {
   type QuestionDisplayMode,
   type QuestionLayout,
   type QuestionSettings,
+  type RandomizeAnswerCount,
   type VideoOption,
 } from '@/data/mock-question-settings';
 import styles from './QuestionSettingsPanel.module.css';
@@ -97,6 +100,18 @@ export function QuestionSettingsPanel({
 
   const displayOrderValue =
     ANSWER_DISPLAY_ORDER_OPTIONS.find((o) => o.value === settings.answerDisplayOrder) ?? null;
+  const randomizeAnswerCountOptions = useMemo(
+    () => buildRandomizeAnswerCountOptions(question.options.length),
+    [question.options.length]
+  );
+  const normalizedRandomizeAnswerCount = normalizeRandomizeAnswerCount(
+    settings.randomizeAnswerCount,
+    question.options.length
+  );
+  const randomizeAnswerCountValue =
+    randomizeAnswerCountOptions.find((o) => o.value === normalizedRandomizeAnswerCount) ??
+    randomizeAnswerCountOptions[0] ??
+    null;
   const questionDisplayValue =
     QUESTION_DISPLAY_OPTIONS.find((o) => o.value === settings.questionDisplay) ?? null;
   const videoValue = VIDEO_OPTIONS.find((o) => o.value === settings.video) ?? null;
@@ -152,11 +167,32 @@ export function QuestionSettingsPanel({
               data={ANSWER_DISPLAY_ORDER_OPTIONS}
               accessorKey={{ value: 'value', label: 'label' }}
               value={displayOrderValue}
-              onSelect={(item) => patch({ answerDisplayOrder: (item as { value: AnswerDisplayOrder }).value })}
+              onSelect={(item) =>
+                patch({ answerDisplayOrder: (item as { value: AnswerDisplayOrder }).value })
+              }
               variant="outlined"
             />
           </div>
         </div>
+
+        {settings.answerDisplayOrder === 'random' ? (
+          <div className={styles.field}>
+            <span className={styles.fieldLabel}>Number of Answers to Randomize</span>
+            <div className={styles.selectWrap}>
+              <WuSelect
+                data={randomizeAnswerCountOptions}
+                accessorKey={{ value: 'value', label: 'label' }}
+                value={randomizeAnswerCountValue}
+                onSelect={(item) =>
+                  patch({
+                    randomizeAnswerCount: (item as { value: RandomizeAnswerCount }).value,
+                  })
+                }
+                variant="outlined"
+              />
+            </div>
+          </div>
+        ) : null}
 
         <div className={styles.field}>
           <div className={styles.toggleRow}>

@@ -6,6 +6,7 @@ import { useSurveyPreviewPagination } from '@/components/surveys/useSurveyPrevie
 import {
   DEFAULT_QUESTION_SETTINGS,
   type AnswerDisplayOrder,
+  type RandomizeAnswerCount,
 } from '@/data/mock-question-settings';
 import type { SurveyQuestionPreviewFollowUp } from '@/data/survey-question-preview-session';
 import type { ShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
@@ -20,8 +21,9 @@ export interface SelectManyQuestionPreviewProps {
   required?: boolean;
   options: { id: string; label: string }[];
   answerDisplayOrder?: AnswerDisplayOrder;
+  randomizeAnswerCount?: RandomizeAnswerCount;
+  alternateFlipReversed?: boolean;
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
-  priorPages?: SurveyQuestionPreviewFollowUp[][];
   samePageFollowUps?: SurveyQuestionPreviewFollowUp[];
   nextPages?: SurveyQuestionPreviewFollowUp[][];
   onDone?: () => void;
@@ -36,8 +38,9 @@ export function SelectManyQuestionPreview({
   required,
   options,
   answerDisplayOrder = DEFAULT_QUESTION_SETTINGS.answerDisplayOrder,
+  randomizeAnswerCount = DEFAULT_QUESTION_SETTINGS.randomizeAnswerCount,
+  alternateFlipReversed,
   showHideOptions = null,
-  priorPages = [],
   samePageFollowUps = [],
   nextPages = [],
   onDone,
@@ -52,15 +55,18 @@ export function SelectManyQuestionPreview({
       inputKind: 'checkbox',
       options,
       answerDisplayOrder,
+      randomizeAnswerCount,
+      alternateFlipReversed,
       showHideOptions,
     };
 
-    return [...priorPages, [anchorPage, ...samePageFollowUps], ...nextPages];
+    return [[anchorPage, ...samePageFollowUps], ...nextPages];
   }, [
+    alternateFlipReversed,
     answerDisplayOrder,
+    randomizeAnswerCount,
     nextPages,
     options,
-    priorPages,
     questionCode,
     questionText,
     required,
@@ -68,7 +74,6 @@ export function SelectManyQuestionPreview({
     showHideOptions,
   ]);
 
-  const startsFromSurveyBeginning = priorPages.length > 0;
   const { pageIndex, getFooterLabel, handleFooterAction } = useSurveyPreviewPagination(
     pages.length,
     0
@@ -109,7 +114,7 @@ export function SelectManyQuestionPreview({
               className={shellStyles.doneBtn}
               onClick={() => handleFooterAction(onDone)}
             >
-              {getFooterLabel(startsFromSurveyBeginning)}
+              {getFooterLabel(false)}
             </button>
           </div>
         </div>

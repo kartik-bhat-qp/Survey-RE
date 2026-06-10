@@ -8,9 +8,11 @@ import {
   type MultiPointScalesSettings,
 } from '@/data/mock-multi-point-settings';
 import {
-  DEFAULT_QUESTION_SETTINGS,
+  normalizeAnswerDisplayOrder,
+  normalizeRandomizeAnswerCount,
   type AnswerDisplayOrder,
   type QuestionSettings,
+  type RandomizeAnswerCount,
 } from '@/data/mock-question-settings';
 import type { ShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
 
@@ -23,6 +25,9 @@ export interface SurveyQuestionPreviewFollowUp {
   options: { id: string; label: string }[];
   matrix?: SurveyMatrix;
   answerDisplayOrder?: AnswerDisplayOrder;
+  randomizeAnswerCount?: RandomizeAnswerCount;
+  /** When answer display order is alternate-flip, whether this preview uses reversed order. */
+  alternateFlipReversed?: boolean;
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
 }
 
@@ -50,6 +55,8 @@ export interface SelectManyQuestionPreviewSession {
   required?: boolean;
   options: { id: string; label: string }[];
   answerDisplayOrder?: AnswerDisplayOrder;
+  randomizeAnswerCount?: RandomizeAnswerCount;
+  alternateFlipReversed?: boolean;
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
   priorPages?: SurveyQuestionPreviewFollowUp[][];
   samePageFollowUps?: SurveyQuestionPreviewFollowUp[];
@@ -64,6 +71,8 @@ export interface SelectOneQuestionPreviewSession {
   required?: boolean;
   options: { id: string; label: string }[];
   answerDisplayOrder?: AnswerDisplayOrder;
+  randomizeAnswerCount?: RandomizeAnswerCount;
+  alternateFlipReversed?: boolean;
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
   isFirstQuestion?: boolean;
   priorPages?: SurveyQuestionPreviewFollowUp[][];
@@ -131,9 +140,19 @@ export function readMultiPointQuestionPreviewSession(
 }
 
 function mergeOptionQuestionPreviewSettings(
-  settings?: Partial<Pick<QuestionSettings, 'answerDisplayOrder'>>
-): AnswerDisplayOrder {
-  return settings?.answerDisplayOrder ?? DEFAULT_QUESTION_SETTINGS.answerDisplayOrder;
+  settings?: Partial<Pick<QuestionSettings, 'answerDisplayOrder' | 'randomizeAnswerCount'>>,
+  optionCount = 0
+): {
+  answerDisplayOrder: AnswerDisplayOrder;
+  randomizeAnswerCount: RandomizeAnswerCount;
+} {
+  return {
+    answerDisplayOrder: normalizeAnswerDisplayOrder(settings?.answerDisplayOrder),
+    randomizeAnswerCount: normalizeRandomizeAnswerCount(
+      settings?.randomizeAnswerCount,
+      optionCount
+    ),
+  };
 }
 
 export function writeSelectManyQuestionPreviewSession(
@@ -144,9 +163,13 @@ export function writeSelectManyQuestionPreviewSession(
     selectManyPreviewStorageKey(payload.surveyId),
     JSON.stringify({
       ...payload,
-      answerDisplayOrder: mergeOptionQuestionPreviewSettings({
-        answerDisplayOrder: payload.answerDisplayOrder,
-      }),
+      ...mergeOptionQuestionPreviewSettings(
+        {
+          answerDisplayOrder: payload.answerDisplayOrder,
+          randomizeAnswerCount: payload.randomizeAnswerCount,
+        },
+        payload.options.length
+      ),
     })
   );
 }
@@ -161,9 +184,13 @@ export function readSelectManyQuestionPreviewSession(
     const parsed = JSON.parse(raw) as SelectManyQuestionPreviewSession;
     return {
       ...parsed,
-      answerDisplayOrder: mergeOptionQuestionPreviewSettings({
-        answerDisplayOrder: parsed.answerDisplayOrder,
-      }),
+      ...mergeOptionQuestionPreviewSettings(
+        {
+          answerDisplayOrder: parsed.answerDisplayOrder,
+          randomizeAnswerCount: parsed.randomizeAnswerCount,
+        },
+        parsed.options.length
+      ),
     };
   } catch {
     return null;
@@ -178,9 +205,13 @@ export function writeSelectOneQuestionPreviewSession(
     selectOnePreviewStorageKey(payload.surveyId),
     JSON.stringify({
       ...payload,
-      answerDisplayOrder: mergeOptionQuestionPreviewSettings({
-        answerDisplayOrder: payload.answerDisplayOrder,
-      }),
+      ...mergeOptionQuestionPreviewSettings(
+        {
+          answerDisplayOrder: payload.answerDisplayOrder,
+          randomizeAnswerCount: payload.randomizeAnswerCount,
+        },
+        payload.options.length
+      ),
     })
   );
 }
@@ -195,9 +226,13 @@ export function readSelectOneQuestionPreviewSession(
     const parsed = JSON.parse(raw) as SelectOneQuestionPreviewSession;
     return {
       ...parsed,
-      answerDisplayOrder: mergeOptionQuestionPreviewSettings({
-        answerDisplayOrder: parsed.answerDisplayOrder,
-      }),
+      ...mergeOptionQuestionPreviewSettings(
+        {
+          answerDisplayOrder: parsed.answerDisplayOrder,
+          randomizeAnswerCount: parsed.randomizeAnswerCount,
+        },
+        parsed.options.length
+      ),
     };
   } catch {
     return null;

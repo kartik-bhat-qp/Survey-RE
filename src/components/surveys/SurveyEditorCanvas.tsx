@@ -36,7 +36,10 @@ import {
   plainTextFromRichValue,
 } from '@/components/surveys/QuestionRichTextField';
 import {
+  getAndAdvanceAlternateFlipState,
   getDefaultSettingsForQuestion,
+  normalizeAnswerDisplayOrder,
+  normalizeRandomizeAnswerCount,
   type QuestionSettings,
 } from '@/data/mock-question-settings';
 import {
@@ -45,7 +48,7 @@ import {
   isCardsCarouselPreview,
   type MultiPointScalesSettings,
 } from '@/data/mock-multi-point-settings';
-import { collectPreviewPagesAfterQuestion, collectPreviewPagesBeforeQuestion, hasPageBreakAtSlot, getPageBreakSlotKey, showHideReferencesEarlierQuestions } from '@/data/survey-page-breaks';
+import { collectPreviewPagesAfterQuestion, hasPageBreakAtSlot, getPageBreakSlotKey } from '@/data/survey-page-breaks';
 import {
   isFirstSurveyQuestion,
   isSelectManyPreviewQuestion,
@@ -946,10 +949,17 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
 
   const getQuestionSettings = useCallback(
     (question: SurveyQuestion, questionKey: string): QuestionSettings => {
-      return (
+      const settings =
         questionSettingsByKey[questionKey] ??
-        getDefaultSettingsForQuestion(question.inputKind)
-      );
+        getDefaultSettingsForQuestion(question.inputKind);
+      return {
+        ...settings,
+        answerDisplayOrder: normalizeAnswerDisplayOrder(settings.answerDisplayOrder),
+        randomizeAnswerCount: normalizeRandomizeAnswerCount(
+          settings.randomizeAnswerCount,
+          question.options.length
+        ),
+      };
     },
     [questionSettingsByKey]
   );
@@ -964,10 +974,15 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       return {
         ...toQuestionPreviewFollowUp(followUpQuestion, questionSettings),
         answerDisplayOrder: questionSettings.answerDisplayOrder,
+        randomizeAnswerCount: questionSettings.randomizeAnswerCount,
+        alternateFlipReversed:
+          questionSettings.answerDisplayOrder === 'alternate-flip'
+            ? getAndAdvanceAlternateFlipState(detail.survey.id, followUpQuestion.code)
+            : undefined,
         showHideOptions: toShowHideOptionsPreviewConfig(questionLogic, optionIds),
       };
     },
-    [getQuestionLogic, getQuestionSettings]
+    [detail.survey.id, getQuestionLogic, getQuestionSettings]
   );
 
   const getMultiPointSettings = useCallback(
@@ -1126,21 +1141,6 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           const questionLogic = getQuestionLogic(questionKey, question);
           const optionIds = question.options.map((option) => option.id);
           const showHideOptions = toShowHideOptionsPreviewConfig(questionLogic, optionIds);
-          const includePriorPages = showHideReferencesEarlierQuestions(
-            showHideOptions,
-            detail.survey.id,
-            sections,
-            questionId
-          );
-          const priorPages = includePriorPages
-            ? collectPreviewPagesBeforeQuestion(
-                sections,
-                sectionId,
-                questionId,
-                pageBreakBySlotKey,
-                buildPreviewFollowUp
-              )
-            : [];
           const { samePageFollowUps, nextPages } = collectPreviewPagesAfterQuestion(
             sections,
             sectionId,
@@ -1161,8 +1161,12 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                 label: option.label,
               })),
               answerDisplayOrder: questionSettings.answerDisplayOrder,
+              randomizeAnswerCount: questionSettings.randomizeAnswerCount,
+              alternateFlipReversed:
+                questionSettings.answerDisplayOrder === 'alternate-flip'
+                  ? getAndAdvanceAlternateFlipState(detail.survey.id, question.code)
+                  : undefined,
               showHideOptions,
-              priorPages,
               samePageFollowUps,
               nextPages,
             });
@@ -1182,8 +1186,12 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                 label: option.label,
               })),
               answerDisplayOrder: questionSettings.answerDisplayOrder,
+              randomizeAnswerCount: questionSettings.randomizeAnswerCount,
+              alternateFlipReversed:
+                questionSettings.answerDisplayOrder === 'alternate-flip'
+                  ? getAndAdvanceAlternateFlipState(detail.survey.id, question.code)
+                  : undefined,
               showHideOptions,
-              priorPages,
               isFirstQuestion: isFirstSurveyQuestion(sections, sectionId, questionId),
               samePageFollowUps,
               nextPages,

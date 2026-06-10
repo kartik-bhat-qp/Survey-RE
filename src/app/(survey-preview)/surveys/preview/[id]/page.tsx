@@ -105,13 +105,14 @@ export default function SurveyQuestionPreviewPage() {
           <SelectManyQuestionPreview
             surveyId={selectManyPayload.surveyId}
             surveyTitle={selectManyPayload.surveyTitle}
-            questionCode={selectManyPayload.questionCode}
+            questionCode={selectManyPayload.questionCode ?? 'Q'}
             questionText={selectManyPayload.questionText}
             required={selectManyPayload.required}
             options={selectManyPayload.options}
             answerDisplayOrder={selectManyPayload.answerDisplayOrder}
+            randomizeAnswerCount={selectManyPayload.randomizeAnswerCount}
+            alternateFlipReversed={selectManyPayload.alternateFlipReversed}
             showHideOptions={selectManyPayload.showHideOptions ?? null}
-            priorPages={selectManyPayload.priorPages ?? []}
             samePageFollowUps={selectManyPayload.samePageFollowUps ?? []}
             nextPages={selectManyPayload.nextPages ?? []}
             onDone={() => window.close()}
@@ -141,14 +142,15 @@ export default function SurveyQuestionPreviewPage() {
           <SelectOneQuestionPreview
             surveyId={selectOnePayload.surveyId}
             surveyTitle={selectOnePayload.surveyTitle}
-            questionCode={selectOnePayload.questionCode}
+            questionCode={selectOnePayload.questionCode ?? 'Q'}
             questionText={selectOnePayload.questionText}
             required={selectOnePayload.required}
             options={selectOnePayload.options}
             answerDisplayOrder={selectOnePayload.answerDisplayOrder}
+            randomizeAnswerCount={selectOnePayload.randomizeAnswerCount}
+            alternateFlipReversed={selectOnePayload.alternateFlipReversed}
             showHideOptions={selectOnePayload.showHideOptions ?? null}
             isFirstQuestion={selectOnePayload.isFirstQuestion}
-            priorPages={selectOnePayload.priorPages ?? []}
             samePageFollowUps={selectOnePayload.samePageFollowUps ?? []}
             nextPages={selectOnePayload.nextPages ?? []}
             onDone={() => window.close()}
