@@ -9,10 +9,12 @@ import type {
 import { plainTextFromRichValue } from '@/components/surveys/QuestionRichTextField';
 import { isHtmlContent, toEditorHtml } from '@/components/surveys/rich-text-utils';
 import { SurveyPreviewFollowUpQuestion } from '@/components/surveys/SurveyPreviewFollowUpQuestion';
+import { useSurveyPreviewPagination } from '@/components/surveys/useSurveyPreviewPagination';
 import type { SurveyQuestionPreviewFollowUp } from '@/data/survey-question-preview-session';
 import styles from './MultiPointCardsCarouselPreview.module.css';
 
 export interface MultiPointCardsCarouselPreviewProps {
+  surveyId: number;
   surveyTitle: string;
   questionText: string;
   required?: boolean;
@@ -20,7 +22,8 @@ export interface MultiPointCardsCarouselPreviewProps {
   questionWidthPercent: number;
   answerType: MultiPointAnswerType;
   responseLayout?: CardsCarouselResponseLayout;
-  questionBelow?: SurveyQuestionPreviewFollowUp | null;
+  samePageFollowUps?: SurveyQuestionPreviewFollowUp[];
+  nextPages?: SurveyQuestionPreviewFollowUp[][];
   onDone?: () => void;
   onClose?: () => void;
 }
@@ -152,6 +155,7 @@ function CarouselSlide({
 }
 
 export function MultiPointCardsCarouselPreview({
+  surveyId,
   surveyTitle,
   questionText,
   required = false,
@@ -159,10 +163,14 @@ export function MultiPointCardsCarouselPreview({
   questionWidthPercent,
   answerType,
   responseLayout = 'vertical',
-  questionBelow = null,
+  samePageFollowUps = [],
+  nextPages = [],
   onDone,
   onClose,
 }: MultiPointCardsCarouselPreviewProps) {
+  const { pageIndex, getFooterLabel, handleFooterAction } = useSurveyPreviewPagination(
+    1 + nextPages.length
+  );
   const [activeRowIndex, setActiveRowIndex] = useState(0);
   const [selectionsByRowId, setSelectionsByRowId] = useState<Record<string, string>>({});
   const [slideDirection, setSlideDirection] = useState<SlideDirection>('next');
@@ -368,6 +376,10 @@ export function MultiPointCardsCarouselPreview({
     />
   );
 
+  const currentPageQuestions = pageIndex > 0 ? (nextPages[pageIndex - 1] ?? []) : [];
+  const currentPagePrimary = currentPageQuestions[0] ?? null;
+  const currentPageFollowUps = currentPageQuestions.slice(1);
+
   return (
     <div className={styles.shell}>
       <header className={styles.previewHeader}>
@@ -386,6 +398,8 @@ export function MultiPointCardsCarouselPreview({
         <div className={styles.questionContainer}>
           <p className={styles.requiredNote}>Questions marked with a * are required</p>
 
+          {pageIndex === 0 ? (
+            <>
           <h2 className={styles.questionTitle}>
             {required ? <span className={styles.requiredMark}>*</span> : null}
             <span>{plainTextFromRichValue(questionText)}</span>
@@ -450,11 +464,38 @@ export function MultiPointCardsCarouselPreview({
             )}
           </div>
 
-          {questionBelow ? <SurveyPreviewFollowUpQuestion question={questionBelow} /> : null}
+          {samePageFollowUps.map((question) => (
+            <SurveyPreviewFollowUpQuestion
+              key={question.code}
+              question={question}
+              surveyId={surveyId}
+            />
+          ))}
+            </>
+          ) : currentPagePrimary ? (
+            <>
+              <SurveyPreviewFollowUpQuestion
+                question={currentPagePrimary}
+                surveyId={surveyId}
+                showDivider={false}
+              />
+              {currentPageFollowUps.map((question) => (
+                <SurveyPreviewFollowUpQuestion
+                  key={question.code}
+                  question={question}
+                  surveyId={surveyId}
+                />
+              ))}
+            </>
+          ) : null}
 
           <div className={styles.previewFooter}>
-            <button type="button" className={styles.doneBtn} onClick={onDone}>
-              Done
+            <button
+              type="button"
+              className={styles.doneBtn}
+              onClick={() => handleFooterAction(onDone)}
+            >
+              {getFooterLabel(false)}
             </button>
           </div>
         </div>

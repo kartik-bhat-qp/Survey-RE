@@ -146,7 +146,7 @@ export function ShowHideOptionsLogicPanel({
         }}
       />
 
-      {!state.useLegacyMethod && hasUncoveredOptions ? (
+      {!state.useLegacyMethod ? (
         <div className={styles.uncoveredRow}>
           <span className={styles.uncoveredLabel}>
             For options which are not a part of any criteria
@@ -168,6 +168,11 @@ export function ShowHideOptionsLogicPanel({
               variant="outlined"
             />
           </div>
+          {!hasUncoveredOptions ? (
+            <span className={styles.uncoveredHint}>
+              All answer options are currently assigned to criteria.
+            </span>
+          ) : null}
         </div>
       ) : null}
 

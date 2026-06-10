@@ -194,6 +194,14 @@
   min-width: 10rem;
 }
 
+.uncoveredHint {
+  color: #94a3b8;
+  flex-basis: 100%;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
 .legacyToggleRow {
   border-top: 1px solid #eef2f6;
   margin-top: 0.25rem;

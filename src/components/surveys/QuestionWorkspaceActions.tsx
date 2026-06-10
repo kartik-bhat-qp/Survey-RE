@@ -19,6 +19,7 @@ export interface QuestionWorkspaceActionsProps {
   onAction: (label: string) => void;
   onOpenLogic: () => void;
   onOpenSettings: () => void;
+  onOpenValidation?: () => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   className?: string;
   menuBtnClassName?: string;
@@ -29,6 +30,7 @@ export function QuestionWorkspaceActions({
   onAction,
   onOpenLogic,
   onOpenSettings,
+  onOpenValidation,
   onMenuAction,
   className,
   menuBtnClassName,
@@ -56,7 +58,11 @@ export function QuestionWorkspaceActions({
             />
           </span>
         ) : null}
-        <button type="button" className={styles.actionLink} onClick={() => onAction('Validation')}>
+        <button
+          type="button"
+          className={styles.actionLink}
+          onClick={() => (onOpenValidation ? onOpenValidation() : onAction('Validation'))}
+        >
           Validation
         </button>
       </div>

@@ -91,7 +91,9 @@ export const UNCOVERED_OPTIONS_ACTION_OPTIONS: BranchTargetOption[] = [
   { value: 'hide', label: 'Hide options' },
 ];
 
-export function getCriteriaCoveredOptionIds(state: ShowHideOptionsState): Set<string> {
+export function getCriteriaCoveredOptionIds(state: {
+  criteria: ShowHideOptionsCriterion[];
+}): Set<string> {
   const ids = new Set<string>();
   for (const criterion of state.criteria) {
     for (const id of parseSelectedValues(criterion.targetOptionId)) {

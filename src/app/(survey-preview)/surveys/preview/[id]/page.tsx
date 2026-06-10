@@ -1,22 +1,39 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { MultiPointCardsCarouselPreview } from '@/components/surveys/MultiPointCardsCarouselPreview';
+import { SelectManyQuestionPreview } from '@/components/surveys/SelectManyQuestionPreview';
+import { SelectOneQuestionPreview } from '@/components/surveys/SelectOneQuestionPreview';
+import { SurveyPreviewAnswerProvider } from '@/components/surveys/SurveyPreviewAnswerContext';
 import { SurveyQuestionPreviewChrome } from '@/components/surveys/SurveyQuestionPreviewChrome';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { DEFAULT_MULTI_POINT_SETTINGS } from '@/data/mock-multi-point-settings';
 import {
   multiPointPreviewStorageKey,
   readMultiPointQuestionPreviewSession,
+  readSelectManyQuestionPreviewSession,
+  readSelectOneQuestionPreviewSession,
+  selectManyPreviewStorageKey,
+  selectOnePreviewStorageKey,
   type MultiPointQuestionPreviewSession,
+  type SelectManyQuestionPreviewSession,
+  type SelectOneQuestionPreviewSession,
+  type SurveyQuestionPreviewKind,
 } from '@/data/survey-question-preview-session';
 import styles from './SurveyQuestionPreviewPage.module.css';
 
 export default function SurveyQuestionPreviewPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const surveyId = Number(params.id);
-  const [payload, setPayload] = useState<MultiPointQuestionPreviewSession | null>(null);
+  const previewKind = (searchParams.get('kind') ?? 'multi-point') as SurveyQuestionPreviewKind;
+  const [multiPointPayload, setMultiPointPayload] =
+    useState<MultiPointQuestionPreviewSession | null>(null);
+  const [selectManyPayload, setSelectManyPayload] =
+    useState<SelectManyQuestionPreviewSession | null>(null);
+  const [selectOnePayload, setSelectOnePayload] =
+    useState<SelectOneQuestionPreviewSession | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -26,14 +43,32 @@ export default function SurveyQuestionPreviewPage() {
     }
 
     function loadPayload(): void {
-      setPayload(readMultiPointQuestionPreviewSession(surveyId));
+      if (previewKind === 'select-many') {
+        setSelectManyPayload(readSelectManyQuestionPreviewSession(surveyId));
+        setSelectOnePayload(null);
+        setMultiPointPayload(null);
+      } else if (previewKind === 'select-one') {
+        setSelectOnePayload(readSelectOneQuestionPreviewSession(surveyId));
+        setSelectManyPayload(null);
+        setMultiPointPayload(null);
+      } else {
+        setMultiPointPayload(readMultiPointQuestionPreviewSession(surveyId));
+        setSelectManyPayload(null);
+        setSelectOnePayload(null);
+      }
       setReady(true);
     }
 
     loadPayload();
 
     function onStorage(event: StorageEvent): void {
-      if (event.key === multiPointPreviewStorageKey(surveyId)) {
+      const key =
+        previewKind === 'select-many'
+          ? selectManyPreviewStorageKey(surveyId)
+          : previewKind === 'select-one'
+            ? selectOnePreviewStorageKey(surveyId)
+            : multiPointPreviewStorageKey(surveyId);
+      if (event.key === key) {
         loadPayload();
       }
     }
@@ -45,13 +80,86 @@ export default function SurveyQuestionPreviewPage() {
       window.removeEventListener('storage', onStorage);
       window.removeEventListener('focus', loadPayload);
     };
-  }, [surveyId]);
+  }, [previewKind, surveyId]);
 
   if (!ready) {
     return null;
   }
 
-  if (!payload) {
+  if (previewKind === 'select-many') {
+    if (!selectManyPayload) {
+      return (
+        <div className={styles.emptyWrap}>
+          <EmptyState
+            icon="wm-visibility"
+            title="No preview available"
+            description="Open preview from the question menu in the survey editor."
+          />
+        </div>
+      );
+    }
+
+    return (
+      <SurveyQuestionPreviewChrome onClose={() => window.close()}>
+        <SurveyPreviewAnswerProvider>
+          <SelectManyQuestionPreview
+            surveyId={selectManyPayload.surveyId}
+            surveyTitle={selectManyPayload.surveyTitle}
+            questionCode={selectManyPayload.questionCode}
+            questionText={selectManyPayload.questionText}
+            required={selectManyPayload.required}
+            options={selectManyPayload.options}
+            answerDisplayOrder={selectManyPayload.answerDisplayOrder}
+            showHideOptions={selectManyPayload.showHideOptions ?? null}
+            priorPages={selectManyPayload.priorPages ?? []}
+            samePageFollowUps={selectManyPayload.samePageFollowUps ?? []}
+            nextPages={selectManyPayload.nextPages ?? []}
+            onDone={() => window.close()}
+            onClose={() => window.close()}
+          />
+        </SurveyPreviewAnswerProvider>
+      </SurveyQuestionPreviewChrome>
+    );
+  }
+
+  if (previewKind === 'select-one') {
+    if (!selectOnePayload) {
+      return (
+        <div className={styles.emptyWrap}>
+          <EmptyState
+            icon="wm-visibility"
+            title="No preview available"
+            description="Open preview from the question menu in the survey editor."
+          />
+        </div>
+      );
+    }
+
+    return (
+      <SurveyQuestionPreviewChrome onClose={() => window.close()}>
+        <SurveyPreviewAnswerProvider>
+          <SelectOneQuestionPreview
+            surveyId={selectOnePayload.surveyId}
+            surveyTitle={selectOnePayload.surveyTitle}
+            questionCode={selectOnePayload.questionCode}
+            questionText={selectOnePayload.questionText}
+            required={selectOnePayload.required}
+            options={selectOnePayload.options}
+            answerDisplayOrder={selectOnePayload.answerDisplayOrder}
+            showHideOptions={selectOnePayload.showHideOptions ?? null}
+            isFirstQuestion={selectOnePayload.isFirstQuestion}
+            priorPages={selectOnePayload.priorPages ?? []}
+            samePageFollowUps={selectOnePayload.samePageFollowUps ?? []}
+            nextPages={selectOnePayload.nextPages ?? []}
+            onDone={() => window.close()}
+            onClose={() => window.close()}
+          />
+        </SurveyPreviewAnswerProvider>
+      </SurveyQuestionPreviewChrome>
+    );
+  }
+
+  if (!multiPointPayload) {
     return (
       <div className={styles.emptyWrap}>
         <EmptyState
@@ -65,21 +173,25 @@ export default function SurveyQuestionPreviewPage() {
 
   return (
     <SurveyQuestionPreviewChrome onClose={() => window.close()}>
-      <MultiPointCardsCarouselPreview
-        surveyTitle={payload.surveyTitle}
-        questionText={payload.questionText}
-        required={payload.required}
-        matrix={payload.matrix}
-        questionWidthPercent={payload.settings.questionWidthPercent}
-        answerType={payload.settings.answerType}
-        responseLayout={
-          payload.settings.cardsCarouselResponseLayout ??
-          DEFAULT_MULTI_POINT_SETTINGS.cardsCarouselResponseLayout
-        }
-        questionBelow={payload.questionBelow ?? null}
-        onDone={() => window.close()}
-        onClose={() => window.close()}
-      />
+      <SurveyPreviewAnswerProvider>
+        <MultiPointCardsCarouselPreview
+          surveyId={multiPointPayload.surveyId}
+          surveyTitle={multiPointPayload.surveyTitle}
+          questionText={multiPointPayload.questionText}
+          required={multiPointPayload.required}
+          matrix={multiPointPayload.matrix}
+          questionWidthPercent={multiPointPayload.settings.questionWidthPercent}
+          answerType={multiPointPayload.settings.answerType}
+          responseLayout={
+            multiPointPayload.settings.cardsCarouselResponseLayout ??
+            DEFAULT_MULTI_POINT_SETTINGS.cardsCarouselResponseLayout
+          }
+          samePageFollowUps={multiPointPayload.samePageFollowUps ?? []}
+          nextPages={multiPointPayload.nextPages ?? []}
+          onDone={() => window.close()}
+          onClose={() => window.close()}
+        />
+      </SurveyPreviewAnswerProvider>
     </SurveyQuestionPreviewChrome>
   );
 }

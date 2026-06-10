@@ -1,3 +1,5 @@
+import { plainTextFromRichValue } from '@/components/surveys/rich-text-utils';
+
 export type AnswerType = 'radio' | 'checkbox' | 'dropdown' | 'select-list';
 
 export type QuestionLayout = 'horizontal' | 'vertical';
@@ -76,4 +78,28 @@ export function getDefaultSettingsForQuestion(inputKind?: 'radio' | 'checkbox'):
 
 export function getQuestionTypeLabel(inputKind?: 'radio' | 'checkbox'): string {
   return inputKind === 'checkbox' ? 'Select Many' : 'Multiple Choice';
+}
+
+export function orderAnswerOptions<T extends { id: string; label: string }>(
+  options: T[],
+  displayOrder: AnswerDisplayOrder
+): T[] {
+  if (displayOrder === 'default' || options.length < 2) {
+    return options;
+  }
+
+  if (displayOrder === 'alphabetical') {
+    return [...options].sort((a, b) =>
+      plainTextFromRichValue(a.label).localeCompare(plainTextFromRichValue(b.label), undefined, {
+        sensitivity: 'base',
+      })
+    );
+  }
+
+  const shuffled = [...options];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
 }

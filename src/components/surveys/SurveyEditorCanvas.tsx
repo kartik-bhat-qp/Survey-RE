@@ -30,6 +30,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { MultiPointScalesSettingsPanel } from '@/components/surveys/MultiPointScalesSettingsPanel';
 import { QuestionLogicModal } from '@/components/surveys/QuestionLogicModal';
 import { QuestionSettingsPanel } from '@/components/surveys/QuestionSettingsPanel';
+import { QuestionValidationModal } from '@/components/surveys/QuestionValidationModal';
 import {
   QuestionRichTextField,
   plainTextFromRichValue,
@@ -44,16 +45,27 @@ import {
   isCardsCarouselPreview,
   type MultiPointScalesSettings,
 } from '@/data/mock-multi-point-settings';
+import { collectPreviewPagesAfterQuestion, collectPreviewPagesBeforeQuestion, hasPageBreakAtSlot, getPageBreakSlotKey, showHideReferencesEarlierQuestions } from '@/data/survey-page-breaks';
 import {
-  findNextSurveyQuestion,
+  isFirstSurveyQuestion,
+  isSelectManyPreviewQuestion,
   toQuestionPreviewFollowUp,
 } from '@/data/survey-question-preview-utils';
-import { writeMultiPointQuestionPreviewSession } from '@/data/survey-question-preview-session';
+import {
+  writeMultiPointQuestionPreviewSession,
+  writeSelectManyQuestionPreviewSession,
+  writeSelectOneQuestionPreviewSession,
+} from '@/data/survey-question-preview-session';
+import { toShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
 import {
   createDefaultQuestionLogicState,
   isShowHideOptionsLogicApplied,
   type QuestionLogicState,
 } from '@/data/mock-question-logic';
+import {
+  createDefaultQuestionValidation,
+  type QuestionValidationState,
+} from '@/data/mock-question-validation';
 import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
 import {
   useSurveyWorkspaceSections,
@@ -109,6 +121,19 @@ function isNpsQuestion(question: SurveyQuestion): boolean {
 
 function isVanWestendorpQuestion(question: SurveyQuestion): boolean {
   return question.kind === 'van-westendorp';
+}
+
+function isSelectOnePreviewQuestion(
+  question: SurveyQuestion,
+  settings?: Pick<QuestionSettings, 'answerType'>
+): boolean {
+  return (
+    !isSelectManyPreviewQuestion(question, settings) &&
+    !isMultiPointScalesQuestion(question) &&
+    !isNpsQuestion(question) &&
+    !isVanWestendorpQuestion(question) &&
+    question.options.length > 0
+  );
 }
 
 function cloneQuestionForCopy(question: SurveyQuestion): SurveyQuestion {
@@ -221,12 +246,15 @@ function QuestionCodeField({
 function AddQuestionToolbar({
   sectionId,
   insertIndex,
+  hasPageBreak,
   onSelect,
   onPageControl,
+  onTogglePageBreak,
 }: {
   sectionId: string;
   /** Position in the section's question list where the new question is inserted. */
   insertIndex: number;
+  hasPageBreak: boolean;
   onSelect: (
     sectionId: string,
     insertIndex: number,
@@ -235,6 +263,7 @@ function AddQuestionToolbar({
     typeId: string
   ) => void;
   onPageControl: (action: string) => void;
+  onTogglePageBreak: () => void;
 }) {
   return (
     <div className={styles.addQuestionToolbar}>
@@ -249,9 +278,9 @@ function AddQuestionToolbar({
         <button
           type="button"
           className={styles.pageBreakBtn}
-          onClick={() => onPageControl('Remove Page Break')}
+          onClick={onTogglePageBreak}
         >
-          Remove Page Break
+          {hasPageBreak ? 'Remove Page Break' : 'Add Page Break'}
         </button>
         <button
           type="button"
@@ -279,6 +308,7 @@ function QuestionRow({
   onAction,
   onOpenLogic,
   onOpenSettings,
+  onOpenValidation,
   onMenuAction,
   onQuestionTextChange,
   onOptionLabelChange,
@@ -290,6 +320,7 @@ function QuestionRow({
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
   onOpenSettings: () => void;
+  onOpenValidation: () => void;
   onQuestionTextChange: (sectionId: string, questionId: string, text: string) => void;
   onOptionLabelChange: (
     sectionId: string,
@@ -347,6 +378,7 @@ function QuestionRow({
           onAction={onAction}
           onOpenLogic={onOpenLogic}
           onOpenSettings={onOpenSettings}
+          onOpenValidation={onOpenValidation}
           onMenuAction={onMenuAction}
           className={styles.questionActions}
           menuBtnClassName={styles.menuBtn}
@@ -504,6 +536,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   const [logicByQuestionKey, setLogicByQuestionKey] = useState<
     Record<string, QuestionLogicState>
   >({});
+  const [validationByQuestionKey, setValidationByQuestionKey] = useState<
+    Record<string, QuestionValidationState>
+  >({});
+  const [validationTarget, setValidationTarget] = useState<{
+    sectionId: string;
+    questionId: string;
+  } | null>(null);
   const [multiPointSettingsByKey, setMultiPointSettingsByKey] = useState<
     Record<string, MultiPointScalesSettings>
   >({});
@@ -516,6 +555,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     sectionId: string;
     questionId: string;
   } | null>(null);
+  const [pageBreakBySlotKey, setPageBreakBySlotKey] = useState<Record<string, boolean>>({});
   const pendingScrollQuestionRef = useRef<{ sectionId: string; questionId: string } | null>(
     null
   );
@@ -531,11 +571,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     setSelectedQuestionKey(null);
     setSettingsTarget(null);
     setLogicTarget(null);
+    setValidationTarget(null);
     setQuestionSettingsByKey({});
     setLogicByQuestionKey({});
+    setValidationByQuestionKey({});
     setMultiPointSettingsByKey({});
     setBulkEditMatrixTarget(null);
     setDeleteQuestionTarget(null);
+    setPageBreakBySlotKey({});
   }, [detail.survey.id]);
 
   useEffect(() => {
@@ -645,6 +688,19 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       toast(action);
     },
     [toast]
+  );
+
+  const handleTogglePageBreak = useCallback(
+    (sectionId: string, insertIndex: number) => {
+      const section = sections.find((sec) => sec.id === sectionId);
+      if (!section) return;
+
+      const slotKey = getPageBreakSlotKey(sectionId, insertIndex, section.questions);
+      const nextHasPageBreak = !hasPageBreakAtSlot(pageBreakBySlotKey, slotKey);
+      setPageBreakBySlotKey((prev) => ({ ...prev, [slotKey]: nextHasPageBreak }));
+      toast(nextHasPageBreak ? 'Page break added' : 'Page break removed');
+    },
+    [pageBreakBySlotKey, sections, toast]
   );
 
   const handleAddOption = useCallback(
@@ -787,6 +843,16 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         ?.questions.find((q) => q.id === settingsTarget.questionId)
     : undefined;
 
+  const validationQuestion = validationTarget
+    ? sections
+        .find((sec) => sec.id === validationTarget.sectionId)
+        ?.questions.find((q) => q.id === validationTarget.questionId)
+    : undefined;
+
+  const validationQuestionKey = validationTarget
+    ? `${validationTarget.sectionId}:${validationTarget.questionId}`
+    : null;
+
   const handleOpenLogic = useCallback((sectionId: string, questionId: string) => {
     setLogicTarget({ sectionId, questionId });
   }, []);
@@ -815,9 +881,65 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     setSettingsTarget({ sectionId, questionId });
   }, []);
 
+  const handleOpenValidation = useCallback((sectionId: string, questionId: string) => {
+    setValidationTarget({ sectionId, questionId });
+  }, []);
+
+  const getQuestionValidation = useCallback(
+    (question: SurveyQuestion, questionKey: string): QuestionValidationState =>
+      validationByQuestionKey[questionKey] ?? createDefaultQuestionValidation(question.required),
+    [validationByQuestionKey]
+  );
+
+  const handleValidationApply = useCallback(
+    (sectionId: string, questionId: string, state: QuestionValidationState) => {
+      const questionKey = `${sectionId}:${questionId}`;
+      setValidationByQuestionKey((prev) => ({
+        ...prev,
+        [questionKey]: state,
+      }));
+    },
+    []
+  );
+
   const handleSettingsChange = useCallback(
-    (questionKey: string, settings: QuestionSettings) => {
+    (questionKey: string, settings: QuestionSettings, question: SurveyQuestion) => {
       setQuestionSettingsByKey((prev) => ({ ...prev, [questionKey]: settings }));
+
+      const isStandardChoiceQuestion =
+        (!question.kind || question.kind === 'standard') && question.options.length > 0;
+      if (!isStandardChoiceQuestion) return;
+
+      const nextInputKind =
+        settings.answerType === 'checkbox'
+          ? 'checkbox'
+          : settings.answerType === 'radio'
+            ? 'radio'
+            : null;
+      if (!nextInputKind || question.inputKind === nextInputKind) return;
+
+      const [sectionId, questionId] = questionKey.split(':');
+      setSections((prev) =>
+        prev.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            questions: sec.questions.map((item) => {
+              if (item.id !== questionId) return item;
+              return {
+                ...item,
+                inputKind: nextInputKind,
+                addQuestionTypeId:
+                  nextInputKind === 'checkbox'
+                    ? 'select-many'
+                    : item.addQuestionTypeId === 'select-many'
+                      ? undefined
+                      : item.addQuestionTypeId,
+              };
+            }),
+          };
+        })
+      );
     },
     []
   );
@@ -830,6 +952,22 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       );
     },
     [questionSettingsByKey]
+  );
+
+  const buildPreviewFollowUp = useCallback(
+    (itemSectionId: string, followUpQuestion: SurveyQuestion) => {
+      const questionKey = `${itemSectionId}:${followUpQuestion.id}`;
+      const questionSettings = getQuestionSettings(followUpQuestion, questionKey);
+      const questionLogic = getQuestionLogic(questionKey, followUpQuestion);
+      const optionIds = followUpQuestion.options.map((option) => option.id);
+
+      return {
+        ...toQuestionPreviewFollowUp(followUpQuestion, questionSettings),
+        answerDisplayOrder: questionSettings.answerDisplayOrder,
+        showHideOptions: toShowHideOptionsPreviewConfig(questionLogic, optionIds),
+      };
+    },
+    [getQuestionLogic, getQuestionSettings]
   );
 
   const getMultiPointSettings = useCallback(
@@ -983,11 +1121,80 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
 
       switch (action) {
         case 'preview': {
+          const questionKey = `${sectionId}:${questionId}`;
+          const questionSettings = getQuestionSettings(question, questionKey);
+          const questionLogic = getQuestionLogic(questionKey, question);
+          const optionIds = question.options.map((option) => option.id);
+          const showHideOptions = toShowHideOptionsPreviewConfig(questionLogic, optionIds);
+          const includePriorPages = showHideReferencesEarlierQuestions(
+            showHideOptions,
+            detail.survey.id,
+            sections,
+            questionId
+          );
+          const priorPages = includePriorPages
+            ? collectPreviewPagesBeforeQuestion(
+                sections,
+                sectionId,
+                questionId,
+                pageBreakBySlotKey,
+                buildPreviewFollowUp
+              )
+            : [];
+          const { samePageFollowUps, nextPages } = collectPreviewPagesAfterQuestion(
+            sections,
+            sectionId,
+            questionId,
+            pageBreakBySlotKey,
+            buildPreviewFollowUp
+          );
+
+          if (isSelectManyPreviewQuestion(question, questionSettings)) {
+            writeSelectManyQuestionPreviewSession({
+              surveyId: detail.survey.id,
+              surveyTitle: detail.editorTitle,
+              questionCode: question.code,
+              questionText: question.text,
+              required: question.required,
+              options: question.options.map((option) => ({
+                id: option.id,
+                label: option.label,
+              })),
+              answerDisplayOrder: questionSettings.answerDisplayOrder,
+              showHideOptions,
+              priorPages,
+              samePageFollowUps,
+              nextPages,
+            });
+            const previewUrl = `${window.location.origin}/surveys/preview/${detail.survey.id}?kind=select-many`;
+            window.open(previewUrl, '_blank', 'noopener,noreferrer');
+            return;
+          }
+          if (isSelectOnePreviewQuestion(question, questionSettings)) {
+            writeSelectOneQuestionPreviewSession({
+              surveyId: detail.survey.id,
+              surveyTitle: detail.editorTitle,
+              questionCode: question.code,
+              questionText: question.text,
+              required: question.required,
+              options: question.options.map((option) => ({
+                id: option.id,
+                label: option.label,
+              })),
+              answerDisplayOrder: questionSettings.answerDisplayOrder,
+              showHideOptions,
+              priorPages,
+              isFirstQuestion: isFirstSurveyQuestion(sections, sectionId, questionId),
+              samePageFollowUps,
+              nextPages,
+            });
+            const previewUrl = `${window.location.origin}/surveys/preview/${detail.survey.id}?kind=select-one`;
+            window.open(previewUrl, '_blank', 'noopener,noreferrer');
+            return;
+          }
           if (isMultiPointScalesQuestion(question) && question.matrix) {
-            const questionKey = `${sectionId}:${questionId}`;
             const mpSettings = getMultiPointSettings(questionKey);
             if (isCardsCarouselPreview(mpSettings)) {
-              const nextQuestion = findNextSurveyQuestion(sections, sectionId, questionId);
               writeMultiPointQuestionPreviewSession({
                 surveyId: detail.survey.id,
                 surveyTitle: detail.editorTitle,
@@ -995,9 +1202,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                 required: question.required,
                 matrix: question.matrix,
                 settings: mpSettings,
-                questionBelow: nextQuestion
-                  ? toQuestionPreviewFollowUp(nextQuestion)
-                  : null,
+                samePageFollowUps,
+                nextPages,
               });
               const previewUrl = `${window.location.origin}/surveys/preview/${detail.survey.id}`;
               window.open(previewUrl, '_blank', 'noopener,noreferrer');
@@ -1056,7 +1262,17 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           return;
       }
     },
-    [detail.editorTitle, detail.survey.id, sections, showToast, getMultiPointSettings]
+    [
+      detail.editorTitle,
+      detail.survey.id,
+      pageBreakBySlotKey,
+      sections,
+      showToast,
+      getMultiPointSettings,
+      getQuestionSettings,
+      getQuestionLogic,
+      buildPreviewFollowUp,
+    ]
   );
 
   const handleConfirmDeleteQuestion = useCallback(() => {
@@ -1276,8 +1492,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                   <AddQuestionToolbar
                     sectionId={section.id}
                     insertIndex={0}
+                    hasPageBreak={hasPageBreakAtSlot(
+                      pageBreakBySlotKey,
+                      getPageBreakSlotKey(section.id, 0, section.questions)
+                    )}
                     onSelect={handleAddQuestionSelect}
                     onPageControl={handlePageControl}
+                    onTogglePageBreak={() => handleTogglePageBreak(section.id, 0)}
                   />
 
                   {section.questions.map((question, questionIndex) => {
@@ -1426,6 +1647,9 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 onOpenSettings={() =>
                                   handleOpenSettings(section.id, question.id)
                                 }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
                                 onQuestionTextChange={handleQuestionTextChange}
                                 onOptionLabelChange={handleOptionLabelChange}
                               />
@@ -1436,8 +1660,15 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                         <AddQuestionToolbar
                           sectionId={section.id}
                           insertIndex={questionIndex + 1}
+                          hasPageBreak={hasPageBreakAtSlot(
+                            pageBreakBySlotKey,
+                            getPageBreakSlotKey(section.id, questionIndex + 1, section.questions)
+                          )}
                           onSelect={handleAddQuestionSelect}
                           onPageControl={handlePageControl}
+                          onTogglePageBreak={() =>
+                            handleTogglePageBreak(section.id, questionIndex + 1)
+                          }
                         />
                       </Fragment>
                     );
@@ -1487,7 +1718,9 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           <QuestionSettingsPanel
             question={settingsQuestion}
             settings={getQuestionSettings(settingsQuestion, settingsQuestionKey)}
-            onChange={(next) => handleSettingsChange(settingsQuestionKey, next)}
+            onChange={(next) =>
+              handleSettingsChange(settingsQuestionKey, next, settingsQuestion)
+            }
             onClose={() => setSettingsTarget(null)}
           />
         )
@@ -1505,6 +1738,24 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           initialState={getQuestionLogic(logicQuestionKey, logicQuestion)}
           onSave={(state) =>
             handleLogicSave(logicTarget.sectionId, logicTarget.questionId, state)
+          }
+        />
+      ) : null}
+
+      {validationQuestion && validationQuestionKey && validationTarget ? (
+        <QuestionValidationModal
+          open={validationTarget !== null}
+          onOpenChange={(open) => {
+            if (!open) setValidationTarget(null);
+          }}
+          required={validationQuestion.required}
+          initialState={getQuestionValidation(validationQuestion, validationQuestionKey)}
+          onApply={(state) =>
+            handleValidationApply(
+              validationTarget.sectionId,
+              validationTarget.questionId,
+              state
+            )
           }
         />
       ) : null}

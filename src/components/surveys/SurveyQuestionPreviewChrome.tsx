@@ -1,6 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import {
+  SurveyPreviewToolbarContext,
+  type SurveyPreviewToolbarToggles,
+} from '@/components/surveys/SurveyPreviewToolbarContext';
 import styles from './SurveyQuestionPreviewChrome.module.css';
 
 type PreviewDevice = 'desktop' | 'tablet' | 'mobile';
@@ -10,21 +14,26 @@ interface SurveyQuestionPreviewChromeProps {
   onClose?: () => void;
 }
 
-const TOOLBAR_TOGGLES = [
-  { id: 'url-variable', label: 'URL Variable' },
+const TOOLBAR_TOGGLES: { id: keyof SurveyPreviewToolbarToggles; label: string }[] = [
+  { id: 'urlVariable', label: 'URL Variable' },
   { id: 'validations', label: 'Validations' },
   { id: 'logic', label: 'Logic' },
-  { id: 'page-breaks', label: 'Page Breaks' },
-] as const;
+  { id: 'pageBreaks', label: 'Page Breaks' },
+];
+
+const DEFAULT_TOOLBAR_TOGGLES: SurveyPreviewToolbarToggles = {
+  urlVariable: true,
+  validations: true,
+  logic: true,
+  pageBreaks: true,
+};
 
 export function SurveyQuestionPreviewChrome({
   children,
   onClose,
 }: SurveyQuestionPreviewChromeProps) {
   const [device, setDevice] = useState<PreviewDevice>('desktop');
-  const [toggles, setToggles] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(TOOLBAR_TOGGLES.map((item) => [item.id, true]))
-  );
+  const [toggles, setToggles] = useState<SurveyPreviewToolbarToggles>(DEFAULT_TOOLBAR_TOGGLES);
 
   return (
     <div className={styles.root}>
@@ -110,7 +119,9 @@ export function SurveyQuestionPreviewChrome({
               : ''
         }`}
       >
-        {children}
+        <SurveyPreviewToolbarContext.Provider value={toggles}>
+          {children}
+        </SurveyPreviewToolbarContext.Provider>
       </div>
     </div>
   );

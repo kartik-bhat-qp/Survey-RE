@@ -4,6 +4,7 @@ export const QUESTION_LOGIC_HELP_LINKS = {
   pipingText: 'https://help.questionpro.com/piping-text',
   variableAssignment: 'https://help.questionpro.com/variable-assignment',
   branchingRandomizer: 'https://help.questionpro.com/branching-randomizer',
+  validation: 'https://help.questionpro.com/validation',
 } as const;
 
 export type QuestionLogicHelpTopic = keyof typeof QUESTION_LOGIC_HELP_LINKS;
