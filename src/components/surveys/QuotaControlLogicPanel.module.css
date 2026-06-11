@@ -1,0 +1,57 @@
+.tableWrap {
+  max-height: min(28rem, calc(100vh - 16rem));
+  overflow: auto;
+  padding: 0 1rem 1rem;
+}
+
+.table {
+  border-collapse: collapse;
+  font-family: 'Fira Sans', sans-serif;
+  width: 100%;
+}
+
+.table th {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.75rem 0.5rem;
+  position: sticky;
+  text-align: left;
+  top: 0;
+  vertical-align: bottom;
+  z-index: 1;
+}
+
+.table td {
+  border-bottom: 1px solid #eef2f6;
+  padding: 0.625rem 0.5rem;
+  vertical-align: middle;
+}
+
+.optionLabel {
+  color: #334155;
+  display: block;
+  font-size: 0.8125rem;
+  min-width: 6rem;
+}
+
+.quotaInput {
+  max-width: 5.5rem;
+  min-width: 4.5rem;
+}
+
+.actionSelect {
+  min-width: 14rem;
+}
+
+.table th:nth-child(2),
+.table td:nth-child(2) {
+  width: 7rem;
+}
+
+.table th:nth-child(3),
+.table td:nth-child(3) {
+  width: 40%;
+}

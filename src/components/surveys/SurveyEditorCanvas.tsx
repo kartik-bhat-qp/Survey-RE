@@ -11,13 +11,17 @@ import type {
   SurveySection,
 } from '@/data/mock-survey-detail';
 import {
+  createDefaultLookupTableData,
+  createDefaultLookupTableOptions,
   createDefaultMultiPointMatrix,
   createDefaultVanWestendorpData,
+  DEFAULT_LOOKUP_TABLE_QUESTION_TEXT,
   DEFAULT_MULTI_POINT_QUESTION_TEXT,
   DEFAULT_NPS_MAX_LABEL,
   DEFAULT_NPS_MIN_LABEL,
   DEFAULT_VAN_WESTENDORP_QUESTION_TEXT,
 } from '@/data/mock-survey-detail';
+import { LookupTableQuestionRow } from '@/components/surveys/LookupTableQuestionRow';
 import { NpsQuestionRow } from '@/components/surveys/NpsQuestionRow';
 import { VanWestendorpQuestionRow } from '@/components/surveys/VanWestendorpQuestionRow';
 import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
@@ -110,6 +114,7 @@ function cloneSections(sections: SurveySection[]): SurveySection[] {
             },
           }
         : {}),
+      ...(q.lookupTable ? { lookupTable: { ...q.lookupTable } } : {}),
     })),
   }));
 }
@@ -126,6 +131,21 @@ function isVanWestendorpQuestion(question: SurveyQuestion): boolean {
   return question.kind === 'van-westendorp';
 }
 
+function isLookupTableQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'lookup-table' || question.addQuestionTypeId === 'lookup-table';
+}
+
+function isSelectOneQuestion(question: SurveyQuestion): boolean {
+  return (
+    !isLookupTableQuestion(question) &&
+    (question.addQuestionTypeId === 'select-one' ||
+      (question.inputKind === 'radio' &&
+        !isMultiPointScalesQuestion(question) &&
+        !isNpsQuestion(question) &&
+        !isVanWestendorpQuestion(question)))
+  );
+}
+
 function isSelectOnePreviewQuestion(
   question: SurveyQuestion,
   settings?: Pick<QuestionSettings, 'answerType'>
@@ -135,6 +155,7 @@ function isSelectOnePreviewQuestion(
     !isMultiPointScalesQuestion(question) &&
     !isNpsQuestion(question) &&
     !isVanWestendorpQuestion(question) &&
+    !isLookupTableQuestion(question) &&
     question.options.length > 0
   );
 }
@@ -158,6 +179,7 @@ function cloneQuestionForCopy(question: SurveyQuestion): SurveyQuestion {
           },
         }
       : {}),
+    ...(question.lookupTable ? { lookupTable: { ...question.lookupTable } } : {}),
   };
 }
 
@@ -391,6 +413,126 @@ function QuestionRow({
         showHideOptionsApplied={showHideOptionsApplied}
         className={styles.questionRowFooter}
       />
+    </article>
+  );
+}
+
+function SelectOneQuestionRow({
+  question,
+  sectionId,
+  showHideOptionsApplied,
+  onAction,
+  onOpenLogic,
+  onOpenSettings,
+  onOpenValidation,
+  onMenuAction,
+  onAddOption,
+  onBulkEdit,
+  onQuestionTextChange,
+  onOptionLabelChange,
+}: {
+  question: SurveyQuestion;
+  sectionId: string;
+  showHideOptionsApplied: boolean;
+  onAction: (label: string) => void;
+  onMenuAction: (action: QuestionMenuAction) => void;
+  onOpenLogic: () => void;
+  onOpenSettings: () => void;
+  onOpenValidation: () => void;
+  onAddOption: (sectionId: string, questionId: string) => void;
+  onBulkEdit: (sectionId: string, questionId: string) => void;
+  onQuestionTextChange: (sectionId: string, questionId: string, text: string) => void;
+  onOptionLabelChange: (
+    sectionId: string,
+    questionId: string,
+    optionId: string,
+    label: string
+  ) => void;
+}) {
+  return (
+    <article className={styles.selectManyBlock}>
+      <div className={styles.selectManyCard}>
+        <div className={styles.selectManyCardInner}>
+          <div className={styles.selectManyTopBar}>
+            <span className={styles.selectManyTopSpacer} aria-hidden />
+            <QuestionWorkspaceActions
+              question={question}
+              onAction={onAction}
+              onOpenLogic={onOpenLogic}
+              onOpenSettings={onOpenSettings}
+              onOpenValidation={onOpenValidation}
+              onMenuAction={onMenuAction}
+              menuBtnClassName={styles.menuBtn}
+            />
+          </div>
+          <div className={styles.selectManyQuestionTextWrap}>
+            {question.required ? <span className={styles.required}>*</span> : null}
+            <QuestionRichTextField
+              value={question.text}
+              onChange={(text) => onQuestionTextChange(sectionId, question.id, text)}
+              ariaLabel="Question text"
+              placeholder="Enter question text"
+              onPointerDown={stopQuestionEvent}
+            />
+          </div>
+          <ul className={styles.selectManyOptions}>
+            {question.options.map((option) => (
+              <li key={option.id} className={styles.selectManyOptionItem}>
+                <span className={styles.selectOneOptionRadio}>
+                  <input
+                    type="radio"
+                    className={styles.optionRadio}
+                    disabled
+                    name={question.id}
+                    aria-label={`${plainTextFromRichValue(option.label)} radio`}
+                  />
+                </span>
+                <div className={styles.selectManyOptionEditor}>
+                  <QuestionRichTextField
+                    variant="option"
+                    value={option.label}
+                    onChange={(label) =>
+                      onOptionLabelChange(sectionId, question.id, option.id, label)
+                    }
+                    ariaLabel="Answer option"
+                    placeholder="Option"
+                    onPointerDown={stopQuestionEvent}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div
+            className={styles.selectManyOptionTools}
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className={styles.addOptionBtn}
+              aria-label="Add option"
+              onClick={() => onAddOption(sectionId, question.id)}
+            >
+              <span className="wm-add" aria-hidden />
+            </button>
+            <span className={styles.selectManyOptionToolsSpacer} aria-hidden />
+            <button
+              type="button"
+              className={styles.bulkEditLink}
+              onClick={(event) => {
+                event.stopPropagation();
+                onBulkEdit(sectionId, question.id);
+              }}
+            >
+              Bulk Edit
+            </button>
+          </div>
+        </div>
+        <QuestionWorkspaceFooter
+          showHideOptionsApplied={showHideOptionsApplied}
+          className={styles.selectManyFooter}
+        />
+      </div>
     </article>
   );
 }
@@ -1322,6 +1464,38 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       typeLabel: string,
       typeId: string
     ) => {
+      if (typeId === 'select-one') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: `Question ${nextNum}`,
+              required: true,
+              inputKind: 'radio',
+              addQuestionTypeId: 'select-one',
+              options: [
+                { id: `opt-${ts}-1`, label: 'Option 1' },
+                { id: `opt-${ts}-2`, label: 'Option 2' },
+              ],
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Select One question added', variant: 'success' });
+        return;
+      }
+
       if (typeId === 'select-many') {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
@@ -1423,6 +1597,36 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         return;
       }
 
+      if (typeId === 'lookup-table') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_LOOKUP_TABLE_QUESTION_TEXT,
+              required: true,
+              kind: 'lookup-table',
+              addQuestionTypeId: 'lookup-table',
+              options: createDefaultLookupTableOptions(),
+              lookupTable: createDefaultLookupTableData(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Lookup Table question added', variant: 'success' });
+        return;
+      }
+
       if (typeId === 'van-westendorp') {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
@@ -1515,6 +1719,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const isMultiPoint = isMultiPointScalesQuestion(question);
                     const isNps = isNpsQuestion(question);
                     const isVanWestendorp = isVanWestendorpQuestion(question);
+                    const isLookupTable = isLookupTableQuestion(question);
+                    const isSelectOne = isSelectOneQuestion(question);
                     const multiPointSettings = getMultiPointSettings(questionKey);
                     const savedLogic = logicByQuestionKey[questionKey];
                     const showHideOptionsApplied =
@@ -1529,11 +1735,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                           id={`survey-question-${section.id}-${question.id}`}
                           className={`${styles.questionBlock} ${
                             question.inputKind === 'checkbox' ? styles.questionBlockSelectMany : ''
-                          } ${
+                          } ${isSelectOne ? styles.questionBlockSelectOne : ''} ${
                             isMultiPoint ? styles.questionBlockMultiPoint : ''
                           } ${isNps ? styles.questionBlockNps : ''} ${
                             isVanWestendorp ? styles.questionBlockVanWestendorp : ''
-                          } ${isSelected ? styles.questionBlockSelected : ''}`}
+                          } ${isLookupTable ? styles.questionBlockLookupTable : ''} ${
+                            isSelected ? styles.questionBlockSelected : ''
+                          }`}
                         >
                           <div
                             className={styles.questionCodeColumn}
@@ -1564,6 +1772,28 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 onOpenSettings={() =>
                                   handleOpenSettings(section.id, question.id)
                                 }
+                                onQuestionTextChange={handleQuestionTextChange}
+                              />
+                            ) : isLookupTable ? (
+                              <LookupTableQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onEditLookupTable={() => toast('Edit lookup table')}
+                                onBulkEdit={handleBulkEdit}
                                 onQuestionTextChange={handleQuestionTextChange}
                               />
                             ) : isVanWestendorp ? (
@@ -1619,6 +1849,29 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                     target: 'columns',
                                   })
                                 }
+                              />
+                            ) : isSelectOne ? (
+                              <SelectOneQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onAddOption={handleAddOption}
+                                onBulkEdit={handleBulkEdit}
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onOptionLabelChange={handleOptionLabelChange}
                               />
                             ) : question.inputKind === 'checkbox' ? (
                               <SelectManyQuestionRow

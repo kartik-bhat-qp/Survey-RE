@@ -35,6 +35,42 @@ export const QUESTION_LOGIC_TYPE_OPTIONS: QuestionLogicTypeOption[] = [
   { value: 'update-variables', label: 'Update Variables' },
 ];
 
+export const LOOKUP_TABLE_EXCLUDED_LOGIC_TYPES: readonly QuestionLogicType[] = [
+  'quota-control',
+  'dynamic-text',
+  'extraction',
+];
+
+export function isLookupTableSurveyQuestion(question: {
+  kind?: string;
+  addQuestionTypeId?: string;
+}): boolean {
+  return question.kind === 'lookup-table' || question.addQuestionTypeId === 'lookup-table';
+}
+
+export function getQuestionLogicTypeOptions(question: {
+  kind?: string;
+  addQuestionTypeId?: string;
+}): QuestionLogicTypeOption[] {
+  if (!isLookupTableSurveyQuestion(question)) {
+    return QUESTION_LOGIC_TYPE_OPTIONS;
+  }
+  return QUESTION_LOGIC_TYPE_OPTIONS.filter(
+    (option) => !LOOKUP_TABLE_EXCLUDED_LOGIC_TYPES.includes(option.value)
+  );
+}
+
+export function resolveLogicTypeForQuestion(
+  logicType: QuestionLogicType,
+  question: { kind?: string; addQuestionTypeId?: string }
+): QuestionLogicType {
+  const options = getQuestionLogicTypeOptions(question);
+  if (options.some((option) => option.value === logicType)) {
+    return logicType;
+  }
+  return options[0]?.value ?? 'skip-logic';
+}
+
 export interface BranchTargetOption {
   value: string;
   label: string;
@@ -67,6 +103,32 @@ export interface ShowHideOptionsState {
   useLegacyMethod: boolean;
 }
 
+export type QuotaOverLimitAction =
+  | 'none'
+  | 'terminate-survey'
+  | 'quota-overlimit'
+  | 'quota-full-hide-option'
+  | 'goto-thank-you'
+  | 'skip-choice-continue';
+
+export interface QuotaControlOptionState {
+  quotaLimit: number;
+  overLimitAction: QuotaOverLimitAction;
+}
+
+export interface QuotaControlState {
+  byOptionId: Record<string, QuotaControlOptionState>;
+}
+
+export const QUOTA_OVER_LIMIT_ACTION_OPTIONS: BranchTargetOption[] = [
+  { value: 'none', label: 'No Branching' },
+  { value: 'terminate-survey', label: 'Terminate Survey' },
+  { value: 'quota-overlimit', label: 'Quota Overlimit' },
+  { value: 'quota-full-hide-option', label: 'Quota Full - Hide Option' },
+  { value: 'goto-thank-you', label: 'Goto Thank You Page' },
+  { value: 'skip-choice-continue', label: 'Skip Choice and Continue Survey' },
+];
+
 export interface QuestionLogicState {
   logicType: QuestionLogicType;
   looping: boolean;
@@ -74,6 +136,7 @@ export interface QuestionLogicState {
   defaultBranching: string;
   randomizerLimit: string;
   showHideOptions: ShowHideOptionsState;
+  quotaControl: QuotaControlState;
 }
 
 export const SELECT_PLACEHOLDER: BranchTargetOption = {
@@ -130,6 +193,17 @@ export function createDefaultShowHideOptionsState(): ShowHideOptionsState {
   };
 }
 
+export function createDefaultQuotaControlState(optionIds: string[]): QuotaControlState {
+  const byOptionId: Record<string, QuotaControlOptionState> = {};
+  for (const optionId of optionIds) {
+    byOptionId[optionId] = {
+      quotaLimit: 0,
+      overLimitAction: NO_BRANCHING_OPTION.value as QuotaOverLimitAction,
+    };
+  }
+  return { byOptionId };
+}
+
 export function isShowHideOptionsLogicApplied(
   state: QuestionLogicState,
   optionIds: string[]
@@ -173,6 +247,28 @@ export function createDefaultQuestionLogicState(
     defaultBranching: NO_BRANCHING_OPTION.value,
     randomizerLimit: '0',
     showHideOptions: createDefaultShowHideOptionsState(),
+    quotaControl: createDefaultQuotaControlState(optionIds),
+  };
+}
+
+export function mergeQuestionLogicState(
+  optionIds: string[],
+  initial?: QuestionLogicState
+): QuestionLogicState {
+  const defaults = createDefaultQuestionLogicState(optionIds);
+  if (!initial) return defaults;
+
+  return {
+    ...defaults,
+    ...initial,
+    branchByOptionId: { ...defaults.branchByOptionId, ...initial.branchByOptionId },
+    showHideOptions: initial.showHideOptions ?? defaults.showHideOptions,
+    quotaControl: {
+      byOptionId: {
+        ...defaults.quotaControl.byOptionId,
+        ...(initial.quotaControl?.byOptionId ?? {}),
+      },
+    },
   };
 }
 

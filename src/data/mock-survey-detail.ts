@@ -9,7 +9,8 @@ export type SurveyQuestionKind =
   | 'standard'
   | 'multi-point-scales'
   | 'nps'
-  | 'van-westendorp';
+  | 'van-westendorp'
+  | 'lookup-table';
 
 export interface SurveyQuestionVanWestendorpRow {
   id: string;
@@ -59,6 +60,32 @@ export interface SurveyQuestionNps {
 export const DEFAULT_NPS_MIN_LABEL = 'Very Unlikely';
 export const DEFAULT_NPS_MAX_LABEL = 'Very Likely';
 
+export interface SurveyQuestionLookupTable {
+  /** Sample value shown in the workspace dropdown preview. */
+  selectedValue: string;
+}
+
+export const DEFAULT_LOOKUP_TABLE_QUESTION_TEXT = 'Which state do you live in?';
+
+export const DEFAULT_LOOKUP_TABLE_SAMPLE_VALUES = [
+  'Alabama',
+  'Alaska',
+  'Arizona',
+  'Arkansas',
+  'California',
+] as const;
+
+export function createDefaultLookupTableData(): SurveyQuestionLookupTable {
+  return { selectedValue: DEFAULT_LOOKUP_TABLE_SAMPLE_VALUES[0] };
+}
+
+export function createDefaultLookupTableOptions(): SurveyQuestionOption[] {
+  return DEFAULT_LOOKUP_TABLE_SAMPLE_VALUES.map((label, index) => ({
+    id: `lookup-opt-${index + 1}`,
+    label,
+  }));
+}
+
 export interface SurveyQuestionOption {
   id: string;
   label: string;
@@ -100,6 +127,8 @@ export interface SurveyQuestion {
   nps?: SurveyQuestionNps;
   /** Price sensitivity rows for Van Westendorp questions. */
   vanWestendorp?: SurveyQuestionVanWestendorp;
+  /** Lookup table dropdown preview for Data Reference questions. */
+  lookupTable?: SurveyQuestionLookupTable;
   /** Add Question menu type id (e.g. `nps`, `select-many`) for license diamond display. */
   addQuestionTypeId?: string;
 }
@@ -109,8 +138,10 @@ export function resolveAddQuestionTypeId(question: SurveyQuestion): string | und
   if (question.addQuestionTypeId) return question.addQuestionTypeId;
   if (question.kind === 'nps') return 'nps';
   if (question.kind === 'van-westendorp') return 'van-westendorp';
+  if (question.kind === 'lookup-table') return 'lookup-table';
   if (question.kind === 'multi-point-scales') return 'multi-point';
   if (question.inputKind === 'checkbox') return 'select-many';
+  if (question.inputKind === 'radio') return 'select-one';
   return undefined;
 }
 

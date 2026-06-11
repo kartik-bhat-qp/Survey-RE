@@ -206,9 +206,11 @@
 }
 
 .questionBlockSelectMany .questionCodeColumn,
+.questionBlockSelectOne .questionCodeColumn,
 .questionBlockMultiPoint .questionCodeColumn,
 .questionBlockNps .questionCodeColumn,
-.questionBlockVanWestendorp .questionCodeColumn {
+.questionBlockVanWestendorp .questionCodeColumn,
+.questionBlockLookupTable .questionCodeColumn {
   padding-top: 2.75rem;
 }
 
@@ -227,7 +229,8 @@
 .addQuestionToolbar + .questionBlock .questionRow,
 .addQuestionToolbar + .questionBlock .selectManyCard,
 .addQuestionToolbar + .questionBlock .npsCard,
-.addQuestionToolbar + .questionBlock .vanWestendorpCard {
+.addQuestionToolbar + .questionBlock .vanWestendorpCard,
+.addQuestionToolbar + .questionBlock .lookupTableCard {
   border-top: none;
 }
 
@@ -385,6 +388,19 @@
   height: 1rem;
   margin: 0;
   width: 1rem;
+}
+
+.selectOneOptionRadio {
+  align-items: center;
+  display: flex;
+  height: 1.45rem;
+  justify-content: center;
+  width: 1rem;
+}
+
+.selectOneOptionRadio .optionRadio {
+  accent-color: #1b87e6;
+  margin: 0;
 }
 
 .selectManyOptionEditor {

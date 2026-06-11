@@ -7,15 +7,18 @@ import type { SurveyQuestion } from '@/data/mock-survey-detail';
 import {
   buildBranchTargetOptions,
   createDefaultQuestionLogicState,
+  mergeQuestionLogicState,
   findBranchTargetOption,
   isShowHideOptionsLogicApplied,
   isShowHideOptionsLogicComplete,
-  QUESTION_LOGIC_TYPE_OPTIONS,
+  getQuestionLogicTypeOptions,
+  resolveLogicTypeForQuestion,
   RANDOMIZER_LIMIT_OPTIONS,
   type QuestionLogicState,
   type QuestionLogicTypeOption,
 } from '@/data/mock-question-logic';
 import { HelpFileLink } from '@/components/surveys/HelpFileLink';
+import { QuotaControlLogicPanel } from '@/components/surveys/QuotaControlLogicPanel';
 import { ShowHideOptionsAppliedIcon } from '@/components/surveys/ShowHideOptionsAppliedIcon';
 import { ShowHideOptionsLogicPanel } from '@/components/surveys/ShowHideOptionsLogicPanel';
 import { plainTextFromRichValue } from '@/components/surveys/QuestionRichTextField';
@@ -57,9 +60,15 @@ export function QuestionLogicModal({
   );
 
   const isShowHideOptions = state.logicType === 'show-hide-options';
+  const isQuotaControl = state.logicType === 'quota-control';
+  const isAlternateLogicPanel = isShowHideOptions || isQuotaControl;
   const optionIds = useMemo(
     () => question.options.map((option) => option.id),
     [question.options]
+  );
+  const logicTypeOptions = useMemo(
+    () => getQuestionLogicTypeOptions(question),
+    [question]
   );
   const showHideOptionsApplied = isShowHideOptionsLogicApplied(state, optionIds);
   const savedShowHideOptionsApplied =
@@ -82,12 +91,14 @@ export function QuestionLogicModal({
 
   useEffect(() => {
     if (!open) return;
-    setState(initialState ?? createDefaultQuestionLogicState(optionIds));
-  }, [open, question.id, initialState, optionIds]);
+    const merged = mergeQuestionLogicState(optionIds, initialState);
+    const logicType = resolveLogicTypeForQuestion(merged.logicType, question);
+    setState(logicType === merged.logicType ? merged : { ...merged, logicType });
+  }, [open, question, question.id, initialState, optionIds]);
 
   const selectedLogicType =
-    QUESTION_LOGIC_TYPE_OPTIONS.find((option) => option.value === state.logicType) ??
-    QUESTION_LOGIC_TYPE_OPTIONS[0];
+    logicTypeOptions.find((option) => option.value === state.logicType) ??
+    logicTypeOptions[0];
 
   const selectedDefaultBranch =
     findBranchTargetOption(branchTargets, state.defaultBranching) ?? branchTargets[0];
@@ -136,12 +147,12 @@ export function QuestionLogicModal({
 
         <div
           className={`${styles.controlsRow} ${
-            isShowHideOptions ? styles.controlsRowCompact : ''
+            isAlternateLogicPanel ? styles.controlsRowCompact : ''
           }`}
         >
           <div className={styles.logicTypeField}>
             <WuSelect
-              data={QUESTION_LOGIC_TYPE_OPTIONS}
+              data={logicTypeOptions}
               accessorKey={{ value: 'value', label: 'label' }}
               value={selectedLogicType}
               onSelect={(item) => {
@@ -154,7 +165,7 @@ export function QuestionLogicModal({
             <HelpFileLink topic="logicType" label="Logic type help" />
             {showHideOptionsApplied ? <ShowHideOptionsAppliedIcon /> : null}
           </div>
-          {!isShowHideOptions ? (
+          {!isAlternateLogicPanel ? (
             <div className={styles.loopingField}>
               <WuToggle
                 Label="Looping"
@@ -173,6 +184,12 @@ export function QuestionLogicModal({
             question={question}
             surveyId={surveyId}
             onChange={(showHideOptions) => setState((prev) => ({ ...prev, showHideOptions }))}
+          />
+        ) : isQuotaControl ? (
+          <QuotaControlLogicPanel
+            question={question}
+            state={state.quotaControl}
+            onChange={(quotaControl) => setState((prev) => ({ ...prev, quotaControl }))}
           />
         ) : (
           <>
