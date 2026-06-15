@@ -5,6 +5,7 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { SurveyAnalyticsPieChart } from '@/components/surveys/analytics/SurveyAnalyticsPieChart';
 import { SurveyAnalyticsWorldMap } from '@/components/surveys/analytics/SurveyAnalyticsWorldMap';
 import { useSurveyAnalyticsView } from '@/components/surveys/SurveyAnalyticsViewContext';
+import { VideoAiAnalysis } from '@/components/surveys/VideoAiAnalysis';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { SurveyDetail } from '@/data/mock-survey-detail';
 import {
@@ -119,6 +120,7 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
   const data = useMemo(() => getSurveyAnalyticsDashboardData(detail), [detail]);
   const activeViewLabel = getAnalyticsViewLabel(activeTab, activeSubView);
   const showDashboardContent = activeTab === 'dashboard' && activeSubView === 'dashboard';
+  const showVideoAiAnalysis = activeTab === 'analysis' && activeSubView === 'video-ai-analysis';
 
   function handleAction(label: string) {
     showToast({ message: label, variant: 'info' });
@@ -132,6 +134,10 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
     { label: 'Dropouts', value: data.summary.dropouts, highlight: false },
     { label: 'Average Time', value: data.summary.averageTimeLabel, highlight: false },
   ];
+
+  if (showVideoAiAnalysis) {
+    return <VideoAiAnalysis />;
+  }
 
   if (!showDashboardContent) {
     return (

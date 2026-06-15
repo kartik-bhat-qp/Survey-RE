@@ -145,6 +145,15 @@ export const MOCK_SURVEYS: Survey[] = [
     status: 'Active - Draft',
     responses: 0,
   },
+  {
+    id: 13,
+    name: 'Video AI',
+    folderId: 'all',
+    createdAt: '2026-06-03T09:00:00Z',
+    modifiedAt: '2026-06-10T11:30:00Z',
+    status: 'Active - Published',
+    responses: 46,
+  },
 ];
 
 export const SURVEYS_PAGE_SIZE = 100;

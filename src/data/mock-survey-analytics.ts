@@ -36,6 +36,7 @@ export const ANALYTICS_TAB_CONFIG: Record<
         label: 'Statistical Analysis',
         requiresAdvancedLicense: true,
       },
+      { id: 'video-ai-analysis', label: 'VideoAI Analysis' },
     ],
   },
   'net-insights': {

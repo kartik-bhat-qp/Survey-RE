@@ -32,12 +32,6 @@ function GlobalFooterActions() {
 }
 
 export function GlobalFooter({ copy = DEFAULT_FOOTER_COPY }: { copy?: string }) {
-  const mounted = useMounted();
-
-  return (
-    <footer className={styles.footer} aria-label="Application footer">
-      <span className={styles.copy}>{copy}</span>
-      {mounted ? <GlobalFooterActions /> : <div className={styles.actions} aria-hidden />}
-    </footer>
-  );
+  void copy;
+  return null;
 }

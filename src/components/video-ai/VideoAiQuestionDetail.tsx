@@ -1,0 +1,697 @@
+'use client';
+
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
+import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import {
+  getVideoAiQuestionDetail,
+  type SentimentValue,
+  type VideoAiResponse,
+} from '@/data/mock-video-ai-detail';
+import styles from './VideoAiQuestionDetail.module.css';
+
+const WuInput = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
+  { ssr: false }
+);
+const WuSelect = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
+  { ssr: false }
+);
+const WuButton = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
+  { ssr: false }
+);
+
+const PAGE_SIZE = 5;
+
+type SentimentFilter = 'all' | 'Positive' | 'Neutral' | 'Negative';
+type ViewFilter = 'all' | 'viewed' | 'not-viewed';
+type SortOrder = 'newest' | 'oldest' | 'longest' | 'shortest';
+
+const SENTIMENT_FILTER_OPTIONS = [
+  { value: 'all', label: 'All sentiments' },
+  { value: 'Positive', label: 'Positive' },
+  { value: 'Neutral', label: 'Neutral' },
+  { value: 'Negative', label: 'Negative' },
+];
+const VIEW_FILTER_OPTIONS = [
+  { value: 'all', label: 'All responses' },
+  { value: 'viewed', label: 'Viewed' },
+  { value: 'not-viewed', label: 'Not viewed' },
+];
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'longest', label: 'Longest first' },
+  { value: 'shortest', label: 'Shortest first' },
+];
+
+const SENTIMENT_CONFIG: Record<
+  SentimentValue,
+  { barColor: string; badgeBg: string; badgeText: string }
+> = {
+  Positive: { barColor: '#5DCAA5', badgeBg: '#E1F5EE', badgeText: '#15803d' },
+  Neutral:  { barColor: '#FAC775', badgeBg: '#FAEEDA', badgeText: '#92400e' },
+  Negative: { barColor: '#F09595', badgeBg: '#FCEBEB', badgeText: '#991b1b' },
+};
+
+// ── Pie chart helpers ─────────────────────────────────────────────────────────
+
+function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
+  const rad = ((angleDeg - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function donutSlicePath(
+  cx: number, cy: number, outer: number, inner: number,
+  start: number, end: number,
+) {
+  const sweep = Math.min(end - start, 359.99);
+  const large = sweep > 180 ? 1 : 0;
+  const os  = polarToCartesian(cx, cy, outer, start);
+  const oe  = polarToCartesian(cx, cy, outer, start + sweep);
+  const ie  = polarToCartesian(cx, cy, inner, start + sweep);
+  const is_ = polarToCartesian(cx, cy, inner, start);
+  return [
+    `M ${os.x} ${os.y}`,
+    `A ${outer} ${outer} 0 ${large} 1 ${oe.x} ${oe.y}`,
+    `L ${ie.x} ${ie.y}`,
+    `A ${inner} ${inner} 0 ${large} 0 ${is_.x} ${is_.y}`,
+    'Z',
+  ].join(' ');
+}
+
+// ── Sentiment donut widget ────────────────────────────────────────────────────
+
+function SentimentDonut({
+  positive, neutral, negative, activeFilter, onSegmentClick,
+}: {
+  positive: number; neutral: number; negative: number;
+  activeFilter: SentimentFilter;
+  onSegmentClick: (s: SentimentFilter) => void;
+}) {
+  const cx = 44; const cy = 44; const outer = 36; const inner = 22;
+  const total = positive + neutral + negative || 1;
+  const segments: { key: SentimentFilter; pct: number }[] = [
+    { key: 'Positive', pct: positive / total },
+    { key: 'Neutral',  pct: neutral  / total },
+    { key: 'Negative', pct: negative / total },
+  ];
+  let cursor = 0;
+  const slices = segments.map(({ key, pct }) => {
+    const start = cursor * 360;
+    const sweep = pct * 360;
+    cursor += pct;
+    return { key, start, sweep, isActive: activeFilter === key, color: SENTIMENT_CONFIG[key as SentimentValue].barColor };
+  });
+
+  return (
+    <div className={styles.donutWrap}>
+      <svg viewBox="0 0 88 88" className={styles.donutSvg} aria-hidden>
+        {slices.map(({ key, start, sweep, isActive, color }) =>
+          sweep > 0 ? (
+            <path
+              key={key}
+              d={donutSlicePath(cx, cy, outer, inner, start, start + sweep)}
+              fill={color}
+              className={styles.donutSlice}
+              data-active={isActive}
+              onClick={() => onSegmentClick(key)}
+              role="button"
+              aria-label={`${key} — click to filter`}
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSegmentClick(key); }}
+            />
+          ) : null
+        )}
+      </svg>
+      <div className={styles.sentimentLegend}>
+        {(['Positive', 'Neutral', 'Negative'] as SentimentValue[]).map((s) => {
+          const pct = s === 'Positive' ? positive : s === 'Neutral' ? neutral : negative;
+          const cfg = SENTIMENT_CONFIG[s];
+          const isActive = activeFilter === s;
+          return (
+            <button
+              key={s}
+              type="button"
+              className={`${styles.legendItem} ${isActive ? styles.legendItemActive : ''}`}
+              style={isActive ? { color: cfg.badgeText, borderColor: cfg.barColor, background: cfg.badgeBg } : {}}
+              onClick={() => onSegmentClick(s)}
+            >
+              <span className={styles.legendDot} style={{ background: cfg.barColor }} />
+              {pct}% {s}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Sentiment badge ───────────────────────────────────────────────────────────
+
+function SentimentBadge({ sentiment }: { sentiment: SentimentValue }) {
+  const cfg = SENTIMENT_CONFIG[sentiment];
+  return (
+    <span className={styles.sentimentBadge} style={{ background: cfg.badgeBg, color: cfg.badgeText }}>
+      {sentiment}
+    </span>
+  );
+}
+
+// ── Kebab menu ────────────────────────────────────────────────────────────────
+
+function KebabMenu({ onEdit }: { onEdit: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onOut(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onOut);
+    return () => document.removeEventListener('mousedown', onOut);
+  }, [open]);
+
+  return (
+    <div className={styles.kebabWrap} ref={ref}>
+      <button
+        type="button"
+        className={`${styles.kebabBtn} ${open ? styles.kebabBtnActive : ''}`}
+        aria-label="More actions"
+        title="More actions"
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+      >
+        <span className="wm-more-vert" aria-hidden />
+      </button>
+      {open && (
+        <div className={styles.kebabMenu}>
+          <button
+            type="button"
+            className={styles.kebabItem}
+            onClick={(e) => { e.stopPropagation(); setOpen(false); onEdit(); }}
+          >
+            <span className="wm-edit" aria-hidden />
+            Edit AI content
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Edit AI content popover ───────────────────────────────────────────────────
+
+function EditAiPopover({
+  responseId,
+  initialSummary,
+  initialTranscript,
+  onSave,
+  onClose,
+}: {
+  responseId: string;
+  initialSummary: string;
+  initialTranscript: string;
+  onSave: (summary: string, transcript: string) => void;
+  onClose: () => void;
+}) {
+  const [summary, setSummary] = useState(initialSummary);
+  const [transcript, setTranscript] = useState(initialTranscript);
+
+  return createPortal(
+    <div className={styles.editModalOverlay} onClick={onClose}>
+      <div className={styles.editModalCard} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.editModalHeader}>
+          <p className={styles.editPopoverTitle}>Edit AI content</p>
+          <button type="button" className={styles.editModalClose} onClick={onClose} aria-label="Close">
+            <span className="wm-close" aria-hidden />
+          </button>
+        </div>
+        <div className={styles.editSection}>
+          <label className={styles.editLabel} htmlFor={`summary-${responseId}`}>Summary</label>
+          <textarea
+            id={`summary-${responseId}`}
+            className={styles.editTextarea}
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+            rows={5}
+          />
+        </div>
+        <div className={styles.editSection}>
+          <label className={styles.editLabel} htmlFor={`transcript-${responseId}`}>Transcript</label>
+          <textarea
+            id={`transcript-${responseId}`}
+            className={styles.editTextarea}
+            value={transcript}
+            onChange={(e) => setTranscript(e.target.value)}
+            rows={4}
+          />
+        </div>
+        <div className={styles.editPopoverActions}>
+          <button type="button" className={styles.editCancelBtn} onClick={onClose}>Cancel</button>
+          <button type="button" className={styles.editSaveBtn} onClick={() => onSave(summary, transcript)}>Save changes</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ── Focus-mode modal ──────────────────────────────────────────────────────────
+
+function ResponseFocusModal({
+  response,
+  sentimentOverride,
+  textOverrides,
+  onClose,
+}: {
+  response: VideoAiResponse;
+  sentimentOverride: SentimentValue | null;
+  textOverrides: { summary?: string; transcript?: string };
+  onClose: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState<'summary' | 'transcript'>('summary');
+  const { showToast } = useWuShowToast();
+  const effectiveSentiment = sentimentOverride ?? response.sentiment;
+  const displaySummary    = textOverrides.summary    ?? response.summary;
+  const displayTranscript = textOverrides.transcript ?? response.transcript;
+
+  // ESC to dismiss
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  // Lock body scroll
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  return createPortal(
+    <div className={styles.focusOverlay} onClick={onClose} role="dialog" aria-modal aria-label="Response detail">
+      <div className={styles.focusCard} onClick={(e) => e.stopPropagation()}>
+
+        {/* Close */}
+        <button className={styles.focusClose} onClick={onClose} aria-label="Close">
+          <span className="wm-close" aria-hidden />
+        </button>
+
+        {/* Header row */}
+        <div className={styles.focusHeader}>
+          <div className={styles.focusHeaderLeft}>
+            <span className={styles.respondentId}>{response.id}</span>
+            <span className={styles.cardDate}>{response.date}</span>
+          </div>
+          <SentimentBadge sentiment={effectiveSentiment} />
+        </div>
+
+        {/* Video */}
+        <div className={styles.focusThumb}>
+          <svg className={styles.focusThumbSvg} viewBox="0 0 560 315" fill="none" aria-hidden>
+            <rect width="560" height="315" rx="8" fill="#1e293b" />
+            <circle cx="280" cy="157" r="48" fill="rgba(255,255,255,0.12)" />
+            <polygon points="264,133 264,181 308,157" fill="white" />
+          </svg>
+          <span className={styles.focusDurationBadge}>{response.duration}</span>
+        </div>
+
+        {/* Tabs */}
+        <div className={styles.tabRow} role="tablist">
+          <button
+            role="tab"
+            aria-selected={activeTab === 'summary'}
+            className={`${styles.tabBtn} ${activeTab === 'summary' ? styles.tabBtnActive : ''}`}
+            onClick={() => setActiveTab('summary')}
+          >
+            Summary
+          </button>
+          <button
+            role="tab"
+            aria-selected={activeTab === 'transcript'}
+            className={`${styles.tabBtn} ${activeTab === 'transcript' ? styles.tabBtnActive : ''}`}
+            onClick={() => setActiveTab('transcript')}
+          >
+            Transcript
+          </button>
+        </div>
+
+        <p className={styles.focusText}>
+          {activeTab === 'summary' ? displaySummary : displayTranscript}
+        </p>
+
+        {/* Actions */}
+        <div className={styles.focusActions}>
+          <button type="button" className={styles.actionBtn} aria-label="Like" title="Like"
+            onClick={() => showToast({ message: 'Liked', variant: 'success' })}>
+            <span className="wm-thumb-up" aria-hidden />
+          </button>
+          <button type="button" className={styles.actionBtn} aria-label="Dislike" title="Dislike"
+            onClick={() => showToast({ message: 'Disliked', variant: 'info' })}>
+            <span className="wm-thumb-down" aria-hidden />
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ── Response card ─────────────────────────────────────────────────────────────
+
+function ResponseCard({
+  response,
+  sentimentOverride,
+  textOverrides,
+  onSentimentOverride,
+  onTextOverride,
+  onOpenModal,
+}: {
+  response: VideoAiResponse;
+  sentimentOverride: SentimentValue | null;
+  textOverrides: { summary?: string; transcript?: string };
+  onSentimentOverride: (id: string, s: SentimentValue) => void;
+  onTextOverride: (id: string, field: 'summary' | 'transcript', value: string) => void;
+  onOpenModal: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState<'summary' | 'transcript'>('summary');
+  const [editOpen, setEditOpen] = useState(false);
+  const { showToast } = useWuShowToast();
+
+  const effectiveSentiment = sentimentOverride ?? response.sentiment;
+  const displaySummary    = textOverrides.summary    ?? response.summary;
+  const displayTranscript = textOverrides.transcript ?? response.transcript;
+
+  function handleSave(sum: string, trans: string) {
+    onTextOverride(response.id, 'summary', sum);
+    onTextOverride(response.id, 'transcript', trans);
+    setEditOpen(false);
+    showToast({ message: 'AI content updated', variant: 'success' });
+  }
+
+  return (
+    <>
+      <article
+        className={styles.responseCard}
+        onClick={onOpenModal}
+        role="button"
+        tabIndex={0}
+        aria-label={`Open response ${response.id}`}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenModal(); } }}
+      >
+        {/* Left: video thumbnail */}
+        <div className={styles.videoThumb}>
+          <svg className={styles.videoThumbSvg} viewBox="0 0 140 95" fill="none" aria-hidden>
+            <rect width="140" height="95" rx="6" fill="#1e293b" />
+            <circle cx="70" cy="44" r="18" fill="rgba(255,255,255,0.15)" />
+            <polygon points="64,36 64,52 80,44" fill="white" />
+          </svg>
+          <span className={styles.durationBadge}>{response.duration}</span>
+        </div>
+
+        {/* Center: content */}
+        <div className={styles.cardContent} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.cardHeader}>
+            <span className={styles.respondentId}>{response.id}</span>
+            <span className={styles.cardDate}>{response.date}</span>
+          </div>
+
+          <div className={styles.tabRow} role="tablist">
+            <button
+              role="tab"
+              aria-selected={activeTab === 'summary'}
+              className={`${styles.tabBtn} ${activeTab === 'summary' ? styles.tabBtnActive : ''}`}
+              onClick={() => setActiveTab('summary')}
+            >
+              Summary
+            </button>
+            <button
+              role="tab"
+              aria-selected={activeTab === 'transcript'}
+              className={`${styles.tabBtn} ${activeTab === 'transcript' ? styles.tabBtnActive : ''}`}
+              onClick={() => setActiveTab('transcript')}
+            >
+              Transcript
+            </button>
+          </div>
+
+          <p className={styles.cardText}>
+            {activeTab === 'summary' ? displaySummary : displayTranscript}
+          </p>
+        </div>
+
+        {/* Right: sentiment badge + kebab + like/dislike */}
+        <div className={styles.cardRight} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.sentimentRow}>
+            <SentimentBadge sentiment={effectiveSentiment} />
+            <KebabMenu onEdit={() => setEditOpen(true)} />
+          </div>
+
+          <div className={styles.cardActions}>
+            <button type="button" className={styles.actionBtn} aria-label="Like" title="Like"
+              onClick={() => showToast({ message: 'Liked', variant: 'success' })}>
+              <span className="wm-thumb-up" aria-hidden />
+            </button>
+            <button type="button" className={styles.actionBtn} aria-label="Dislike" title="Dislike"
+              onClick={() => showToast({ message: 'Disliked', variant: 'info' })}>
+              <span className="wm-thumb-down" aria-hidden />
+            </button>
+          </div>
+        </div>
+      </article>
+
+      {editOpen && (
+        <EditAiPopover
+          responseId={response.id}
+          initialSummary={displaySummary}
+          initialTranscript={displayTranscript}
+          onSave={handleSave}
+          onClose={() => setEditOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
+  const router = useRouter();
+  const detail = getVideoAiQuestionDetail(questionId);
+  const { showToast } = useWuShowToast();
+
+  const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>('all');
+  const [viewFilter, setViewFilter] = useState<ViewFilter>('all');
+  const [sort, setSort] = useState<SortOrder>('newest');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [aiExpanded, setAiExpanded] = useState(false);
+  const [aiRefreshing, setAiRefreshing] = useState(false);
+  const [sentimentOverrides, setSentimentOverrides] = useState<Record<string, SentimentValue>>({});
+  const [textOverrides, setTextOverrides]   = useState<Record<string, { summary?: string; transcript?: string }>>({});
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+
+  const sentimentFilterOpt = SENTIMENT_FILTER_OPTIONS.find((o) => o.value === sentimentFilter)!;
+  const viewFilterOpt      = VIEW_FILTER_OPTIONS.find((o) => o.value === viewFilter)!;
+  const sortOpt            = SORT_OPTIONS.find((o) => o.value === sort)!;
+  const isFiltered = sentimentFilter !== 'all' || viewFilter !== 'all' || search.trim() !== '';
+
+  function applyFilter<T>(setter: (v: T) => void, value: T) { setter(value); setPage(1); }
+  function handleSegmentClick(s: SentimentFilter) { applyFilter(setSentimentFilter, sentimentFilter === s ? 'all' : s); }
+  function handleSentimentOverride(id: string, s: SentimentValue) { setSentimentOverrides((p) => ({ ...p, [id]: s })); }
+  function handleTextOverride(id: string, field: 'summary' | 'transcript', value: string) {
+    setTextOverrides((p) => ({ ...p, [id]: { ...p[id], [field]: value } }));
+  }
+  function handleRefreshAi() {
+    setAiRefreshing(true);
+    setTimeout(() => { setAiRefreshing(false); showToast({ message: 'AI summary refreshed', variant: 'success' }); }, 1400);
+  }
+
+  const filtered = useMemo(() => {
+    let result = detail.responses.map((r) => ({ ...r, sentiment: sentimentOverrides[r.id] ?? r.sentiment }));
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((r) => r.id.includes(q) || r.summary.toLowerCase().includes(q) || r.transcript.toLowerCase().includes(q));
+    }
+    if (sentimentFilter !== 'all') result = result.filter((r) => r.sentiment === sentimentFilter);
+    if (viewFilter === 'viewed')     result = result.filter((r) => r.viewed);
+    if (viewFilter === 'not-viewed') result = result.filter((r) => !r.viewed);
+    result = [...result].sort((a, b) => {
+      if (sort === 'newest')  return new Date(b.date).getTime() - new Date(a.date).getTime() || b.durationSeconds - a.durationSeconds;
+      if (sort === 'oldest')  return new Date(a.date).getTime() - new Date(b.date).getTime() || a.durationSeconds - b.durationSeconds;
+      if (sort === 'longest') return b.durationSeconds - a.durationSeconds;
+      return a.durationSeconds - b.durationSeconds;
+    });
+    return result;
+  }, [detail.responses, search, sentimentFilter, viewFilter, sort, sentimentOverrides]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const startItem  = filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const endItem    = Math.min(page * PAGE_SIZE, filtered.length);
+  const { positive, neutral, negative } = detail.sentiment;
+
+  const focusedResponse = focusedId ? filtered.find((r) => r.id === focusedId) ?? null : null;
+
+  return (
+    <div className={styles.page}>
+
+      {/* ── Breadcrumb ─────────────────────────────────────────────── */}
+      <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+        <button type="button" className={styles.breadcrumbLink} onClick={() => router.back()}>
+          <span className="wm-arrow-back" aria-hidden />
+          VideoAI Analysis
+        </button>
+        <span className={styles.breadcrumbSep} aria-hidden>›</span>
+        <span className={styles.breadcrumbCurrent}>Question detail</span>
+      </nav>
+
+      {/* ── Question header ─────────────────────────────────────────── */}
+      <header className={styles.questionHeader}>
+        <div className={styles.stimulusThumb} aria-hidden>
+          <span className={`wm-image ${styles.stimulusIcon}`} />
+        </div>
+        <div className={styles.questionMeta}>
+          <h1 className={styles.questionText}>{detail.question}</h1>
+          <div className={styles.questionSubMeta}>
+            <span className={styles.surveyBadge}>{detail.survey}</span>
+            <span className={styles.questionDate}>
+              <span className="wm-calendar-today" aria-hidden />
+              {detail.date}
+            </span>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Summary widgets (3 cards) ───────────────────────────────── */}
+      <div className={styles.widgetsRow}>
+        <div className={styles.widget}>
+          <div className={styles.widgetLabel}><span className="wm-group" aria-hidden />Responses</div>
+          <div className={styles.widgetValue}>{detail.totalResponses}</div>
+          <div className={styles.widgetSub}>{detail.analyzedResponses} analyzed · {detail.totalResponses - detail.analyzedResponses} pending</div>
+        </div>
+
+        <div className={styles.widget}>
+          <div className={styles.widgetLabel}><span className="wm-pie-chart" aria-hidden />Sentiment</div>
+          <SentimentDonut positive={positive} neutral={neutral} negative={negative}
+            activeFilter={sentimentFilter} onSegmentClick={handleSegmentClick} />
+        </div>
+
+        <div className={styles.widget}>
+          <div className={styles.widgetLabel}><span className="wm-schedule" aria-hidden />Avg. duration</div>
+          <div className={styles.widgetValue}>{detail.avgDuration}</div>
+          <div className={styles.widgetSub}>Range: {detail.durationRange.min} – {detail.durationRange.max}</div>
+        </div>
+      </div>
+
+      {/* ── AI summary ──────────────────────────────────────────────── */}
+      <div className={styles.aiCard}>
+        <div className={styles.aiCardHeader}>
+          <span className={styles.aiCardTitle}>
+            <span className="wc-ai" aria-hidden />
+            AI summary
+          </span>
+          <div className={styles.aiCardActions}>
+            <button
+              type="button"
+              className={`${styles.aiRefreshBtn} ${aiRefreshing ? styles.aiRefreshBtnSpinning : ''}`}
+              aria-label="Refresh AI summary"
+              title="Refresh AI summary"
+              onClick={handleRefreshAi}
+              disabled={aiRefreshing}
+            >
+              <span className="wm-refresh" aria-hidden />
+            </button>
+            <button type="button" className={styles.aiToggleBtn} onClick={() => setAiExpanded((v) => !v)}>
+              {aiExpanded ? 'Show less' : 'Show more'}
+              <span className={`wm-expand-more ${styles.aiToggleIcon} ${aiExpanded ? styles.aiToggleIconExpanded : ''}`} aria-hidden />
+            </button>
+          </div>
+        </div>
+        <p className={`${styles.aiText} ${!aiExpanded ? styles.aiTextClamped : ''}`}>
+          {aiRefreshing ? 'Refreshing AI summary…' : detail.aiSummary}
+        </p>
+      </div>
+
+      {/* ── Responses section ───────────────────────────────────────── */}
+      <div className={styles.responsesSection}>
+        <div className={styles.filterBar}>
+          <div className={styles.searchWrap}>
+            <WuInput
+              variant="outlined"
+              placeholder="Search by ID, summary or transcript…"
+              Icon={<span className="wm-search" />}
+              iconPosition="left"
+              value={search}
+              onChange={(e) => applyFilter(setSearch, e.target.value)}
+            />
+          </div>
+          <WuSelect data={SENTIMENT_FILTER_OPTIONS} accessorKey={{ value: 'value', label: 'label' }} value={sentimentFilterOpt}
+            onSelect={(opt) => { if (opt) applyFilter(setSentimentFilter, opt.value as SentimentFilter); }}
+            variant="outlined" className={styles.filterSelect} />
+          <WuSelect data={VIEW_FILTER_OPTIONS} accessorKey={{ value: 'value', label: 'label' }} value={viewFilterOpt}
+            onSelect={(opt) => { if (opt) applyFilter(setViewFilter, opt.value as ViewFilter); }}
+            variant="outlined" className={styles.filterSelect} />
+          <WuSelect data={SORT_OPTIONS} accessorKey={{ value: 'value', label: 'label' }} value={sortOpt}
+            onSelect={(opt) => { if (opt) applyFilter(setSort, opt.value as SortOrder); }}
+            variant="outlined" className={styles.filterSelect} />
+        </div>
+
+        <div className={styles.sectionDivider} />
+
+        <p className={styles.responseCount}>
+          {filtered.length} {filtered.length === 1 ? 'response' : 'responses'}
+          {isFiltered && <span className={styles.responseCountFiltered}> (filtered)</span>}
+        </p>
+
+        <div className={styles.cardList}>
+          {paginated.length === 0 ? (
+            <div className={styles.emptyState}>
+              <span className={`wm-videocam ${styles.emptyIcon}`} aria-hidden />
+              <p className={styles.emptyTitle}>No responses match your filters</p>
+              <p className={styles.emptyDesc}>Try adjusting or clearing the search and filter options.</p>
+            </div>
+          ) : (
+            paginated.map((r) => (
+              <ResponseCard
+                key={r.id}
+                response={r}
+                sentimentOverride={sentimentOverrides[r.id] ?? null}
+                textOverrides={textOverrides[r.id] ?? {}}
+                onSentimentOverride={handleSentimentOverride}
+                onTextOverride={handleTextOverride}
+                onOpenModal={() => setFocusedId(r.id)}
+              />
+            ))
+          )}
+        </div>
+
+        {filtered.length > 0 && (
+          <div className={styles.pagination}>
+            <span className={styles.paginationInfo}>Showing {startItem}–{endItem} of {filtered.length}</span>
+            <div className={styles.paginationControls}>
+              <WuButton variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</WuButton>
+              <WuButton variant="secondary" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</WuButton>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Focus-mode modal ────────────────────────────────────────── */}
+      {focusedResponse && (
+        <ResponseFocusModal
+          response={focusedResponse}
+          sentimentOverride={sentimentOverrides[focusedResponse.id] ?? null}
+          textOverrides={textOverrides[focusedResponse.id] ?? {}}
+          onClose={() => setFocusedId(null)}
+        />
+      )}
+    </div>
+  );
+}
