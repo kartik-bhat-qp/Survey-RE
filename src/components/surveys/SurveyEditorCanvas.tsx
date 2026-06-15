@@ -16,11 +16,13 @@ import {
   createDefaultMultiPointMatrix,
   createDefaultVanWestendorpData,
   DEFAULT_LOOKUP_TABLE_QUESTION_TEXT,
+  SELECT_ONE_MAX_BULK_OPTIONS,
   DEFAULT_MULTI_POINT_QUESTION_TEXT,
   DEFAULT_NPS_MAX_LABEL,
   DEFAULT_NPS_MIN_LABEL,
   DEFAULT_VAN_WESTENDORP_QUESTION_TEXT,
 } from '@/data/mock-survey-detail';
+import { LookupTableBulkConversionModal } from '@/components/surveys/LookupTableBulkConversionModal';
 import { LookupTableQuestionRow } from '@/components/surveys/LookupTableQuestionRow';
 import { NpsQuestionRow } from '@/components/surveys/NpsQuestionRow';
 import { VanWestendorpQuestionRow } from '@/components/surveys/VanWestendorpQuestionRow';
@@ -65,11 +67,26 @@ import {
 } from '@/data/survey-question-preview-session';
 import { toShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
 import { QuotaControlOptionTag } from '@/components/surveys/QuotaControlOptionTag';
+import { DynamicTextCommentsOptionIcon } from '@/components/surveys/DynamicTextCommentsOptionIcon';
+import { ExtractedQuestionBanner } from '@/components/surveys/ExtractedQuestionBanner';
+import { ExtractionOptionTag } from '@/components/surveys/ExtractionOptionTag';
 import {
+  getExtractionOptionLabels,
+  isExtractionLogicApplied,
+  removeExtractedQuestionFromSection,
+  upsertExtractedQuestionInSection,
+} from '@/data/mock-question-extraction';
+import type { SurveyQuestionExtractionSource } from '@/data/mock-survey-detail';
+import {
+  clearLookupTableUnsupportedLogic,
+  collectLookupTableConversionLogicConflicts,
   createDefaultQuestionLogicState,
+  getDynamicTextEnabledByOptionId,
   getQuotaControlOptionLabels,
-  isQuotaControlLogicApplied,
+  isDynamicTextCommentsConfigured,
+  isQuotaControlConfigured,
   isShowHideOptionsLogicApplied,
+  type LookupTableConversionLogicConflict,
   type QuestionLogicState,
 } from '@/data/mock-question-logic';
 import {
@@ -118,6 +135,7 @@ function cloneSections(sections: SurveySection[]): SurveySection[] {
           }
         : {}),
       ...(q.lookupTable ? { lookupTable: { ...q.lookupTable } } : {}),
+      ...(q.extractionSource ? { extractionSource: { ...q.extractionSource } } : {}),
     })),
   }));
 }
@@ -183,6 +201,7 @@ function cloneQuestionForCopy(question: SurveyQuestion): SurveyQuestion {
         }
       : {}),
     ...(question.lookupTable ? { lookupTable: { ...question.lookupTable } } : {}),
+    ...(question.extractionSource ? { extractionSource: { ...question.extractionSource } } : {}),
   };
 }
 
@@ -215,6 +234,48 @@ function questionHasOtherOption(question: SurveyQuestion): boolean {
 
 function questionHasNotApplicableOption(question: SurveyQuestion): boolean {
   return question.options.some((option) => isNotApplicableOptionLabel(option.label));
+}
+
+function countBulkEditOptions(
+  labels: string[],
+  otherOption: boolean,
+  notApplicableOption: boolean
+): number {
+  let count = labels.length;
+  if (otherOption && !labels.some(isOtherOptionLabel)) count += 1;
+  if (notApplicableOption && !labels.some(isNotApplicableOptionLabel)) count += 1;
+  return count;
+}
+
+function applyBulkEditToQuestion(
+  question: SurveyQuestion,
+  payload: {
+    optionLabels: string[];
+    otherOption: boolean;
+    notApplicableOption: boolean;
+  },
+  convertToLookupTable: boolean
+): SurveyQuestion {
+  const options = applyBulkOptionLabels(
+    question.options,
+    payload.optionLabels,
+    payload.otherOption,
+    payload.notApplicableOption
+  );
+
+  if (!convertToLookupTable) {
+    return { ...question, options };
+  }
+
+  const firstOptionLabel = plainTextFromRichValue(options[0]?.label ?? '');
+
+  return {
+    ...question,
+    kind: 'lookup-table',
+    addQuestionTypeId: 'lookup-table',
+    options,
+    lookupTable: { selectedValue: firstOptionLabel },
+  };
 }
 
 function applyBulkOptionLabels(
@@ -333,8 +394,15 @@ function QuestionRow({
   question,
   sectionId,
   showHideOptionsApplied,
+  dynamicTextCommentsApplied,
+  dynamicTextEnabledByOptionId,
+  extractionApplied,
   quotaControlApplied,
   quotaOptionLabels,
+  extractionOptionLabels,
+  extractionSource,
+  onModifyExtraction,
+  onExtractionSourceClick,
   onAction,
   onOpenLogic,
   onOpenSettings,
@@ -346,8 +414,15 @@ function QuestionRow({
   question: SurveyQuestion;
   sectionId: string;
   showHideOptionsApplied: boolean;
+  dynamicTextCommentsApplied: boolean;
+  dynamicTextEnabledByOptionId: Record<string, boolean>;
+  extractionApplied: boolean;
   quotaControlApplied: boolean;
   quotaOptionLabels: Record<string, string>;
+  extractionOptionLabels: Record<string, string>;
+  extractionSource?: SurveyQuestionExtractionSource;
+  onModifyExtraction?: () => void;
+  onExtractionSourceClick?: () => void;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -375,9 +450,17 @@ function QuestionRow({
               onPointerDown={stopQuestionEvent}
             />
           </div>
+          {extractionSource && onModifyExtraction && onExtractionSourceClick ? (
+            <ExtractedQuestionBanner
+              extractionSource={extractionSource}
+              onModifyExtraction={onModifyExtraction}
+              onSourceClick={onExtractionSourceClick}
+            />
+          ) : null}
           <ul className={styles.options}>
             {question.options.map((option) => {
               const quotaLabel = quotaOptionLabels[option.id];
+              const extractionLabel = extractionOptionLabels[option.id];
               return (
               <li
                 key={option.id}
@@ -401,9 +484,15 @@ function QuestionRow({
                     placeholder="Option"
                     onPointerDown={stopQuestionEvent}
                   />
+                  {dynamicTextEnabledByOptionId[option.id] ? (
+                    <DynamicTextCommentsOptionIcon />
+                  ) : null}
+                  {extractionLabel ? (
+                    <ExtractionOptionTag label={extractionLabel} />
+                  ) : null}
                   {quotaLabel ? <QuotaControlOptionTag label={quotaLabel} /> : null}
                 </div>
-                {!quotaLabel && option.logicLabel ? (
+                {!quotaLabel && !extractionLabel && option.logicLabel ? (
                   <span className={styles.logicTag}>
                     <span className="wm-call-split" aria-hidden />
                     {option.logicLabel}
@@ -427,6 +516,8 @@ function QuestionRow({
       </div>
       <QuestionWorkspaceFooter
         showHideOptionsApplied={showHideOptionsApplied}
+        dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+        extractionApplied={extractionApplied}
         quotaControlApplied={quotaControlApplied}
         className={styles.questionRowFooter}
       />
@@ -438,8 +529,15 @@ function SelectOneQuestionRow({
   question,
   sectionId,
   showHideOptionsApplied,
+  dynamicTextCommentsApplied,
+  dynamicTextEnabledByOptionId,
+  extractionApplied,
   quotaControlApplied,
   quotaOptionLabels,
+  extractionOptionLabels,
+  extractionSource,
+  onModifyExtraction,
+  onExtractionSourceClick,
   onAction,
   onOpenLogic,
   onOpenSettings,
@@ -453,8 +551,15 @@ function SelectOneQuestionRow({
   question: SurveyQuestion;
   sectionId: string;
   showHideOptionsApplied: boolean;
+  dynamicTextCommentsApplied: boolean;
+  dynamicTextEnabledByOptionId: Record<string, boolean>;
+  extractionApplied: boolean;
   quotaControlApplied: boolean;
   quotaOptionLabels: Record<string, string>;
+  extractionOptionLabels: Record<string, string>;
+  extractionSource?: SurveyQuestionExtractionSource;
+  onModifyExtraction?: () => void;
+  onExtractionSourceClick?: () => void;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -496,9 +601,17 @@ function SelectOneQuestionRow({
               onPointerDown={stopQuestionEvent}
             />
           </div>
+          {extractionSource && onModifyExtraction && onExtractionSourceClick ? (
+            <ExtractedQuestionBanner
+              extractionSource={extractionSource}
+              onModifyExtraction={onModifyExtraction}
+              onSourceClick={onExtractionSourceClick}
+            />
+          ) : null}
           <ul className={styles.selectManyOptions}>
             {question.options.map((option) => {
               const quotaLabel = quotaOptionLabels[option.id];
+              const extractionLabel = extractionOptionLabels[option.id];
               return (
               <li key={option.id} className={styles.selectManyOptionItem}>
                 <span className={styles.selectOneOptionRadio}>
@@ -523,6 +636,12 @@ function SelectOneQuestionRow({
                       onPointerDown={stopQuestionEvent}
                     />
                   </div>
+                  {dynamicTextEnabledByOptionId[option.id] ? (
+                    <DynamicTextCommentsOptionIcon />
+                  ) : null}
+                  {extractionLabel ? (
+                    <ExtractionOptionTag label={extractionLabel} />
+                  ) : null}
                   {quotaLabel ? <QuotaControlOptionTag label={quotaLabel} /> : null}
                 </div>
               </li>
@@ -557,6 +676,8 @@ function SelectOneQuestionRow({
         </div>
         <QuestionWorkspaceFooter
           showHideOptionsApplied={showHideOptionsApplied}
+          dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+          extractionApplied={extractionApplied}
           quotaControlApplied={quotaControlApplied}
           className={styles.selectManyFooter}
         />
@@ -569,8 +690,15 @@ function SelectManyQuestionRow({
   question,
   sectionId,
   showHideOptionsApplied,
+  dynamicTextCommentsApplied,
+  dynamicTextEnabledByOptionId,
+  extractionApplied,
   quotaControlApplied,
   quotaOptionLabels,
+  extractionOptionLabels,
+  extractionSource,
+  onModifyExtraction,
+  onExtractionSourceClick,
   onAction,
   onOpenLogic,
   onOpenSettings,
@@ -583,8 +711,15 @@ function SelectManyQuestionRow({
   question: SurveyQuestion;
   sectionId: string;
   showHideOptionsApplied: boolean;
+  dynamicTextCommentsApplied: boolean;
+  dynamicTextEnabledByOptionId: Record<string, boolean>;
+  extractionApplied: boolean;
   quotaControlApplied: boolean;
   quotaOptionLabels: Record<string, string>;
+  extractionOptionLabels: Record<string, string>;
+  extractionSource?: SurveyQuestionExtractionSource;
+  onModifyExtraction?: () => void;
+  onExtractionSourceClick?: () => void;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -624,9 +759,17 @@ function SelectManyQuestionRow({
               onPointerDown={stopQuestionEvent}
             />
           </div>
+          {extractionSource && onModifyExtraction && onExtractionSourceClick ? (
+            <ExtractedQuestionBanner
+              extractionSource={extractionSource}
+              onModifyExtraction={onModifyExtraction}
+              onSourceClick={onExtractionSourceClick}
+            />
+          ) : null}
           <ul className={styles.selectManyOptions}>
             {question.options.map((option) => {
               const quotaLabel = quotaOptionLabels[option.id];
+              const extractionLabel = extractionOptionLabels[option.id];
               return (
               <li key={option.id} className={styles.selectManyOptionItem}>
                 <span className={styles.selectManyOptionCheckbox}>
@@ -650,6 +793,12 @@ function SelectManyQuestionRow({
                       onPointerDown={stopQuestionEvent}
                     />
                   </div>
+                  {dynamicTextEnabledByOptionId[option.id] ? (
+                    <DynamicTextCommentsOptionIcon />
+                  ) : null}
+                  {extractionLabel ? (
+                    <ExtractionOptionTag label={extractionLabel} />
+                  ) : null}
                   {quotaLabel ? <QuotaControlOptionTag label={quotaLabel} /> : null}
                 </div>
               </li>
@@ -684,6 +833,8 @@ function SelectManyQuestionRow({
         </div>
         <QuestionWorkspaceFooter
           showHideOptionsApplied={showHideOptionsApplied}
+          dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+          extractionApplied={extractionApplied}
           quotaControlApplied={quotaControlApplied}
           className={styles.selectManyFooter}
         />
@@ -738,6 +889,19 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   const [deleteQuestionTarget, setDeleteQuestionTarget] = useState<{
     sectionId: string;
     questionId: string;
+  } | null>(null);
+  const [lookupTableBulkConversionOpen, setLookupTableBulkConversionOpen] = useState(false);
+  const [lookupTableBulkConversionConflicts, setLookupTableBulkConversionConflicts] = useState<
+    LookupTableConversionLogicConflict[]
+  >([]);
+  const [pendingLookupTableBulkConversion, setPendingLookupTableBulkConversion] = useState<{
+    sectionId: string;
+    questionId: string;
+    payload: {
+      optionLabels: string[];
+      otherOption: boolean;
+      notApplicableOption: boolean;
+    };
   } | null>(null);
   const [pageBreakBySlotKey, setPageBreakBySlotKey] = useState<Record<string, boolean>>({});
   const pendingScrollQuestionRef = useRef<{ sectionId: string; questionId: string } | null>(
@@ -957,14 +1121,16 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     []
   );
 
-  const handleBulkEditSave = useCallback(
-    (payload: {
-      optionLabels: string[];
-      otherOption: boolean;
-      notApplicableOption: boolean;
-    }) => {
-      if (!bulkEditTarget) return;
-      const { sectionId, questionId } = bulkEditTarget;
+  const applyLookupTableBulkConversion = useCallback(
+    (
+      sectionId: string,
+      questionId: string,
+      payload: {
+        optionLabels: string[];
+        otherOption: boolean;
+        notApplicableOption: boolean;
+      }
+    ) => {
       setSections((prev) =>
         prev.map((sec) => {
           if (sec.id !== sectionId) return sec;
@@ -972,23 +1138,154 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             ...sec,
             questions: sec.questions.map((q) => {
               if (q.id !== questionId) return q;
-              return {
-                ...q,
-                options: applyBulkOptionLabels(
-                  q.options,
-                  payload.optionLabels,
-                  payload.otherOption,
-                  payload.notApplicableOption
-                ),
-              };
+              return applyBulkEditToQuestion(q, payload, true);
             }),
           };
         })
       );
       setBulkEditTarget(null);
     },
-    [bulkEditTarget]
+    []
   );
+
+  const handleBulkEditSave = useCallback(
+    (payload: {
+      optionLabels: string[];
+      otherOption: boolean;
+      notApplicableOption: boolean;
+    }): 'saved' | 'converted' | 'blocked' => {
+      if (!bulkEditTarget) return 'saved';
+      const { sectionId, questionId } = bulkEditTarget;
+      const question = sections
+        .find((sec) => sec.id === sectionId)
+        ?.questions.find((q) => q.id === questionId);
+
+      if (!question) return 'saved';
+
+      const optionCount = countBulkEditOptions(
+        payload.optionLabels,
+        payload.otherOption,
+        payload.notApplicableOption
+      );
+      const requiresLookupTable =
+        isSelectOneQuestion(question) && optionCount > SELECT_ONE_MAX_BULK_OPTIONS;
+
+      if (requiresLookupTable) {
+        const questionKey = `${sectionId}:${questionId}`;
+        const optionIds = question.options.map((option) => option.id);
+        const savedLogic =
+          logicByQuestionKey[questionKey] ?? createDefaultQuestionLogicState(optionIds);
+        const conflicts = collectLookupTableConversionLogicConflicts(savedLogic, optionIds);
+
+        if (conflicts.length > 0) {
+          setPendingLookupTableBulkConversion({ sectionId, questionId, payload });
+          setLookupTableBulkConversionConflicts(conflicts);
+          setLookupTableBulkConversionOpen(true);
+          setBulkEditTarget(null);
+          return 'blocked';
+        }
+
+        applyLookupTableBulkConversion(sectionId, questionId, payload);
+        return 'converted';
+      }
+
+      setSections((prev) =>
+        prev.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            questions: sec.questions.map((q) => {
+              if (q.id !== questionId) return q;
+              return applyBulkEditToQuestion(q, payload, false);
+            }),
+          };
+        })
+      );
+      setBulkEditTarget(null);
+      return 'saved';
+    },
+    [applyLookupTableBulkConversion, bulkEditTarget, logicByQuestionKey, sections]
+  );
+
+  const handleRemoveLookupTableConflict = useCallback(
+    (conflict: LookupTableConversionLogicConflict) => {
+      if (!pendingLookupTableBulkConversion) return;
+      const { sectionId, questionId, payload } = pendingLookupTableBulkConversion;
+      const questionKey = `${sectionId}:${questionId}`;
+      const question = sections
+        .find((sec) => sec.id === sectionId)
+        ?.questions.find((q) => q.id === questionId);
+      if (!question) return;
+
+      const optionIds = question.options.map((option) => option.id);
+      const currentLogic =
+        logicByQuestionKey[questionKey] ?? createDefaultQuestionLogicState(optionIds);
+      const nextLogic = clearLookupTableUnsupportedLogic(
+        currentLogic,
+        optionIds,
+        conflict.logicType
+      );
+      const nextConflicts = collectLookupTableConversionLogicConflicts(nextLogic, optionIds);
+
+      setLogicByQuestionKey((prev) => ({
+        ...prev,
+        [questionKey]: nextLogic,
+      }));
+
+      if (conflict.logicType === 'extraction') {
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            return {
+              ...sec,
+              questions: removeExtractedQuestionFromSection(sec.questions, questionId),
+            };
+          })
+        );
+      }
+
+      setLookupTableBulkConversionConflicts(nextConflicts);
+      showToast({
+        message: `${conflict.typeLabel} logic removed`,
+        variant: 'success',
+      });
+    },
+    [logicByQuestionKey, pendingLookupTableBulkConversion, sections, showToast]
+  );
+
+  const handleSaveAsLookupTable = useCallback(() => {
+    if (!pendingLookupTableBulkConversion) return;
+    const { sectionId, questionId, payload } = pendingLookupTableBulkConversion;
+    const questionKey = `${sectionId}:${questionId}`;
+    const question = sections
+      .find((sec) => sec.id === sectionId)
+      ?.questions.find((q) => q.id === questionId);
+    if (!question) return;
+
+    const optionIds = question.options.map((option) => option.id);
+    const savedLogic =
+      logicByQuestionKey[questionKey] ?? createDefaultQuestionLogicState(optionIds);
+    const remainingConflicts = collectLookupTableConversionLogicConflicts(
+      savedLogic,
+      optionIds
+    );
+    if (remainingConflicts.length > 0) return;
+
+    applyLookupTableBulkConversion(sectionId, questionId, payload);
+    setPendingLookupTableBulkConversion(null);
+    setLookupTableBulkConversionOpen(false);
+    setLookupTableBulkConversionConflicts([]);
+    showToast({
+      message: 'Question converted to Lookup Table with answer options updated',
+      variant: 'success',
+    });
+  }, [
+    applyLookupTableBulkConversion,
+    logicByQuestionKey,
+    pendingLookupTableBulkConversion,
+    sections,
+    showToast,
+  ]);
 
   const bulkEditQuestion = bulkEditTarget
     ? sections
@@ -1055,6 +1352,54 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         ...prev,
         [questionKey]: state,
       }));
+
+      let extractedQuestionId: string | null = null;
+      setSections((prev) =>
+        prev.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          const sourceIndex = sec.questions.findIndex((question) => question.id === questionId);
+          if (sourceIndex < 0) return sec;
+
+          if (state.logicType !== 'extraction') {
+            return {
+              ...sec,
+              questions: removeExtractedQuestionFromSection(sec.questions, questionId),
+            };
+          }
+
+          const sourceQuestion = sec.questions[sourceIndex];
+          const result = upsertExtractedQuestionInSection(
+            sec.questions,
+            sourceIndex,
+            sourceQuestion,
+            state.extraction
+          );
+          extractedQuestionId = result.extractedQuestionId;
+          return { ...sec, questions: result.questions };
+        })
+      );
+
+      if (extractedQuestionId) {
+        pendingScrollQuestionRef.current = {
+          sectionId,
+          questionId: extractedQuestionId,
+        };
+        setSelectedQuestionKey(`${sectionId}:${extractedQuestionId}`);
+      }
+    },
+    []
+  );
+
+  const handleModifyExtraction = useCallback((sectionId: string, sourceQuestionId: string) => {
+    setLogicTarget({ sectionId, questionId: sourceQuestionId });
+    pendingScrollQuestionRef.current = { sectionId, questionId: sourceQuestionId };
+    setSelectedQuestionKey(`${sectionId}:${sourceQuestionId}`);
+  }, []);
+
+  const handleExtractionSourceClick = useCallback(
+    (sectionId: string, sourceQuestionId: string) => {
+      pendingScrollQuestionRef.current = { sectionId, questionId: sourceQuestionId };
+      setSelectedQuestionKey(`${sectionId}:${sourceQuestionId}`);
     },
     []
   );
@@ -1768,11 +2113,45 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                       isShowHideOptionsLogicApplied(savedLogic, questionOptionIds);
                     const quotaControlApplied =
                       savedLogic != null &&
-                      isQuotaControlLogicApplied(savedLogic, questionOptionIds);
+                      isQuotaControlConfigured(savedLogic, questionOptionIds);
+                    const dynamicTextCommentsApplied =
+                      savedLogic != null &&
+                      isDynamicTextCommentsConfigured(savedLogic, questionOptionIds);
+                    const dynamicTextEnabledByOptionId =
+                      savedLogic != null
+                        ? getDynamicTextEnabledByOptionId(savedLogic, questionOptionIds)
+                        : {};
+                    const extractionApplied =
+                      savedLogic != null &&
+                      !question.extractionSource &&
+                      isExtractionLogicApplied(savedLogic);
                     const quotaOptionLabels =
                       savedLogic != null
                         ? getQuotaControlOptionLabels(savedLogic, questionOptionIds)
                         : {};
+                    const extractionOptionLabels =
+                      savedLogic != null && !question.extractionSource
+                        ? getExtractionOptionLabels(
+                            savedLogic,
+                            question.code,
+                            questionOptionIds
+                          )
+                        : {};
+                    const extractionRowProps = question.extractionSource
+                      ? {
+                          extractionSource: question.extractionSource,
+                          onModifyExtraction: () =>
+                            handleModifyExtraction(
+                              section.id,
+                              question.extractionSource!.sourceQuestionId
+                            ),
+                          onExtractionSourceClick: () =>
+                            handleExtractionSourceClick(
+                              section.id,
+                              question.extractionSource!.sourceQuestionId
+                            ),
+                        }
+                      : {};
                     return (
                       <Fragment key={question.id}>
                         <div
@@ -1899,8 +2278,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 question={question}
                                 sectionId={section.id}
                                 showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                dynamicTextEnabledByOptionId={dynamicTextEnabledByOptionId}
+                                extractionApplied={extractionApplied}
                                 quotaControlApplied={quotaControlApplied}
                                 quotaOptionLabels={quotaOptionLabels}
+                                extractionOptionLabels={extractionOptionLabels}
+                                {...extractionRowProps}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -1924,8 +2308,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 question={question}
                                 sectionId={section.id}
                                 showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                dynamicTextEnabledByOptionId={dynamicTextEnabledByOptionId}
+                                extractionApplied={extractionApplied}
                                 quotaControlApplied={quotaControlApplied}
                                 quotaOptionLabels={quotaOptionLabels}
+                                extractionOptionLabels={extractionOptionLabels}
+                                {...extractionRowProps}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -1946,8 +2335,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 question={question}
                                 sectionId={section.id}
                                 showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                dynamicTextEnabledByOptionId={dynamicTextEnabledByOptionId}
+                                extractionApplied={extractionApplied}
                                 quotaControlApplied={quotaControlApplied}
                                 quotaOptionLabels={quotaOptionLabels}
+                                extractionOptionLabels={extractionOptionLabels}
+                                {...extractionRowProps}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -2113,6 +2507,23 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           bulkEditQuestion ? questionHasNotApplicableOption(bulkEditQuestion) : false
         }
         onSave={handleBulkEditSave}
+      />
+
+      <LookupTableBulkConversionModal
+        open={lookupTableBulkConversionOpen}
+        onOpenChange={(open) => {
+          setLookupTableBulkConversionOpen(open);
+          if (!open) {
+            setPendingLookupTableBulkConversion(null);
+            setLookupTableBulkConversionConflicts([]);
+          }
+        }}
+        conflicts={lookupTableBulkConversionConflicts}
+        canSaveAsLookupTable={
+          lookupTableBulkConversionOpen && lookupTableBulkConversionConflicts.length === 0
+        }
+        onRemoveLogic={handleRemoveLookupTableConflict}
+        onSaveAsLookupTable={handleSaveAsLookupTable}
       />
 
       <ConfirmModal

@@ -21,6 +21,7 @@ import {
 } from '@/data/mock-question-logic';
 import { HelpFileLink } from '@/components/surveys/HelpFileLink';
 import { DynamicTextCommentsLogicPanel } from '@/components/surveys/DynamicTextCommentsLogicPanel';
+import { ExtractionLogicPanel } from '@/components/surveys/ExtractionLogicPanel';
 import { QuotaControlAppliedIcon } from '@/components/surveys/QuotaControlAppliedIcon';
 import { QuotaControlLogicPanel } from '@/components/surveys/QuotaControlLogicPanel';
 import { ShowHideOptionsAppliedIcon } from '@/components/surveys/ShowHideOptionsAppliedIcon';
@@ -66,8 +67,9 @@ export function QuestionLogicModal({
   const isShowHideOptions = state.logicType === 'show-hide-options';
   const isQuotaControl = state.logicType === 'quota-control';
   const isDynamicTextComments = state.logicType === 'dynamic-text';
+  const isExtraction = state.logicType === 'extraction';
   const isAlternateLogicPanel =
-    isShowHideOptions || isQuotaControl || isDynamicTextComments;
+    isShowHideOptions || isQuotaControl || isDynamicTextComments || isExtraction;
   const optionIds = useMemo(
     () => question.options.map((option) => option.id),
     [question.options]
@@ -130,7 +132,10 @@ export function QuestionLogicModal({
     if (!canSave) return;
     onSave?.(state);
     onOpenChange(false);
-    showToast({ message: 'Logic saved', variant: 'success' });
+    showToast({
+      message: isExtraction ? 'Extraction logic saved' : 'Logic saved',
+      variant: 'success',
+    });
   }
 
   function handleResetShowHideLogic() {
@@ -230,6 +235,12 @@ export function QuestionLogicModal({
             }
             onReset={handleResetDynamicTextLogic}
             canReset={canResetDynamicTextLogic}
+          />
+        ) : isExtraction ? (
+          <ExtractionLogicPanel
+            question={question}
+            state={state.extraction}
+            onChange={(extraction) => setState((prev) => ({ ...prev, extraction }))}
           />
         ) : (
           <>
@@ -355,7 +366,7 @@ export function QuestionLogicModal({
           </WuButton>
         ) : null}
         <WuButton variant="primary" disabled={!canSave} onClick={handleSave}>
-          Save Logic
+          {isExtraction ? 'Save Extraction Logic' : 'Save Logic'}
         </WuButton>
       </WuModalFooter>
     </WuModal>

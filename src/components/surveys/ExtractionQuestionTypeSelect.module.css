@@ -1,0 +1,70 @@
+.menuTrigger {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  color: #1f2937;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  gap: 0.5rem;
+  height: 2.25rem;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 0 0.75rem;
+  text-align: left;
+  width: 100%;
+}
+
+.menuTrigger:hover,
+.menuTrigger:focus-visible {
+  border-color: #1b87e6;
+  outline: none;
+}
+
+.menuTriggerLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menuCaret {
+  color: #67727e;
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.menuScroll {
+  max-height: 18rem;
+  overflow-y: auto;
+}
+
+.groupHeader {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem 0.25rem;
+}
+
+.groupDivider {
+  border-top: 1px solid #e5e7eb;
+  margin: 0.25rem 0;
+}
+
+.menuItemLabel,
+.menuItemSelected {
+  display: block;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+}
+
+.menuItemSelected {
+  background: #f1f5f9;
+  border-radius: 0.25rem;
+  margin: 0 -0.25rem;
+  padding: 0 0.25rem;
+}

@@ -1,0 +1,104 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.875rem 1rem 1rem;
+}
+
+.extractRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+
+.choiceRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+}
+
+.choiceField {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.lockedRow {
+  align-items: center;
+  display: flex;
+}
+
+.rowLabel {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.selectField {
+  flex-shrink: 0;
+  min-width: 16rem;
+  width: 16rem;
+}
+
+.selectFieldWide {
+  flex-shrink: 0;
+  min-width: 18rem;
+  width: 18rem;
+}
+
+.selectField > *,
+.selectFieldWide > * {
+  width: 100%;
+}
+
+.menuTrigger {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  color: #1f2937;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  gap: 0.5rem;
+  height: 2.25rem;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 0 0.75rem;
+  text-align: left;
+  width: 100%;
+}
+
+.menuTrigger:hover,
+.menuTrigger:focus-visible {
+  border-color: #1b87e6;
+  outline: none;
+}
+
+.hint {
+  color: #64748b;
+  flex: 1;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 0;
+  min-width: 12rem;
+}
+
+@media (max-width: 767px) {
+  .extractRow,
+  .choiceRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hint {
+    flex: none;
+  }
+}

@@ -132,6 +132,123 @@ export interface DynamicTextCommentsState {
   byOptionId: Record<string, DynamicTextOptionState>;
 }
 
+export type ExtractionSource =
+  | 'selected-choices'
+  | 'not-selected-choices'
+  | 'displayed-choices'
+  | 'not-displayed-choices'
+  | 'all-choices';
+
+export type ExtractionQuestionType =
+  | 'single-select'
+  | 'multi-select'
+  | 'dropdown'
+  | 'image'
+  | 'single-row'
+  | 'multiple-row'
+  | 'email-address'
+  | 'numeric'
+  | 'drag-and-drop'
+  | 'rank-order'
+  | 'constant-sum'
+  | 'star'
+  | 'matrix-single-select'
+  | 'matrix-multi-select'
+  | 'spreadsheet'
+  | 'image-chooser'
+  | 'slider-text'
+  | 'slider-numeric';
+
+export interface ExtractionLogicState {
+  extractSource: ExtractionSource;
+  questionType: ExtractionQuestionType;
+  alwaysExtractOptionId: string;
+  neverExtractOptionId: string;
+  lockedExtraction: boolean;
+}
+
+export const EXTRACTION_SOURCE_OPTIONS: BranchTargetOption[] = [
+  { value: 'selected-choices', label: 'Selected Choices' },
+  { value: 'not-selected-choices', label: 'Not Selected Choices' },
+  { value: 'displayed-choices', label: 'Displayed Choices' },
+  { value: 'not-displayed-choices', label: 'Not Displayed Choices' },
+  { value: 'all-choices', label: 'All Choices' },
+];
+
+export interface ExtractionQuestionTypeGroup {
+  label: string;
+  options: BranchTargetOption[];
+}
+
+export const EXTRACTION_QUESTION_TYPE_GROUPS: ExtractionQuestionTypeGroup[] = [
+  {
+    label: 'Multiple Choice',
+    options: [
+      { value: 'single-select', label: 'Single Select' },
+      { value: 'multi-select', label: 'Multi Select' },
+      { value: 'dropdown', label: 'Dropdown' },
+      { value: 'image', label: 'Image' },
+    ],
+  },
+  {
+    label: 'Text',
+    options: [
+      { value: 'single-row', label: 'Single Row' },
+      { value: 'multiple-row', label: 'Multiple Row' },
+      { value: 'email-address', label: 'Email Address' },
+      { value: 'numeric', label: 'Numeric' },
+    ],
+  },
+  {
+    label: 'Ordering',
+    options: [
+      { value: 'drag-and-drop', label: 'Drag and Drop' },
+      { value: 'rank-order', label: 'Rank Order' },
+      { value: 'constant-sum', label: 'Constant Sum' },
+    ],
+  },
+  {
+    label: 'Rating',
+    options: [{ value: 'star', label: 'Star' }],
+  },
+  {
+    label: 'Matrix',
+    options: [
+      { value: 'matrix-single-select', label: 'Single Select' },
+      { value: 'matrix-multi-select', label: 'Multi Select' },
+      { value: 'spreadsheet', label: 'Spreadsheet' },
+      { value: 'image-chooser', label: 'Image Chooser' },
+    ],
+  },
+  {
+    label: 'Slider',
+    options: [
+      { value: 'slider-text', label: 'Text' },
+      { value: 'slider-numeric', label: 'Numeric' },
+    ],
+  },
+];
+
+export const EXTRACTION_QUESTION_TYPE_OPTIONS: BranchTargetOption[] =
+  EXTRACTION_QUESTION_TYPE_GROUPS.flatMap((group) => group.options);
+
+export function findExtractionQuestionTypeOption(
+  value: string
+): BranchTargetOption | null {
+  return EXTRACTION_QUESTION_TYPE_OPTIONS.find((option) => option.value === value) ?? null;
+}
+
+export function normalizeExtractionSource(source: string): ExtractionSource {
+  if (source === 'unselected-choices') return 'not-selected-choices';
+  const match = EXTRACTION_SOURCE_OPTIONS.find((option) => option.value === source);
+  return (match?.value as ExtractionSource) ?? 'selected-choices';
+}
+
+export function normalizeExtractionQuestionType(value: string): ExtractionQuestionType {
+  const match = findExtractionQuestionTypeOption(value);
+  return (match?.value as ExtractionQuestionType) ?? 'single-select';
+}
+
 export const DYNAMIC_TEXT_BOX_STATUS_OPTIONS: BranchTargetOption[] = [
   { value: 'enabled', label: 'Enabled' },
   { value: 'disabled', label: 'Disabled' },
@@ -168,8 +285,6 @@ export function getQuotaControlOptionLabels(
   state: QuestionLogicState,
   optionIds: string[]
 ): Record<string, string> {
-  if (state.logicType !== 'quota-control') return {};
-
   const labels: Record<string, string> = {};
   for (const optionId of optionIds) {
     const optionState = state.quotaControl.byOptionId[optionId];
@@ -180,17 +295,24 @@ export function getQuotaControlOptionLabels(
   return labels;
 }
 
+export function isQuotaControlConfigured(
+  state: QuestionLogicState,
+  optionIds: string[]
+): boolean {
+  return optionIds.some((optionId) => {
+    const optionState = state.quotaControl.byOptionId[optionId];
+    if (!optionState) return false;
+    return optionState.quotaLimit > 0 || optionState.overLimitAction !== 'none';
+  });
+}
+
 export function isQuotaControlLogicApplied(
   state: QuestionLogicState,
   optionIds: string[]
 ): boolean {
   if (state.logicType !== 'quota-control') return false;
 
-  return optionIds.some((optionId) => {
-    const optionState = state.quotaControl.byOptionId[optionId];
-    if (!optionState) return false;
-    return optionState.quotaLimit > 0 || optionState.overLimitAction !== 'none';
-  });
+  return isQuotaControlConfigured(state, optionIds);
 }
 
 export interface QuestionLogicState {
@@ -202,6 +324,7 @@ export interface QuestionLogicState {
   showHideOptions: ShowHideOptionsState;
   quotaControl: QuotaControlState;
   dynamicTextComments: DynamicTextCommentsState;
+  extraction: ExtractionLogicState;
 }
 
 export const SELECT_PLACEHOLDER: BranchTargetOption = {
@@ -291,6 +414,122 @@ export function hasDynamicTextCommentsChanges(
   });
 }
 
+export function isDynamicTextCommentsConfigured(
+  state: QuestionLogicState,
+  optionIds: string[]
+): boolean {
+  return optionIds.some((optionId) => {
+    const optionState = state.dynamicTextComments.byOptionId[optionId];
+    return optionState?.status === 'enabled';
+  });
+}
+
+export function getDynamicTextEnabledByOptionId(
+  state: QuestionLogicState,
+  optionIds: string[]
+): Record<string, boolean> {
+  const enabledByOptionId: Record<string, boolean> = {};
+  for (const optionId of optionIds) {
+    if (state.dynamicTextComments.byOptionId[optionId]?.status === 'enabled') {
+      enabledByOptionId[optionId] = true;
+    }
+  }
+  return enabledByOptionId;
+}
+
+export type LookupTableUnsupportedLogicType =
+  | 'quota-control'
+  | 'dynamic-text'
+  | 'extraction';
+
+const LOOKUP_TABLE_UNSUPPORTED_LOGIC_LABELS: Record<
+  LookupTableUnsupportedLogicType,
+  string
+> = {
+  'quota-control': 'Quota Control',
+  'dynamic-text': 'Dynamic Text/Comments',
+  extraction: 'Extraction',
+};
+
+export interface LookupTableConversionLogicConflict {
+  logicType: LookupTableUnsupportedLogicType;
+  typeLabel: string;
+}
+
+export function collectLookupTableConversionLogicConflicts(
+  state: QuestionLogicState,
+  optionIds: string[]
+): LookupTableConversionLogicConflict[] {
+  const conflicts: LookupTableConversionLogicConflict[] = [];
+
+  if (isQuotaControlConfigured(state, optionIds)) {
+    conflicts.push({
+      logicType: 'quota-control',
+      typeLabel: LOOKUP_TABLE_UNSUPPORTED_LOGIC_LABELS['quota-control'],
+    });
+  }
+
+  if (isDynamicTextCommentsConfigured(state, optionIds)) {
+    conflicts.push({
+      logicType: 'dynamic-text',
+      typeLabel: LOOKUP_TABLE_UNSUPPORTED_LOGIC_LABELS['dynamic-text'],
+    });
+  }
+
+  if (state.logicType === 'extraction') {
+    conflicts.push({
+      logicType: 'extraction',
+      typeLabel: LOOKUP_TABLE_UNSUPPORTED_LOGIC_LABELS.extraction,
+    });
+  }
+
+  return conflicts;
+}
+
+export function clearLookupTableUnsupportedLogic(
+  state: QuestionLogicState,
+  optionIds: string[],
+  logicType: LookupTableUnsupportedLogicType
+): QuestionLogicState {
+  if (logicType === 'quota-control') {
+    return {
+      ...state,
+      logicType: state.logicType === 'quota-control' ? 'skip-logic' : state.logicType,
+      quotaControl: createDefaultQuotaControlState(optionIds),
+    };
+  }
+
+  if (logicType === 'dynamic-text') {
+    return {
+      ...state,
+      logicType: state.logicType === 'dynamic-text' ? 'skip-logic' : state.logicType,
+      dynamicTextComments: createDefaultDynamicTextCommentsState(optionIds),
+    };
+  }
+
+  return {
+    ...state,
+    logicType: state.logicType === 'extraction' ? 'skip-logic' : state.logicType,
+    extraction: createDefaultExtractionLogicState(),
+  };
+}
+
+export function createDefaultExtractionLogicState(): ExtractionLogicState {
+  return {
+    extractSource: 'selected-choices',
+    questionType: 'single-select',
+    alwaysExtractOptionId: '',
+    neverExtractOptionId: '',
+    lockedExtraction: false,
+  };
+}
+
+export function buildExtractionOptionTargets(
+  options: { id: string; label: string }[]
+): BranchTargetOption[] {
+  return options.map((option) => ({ value: option.id, label: option.label }));
+}
+
 export function isShowHideOptionsLogicApplied(
   state: QuestionLogicState,
   optionIds: string[]
@@ -336,6 +575,7 @@ export function createDefaultQuestionLogicState(
     showHideOptions: createDefaultShowHideOptionsState(),
     quotaControl: createDefaultQuotaControlState(optionIds),
     dynamicTextComments: createDefaultDynamicTextCommentsState(optionIds),
+    extraction: createDefaultExtractionLogicState(),
   };
 }
 
@@ -363,6 +603,16 @@ export function mergeQuestionLogicState(
         ...defaults.dynamicTextComments.byOptionId,
         ...(initial.dynamicTextComments?.byOptionId ?? {}),
       },
+    },
+    extraction: {
+      ...defaults.extraction,
+      ...(initial.extraction ?? {}),
+      extractSource: normalizeExtractionSource(
+        initial.extraction?.extractSource ?? defaults.extraction.extractSource
+      ),
+      questionType: normalizeExtractionQuestionType(
+        initial.extraction?.questionType ?? defaults.extraction.questionType
+      ),
     },
   };
 }

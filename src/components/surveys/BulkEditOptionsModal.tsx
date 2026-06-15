@@ -31,7 +31,7 @@ export interface BulkEditOptionsModalProps {
     optionLabels: string[];
     otherOption: boolean;
     notApplicableOption: boolean;
-  }) => void;
+  }) => 'saved' | 'converted' | 'blocked' | void;
 }
 
 function parseBulkLines(text: string): string[] {
@@ -101,13 +101,20 @@ export function BulkEditOptionsModal({
       showToast({ message: 'Add at least one answer option', variant: 'error' });
       return;
     }
-    onSave({
+    const result = onSave({
       optionLabels: parsedLines,
       otherOption: otherEnabled,
       notApplicableOption: notApplicableEnabled,
     });
+    if (result === 'blocked') return;
     onOpenChange(false);
-    showToast({ message: 'Answer options updated', variant: 'success' });
+    showToast({
+      message:
+        result === 'converted'
+          ? 'Question converted to Lookup Table with answer options updated'
+          : 'Answer options updated',
+      variant: 'success',
+    });
   }
 
   function handleAddToScaleLibrary(): void {

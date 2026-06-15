@@ -65,7 +65,15 @@ export interface SurveyQuestionLookupTable {
   selectedValue: string;
 }
 
+export interface SurveyQuestionExtractionSource {
+  sourceQuestionId: string;
+  sourceQuestionCode: string;
+}
+
 export const DEFAULT_LOOKUP_TABLE_QUESTION_TEXT = 'Which state do you live in?';
+
+/** Select One questions with more than this many options must use Lookup Table. */
+export const SELECT_ONE_MAX_BULK_OPTIONS = 300;
 
 export const DEFAULT_LOOKUP_TABLE_SAMPLE_VALUES = [
   'Alabama',
@@ -129,6 +137,8 @@ export interface SurveyQuestion {
   vanWestendorp?: SurveyQuestionVanWestendorp;
   /** Lookup table dropdown preview for Data Reference questions. */
   lookupTable?: SurveyQuestionLookupTable;
+  /** Set when this question was auto-added by extraction from another question. */
+  extractionSource?: SurveyQuestionExtractionSource;
   /** Add Question menu type id (e.g. `nps`, `select-many`) for license diamond display. */
   addQuestionTypeId?: string;
 }

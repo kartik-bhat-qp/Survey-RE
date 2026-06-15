@@ -1,0 +1,38 @@
+.banner {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0 0 0.75rem;
+  padding-left: 0.125rem;
+}
+
+.icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+  font-size: 0.875rem;
+}
+
+.label {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+}
+
+.sourceLink,
+.modifyLink {
+  background: transparent;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  padding: 0;
+}
+
+.sourceLink:hover,
+.sourceLink:focus-visible,
+.modifyLink:hover,
+.modifyLink:focus-visible {
+  text-decoration: underline;
+}
