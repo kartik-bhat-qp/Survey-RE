@@ -1,0 +1,16 @@
+.tag {
+  align-items: center;
+  color: #64748b;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  gap: 0.25rem;
+  line-height: 1.45rem;
+  white-space: nowrap;
+}
+
+.icon {
+  color: #94a3b8;
+  font-size: 0.875rem;
+}

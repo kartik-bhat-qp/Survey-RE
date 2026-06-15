@@ -120,6 +120,23 @@ export interface QuotaControlState {
   byOptionId: Record<string, QuotaControlOptionState>;
 }
 
+export type DynamicTextBoxStatus = 'enabled' | 'disabled';
+
+export interface DynamicTextOptionState {
+  status: DynamicTextBoxStatus;
+  labelName: string;
+}
+
+export interface DynamicTextCommentsState {
+  aiPrompt: string;
+  byOptionId: Record<string, DynamicTextOptionState>;
+}
+
+export const DYNAMIC_TEXT_BOX_STATUS_OPTIONS: BranchTargetOption[] = [
+  { value: 'enabled', label: 'Enabled' },
+  { value: 'disabled', label: 'Disabled' },
+];
+
 export const QUOTA_OVER_LIMIT_ACTION_OPTIONS: BranchTargetOption[] = [
   { value: 'none', label: 'No Branching' },
   { value: 'terminate-survey', label: 'Terminate Survey' },
@@ -129,6 +146,53 @@ export const QUOTA_OVER_LIMIT_ACTION_OPTIONS: BranchTargetOption[] = [
   { value: 'skip-choice-continue', label: 'Skip Choice and Continue Survey' },
 ];
 
+export function getQuotaOverLimitActionLabel(action: QuotaOverLimitAction): string {
+  return (
+    QUOTA_OVER_LIMIT_ACTION_OPTIONS.find((option) => option.value === action)?.label ??
+    'No Branching'
+  );
+}
+
+export function formatQuotaControlOptionLabel(
+  optionState: QuotaControlOptionState
+): string | null {
+  if (optionState.quotaLimit <= 0 && optionState.overLimitAction === 'none') return null;
+
+  const limitPart = `= ${optionState.quotaLimit}`;
+  if (optionState.overLimitAction === 'none') return limitPart;
+
+  return `${limitPart} >> ${getQuotaOverLimitActionLabel(optionState.overLimitAction)}`;
+}
+
+export function getQuotaControlOptionLabels(
+  state: QuestionLogicState,
+  optionIds: string[]
+): Record<string, string> {
+  if (state.logicType !== 'quota-control') return {};
+
+  const labels: Record<string, string> = {};
+  for (const optionId of optionIds) {
+    const optionState = state.quotaControl.byOptionId[optionId];
+    if (!optionState) continue;
+    const label = formatQuotaControlOptionLabel(optionState);
+    if (label) labels[optionId] = label;
+  }
+  return labels;
+}
+
+export function isQuotaControlLogicApplied(
+  state: QuestionLogicState,
+  optionIds: string[]
+): boolean {
+  if (state.logicType !== 'quota-control') return false;
+
+  return optionIds.some((optionId) => {
+    const optionState = state.quotaControl.byOptionId[optionId];
+    if (!optionState) return false;
+    return optionState.quotaLimit > 0 || optionState.overLimitAction !== 'none';
+  });
+}
+
 export interface QuestionLogicState {
   logicType: QuestionLogicType;
   looping: boolean;
@@ -137,6 +201,7 @@ export interface QuestionLogicState {
   randomizerLimit: string;
   showHideOptions: ShowHideOptionsState;
   quotaControl: QuotaControlState;
+  dynamicTextComments: DynamicTextCommentsState;
 }
 
 export const SELECT_PLACEHOLDER: BranchTargetOption = {
@@ -204,6 +269,28 @@ export function createDefaultQuotaControlState(optionIds: string[]): QuotaContro
   return { byOptionId };
 }
 
+export function createDefaultDynamicTextCommentsState(
+  optionIds: string[]
+): DynamicTextCommentsState {
+  const byOptionId: Record<string, DynamicTextOptionState> = {};
+  for (const optionId of optionIds) {
+    byOptionId[optionId] = { status: 'disabled', labelName: '' };
+  }
+  return { aiPrompt: '', byOptionId };
+}
+
+export function hasDynamicTextCommentsChanges(
+  state: DynamicTextCommentsState,
+  optionIds: string[]
+): boolean {
+  if (state.aiPrompt.trim()) return true;
+  return optionIds.some((optionId) => {
+    const optionState = state.byOptionId[optionId];
+    if (!optionState) return false;
+    return optionState.status === 'enabled' || optionState.labelName.trim().length > 0;
+  });
+}
+
 export function isShowHideOptionsLogicApplied(
   state: QuestionLogicState,
   optionIds: string[]
@@ -248,6 +335,7 @@ export function createDefaultQuestionLogicState(
     randomizerLimit: '0',
     showHideOptions: createDefaultShowHideOptionsState(),
     quotaControl: createDefaultQuotaControlState(optionIds),
+    dynamicTextComments: createDefaultDynamicTextCommentsState(optionIds),
   };
 }
 
@@ -267,6 +355,13 @@ export function mergeQuestionLogicState(
       byOptionId: {
         ...defaults.quotaControl.byOptionId,
         ...(initial.quotaControl?.byOptionId ?? {}),
+      },
+    },
+    dynamicTextComments: {
+      aiPrompt: initial.dynamicTextComments?.aiPrompt ?? defaults.dynamicTextComments.aiPrompt,
+      byOptionId: {
+        ...defaults.dynamicTextComments.byOptionId,
+        ...(initial.dynamicTextComments?.byOptionId ?? {}),
       },
     },
   };

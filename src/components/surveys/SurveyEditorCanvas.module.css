@@ -348,6 +348,22 @@
   z-index: 0;
 }
 
+.optionMain {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.selectManyOptionMain {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
 .optionItem:has(:focus-within) {
   z-index: 2;
 }
@@ -404,10 +420,24 @@
 }
 
 .selectManyOptionEditor {
+  flex: 0 1 auto;
   min-width: 0;
   overflow: visible;
   position: relative;
+  width: fit-content;
   z-index: 0;
+}
+
+.selectManyOptionEditor > :first-child,
+.optionMain > :first-child {
+  flex: 0 1 auto;
+  max-width: 100%;
+  width: fit-content;
+}
+
+.selectManyOptionEditor > :first-child > :first-child,
+.optionMain > :first-child > :first-child {
+  width: auto;
 }
 
 .selectManyOptionItem:has(:focus-within) {

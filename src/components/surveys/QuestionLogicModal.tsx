@@ -9,8 +9,10 @@ import {
   createDefaultQuestionLogicState,
   mergeQuestionLogicState,
   findBranchTargetOption,
+  hasDynamicTextCommentsChanges,
   isShowHideOptionsLogicApplied,
   isShowHideOptionsLogicComplete,
+  isQuotaControlLogicApplied,
   getQuestionLogicTypeOptions,
   resolveLogicTypeForQuestion,
   RANDOMIZER_LIMIT_OPTIONS,
@@ -18,6 +20,8 @@ import {
   type QuestionLogicTypeOption,
 } from '@/data/mock-question-logic';
 import { HelpFileLink } from '@/components/surveys/HelpFileLink';
+import { DynamicTextCommentsLogicPanel } from '@/components/surveys/DynamicTextCommentsLogicPanel';
+import { QuotaControlAppliedIcon } from '@/components/surveys/QuotaControlAppliedIcon';
 import { QuotaControlLogicPanel } from '@/components/surveys/QuotaControlLogicPanel';
 import { ShowHideOptionsAppliedIcon } from '@/components/surveys/ShowHideOptionsAppliedIcon';
 import { ShowHideOptionsLogicPanel } from '@/components/surveys/ShowHideOptionsLogicPanel';
@@ -61,7 +65,9 @@ export function QuestionLogicModal({
 
   const isShowHideOptions = state.logicType === 'show-hide-options';
   const isQuotaControl = state.logicType === 'quota-control';
-  const isAlternateLogicPanel = isShowHideOptions || isQuotaControl;
+  const isDynamicTextComments = state.logicType === 'dynamic-text';
+  const isAlternateLogicPanel =
+    isShowHideOptions || isQuotaControl || isDynamicTextComments;
   const optionIds = useMemo(
     () => question.options.map((option) => option.id),
     [question.options]
@@ -71,10 +77,19 @@ export function QuestionLogicModal({
     [question]
   );
   const showHideOptionsApplied = isShowHideOptionsLogicApplied(state, optionIds);
+  const quotaControlApplied = isQuotaControlLogicApplied(state, optionIds);
   const savedShowHideOptionsApplied =
     initialState != null && isShowHideOptionsLogicApplied(initialState, optionIds);
   const canResetShowHideLogic =
     isShowHideOptions && (showHideOptionsApplied || savedShowHideOptionsApplied);
+  const savedDynamicTextCommentsApplied =
+    initialState != null &&
+    initialState.logicType === 'dynamic-text' &&
+    hasDynamicTextCommentsChanges(initialState.dynamicTextComments, optionIds);
+  const canResetDynamicTextLogic =
+    isDynamicTextComments &&
+    (hasDynamicTextCommentsChanges(state.dynamicTextComments, optionIds) ||
+      savedDynamicTextCommentsApplied);
 
   const branchTargets = useMemo(
     () =>
@@ -126,6 +141,20 @@ export function QuestionLogicModal({
     showToast({ message: 'Show/Hide Options logic reset', variant: 'success' });
   }
 
+  function handleResetDynamicTextLogic() {
+    const defaultDynamicTextComments =
+      createDefaultQuestionLogicState(optionIds).dynamicTextComments;
+    setState((prev) => {
+      const nextState = {
+        ...prev,
+        dynamicTextComments: defaultDynamicTextComments,
+      };
+      onSave?.(nextState);
+      return nextState;
+    });
+    showToast({ message: 'Dynamic Text/Comments logic reset', variant: 'success' });
+  }
+
   if (!open || !wick) {
     return null;
   }
@@ -164,6 +193,7 @@ export function QuestionLogicModal({
             />
             <HelpFileLink topic="logicType" label="Logic type help" />
             {showHideOptionsApplied ? <ShowHideOptionsAppliedIcon /> : null}
+            {quotaControlApplied ? <QuotaControlAppliedIcon /> : null}
           </div>
           {!isAlternateLogicPanel ? (
             <div className={styles.loopingField}>
@@ -190,6 +220,16 @@ export function QuestionLogicModal({
             question={question}
             state={state.quotaControl}
             onChange={(quotaControl) => setState((prev) => ({ ...prev, quotaControl }))}
+          />
+        ) : isDynamicTextComments ? (
+          <DynamicTextCommentsLogicPanel
+            question={question}
+            state={state.dynamicTextComments}
+            onChange={(dynamicTextComments) =>
+              setState((prev) => ({ ...prev, dynamicTextComments }))
+            }
+            onReset={handleResetDynamicTextLogic}
+            canReset={canResetDynamicTextLogic}
           />
         ) : (
           <>

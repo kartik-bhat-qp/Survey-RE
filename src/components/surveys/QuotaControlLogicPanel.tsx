@@ -53,6 +53,30 @@ export function QuotaControlLogicPanel({
     });
   }
 
+  function handleQuotaLimitChange(optionId: string, value: string): void {
+    const current = state.byOptionId[optionId] ?? {
+      quotaLimit: 0,
+      overLimitAction: 'none' as QuotaOverLimitAction,
+    };
+    const quotaLimit = parseQuotaLimit(value);
+    const patch: Partial<{ quotaLimit: number; overLimitAction: QuotaOverLimitAction }> = {
+      quotaLimit,
+    };
+    if (quotaLimit > 0 && current.overLimitAction === 'none') {
+      patch.overLimitAction = 'quota-overlimit';
+    }
+    updateOption(optionId, patch);
+  }
+
+  function handleQuotaLimitFocus(optionId: string): void {
+    const current = state.byOptionId[optionId] ?? {
+      quotaLimit: 0,
+      overLimitAction: 'none' as QuotaOverLimitAction,
+    };
+    if (current.overLimitAction !== 'none') return;
+    updateOption(optionId, { overLimitAction: 'quota-overlimit' });
+  }
+
   return (
     <div className={styles.tableWrap}>
       <table className={styles.table}>
@@ -84,10 +108,9 @@ export function QuotaControlLogicPanel({
                   <WuInput
                     variant="outlined"
                     value={String(row.quotaLimit)}
+                    onFocus={() => handleQuotaLimitFocus(option.id)}
                     onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                      updateOption(option.id, {
-                        quotaLimit: parseQuotaLimit(event.target.value),
-                      })
+                      handleQuotaLimitChange(option.id, event.target.value)
                     }
                     className={styles.quotaInput}
                     aria-label={`Quota limit for ${plainTextFromRichValue(option.label)}`}

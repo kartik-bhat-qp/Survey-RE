@@ -64,8 +64,11 @@ import {
   writeSelectOneQuestionPreviewSession,
 } from '@/data/survey-question-preview-session';
 import { toShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
+import { QuotaControlOptionTag } from '@/components/surveys/QuotaControlOptionTag';
 import {
   createDefaultQuestionLogicState,
+  getQuotaControlOptionLabels,
+  isQuotaControlLogicApplied,
   isShowHideOptionsLogicApplied,
   type QuestionLogicState,
 } from '@/data/mock-question-logic';
@@ -330,6 +333,8 @@ function QuestionRow({
   question,
   sectionId,
   showHideOptionsApplied,
+  quotaControlApplied,
+  quotaOptionLabels,
   onAction,
   onOpenLogic,
   onOpenSettings,
@@ -341,6 +346,8 @@ function QuestionRow({
   question: SurveyQuestion;
   sectionId: string;
   showHideOptionsApplied: boolean;
+  quotaControlApplied: boolean;
+  quotaOptionLabels: Record<string, string>;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -369,8 +376,13 @@ function QuestionRow({
             />
           </div>
           <ul className={styles.options}>
-            {question.options.map((option) => (
-              <li key={option.id} className={styles.optionItem}>
+            {question.options.map((option) => {
+              const quotaLabel = quotaOptionLabels[option.id];
+              return (
+              <li
+                key={option.id}
+                className={styles.optionItem}
+              >
                 <input
                   type="radio"
                   className={styles.optionRadio}
@@ -378,24 +390,28 @@ function QuestionRow({
                   disabled
                   aria-label={`${plainTextFromRichValue(option.label)} radio`}
                 />
-                <QuestionRichTextField
-                  variant="option"
-                  value={option.label}
-                  onChange={(label) =>
-                    onOptionLabelChange(sectionId, question.id, option.id, label)
-                  }
-                  ariaLabel="Answer option"
-                  placeholder="Option"
-                  onPointerDown={stopQuestionEvent}
-                />
-                {option.logicLabel ? (
+                <div className={styles.optionMain}>
+                  <QuestionRichTextField
+                    variant="option"
+                    value={option.label}
+                    onChange={(label) =>
+                      onOptionLabelChange(sectionId, question.id, option.id, label)
+                    }
+                    ariaLabel="Answer option"
+                    placeholder="Option"
+                    onPointerDown={stopQuestionEvent}
+                  />
+                  {quotaLabel ? <QuotaControlOptionTag label={quotaLabel} /> : null}
+                </div>
+                {!quotaLabel && option.logicLabel ? (
                   <span className={styles.logicTag}>
                     <span className="wm-call-split" aria-hidden />
                     {option.logicLabel}
                   </span>
                 ) : null}
               </li>
-            ))}
+            );
+            })}
           </ul>
         </div>
         <QuestionWorkspaceActions
@@ -411,6 +427,7 @@ function QuestionRow({
       </div>
       <QuestionWorkspaceFooter
         showHideOptionsApplied={showHideOptionsApplied}
+        quotaControlApplied={quotaControlApplied}
         className={styles.questionRowFooter}
       />
     </article>
@@ -421,6 +438,8 @@ function SelectOneQuestionRow({
   question,
   sectionId,
   showHideOptionsApplied,
+  quotaControlApplied,
+  quotaOptionLabels,
   onAction,
   onOpenLogic,
   onOpenSettings,
@@ -434,6 +453,8 @@ function SelectOneQuestionRow({
   question: SurveyQuestion;
   sectionId: string;
   showHideOptionsApplied: boolean;
+  quotaControlApplied: boolean;
+  quotaOptionLabels: Record<string, string>;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -476,7 +497,9 @@ function SelectOneQuestionRow({
             />
           </div>
           <ul className={styles.selectManyOptions}>
-            {question.options.map((option) => (
+            {question.options.map((option) => {
+              const quotaLabel = quotaOptionLabels[option.id];
+              return (
               <li key={option.id} className={styles.selectManyOptionItem}>
                 <span className={styles.selectOneOptionRadio}>
                   <input
@@ -487,20 +510,24 @@ function SelectOneQuestionRow({
                     aria-label={`${plainTextFromRichValue(option.label)} radio`}
                   />
                 </span>
-                <div className={styles.selectManyOptionEditor}>
-                  <QuestionRichTextField
-                    variant="option"
-                    value={option.label}
-                    onChange={(label) =>
-                      onOptionLabelChange(sectionId, question.id, option.id, label)
-                    }
-                    ariaLabel="Answer option"
-                    placeholder="Option"
-                    onPointerDown={stopQuestionEvent}
-                  />
+                <div className={styles.selectManyOptionMain}>
+                  <div className={styles.selectManyOptionEditor}>
+                    <QuestionRichTextField
+                      variant="option"
+                      value={option.label}
+                      onChange={(label) =>
+                        onOptionLabelChange(sectionId, question.id, option.id, label)
+                      }
+                      ariaLabel="Answer option"
+                      placeholder="Option"
+                      onPointerDown={stopQuestionEvent}
+                    />
+                  </div>
+                  {quotaLabel ? <QuotaControlOptionTag label={quotaLabel} /> : null}
                 </div>
               </li>
-            ))}
+            );
+            })}
           </ul>
           <div
             className={styles.selectManyOptionTools}
@@ -530,6 +557,7 @@ function SelectOneQuestionRow({
         </div>
         <QuestionWorkspaceFooter
           showHideOptionsApplied={showHideOptionsApplied}
+          quotaControlApplied={quotaControlApplied}
           className={styles.selectManyFooter}
         />
       </div>
@@ -541,6 +569,8 @@ function SelectManyQuestionRow({
   question,
   sectionId,
   showHideOptionsApplied,
+  quotaControlApplied,
+  quotaOptionLabels,
   onAction,
   onOpenLogic,
   onOpenSettings,
@@ -553,6 +583,8 @@ function SelectManyQuestionRow({
   question: SurveyQuestion;
   sectionId: string;
   showHideOptionsApplied: boolean;
+  quotaControlApplied: boolean;
+  quotaOptionLabels: Record<string, string>;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -593,7 +625,9 @@ function SelectManyQuestionRow({
             />
           </div>
           <ul className={styles.selectManyOptions}>
-            {question.options.map((option) => (
+            {question.options.map((option) => {
+              const quotaLabel = quotaOptionLabels[option.id];
+              return (
               <li key={option.id} className={styles.selectManyOptionItem}>
                 <span className={styles.selectManyOptionCheckbox}>
                   <input
@@ -603,20 +637,24 @@ function SelectManyQuestionRow({
                     aria-label={`${plainTextFromRichValue(option.label)} checkbox`}
                   />
                 </span>
-                <div className={styles.selectManyOptionEditor}>
-                  <QuestionRichTextField
-                    variant="option"
-                    value={option.label}
-                    onChange={(label) =>
-                      onOptionLabelChange(sectionId, question.id, option.id, label)
-                    }
-                    ariaLabel="Answer option"
-                    placeholder="Option"
-                    onPointerDown={stopQuestionEvent}
-                  />
+                <div className={styles.selectManyOptionMain}>
+                  <div className={styles.selectManyOptionEditor}>
+                    <QuestionRichTextField
+                      variant="option"
+                      value={option.label}
+                      onChange={(label) =>
+                        onOptionLabelChange(sectionId, question.id, option.id, label)
+                      }
+                      ariaLabel="Answer option"
+                      placeholder="Option"
+                      onPointerDown={stopQuestionEvent}
+                    />
+                  </div>
+                  {quotaLabel ? <QuotaControlOptionTag label={quotaLabel} /> : null}
                 </div>
               </li>
-            ))}
+            );
+            })}
           </ul>
           <div
             className={styles.selectManyOptionTools}
@@ -646,6 +684,7 @@ function SelectManyQuestionRow({
         </div>
         <QuestionWorkspaceFooter
           showHideOptionsApplied={showHideOptionsApplied}
+          quotaControlApplied={quotaControlApplied}
           className={styles.selectManyFooter}
         />
       </div>
@@ -1723,12 +1762,17 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const isSelectOne = isSelectOneQuestion(question);
                     const multiPointSettings = getMultiPointSettings(questionKey);
                     const savedLogic = logicByQuestionKey[questionKey];
+                    const questionOptionIds = question.options.map((option) => option.id);
                     const showHideOptionsApplied =
                       savedLogic != null &&
-                      isShowHideOptionsLogicApplied(
-                        savedLogic,
-                        question.options.map((option) => option.id)
-                      );
+                      isShowHideOptionsLogicApplied(savedLogic, questionOptionIds);
+                    const quotaControlApplied =
+                      savedLogic != null &&
+                      isQuotaControlLogicApplied(savedLogic, questionOptionIds);
+                    const quotaOptionLabels =
+                      savedLogic != null
+                        ? getQuotaControlOptionLabels(savedLogic, questionOptionIds)
+                        : {};
                     return (
                       <Fragment key={question.id}>
                         <div
@@ -1855,6 +1899,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 question={question}
                                 sectionId={section.id}
                                 showHideOptionsApplied={showHideOptionsApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                quotaOptionLabels={quotaOptionLabels}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -1878,6 +1924,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 question={question}
                                 sectionId={section.id}
                                 showHideOptionsApplied={showHideOptionsApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                quotaOptionLabels={quotaOptionLabels}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -1898,6 +1946,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 question={question}
                                 sectionId={section.id}
                                 showHideOptionsApplied={showHideOptionsApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                quotaOptionLabels={quotaOptionLabels}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
