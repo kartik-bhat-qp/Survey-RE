@@ -10,6 +10,7 @@ import {
   type SentimentValue,
   type VideoAiResponse,
 } from '@/data/mock-video-ai-detail';
+import { VideoPlayerModal } from './VideoPlayerModal';
 import styles from './VideoAiQuestionDetail.module.css';
 
 const WuInput = dynamic(
@@ -261,107 +262,7 @@ function EditAiPopover({
   );
 }
 
-// ── Focus-mode modal ──────────────────────────────────────────────────────────
-
-function ResponseFocusModal({
-  response,
-  sentimentOverride,
-  textOverrides,
-  onClose,
-}: {
-  response: VideoAiResponse;
-  sentimentOverride: SentimentValue | null;
-  textOverrides: { summary?: string; transcript?: string };
-  onClose: () => void;
-}) {
-  const [activeTab, setActiveTab] = useState<'summary' | 'transcript'>('summary');
-  const { showToast } = useWuShowToast();
-  const effectiveSentiment = sentimentOverride ?? response.sentiment;
-  const displaySummary    = textOverrides.summary    ?? response.summary;
-  const displayTranscript = textOverrides.transcript ?? response.transcript;
-
-  // ESC to dismiss
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose(); }
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  // Lock body scroll
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
-  }, []);
-
-  return createPortal(
-    <div className={styles.focusOverlay} onClick={onClose} role="dialog" aria-modal aria-label="Response detail">
-      <div className={styles.focusCard} onClick={(e) => e.stopPropagation()}>
-
-        {/* Close */}
-        <button className={styles.focusClose} onClick={onClose} aria-label="Close">
-          <span className="wm-close" aria-hidden />
-        </button>
-
-        {/* Header row */}
-        <div className={styles.focusHeader}>
-          <div className={styles.focusHeaderLeft}>
-            <span className={styles.respondentId}>{response.id}</span>
-            <span className={styles.cardDate}>{response.date}</span>
-          </div>
-          <SentimentBadge sentiment={effectiveSentiment} />
-        </div>
-
-        {/* Video */}
-        <div className={styles.focusThumb}>
-          <svg className={styles.focusThumbSvg} viewBox="0 0 560 315" fill="none" aria-hidden>
-            <rect width="560" height="315" rx="8" fill="#1e293b" />
-            <circle cx="280" cy="157" r="48" fill="rgba(255,255,255,0.12)" />
-            <polygon points="264,133 264,181 308,157" fill="white" />
-          </svg>
-          <span className={styles.focusDurationBadge}>{response.duration}</span>
-        </div>
-
-        {/* Tabs */}
-        <div className={styles.tabRow} role="tablist">
-          <button
-            role="tab"
-            aria-selected={activeTab === 'summary'}
-            className={`${styles.tabBtn} ${activeTab === 'summary' ? styles.tabBtnActive : ''}`}
-            onClick={() => setActiveTab('summary')}
-          >
-            Summary
-          </button>
-          <button
-            role="tab"
-            aria-selected={activeTab === 'transcript'}
-            className={`${styles.tabBtn} ${activeTab === 'transcript' ? styles.tabBtnActive : ''}`}
-            onClick={() => setActiveTab('transcript')}
-          >
-            Transcript
-          </button>
-        </div>
-
-        <p className={styles.focusText}>
-          {activeTab === 'summary' ? displaySummary : displayTranscript}
-        </p>
-
-        {/* Actions */}
-        <div className={styles.focusActions}>
-          <button type="button" className={styles.actionBtn} aria-label="Like" title="Like"
-            onClick={() => showToast({ message: 'Liked', variant: 'success' })}>
-            <span className="wm-thumb-up" aria-hidden />
-          </button>
-          <button type="button" className={styles.actionBtn} aria-label="Dislike" title="Dislike"
-            onClick={() => showToast({ message: 'Disliked', variant: 'info' })}>
-            <span className="wm-thumb-down" aria-hidden />
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
+// ResponseFocusModal removed — replaced by VideoPlayerModal
 
 // ── Response card ─────────────────────────────────────────────────────────────
 
@@ -497,6 +398,7 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
   const [textOverrides, setTextOverrides]   = useState<Record<string, { summary?: string; transcript?: string }>>({});
   const [focusedId, setFocusedId] = useState<string | null>(null);
 
+
   const sentimentFilterOpt = SENTIMENT_FILTER_OPTIONS.find((o) => o.value === sentimentFilter)!;
   const viewFilterOpt      = VIEW_FILTER_OPTIONS.find((o) => o.value === viewFilter)!;
   const sortOpt            = SORT_OPTIONS.find((o) => o.value === sort)!;
@@ -512,6 +414,7 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
     setAiRefreshing(true);
     setTimeout(() => { setAiRefreshing(false); showToast({ message: 'AI summary refreshed', variant: 'success' }); }, 1400);
   }
+
 
   const filtered = useMemo(() => {
     let result = detail.responses.map((r) => ({ ...r, sentiment: sentimentOverrides[r.id] ?? r.sentiment }));
@@ -537,7 +440,6 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
   const endItem    = Math.min(page * PAGE_SIZE, filtered.length);
   const { positive, neutral, negative } = detail.sentiment;
 
-  const focusedResponse = focusedId ? filtered.find((r) => r.id === focusedId) ?? null : null;
 
   return (
     <div className={styles.page}>
@@ -683,12 +585,16 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
         )}
       </div>
 
-      {/* ── Focus-mode modal ────────────────────────────────────────── */}
-      {focusedResponse && (
-        <ResponseFocusModal
-          response={focusedResponse}
-          sentimentOverride={sentimentOverrides[focusedResponse.id] ?? null}
-          textOverrides={textOverrides[focusedResponse.id] ?? {}}
+      {/* ── Video player modal ──────────────────────────────────────── */}
+      {focusedId && (
+        <VideoPlayerModal
+          responses={detail.responses.map((r) => ({
+            ...r,
+            sentiment: sentimentOverrides[r.id] ?? r.sentiment,
+          }))}
+          initialResponseId={focusedId}
+          sentimentOverrides={sentimentOverrides}
+          textOverrides={textOverrides}
           onClose={() => setFocusedId(null)}
         />
       )}

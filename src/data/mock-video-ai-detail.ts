@@ -35,9 +35,9 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     durationSeconds: 11,
     viewed: true,
     summary:
-      'The speaker expressed a strong personal connection to the brand as a result of the social media post. This indicates positive engagement and resonance with the brand messaging through social channels.',
+      'The speaker expressed strong satisfaction with Google Maps, highlighting real-time traffic rerouting as a feature that has consistently improved their daily commute.',
     transcript:
-      'Yeah I really love this, the colors remind me of the treats I buy for my dog already. It feels really authentic and the dog is so cute…',
+      "Google Maps is honestly amazing. The traffic rerouting happens automatically and I have never been late to a meeting because of it. It just works.",
   },
   {
     id: '221470507',
@@ -47,9 +47,9 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     durationSeconds: 7,
     viewed: true,
     summary:
-      'The discussion focused on the connection and relatability of the media campaign. The participant expressed personal resonance, suggesting the campaign effectively engages the intended audience.',
+      'Respondent highlighted daily reliance on Google Maps, with particular appreciation for live traffic updates that save significant commute time every morning.',
     transcript:
-      'Oh this is nice! I follow this brand on Instagram already. The post feels very on-brand and I would definitely share this with my friends…',
+      "I use it every single day. The live traffic updates save me at least twenty minutes every morning on my commute.",
   },
   {
     id: '221502834',
@@ -59,9 +59,9 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     durationSeconds: 22,
     viewed: false,
     summary:
-      'The respondent provided a balanced view, noting both strengths in visual design and areas for improvement in product placement. They felt the post was visually appealing but lacked clear product information.',
+      'Balanced feedback noting solid core navigation but frustration with inaccurate business hours. The respondent cited a specific negative experience of driving to a closed restaurant.',
     transcript:
-      "It looks nice I guess, the colors are pretty. But I'm not sure what they're actually selling? Like the dog is cute but I had to look hard to see the product…",
+      "It is pretty good for navigation but the business hours are often wrong. I drove thirty minutes to a restaurant that was actually closed. That was frustrating. The core directions work well though.",
   },
   {
     id: '221388912',
@@ -71,9 +71,9 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     durationSeconds: 34,
     viewed: false,
     summary:
-      "Strong emotional response to the brand identity. The participant highlighted specific design elements that resonated, including color palette and lifestyle positioning.",
+      'Strong enthusiasm for Google Maps with specific praise for Street View for pre-visit neighborhood exploration and the integrated review and photo system for restaurant discovery.',
     transcript:
-      "I love everything about this! The pastel colors, the happy dog, the whole vibe. It makes me want to buy these treats even though I don't have a dog yet…",
+      "I absolutely love Google Maps. The Street View feature is something I use before visiting any new place. I checked out my new apartment neighborhood before moving in and found the nearest coffee shop. And the reviews and photos integration is really helpful for finding great restaurants. It is one of the most useful apps I have ever used.",
   },
   {
     id: '221519443',
@@ -83,9 +83,9 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     durationSeconds: 15,
     viewed: true,
     summary:
-      'The respondent felt the post was visually cluttered and the product was not prominent enough. They suggested the brand prioritize product visibility over lifestyle imagery.',
+      'Critical response noting a perceived decline in quality, focused on sponsored results cluttering search and suspicion that routes are deliberately guided past commercial areas.',
     transcript:
-      "Honestly I'm not a fan. There's too much going on, the dog takes up most of the image and I can barely see the product. If I were scrolling I'd just skip past this…",
+      "Honestly Google Maps has gotten worse lately. The search results are full of sponsored places that push real results way down. And it seems like they route me past shopping centers on purpose.",
   },
   {
     id: '221601287',
@@ -95,9 +95,9 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     durationSeconds: 19,
     viewed: false,
     summary:
-      "Positive reaction centered on brand authenticity and the use of a real pet versus a stock image. The participant valued the organic feel of the campaign.",
+      'Positive experience centered on walking navigation and urban exploration. The respondent highlighted augmented reality walking directions as a standout innovative feature.',
     transcript:
-      "This feels really genuine, like it's not overly polished which I appreciate. The dog looks like a real pet not a model dog and that makes me trust the brand more…",
+      "For walking around the city it is absolutely perfect. I use it to explore new neighborhoods and have discovered so many hidden gems. The AR walking directions where arrows appear on the actual street are brilliant.",
   },
   {
     id: '221445670',
@@ -107,9 +107,9 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     durationSeconds: 41,
     viewed: true,
     summary:
-      "Mixed feedback — appreciated the creative direction but questioned whether the ad would perform well on all social platforms. Suggested platform-specific adaptations.",
+      'Mixed assessment comparing Google Maps favorably for place discovery and reviews while noting Waze as superior for real-time driving hazards. The respondent uses both apps for different purposes.',
     transcript:
-      "For Instagram this works great. But if this showed up on my Twitter feed I think the format would be off. It's very square and visual, not sure about other platforms…",
+      "It works fine for basic navigation but I switched to Waze for driving because the community hazard updates are so much better. Google Maps does not tell me about speed traps or road debris in real time. But for finding places, reading reviews, and planning trips, I still use Google Maps. I think they are each better at different things so I use both.",
   },
   {
     id: '221677201',
@@ -119,9 +119,9 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     durationSeconds: 9,
     viewed: false,
     summary:
-      "Brief but critical response. The participant did not connect with the visual style and found the color scheme unappetizing for a pet food product.",
+      'Brief but critical response focused on outdated offline maps causing missed turns and navigation failures during a road trip in low-connectivity areas.',
     transcript:
-      "The pastels don't say pet food to me. I think of baby products. It's confusing and wouldn't make me want to buy treats for my dog…",
+      "The offline maps are terrible. I downloaded them for a road trip and they were completely outdated. I missed two turns and got really lost.",
   },
   {
     id: '221534890',
@@ -131,9 +131,9 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     durationSeconds: 62,
     viewed: true,
     summary:
-      "Detailed positive analysis of the post's effectiveness. The respondent works in marketing and praised the campaign strategy, noting strong brand-audience alignment.",
+      'Detailed positive analysis from a product perspective praising seamless feature integration, personalization capabilities, the timeline feature, and the Local Guides crowdsourcing model.',
     transcript:
-      "From a marketing perspective this is solid. The color palette is cohesive, the product placement is subtle but effective, and the dog creates an emotional hook…",
+      "From a product standpoint Google Maps is one of the best applications ever built. The way it integrates real-time traffic data, user reviews, business information, photos, and turn-by-turn navigation into one seamless experience is remarkable. What impresses me most is how it personalizes over time. It knows my home and work, it remembers my preferred routes, it learns what kind of places I like. The timeline feature showing everywhere I have been over the years is incredible. I once used it to recall which restaurant I visited on a specific date two years ago. And the Local Guides program where regular users contribute reviews and photos is a genius crowdsourcing strategy. It is a product that genuinely improves your daily life in a meaningful way.",
   },
   {
     id: '221490123',
@@ -143,25 +143,25 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     durationSeconds: 28,
     viewed: false,
     summary:
-      "Enthusiastic response with emphasis on shareability. The participant mentioned they would engage with and share this type of content on their personal social accounts.",
+      'Enthusiastic response highlighting real-time crowd data and indoor navigation as underrated game-changing features for avoiding packed venues and navigating airports.',
     transcript:
-      "Oh my god the dog! I would 100% share this. My friends and I always send each other cute dog content and this would fit right in. Smart marketing actually…",
+      "I love Google Maps so much. The feature that shows how crowded a place is before you go has been a complete game changer for me. I used to hate arriving somewhere packed. Now I just check the busy times first. Also the indoor maps in airports and shopping malls are so underrated. I have not gotten lost in an airport once since they added that feature.",
   },
 ];
 
 export const MOCK_VIDEO_AI_QUESTION_DETAIL: VideoAiQuestionDetail = {
   id: 'vai-001',
-  question: 'How do you feel about this social media post?',
+  question: 'How has been your experience with Google Maps?',
   survey: 'Video AI',
   date: 'Jun 03 2026',
   totalResponses: 23,
   analyzedResponses: 22,
-  sentiment: { positive: 68, neutral: 23, negative: 9 },
-  avgDuration: '0:38',
-  durationRange: { min: '0:07', max: '1:42' },
-  themes: ['Brand affinity', 'Visual appeal', 'Product visibility', 'Color recognition'],
+  sentiment: { positive: 60, neutral: 22, negative: 18 },
+  avgDuration: '0:27',
+  durationRange: { min: '0:07', max: '1:02' },
+  themes: ['Navigation accuracy', 'Traffic updates', 'Business information', 'Offline maps', 'Personalization'],
   aiSummary:
-    'Respondents generally had a positive reaction to the social media post, with many expressing a strong personal connection to the brand. Common themes include appreciation for visual aesthetics, product color recognition, and suggestions to improve product prominence in the imagery. Several participants noted the campaign felt relatable and authentic, while a minority felt the messaging could be better tailored to specific social platforms. Constructive critiques centered on enhancing product visibility and ensuring the content resonates across different demographics.',
+    'Respondents showed predominantly positive experiences with Google Maps, particularly praising real-time traffic rerouting, Street View, and integrated reviews. Common themes include daily utility, personalization, and exploratory features. Critical voices focused on declining search quality due to sponsored content and issues with outdated offline maps. Several neutral responses noted a preference for Waze for real-time driving hazards while continuing to use Google Maps for planning and discovery. Overall the product is viewed as an essential daily utility with room for improvement in ad transparency and offline map accuracy.',
   responses: DETAIL_RESPONSES,
 };
 
@@ -170,7 +170,7 @@ export function getVideoAiQuestionDetail(id: string): VideoAiQuestionDetail | un
   return {
     ...MOCK_VIDEO_AI_QUESTION_DETAIL,
     id,
-    question: 'What comes to mind when you see this brand logo?',
+    question: 'How has been your experience with Google Maps?',
     survey: 'Brand Perception Q2',
     date: 'May 28 2026',
   };
