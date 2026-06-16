@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
+  formatCrossVariableBatchLabel,
+  inferCrossVariableMatrixName,
   resolveCrossVariableEditState,
   type CrossVariableQuotaBatch,
   type CrossVariableQuotaSaveResult,
@@ -43,13 +45,13 @@ export function CrossVariableQuotaTrackingPanel({
   const batchOptions = useMemo(
     () =>
       trackingSets.map((set, index) => {
-        const batchNum = trackingSets.length - index;
+        const batch = batches.find((item) => item.id === set.batchId);
         return {
           value: set.batchId,
-          label: `Matrix ${batchNum} · ${set.rows.length} combinations`,
+          label: formatCrossVariableBatchLabel(batch, set.rows.length, trackingSets.length - index),
         };
       }),
-    [trackingSets]
+    [batches, trackingSets]
   );
 
   const activeSet = useMemo(
@@ -60,6 +62,11 @@ export function CrossVariableQuotaTrackingPanel({
   const activeBatch = useMemo(
     () => batches.find((batch) => batch.id === activeSet?.batchId),
     [activeSet?.batchId, batches]
+  );
+
+  const activeMatrixName = useMemo(
+    () => (activeBatch ? inferCrossVariableMatrixName(activeBatch) : 'Cross variable matrix'),
+    [activeBatch]
   );
 
   const importEditState = useMemo(() => {
@@ -125,7 +132,11 @@ export function CrossVariableQuotaTrackingPanel({
                 }}
               />
             </div>
-          ) : null}
+          ) : (
+            <div className={styles.matrixNameBadge} title={activeMatrixName}>
+              {formatCrossVariableBatchLabel(activeBatch, activeSet.rows.length)}
+            </div>
+          )}
           {!clientView ? (
             <div className={styles.iconActions}>
               <button

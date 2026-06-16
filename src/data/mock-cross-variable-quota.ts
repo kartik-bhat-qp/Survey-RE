@@ -1,4 +1,4 @@
-import type { AdvanceQuota, QuotaOption } from '@/data/mock-advance-quotas';
+import type { AdvanceQuota, QuotaOption, QuestionQuotaScope } from '@/data/mock-advance-quotas';
 import {
   getQuestionsBySurvey,
   resolvePickerSelection,
@@ -13,6 +13,38 @@ export const CROSS_VARIABLE_SECONDARY_VARIABLES_INSTRUCTIONS =
 
 export const CROSS_VARIABLE_MATRIX_INSTRUCTIONS =
   'Set an overall quota for each primary combination, then allocate targets across secondary variable options. Column values must sum to the overall for that row.';
+
+export const CROSS_VARIABLE_QUOTA_TYPE_INSTRUCTIONS =
+  'Choose how quota targets should be applied across the matrix.';
+
+export const CROSS_VARIABLE_QUOTA_TYPE_OPTIONS: {
+  id: QuestionQuotaScope;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: 'max-count',
+    label: 'Maximum quota',
+    description: 'Cap responses at the target for each cell in the matrix.',
+  },
+  {
+    id: 'min-count',
+    label: 'Minimum count',
+    description: 'Require at least the target count for each cell before closing quotas.',
+  },
+  {
+    id: 'min-pct',
+    label: 'Minimum count percentage',
+    description: 'Set minimum targets as a percentage of the overall sample.',
+  },
+];
+
+export function formatCrossVariableQuotaScope(scope: QuestionQuotaScope | undefined): string {
+  return (
+    CROSS_VARIABLE_QUOTA_TYPE_OPTIONS.find((option) => option.id === scope)?.label ??
+    'Maximum quota'
+  );
+}
 
 export const CROSS_VARIABLE_OVERALL_COLUMN_KEY = '__overall__';
 
@@ -289,9 +321,13 @@ export function buildInitialCrossVariableMatrix(
 
 export interface CrossVariableQuotaBatch {
   id: string;
+  name?: string;
   quotaGroup: string;
   columns: CrossVariableColumn[];
   createdAt: number;
+  quotaScope?: QuestionQuotaScope;
+  primaryVariableLabels?: string[];
+  secondaryVariableLabels?: string[];
   combinationRows?: CrossVariableCombinationRow[];
   matrix?: CrossVariableMatrixState;
 }
@@ -303,8 +339,79 @@ export interface CrossVariableQuotaSaveResult {
 
 export interface BuildCrossVariableQuotasOptions {
   batchId?: string;
+  quotaScope?: QuestionQuotaScope;
+  matrixName?: string;
+  primaryVariableLabels?: string[];
+  secondaryVariableLabels?: string[];
   /** Preserve fill counts when updating an existing matrix. */
   existingQuotas?: AdvanceQuota[];
+}
+
+const MATRIX_NAME_MAX_LENGTH = 72;
+
+function truncateMatrixLabel(value: string, maxLength = MATRIX_NAME_MAX_LENGTH): string {
+  const trimmed = value.trim();
+  if (trimmed.length <= maxLength) return trimmed;
+  return `${trimmed.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function shortenVariableLabel(label: string): string {
+  const trimmed = label.trim();
+  if (trimmed.length <= 36) return trimmed;
+  return `${trimmed.slice(0, 33).trimEnd()}…`;
+}
+
+export function buildCrossVariableMatrixNameFromLabels(
+  primaryVariableLabels: string[],
+  secondaryVariableLabels: string[]
+): string {
+  const primaryPart = primaryVariableLabels
+    .map(shortenVariableLabel)
+    .filter(Boolean)
+    .join(' × ');
+  const secondaryPart = secondaryVariableLabels
+    .map(shortenVariableLabel)
+    .filter(Boolean)
+    .join(', ');
+
+  if (primaryPart && secondaryPart) {
+    return truncateMatrixLabel(`${primaryPart} by ${secondaryPart}`);
+  }
+  return truncateMatrixLabel(primaryPart || secondaryPart || 'Cross variable matrix');
+}
+
+export function inferCrossVariableMatrixName(batch: CrossVariableQuotaBatch): string {
+  if (batch.name?.trim()) return batch.name.trim();
+
+  if (batch.primaryVariableLabels?.length || batch.secondaryVariableLabels?.length) {
+    return buildCrossVariableMatrixNameFromLabels(
+      batch.primaryVariableLabels ?? [],
+      batch.secondaryVariableLabels ??
+        Array.from(new Set(batch.columns.map((column) => column.questionText)))
+    );
+  }
+
+  const secondaryFromColumns = Array.from(
+    new Set(batch.columns.map((column) => column.questionText))
+  );
+  if (secondaryFromColumns.length > 0) {
+    return truncateMatrixLabel(secondaryFromColumns.map(shortenVariableLabel).join(', '));
+  }
+
+  return 'Cross variable matrix';
+}
+
+export function formatCrossVariableBatchLabel(
+  batch: CrossVariableQuotaBatch | undefined,
+  rowCount: number,
+  fallbackIndex?: number
+): string {
+  const baseName = batch
+    ? inferCrossVariableMatrixName(batch)
+    : fallbackIndex != null
+      ? `Matrix ${fallbackIndex}`
+      : 'Cross variable matrix';
+  return `${baseName} · ${rowCount} combinations`;
 }
 
 export function buildCrossVariableQuotas(
@@ -316,6 +423,14 @@ export function buildCrossVariableQuotas(
 ): CrossVariableQuotaSaveResult {
   const now = Date.now();
   const batchId = buildOptions?.batchId ?? `cross-${now}`;
+  const quotaScope = buildOptions?.quotaScope ?? 'max-count';
+  const secondaryVariableLabels =
+    buildOptions?.secondaryVariableLabels ??
+    Array.from(new Set(columns.map((column) => column.questionText)));
+  const primaryVariableLabels = buildOptions?.primaryVariableLabels ?? [];
+  const matrixName =
+    buildOptions?.matrixName?.trim() ||
+    buildCrossVariableMatrixNameFromLabels(primaryVariableLabels, secondaryVariableLabels);
   const existingByName = new Map(
     (buildOptions?.existingQuotas ?? []).map((quota) => [quota.name, quota])
   );
@@ -352,6 +467,7 @@ export function buildCrossVariableQuotas(
       target: overallTarget || CROSS_VARIABLE_DEFAULT_OVERALL,
       current: previous?.current ?? 0,
       crossVariableBatchId: batchId,
+      questionQuotaScope: previous?.questionQuotaScope ?? quotaScope,
       options: options.length > 0 ? options : undefined,
     };
   });
@@ -360,11 +476,15 @@ export function buildCrossVariableQuotas(
     quotas,
     batch: {
       id: batchId,
+      name: matrixName,
       quotaGroup,
       columns,
       createdAt: buildOptions?.batchId
         ? inferBatchCreatedAt(batchId)
         : now,
+      quotaScope,
+      primaryVariableLabels,
+      secondaryVariableLabels,
       combinationRows: rows,
       matrix,
     },

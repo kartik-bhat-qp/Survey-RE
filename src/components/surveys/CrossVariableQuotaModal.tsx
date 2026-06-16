@@ -11,6 +11,7 @@ import {
   questionHasExpandableRows,
   type SurveyQuestion,
 } from '@/data/mock-survey-questions';
+import type { QuestionQuotaScope } from '@/data/mock-advance-quotas';
 import {
   buildCombinationRows,
   buildCrossVariableColumns,
@@ -20,11 +21,14 @@ import {
   buildPrimaryDimensions,
   CROSS_VARIABLE_MATRIX_INSTRUCTIONS,
   CROSS_VARIABLE_PRIMARY_VARIABLES_INSTRUCTIONS,
+  CROSS_VARIABLE_QUOTA_TYPE_INSTRUCTIONS,
   CROSS_VARIABLE_SECONDARY_VARIABLES_INSTRUCTIONS,
+  formatCrossVariableQuotaScope,
   getSelectedQuestionsByIds,
   type CrossVariableMatrixState,
 } from '@/data/mock-cross-variable-quota';
 import { CrossVariableQuotaMatrixStep } from '@/components/surveys/CrossVariableQuotaMatrixStep';
+import { CrossVariableQuotaTypeStep } from '@/components/surveys/CrossVariableQuotaTypeStep';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
   CROSS_VARIABLE_QUOTA_STEPS,
@@ -42,7 +46,7 @@ const WuTable = dynamic(
   { ssr: false, loading: () => <StandardLoader className="min-h-[320px]" /> }
 );
 
-type ModalStep = 'primary-variables' | 'secondary-variables' | 'dimension';
+type ModalStep = 'quota-type' | 'primary-variables' | 'secondary-variables' | 'dimension';
 
 interface CrossVariableQuotaModalProps {
   open: boolean;
@@ -61,7 +65,8 @@ export function CrossVariableQuotaModal({
 }: CrossVariableQuotaModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
-  const [step, setStep] = useState<ModalStep>('primary-variables');
+  const [step, setStep] = useState<ModalStep>('quota-type');
+  const [quotaScope, setQuotaScope] = useState<QuestionQuotaScope>('max-count');
   const [search, setSearch] = useState('');
   const [expandedParentIds, setExpandedParentIds] = useState<Set<number>>(() => new Set());
   const [primarySelectedIds, setPrimarySelectedIds] = useState<Set<number>>(() => new Set());
@@ -236,7 +241,8 @@ export function CrossVariableQuotaModal({
   );
 
   function resetState(): void {
-    setStep('primary-variables');
+    setStep('quota-type');
+    setQuotaScope('max-count');
     setSearch('');
     setExpandedParentIds(new Set());
     setPrimarySelectedIds(new Set());
@@ -256,6 +262,11 @@ export function CrossVariableQuotaModal({
   }
 
   function handleNext(): void {
+    if (step === 'quota-type') {
+      setSearch('');
+      setStep('primary-variables');
+      return;
+    }
     if (step === 'primary-variables') {
       if (primarySelectedIds.size === 0 || primaryDimensions.length === 0) return;
       setSearch('');
@@ -269,11 +280,20 @@ export function CrossVariableQuotaModal({
       return;
     }
     if (combinationRows.length === 0 || matrixColumns.length === 0) return;
+    const primaryVariableLabels = primaryDimensions.map((dimension) => dimension.questionText);
+    const secondaryVariableLabels = Array.from(
+      new Set(matrixColumns.map((column) => column.questionText))
+    );
     const result = buildCrossVariableQuotas(
       combinationRows,
       matrixColumns,
       matrix,
-      'NA'
+      'NA',
+      {
+        quotaScope,
+        primaryVariableLabels,
+        secondaryVariableLabels,
+      }
     );
     onSave?.(result);
     showToast({
@@ -294,6 +314,11 @@ export function CrossVariableQuotaModal({
       setStep('primary-variables');
       return;
     }
+    if (step === 'primary-variables') {
+      setSearch('');
+      setStep('quota-type');
+      return;
+    }
     if (onBack) {
       resetState();
       onBack();
@@ -304,12 +329,8 @@ export function CrossVariableQuotaModal({
 
   function handleBreadcrumbClick(target: QuotaStep): void {
     if (target === 'quota-type') {
-      if (onBack) {
-        resetState();
-        onBack();
-      } else {
-        handleOpenChange(false);
-      }
+      setSearch('');
+      setStep('quota-type');
       return;
     }
     if (target === 'primary-variables') {
@@ -333,7 +354,9 @@ export function CrossVariableQuotaModal({
   const { WuModal, WuModalContent, WuModalHeader, WuModalFooter, WuButton } = wick;
   const selectedCount = activeSelectedIds.size;
   const instructions =
-    step === 'primary-variables'
+    step === 'quota-type'
+      ? CROSS_VARIABLE_QUOTA_TYPE_INSTRUCTIONS
+      : step === 'primary-variables'
       ? CROSS_VARIABLE_PRIMARY_VARIABLES_INSTRUCTIONS
       : step === 'secondary-variables'
         ? CROSS_VARIABLE_SECONDARY_VARIABLES_INSTRUCTIONS
@@ -341,7 +364,9 @@ export function CrossVariableQuotaModal({
   const selectionLabel =
     step === 'primary-variables' ? 'Primary variables' : 'Secondary variables';
   const canProceed =
-    step === 'primary-variables'
+    step === 'quota-type'
+      ? true
+      : step === 'primary-variables'
       ? primarySelectedIds.size > 0 && primaryDimensions.length > 0
       : step === 'secondary-variables'
         ? secondarySelectedIds.size > 0 && matrixColumns.length > 0
@@ -359,10 +384,21 @@ export function CrossVariableQuotaModal({
         {step === 'dimension' ? 'Cross variable quota matrix' : 'Cross variable quota'}
       </WuModalHeader>
       <WuModalContent className={styles.content}>
-        {step === 'dimension' ? (
+        {step === 'quota-type' ? (
           <div className={styles.body}>
             <p className={styles.instructions}>{instructions}</p>
+            <CrossVariableQuotaTypeStep value={quotaScope} onChange={setQuotaScope} />
+          </div>
+        ) : step === 'dimension' ? (
+          <div className={styles.body}>
+            <CrossVariableQuotaTypeStep
+              value={quotaScope}
+              onChange={setQuotaScope}
+              variant="inline"
+            />
+            <p className={styles.instructions}>{instructions}</p>
             <p className={styles.matrixSummary}>
+              <strong>{formatCrossVariableQuotaScope(quotaScope)}</strong> ·{' '}
               <strong>{combinationRows.length}</strong> primary combinations ·{' '}
               <strong>{matrixColumns.length}</strong> column options across{' '}
               <strong>{secondaryQuestions.length}</strong> secondary{' '}

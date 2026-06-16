@@ -3,9 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import type { QuestionQuotaScope } from '@/data/mock-advance-quotas';
 import {
   buildCrossVariableQuotas,
   CROSS_VARIABLE_MATRIX_INSTRUCTIONS,
+  formatCrossVariableQuotaScope,
+  inferCrossVariableMatrixName,
   resolveCrossVariableEditState,
   type CrossVariableMatrixState,
   type CrossVariableQuotaBatch,
@@ -13,9 +16,15 @@ import {
   type CrossVariableTrackingSet,
 } from '@/data/mock-cross-variable-quota';
 import { CrossVariableQuotaMatrixStep } from '@/components/surveys/CrossVariableQuotaMatrixStep';
+import { CrossVariableQuotaTypeStep } from '@/components/surveys/CrossVariableQuotaTypeStep';
 import { CrossVariableExcelImportModal } from '@/components/surveys/CrossVariableExcelImportModal';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import styles from './CrossVariableQuotaModal.module.css';
+
+const WuInput = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
+  { ssr: false }
+);
 
 interface CrossVariableQuotaEditModalProps {
   open: boolean;
@@ -35,12 +44,24 @@ export function CrossVariableQuotaEditModal({
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
   const [matrix, setMatrix] = useState<CrossVariableMatrixState>({ cells: {} });
+  const [quotaScope, setQuotaScope] = useState<QuestionQuotaScope>('max-count');
+  const [matrixName, setMatrixName] = useState('');
   const [importOpen, setImportOpen] = useState(false);
 
   const editState = useMemo(() => {
     if (!trackingSet) return null;
     return resolveCrossVariableEditState(trackingSet.rows, batch);
   }, [batch, trackingSet]);
+
+  useEffect(() => {
+    if (!open) return;
+    setQuotaScope(
+      batch?.quotaScope ??
+        trackingSet?.rows.find((quota) => quota.questionQuotaScope)?.questionQuotaScope ??
+        'max-count'
+    );
+    setMatrixName(batch ? inferCrossVariableMatrixName(batch) : 'Cross variable matrix');
+  }, [batch, open, trackingSet]);
 
   useEffect(() => {
     if (!open || !editState) return;
@@ -64,6 +85,8 @@ export function CrossVariableQuotaEditModal({
       trackingSet.quotaGroup,
       {
         batchId: trackingSet.batchId,
+        quotaScope,
+        matrixName,
         existingQuotas: trackingSet.rows,
       }
     );
@@ -91,8 +114,29 @@ export function CrossVariableQuotaEditModal({
         <WuModalHeader className={styles.header}>Edit cross variable quota matrix</WuModalHeader>
         <WuModalContent className={styles.content}>
           <div className={styles.body}>
+            <div className={styles.matrixNameField}>
+              <label className={styles.matrixNameLabel} htmlFor="cross-variable-matrix-name">
+                Matrix name
+              </label>
+              <WuInput
+                id="cross-variable-matrix-name"
+                variant="outlined"
+                value={matrixName}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  setMatrixName(event.target.value)
+                }
+                aria-label="Matrix name"
+                className={styles.matrixNameInput}
+              />
+            </div>
+            <CrossVariableQuotaTypeStep
+              value={quotaScope}
+              onChange={setQuotaScope}
+              variant="inline"
+            />
             <p className={styles.instructions}>{CROSS_VARIABLE_MATRIX_INSTRUCTIONS}</p>
             <p className={styles.matrixSummary}>
+              <strong>{formatCrossVariableQuotaScope(quotaScope)}</strong> ·{' '}
               <strong>{combinationRows.length}</strong> primary combinations ·{' '}
               <strong>{columns.length}</strong> column options
             </p>

@@ -46,6 +46,23 @@
   font-weight: 600;
 }
 
+.matrixNameField {
+  padding: 1rem 1.5rem 0;
+}
+
+.matrixNameLabel {
+  color: #1b3380;
+  display: block;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-bottom: 0.375rem;
+}
+
+.matrixNameInput {
+  width: 100%;
+}
+
 .searchRow {
   padding: 0.75rem 1.5rem;
 }

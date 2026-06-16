@@ -238,11 +238,19 @@ export async function generateQuotasFromAiPrompt(
     const combinationRows = buildCombinationRows(primaryDimensions);
     const columns = buildCrossVariableColumns(secondaryQuestions);
     const matrix = buildInitialCrossVariableMatrix(combinationRows, columns);
+    const primaryVariableLabels = primaryDimensions.map((dimension) => dimension.questionText);
+    const secondaryVariableLabels = Array.from(
+      new Set(columns.map((column) => column.questionText))
+    );
     const saveResult = buildCrossVariableQuotas(
       combinationRows,
       columns,
       matrix,
-      quotaGroup
+      quotaGroup,
+      {
+        primaryVariableLabels,
+        secondaryVariableLabels,
+      }
     );
 
     return {
