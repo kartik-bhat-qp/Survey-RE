@@ -72,7 +72,7 @@ export interface SurveyQuestionExtractionSource {
 
 export const DEFAULT_LOOKUP_TABLE_QUESTION_TEXT = 'Which state do you live in?';
 
-export const DEFAULT_DROPDOWN_QUESTION_TEXT = 'Which beverage did you consume last?';
+export const DEFAULT_DROPDOWN_QUESTION_TEXT = 'Which beverage did you consume last time?';
 
 export const DEFAULT_DROPDOWN_OPTION_LABELS = ['Coke', 'Pepsi', 'Sprite', 'Water'] as const;
 
