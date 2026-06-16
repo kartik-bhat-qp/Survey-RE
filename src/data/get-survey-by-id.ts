@@ -47,7 +47,7 @@ export function getSurveyFolderById(folderId: string): SurveyFolder | undefined 
 
 export function getSurveyEditorTitle(survey: Survey): string {
   if (survey.folderId === 'demo-2026') {
-    return 'Demo Survey 2026';
+    return 'Demo Survey 2025';
   }
   return survey.name
     .split(' ')
