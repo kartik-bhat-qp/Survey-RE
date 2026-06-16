@@ -72,7 +72,9 @@ export interface SurveyQuestionExtractionSource {
 
 export const DEFAULT_LOOKUP_TABLE_QUESTION_TEXT = 'Which state do you live in?';
 
-export const DEFAULT_DROPDOWN_QUESTION_TEXT = 'Which of the following are you aware of?';
+export const DEFAULT_DROPDOWN_QUESTION_TEXT = 'Which beverage did you consume last?';
+
+export const DEFAULT_DROPDOWN_OPTION_LABELS = ['Coke', 'Pepsi', 'Sprite', 'Water'] as const;
 
 export const DEFAULT_COMMENT_BOX_QUESTION_TEXT = 'Comments / suggestions:';
 
@@ -96,6 +98,13 @@ export function createDefaultLookupTableData(): SurveyQuestionLookupTable {
 export function createDefaultLookupTableOptions(): SurveyQuestionOption[] {
   return DEFAULT_LOOKUP_TABLE_SAMPLE_VALUES.map((label, index) => ({
     id: `lookup-opt-${index + 1}`,
+    label,
+  }));
+}
+
+export function createDefaultDropdownOptions(): SurveyQuestionOption[] {
+  return DEFAULT_DROPDOWN_OPTION_LABELS.map((label, index) => ({
+    id: `dropdown-opt-${index + 1}`,
     label,
   }));
 }

@@ -2,7 +2,7 @@
 
 import type { SyntheticEvent } from 'react';
 import type { SurveyQuestion } from '@/data/mock-survey-detail';
-import { LookupTableQuestionPreview } from '@/components/surveys/LookupTableQuestionPreview';
+import { DropdownQuestionPreview } from '@/components/surveys/DropdownQuestionPreview';
 import { QuestionRichTextField, plainTextFromRichValue } from '@/components/surveys/QuestionRichTextField';
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
@@ -44,8 +44,8 @@ export function DropdownQuestionRow({
   onBulkEdit,
   onQuestionTextChange,
 }: DropdownQuestionRowProps) {
-  const firstOptionLabel = question.options[0]?.label ?? 'Option 1';
-  const selectedValue = plainTextFromRichValue(firstOptionLabel) || 'Option 1';
+  const firstOptionLabel = question.options[0]?.label ?? 'Coke';
+  const selectedValue = plainTextFromRichValue(firstOptionLabel) || 'Coke';
 
   return (
     <article className={styles.root}>
@@ -74,13 +74,7 @@ export function DropdownQuestionRow({
             />
           </div>
           <div className={styles.dropdownWrap}>
-            <LookupTableQuestionPreview
-              data={{
-                question: question.text,
-                selectedValue,
-              }}
-              showQuestion={false}
-            />
+            <DropdownQuestionPreview selectedValue={selectedValue} />
           </div>
           <div
             className={styles.toolsRow}

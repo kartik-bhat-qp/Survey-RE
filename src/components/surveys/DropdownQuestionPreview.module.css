@@ -1,0 +1,37 @@
+.root {
+  display: block;
+  max-width: 20rem;
+  width: 100%;
+}
+
+.select {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #d5dde6;
+  color: #334155;
+  display: flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  justify-content: space-between;
+  line-height: 1.4;
+  min-height: 2rem;
+  padding: 0.25rem 0;
+  width: 100%;
+}
+
+.selectValue {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectCaret {
+  color: #64748b;
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  margin-left: 0.5rem;
+}

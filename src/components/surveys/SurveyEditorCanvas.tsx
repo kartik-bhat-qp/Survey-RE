@@ -18,6 +18,7 @@ import {
   DEFAULT_LOOKUP_TABLE_QUESTION_TEXT,
   DEFAULT_DROPDOWN_QUESTION_TEXT,
   DEFAULT_COMMENT_BOX_QUESTION_TEXT,
+  createDefaultDropdownOptions,
   SELECT_ONE_MAX_BULK_OPTIONS,
   DEFAULT_MULTI_POINT_QUESTION_TEXT,
   DEFAULT_NPS_MAX_LABEL,
@@ -1950,10 +1951,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
               required: true,
               inputKind: 'radio',
               addQuestionTypeId: 'dropdown',
-              options: [
-                { id: `opt-${ts}-1`, label: 'Option 1' },
-                { id: `opt-${ts}-2`, label: 'Option 2' },
-              ],
+              options: createDefaultDropdownOptions().map((option, index) => ({
+                ...option,
+                id: `opt-${ts}-${index + 1}`,
+              })),
             };
             return {
               ...sec,
