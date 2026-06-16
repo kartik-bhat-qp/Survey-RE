@@ -210,7 +210,9 @@
 .questionBlockMultiPoint .questionCodeColumn,
 .questionBlockNps .questionCodeColumn,
 .questionBlockVanWestendorp .questionCodeColumn,
-.questionBlockLookupTable .questionCodeColumn {
+.questionBlockLookupTable .questionCodeColumn,
+.questionBlockDropdown .questionCodeColumn,
+.questionBlockCommentBox .questionCodeColumn {
   padding-top: 2.75rem;
 }
 
@@ -230,7 +232,9 @@
 .addQuestionToolbar + .questionBlock .selectManyCard,
 .addQuestionToolbar + .questionBlock .npsCard,
 .addQuestionToolbar + .questionBlock .vanWestendorpCard,
-.addQuestionToolbar + .questionBlock .lookupTableCard {
+.addQuestionToolbar + .questionBlock .lookupTableCard,
+.addQuestionToolbar + .questionBlock .dropdownCard,
+.addQuestionToolbar + .questionBlock .commentBoxCard {
   border-top: none;
 }
 

@@ -16,6 +16,8 @@ import {
   createDefaultMultiPointMatrix,
   createDefaultVanWestendorpData,
   DEFAULT_LOOKUP_TABLE_QUESTION_TEXT,
+  DEFAULT_DROPDOWN_QUESTION_TEXT,
+  DEFAULT_COMMENT_BOX_QUESTION_TEXT,
   SELECT_ONE_MAX_BULK_OPTIONS,
   DEFAULT_MULTI_POINT_QUESTION_TEXT,
   DEFAULT_NPS_MAX_LABEL,
@@ -24,6 +26,8 @@ import {
 } from '@/data/mock-survey-detail';
 import { LookupTableBulkConversionModal } from '@/components/surveys/LookupTableBulkConversionModal';
 import { LookupTableQuestionRow } from '@/components/surveys/LookupTableQuestionRow';
+import { DropdownQuestionRow } from '@/components/surveys/DropdownQuestionRow';
+import { CommentBoxQuestionRow } from '@/components/surveys/CommentBoxQuestionRow';
 import { NpsQuestionRow } from '@/components/surveys/NpsQuestionRow';
 import { VanWestendorpQuestionRow } from '@/components/surveys/VanWestendorpQuestionRow';
 import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
@@ -156,9 +160,19 @@ function isLookupTableQuestion(question: SurveyQuestion): boolean {
   return question.kind === 'lookup-table' || question.addQuestionTypeId === 'lookup-table';
 }
 
+function isDropdownQuestion(question: SurveyQuestion): boolean {
+  return question.addQuestionTypeId === 'dropdown';
+}
+
+function isCommentBoxQuestion(question: SurveyQuestion): boolean {
+  return question.addQuestionTypeId === 'comment-box';
+}
+
 function isSelectOneQuestion(question: SurveyQuestion): boolean {
   return (
     !isLookupTableQuestion(question) &&
+    !isDropdownQuestion(question) &&
+    !isCommentBoxQuestion(question) &&
     (question.addQuestionTypeId === 'select-one' ||
       (question.inputKind === 'radio' &&
         !isMultiPointScalesQuestion(question) &&
@@ -177,6 +191,8 @@ function isSelectOnePreviewQuestion(
     !isNpsQuestion(question) &&
     !isVanWestendorpQuestion(question) &&
     !isLookupTableQuestion(question) &&
+    !isDropdownQuestion(question) &&
+    !isCommentBoxQuestion(question) &&
     question.options.length > 0
   );
 }
@@ -1477,7 +1493,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     (question: SurveyQuestion, questionKey: string): QuestionSettings => {
       const settings =
         questionSettingsByKey[questionKey] ??
-        getDefaultSettingsForQuestion(question.inputKind);
+        getDefaultSettingsForQuestion(question.inputKind, question.addQuestionTypeId);
       return {
         ...settings,
         answerDisplayOrder: normalizeAnswerDisplayOrder(settings.answerDisplayOrder),
@@ -1912,6 +1928,71 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         return;
       }
 
+      if (typeId === 'dropdown') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        const questionKey = `${sectionId}:${newId}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(questionKey);
+        setQuestionSettingsByKey((prev) => ({
+          ...prev,
+          [questionKey]: getDefaultSettingsForQuestion('radio', 'dropdown'),
+        }));
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_DROPDOWN_QUESTION_TEXT,
+              required: true,
+              inputKind: 'radio',
+              addQuestionTypeId: 'dropdown',
+              options: [
+                { id: `opt-${ts}-1`, label: 'Option 1' },
+                { id: `opt-${ts}-2`, label: 'Option 2' },
+              ],
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Drop-down Menu question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'comment-box') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_COMMENT_BOX_QUESTION_TEXT,
+              required: true,
+              addQuestionTypeId: 'comment-box',
+              options: [],
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Comment Box question added', variant: 'success' });
+        return;
+      }
+
       if (typeId === 'multi-point') {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
@@ -2104,6 +2185,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const isNps = isNpsQuestion(question);
                     const isVanWestendorp = isVanWestendorpQuestion(question);
                     const isLookupTable = isLookupTableQuestion(question);
+                    const isDropdown = isDropdownQuestion(question);
+                    const isCommentBox = isCommentBoxQuestion(question);
                     const isSelectOne = isSelectOneQuestion(question);
                     const multiPointSettings = getMultiPointSettings(questionKey);
                     const savedLogic = logicByQuestionKey[questionKey];
@@ -2163,6 +2246,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                           } ${isNps ? styles.questionBlockNps : ''} ${
                             isVanWestendorp ? styles.questionBlockVanWestendorp : ''
                           } ${isLookupTable ? styles.questionBlockLookupTable : ''} ${
+                            isDropdown ? styles.questionBlockDropdown : ''
+                          } ${isCommentBox ? styles.questionBlockCommentBox : ''} ${
                             isSelected ? styles.questionBlockSelected : ''
                           }`}
                         >
@@ -2217,6 +2302,54 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 }
                                 onEditLookupTable={() => toast('Edit lookup table')}
                                 onBulkEdit={handleBulkEdit}
+                                onQuestionTextChange={handleQuestionTextChange}
+                              />
+                            ) : isDropdown ? (
+                              <DropdownQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onBulkEdit={handleBulkEdit}
+                                onQuestionTextChange={handleQuestionTextChange}
+                              />
+                            ) : isCommentBox ? (
+                              <CommentBoxQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onAddAnswerRow={() => toast('Add answer row')}
                                 onQuestionTextChange={handleQuestionTextChange}
                               />
                             ) : isVanWestendorp ? (

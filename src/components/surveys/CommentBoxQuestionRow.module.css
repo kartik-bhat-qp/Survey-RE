@@ -1,0 +1,100 @@
+.root {
+  display: block;
+  min-width: 0;
+}
+
+:global(.commentBoxCard) {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: visible;
+}
+
+.cardInner {
+  padding: 0.75rem 1rem 0.5rem;
+}
+
+.topBar {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.topSpacer {
+  flex: 1;
+  min-width: 0;
+}
+
+.menuBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.menuBtn:hover {
+  background: #f1f5f9;
+}
+
+.questionTextWrap {
+  margin: 0 0 0.75rem;
+  min-width: 0;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.questionTextWrap .required {
+  left: 0.375rem;
+  line-height: 1.45;
+  position: absolute;
+  top: 0.2rem;
+}
+
+.required {
+  color: #dc2626;
+}
+
+.answerWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 28rem;
+  padding-left: 1.5rem;
+}
+
+.addRowBtn {
+  align-items: center;
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid #d5dde6;
+  border-radius: 0.25rem;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.75rem;
+  justify-content: center;
+  padding: 0;
+  width: 1.75rem;
+}
+
+.addRowBtn:hover {
+  border-color: #1b87e6;
+  color: #1b87e6;
+}
+
+.footer {
+  align-items: center;
+  background: transparent;
+  border-top: none;
+  display: flex;
+  padding: 0.5rem 1rem;
+}

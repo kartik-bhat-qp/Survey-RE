@@ -72,6 +72,12 @@ export interface SurveyQuestionExtractionSource {
 
 export const DEFAULT_LOOKUP_TABLE_QUESTION_TEXT = 'Which state do you live in?';
 
+export const DEFAULT_DROPDOWN_QUESTION_TEXT = 'Which of the following are you aware of?';
+
+export const DEFAULT_COMMENT_BOX_QUESTION_TEXT = 'Comments / suggestions:';
+
+export const DEFAULT_COMMENT_BOX_ANSWER_PLACEHOLDER = 'Multiple Row Answer Text';
+
 /** Select One questions with more than this many options must use Lookup Table. */
 export const SELECT_ONE_MAX_BULK_OPTIONS = 300;
 

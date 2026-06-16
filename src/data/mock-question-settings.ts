@@ -124,7 +124,16 @@ export const SCALE_TYPE_OPTIONS: { value: ScaleType; label: string }[] = [
   { value: 'undefined', label: 'Undefined' },
 ];
 
-export function getDefaultSettingsForQuestion(inputKind?: 'radio' | 'checkbox'): QuestionSettings {
+export function getDefaultSettingsForQuestion(
+  inputKind?: 'radio' | 'checkbox',
+  addQuestionTypeId?: string
+): QuestionSettings {
+  if (addQuestionTypeId === 'dropdown') {
+    return {
+      ...DEFAULT_QUESTION_SETTINGS,
+      answerType: 'dropdown',
+    };
+  }
   return {
     ...DEFAULT_QUESTION_SETTINGS,
     answerType: inputKind === 'checkbox' ? 'checkbox' : 'radio',
