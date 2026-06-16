@@ -14,11 +14,22 @@ import {
   createDefaultLookupTableData,
   createDefaultLookupTableOptions,
   createDefaultMultiPointMatrix,
+  createDefaultStarRatingMatrix,
+  createDefaultSmileyRatingData,
+  createDefaultThumbsUpDownData,
+  createDefaultTextSliderMatrix,
+  DEFAULT_STAR_RATING_QUESTION_TEXT,
+  DEFAULT_SMILEY_RATING_QUESTION_TEXT,
+  DEFAULT_THUMBS_QUESTION_TEXT,
+  DEFAULT_TEXT_SLIDER_QUESTION_TEXT,
   createDefaultVanWestendorpData,
   DEFAULT_LOOKUP_TABLE_QUESTION_TEXT,
   DEFAULT_DROPDOWN_QUESTION_TEXT,
   DEFAULT_COMMENT_BOX_QUESTION_TEXT,
+  DEFAULT_SINGLE_ROW_QUESTION_TEXT,
+  DEFAULT_CONTACT_INFORMATION_QUESTION_TEXT,
   createDefaultDropdownOptions,
+  createDefaultContactInformationOptions,
   SELECT_ONE_MAX_BULK_OPTIONS,
   DEFAULT_MULTI_POINT_QUESTION_TEXT,
   DEFAULT_NPS_MAX_LABEL,
@@ -29,6 +40,13 @@ import { LookupTableBulkConversionModal } from '@/components/surveys/LookupTable
 import { LookupTableQuestionRow } from '@/components/surveys/LookupTableQuestionRow';
 import { DropdownQuestionRow } from '@/components/surveys/DropdownQuestionRow';
 import { CommentBoxQuestionRow } from '@/components/surveys/CommentBoxQuestionRow';
+import { SingleRowTextQuestionRow } from '@/components/surveys/SingleRowTextQuestionRow';
+import { EmailAddressQuestionRow } from '@/components/surveys/EmailAddressQuestionRow';
+import { ContactInformationQuestionRow } from '@/components/surveys/ContactInformationQuestionRow';
+import { StarRatingQuestionRow } from '@/components/surveys/StarRatingQuestionRow';
+import { SmileyRatingQuestionRow } from '@/components/surveys/SmileyRatingQuestionRow';
+import { ThumbsUpDownQuestionRow } from '@/components/surveys/ThumbsUpDownQuestionRow';
+import { TextSliderQuestionRow } from '@/components/surveys/TextSliderQuestionRow';
 import { NpsQuestionRow } from '@/components/surveys/NpsQuestionRow';
 import { VanWestendorpQuestionRow } from '@/components/surveys/VanWestendorpQuestionRow';
 import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
@@ -149,6 +167,22 @@ function isMultiPointScalesQuestion(question: SurveyQuestion): boolean {
   return question.kind === 'multi-point-scales' && Boolean(question.matrix);
 }
 
+function isStarRatingQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'star-rating' || question.addQuestionTypeId === 'star-rating';
+}
+
+function isSmileyRatingQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'smiley-rating' || question.addQuestionTypeId === 'smiley-rating';
+}
+
+function isThumbsUpDownQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'thumbs-up-down' || question.addQuestionTypeId === 'thumbs';
+}
+
+function isTextSliderQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'text-slider' || question.addQuestionTypeId === 'text-slider';
+}
+
 function isNpsQuestion(question: SurveyQuestion): boolean {
   return question.kind === 'nps';
 }
@@ -169,11 +203,30 @@ function isCommentBoxQuestion(question: SurveyQuestion): boolean {
   return question.addQuestionTypeId === 'comment-box';
 }
 
+function isSingleRowTextQuestion(question: SurveyQuestion): boolean {
+  return question.addQuestionTypeId === 'single-row';
+}
+
+function isEmailAddressQuestion(question: SurveyQuestion): boolean {
+  return question.addQuestionTypeId === 'email';
+}
+
+function isContactInformationQuestion(question: SurveyQuestion): boolean {
+  return question.addQuestionTypeId === 'contact';
+}
+
 function isSelectOneQuestion(question: SurveyQuestion): boolean {
   return (
     !isLookupTableQuestion(question) &&
     !isDropdownQuestion(question) &&
     !isCommentBoxQuestion(question) &&
+    !isSingleRowTextQuestion(question) &&
+    !isEmailAddressQuestion(question) &&
+    !isContactInformationQuestion(question) &&
+    !isStarRatingQuestion(question) &&
+    !isSmileyRatingQuestion(question) &&
+    !isThumbsUpDownQuestion(question) &&
+    !isTextSliderQuestion(question) &&
     (question.addQuestionTypeId === 'select-one' ||
       (question.inputKind === 'radio' &&
         !isMultiPointScalesQuestion(question) &&
@@ -194,6 +247,13 @@ function isSelectOnePreviewQuestion(
     !isLookupTableQuestion(question) &&
     !isDropdownQuestion(question) &&
     !isCommentBoxQuestion(question) &&
+    !isSingleRowTextQuestion(question) &&
+    !isEmailAddressQuestion(question) &&
+    !isContactInformationQuestion(question) &&
+    !isStarRatingQuestion(question) &&
+    !isSmileyRatingQuestion(question) &&
+    !isThumbsUpDownQuestion(question) &&
+    !isTextSliderQuestion(question) &&
     question.options.length > 0
   );
 }
@@ -218,6 +278,26 @@ function cloneQuestionForCopy(question: SurveyQuestion): SurveyQuestion {
         }
       : {}),
     ...(question.lookupTable ? { lookupTable: { ...question.lookupTable } } : {}),
+    ...(question.smileyRating
+      ? {
+          smileyRating: {
+            options: question.smileyRating.options.map((option, index) => ({
+              ...option,
+              id: `smiley-opt-${ts}-${index + 1}`,
+            })),
+          },
+        }
+      : {}),
+    ...(question.thumbsUpDown
+      ? {
+          thumbsUpDown: {
+            choices: question.thumbsUpDown.choices.map((choice, index) => ({
+              ...choice,
+              id: `thumbs-choice-${ts}-${index + 1}`,
+            })),
+          },
+        }
+      : {}),
     ...(question.extractionSource ? { extractionSource: { ...question.extractionSource } } : {}),
   };
 }
@@ -1138,6 +1218,58 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     []
   );
 
+  const handleSmileyOptionLabelChange = useCallback(
+    (sectionId: string, questionId: string, optionId: string, label: string) => {
+      setSections((prev) =>
+        prev.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            questions: sec.questions.map((q) => {
+              if (q.id !== questionId || !q.smileyRating) return q;
+              return {
+                ...q,
+                smileyRating: {
+                  ...q.smileyRating,
+                  options: q.smileyRating.options.map((option) =>
+                    option.id === optionId ? { ...option, label } : option
+                  ),
+                },
+              };
+            }),
+          };
+        })
+      );
+    },
+    []
+  );
+
+  const handleThumbsChoiceLabelChange = useCallback(
+    (sectionId: string, questionId: string, choiceId: string, label: string) => {
+      setSections((prev) =>
+        prev.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            questions: sec.questions.map((q) => {
+              if (q.id !== questionId || !q.thumbsUpDown) return q;
+              return {
+                ...q,
+                thumbsUpDown: {
+                  ...q.thumbsUpDown,
+                  choices: q.thumbsUpDown.choices.map((choice) =>
+                    choice.id === choiceId ? { ...choice, label } : choice
+                  ),
+                },
+              };
+            }),
+          };
+        })
+      );
+    },
+    []
+  );
+
   const applyLookupTableBulkConversion = useCallback(
     (
       sectionId: string,
@@ -1994,6 +2126,213 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         return;
       }
 
+      if (typeId === 'single-row') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_SINGLE_ROW_QUESTION_TEXT,
+              required: true,
+              addQuestionTypeId: 'single-row',
+              options: [],
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Single Row Text question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'email') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: `Question ${nextNum}`,
+              required: true,
+              addQuestionTypeId: 'email',
+              options: [],
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Email Address question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'contact') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_CONTACT_INFORMATION_QUESTION_TEXT,
+              required: true,
+              addQuestionTypeId: 'contact',
+              options: createDefaultContactInformationOptions().map((option, index) => ({
+                ...option,
+                id: `contact-field-${ts}-${index + 1}`,
+              })),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Contact Information question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'star-rating') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_STAR_RATING_QUESTION_TEXT,
+              required: true,
+              kind: 'star-rating',
+              addQuestionTypeId: 'star-rating',
+              options: [],
+              matrix: createDefaultStarRatingMatrix(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Star Rating question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'smiley-rating') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_SMILEY_RATING_QUESTION_TEXT,
+              required: true,
+              kind: 'smiley-rating',
+              addQuestionTypeId: 'smiley-rating',
+              options: [],
+              smileyRating: createDefaultSmileyRatingData(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Smiley Rating question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'thumbs') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_THUMBS_QUESTION_TEXT,
+              required: true,
+              kind: 'thumbs-up-down',
+              addQuestionTypeId: 'thumbs',
+              options: [],
+              thumbsUpDown: createDefaultThumbsUpDownData(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Thumbs Up/Down question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'text-slider') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_TEXT_SLIDER_QUESTION_TEXT,
+              required: true,
+              kind: 'text-slider',
+              addQuestionTypeId: 'text-slider',
+              options: [],
+              matrix: createDefaultTextSliderMatrix(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Text Slider question added', variant: 'success' });
+        return;
+      }
+
       if (typeId === 'multi-point') {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
@@ -2188,6 +2527,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const isLookupTable = isLookupTableQuestion(question);
                     const isDropdown = isDropdownQuestion(question);
                     const isCommentBox = isCommentBoxQuestion(question);
+                    const isSingleRowText = isSingleRowTextQuestion(question);
+                    const isEmailAddress = isEmailAddressQuestion(question);
+                    const isContactInformation = isContactInformationQuestion(question);
+                    const isStarRating = isStarRatingQuestion(question);
+                    const isSmileyRating = isSmileyRatingQuestion(question);
+                    const isThumbsUpDown = isThumbsUpDownQuestion(question);
+                    const isTextSlider = isTextSliderQuestion(question);
                     const isSelectOne = isSelectOneQuestion(question);
                     const multiPointSettings = getMultiPointSettings(questionKey);
                     const savedLogic = logicByQuestionKey[questionKey];
@@ -2249,8 +2595,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                           } ${isLookupTable ? styles.questionBlockLookupTable : ''} ${
                             isDropdown ? styles.questionBlockDropdown : ''
                           } ${isCommentBox ? styles.questionBlockCommentBox : ''} ${
-                            isSelected ? styles.questionBlockSelected : ''
-                          }`}
+                            isSingleRowText ? styles.questionBlockSingleRowText : ''
+                          } ${isEmailAddress ? styles.questionBlockEmailAddress : ''} ${
+                            isContactInformation ? styles.questionBlockContactInformation : ''
+                          } ${isStarRating ? styles.questionBlockStarRating : ''} ${
+                            isSmileyRating ? styles.questionBlockSmileyRating : ''
+                          } ${isThumbsUpDown ? styles.questionBlockThumbsUpDown : ''} ${
+                            isTextSlider ? styles.questionBlockTextSlider : ''
+                          } ${isSelected ? styles.questionBlockSelected : ''}`}
                         >
                           <div
                             className={styles.questionCodeColumn}
@@ -2352,6 +2704,203 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 }
                                 onAddAnswerRow={() => toast('Add answer row')}
                                 onQuestionTextChange={handleQuestionTextChange}
+                              />
+                            ) : isSingleRowText ? (
+                              <SingleRowTextQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onAddAnswerRow={() => toast('Add answer row')}
+                                onQuestionTextChange={handleQuestionTextChange}
+                              />
+                            ) : isEmailAddress ? (
+                              <EmailAddressQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onAddAnswerRow={() => toast('Add answer row')}
+                                onQuestionTextChange={handleQuestionTextChange}
+                              />
+                            ) : isContactInformation ? (
+                              <ContactInformationQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onAddField={() => toast('Add contact field')}
+                                onQuestionTextChange={handleQuestionTextChange}
+                              />
+                            ) : isStarRating && question.matrix ? (
+                              <StarRatingQuestionRow
+                                question={question}
+                                matrix={question.matrix}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onMatrixRowLabelChange={handleMatrixRowLabelChange}
+                                onAddRow={handleAddMatrixRow}
+                                onBulkEditRows={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'rows',
+                                  })
+                                }
+                              />
+                            ) : isSmileyRating && question.smileyRating ? (
+                              <SmileyRatingQuestionRow
+                                question={question}
+                                smileyRating={question.smileyRating}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onSmileyOptionLabelChange={handleSmileyOptionLabelChange}
+                              />
+                            ) : isThumbsUpDown && question.thumbsUpDown ? (
+                              <ThumbsUpDownQuestionRow
+                                question={question}
+                                thumbsUpDown={question.thumbsUpDown}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onThumbsChoiceLabelChange={handleThumbsChoiceLabelChange}
+                              />
+                            ) : isTextSlider && question.matrix ? (
+                              <TextSliderQuestionRow
+                                question={question}
+                                matrix={question.matrix}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onMatrixAnchorChange={handleMatrixAnchorChange}
+                                onMatrixColumnLabelChange={handleMatrixColumnLabelChange}
+                                onMatrixRowLabelChange={handleMatrixRowLabelChange}
+                                onAddRow={handleAddMatrixRow}
+                                onBulkEditRows={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'rows',
+                                  })
+                                }
+                                onBulkEditColumns={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'columns',
+                                  })
+                                }
                               />
                             ) : isVanWestendorp ? (
                               <VanWestendorpQuestionRow

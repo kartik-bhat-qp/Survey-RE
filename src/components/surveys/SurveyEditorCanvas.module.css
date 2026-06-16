@@ -212,7 +212,14 @@
 .questionBlockVanWestendorp .questionCodeColumn,
 .questionBlockLookupTable .questionCodeColumn,
 .questionBlockDropdown .questionCodeColumn,
-.questionBlockCommentBox .questionCodeColumn {
+.questionBlockCommentBox .questionCodeColumn,
+.questionBlockSingleRowText .questionCodeColumn,
+.questionBlockEmailAddress .questionCodeColumn,
+.questionBlockContactInformation .questionCodeColumn,
+.questionBlockStarRating .questionCodeColumn,
+.questionBlockSmileyRating .questionCodeColumn,
+.questionBlockThumbsUpDown .questionCodeColumn,
+.questionBlockTextSlider .questionCodeColumn {
   padding-top: 2.75rem;
 }
 
@@ -234,7 +241,14 @@
 .addQuestionToolbar + .questionBlock .vanWestendorpCard,
 .addQuestionToolbar + .questionBlock .lookupTableCard,
 .addQuestionToolbar + .questionBlock .dropdownCard,
-.addQuestionToolbar + .questionBlock .commentBoxCard {
+.addQuestionToolbar + .questionBlock .commentBoxCard,
+.addQuestionToolbar + .questionBlock .singleRowTextCard,
+.addQuestionToolbar + .questionBlock .emailAddressCard,
+.addQuestionToolbar + .questionBlock .contactInformationCard,
+.addQuestionToolbar + .questionBlock .starRatingCard,
+.addQuestionToolbar + .questionBlock .smileyRatingCard,
+.addQuestionToolbar + .questionBlock .thumbsUpDownCard,
+.addQuestionToolbar + .questionBlock .textSliderCard {
   border-top: none;
 }
 

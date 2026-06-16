@@ -1,0 +1,27 @@
+.root {
+  display: block;
+  max-width: 28rem;
+  width: 100%;
+}
+
+.inputRow {
+  align-items: baseline;
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.placeholder {
+  color: #94a3b8;
+  flex-shrink: 0;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.dottedLine {
+  border-bottom: 1px dotted #cbd5e1;
+  flex: 1;
+  min-height: 1.25rem;
+  min-width: 0;
+}

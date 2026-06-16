@@ -10,7 +10,40 @@ export type SurveyQuestionKind =
   | 'multi-point-scales'
   | 'nps'
   | 'van-westendorp'
-  | 'lookup-table';
+  | 'lookup-table'
+  | 'star-rating'
+  | 'smiley-rating'
+  | 'thumbs-up-down'
+  | 'text-slider';
+
+export type SurveySmileyRatingTone =
+  | 'very-unsatisfied'
+  | 'unsatisfied'
+  | 'neutral'
+  | 'satisfied'
+  | 'very-satisfied';
+
+export interface SurveySmileyRatingOption {
+  id: string;
+  label: string;
+  tone: SurveySmileyRatingTone;
+}
+
+export interface SurveyQuestionSmileyRating {
+  options: SurveySmileyRatingOption[];
+}
+
+export type SurveyThumbsDirection = 'up' | 'down';
+
+export interface SurveyThumbsChoice {
+  id: string;
+  label: string;
+  direction: SurveyThumbsDirection;
+}
+
+export interface SurveyQuestionThumbsUpDown {
+  choices: SurveyThumbsChoice[];
+}
 
 export interface SurveyQuestionVanWestendorpRow {
   id: string;
@@ -80,6 +113,21 @@ export const DEFAULT_COMMENT_BOX_QUESTION_TEXT = 'Comments / suggestions:';
 
 export const DEFAULT_COMMENT_BOX_ANSWER_PLACEHOLDER = 'Multiple Row Answer Text';
 
+export const DEFAULT_SINGLE_ROW_QUESTION_TEXT = 'Name';
+
+export const DEFAULT_SINGLE_ROW_ANSWER_PLACEHOLDER = 'Single Row Answer Text';
+
+export const DEFAULT_EMAIL_ADDRESS_FIELD_LABEL = 'Email Address';
+
+export const DEFAULT_CONTACT_INFORMATION_QUESTION_TEXT = 'Please enter the following details';
+
+export const DEFAULT_CONTACT_INFORMATION_FIELD_LABELS = [
+  'First Name',
+  'Last Name',
+  'Phone Number',
+  'Email Address',
+] as const;
+
 /** Select One questions with more than this many options must use Lookup Table. */
 export const SELECT_ONE_MAX_BULK_OPTIONS = 300;
 
@@ -105,6 +153,13 @@ export function createDefaultLookupTableOptions(): SurveyQuestionOption[] {
 export function createDefaultDropdownOptions(): SurveyQuestionOption[] {
   return DEFAULT_DROPDOWN_OPTION_LABELS.map((label, index) => ({
     id: `dropdown-opt-${index + 1}`,
+    label,
+  }));
+}
+
+export function createDefaultContactInformationOptions(): SurveyQuestionOption[] {
+  return DEFAULT_CONTACT_INFORMATION_FIELD_LABELS.map((label, index) => ({
+    id: `contact-field-${index + 1}`,
     label,
   }));
 }
@@ -152,6 +207,10 @@ export interface SurveyQuestion {
   vanWestendorp?: SurveyQuestionVanWestendorp;
   /** Lookup table dropdown preview for Data Reference questions. */
   lookupTable?: SurveyQuestionLookupTable;
+  /** Five-point smiley scale for Smiley Rating questions. */
+  smileyRating?: SurveyQuestionSmileyRating;
+  /** Thumbs up / down choices for Thumbs Up/Down questions. */
+  thumbsUpDown?: SurveyQuestionThumbsUpDown;
   /** Set when this question was auto-added by extraction from another question. */
   extractionSource?: SurveyQuestionExtractionSource;
   /** Add Question menu type id (e.g. `nps`, `select-many`) for license diamond display. */
@@ -165,6 +224,10 @@ export function resolveAddQuestionTypeId(question: SurveyQuestion): string | und
   if (question.kind === 'van-westendorp') return 'van-westendorp';
   if (question.kind === 'lookup-table') return 'lookup-table';
   if (question.kind === 'multi-point-scales') return 'multi-point';
+  if (question.kind === 'star-rating') return 'star-rating';
+  if (question.kind === 'smiley-rating') return 'smiley-rating';
+  if (question.kind === 'thumbs-up-down') return 'thumbs';
+  if (question.kind === 'text-slider') return 'text-slider';
   if (question.inputKind === 'checkbox') return 'select-many';
   if (question.inputKind === 'radio') return 'select-one';
   return undefined;
@@ -193,6 +256,101 @@ const DEFAULT_MULTI_POINT_COLUMN_LABELS = [
 
 export const DEFAULT_MULTI_POINT_QUESTION_TEXT =
   'Rate QuestionPro on the following';
+
+export const DEFAULT_STAR_RATING_QUESTION_TEXT = 'Rate the following';
+
+export const DEFAULT_SMILEY_RATING_QUESTION_TEXT = 'How would you rate us?';
+
+export const DEFAULT_SMILEY_RATING_OPTIONS: ReadonlyArray<{
+  label: string;
+  tone: SurveySmileyRatingTone;
+}> = [
+  { label: 'Very Unsatisfied', tone: 'very-unsatisfied' },
+  { label: 'Unsatisfied', tone: 'unsatisfied' },
+  { label: 'Neutral', tone: 'neutral' },
+  { label: 'Satisfied', tone: 'satisfied' },
+  { label: 'Very Satisfied', tone: 'very-satisfied' },
+] as const;
+
+export function createDefaultSmileyRatingData(): SurveyQuestionSmileyRating {
+  const ts = Date.now();
+  return {
+    options: DEFAULT_SMILEY_RATING_OPTIONS.map((option, index) => ({
+      id: `smiley-opt-${ts}-${index + 1}`,
+      label: option.label,
+      tone: option.tone,
+    })),
+  };
+}
+
+export const DEFAULT_THUMBS_QUESTION_TEXT = 'Like it?';
+
+export const DEFAULT_THUMBS_CHOICES: ReadonlyArray<{
+  label: string;
+  direction: SurveyThumbsDirection;
+}> = [
+  { label: 'Love it', direction: 'up' },
+  { label: 'Hate it', direction: 'down' },
+] as const;
+
+export function createDefaultThumbsUpDownData(): SurveyQuestionThumbsUpDown {
+  const ts = Date.now();
+  return {
+    choices: DEFAULT_THUMBS_CHOICES.map((choice, index) => ({
+      id: `thumbs-choice-${ts}-${index + 1}`,
+      label: choice.label,
+      direction: choice.direction,
+    })),
+  };
+}
+
+export const DEFAULT_TEXT_SLIDER_QUESTION_TEXT = 'How would you rate us on the following?';
+
+export const TEXT_SLIDER_VALUE_PLACEHOLDER = '--';
+
+const DEFAULT_TEXT_SLIDER_ROW_LABELS = ['Product', 'Price', 'Overall'] as const;
+
+const DEFAULT_TEXT_SLIDER_COLUMN_LABELS = [
+  'Very dissatisfied',
+  'Not satisfied',
+  'Neutral',
+  'Satisfied',
+  'Very satisfied',
+] as const;
+
+export function createDefaultTextSliderMatrix(): SurveyMatrix {
+  const ts = Date.now();
+  return {
+    leftAnchor: '',
+    rightAnchor: '',
+    columns: DEFAULT_TEXT_SLIDER_COLUMN_LABELS.map((label, index) => ({
+      id: `text-slider-col-${ts}-${index + 1}`,
+      label,
+    })),
+    rows: DEFAULT_TEXT_SLIDER_ROW_LABELS.map((label, index) => ({
+      id: `text-slider-row-${ts}-${index + 1}`,
+      label,
+    })),
+  };
+}
+
+export const STAR_RATING_STAR_COUNT = 5;
+
+export function createDefaultStarRatingMatrix(): SurveyMatrix {
+  const ts = Date.now();
+  return {
+    leftAnchor: '',
+    rightAnchor: '',
+    columns: Array.from({ length: STAR_RATING_STAR_COUNT }, (_, index) => ({
+      id: `star-col-${ts}-${index + 1}`,
+      label: '',
+    })),
+    rows: [
+      { id: `star-row-${ts}-1`, label: 'Row 1' },
+      { id: `star-row-${ts}-2`, label: 'Row 2' },
+    ],
+  };
+}
 
 export function createDefaultMultiPointMatrix(): SurveyMatrix {
   const ts = Date.now();

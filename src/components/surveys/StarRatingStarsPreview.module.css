@@ -1,0 +1,10 @@
+.starRow {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.star {
+  color: #cbd5e1;
+  font-size: 1.375rem;
+  line-height: 1;
+}

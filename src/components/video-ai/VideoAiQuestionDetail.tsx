@@ -417,6 +417,7 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
 
 
   const filtered = useMemo(() => {
+    if (!detail) return [];
     let result = detail.responses.map((r) => ({ ...r, sentiment: sentimentOverrides[r.id] ?? r.sentiment }));
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -432,7 +433,9 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
       return a.durationSeconds - b.durationSeconds;
     });
     return result;
-  }, [detail.responses, search, sentimentFilter, viewFilter, sort, sentimentOverrides]);
+  }, [detail, search, sentimentFilter, viewFilter, sort, sentimentOverrides]);
+
+  if (!detail) return null;
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -535,13 +538,22 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
             />
           </div>
           <WuSelect data={SENTIMENT_FILTER_OPTIONS} accessorKey={{ value: 'value', label: 'label' }} value={sentimentFilterOpt}
-            onSelect={(opt) => { if (opt) applyFilter(setSentimentFilter, opt.value as SentimentFilter); }}
+            onSelect={(opt) => {
+              if (!opt) return;
+              applyFilter(setSentimentFilter, (opt as { value: SentimentFilter }).value);
+            }}
             variant="outlined" className={styles.filterSelect} />
           <WuSelect data={VIEW_FILTER_OPTIONS} accessorKey={{ value: 'value', label: 'label' }} value={viewFilterOpt}
-            onSelect={(opt) => { if (opt) applyFilter(setViewFilter, opt.value as ViewFilter); }}
+            onSelect={(opt) => {
+              if (!opt) return;
+              applyFilter(setViewFilter, (opt as { value: ViewFilter }).value);
+            }}
             variant="outlined" className={styles.filterSelect} />
           <WuSelect data={SORT_OPTIONS} accessorKey={{ value: 'value', label: 'label' }} value={sortOpt}
-            onSelect={(opt) => { if (opt) applyFilter(setSort, opt.value as SortOrder); }}
+            onSelect={(opt) => {
+              if (!opt) return;
+              applyFilter(setSort, (opt as { value: SortOrder }).value);
+            }}
             variant="outlined" className={styles.filterSelect} />
         </div>
 

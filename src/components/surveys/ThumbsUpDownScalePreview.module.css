@@ -1,0 +1,36 @@
+.scale {
+  display: flex;
+  gap: 3rem;
+  justify-content: center;
+  list-style: none;
+  margin: 0;
+  min-width: 0;
+  padding: 0.5rem 0 0;
+}
+
+.scaleItem {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.thumbIcon {
+  color: #545e6b;
+  font-size: 3.25rem;
+  line-height: 1;
+}
+
+.labelWrap {
+  min-width: 0;
+  width: 100%;
+}
+
+.labelText {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
