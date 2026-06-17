@@ -57,6 +57,13 @@ export function SurveysHeaderActions({ compact }: { compact?: boolean }) {
           >
             Account settings
           </WuMenuItem>
+          <WuMenuItem
+            onSelect={() =>
+              window.open('https://bi-lite.vercel.app/dashboards', '_blank', 'noopener,noreferrer')
+            }
+          >
+            BI Lite
+          </WuMenuItem>
           <WuMenuItem onSelect={() => router.push('/surveys/create')}>
             New survey creation flow
           </WuMenuItem>

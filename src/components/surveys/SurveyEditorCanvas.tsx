@@ -78,6 +78,7 @@ import {
   resolveStaticContentVariant,
 } from '@/components/surveys/StaticContentQuestionRow';
 import { NpsQuestionRow } from '@/components/surveys/NpsQuestionRow';
+import { SurveyAgentSidebar } from '@/components/surveys/SurveyAgentSidebar';
 import { VanWestendorpQuestionRow } from '@/components/surveys/VanWestendorpQuestionRow';
 import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
 import { BulkEditLinesModal } from '@/components/surveys/BulkEditLinesModal';
@@ -1088,6 +1089,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     questionId: string;
   } | null>(null);
   const [lookupTableBulkConversionOpen, setLookupTableBulkConversionOpen] = useState(false);
+  const [surveyAgentOpen, setSurveyAgentOpen] = useState(false);
   const [lookupTableBulkConversionConflicts, setLookupTableBulkConversionConflicts] = useState<
     LookupTableConversionLogicConflict[]
   >([]);
@@ -2878,6 +2880,12 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         settingsQuestion ? styles.canvasWithSettings : ''
       }`}
     >
+      <SurveyAgentSidebar
+        open={surveyAgentOpen}
+        surveyId={detail.survey.id}
+        onClose={() => setSurveyAgentOpen(false)}
+      />
+
       <div className={styles.canvasMain}>
       <div className={styles.workspace}>
         <div className={styles.titleCard}>
@@ -3830,6 +3838,18 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         </div>
       </div>
       </div>
+
+      {!surveyAgentOpen ? (
+        <button
+          type="button"
+          className={styles.surveyAgentFab}
+          aria-label="Open survey agent"
+          title="Open survey agent"
+          onClick={() => setSurveyAgentOpen(true)}
+        >
+          <span className={`wc-ai ${styles.surveyAgentFabIcon}`} aria-hidden />
+        </button>
+      ) : null}
 
       {settingsQuestion && settingsQuestionKey ? (
         isMultiPointScalesQuestion(settingsQuestion) ? (
