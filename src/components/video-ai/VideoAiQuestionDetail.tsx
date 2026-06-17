@@ -415,7 +415,6 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
     setTimeout(() => { setAiRefreshing(false); showToast({ message: 'AI summary refreshed', variant: 'success' }); }, 1400);
   }
 
-
   const filtered = useMemo(() => {
     if (!detail) return [];
     let result = detail.responses.map((r) => ({ ...r, sentiment: sentimentOverrides[r.id] ?? r.sentiment }));
@@ -435,6 +434,7 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
     return result;
   }, [detail, search, sentimentFilter, viewFilter, sort, sentimentOverrides]);
 
+  // Safe to return null here — all hooks have been called unconditionally above.
   if (!detail) return null;
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));

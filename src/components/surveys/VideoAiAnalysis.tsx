@@ -226,15 +226,17 @@ export function VideoAiAnalysis() {
           <div className={styles.activeTab}>
             <span className={`wm-videocam ${styles.activeTabIcon}`} aria-hidden />
             <span className={styles.activeTabLabel}>VideoAI Analysis</span>
+            <a
+              href="https://www.questionpro.com/help/livecast.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.helpBtn}
+              aria-label="VideoAI Analysis help documentation"
+              title="View VideoAI Analysis help documentation"
+            >
+              ?
+            </a>
           </div>
-          <button
-            type="button"
-            className={styles.helpBtn}
-            title="VideoAI Analysis helps you understand open-ended video responses using AI sentiment analysis."
-            aria-label="Help"
-          >
-            ?
-          </button>
         </div>
       </div>
 
