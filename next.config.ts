@@ -7,6 +7,14 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'cdn.simpleicons.org', pathname: '/**' },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/surveys/preview/:id',
+        destination: '/preview/:id',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -6,12 +6,17 @@ import { useRouter } from 'next/navigation';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
   VIDEO_AI_QUESTIONS,
+  getVideoAiSummaryMetrics,
   VIDEO_AI_SURVEY_OPTIONS,
   VIDEO_AI_STATUS_OPTIONS,
   VIDEO_AI_SENTIMENT_OPTIONS,
   type VideoAiQuestion,
   type FilterOption,
 } from '@/data/mock-video-ai';
+import {
+  saveVideoAiReturnState,
+  videoAiDetailHref,
+} from '@/components/video-ai/videoAiNavigation';
 import styles from './VideoAiAnalysis.module.css';
 
 const WuInput = dynamic(
@@ -28,43 +33,6 @@ const WuButton = dynamic(
 );
 
 const PAGE_SIZE = 6;
-
-const TOTAL_METRICS = {
-  questions: VIDEO_AI_QUESTIONS.length,
-  surveys: new Set(VIDEO_AI_QUESTIONS.map((q) => q.survey)).size,
-  responses: VIDEO_AI_QUESTIONS.reduce((sum, q) => sum + q.responses, 0),
-  minutesLeft: 348,
-};
-
-function StatusChip({ status }: { status: VideoAiQuestion['status'] }) {
-  const config: Record<
-    VideoAiQuestion['status'],
-    { label: string; icon: string; className: string }
-  > = {
-    complete: {
-      label: 'Active',
-      icon: 'wm-radio-button-on',
-      className: styles.statusActive,
-    },
-    'in-progress': {
-      label: 'Closed',
-      icon: 'wm-lock',
-      className: styles.statusClosed,
-    },
-    pending: {
-      label: 'Pending',
-      icon: 'wm-schedule',
-      className: styles.statusPending,
-    },
-  };
-  const { label, icon, className } = config[status];
-  return (
-    <span className={`${styles.chip} ${className}`}>
-      <span className={`${icon} ${styles.chipIcon}`} aria-hidden />
-      {label}
-    </span>
-  );
-}
 
 function SentimentBar({
   sentiment,
@@ -136,13 +104,17 @@ function QuestionCard({
 
         <div className={styles.cardContent}>
           <p className={styles.questionText}>{question.question}</p>
-          <div className={styles.metaRow}>
-            <StatusChip status={question.status} />
-          </div>
+          {question.status === 'pending' && (
+            <div className={styles.metaRow}>
+              <span className={`${styles.chip} ${styles.statusPending}`}>
+                <span className={`wm-schedule ${styles.chipIcon}`} aria-hidden />
+                Pending
+              </span>
+            </div>
+          )}
         </div>
 
         <div className={styles.cardRight}>
-          <span className={styles.dateText}>{question.date}</span>
           <span className={`wm-chevron-right ${styles.chevron}`} aria-hidden />
         </div>
       </div>
@@ -175,7 +147,7 @@ function QuestionCard({
   );
 }
 
-export function VideoAiAnalysis() {
+export function VideoAiAnalysis({ surveyId }: { surveyId: number }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [surveyFilter, setSurveyFilter] = useState<FilterOption>(VIDEO_AI_SURVEY_OPTIONS[0]);
@@ -217,6 +189,7 @@ export function VideoAiAnalysis() {
 
   const startItem = filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const endItem = Math.min(page * PAGE_SIZE, filtered.length);
+  const summaryMetrics = getVideoAiSummaryMetrics();
 
   return (
     <div className={styles.page}>
@@ -243,20 +216,25 @@ export function VideoAiAnalysis() {
       {/* ── Summary metric cards ────────────────────────────────────── */}
       <div className={styles.metricsRow} role="region" aria-label="Summary metrics">
         <div className={styles.metricCard}>
-          <span className={styles.metricCardValue}>{TOTAL_METRICS.questions}</span>
+          <span className={styles.metricCardValue}>{summaryMetrics.questionCount}</span>
           <span className={styles.metricCardLabel}>Questions</span>
         </div>
         <div className={styles.metricCard}>
-          <span className={styles.metricCardValue}>{TOTAL_METRICS.surveys}</span>
-          <span className={styles.metricCardLabel}>Surveys</span>
-        </div>
-        <div className={styles.metricCard}>
-          <span className={styles.metricCardValue}>{TOTAL_METRICS.responses}</span>
+          <span className={styles.metricCardValue}>{summaryMetrics.totalResponses}</span>
           <span className={styles.metricCardLabel}>Total Responses</span>
         </div>
         <div className={styles.metricCard}>
-          <span className={styles.metricCardValue}>{TOTAL_METRICS.minutesLeft}</span>
-          <span className={styles.metricCardLabel}>Minutes Left</span>
+          <span className={styles.metricCardValue}>{summaryMetrics.avgResponseDuration}</span>
+          <span className={styles.metricCardLabel}>Average Duration</span>
+        </div>
+        <div className={styles.metricCard}>
+          <span
+            className={styles.metricCardValue}
+            aria-label={`${summaryMetrics.minutesConsumed} minutes used, ${summaryMetrics.minutesLeft} minutes left`}
+          >
+            {summaryMetrics.minutesConsumed} / {summaryMetrics.minutesLeft}
+          </span>
+          <span className={styles.metricCardLabel}>Minutes Used/Left</span>
         </div>
       </div>
 
@@ -322,7 +300,10 @@ export function VideoAiAnalysis() {
             <QuestionCard
               key={q.id}
               question={q}
-              onClick={() => router.push(`/video-ai/${q.id}`)}
+              onClick={() => {
+                saveVideoAiReturnState(surveyId);
+                router.push(videoAiDetailHref(q.id, surveyId));
+              }}
             />
           ))
         )}

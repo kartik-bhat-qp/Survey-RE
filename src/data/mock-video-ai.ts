@@ -19,6 +19,14 @@ export interface VideoAiQuestion {
   dominantSentiment: 'mostly-positive' | 'mostly-negative' | 'mixed';
 }
 
+export interface VideoAiSummaryMetrics {
+  questionCount: number;
+  totalResponses: number;
+  avgResponseDuration: string;
+  minutesConsumed: number;
+  minutesLeft: number;
+}
+
 export const VIDEO_AI_QUESTIONS: VideoAiQuestion[] = [
   {
     id: 'vai-001',
@@ -153,6 +161,16 @@ export const VIDEO_AI_QUESTIONS: VideoAiQuestion[] = [
     dominantSentiment: 'mixed',
   },
 ];
+
+export function getVideoAiSummaryMetrics(): VideoAiSummaryMetrics {
+  return {
+    questionCount: VIDEO_AI_QUESTIONS.length,
+    totalResponses: VIDEO_AI_QUESTIONS.reduce((sum, q) => sum + q.responses, 0),
+    avgResponseDuration: '0:22',
+    minutesConsumed: 652,
+    minutesLeft: 348,
+  };
+}
 
 export const VIDEO_AI_SURVEY_OPTIONS: FilterOption[] = [
   { value: 'all', label: 'All surveys' },

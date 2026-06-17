@@ -7,6 +7,7 @@ export interface VideoAiResponse {
   duration: string;
   durationSeconds: number;
   viewed: boolean;
+  language: string;
   summary: string;
   transcript: string;
 }
@@ -34,6 +35,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:11',
     durationSeconds: 11,
     viewed: true,
+    language: 'EN',
     summary:
       'The speaker expressed strong satisfaction with Google Maps, highlighting real-time traffic rerouting as a feature that has consistently improved their daily commute.',
     transcript:
@@ -46,6 +48,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:07',
     durationSeconds: 7,
     viewed: true,
+    language: 'EN',
     summary:
       'Respondent highlighted daily reliance on Google Maps, with particular appreciation for live traffic updates that save significant commute time every morning.',
     transcript:
@@ -58,10 +61,11 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:22',
     durationSeconds: 22,
     viewed: false,
+    language: 'ES',
     summary:
-      'Balanced feedback noting solid core navigation but frustration with inaccurate business hours. The respondent cited a specific negative experience of driving to a closed restaurant.',
+      'Retroalimentación equilibrada que señala una buena navegación principal pero frustración con los horarios comerciales incorrectos.',
     transcript:
-      "It is pretty good for navigation but the business hours are often wrong. I drove thirty minutes to a restaurant that was actually closed. That was frustrating. The core directions work well though.",
+      "Es bastante bueno para la navegación pero los horarios comerciales suelen estar equivocados. Conduje treinta minutos a un restaurante que estaba cerrado. Eso fue frustrante. Las indicaciones principales funcionan bien.",
   },
   {
     id: '221388912',
@@ -70,10 +74,11 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:34',
     durationSeconds: 34,
     viewed: false,
+    language: 'FR',
     summary:
-      'Strong enthusiasm for Google Maps with specific praise for Street View for pre-visit neighborhood exploration and the integrated review and photo system for restaurant discovery.',
+      'Enthousiasme fort pour Google Maps avec des éloges spécifiques pour Street View et le système intégré d\'avis et de photos.',
     transcript:
-      "I absolutely love Google Maps. The Street View feature is something I use before visiting any new place. I checked out my new apartment neighborhood before moving in and found the nearest coffee shop. And the reviews and photos integration is really helpful for finding great restaurants. It is one of the most useful apps I have ever used.",
+      "J'adore absolument Google Maps. La fonctionnalité Street View est quelque chose que j'utilise avant de visiter tout nouvel endroit. J'ai exploré mon nouveau quartier avant d'emménager et j'ai trouvé le café le plus proche. Et l'intégration des avis et photos est vraiment utile pour trouver de bons restaurants.",
   },
   {
     id: '221519443',
@@ -82,10 +87,11 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:15',
     durationSeconds: 15,
     viewed: true,
+    language: 'DE',
     summary:
-      'Critical response noting a perceived decline in quality, focused on sponsored results cluttering search and suspicion that routes are deliberately guided past commercial areas.',
+      'Kritische Antwort, die einen wahrgenommenen Qualitätsverlust anmerkt, fokussiert auf gesponserte Ergebnisse und verdächtige Routenführung.',
     transcript:
-      "Honestly Google Maps has gotten worse lately. The search results are full of sponsored places that push real results way down. And it seems like they route me past shopping centers on purpose.",
+      "Ehrlich gesagt ist Google Maps in letzter Zeit schlechter geworden. Die Suchergebnisse sind voller gesponserter Orte, die echte Ergebnisse weit nach unten schieben. Und es scheint, als würden sie mich absichtlich an Einkaufszentren vorbeiführen.",
   },
   {
     id: '221601287',
@@ -94,6 +100,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:19',
     durationSeconds: 19,
     viewed: false,
+    language: 'EN',
     summary:
       'Positive experience centered on walking navigation and urban exploration. The respondent highlighted augmented reality walking directions as a standout innovative feature.',
     transcript:
@@ -106,10 +113,11 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:41',
     durationSeconds: 41,
     viewed: true,
+    language: 'JA',
     summary:
-      'Mixed assessment comparing Google Maps favorably for place discovery and reviews while noting Waze as superior for real-time driving hazards. The respondent uses both apps for different purposes.',
+      'Googleマップを場所探しやレビューに好意的に評価しつつ、リアルタイム運転ハザードではWazeが優れていると指摘する混合評価。',
     transcript:
-      "It works fine for basic navigation but I switched to Waze for driving because the community hazard updates are so much better. Google Maps does not tell me about speed traps or road debris in real time. But for finding places, reading reviews, and planning trips, I still use Google Maps. I think they are each better at different things so I use both.",
+      "基本的なナビゲーションには問題ありませんが、コミュニティハザード更新がはるかに優れているWazeに切り替えました。Googleマップはスピードトラップや道路の障害物をリアルタイムで教えてくれません。でも場所を探したり、レビューを読んだり、旅行を計画したりするためにはGoogleマップを使い続けています。",
   },
   {
     id: '221677201',
@@ -118,10 +126,11 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:09',
     durationSeconds: 9,
     viewed: false,
+    language: 'PT',
     summary:
-      'Brief but critical response focused on outdated offline maps causing missed turns and navigation failures during a road trip in low-connectivity areas.',
+      'Resposta breve mas crítica focada em mapas offline desatualizados causando falhas de navegação durante uma viagem.',
     transcript:
-      "The offline maps are terrible. I downloaded them for a road trip and they were completely outdated. I missed two turns and got really lost.",
+      "Os mapas offline são terríveis. Baixei-os para uma viagem de carro e estavam completamente desatualizados. Perdi duas curvas e fiquei completamente perdido.",
   },
   {
     id: '221534890',
@@ -130,6 +139,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '1:02',
     durationSeconds: 62,
     viewed: true,
+    language: 'EN',
     summary:
       'Detailed positive analysis from a product perspective praising seamless feature integration, personalization capabilities, the timeline feature, and the Local Guides crowdsourcing model.',
     transcript:
@@ -142,6 +152,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:28',
     durationSeconds: 28,
     viewed: false,
+    language: 'EN',
     summary:
       'Enthusiastic response highlighting real-time crowd data and indoor navigation as underrated game-changing features for avoiding packed venues and navigating airports.',
     transcript:

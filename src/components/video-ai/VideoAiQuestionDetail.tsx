@@ -3,14 +3,24 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
   getVideoAiQuestionDetail,
   type SentimentValue,
   type VideoAiResponse,
 } from '@/data/mock-video-ai-detail';
+import {
+  MOCK_HIGHLIGHT_REEL,
+  RESPONSE_VIDEO_URLS,
+  type ReelClip,
+} from '@/data/mock-video-ai-reel';
 import { VideoPlayerModal } from './VideoPlayerModal';
+import {
+  readVideoAiReturnState,
+  saveVideoAiReturnState,
+  videoAiListHref,
+} from './videoAiNavigation';
 import styles from './VideoAiQuestionDetail.module.css';
 
 const WuInput = dynamic(
@@ -283,11 +293,24 @@ function ResponseCard({
 }) {
   const [activeTab, setActiveTab] = useState<'summary' | 'transcript'>('summary');
   const [editOpen, setEditOpen] = useState(false);
+  const [votes, setVotes] = useState<{ summary: boolean | null; transcript: boolean | null }>({
+    summary: null,
+    transcript: null,
+  });
   const { showToast } = useWuShowToast();
 
   const effectiveSentiment = sentimentOverride ?? response.sentiment;
   const displaySummary    = textOverrides.summary    ?? response.summary;
   const displayTranscript = textOverrides.transcript ?? response.transcript;
+
+  function handleVote(value: boolean) {
+    setVotes((prev) => {
+      const current = prev[activeTab];
+      const next = current === value ? null : value;
+      showToast({ message: next === true ? 'Liked' : next === false ? 'Disliked' : 'Vote removed', variant: 'success' });
+      return { ...prev, [activeTab]: next };
+    });
+  }
 
   function handleSave(sum: string, trans: string) {
     onTextOverride(response.id, 'summary', sum);
@@ -295,6 +318,8 @@ function ResponseCard({
     setEditOpen(false);
     showToast({ message: 'AI content updated', variant: 'success' });
   }
+
+  const currentVote = votes[activeTab];
 
   return (
     <>
@@ -321,6 +346,7 @@ function ResponseCard({
           <div className={styles.cardHeader}>
             <span className={styles.respondentId}>{response.id}</span>
             <span className={styles.cardDate}>{response.date}</span>
+            <span className={styles.langTag}>{response.language}</span>
           </div>
 
           <div className={styles.tabRow} role="tablist">
@@ -347,22 +373,29 @@ function ResponseCard({
           </p>
         </div>
 
-        {/* Right: sentiment badge + kebab + like/dislike */}
+        {/* Right: sentiment badge + like/dislike + kebab */}
         <div className={styles.cardRight} onClick={(e) => e.stopPropagation()}>
           <div className={styles.sentimentRow}>
             <SentimentBadge sentiment={effectiveSentiment} />
-            <KebabMenu onEdit={() => setEditOpen(true)} />
-          </div>
-
-          <div className={styles.cardActions}>
-            <button type="button" className={styles.actionBtn} aria-label="Like" title="Like"
-              onClick={() => showToast({ message: 'Liked', variant: 'success' })}>
+            <button
+              type="button"
+              className={`${styles.actionBtn} ${currentVote === true ? styles.actionBtnActive : ''}`}
+              aria-label="Like"
+              title={`Like ${activeTab}`}
+              onClick={() => handleVote(true)}
+            >
               <span className="wm-thumb-up" aria-hidden />
             </button>
-            <button type="button" className={styles.actionBtn} aria-label="Dislike" title="Dislike"
-              onClick={() => showToast({ message: 'Disliked', variant: 'info' })}>
+            <button
+              type="button"
+              className={`${styles.actionBtn} ${currentVote === false ? styles.actionBtnActive : ''}`}
+              aria-label="Dislike"
+              title={`Dislike ${activeTab}`}
+              onClick={() => handleVote(false)}
+            >
               <span className="wm-thumb-down" aria-hidden />
             </button>
+            <KebabMenu onEdit={() => setEditOpen(true)} />
           </div>
         </div>
       </article>
@@ -384,8 +417,26 @@ function ResponseCard({
 
 export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const detail = getVideoAiQuestionDetail(questionId);
   const { showToast } = useWuShowToast();
+
+  function handleBreadcrumbBack() {
+    const surveyIdParam = searchParams.get('surveyId');
+    const surveyIdFromQuery = surveyIdParam ? Number(surveyIdParam) : NaN;
+    const surveyId =
+      Number.isFinite(surveyIdFromQuery) && surveyIdFromQuery > 0
+        ? surveyIdFromQuery
+        : readVideoAiReturnState()?.surveyId;
+
+    if (surveyId) {
+      saveVideoAiReturnState(surveyId);
+      router.push(videoAiListHref(surveyId));
+      return;
+    }
+
+    router.back();
+  }
 
   const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>('all');
   const [viewFilter, setViewFilter] = useState<ViewFilter>('all');
@@ -397,6 +448,30 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
   const [sentimentOverrides, setSentimentOverrides] = useState<Record<string, SentimentValue>>({});
   const [textOverrides, setTextOverrides]   = useState<Record<string, { summary?: string; transcript?: string }>>({});
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [downloadOpen, setDownloadOpen] = useState(false);
+  const downloadRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<'responses' | 'reels'>('responses');
+  const [reels, setReels] = useState<ReelClip[]>(MOCK_HIGHLIGHT_REEL.clips);
+
+  function handleSaveClip(clip: ReelClip) {
+    setReels((prev) => [...prev, { ...clip, clipNumber: prev.length + 1 }]);
+    setActiveTab('reels');
+    showToast({ message: 'Clip saved to Reels', variant: 'success' });
+  }
+
+  function handleDeleteClip(clipNumber: number) {
+    setReels((prev) => prev.filter((c) => c.clipNumber !== clipNumber));
+    showToast({ message: 'Clip removed', variant: 'info' });
+  }
+
+  useEffect(() => {
+    if (!downloadOpen) return;
+    function onOutside(e: MouseEvent) {
+      if (downloadRef.current && !downloadRef.current.contains(e.target as Node)) setDownloadOpen(false);
+    }
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, [downloadOpen]);
 
 
   const sentimentFilterOpt = SENTIMENT_FILTER_OPTIONS.find((o) => o.value === sentimentFilter)!;
@@ -447,32 +522,56 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
   return (
     <div className={styles.page}>
 
-      {/* ── Breadcrumb ─────────────────────────────────────────────── */}
-      <nav className={styles.breadcrumb} aria-label="Breadcrumb">
-        <button type="button" className={styles.breadcrumbLink} onClick={() => router.back()}>
-          <span className="wm-arrow-back" aria-hidden />
-          VideoAI Analysis
-        </button>
-        <span className={styles.breadcrumbSep} aria-hidden>›</span>
-        <span className={styles.breadcrumbCurrent}>Question detail</span>
-      </nav>
+      {/* ── Page header row: breadcrumb + download ─────────────────── */}
+      <div className={styles.pageHeaderRow}>
+        <nav className={styles.breadcrumb} aria-label="Breadcrumb">
+          <button type="button" className={styles.breadcrumbLink} onClick={handleBreadcrumbBack}>
+            <span className="wm-arrow-back" aria-hidden />
+            VideoAI Analysis
+          </button>
+          <span className={styles.breadcrumbSep} aria-hidden>›</span>
+          <span className={styles.breadcrumbCurrent} title={detail.question}>{detail.question}</span>
+        </nav>
 
-      {/* ── Question header ─────────────────────────────────────────── */}
-      <header className={styles.questionHeader}>
-        <div className={styles.stimulusThumb} aria-hidden>
-          <span className={`wm-image ${styles.stimulusIcon}`} />
+        {/* Download dropdown */}
+        <div className={styles.downloadWrap} ref={downloadRef}>
+          <button
+            type="button"
+            className={`${styles.downloadBtn} ${downloadOpen ? styles.downloadBtnActive : ''}`}
+            aria-label="Download report"
+            title="Download"
+            onClick={() => setDownloadOpen((v) => !v)}
+          >
+            <span className="wm-download" aria-hidden />
+          </button>
+          {downloadOpen && (
+            <div className={styles.downloadMenu}>
+              <button
+                type="button"
+                className={styles.downloadItem}
+                onClick={() => {
+                  setDownloadOpen(false);
+                  showToast({ message: 'Downloading Video + CSV Report…', variant: 'info' });
+                }}
+              >
+                <span className="wm-videocam" aria-hidden />
+                Video + CSV Report
+              </button>
+              <button
+                type="button"
+                className={styles.downloadItem}
+                onClick={() => {
+                  setDownloadOpen(false);
+                  showToast({ message: 'Downloading CSV Report…', variant: 'info' });
+                }}
+              >
+                <span className="wm-table-chart" aria-hidden />
+                CSV Report
+              </button>
+            </div>
+          )}
         </div>
-        <div className={styles.questionMeta}>
-          <h1 className={styles.questionText}>{detail.question}</h1>
-          <div className={styles.questionSubMeta}>
-            <span className={styles.surveyBadge}>{detail.survey}</span>
-            <span className={styles.questionDate}>
-              <span className="wm-calendar-today" aria-hidden />
-              {detail.date}
-            </span>
-          </div>
-        </div>
-      </header>
+      </div>
 
       {/* ── Summary widgets (3 cards) ───────────────────────────────── */}
       <div className={styles.widgetsRow}>
@@ -524,8 +623,29 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
         </p>
       </div>
 
-      {/* ── Responses section ───────────────────────────────────────── */}
-      <div className={styles.responsesSection}>
+      {/* ── Page tabs: Responses / Reels ──────────────────────────── */}
+      <div className={styles.pageTabs} role="tablist">
+        {(['responses', 'reels'] as const).map((tab) => (
+          <button
+            key={tab}
+            role="tab"
+            aria-selected={activeTab === tab}
+            className={`${styles.pageTab} ${activeTab === tab ? styles.pageTabActive : ''}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab === 'responses' && <span className="wm-videocam" aria-hidden />}
+            {tab === 'reels' && <span className="wm-movie" aria-hidden />}
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {tab === 'reels' && (
+              <span className={styles.pageTabComingSoon}>Coming Soon</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Responses tab ───────────────────────────────────────────── */}
+      {activeTab === 'responses' ? (
+        <div className={styles.responsesSection}>
         <div className={styles.filterBar}>
           <div className={styles.searchWrap}>
             <WuInput
@@ -595,7 +715,86 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      ) : null}
+
+      {/* ── Reels tab ───────────────────────────────────────────────── */}
+      {activeTab === 'reels' ? (
+        <div className={styles.reelsSection}>
+          {reels.length === 0 ? (
+            <div className={styles.emptyState}>
+              <span className={`wm-movie ${styles.emptyIcon}`} aria-hidden />
+              <p className={styles.emptyTitle}>No reels yet</p>
+              <p className={styles.emptyDesc}>
+                Open a response and click <strong>Create Reels</strong> in the video player to clip a highlight.
+              </p>
+            </div>
+          ) : (
+            <div className={styles.reelsGrid}>
+              {reels.map((clip) => {
+                const videoUrl = RESPONSE_VIDEO_URLS[clip.responseId]
+                  ?? 'https://assets.mixkit.co/videos/41290/41290-720.mp4';
+                const sentimentColors: Record<string, { bg: string; text: string }> = {
+                  Positive: { bg: '#E1F5EE', text: '#15803d' },
+                  Neutral:  { bg: '#FAEEDA', text: '#92400e' },
+                  Negative: { bg: '#FCEBEB', text: '#991b1b' },
+                };
+                const sc = sentimentColors[clip.sentiment];
+                return (
+                  <div key={`${clip.responseId}-${clip.clipNumber}`} className={styles.reelCard}>
+                    {/* Thumbnail */}
+                    <div className={styles.reelThumb}>
+                      <video
+                        src={videoUrl}
+                        muted playsInline
+                        className={styles.reelThumbVideo}
+                        aria-hidden
+                      />
+                      <div className={styles.reelThumbOverlay}>
+                        <span className={styles.reelDuration}>{clip.duration}</span>
+                        <div className={styles.reelPlayIcon} aria-hidden>
+                          <svg viewBox="0 0 24 24" width="28" height="28">
+                            <circle cx="12" cy="12" r="12" fill="rgba(0,0,0,0.45)" />
+                            <polygon points="10,8 10,16 17,12" fill="white" />
+                          </svg>
+                        </div>
+                        <span className={styles.reelRange}>{clip.start}s – {clip.end}s</span>
+                      </div>
+                    </div>
+
+                    {/* Meta */}
+                    <div className={styles.reelMeta}>
+                      <div className={styles.reelMetaTop}>
+                        <span className={styles.reelRespondent}>{clip.responseId}</span>
+                        <button
+                          type="button"
+                          className={styles.reelDeleteBtn}
+                          aria-label="Remove clip"
+                          title="Remove clip"
+                          onClick={() => handleDeleteClip(clip.clipNumber)}
+                        >
+                          <span className="wm-delete-outline" aria-hidden />
+                        </button>
+                      </div>
+                      {clip.theme && (
+                        <p className={styles.reelTheme}>{clip.theme}</p>
+                      )}
+                      <div className={styles.reelMetaBottom}>
+                        <span className={styles.reelSentiment} style={{ background: sc.bg, color: sc.text }}>
+                          {clip.sentiment}
+                        </span>
+                        {clip.language && (
+                          <span className={styles.reelLang}>{clip.language}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : null}
 
       {/* ── Video player modal ──────────────────────────────────────── */}
       {focusedId && (
@@ -607,6 +806,7 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
           initialResponseId={focusedId}
           sentimentOverrides={sentimentOverrides}
           textOverrides={textOverrides}
+          onSaveClip={handleSaveClip}
           onClose={() => setFocusedId(null)}
         />
       )}

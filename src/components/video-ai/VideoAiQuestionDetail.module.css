@@ -10,13 +10,22 @@
   gap: 1.25rem;
 }
 
-/* ── Breadcrumb ──────────────────────────────────────────────────────────── */
+/* ── Page header row (breadcrumb + download) ─────────────────────────────── */
+.pageHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .breadcrumb {
   display: flex;
   align-items: center;
   gap: 0.375rem;
   font-size: 0.8125rem;
   color: #64748b;
+  min-width: 0;
+  flex: 1;
 }
 
 .breadcrumbLink {
@@ -30,83 +39,272 @@
   cursor: pointer;
   padding: 0;
   font-size: 0.8125rem;
-}
-
-.breadcrumbLink:hover {
-  text-decoration: underline;
-}
-
-.breadcrumbSep { color: #94a3b8; font-size: 1rem; line-height: 1; }
-.breadcrumbCurrent { color: #475569; }
-
-/* ── Question header ─────────────────────────────────────────────────────── */
-.questionHeader {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.625rem;
-  padding: 1rem 1.25rem;
-}
-
-.stimulusThumb {
-  width: 4rem;
-  height: 3rem;
-  border-radius: 0.375rem;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  white-space: nowrap;
   flex-shrink: 0;
 }
 
-.stimulusIcon { font-size: 1.5rem; color: #94a3b8; }
+.breadcrumbLink:hover { text-decoration: underline; }
 
-.questionMeta {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+.breadcrumbSep { color: #94a3b8; font-size: 1rem; line-height: 1; flex-shrink: 0; }
 
-.questionText {
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 1rem;
-  font-weight: 500;
+.breadcrumbCurrent {
   color: #0f172a;
-  margin: 0;
-  line-height: 1.5;
-}
-
-.questionSubMeta {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.surveyBadge {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  padding: 0.2rem 0.6rem;
-  border-radius: 9999px;
-  background: #ede9fe;
-  color: #5b21b6;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.questionDate {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-  color: #64748b;
+/* ── Download button + dropdown ──────────────────────────────────────────── */
+.downloadWrap {
+  position: relative;
+  flex-shrink: 0;
 }
 
-.questionDate span { font-size: 0.875rem; }
+.downloadBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  font-size: 1.125rem;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.downloadBtn:hover, .downloadBtnActive {
+  background: #f1f5f9;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+.downloadMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.1);
+  padding: 0.375rem;
+  min-width: 11rem;
+  z-index: 50;
+}
+
+.downloadItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #1e293b;
+  background: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.downloadItem:hover { background: #f8fafc; }
+.downloadItem span { font-size: 1rem; color: #64748b; }
+
+/* ── Page-level Responses / Reels tabs ──────────────────────────────────── */
+.pageTabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.pageTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.pageTab span[class^="wm-"] { font-size: 1rem; }
+
+.pageTab:hover { color: #334155; }
+
+.pageTabActive {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+.pageTabComingSoon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 9999px;
+  padding: 0.15rem 0.5rem;
+  line-height: 1;
+}
+
+/* ── Reels tab content ───────────────────────────────────────────────────── */
+.reelsSection {
+  flex: 1;
+}
+
+.reelsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.reelCard {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.625rem;
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+
+.reelCard:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.reelThumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0f172a;
+  overflow: hidden;
+}
+
+.reelThumbVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  display: block;
+  opacity: 0.85;
+}
+
+.reelThumbOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reelPlayIcon { pointer-events: none; }
+
+.reelDuration {
+  position: absolute;
+  bottom: 0.375rem;
+  right: 0.375rem;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.1rem 0.375rem;
+  border-radius: 0.25rem;
+}
+
+.reelRange {
+  position: absolute;
+  bottom: 0.375rem;
+  left: 0.375rem;
+  background: rgba(0, 0, 0, 0.55);
+  color: rgba(255,255,255,0.85);
+  font-size: 0.625rem;
+  font-weight: 500;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+.reelMeta {
+  padding: 0.625rem 0.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.reelMetaTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.reelRespondent {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1e293b;
+  font-family: monospace;
+}
+
+.reelDeleteBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  font-size: 0.9375rem;
+  transition: color 0.1s, background 0.1s;
+}
+
+.reelDeleteBtn:hover { color: #ef4444; background: #fef2f2; }
+
+.reelTheme {
+  font-size: 0.75rem;
+  color: #475569;
+  margin: 0;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reelMetaBottom {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.reelSentiment {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.reelLang {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.35rem;
+}
 
 /* ── Summary widgets row ─────────────────────────────────────────────────── */
 .widgetsRow {
@@ -453,6 +651,21 @@
 
 .cardDate { font-size: 0.75rem; color: #94a3b8; }
 
+.langTag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.35rem;
+  line-height: 1;
+  align-self: center;
+}
+
 /* Summary / Transcript tabs */
 .tabRow {
   display: flex;
@@ -601,6 +814,18 @@
   background: #f1f5f9;
   color: #475569;
   border-color: #cbd5e1;
+}
+
+.actionBtnActive {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #93c5fd;
+}
+
+.actionBtnActive:hover {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #60a5fa;
 }
 
 /* ── Edit AI content modal (portal) ──────────────────────────────────────── */

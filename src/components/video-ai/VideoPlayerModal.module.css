@@ -1,37 +1,28 @@
-/* ── Overlay + container ──────────────────────────────────────────────────── */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(5, 13, 26, 0.82);
-  backdrop-filter: blur(3px);
+/* ── WickUI player modal (lg, page-consistent sizing) ─────────────────────── */
+.playerModal {
+  max-width: min(1100px, calc(100vw - 1.5rem)) !important;
+  width: 100%;
+}
+
+.playerHeader {
   display: flex;
   align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 2vh 1rem;
-}
-
-.container {
-  background: #141d2b;
-  border-radius: 0.875rem;
-  width: min(96vw, 1100px);
-  height: min(90vh, 680px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  position: relative;
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.55);
-}
-
-/* ── Top navigation bar ───────────────────────────────────────────────────── */
-.topBar {
+  gap: 0.75rem;
+  padding-right: 3rem !important;
   flex-shrink: 0;
+}
+
+.playerHeaderTitle {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #1b3380;
+  margin: 0;
+}
+
+.headerNav {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: #0d1421;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  gap: 0.375rem;
 }
 
 .navBtn {
@@ -41,46 +32,36 @@
   width: 1.875rem;
   height: 1.875rem;
   border-radius: 0.375rem;
-  border: none;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.65);
+  border: 1px solid #d4e3f7;
+  background: #fff;
+  color: #64748b;
   font-size: 1.125rem;
   cursor: pointer;
-  transition: background 0.1s, color 0.1s;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
   flex-shrink: 0;
 }
 
-.navBtn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
-.navBtn:disabled { opacity: 0.25; cursor: default; }
+.navBtn:hover { background: #eef3fb; color: #2563eb; border-color: #bfdbfe; }
+.navBtn:disabled { opacity: 0.35; cursor: default; }
 
 .navCounter {
   font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.55);
+  color: #64748b;
   font-variant-numeric: tabular-nums;
   min-width: 3rem;
   text-align: center;
 }
 
-.navOf { color: rgba(255, 255, 255, 0.3); margin: 0 0.2em; }
+.navOf { color: #94a3b8; margin: 0 0.2em; }
 
-.closeBtn {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.875rem;
-  height: 1.875rem;
-  border-radius: 0.375rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.7);
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background 0.12s, color 0.12s;
-  flex-shrink: 0;
+.playerModalContent {
+  display: flex;
+  flex-direction: column;
+  padding: 0 !important;
+  max-height: min(85dvh, calc(100dvh - 8rem));
+  height: min(680px, calc(100dvh - 8rem));
+  overflow: hidden;
 }
-
-.closeBtn:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
 
 /* ── Main area ─────────────────────────────────────────────────────────────── */
 .mainArea {
@@ -91,7 +72,7 @@
 
 /* ── Video panel (portrait, mobile phone style) ───────────────────────────── */
 .videoPanel {
-  flex: 1;                        /* expands to fill all space beside sidebar */
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -99,12 +80,14 @@
   background: #0a0a0a;
   padding: 1rem;
   gap: 0;
+  min-height: 0;
 }
 
 .videoWrap {
-  width: 260px;                   /* fixed portrait width */
+  width: 260px;
   flex: 1;
-  max-height: 462px;              /* 260 × 16/9 ≈ 462 — keeps 9:16 ratio */
+  max-height: 462px;
+  min-height: 0;
   position: relative;
   overflow: hidden;
   background: #0a0a0a;
@@ -257,7 +240,7 @@
 /* ── Control bar ──────────────────────────────────────────────────────────── */
 .controlBar {
   flex-shrink: 0;
-  width: 260px;                   /* matches videoWrap exactly */
+  width: 260px;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -351,6 +334,128 @@
   align-items: center;
   gap: 0.3rem;
   flex-shrink: 0;
+}
+
+/* ── Create Reels panel (inline in player modal sidebar) ─────────────────── */
+.reelPanel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.reelPanelHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 0.875rem 0.625rem;
+  border-bottom: 1px solid #f1f5f9;
+  flex-shrink: 0;
+}
+
+.reelPanelBack {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.1s, color 0.1s;
+}
+
+.reelPanelBack:hover { background: #f1f5f9; color: #334155; }
+
+.reelPanelTitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.reelPanelBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.875rem;
+}
+
+.reelPanelFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.75rem 0.875rem;
+  border-top: 1px solid #f1f5f9;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.reelPanelContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.reelModalIntro {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #64748b;
+  line-height: 1.55;
+}
+
+.reelDurationPill {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  align-self: flex-start;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  font-size: 0.8125rem;
+}
+
+.reelDurationPill span[aria-hidden] { font-size: 0.9375rem; }
+
+.reelDurationRange {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.reelTimeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.reelField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.reelLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.reelInputRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reelInputRow > :first-child {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ── Popover anchor + popover ─────────────────────────────────────────────── */
@@ -497,12 +602,13 @@
 
 /* ── Sidebar ──────────────────────────────────────────────────────────────── */
 .sidebar {
-  flex: 0 0 420px;                /* wider fixed sidebar; video panel gets rest */
+  flex: 0 0 420px;
   display: flex;
   flex-direction: column;
   background: #fff;
   border-left: 1px solid rgba(255, 255, 255, 0.06);
   overflow: hidden;
+  min-height: 0;
 }
 
 .sidebarHeader {
@@ -527,7 +633,41 @@
   justify-content: space-between;
 }
 
-.sidebarActions { display: flex; gap: 0.25rem; }
+.sidebarActions { display: flex; align-items: center; gap: 0.25rem; }
+
+/* Compact language picker in the actions row */
+.langSelectorCompact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  background: transparent;
+  padding: 0 0.3rem;
+  height: 1.75rem;
+}
+
+.langSelectorIcon {
+  color: #94a3b8;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.langSelectCompact {
+  border: none;
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #475569;
+  cursor: pointer;
+  outline: none;
+  padding: 0;
+  /* Shrink to just the code width */
+  width: 2.5rem;
+}
+
+.langSelectCompact:focus { color: #2563eb; }
 
 .sidebarActionBtn {
   display: inline-flex;
@@ -590,58 +730,43 @@
   margin: 0;
 }
 
-/* ── Translation bar (inside transcript tab) ─────────────────────────────── */
+/* ── Transcript panel ────────────────────────────────────────────────────── */
 .transcriptPanel {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-.transcriptLangBar {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.25rem 0.625rem;
-  border-bottom: 1px solid #f1f5f9;
-  margin-bottom: 0.25rem;
-  flex-wrap: wrap;
-}
-
-.transcriptLangBarIcon {
-  color: #64748b;
-  font-size: 0.9375rem;
-  flex-shrink: 0;
-}
-
-.langSelect {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.8125rem;
-  font-family: inherit;
-  color: #1e293b;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.375rem;
-  padding: 0.3rem 0.5rem;
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.1s;
-}
-
-.langSelect:focus { border-color: #2563eb; }
-
+/* "Show original" toggle — appears at top of transcript when a translation is active */
 .showOrigInline {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.75rem;
-  color: #475569;
+  font-size: 0.6875rem;
+  color: #64748b;
   cursor: pointer;
   white-space: nowrap;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 0.25rem;
+  flex-shrink: 0;
 }
 
 .showOrigInline input { accent-color: #2563eb; cursor: pointer; }
+
+/* "Showing summary in original language" notice */
+.translationNotice {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.6875rem;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 0.375rem;
+  padding: 0.3rem 0.5rem;
+  margin-bottom: 0.625rem;
+}
 
 .transcriptScrollArea {
   flex: 1;
