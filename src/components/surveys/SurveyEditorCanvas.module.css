@@ -208,6 +208,8 @@
 .questionBlockSelectMany .questionCodeColumn,
 .questionBlockSelectOne .questionCodeColumn,
 .questionBlockMultiPoint .questionCodeColumn,
+.questionBlockMatrixMultiSelect .questionCodeColumn,
+.questionBlockMatrixSpreadsheet .questionCodeColumn,
 .questionBlockNps .questionCodeColumn,
 .questionBlockVanWestendorp .questionCodeColumn,
 .questionBlockLookupTable .questionCodeColumn,
@@ -219,7 +221,15 @@
 .questionBlockStarRating .questionCodeColumn,
 .questionBlockSmileyRating .questionCodeColumn,
 .questionBlockThumbsUpDown .questionCodeColumn,
-.questionBlockTextSlider .questionCodeColumn {
+.questionBlockTextSlider .questionCodeColumn,
+.questionBlockNumericSlider .questionCodeColumn,
+.questionBlockImageChooserSelectOne .questionCodeColumn,
+.questionBlockImageChooserSelectMany .questionCodeColumn,
+.questionBlockImageChooserRating .questionCodeColumn,
+.questionBlockRankOrder .questionCodeColumn,
+.questionBlockConstantSum .questionCodeColumn,
+.questionBlockDragDrop .questionCodeColumn,
+.questionBlockStaticContent .questionCodeColumn {
   padding-top: 2.75rem;
 }
 
@@ -248,7 +258,17 @@
 .addQuestionToolbar + .questionBlock .starRatingCard,
 .addQuestionToolbar + .questionBlock .smileyRatingCard,
 .addQuestionToolbar + .questionBlock .thumbsUpDownCard,
-.addQuestionToolbar + .questionBlock .textSliderCard {
+.addQuestionToolbar + .questionBlock .textSliderCard,
+.addQuestionToolbar + .questionBlock .numericSliderCard,
+.addQuestionToolbar + .questionBlock .imageChooserSelectOneCard,
+.addQuestionToolbar + .questionBlock .imageChooserSelectManyCard,
+.addQuestionToolbar + .questionBlock .imageChooserRatingCard,
+.addQuestionToolbar + .questionBlock .rankOrderCard,
+.addQuestionToolbar + .questionBlock .constantSumCard,
+.addQuestionToolbar + .questionBlock .dragDropCard,
+.addQuestionToolbar + .questionBlock .staticContentCard,
+.addQuestionToolbar + .questionBlock .matrixMultiSelectCard,
+.addQuestionToolbar + .questionBlock .matrixSpreadsheetCard {
   border-top: none;
 }
 

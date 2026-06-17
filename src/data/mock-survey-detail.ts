@@ -1,6 +1,10 @@
 import type { Survey } from '@/data/mock-surveys';
 import { getSurveyEditorTitle } from '@/data/get-survey-by-id';
 import { NEW_AI_SURVEY_ID, readAiSurveyDraft } from '@/data/ai-survey-draft';
+import {
+  COKE_RESEARCH_SURVEY_TITLE,
+  createCokeResearchSurveySections,
+} from '@/data/mock-coke-research-survey';
 import { NEW_BLANK_SURVEY_ID } from '@/data/mock-survey-creation-flow';
 
 export type SurveyQuestionInputKind = 'radio' | 'checkbox';
@@ -8,13 +12,25 @@ export type SurveyQuestionInputKind = 'radio' | 'checkbox';
 export type SurveyQuestionKind =
   | 'standard'
   | 'multi-point-scales'
+  | 'matrix-multi-select'
+  | 'matrix-spreadsheet'
   | 'nps'
   | 'van-westendorp'
   | 'lookup-table'
   | 'star-rating'
   | 'smiley-rating'
   | 'thumbs-up-down'
-  | 'text-slider';
+  | 'text-slider'
+  | 'numeric-slider'
+  | 'image-chooser-select-one'
+  | 'image-chooser-select-many'
+  | 'image-chooser-rating'
+  | 'rank-order'
+  | 'constant-sum'
+  | 'drag-drop'
+  | 'presentation'
+  | 'section-heading'
+  | 'section-subheading';
 
 export type SurveySmileyRatingTone =
   | 'very-unsatisfied'
@@ -168,6 +184,9 @@ export interface SurveyQuestionOption {
   id: string;
   label: string;
   logicLabel?: string;
+  /** Image URL for Image Chooser answer options. */
+  imageSrc?: string;
+  imageAlt?: string;
 }
 
 export interface SurveyMatrixColumn {
@@ -178,6 +197,9 @@ export interface SurveyMatrixColumn {
 export interface SurveyMatrixRow {
   id: string;
   label: string;
+  /** Image URL for Image Chooser Rating rows. */
+  imageSrc?: string;
+  imageAlt?: string;
 }
 
 export interface SurveyMatrix {
@@ -224,10 +246,22 @@ export function resolveAddQuestionTypeId(question: SurveyQuestion): string | und
   if (question.kind === 'van-westendorp') return 'van-westendorp';
   if (question.kind === 'lookup-table') return 'lookup-table';
   if (question.kind === 'multi-point-scales') return 'multi-point';
+  if (question.kind === 'matrix-multi-select') return 'multi-select-matrix';
+  if (question.kind === 'matrix-spreadsheet') return 'spreadsheet';
   if (question.kind === 'star-rating') return 'star-rating';
   if (question.kind === 'smiley-rating') return 'smiley-rating';
   if (question.kind === 'thumbs-up-down') return 'thumbs';
   if (question.kind === 'text-slider') return 'text-slider';
+  if (question.kind === 'numeric-slider') return 'numeric-slider';
+  if (question.kind === 'image-chooser-select-one') return 'image-select-one';
+  if (question.kind === 'image-chooser-select-many') return 'image-select-many';
+  if (question.kind === 'image-chooser-rating') return 'image-rating';
+  if (question.kind === 'rank-order') return 'rank-order';
+  if (question.kind === 'constant-sum') return 'constant-sum';
+  if (question.kind === 'drag-drop') return 'drag-drop';
+  if (question.kind === 'presentation') return 'presentation';
+  if (question.kind === 'section-heading') return 'section-heading';
+  if (question.kind === 'section-subheading') return 'section-subheading';
   if (question.inputKind === 'checkbox') return 'select-many';
   if (question.inputKind === 'radio') return 'select-one';
   return undefined;
@@ -334,6 +368,113 @@ export function createDefaultTextSliderMatrix(): SurveyMatrix {
   };
 }
 
+export const DEFAULT_NUMERIC_SLIDER_QUESTION_TEXT = 'How much do you spend on';
+
+export const NUMERIC_SLIDER_VALUE_PLACEHOLDER = '--';
+
+const DEFAULT_NUMERIC_SLIDER_ROW_LABELS = ['Food', 'Travel', 'Tech'] as const;
+
+export function createDefaultNumericSliderMatrix(): SurveyMatrix {
+  const ts = Date.now();
+  return {
+    leftAnchor: '',
+    rightAnchor: '',
+    columns: [],
+    rows: DEFAULT_NUMERIC_SLIDER_ROW_LABELS.map((label, index) => ({
+      id: `numeric-slider-row-${ts}-${index + 1}`,
+      label,
+    })),
+  };
+}
+
+export const DEFAULT_IMAGE_CHOOSER_SELECT_ONE_QUESTION_TEXT =
+  'Please select the flav of icecream you like';
+
+export function createDefaultImageChooserSelectOneOptions(): SurveyQuestionOption[] {
+  const ts = Date.now();
+  return [
+    { id: `img-opt-${ts}-1`, label: 'Option 1' },
+    { id: `img-opt-${ts}-2`, label: 'Option 2' },
+  ];
+}
+
+export const DEFAULT_IMAGE_CHOOSER_SELECT_MANY_QUESTION_TEXT =
+  'Please select the flavors of ice cream you like - (Select all that apply)';
+
+export function createDefaultImageChooserSelectManyOptions(): SurveyQuestionOption[] {
+  return createDefaultImageChooserSelectOneOptions();
+}
+
+export const DEFAULT_IMAGE_CHOOSER_RATING_QUESTION_TEXT = 'Rate the following flavors';
+
+export function createDefaultImageChooserRatingMatrix(): SurveyMatrix {
+  const ts = Date.now();
+  return {
+    leftAnchor: '',
+    rightAnchor: '',
+    columns: [{ id: `img-rating-col-${ts}-1`, label: 'Column 1' }],
+    rows: [
+      { id: `img-rating-row-${ts}-1`, label: 'Row 1' },
+      { id: `img-rating-row-${ts}-2`, label: 'Row 2' },
+    ],
+  };
+}
+
+export const DEFAULT_RANK_ORDER_QUESTION_TEXT = 'Rate the following';
+
+export const RANK_ORDER_SELECT_PLACEHOLDER = '- Select -';
+
+const DEFAULT_RANK_ORDER_ITEM_LABELS = ['Skiing', 'Snowboarding', 'Biking'] as const;
+
+export function createDefaultRankOrderOptions(): SurveyQuestionOption[] {
+  const ts = Date.now();
+  return DEFAULT_RANK_ORDER_ITEM_LABELS.map((label, index) => ({
+    id: `rank-opt-${ts}-${index + 1}`,
+    label,
+  }));
+}
+
+export const DEFAULT_CONSTANT_SUM_QUESTION_TEXT = 'How much do you spend monthly on -';
+
+export const CONSTANT_SUM_VALUE_PLACEHOLDER = '0';
+
+export const CONSTANT_SUM_PREFIX_PLACEHOLDER = 'Prefix';
+
+export const CONSTANT_SUM_SUFFIX_PLACEHOLDER = 'Suffix';
+
+const DEFAULT_CONSTANT_SUM_ITEM_LABELS = [
+  'Essentials (Gas, Grocery etc.)',
+  'Entertainment (Movies, Clubs etc.)',
+] as const;
+
+export function createDefaultConstantSumOptions(): SurveyQuestionOption[] {
+  const ts = Date.now();
+  return DEFAULT_CONSTANT_SUM_ITEM_LABELS.map((label, index) => ({
+    id: `constant-sum-opt-${ts}-${index + 1}`,
+    label,
+  }));
+}
+
+export const DEFAULT_DRAG_DROP_QUESTION_TEXT =
+  'Drag and drop the following in the order of your preference';
+
+const DEFAULT_DRAG_DROP_ROW_LABELS = ['Skiing', 'Snowboarding', 'Biking'] as const;
+
+export function createDefaultDragDropMatrix(): SurveyMatrix {
+  const ts = Date.now();
+  return {
+    leftAnchor: '',
+    rightAnchor: '',
+    columns: [],
+    rows: DEFAULT_DRAG_DROP_ROW_LABELS.map((label, index) => ({
+      id: `drag-drop-row-${ts}-${index + 1}`,
+      label,
+    })),
+  };
+}
+
+export const STATIC_CONTENT_TEXT_PLACEHOLDER = 'Add your text here';
+
 export const STAR_RATING_STAR_COUNT = 5;
 
 export function createDefaultStarRatingMatrix(): SurveyMatrix {
@@ -368,6 +509,63 @@ export function createDefaultMultiPointMatrix(): SurveyMatrix {
   };
 }
 
+export const DEFAULT_MATRIX_MULTI_SELECT_QUESTION_TEXT =
+  'Which attributes are true for the following?';
+
+const DEFAULT_MATRIX_MULTI_SELECT_ROW_LABELS = [
+  'Apple',
+  'Samsung',
+  'Nothing',
+  'OnePlus',
+] as const;
+
+const DEFAULT_MATRIX_MULTI_SELECT_COLUMN_LABELS = [
+  'High quality',
+  'Lot of features',
+  'Good support',
+  'Value for money',
+] as const;
+
+export function createDefaultMatrixMultiSelectMatrix(): SurveyMatrix {
+  const ts = Date.now();
+  return {
+    leftAnchor: '',
+    rightAnchor: '',
+    columns: DEFAULT_MATRIX_MULTI_SELECT_COLUMN_LABELS.map((label, index) => ({
+      id: `ms-col-${ts}-${index + 1}`,
+      label,
+    })),
+    rows: DEFAULT_MATRIX_MULTI_SELECT_ROW_LABELS.map((label, index) => ({
+      id: `ms-row-${ts}-${index + 1}`,
+      label,
+    })),
+  };
+}
+
+export const DEFAULT_MATRIX_SPREADSHEET_QUESTION_TEXT = 'Please provide the following info';
+
+export const SPREADSHEET_ANSWER_PLACEHOLDER = 'Answer Text';
+
+const DEFAULT_MATRIX_SPREADSHEET_ROW_LABELS = ['Child 1', 'Child 2'] as const;
+
+const DEFAULT_MATRIX_SPREADSHEET_COLUMN_LABELS = ['Gender', 'Age'] as const;
+
+export function createDefaultMatrixSpreadsheetMatrix(): SurveyMatrix {
+  const ts = Date.now();
+  return {
+    leftAnchor: '',
+    rightAnchor: '',
+    columns: DEFAULT_MATRIX_SPREADSHEET_COLUMN_LABELS.map((label, index) => ({
+      id: `ss-col-${ts}-${index + 1}`,
+      label,
+    })),
+    rows: DEFAULT_MATRIX_SPREADSHEET_ROW_LABELS.map((label, index) => ({
+      id: `ss-row-${ts}-${index + 1}`,
+      label,
+    })),
+  };
+}
+
 export interface SurveySection {
   id: string;
   title: string;
@@ -381,82 +579,30 @@ export interface SurveyDetail {
   sections: SurveySection[];
 }
 
-const DEFAULT_SECTIONS: SurveySection[] = [
-  {
-    id: 'section-demo',
-    title: 'Block 1',
-    questions: [
-      {
-        id: 'q1',
-        code: 'Q1',
-        number: 1,
-        text: 'What is your gender?',
-        required: true,
-        options: [
-          { id: 'male', label: 'Male' },
-          { id: 'female', label: 'Female' },
-          { id: 'other', label: 'Other' },
-          { id: 'na', label: 'NA' },
-        ],
-      },
-      {
-        id: 'q5',
-        code: 'Q5',
-        number: 5,
-        text: 'Age',
-        required: true,
-        options: [
-          { id: 'under-18', label: 'Under 18', logicLabel: 'Terminate Survey' },
-          { id: '18-24', label: '18-24' },
-          { id: '25-34', label: '25-34' },
-          { id: '35-44', label: '35-44' },
-          { id: '45-54', label: '45-54' },
-          { id: '55-64', label: '55-64' },
-          { id: 'above-64', label: 'Above 64' },
-        ],
-      },
-      {
-        id: 'q6',
-        code: 'Q6',
-        number: 6,
-        text: 'Household income (optional)',
-        required: false,
-        options: [
-          { id: 'inc-1', label: 'Under $25,000' },
-          { id: 'inc-2', label: '$25,000–$49,999' },
-          { id: 'inc-3', label: '$50,000–$99,999' },
-          { id: 'inc-4', label: '$100,000 or more' },
-          { id: 'inc-pref', label: 'Prefer not to say' },
-        ],
-      },
-    ],
-    showPageBreak: true,
-  },
-];
-
-const BLANK_SURVEY_SECTIONS: SurveySection[] = [
-  {
-    id: 'section-blank-1',
-    title: 'Block 1',
-    questions: [],
-  },
-];
+const COKE_RESEARCH_SECTIONS = createCokeResearchSurveySections();
 
 export function getSurveyDetail(survey: Survey): SurveyDetail {
   if (survey.id === NEW_AI_SURVEY_ID) {
     const draft = readAiSurveyDraft();
-    const sections = draft?.sections.length ? draft.sections : BLANK_SURVEY_SECTIONS;
+    const sections = draft?.sections.length ? draft.sections : COKE_RESEARCH_SECTIONS;
     return {
       survey,
-      editorTitle: draft?.name ?? getSurveyEditorTitle(survey),
+      editorTitle: draft?.name ?? COKE_RESEARCH_SURVEY_TITLE,
       sections,
     };
   }
 
-  const sections = survey.id === NEW_BLANK_SURVEY_ID ? BLANK_SURVEY_SECTIONS : DEFAULT_SECTIONS;
+  if (survey.id === NEW_BLANK_SURVEY_ID) {
+    return {
+      survey,
+      editorTitle: COKE_RESEARCH_SURVEY_TITLE,
+      sections: COKE_RESEARCH_SECTIONS,
+    };
+  }
+
   return {
     survey,
     editorTitle: getSurveyEditorTitle(survey),
-    sections,
+    sections: COKE_RESEARCH_SECTIONS,
   };
 }

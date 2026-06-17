@@ -1,0 +1,159 @@
+.root {
+  display: block;
+  min-width: 0;
+}
+
+:global(.matrixMultiSelectCard) {
+  background: transparent;
+  border: none;
+  min-width: 0;
+}
+
+.cardInner {
+  padding: 0.75rem 1rem 1rem;
+}
+
+.topBar {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.topSpacer {
+  flex: 1;
+  min-width: 0;
+}
+
+.menuBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.125rem;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+}
+
+.menuBtn:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.questionTextWrap {
+  margin: 0 0 0.875rem;
+  min-width: 0;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.questionTextWrap .required {
+  color: #dc2626;
+  left: 0.375rem;
+  line-height: 1.45;
+  position: absolute;
+  top: 0.2rem;
+}
+
+.matrixWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow: visible;
+  padding-left: 0.25rem;
+}
+
+.matrixRowLine {
+  align-items: center;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 7.5rem repeat(var(--matrix-cols, 2), minmax(0, 1fr));
+  min-width: 0;
+}
+
+.rowLabelSpacer {
+  display: block;
+}
+
+.rowLabelCell {
+  min-width: 0;
+}
+
+.columnHeader {
+  color: #64748b;
+  font-size: 0.8125rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.cell {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.cell input {
+  accent-color: #94a3b8;
+  height: 0.9375rem;
+  margin: 0;
+  width: 0.9375rem;
+}
+
+.matrixTools {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+  padding-left: 8rem;
+}
+
+.matrixToolsSpacer {
+  flex: 1;
+}
+
+.addRowBtn {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d5dde6;
+  border-radius: 0.25rem;
+  color: #1b87e6;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1rem;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+}
+
+.addRowBtn:hover {
+  background: #f8fafc;
+  border-color: #1b87e6;
+}
+
+.bulkEditLink {
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0;
+}
+
+.bulkEditLink:hover {
+  text-decoration: underline;
+}
+
+.footer {
+  align-items: center;
+  background: transparent;
+  border-top: none;
+  display: flex;
+  padding: 0.5rem 1rem 0.75rem;
+}

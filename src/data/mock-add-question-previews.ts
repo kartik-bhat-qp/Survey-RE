@@ -516,11 +516,11 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     variant: 'numeric-slider',
     headerIcon: 'wm-linear-scale',
     headerLabel: 'Graphical Rating (Numeric Slider)',
-    question: 'How satisfied are you with the following',
+    question: 'How much do you spend on',
     numericSlider: {
       leftAnchor: 'Left Anchor',
       rightAnchor: 'Right Anchor',
-      rows: ['Row 1', 'Row 2'],
+      rows: ['Food', 'Travel', 'Tech'],
       valuePlaceholder: '--',
     },
   },
@@ -528,16 +528,16 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     variant: 'image-chooser-select-one',
     headerIcon: 'wm-panorama',
     headerLabel: 'Image Chooser (Select One)',
-    question: 'Please choose your favorite ice-cream flavor ?',
+    question: 'Please select the flav of icecream you like',
     imageChooserSelectOne: {
       options: [
         {
-          label: 'Strawberry',
+          label: 'Option 1',
           imageSrc: '/images/add-question-previews/ice-cream-strawberry.svg',
           imageAlt: 'Strawberry sundae',
         },
         {
-          label: 'Butterscotch',
+          label: 'Option 2',
           imageSrc: '/images/add-question-previews/ice-cream-butterscotch.svg',
           imageAlt: 'Butterscotch ice cream',
         },
@@ -548,26 +548,26 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     variant: 'image-chooser-select-many',
     headerIcon: 'wm-photo-library',
     headerLabel: 'Image Chooser (Select Many)',
-    question: 'Select all the flavors of icecream you like',
+    question: 'Please select the flavors of ice cream you like - (Select all that apply)',
     imageChooserSelectMany: {
       options: [
         {
-          label: 'Strawberry',
+          label: 'Option 1',
           imageSrc: '/images/add-question-previews/ice-cream-strawberry.svg',
           imageAlt: 'Strawberry sundae',
         },
         {
-          label: 'Butterscotch',
+          label: 'Option 2',
           imageSrc: '/images/add-question-previews/ice-cream-butterscotch.svg',
           imageAlt: 'Butterscotch ice cream',
         },
         {
-          label: 'Chocolate',
+          label: 'Option 3',
           imageSrc: '/images/add-question-previews/ice-cream-chocolate.svg',
           imageAlt: 'Chocolate ice cream',
         },
         {
-          label: 'Vanilla',
+          label: 'Option 4',
           imageSrc: '/images/add-question-previews/ice-cream-vanilla.svg',
           imageAlt: 'Vanilla ice cream',
         },
@@ -578,9 +578,9 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     variant: 'image-chooser-rating',
     headerIcon: 'wc-image-chooser-2',
     headerLabel: 'Image Chooser (Rating)',
-    question: 'Please rate the ice cream flavors',
+    question: 'Rate the following flavors',
     imageChooserRating: {
-      ratingPlaceholder: 'Very Dissatisfied',
+      ratingPlaceholder: 'Column 1',
       options: [
         {
           imageSrc: '/images/add-question-previews/ice-cream-strawberry.svg',
@@ -590,14 +590,6 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
           imageSrc: '/images/add-question-previews/ice-cream-butterscotch.svg',
           imageAlt: 'Butterscotch ice cream',
         },
-        {
-          imageSrc: '/images/add-question-previews/ice-cream-chocolate.svg',
-          imageAlt: 'Chocolate ice cream',
-        },
-        {
-          imageSrc: '/images/add-question-previews/ice-cream-vanilla.svg',
-          imageAlt: 'Vanilla ice cream',
-        },
       ],
     },
   },
@@ -605,22 +597,21 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     variant: 'rank-order',
     headerIcon: 'wm-format-list-numbered',
     headerLabel: 'Ordering (Rank Order)',
-    question: 'Please rank (1-3) the following in order of interest',
+    question: 'Rate the following',
     rankOrder: {
       items: ['Skiing', 'Snowboarding', 'Biking'],
-      selectPlaceholder: '-- Select --',
+      selectPlaceholder: '- Select -',
     },
   },
   'constant-sum': {
     variant: 'constant-sum',
     headerIcon: 'wm-functions',
     headerLabel: 'Ordering (Constant Sum)',
-    question: 'Please allocate 100 points on how you spend your income',
+    question: 'How much do you spend monthly on -',
     constantSum: {
       rows: [
         { label: 'Essentials (Gas, Grocery etc.)', value: '0' },
         { label: 'Entertainment (Movies, Clubs etc.)', value: '0' },
-        { label: 'Other', value: '0' },
       ],
     },
   },
@@ -628,15 +619,15 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     variant: 'drag-drop',
     headerIcon: 'wm-drag-indicator',
     headerLabel: 'Ordering (Drag and Drop)',
-    question: 'Please rank (1-3) the following in order of interest',
+    question: 'Drag and drop the following in the order of your preference',
     dragDrop: {
       items: [
         { label: 'Skiing', rank: 1 },
         { label: 'Snowboarding', rank: 2 },
         { label: 'Biking', rank: 3 },
       ],
-      leftAnchor: 'Left Anchor',
-      rightAnchor: 'Right Anchor',
+      leftAnchor: 'Top Anchor',
+      rightAnchor: 'Bottom Anchor',
     },
   },
   'multi-point': {
@@ -659,51 +650,44 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     variant: 'matrix-multi-select',
     headerIcon: 'wc-basic-matrix-2',
     headerLabel: 'Basic Matrix (Multi-Select)',
-    question: 'How satisfied are you with the following',
+    question: 'Which attributes are true for the following?',
     matrixMultiSelect: {
       scaleLabels: [
-        'Very Dissatisfied',
-        'Unsatisfied',
-        'Neutral',
-        'Satisfied',
-        'Very Satisfied',
+        'High quality',
+        'Lot of features',
+        'Good support',
+        'Value for money',
       ],
-      rows: ['Website', 'Customer Service', 'Overall'],
+      rows: ['Apple', 'Samsung', 'Nothing', 'OnePlus'],
     },
   },
   spreadsheet: {
     variant: 'matrix-spreadsheet',
     headerIcon: 'wm-table-chart',
     headerLabel: 'Basic Matrix (Spreadsheet)',
-    question: 'How satisfied are you with the following',
+    question: 'Please provide the following info',
     matrixSpreadsheet: {
-      scaleLabels: [
-        'Very Dissatisfied',
-        'Unsatisfied',
-        'Neutral',
-        'Satisfied',
-        'Very Satisfied',
-      ],
-      rows: ['Website', 'Customer Service', 'Overall'],
+      scaleLabels: ['Gender', 'Age'],
+      rows: ['Child 1', 'Child 2'],
     },
   },
   presentation: {
     variant: 'placeholder',
     headerIcon: 'wm-article',
     headerLabel: 'Presentation Text',
-    question: 'Non-interactive text and images shown to respondents.',
+    question: 'Add your text here',
   },
   'section-heading': {
     variant: 'placeholder',
     headerIcon: 'wm-title',
     headerLabel: 'Section Heading',
-    question: 'Large heading to break the survey into sections.',
+    question: 'Add your text here',
   },
   'section-subheading': {
     variant: 'placeholder',
     headerIcon: 'wm-subtitles',
     headerLabel: 'Section Sub-Heading',
-    question: 'Secondary heading within a section.',
+    question: 'Add your text here',
   },
   'date-time': {
     variant: 'date-time',

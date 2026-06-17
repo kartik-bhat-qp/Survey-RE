@@ -14,14 +14,30 @@ import {
   createDefaultLookupTableData,
   createDefaultLookupTableOptions,
   createDefaultMultiPointMatrix,
+  createDefaultMatrixMultiSelectMatrix,
+  createDefaultMatrixSpreadsheetMatrix,
   createDefaultStarRatingMatrix,
   createDefaultSmileyRatingData,
   createDefaultThumbsUpDownData,
   createDefaultTextSliderMatrix,
+  createDefaultNumericSliderMatrix,
+  createDefaultImageChooserSelectOneOptions,
+  createDefaultImageChooserSelectManyOptions,
+  createDefaultImageChooserRatingMatrix,
+  createDefaultRankOrderOptions,
+  createDefaultConstantSumOptions,
+  createDefaultDragDropMatrix,
   DEFAULT_STAR_RATING_QUESTION_TEXT,
   DEFAULT_SMILEY_RATING_QUESTION_TEXT,
   DEFAULT_THUMBS_QUESTION_TEXT,
   DEFAULT_TEXT_SLIDER_QUESTION_TEXT,
+  DEFAULT_NUMERIC_SLIDER_QUESTION_TEXT,
+  DEFAULT_IMAGE_CHOOSER_SELECT_ONE_QUESTION_TEXT,
+  DEFAULT_IMAGE_CHOOSER_SELECT_MANY_QUESTION_TEXT,
+  DEFAULT_IMAGE_CHOOSER_RATING_QUESTION_TEXT,
+  DEFAULT_RANK_ORDER_QUESTION_TEXT,
+  DEFAULT_CONSTANT_SUM_QUESTION_TEXT,
+  DEFAULT_DRAG_DROP_QUESTION_TEXT,
   createDefaultVanWestendorpData,
   DEFAULT_LOOKUP_TABLE_QUESTION_TEXT,
   DEFAULT_DROPDOWN_QUESTION_TEXT,
@@ -32,6 +48,8 @@ import {
   createDefaultContactInformationOptions,
   SELECT_ONE_MAX_BULK_OPTIONS,
   DEFAULT_MULTI_POINT_QUESTION_TEXT,
+  DEFAULT_MATRIX_MULTI_SELECT_QUESTION_TEXT,
+  DEFAULT_MATRIX_SPREADSHEET_QUESTION_TEXT,
   DEFAULT_NPS_MAX_LABEL,
   DEFAULT_NPS_MIN_LABEL,
   DEFAULT_VAN_WESTENDORP_QUESTION_TEXT,
@@ -47,12 +65,26 @@ import { StarRatingQuestionRow } from '@/components/surveys/StarRatingQuestionRo
 import { SmileyRatingQuestionRow } from '@/components/surveys/SmileyRatingQuestionRow';
 import { ThumbsUpDownQuestionRow } from '@/components/surveys/ThumbsUpDownQuestionRow';
 import { TextSliderQuestionRow } from '@/components/surveys/TextSliderQuestionRow';
+import { NumericSliderQuestionRow } from '@/components/surveys/NumericSliderQuestionRow';
+import { ImageChooserSelectOneQuestionRow } from '@/components/surveys/ImageChooserSelectOneQuestionRow';
+import { ImageChooserSelectManyQuestionRow } from '@/components/surveys/ImageChooserSelectManyQuestionRow';
+import { ImageChooserRatingQuestionRow } from '@/components/surveys/ImageChooserRatingQuestionRow';
+import { RankOrderQuestionRow } from '@/components/surveys/RankOrderQuestionRow';
+import { ConstantSumQuestionRow } from '@/components/surveys/ConstantSumQuestionRow';
+import { DragDropQuestionRow } from '@/components/surveys/DragDropQuestionRow';
+import {
+  StaticContentQuestionRow,
+  isStaticContentQuestionKind,
+  resolveStaticContentVariant,
+} from '@/components/surveys/StaticContentQuestionRow';
 import { NpsQuestionRow } from '@/components/surveys/NpsQuestionRow';
 import { VanWestendorpQuestionRow } from '@/components/surveys/VanWestendorpQuestionRow';
 import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
 import { BulkEditLinesModal } from '@/components/surveys/BulkEditLinesModal';
 import { BulkEditOptionsModal } from '@/components/surveys/BulkEditOptionsModal';
 import { MultiPointScalesQuestionRow } from '@/components/surveys/MultiPointScalesQuestionRow';
+import { MatrixMultiSelectQuestionRow } from '@/components/surveys/MatrixMultiSelectQuestionRow';
+import { MatrixSpreadsheetQuestionRow } from '@/components/surveys/MatrixSpreadsheetQuestionRow';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -167,6 +199,14 @@ function isMultiPointScalesQuestion(question: SurveyQuestion): boolean {
   return question.kind === 'multi-point-scales' && Boolean(question.matrix);
 }
 
+function isMatrixMultiSelectQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'matrix-multi-select' || question.addQuestionTypeId === 'multi-select-matrix';
+}
+
+function isMatrixSpreadsheetQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'matrix-spreadsheet' || question.addQuestionTypeId === 'spreadsheet';
+}
+
 function isStarRatingQuestion(question: SurveyQuestion): boolean {
   return question.kind === 'star-rating' || question.addQuestionTypeId === 'star-rating';
 }
@@ -181,6 +221,46 @@ function isThumbsUpDownQuestion(question: SurveyQuestion): boolean {
 
 function isTextSliderQuestion(question: SurveyQuestion): boolean {
   return question.kind === 'text-slider' || question.addQuestionTypeId === 'text-slider';
+}
+
+function isNumericSliderQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'numeric-slider' || question.addQuestionTypeId === 'numeric-slider';
+}
+
+function isImageChooserSelectOneQuestion(question: SurveyQuestion): boolean {
+  return (
+    question.kind === 'image-chooser-select-one' ||
+    question.addQuestionTypeId === 'image-select-one'
+  );
+}
+
+function isImageChooserSelectManyQuestion(question: SurveyQuestion): boolean {
+  return (
+    question.kind === 'image-chooser-select-many' ||
+    question.addQuestionTypeId === 'image-select-many'
+  );
+}
+
+function isImageChooserRatingQuestion(question: SurveyQuestion): boolean {
+  return (
+    question.kind === 'image-chooser-rating' || question.addQuestionTypeId === 'image-rating'
+  );
+}
+
+function isRankOrderQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'rank-order' || question.addQuestionTypeId === 'rank-order';
+}
+
+function isConstantSumQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'constant-sum' || question.addQuestionTypeId === 'constant-sum';
+}
+
+function isDragDropQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'drag-drop' || question.addQuestionTypeId === 'drag-drop';
+}
+
+function isStaticContentQuestion(question: SurveyQuestion): boolean {
+  return isStaticContentQuestionKind(question.kind, question.addQuestionTypeId);
 }
 
 function isNpsQuestion(question: SurveyQuestion): boolean {
@@ -227,9 +307,19 @@ function isSelectOneQuestion(question: SurveyQuestion): boolean {
     !isSmileyRatingQuestion(question) &&
     !isThumbsUpDownQuestion(question) &&
     !isTextSliderQuestion(question) &&
+    !isNumericSliderQuestion(question) &&
+    !isImageChooserSelectOneQuestion(question) &&
+    !isImageChooserSelectManyQuestion(question) &&
+    !isImageChooserRatingQuestion(question) &&
+    !isRankOrderQuestion(question) &&
+    !isConstantSumQuestion(question) &&
+    !isDragDropQuestion(question) &&
+    !isStaticContentQuestion(question) &&
     (question.addQuestionTypeId === 'select-one' ||
       (question.inputKind === 'radio' &&
         !isMultiPointScalesQuestion(question) &&
+    !isMatrixMultiSelectQuestion(question) &&
+    !isMatrixSpreadsheetQuestion(question) &&
         !isNpsQuestion(question) &&
         !isVanWestendorpQuestion(question)))
   );
@@ -242,6 +332,8 @@ function isSelectOnePreviewQuestion(
   return (
     !isSelectManyPreviewQuestion(question, settings) &&
     !isMultiPointScalesQuestion(question) &&
+    !isMatrixMultiSelectQuestion(question) &&
+    !isMatrixSpreadsheetQuestion(question) &&
     !isNpsQuestion(question) &&
     !isVanWestendorpQuestion(question) &&
     !isLookupTableQuestion(question) &&
@@ -254,6 +346,14 @@ function isSelectOnePreviewQuestion(
     !isSmileyRatingQuestion(question) &&
     !isThumbsUpDownQuestion(question) &&
     !isTextSliderQuestion(question) &&
+    !isNumericSliderQuestion(question) &&
+    !isImageChooserSelectOneQuestion(question) &&
+    !isImageChooserSelectManyQuestion(question) &&
+    !isImageChooserRatingQuestion(question) &&
+    !isRankOrderQuestion(question) &&
+    !isConstantSumQuestion(question) &&
+    !isDragDropQuestion(question) &&
+    !isStaticContentQuestion(question) &&
     question.options.length > 0
   );
 }
@@ -2333,6 +2433,250 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         return;
       }
 
+      if (typeId === 'numeric-slider') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_NUMERIC_SLIDER_QUESTION_TEXT,
+              required: true,
+              kind: 'numeric-slider',
+              addQuestionTypeId: 'numeric-slider',
+              options: [],
+              matrix: createDefaultNumericSliderMatrix(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Numeric Slider question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'image-select-one') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_IMAGE_CHOOSER_SELECT_ONE_QUESTION_TEXT,
+              required: true,
+              kind: 'image-chooser-select-one',
+              addQuestionTypeId: 'image-select-one',
+              options: createDefaultImageChooserSelectOneOptions(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Image Chooser Select One question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'image-select-many') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_IMAGE_CHOOSER_SELECT_MANY_QUESTION_TEXT,
+              required: true,
+              kind: 'image-chooser-select-many',
+              addQuestionTypeId: 'image-select-many',
+              options: createDefaultImageChooserSelectManyOptions(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Image Chooser Select Many question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'image-rating') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_IMAGE_CHOOSER_RATING_QUESTION_TEXT,
+              required: true,
+              kind: 'image-chooser-rating',
+              addQuestionTypeId: 'image-rating',
+              options: [],
+              matrix: createDefaultImageChooserRatingMatrix(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Image Chooser Rating question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'rank-order') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_RANK_ORDER_QUESTION_TEXT,
+              required: true,
+              kind: 'rank-order',
+              addQuestionTypeId: 'rank-order',
+              options: createDefaultRankOrderOptions(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Rank Order question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'constant-sum') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_CONSTANT_SUM_QUESTION_TEXT,
+              required: true,
+              kind: 'constant-sum',
+              addQuestionTypeId: 'constant-sum',
+              options: createDefaultConstantSumOptions(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Constant Sum question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'drag-drop') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_DRAG_DROP_QUESTION_TEXT,
+              required: true,
+              kind: 'drag-drop',
+              addQuestionTypeId: 'drag-drop',
+              options: [],
+              matrix: createDefaultDragDropMatrix(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Drag and Drop question added', variant: 'success' });
+        return;
+      }
+
+      if (
+        typeId === 'presentation' ||
+        typeId === 'section-heading' ||
+        typeId === 'section-subheading'
+      ) {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        const toastLabel =
+          typeId === 'presentation'
+            ? 'Presentation Text'
+            : typeId === 'section-heading'
+              ? 'Section Heading'
+              : 'Section Sub-Heading';
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: '',
+              kind: typeId,
+              addQuestionTypeId: typeId,
+              options: [],
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: `${toastLabel} added`, variant: 'success' });
+        return;
+      }
+
       if (typeId === 'multi-point') {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
@@ -2366,6 +2710,67 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           [questionKey]: DEFAULT_NEW_MULTI_POINT_QUESTION_SETTINGS,
         }));
         showToast({ message: 'Multi-Point Scales question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'multi-select-matrix') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        const questionKey = `${sectionId}:${newId}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(questionKey);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_MATRIX_MULTI_SELECT_QUESTION_TEXT,
+              required: true,
+              kind: 'matrix-multi-select',
+              addQuestionTypeId: 'multi-select-matrix',
+              options: [],
+              matrix: createDefaultMatrixMultiSelectMatrix(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Basic Matrix Multi-Select question added', variant: 'success' });
+        return;
+      }
+
+      if (typeId === 'spreadsheet') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_MATRIX_SPREADSHEET_QUESTION_TEXT,
+              required: true,
+              kind: 'matrix-spreadsheet',
+              addQuestionTypeId: 'spreadsheet',
+              options: [],
+              matrix: createDefaultMatrixSpreadsheetMatrix(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        showToast({ message: 'Spreadsheet question added', variant: 'success' });
         return;
       }
 
@@ -2522,6 +2927,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const questionKey = `${section.id}:${question.id}`;
                     const isSelected = selectedQuestionKey === questionKey;
                     const isMultiPoint = isMultiPointScalesQuestion(question);
+                    const isMatrixMultiSelect = isMatrixMultiSelectQuestion(question);
+                    const isMatrixSpreadsheet = isMatrixSpreadsheetQuestion(question);
                     const isNps = isNpsQuestion(question);
                     const isVanWestendorp = isVanWestendorpQuestion(question);
                     const isLookupTable = isLookupTableQuestion(question);
@@ -2534,6 +2941,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const isSmileyRating = isSmileyRatingQuestion(question);
                     const isThumbsUpDown = isThumbsUpDownQuestion(question);
                     const isTextSlider = isTextSliderQuestion(question);
+                    const isNumericSlider = isNumericSliderQuestion(question);
+                    const isImageChooserSelectOne = isImageChooserSelectOneQuestion(question);
+                    const isImageChooserSelectMany = isImageChooserSelectManyQuestion(question);
+                    const isImageChooserRating = isImageChooserRatingQuestion(question);
+                    const isRankOrder = isRankOrderQuestion(question);
+                    const isConstantSum = isConstantSumQuestion(question);
+                    const isDragDrop = isDragDropQuestion(question);
+                    const isStaticContent = isStaticContentQuestion(question);
                     const isSelectOne = isSelectOneQuestion(question);
                     const multiPointSettings = getMultiPointSettings(questionKey);
                     const savedLogic = logicByQuestionKey[questionKey];
@@ -2590,9 +3005,9 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                             question.inputKind === 'checkbox' ? styles.questionBlockSelectMany : ''
                           } ${isSelectOne ? styles.questionBlockSelectOne : ''} ${
                             isMultiPoint ? styles.questionBlockMultiPoint : ''
-                          } ${isNps ? styles.questionBlockNps : ''} ${
-                            isVanWestendorp ? styles.questionBlockVanWestendorp : ''
-                          } ${isLookupTable ? styles.questionBlockLookupTable : ''} ${
+                          } ${isMatrixMultiSelect ? styles.questionBlockMatrixMultiSelect : ''} ${
+                            isMatrixSpreadsheet ? styles.questionBlockMatrixSpreadsheet : ''
+                          } ${isVanWestendorp ? styles.questionBlockVanWestendorp : ''} ${
                             isDropdown ? styles.questionBlockDropdown : ''
                           } ${isCommentBox ? styles.questionBlockCommentBox : ''} ${
                             isSingleRowText ? styles.questionBlockSingleRowText : ''
@@ -2602,7 +3017,19 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                             isSmileyRating ? styles.questionBlockSmileyRating : ''
                           } ${isThumbsUpDown ? styles.questionBlockThumbsUpDown : ''} ${
                             isTextSlider ? styles.questionBlockTextSlider : ''
-                          } ${isSelected ? styles.questionBlockSelected : ''}`}
+                          } ${isNumericSlider ? styles.questionBlockNumericSlider : ''} ${
+                            isImageChooserSelectOne ? styles.questionBlockImageChooserSelectOne : ''
+                          } ${
+                            isImageChooserSelectMany ? styles.questionBlockImageChooserSelectMany : ''
+                          } ${
+                            isImageChooserRating ? styles.questionBlockImageChooserRating : ''
+                          } ${isRankOrder ? styles.questionBlockRankOrder : ''} ${
+                            isConstantSum ? styles.questionBlockConstantSum : ''
+                          } ${isDragDrop ? styles.questionBlockDragDrop : ''} ${
+                            isStaticContent ? styles.questionBlockStaticContent : ''
+                          } ${
+                            isSelected ? styles.questionBlockSelected : ''
+                          }`}
                         >
                           <div
                             className={styles.questionCodeColumn}
@@ -2860,6 +3287,239 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 onQuestionTextChange={handleQuestionTextChange}
                                 onThumbsChoiceLabelChange={handleThumbsChoiceLabelChange}
                               />
+                            ) : isStaticContent ? (
+                              <StaticContentQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                variant={resolveStaticContentVariant(question)}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                              />
+                            ) : isDragDrop && question.matrix ? (
+                              <DragDropQuestionRow
+                                question={question}
+                                matrix={question.matrix}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onMatrixAnchorChange={handleMatrixAnchorChange}
+                                onMatrixRowLabelChange={handleMatrixRowLabelChange}
+                                onAddRow={handleAddMatrixRow}
+                                onBulkEditRows={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'rows',
+                                  })
+                                }
+                              />
+                            ) : isConstantSum ? (
+                              <ConstantSumQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onOptionLabelChange={handleOptionLabelChange}
+                                onAddOption={handleAddOption}
+                                onBulkEdit={handleBulkEdit}
+                              />
+                            ) : isRankOrder ? (
+                              <RankOrderQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onOptionLabelChange={handleOptionLabelChange}
+                                onAddOption={handleAddOption}
+                                onBulkEdit={handleBulkEdit}
+                              />
+                            ) : isImageChooserRating && question.matrix ? (
+                              <ImageChooserRatingQuestionRow
+                                question={question}
+                                matrix={question.matrix}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onMatrixRowLabelChange={handleMatrixRowLabelChange}
+                                onEditImage={() => toast('Edit image')}
+                                onAddRow={handleAddMatrixRow}
+                                onBulkEditRows={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'rows',
+                                  })
+                                }
+                                onBulkEditColumns={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'columns',
+                                  })
+                                }
+                              />
+                            ) : isImageChooserSelectMany ? (
+                              <ImageChooserSelectManyQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onOptionLabelChange={handleOptionLabelChange}
+                                onEditImage={() => toast('Edit image')}
+                                onAddOption={handleAddOption}
+                                onBulkEdit={handleBulkEdit}
+                              />
+                            ) : isImageChooserSelectOne ? (
+                              <ImageChooserSelectOneQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onOptionLabelChange={handleOptionLabelChange}
+                                onEditImage={() => toast('Edit image')}
+                                onAddOption={handleAddOption}
+                                onBulkEdit={handleBulkEdit}
+                              />
+                            ) : isNumericSlider && question.matrix ? (
+                              <NumericSliderQuestionRow
+                                question={question}
+                                matrix={question.matrix}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                dynamicTextCommentsApplied={dynamicTextCommentsApplied}
+                                extractionApplied={extractionApplied}
+                                quotaControlApplied={quotaControlApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onMatrixAnchorChange={handleMatrixAnchorChange}
+                                onMatrixRowLabelChange={handleMatrixRowLabelChange}
+                                onAddRow={handleAddMatrixRow}
+                                onBulkEditRows={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'rows',
+                                  })
+                                }
+                              />
                             ) : isTextSlider && question.matrix ? (
                               <TextSliderQuestionRow
                                 question={question}
@@ -2918,6 +3578,82 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                   handleOpenSettings(section.id, question.id)
                                 }
                                 onQuestionTextChange={handleQuestionTextChange}
+                              />
+                            ) : isMatrixSpreadsheet && question.matrix ? (
+                              <MatrixSpreadsheetQuestionRow
+                                question={question}
+                                matrix={question.matrix}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onMatrixColumnLabelChange={handleMatrixColumnLabelChange}
+                                onMatrixRowLabelChange={handleMatrixRowLabelChange}
+                                onAddRow={handleAddMatrixRow}
+                                onBulkEditRows={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'rows',
+                                  })
+                                }
+                                onBulkEditColumns={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'columns',
+                                  })
+                                }
+                              />
+                            ) : isMatrixMultiSelect && question.matrix ? (
+                              <MatrixMultiSelectQuestionRow
+                                question={question}
+                                matrix={question.matrix}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onMatrixColumnLabelChange={handleMatrixColumnLabelChange}
+                                onMatrixRowLabelChange={handleMatrixRowLabelChange}
+                                onAddRow={handleAddMatrixRow}
+                                onBulkEditRows={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'rows',
+                                  })
+                                }
+                                onBulkEditColumns={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'columns',
+                                  })
+                                }
                               />
                             ) : isMultiPoint && question.matrix ? (
                               <MultiPointScalesQuestionRow
