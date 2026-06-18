@@ -13,16 +13,27 @@ export const SURVEY_AI_EXAMPLE_PROMPTS = [
   },
 ] as const;
 
-export const SURVEY_AI_CAPABILITY_PILLS = [
-  'Add or edit questions',
-  'Set up survey logic',
-  'Improve question wording',
-  'Add validation rules',
-  'Reorganize blocks',
-] as const;
+export interface SurveyAiCapabilityPill {
+  id: string;
+  label: string;
+  icon?: string;
+}
+
+export const SURVEY_AI_CAPABILITY_PILLS: SurveyAiCapabilityPill[] = [
+  { id: 'import-word', label: 'Import from Word', icon: 'wm-description' },
+  { id: 'import-pdf', label: 'Import from PDF', icon: 'wm-picture-as-pdf' },
+  { id: 'add-question-types', label: 'Add different types of questions' },
+  { id: 'compound-logic', label: 'Set up advanced (compound) survey logic' },
+  { id: 'translate', label: 'Translate survey languages' },
+  { id: 'generate-brief', label: 'Generate questions from a brief' },
+  { id: 'add-edit-questions', label: 'Add or edit questions' },
+  { id: 'survey-logic', label: 'Set up survey logic' },
+  { id: 'validation', label: 'Add validation rules' },
+  { id: 'reorganize', label: 'Reorganize blocks' },
+];
 
 export const SURVEY_AI_GREETING =
-  "Hi! I'm your survey agent. I can help you build, edit, and improve this survey. Try asking me to:";
+  "Hi! I'm your research agent. I can help you build, edit, and improve this survey. Try asking me to:";
 
 export const SURVEY_AI_THINKING_STEPS = [
   'Reviewing your survey…',
@@ -32,6 +43,17 @@ export const SURVEY_AI_THINKING_STEPS = [
 ] as const;
 
 const SURVEY_AI_GENERATION_DELAY_MS = 2200;
+
+/** Prototype context window for the research agent sidebar. */
+export const RESEARCH_AGENT_CONTEXT_MAX_TOKENS = 200_000;
+
+/** Baseline survey workspace context loaded into the agent. */
+export const RESEARCH_AGENT_BASE_CONTEXT_TOKENS = 18_400;
+
+export function estimateResearchAgentContextUsage(prompt: string): number {
+  const promptTokens = Math.ceil(prompt.trim().length / 4);
+  return RESEARCH_AGENT_BASE_CONTEXT_TOKENS + promptTokens;
+}
 
 export interface SurveyAiGenerationResult {
   summary: string;
@@ -51,6 +73,12 @@ export async function generateSurveyChangesFromAiPrompt(
   });
 
   const lower = trimmed.toLowerCase();
+  if (lower.includes('word') || lower.includes('import from word')) {
+    return { summary: 'Imported survey questions from your Word document into Block 1.' };
+  }
+  if (lower.includes('pdf')) {
+    return { summary: 'Imported survey questions from your PDF into Block 1.' };
+  }
   if (lower.includes('nps')) {
     return { summary: 'Added an NPS question at the end of Block 1.' };
   }
@@ -62,6 +90,6 @@ export async function generateSurveyChangesFromAiPrompt(
   }
 
   return {
-    summary: 'Your survey agent request has been applied to this prototype workspace.',
+    summary: 'Your research agent request has been applied to this prototype workspace.',
   };
 }

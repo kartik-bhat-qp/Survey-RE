@@ -3843,8 +3843,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         <button
           type="button"
           className={styles.surveyAgentFab}
-          aria-label="Open survey agent"
-          title="Open survey agent"
+          aria-label="Open research agent"
+          title="Open research agent"
           onClick={() => setSurveyAgentOpen(true)}
         >
           <span className={`wc-ai ${styles.surveyAgentFabIcon}`} aria-hidden />

@@ -1,14 +1,17 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
+  estimateResearchAgentContextUsage,
   generateSurveyChangesFromAiPrompt,
+  RESEARCH_AGENT_CONTEXT_MAX_TOKENS,
   SURVEY_AI_CAPABILITY_PILLS,
   SURVEY_AI_EXAMPLE_PROMPTS,
   SURVEY_AI_GREETING,
   type SurveyAiGenerationResult,
 } from '@/data/mock-survey-ai-agent';
+import { ResearchAgentContextUsage } from '@/components/surveys/ResearchAgentContextUsage';
 import { SurveyAgentThinkingOverlay } from '@/components/surveys/SurveyAgentThinkingOverlay';
 import styles from './SurveyAgentSidebar.module.css';
 
@@ -29,6 +32,10 @@ export function SurveyAgentSidebar({
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const contextUsageTokens = useMemo(
+    () => estimateResearchAgentContextUsage(prompt),
+    [prompt]
+  );
 
   const resetPrompt = useCallback((): void => {
     setPrompt('');
@@ -43,7 +50,7 @@ export function SurveyAgentSidebar({
   function handleNewChat(): void {
     if (isGenerating) return;
     resetPrompt();
-    showToast({ message: 'Started a new survey agent chat', variant: 'info' });
+    showToast({ message: 'Started a new research agent chat', variant: 'info' });
   }
 
   async function handleSubmit(): Promise<void> {
@@ -84,10 +91,10 @@ export function SurveyAgentSidebar({
   return (
     <>
       <SurveyAgentThinkingOverlay open={isGenerating} />
-      <aside className={styles.sidebar} aria-label="Survey agent">
+      <aside className={styles.sidebar} aria-label="Research agent">
         <header className={styles.header}>
           <div className={styles.headerTitleRow}>
-            <h2 className={styles.headerTitle}>Survey Agent</h2>
+            <h2 className={styles.headerTitle}>Research Agent</h2>
             <span className={styles.headerAvatar} aria-hidden>
               <span className={`wc-ai ${styles.headerAvatarIcon}`} />
             </span>
@@ -96,11 +103,11 @@ export function SurveyAgentSidebar({
             <button
               type="button"
               className={`${styles.headerIconBtn} ${styles.headerHelpBtn}`}
-              aria-label="About survey agent"
-              title="About survey agent"
+              aria-label="About research agent"
+              title="About research agent"
               onClick={() =>
                 showToast({
-                  message: 'Survey agent helps you build, edit, and improve your survey with AI',
+                  message: 'Research agent helps you build, edit, and improve your survey with AI',
                   variant: 'info',
                 })
               }
@@ -119,7 +126,7 @@ export function SurveyAgentSidebar({
             <button
               type="button"
               className={styles.headerIconBtn}
-              aria-label="Close survey agent"
+              aria-label="Close research agent"
               title="Close"
               onClick={handleClose}
             >
@@ -149,12 +156,15 @@ export function SurveyAgentSidebar({
             <div className={styles.capabilityPills}>
               {SURVEY_AI_CAPABILITY_PILLS.map((pill) => (
                 <button
-                  key={pill}
+                  key={pill.id}
                   type="button"
                   className={styles.capabilityPill}
-                  onClick={() => applyPrompt(pill)}
+                  onClick={() => applyPrompt(pill.label)}
                 >
-                  {pill}
+                  {pill.icon ? (
+                    <span className={`${pill.icon} ${styles.capabilityPillIcon}`} aria-hidden />
+                  ) : null}
+                  {pill.label}
                 </button>
               ))}
             </div>
@@ -186,6 +196,10 @@ export function SurveyAgentSidebar({
               aria-label="Describe what you'd like to do"
               onChange={(event) => setPrompt(event.target.value)}
               onKeyDown={handlePromptKeyDown}
+            />
+            <ResearchAgentContextUsage
+              usedTokens={contextUsageTokens}
+              maxTokens={RESEARCH_AGENT_CONTEXT_MAX_TOKENS}
             />
             <button
               type="button"

@@ -1,0 +1,22 @@
+.usage {
+  align-items: center;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 2rem;
+  justify-content: center;
+  width: 1.25rem;
+}
+
+.ring {
+  display: block;
+}
+
+.track {
+  stroke: #e2e8f0;
+}
+
+.fill {
+  stroke: #64748b;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.2s ease;
+}
