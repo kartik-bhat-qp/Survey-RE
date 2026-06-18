@@ -8,7 +8,6 @@ import {
   VIDEO_AI_QUESTIONS,
   getVideoAiSummaryMetrics,
   VIDEO_AI_SURVEY_OPTIONS,
-  VIDEO_AI_STATUS_OPTIONS,
   VIDEO_AI_SENTIMENT_OPTIONS,
   type VideoAiQuestion,
   type FilterOption,
@@ -33,6 +32,38 @@ const WuButton = dynamic(
 );
 
 const PAGE_SIZE = 6;
+
+const SUMMARY_METRIC_ICONS = {
+  questions: 'wm-help-outline',
+  responses: 'wm-group',
+  duration: 'wm-schedule',
+  minutes: 'wm-timer',
+} as const;
+
+function SummaryMetricCard({
+  value,
+  label,
+  icon,
+  valueAriaLabel,
+}: {
+  value: string | number;
+  label: string;
+  icon: string;
+  valueAriaLabel?: string;
+}) {
+  return (
+    <div className={styles.metricCard}>
+      <div className={styles.metricCardValue} aria-label={valueAriaLabel}>
+        {value}
+      </div>
+      <div className={styles.metricCardRule} aria-hidden />
+      <div className={styles.metricCardLabel}>
+        <span className={`${icon} ${styles.metricCardIcon}`} aria-hidden />
+        <span>{label}</span>
+      </div>
+    </div>
+  );
+}
 
 function SentimentBar({
   sentiment,
@@ -90,16 +121,8 @@ function QuestionCard({
       }}
     >
       <div className={styles.cardTop}>
-        <div className={styles.thumbnail} aria-hidden>
-          <svg className={styles.thumbnailSvg} viewBox="0 0 90 65" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="90" height="65" fill="#e8ecf1"/>
-            {/* person silhouette */}
-            <circle cx="45" cy="23" r="10" fill="#b8c0cc"/>
-            <path d="M27 58 Q27 41 45 41 Q63 41 63 58Z" fill="#b8c0cc"/>
-            {/* record indicator */}
-            <circle cx="75" cy="53" r="7" fill="#e53935" opacity="0.15"/>
-            <circle cx="75" cy="53" r="4.5" fill="#e53935"/>
-          </svg>
+        <div className={styles.questionIconWrap} aria-hidden>
+          <span className={`wm-videocam ${styles.questionIcon}`} />
         </div>
 
         <div className={styles.cardContent}>
@@ -150,8 +173,7 @@ function QuestionCard({
 export function VideoAiAnalysis({ surveyId }: { surveyId: number }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const [surveyFilter, setSurveyFilter] = useState<FilterOption>(VIDEO_AI_SURVEY_OPTIONS[0]);
-  const [statusFilter, setStatusFilter] = useState<FilterOption>(VIDEO_AI_STATUS_OPTIONS[0]);
+  const [questionFilter, setQuestionFilter] = useState<FilterOption>(VIDEO_AI_SURVEY_OPTIONS[0]);
   const [sentimentFilter, setSentimentFilter] = useState<FilterOption>(
     VIDEO_AI_SENTIMENT_OPTIONS[0]
   );
@@ -167,17 +189,14 @@ export function VideoAiAnalysis({ surveyId }: { surveyId: number }) {
           item.question.toLowerCase().includes(q) || item.survey.toLowerCase().includes(q)
       );
     }
-    if (surveyFilter.value !== 'all') {
-      result = result.filter((item) => item.survey === surveyFilter.value);
-    }
-    if (statusFilter.value !== 'all') {
-      result = result.filter((item) => item.status === statusFilter.value);
+    if (questionFilter.value !== 'all') {
+      result = result.filter((item) => item.survey === questionFilter.value);
     }
     if (sentimentFilter.value !== 'all') {
       result = result.filter((item) => item.dominantSentiment === sentimentFilter.value);
     }
     return result;
-  }, [search, surveyFilter, statusFilter, sentimentFilter]);
+  }, [search, questionFilter, sentimentFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -214,33 +233,33 @@ export function VideoAiAnalysis({ surveyId }: { surveyId: number }) {
       </div>
 
       {/* ── Summary metric cards ────────────────────────────────────── */}
-      <div className={styles.metricsRow} role="region" aria-label="Summary metrics">
-        <div className={styles.metricCard}>
-          <span className={styles.metricCardValue}>{summaryMetrics.questionCount}</span>
-          <span className={styles.metricCardLabel}>Questions</span>
-        </div>
-        <div className={styles.metricCard}>
-          <span className={styles.metricCardValue}>{summaryMetrics.totalResponses}</span>
-          <span className={styles.metricCardLabel}>Total Responses</span>
-        </div>
-        <div className={styles.metricCard}>
-          <span className={styles.metricCardValue}>{summaryMetrics.avgResponseDuration}</span>
-          <span className={styles.metricCardLabel}>Average Duration</span>
-        </div>
-        <div className={styles.metricCard}>
-          <span
-            className={styles.metricCardValue}
-            aria-label={`${summaryMetrics.minutesConsumed} minutes used, ${summaryMetrics.minutesLeft} minutes left`}
-          >
-            {summaryMetrics.minutesConsumed} / {summaryMetrics.minutesLeft}
-          </span>
-          <span className={styles.metricCardLabel}>Minutes Used/Left</span>
-        </div>
+      <div className={styles.metricsPanel} role="region" aria-label="Summary metrics">
+        <SummaryMetricCard
+          value={summaryMetrics.questionCount}
+          label="Questions"
+          icon={SUMMARY_METRIC_ICONS.questions}
+        />
+        <SummaryMetricCard
+          value={summaryMetrics.totalResponses}
+          label="Total Responses"
+          icon={SUMMARY_METRIC_ICONS.responses}
+        />
+        <SummaryMetricCard
+          value={summaryMetrics.avgResponseDuration}
+          label="Average Duration"
+          icon={SUMMARY_METRIC_ICONS.duration}
+        />
+        <SummaryMetricCard
+          value={`${summaryMetrics.minutesConsumed} / ${summaryMetrics.minutesLeft}`}
+          label="Minutes Used/Left"
+          icon={SUMMARY_METRIC_ICONS.minutes}
+          valueAriaLabel={`${summaryMetrics.minutesConsumed} minutes used, ${summaryMetrics.minutesLeft} minutes left`}
+        />
       </div>
 
-      {/* ── Filters ────────────────────────────────────────────────── */}
-      <div className={styles.filterBar} role="search" aria-label="Filter questions">
-        <div className={styles.searchWrap}>
+      {/* ── Search & filters ───────────────────────────────────────── */}
+      <div className={styles.filterBar} role="search" aria-label="Search and filter questions">
+        <div className={styles.searchInput}>
           <WuInput
             variant="outlined"
             placeholder="Search by question or survey name…"
@@ -254,20 +273,9 @@ export function VideoAiAnalysis({ surveyId }: { surveyId: number }) {
         <WuSelect
           data={VIDEO_AI_SURVEY_OPTIONS}
           accessorKey={{ value: 'value', label: 'label' }}
-          value={surveyFilter}
+          value={questionFilter}
           onSelect={(opt) => {
-            if (opt) applyFilter(setSurveyFilter, opt as FilterOption);
-          }}
-          variant="outlined"
-          className={styles.filterSelect}
-        />
-
-        <WuSelect
-          data={VIDEO_AI_STATUS_OPTIONS}
-          accessorKey={{ value: 'value', label: 'label' }}
-          value={statusFilter}
-          onSelect={(opt) => {
-            if (opt) applyFilter(setStatusFilter, opt as FilterOption);
+            if (opt) applyFilter(setQuestionFilter, opt as FilterOption);
           }}
           variant="outlined"
           className={styles.filterSelect}

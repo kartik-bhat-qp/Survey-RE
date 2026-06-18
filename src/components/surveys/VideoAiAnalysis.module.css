@@ -5,6 +5,7 @@
   overflow-y: auto;
   padding: 1.75rem 2rem 2rem;
   background: #f8fafc;
+  font-family: 'Fira Sans', sans-serif;
 }
 
 /* ── Tab-style page header ───────────────────────────────────────────── */
@@ -64,38 +65,65 @@
   background: #1d4ed8;
 }
 
-/* ── Summary metric cards ────────────────────────────────────────────── */
-.metricsRow {
+/* ── Summary metric cards (ResponseInfoWidget / QP analytics pattern) ─ */
+.metricsPanel {
   display: flex;
-  gap: 0.75rem;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.5rem;
   margin-bottom: 1.25rem;
+  overflow: hidden;
 }
 
 .metricCard {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  padding: 0.875rem 1.25rem;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0.75rem;
+  text-align: center;
+  min-width: 0;
+}
+
+.metricCard + .metricCard {
+  border-left: 1px solid #e0e0e0;
 }
 
 .metricCardValue {
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #1e293b;
-  line-height: 1.15;
+  color: #333;
+  font-family: inherit;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  width: 100%;
+}
+
+.metricCardRule {
+  width: 2.5rem;
+  height: 1px;
+  background: #e0e0e0;
+  margin: 0.625rem auto;
+  flex-shrink: 0;
 }
 
 .metricCardLabel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3125rem;
+  color: #545e6b;
+  font-family: inherit;
   font-size: 0.75rem;
-  font-weight: 500;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.metricCardIcon {
+  color: #545e6b;
+  flex-shrink: 0;
+  font-size: 0.9375rem;
+  line-height: 1;
 }
 
 /* ── Filter bar ──────────────────────────────────────────────────────── */
@@ -107,13 +135,14 @@
   margin-bottom: 1rem;
 }
 
-.searchWrap {
+.searchInput {
   flex: 1;
   min-width: 15rem;
 }
 
 .filterSelect {
   min-width: 10.5rem;
+  flex-shrink: 0;
 }
 
 /* ── Card list ───────────────────────────────────────────────────────── */
@@ -153,19 +182,19 @@
   align-items: center;
 }
 
-.thumbnail {
-  width: 6.5rem;
-  height: 4.5rem;
-  border-radius: 0.5rem;
-  overflow: hidden;
+.questionIconWrap {
   flex-shrink: 0;
-  border: 1px solid #e2e8f0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
 }
 
-.thumbnailSvg {
-  width: 100%;
-  height: 100%;
-  display: block;
+.questionIcon {
+  font-size: 1.625rem;
+  line-height: 1;
+  color: #545e6b;
 }
 
 .cardContent {
@@ -198,6 +227,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+  font-family: inherit;
   font-size: 0.6875rem;
   font-weight: 600;
   padding: 0.1875rem 0.5rem;
@@ -265,12 +295,14 @@
 }
 
 .metricLabel {
+  font-family: inherit;
   font-size: 0.75rem;
   color: #94a3b8;
   font-weight: 400;
 }
 
 .metricValue {
+  font-family: inherit;
   font-weight: 600;
   color: #1e293b;
   font-size: 0.875rem;
@@ -293,18 +325,19 @@
 }
 
 .sentimentPos {
-  background: #22c55e;
+  background: #16a34a;
 }
 
 .sentimentNeu {
-  background: #f59e0b;
+  background: #d97706;
 }
 
 .sentimentNeg {
-  background: #ef4444;
+  background: #dc2626;
 }
 
 .awaitingAnalysis {
+  font-family: inherit;
   font-size: 0.75rem;
   color: #94a3b8;
   font-style: italic;
@@ -322,6 +355,7 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
+  font-family: inherit;
   font-size: 0.6875rem;
   font-weight: 500;
   white-space: nowrap;
@@ -348,15 +382,15 @@
 }
 
 .posText {
-  color: #4ade80;
+  color: #16a34a;
 }
 
 .neuText {
-  color: #fbbf24;
+  color: #d97706;
 }
 
 .negText {
-  color: #f87171;
+  color: #dc2626;
 }
 
 .sepDot {
@@ -380,6 +414,7 @@
 }
 
 .paginationInfo {
+  font-family: inherit;
   font-size: 0.8125rem;
   color: #64748b;
 }

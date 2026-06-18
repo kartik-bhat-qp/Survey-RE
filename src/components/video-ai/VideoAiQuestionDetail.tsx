@@ -21,6 +21,10 @@ import {
   saveVideoAiReturnState,
   videoAiListHref,
 } from './videoAiNavigation';
+import {
+  SENTIMENT_BADGE_COLORS,
+  SENTIMENT_CHART_COLORS,
+} from '@/data/sentiment-colors';
 import styles from './VideoAiQuestionDetail.module.css';
 
 const WuInput = dynamic(
@@ -64,9 +68,21 @@ const SENTIMENT_CONFIG: Record<
   SentimentValue,
   { barColor: string; badgeBg: string; badgeText: string }
 > = {
-  Positive: { barColor: '#5DCAA5', badgeBg: '#E1F5EE', badgeText: '#15803d' },
-  Neutral:  { barColor: '#FAC775', badgeBg: '#FAEEDA', badgeText: '#92400e' },
-  Negative: { barColor: '#F09595', badgeBg: '#FCEBEB', badgeText: '#991b1b' },
+  Positive: {
+    barColor: SENTIMENT_CHART_COLORS.Positive,
+    badgeBg: SENTIMENT_BADGE_COLORS.Positive.bg,
+    badgeText: SENTIMENT_BADGE_COLORS.Positive.text,
+  },
+  Neutral: {
+    barColor: SENTIMENT_CHART_COLORS.Neutral,
+    badgeBg: SENTIMENT_BADGE_COLORS.Neutral.bg,
+    badgeText: SENTIMENT_BADGE_COLORS.Neutral.text,
+  },
+  Negative: {
+    barColor: SENTIMENT_CHART_COLORS.Negative,
+    badgeBg: SENTIMENT_BADGE_COLORS.Negative.bg,
+    badgeText: SENTIMENT_BADGE_COLORS.Negative.text,
+  },
 };
 
 // ── Pie chart helpers ─────────────────────────────────────────────────────────
@@ -734,12 +750,7 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
               {reels.map((clip) => {
                 const videoUrl = RESPONSE_VIDEO_URLS[clip.responseId]
                   ?? 'https://assets.mixkit.co/videos/41290/41290-720.mp4';
-                const sentimentColors: Record<string, { bg: string; text: string }> = {
-                  Positive: { bg: '#E1F5EE', text: '#15803d' },
-                  Neutral:  { bg: '#FAEEDA', text: '#92400e' },
-                  Negative: { bg: '#FCEBEB', text: '#991b1b' },
-                };
-                const sc = sentimentColors[clip.sentiment];
+                const sc = SENTIMENT_BADGE_COLORS[clip.sentiment];
                 return (
                   <div key={`${clip.responseId}-${clip.clipNumber}`} className={styles.reelCard}>
                     {/* Thumbnail */}

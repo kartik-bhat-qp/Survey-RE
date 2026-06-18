@@ -131,6 +131,7 @@ export const AVAILABLE_LANGUAGES = [
   { code: 'de', label: 'German',     native: 'Deutsch'   },
   { code: 'pt', label: 'Portuguese', native: 'Português' },
   { code: 'zh', label: 'Chinese',    native: '中文'       },
+  { code: 'ja', label: 'Japanese',   native: '日本語'     },
 ];
 
 export const TRANSLATIONS: Record<string, TranscriptSegment[]> = {

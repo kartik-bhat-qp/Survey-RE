@@ -173,7 +173,7 @@ export function getVideoAiSummaryMetrics(): VideoAiSummaryMetrics {
 }
 
 export const VIDEO_AI_SURVEY_OPTIONS: FilterOption[] = [
-  { value: 'all', label: 'All surveys' },
+  { value: 'all', label: 'All Questions' },
   ...Array.from(new Set(VIDEO_AI_QUESTIONS.map((q) => q.survey))).map((s) => ({
     value: s,
     label: s,
@@ -187,7 +187,7 @@ export const VIDEO_AI_STATUS_OPTIONS: FilterOption[] = [
 ];
 
 export const VIDEO_AI_SENTIMENT_OPTIONS: FilterOption[] = [
-  { value: 'all', label: 'All sentiments' },
+  { value: 'all', label: 'All Sentiments' },
   { value: 'mostly-positive', label: 'Mostly positive' },
   { value: 'mostly-negative', label: 'Mostly negative' },
   { value: 'mixed', label: 'Mixed' },

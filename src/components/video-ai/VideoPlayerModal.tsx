@@ -5,13 +5,19 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import type { VideoAiResponse, SentimentValue } from '@/data/mock-video-ai-detail';
 import {
+  getNativeLangCode,
+  getTranslatedSummary,
+  getTranslatedTranscript,
+  getLanguageLabel,
+} from '@/data/mock-video-ai-translations';
+import {
   AVAILABLE_LANGUAGES,
-  TRANSLATIONS,
   RESPONSE_VIDEO_URLS,
   RESPONSE_VOICE_IDX,
   type TranscriptSegment,
   type ReelClip,
 } from '@/data/mock-video-ai-reel';
+import { SENTIMENT_BADGE_COLORS } from '@/data/sentiment-colors';
 import styles from './VideoPlayerModal.module.css';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -58,13 +64,6 @@ function deriveWordTiming(segs: TranscriptSegment[]) {
   return result;
 }
 
-
-const SENTIMENT_CFG: Record<SentimentValue, { bg: string; text: string }> = {
-  Positive: { bg: '#E1F5EE', text: '#15803d' },
-  Neutral:  { bg: '#FAEEDA', text: '#92400e' },
-  Negative: { bg: '#FCEBEB', text: '#991b1b' },
-};
-
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
@@ -78,7 +77,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 }
 
 function SentimentBadge({ sentiment }: { sentiment: SentimentValue }) {
-  const cfg = SENTIMENT_CFG[sentiment];
+  const cfg = SENTIMENT_BADGE_COLORS[sentiment];
   return (
     <span className={styles.sentimentBadge} style={{ background: cfg.bg, color: cfg.text }}>
       {sentiment}
@@ -209,7 +208,10 @@ export function VideoPlayerModal({
   const [isPlaying, setIsPlaying] = useState(false);
   const [ccEnabled, setCcEnabled] = useState(true);
   const [sidebarTab, setSidebarTab] = useState<'summary' | 'transcript'>('summary');
-  const [activeLang, setActiveLang] = useState('en');
+  const [activeLang, setActiveLang] = useState(() => {
+    const initial = responses.find((r) => r.id === initialResponseId) ?? responses[0];
+    return initial ? getNativeLangCode(initial) : 'en';
+  });
   const [showOriginal, setShowOriginal] = useState(false);
   const [reelPanelOpen, setReelPanelOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(true);
@@ -228,34 +230,30 @@ export function VideoPlayerModal({
   const responseIdx      = responses.findIndex((r) => r.id === currentId);
   const currentResponse  = responses[responseIdx] ?? responses[0];
   const effectiveSentiment = (sentimentOverrides[currentId] ?? currentResponse?.sentiment) as SentimentValue;
-  const displaySummary   = textOverrides[currentId]?.summary ?? currentResponse?.summary ?? '';
-  const displayTranscript = textOverrides[currentId]?.transcript ?? currentResponse?.transcript ?? '';
+  const nativeLang = currentResponse ? getNativeLangCode(currentResponse) : 'en';
+  const textOverride = textOverrides[currentId];
+  const originalSummary = textOverride?.summary ?? currentResponse?.summary ?? '';
+  const originalTranscript = textOverride?.transcript ?? currentResponse?.transcript ?? '';
+  const displaySummary = currentResponse
+    ? getTranslatedSummary(currentResponse, activeLang, textOverride)
+    : '';
+  const displayTranscript = currentResponse
+    ? getTranslatedTranscript(currentResponse, activeLang, textOverride)
+    : '';
   const totalDuration    = currentResponse?.durationSeconds ?? 18;
 
-  const segments   = useMemo(() => segmentTranscript(displayTranscript, totalDuration), [displayTranscript, totalDuration]);
+  const segments = useMemo(
+    () => segmentTranscript(displayTranscript, totalDuration),
+    [displayTranscript, totalDuration],
+  );
+  const originalSegments = useMemo(
+    () => segmentTranscript(originalTranscript, totalDuration),
+    [originalTranscript, totalDuration],
+  );
   const wordTiming = useMemo(() => deriveWordTiming(segments), [segments]);
 
-  const translatedSegs: TranscriptSegment[] = useMemo(() => {
-    if (activeLang === 'en') return segments;
-    const tlTexts = TRANSLATIONS[activeLang] ?? [];
-    return segments.map((seg, i) => ({
-      ...seg,
-      text: tlTexts[i % Math.max(tlTexts.length, 1)]?.text ?? seg.text,
-    }));
-  }, [activeLang, segments]);
-
-  // Keep a ref for stable closure access inside speech callbacks
-  const translatedSegsRef = useRef(translatedSegs);
-  useEffect(() => { translatedSegsRef.current = translatedSegs; }, [translatedSegs]);
-
-  const activeSegIdx   = segments.findIndex((s) => currentTime >= s.start && currentTime < s.end);
-  const captionPrimary = activeLang !== 'en'
-    ? (translatedSegs[activeSegIdx]?.text ?? '')
-    : (segments[activeSegIdx]?.text ?? '');
-  const captionSecondary = activeLang !== 'en' && showOriginal
-    ? (segments[activeSegIdx]?.text ?? '')
-    : undefined;
-  void captionPrimary; void captionSecondary; // used below
+  const segmentsRef = useRef(segments);
+  useEffect(() => { segmentsRef.current = segments; }, [segments]);
 
   const progressPct = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
 
@@ -365,7 +363,7 @@ export function VideoPlayerModal({
       (RESPONSE_VOICE_IDX[currentId] ?? responseIdx) %
       Math.max(englishVoicesRef.current.length, 1);
 
-    startSpeechFrom(fromTime, translatedSegsRef.current, voiceIdx, () => {
+    startSpeechFrom(fromTime, segmentsRef.current, voiceIdx, () => {
       // Timer starts in sync with speech onset
       intervalRef.current = setInterval(() => {
         setCurrentTime((prev) => {
@@ -461,8 +459,20 @@ export function VideoPlayerModal({
     setCurrentWordGlobalIdx(-1);
     setReelPanelOpen(false);
     setClipTheme('');
+    setShowOriginal(false);
     if (intervalRef.current) clearInterval(intervalRef.current);
-  }, [currentId]);
+    const response = responses.find((r) => r.id === currentId);
+    if (response) {
+      setActiveLang(getNativeLangCode(response));
+    }
+  }, [currentId, responses]);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    beginPlayingFrom(currentTime);
+    // Re-sync captions and speech when display language changes during playback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeLang]);
 
   if (!currentResponse || !wick) return null;
 
@@ -724,7 +734,7 @@ export function VideoPlayerModal({
                         >
                           {AVAILABLE_LANGUAGES.map((lang) => (
                             <option key={lang.code} value={lang.code}>
-                              {lang.code.toUpperCase()}
+                              {lang.native}
                             </option>
                           ))}
                         </select>
@@ -753,33 +763,40 @@ export function VideoPlayerModal({
 
                 <div className={styles.sidebarContent}>
                   {sidebarTab === 'summary' && (
-                    <>
-                      {activeLang !== 'en' && (
-                        <div className={styles.translationNotice}>
-                          <span className="wm-translate" aria-hidden style={{ fontSize: '0.8125rem' }} />
-                          Showing summary in original language
-                        </div>
-                      )}
-                      <p className={styles.summaryText}>{displaySummary}</p>
-                    </>
-                  )}
-                  {sidebarTab === 'transcript' && (
-                    <div className={styles.transcriptPanel}>
-                      {activeLang !== 'en' && (
+                    <div className={styles.summaryPanel}>
+                      {activeLang !== nativeLang && (
                         <label className={styles.showOrigInline}>
                           <input
                             type="checkbox"
                             checked={showOriginal}
                             onChange={(e) => setShowOriginal(e.target.checked)}
                           />
-                          Show original
+                          Show original ({getLanguageLabel(nativeLang)})
+                        </label>
+                      )}
+                      <p className={styles.summaryText}>{displaySummary}</p>
+                      {activeLang !== nativeLang && showOriginal && (
+                        <p className={styles.summaryTextSecondary}>{originalSummary}</p>
+                      )}
+                    </div>
+                  )}
+                  {sidebarTab === 'transcript' && (
+                    <div className={styles.transcriptPanel}>
+                      {activeLang !== nativeLang && (
+                        <label className={styles.showOrigInline}>
+                          <input
+                            type="checkbox"
+                            checked={showOriginal}
+                            onChange={(e) => setShowOriginal(e.target.checked)}
+                          />
+                          Show original ({getLanguageLabel(nativeLang)})
                         </label>
                       )}
 
                       <div className={styles.transcriptScrollArea}>
                         <TranscriptPanel
-                          segments={translatedSegs}
-                          secondarySegments={activeLang !== 'en' && showOriginal ? segments : undefined}
+                          segments={segments}
+                          secondarySegments={activeLang !== nativeLang && showOriginal ? originalSegments : undefined}
                           currentTime={currentTime}
                           onSeek={(t) => { seekTo(t); }}
                         />
