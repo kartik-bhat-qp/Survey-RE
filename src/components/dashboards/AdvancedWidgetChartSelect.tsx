@@ -8,6 +8,7 @@ import { AdvancedWidgetPreview } from '@/components/dashboards/AdvancedWidgetPre
 import {
   ADVANCED_WIDGET_TYPES,
   DEFAULT_ADVANCED_WIDGET_TYPE_ID,
+  LICENSE_DIAMOND_TOOLTIP,
   type AdvancedWidgetType,
   type AdvancedWidgetTypeId,
 } from '@/data/mock-advanced-widget-types';
@@ -25,6 +26,11 @@ const WuInput = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
   { ssr: false }
 );
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
+
 interface AdvancedWidgetChartSelectProps {
   widgetName: string;
   selectedTypeId: AdvancedWidgetTypeId;
@@ -94,6 +100,23 @@ export function AdvancedWidgetChartSelect({
                 onMouseEnter={() => setHoveredTypeId(chart.id)}
               >
                 {chart.showBetaBadge && <AdvancedWidgetBetaBadge />}
+                {chart.showDiamond && (
+                  <span
+                    className={styles.diamondWrap}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    role="presentation"
+                  >
+                    <WuTooltip content={LICENSE_DIAMOND_TOOLTIP} position="bottom">
+                      <span
+                        className={styles.diamondIcon}
+                        aria-label={LICENSE_DIAMOND_TOOLTIP}
+                      >
+                        <span className="wm-diamond" />
+                      </span>
+                    </WuTooltip>
+                  </span>
+                )}
                 <Image
                   src={chart.imageSrc}
                   alt={chart.name}

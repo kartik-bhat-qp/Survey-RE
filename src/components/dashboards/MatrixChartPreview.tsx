@@ -23,6 +23,9 @@ export function MatrixChartPreview({ widgetName, chartTypeId }: MatrixChartPrevi
     <article className={styles.preview}>
       <header className={styles.header}>
         <div className={styles.title}>{headerLabel}</div>
+        <div className={styles.headerActions}>
+          <span className="wm-diamond" aria-hidden />
+        </div>
       </header>
       <div className={styles.divider} />
       <div className={styles.body}>

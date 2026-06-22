@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { AdvancedWidgetBetaBadge } from '@/components/dashboards/AdvancedWidgetBetaBadge';
 import { SingleSelectChartPreview } from '@/components/dashboards/SingleSelectChartPreview';
+import { LICENSE_DIAMOND_TOOLTIP } from '@/data/mock-advanced-widget-types';
 import type { SurveyQuestion } from '@/data/mock-survey-questions';
 import {
   SINGLE_SELECT_CHART_TYPES,
@@ -25,6 +26,11 @@ const WuInput = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
   { ssr: false }
 );
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
+
 interface QuestionBasedChartSelectProps {
   question: SurveyQuestion;
   /** Matrix sub-row label when a logical row was selected in the picker. */
@@ -94,6 +100,23 @@ export function QuestionBasedChartSelect({
                 onMouseEnter={() => setHoveredTypeId(chart.id)}
               >
                 {chart.showBetaBadge ? <AdvancedWidgetBetaBadge /> : null}
+                {chart.showDiamond ? (
+                  <span
+                    className={chartStyles.diamondWrap}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    role="presentation"
+                  >
+                    <WuTooltip content={LICENSE_DIAMOND_TOOLTIP} position="bottom">
+                      <span
+                        className={chartStyles.diamondIcon}
+                        aria-label={LICENSE_DIAMOND_TOOLTIP}
+                      >
+                        <span className="wm-diamond" />
+                      </span>
+                    </WuTooltip>
+                  </span>
+                ) : null}
                 <Image
                   src={chart.imageSrc}
                   alt={chart.name}

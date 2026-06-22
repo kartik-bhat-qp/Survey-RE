@@ -64,11 +64,27 @@
   width: 100%;
 }
 
-.card:hover,
-.card:focus-visible,
-.card:active {
+.card:hover:not(.cardDisabled),
+.card:focus-visible:not(.cardDisabled),
+.card:active:not(.cardDisabled) {
   border-color: #1b87e6;
   outline: none;
+}
+
+.cardDisabled {
+  cursor: not-allowed;
+}
+
+.cardDisabled .cardIcon,
+.cardDisabled .cardTitleText,
+.cardDisabled .cardDescription {
+  opacity: 0.55;
+}
+
+.cardDisabled .diamondWrap {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
 }
 
 .cardIcon {
@@ -104,6 +120,19 @@
 
 .cardTitleText {
   color: inherit;
+}
+
+.diamondWrap {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.diamondIcon {
+  color: #1b87e6;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .cardDescription {

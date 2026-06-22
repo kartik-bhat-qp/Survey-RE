@@ -1,0 +1,18 @@
+.tabBar {
+  align-items: center;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.5rem 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .tabBar {
+    overflow-x: visible;
+    padding: 0.5rem 1rem;
+  }
+}

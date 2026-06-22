@@ -1,3 +1,8 @@
+export const DATA_SLICER_LICENSE_LIMIT = 5;
+
+export const DATA_SLICER_LIMIT_TOOLTIP =
+  'you can only create 5 data slicers with your current license';
+
 export interface DataSlicer {
   id: number;
   name: string;

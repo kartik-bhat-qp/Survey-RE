@@ -1,0 +1,37 @@
+.tableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableWrap :global(table) {
+  min-width: 32rem;
+}
+
+.tableWrap :global(tbody tr:hover) .rowActions,
+.tableWrap :global(tbody tr:focus-within) .rowActions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0;
+  width: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.rowActions :global(button) {
+  min-width: 0;
+  padding-inline: 0.25rem;
+}
+
+@media (max-width: 767px) {
+  .tableWrap :global(tbody tr) .rowActions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

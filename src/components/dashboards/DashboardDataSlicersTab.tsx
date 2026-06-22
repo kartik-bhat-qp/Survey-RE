@@ -5,7 +5,12 @@ import dynamic from 'next/dynamic';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { MOCK_DATA_SLICERS, type DataSlicer } from '@/data/mock-data-slicers';
+import {
+  DATA_SLICER_LICENSE_LIMIT,
+  DATA_SLICER_LIMIT_TOOLTIP,
+  MOCK_DATA_SLICERS,
+  type DataSlicer,
+} from '@/data/mock-data-slicers';
 import styles from './DashboardDataSlicersTab.module.css';
 
 const WuTable = dynamic(
@@ -24,11 +29,28 @@ const WuCheckbox = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCheckbox })),
   { ssr: false }
 );
-function CreateDataSlicerButton() {
-  return (
-    <WuButton Icon={<span className="wm-add" />}>
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
+
+function CreateDataSlicerButton({ disabled }: { disabled: boolean }) {
+  const button = (
+    <WuButton Icon={<span className="wm-add" />} disabled={disabled}>
       Create data slicer
     </WuButton>
+  );
+
+  if (!disabled) {
+    return button;
+  }
+
+  return (
+    <WuTooltip content={DATA_SLICER_LIMIT_TOOLTIP} position="bottom">
+      <span className={styles.createBtnWrap} aria-label={DATA_SLICER_LIMIT_TOOLTIP}>
+        {button}
+      </span>
+    </WuTooltip>
   );
 }
 
@@ -37,6 +59,8 @@ export function DashboardDataSlicersTab() {
   const [slicers, setSlicers] = useState<DataSlicer[]>(MOCK_DATA_SLICERS);
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  const atSlicerLimit = slicers.length >= DATA_SLICER_LICENSE_LIMIT;
 
   const filteredSlicers = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -140,7 +164,7 @@ export function DashboardDataSlicersTab() {
       </div>
 
       <div className={styles.actionsRow}>
-        <CreateDataSlicerButton />
+        <CreateDataSlicerButton disabled={atSlicerLimit} />
         <button
           type="button"
           className={styles.manageLink}
@@ -169,7 +193,7 @@ export function DashboardDataSlicersTab() {
                   ? 'Try adjusting your search'
                   : 'Create a data slicer to filter dashboard widgets'
               }
-              action={!search.trim() ? <CreateDataSlicerButton /> : undefined}
+              action={!search.trim() ? <CreateDataSlicerButton disabled={atSlicerLimit} /> : undefined}
             />
           }
         />

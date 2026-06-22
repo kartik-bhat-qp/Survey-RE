@@ -14,6 +14,7 @@ import { SelectWidgetModal } from '@/components/dashboards/SelectWidgetModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { getDashboardById } from '@/data/get-dashboard-by-id';
+import { useBiProductBasePath, withBiProductBasePath } from '@/hooks/useBiProductBasePath';
 import {
   resolveDashboardSurvey,
   type SurveyListItem,
@@ -27,6 +28,8 @@ const WuButton = dynamic(
 
 function DashboardDetailContent({ numericId }: { numericId: number }) {
   const router = useRouter();
+  const basePath = useBiProductBasePath();
+  const dashboardsPath = withBiProductBasePath(basePath, '/dashboards');
   const { showToast } = useWuShowToast();
   const dashboard = getDashboardById(numericId);
   const [name, setName] = useState(dashboard?.name ?? 'Untitled');
@@ -36,6 +39,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
   const [questionBasedPresetSurvey, setQuestionBasedPresetSurvey] =
     useState<SurveyListItem | null>(null);
   const [advancedWidgetOpen, setAdvancedWidgetOpen] = useState(false);
+  const [hasAddedWidget, setHasAddedWidget] = useState(false);
   if (!dashboard) {
     return (
       <PageContainer>
@@ -44,7 +48,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
           title="Dashboard cannot be loaded."
           description="This dashboard may have been deleted or you do not have access."
           action={
-            <Link href="/dashboards">
+            <Link href={dashboardsPath}>
               <WuButton>Back to dashboards</WuButton>
             </Link>
           }
@@ -54,6 +58,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
   }
 
   const isAiDashboard = dashboard.type === 'ai';
+  const questionBasedDisabled = isAiDashboard || hasAddedWidget;
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -76,7 +81,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
             message: `Dashboard '${name}' deleted successfully`,
             variant: 'success',
           });
-          router.push('/dashboards');
+          router.push(dashboardsPath);
         }}
       />
 
@@ -84,6 +89,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         open={addWidgetOpen}
         onOpenChange={setAddWidgetOpen}
         surveyName={dashboard.surveyName ?? 'QuestionPro - RE'}
+        questionBasedDisabled={questionBasedDisabled}
         onSelectQuestionBased={() => {
           setQuestionBasedPresetSurvey(null);
           setQuestionBasedWidgetOpen(true);
@@ -100,6 +106,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
       <AdvancedWidgetModal
         open={advancedWidgetOpen}
         onOpenChange={setAdvancedWidgetOpen}
+        onWidgetAdded={() => setHasAddedWidget(true)}
       />
 
       <QuestionBasedWidgetModal
@@ -109,6 +116,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
           if (!open) setQuestionBasedPresetSurvey(null);
         }}
         presetSurvey={questionBasedPresetSurvey}
+        onAddWidget={() => setHasAddedWidget(true)}
       />
 
       {isAiDashboard ? (

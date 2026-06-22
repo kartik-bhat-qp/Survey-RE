@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { getBiProductBasePath, withBiProductBasePath } from '@/hooks/useBiProductBasePath';
 
 const WuSidebarContent = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSidebarContent })),
@@ -49,30 +50,34 @@ const BOTTOM_NAV: NavItem[] = [
   { label: 'Settings', href: '/settings', icon: <span className="wm-settings" /> },
 ];
 
-function NavLinkItem({ item }: { item: NavItem }) {
+function NavLinkItem({ item, basePath }: { item: NavItem; basePath: string }) {
   const pathname = usePathname();
+  const href = withBiProductBasePath(basePath, item.href);
   const isActive =
-    pathname === item.href || pathname.startsWith(`${item.href}/`);
+    pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <WuSidebarItem key={item.href} Icon={item.icon} isActive={isActive}>
-      <Link href={item.href}>{item.label}</Link>
+      <Link href={href}>{item.label}</Link>
     </WuSidebarItem>
   );
 }
 
 export function SideNav() {
+  const pathname = usePathname();
+  const basePath = getBiProductBasePath(pathname);
+
   return (
     <>
       <WuSidebarContent>
         <WuSidebarGroup label="Analytics">
           {ANALYTICS_NAV.map((item) => (
-            <NavLinkItem key={item.href} item={item} />
+            <NavLinkItem key={item.href} item={item} basePath={basePath} />
           ))}
         </WuSidebarGroup>
         <WuSidebarGroup label="Data">
           {DATA_NAV.map((item) => (
-            <NavLinkItem key={item.href} item={item} />
+            <NavLinkItem key={item.href} item={item} basePath={basePath} />
           ))}
         </WuSidebarGroup>
       </WuSidebarContent>
@@ -80,7 +85,7 @@ export function SideNav() {
       <WuSidebarFooter>
         <WuSidebarMenu>
           {BOTTOM_NAV.map((item) => (
-            <NavLinkItem key={item.href} item={item} />
+            <NavLinkItem key={item.href} item={item} basePath={basePath} />
           ))}
         </WuSidebarMenu>
       </WuSidebarFooter>
