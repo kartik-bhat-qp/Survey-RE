@@ -7,6 +7,7 @@ export interface VideoAiResponse {
   duration: string;
   durationSeconds: number;
   viewed: boolean;
+  language: string;
   summary: string;
   transcript: string;
 }
@@ -34,6 +35,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:11',
     durationSeconds: 11,
     viewed: true,
+    language: 'en',
     summary:
       'The speaker expressed strong satisfaction with Google Maps, highlighting real-time traffic rerouting as a feature that has consistently improved their daily commute.',
     transcript:
@@ -46,6 +48,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:07',
     durationSeconds: 7,
     viewed: true,
+    language: 'en',
     summary:
       'Respondent highlighted daily reliance on Google Maps, with particular appreciation for live traffic updates that save significant commute time every morning.',
     transcript:
@@ -58,6 +61,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:22',
     durationSeconds: 22,
     viewed: false,
+    language: 'en',
     summary:
       'Balanced feedback noting solid core navigation but frustration with inaccurate business hours. The respondent cited a specific negative experience of driving to a closed restaurant.',
     transcript:
@@ -70,6 +74,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:34',
     durationSeconds: 34,
     viewed: false,
+    language: 'en',
     summary:
       'Strong enthusiasm for Google Maps with specific praise for Street View for pre-visit neighborhood exploration and the integrated review and photo system for restaurant discovery.',
     transcript:
@@ -82,6 +87,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:15',
     durationSeconds: 15,
     viewed: true,
+    language: 'en',
     summary:
       'Critical response noting a perceived decline in quality, focused on sponsored results cluttering search and suspicion that routes are deliberately guided past commercial areas.',
     transcript:
@@ -94,6 +100,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:19',
     durationSeconds: 19,
     viewed: false,
+    language: 'en',
     summary:
       'Positive experience centered on walking navigation and urban exploration. The respondent highlighted augmented reality walking directions as a standout innovative feature.',
     transcript:
@@ -106,6 +113,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:41',
     durationSeconds: 41,
     viewed: true,
+    language: 'en',
     summary:
       'Mixed assessment comparing Google Maps favorably for place discovery and reviews while noting Waze as superior for real-time driving hazards. The respondent uses both apps for different purposes.',
     transcript:
@@ -118,6 +126,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:09',
     durationSeconds: 9,
     viewed: false,
+    language: 'en',
     summary:
       'Brief but critical response focused on outdated offline maps causing missed turns and navigation failures during a road trip in low-connectivity areas.',
     transcript:
@@ -130,6 +139,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '1:02',
     durationSeconds: 62,
     viewed: true,
+    language: 'en',
     summary:
       'Detailed positive analysis from a product perspective praising seamless feature integration, personalization capabilities, the timeline feature, and the Local Guides crowdsourcing model.',
     transcript:
@@ -142,6 +152,7 @@ const DETAIL_RESPONSES: VideoAiResponse[] = [
     duration: '0:28',
     durationSeconds: 28,
     viewed: false,
+    language: 'en',
     summary:
       'Enthusiastic response highlighting real-time crowd data and indoor navigation as underrated game-changing features for avoiding packed venues and navigating airports.',
     transcript:
