@@ -18,7 +18,7 @@ export interface Workspace {
 export const MOCK_MY_WORKSPACES: Workspace[] = [
   {
     id: 1,
-    name: 'Jayaprakash Pattanaik',
+    name: 'Kartik Bhat',
     updatedAt: '2026-01-27',
     scope: 'mine',
     stats: { dashboards: 213, surveyStacks: 13, biVariables: 16, reports: 26 },
@@ -42,7 +42,7 @@ export const MOCK_MY_WORKSPACES: Workspace[] = [
 export const MOCK_SHARED_WORKSPACES: Workspace[] = [
   {
     id: 3,
-    name: 'Jayaprakash Pattanaik',
+    name: 'Kartik Bhat',
     updatedAt: '2026-01-27',
     scope: 'shared',
     stats: { dashboards: 213, surveyStacks: 13, biVariables: 16, reports: 26 },

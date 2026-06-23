@@ -136,7 +136,7 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
   ];
 
   if (showVideoAiAnalysis) {
-    return <VideoAiAnalysis surveyId={detail.survey.id} />;
+    return <VideoAiAnalysis />;
   }
 
   if (!showDashboardContent) {

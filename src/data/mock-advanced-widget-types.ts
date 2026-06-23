@@ -18,7 +18,11 @@ export interface AdvancedWidgetType {
   name: string;
   imageSrc: string;
   showBetaBadge?: boolean;
+  showDiamond?: boolean;
 }
+
+export const LICENSE_DIAMOND_TOOLTIP =
+  'Not available with your current license. Will only show a maximum of 100 responses.';
 
 const IMG = PUBLIC_IMAGES.advancedWidgets;
 
@@ -47,11 +51,13 @@ export const ADVANCED_WIDGET_TYPES: AdvancedWidgetType[] = [
     id: 'comparative-bar',
     name: 'Comparative bar',
     imageSrc: IMG.comparativeBar,
+    showDiamond: true,
   },
   {
     id: 'heat-map',
     name: 'Heat map',
     imageSrc: IMG.heatMap,
+    showDiamond: true,
   },
   {
     id: 'cross-tab',
@@ -62,16 +68,19 @@ export const ADVANCED_WIDGET_TYPES: AdvancedWidgetType[] = [
     id: 'segment-trend',
     name: 'Segment trend',
     imageSrc: IMG.segmentTrendLine,
+    showDiamond: true,
   },
   {
     id: 'segment-bar',
     name: 'Segment bar',
     imageSrc: IMG.barChart,
+    showDiamond: true,
   },
   {
     id: 'funnel-chart',
     name: 'Funnel chart',
     imageSrc: IMG.funnel,
+    showDiamond: true,
   },
   {
     id: 'response-viewer',

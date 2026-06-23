@@ -4,12 +4,17 @@ import { useCallback, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { LICENSE_DIAMOND_TOOLTIP } from '@/data/mock-advanced-widget-types';
 import { PUBLIC_IMAGES } from '@/lib/public-images';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import styles from './SelectWidgetModal.module.css';
 
 const WuHelpButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuHelpButton })),
+  { ssr: false }
+);
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
 
@@ -19,6 +24,8 @@ interface SelectWidgetModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   surveyName?: string;
+  /** When true, question-based path is disabled (e.g. dashboard already has widgets). */
+  questionBasedDisabled?: boolean;
   onSelectType?: (type: WidgetPickerType) => void;
   onSelectQuestionBased?: () => void;
   /** Skips survey picker and opens the question list for the dashboard survey. */
@@ -26,12 +33,16 @@ interface SelectWidgetModalProps {
   onSelectAdvanced?: () => void;
 }
 
+const QUESTION_BASED_DISABLED_MESSAGE =
+  'Question based widgets can only be added when the dashboard has no widgets yet.';
+
 type HoverCard = 'question-based' | 'advanced' | undefined;
 
 export function SelectWidgetModal({
   open,
   onOpenChange,
   surveyName = 'QuestionPro - RE',
+  questionBasedDisabled = false,
   onSelectType,
   onSelectQuestionBased,
   onContinueWithSurvey,
@@ -51,6 +62,10 @@ export function SelectWidgetModal({
   );
 
   const handleSelect = (type: WidgetPickerType): void => {
+    if (type === 'question-based' && questionBasedDisabled) {
+      showToast({ message: QUESTION_BASED_DISABLED_MESSAGE, variant: 'error' });
+      return;
+    }
     onSelectType?.(type);
     if (type === 'question-based') {
       handleOpenChange(false);
@@ -87,18 +102,27 @@ export function SelectWidgetModal({
       <WuModalContent className={styles.content}>
         <div className={styles.cardGrid}>
           <div
-            role="button"
-            tabIndex={0}
-            className={styles.card}
-            onClick={() => handleSelect('question-based')}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleSelect('question-based');
-              }
-            }}
-            onMouseEnter={() => setHovered('question-based')}
-            onMouseLeave={() => setHovered(undefined)}
+            role={questionBasedDisabled ? undefined : 'button'}
+            tabIndex={questionBasedDisabled ? -1 : 0}
+            aria-disabled={questionBasedDisabled}
+            className={`${styles.card} ${questionBasedDisabled ? styles.cardDisabled : ''}`}
+            onClick={
+              questionBasedDisabled ? undefined : () => handleSelect('question-based')
+            }
+            onKeyDown={
+              questionBasedDisabled
+                ? undefined
+                : (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelect('question-based');
+                    }
+                  }
+            }
+            onMouseEnter={
+              questionBasedDisabled ? undefined : () => setHovered('question-based')
+            }
+            onMouseLeave={questionBasedDisabled ? undefined : () => setHovered(undefined)}
           >
             <Image
               src={
@@ -114,6 +138,18 @@ export function SelectWidgetModal({
             <div className={styles.cardText}>
               <div className={styles.cardTitle}>
                 <span className={styles.cardTitleText}>Question based</span>
+                <span
+                  className={styles.diamondWrap}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  role="presentation"
+                >
+                  <WuTooltip content={LICENSE_DIAMOND_TOOLTIP} position="bottom">
+                    <span className={styles.diamondIcon} aria-label={LICENSE_DIAMOND_TOOLTIP}>
+                      <span className="wm-diamond" />
+                    </span>
+                  </WuTooltip>
+                </span>
               </div>
               <p className={styles.cardDescription}>Widgets based on survey question</p>
             </div>

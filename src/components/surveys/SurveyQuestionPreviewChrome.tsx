@@ -5,9 +5,15 @@ import {
   SurveyPreviewToolbarContext,
   type SurveyPreviewToolbarToggles,
 } from '@/components/surveys/SurveyPreviewToolbarContext';
+import {
+  SurveyPreviewDeviceContext,
+  type SurveyPreviewDevice,
+} from '@/components/surveys/SurveyPreviewDeviceContext';
+import {
+  SurveyPreviewScrollProvider,
+  useSurveyPreviewScroll,
+} from '@/components/surveys/SurveyPreviewScrollContext';
 import styles from './SurveyQuestionPreviewChrome.module.css';
-
-type PreviewDevice = 'desktop' | 'tablet' | 'mobile';
 
 interface SurveyQuestionPreviewChromeProps {
   children: React.ReactNode;
@@ -28,11 +34,24 @@ const DEFAULT_TOOLBAR_TOGGLES: SurveyPreviewToolbarToggles = {
   pageBreaks: true,
 };
 
+function MobilePhoneScreen({ children }: { children: React.ReactNode }) {
+  const previewScroll = useSurveyPreviewScroll();
+
+  return (
+    <div
+      ref={previewScroll?.setScrollContainer}
+      className={styles.phoneScreen}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function SurveyQuestionPreviewChrome({
   children,
   onClose,
 }: SurveyQuestionPreviewChromeProps) {
-  const [device, setDevice] = useState<PreviewDevice>('desktop');
+  const [device, setDevice] = useState<SurveyPreviewDevice>('desktop');
   const [toggles, setToggles] = useState<SurveyPreviewToolbarToggles>(DEFAULT_TOOLBAR_TOGGLES);
 
   return (
@@ -111,17 +130,47 @@ export function SurveyQuestionPreviewChrome({
       </div>
 
       <div
-        className={`${styles.deviceFrame} ${
+        className={`${styles.deviceViewport} ${
           device === 'tablet'
-            ? styles.deviceFrameTablet
+            ? styles.deviceViewportTablet
             : device === 'mobile'
-              ? styles.deviceFrameMobile
+              ? styles.deviceViewportMobile
               : ''
         }`}
       >
-        <SurveyPreviewToolbarContext.Provider value={toggles}>
-          {children}
-        </SurveyPreviewToolbarContext.Provider>
+        {device === 'mobile' ? (
+          <SurveyPreviewScrollProvider>
+            <div className={styles.phoneShell}>
+              <div className={styles.phoneStatusBar} aria-hidden>
+                <span className={styles.phoneStatusTime}>6:38</span>
+                <span className={styles.phoneStatusIcons}>
+                  <span className={styles.phoneStatusSignal} />
+                  <span>5G</span>
+                  <span className={styles.phoneStatusBattery}>31%</span>
+                </span>
+              </div>
+              <MobilePhoneScreen>
+                <SurveyPreviewDeviceContext.Provider value={device}>
+                  <SurveyPreviewToolbarContext.Provider value={toggles}>
+                    {children}
+                  </SurveyPreviewToolbarContext.Provider>
+                </SurveyPreviewDeviceContext.Provider>
+              </MobilePhoneScreen>
+            </div>
+          </SurveyPreviewScrollProvider>
+        ) : (
+          <div
+            className={`${styles.deviceFrame} ${
+              device === 'tablet' ? styles.deviceFrameTablet : ''
+            }`}
+          >
+            <SurveyPreviewDeviceContext.Provider value={device}>
+              <SurveyPreviewToolbarContext.Provider value={toggles}>
+                {children}
+              </SurveyPreviewToolbarContext.Provider>
+            </SurveyPreviewDeviceContext.Provider>
+          </div>
+        )}
       </div>
     </div>
   );

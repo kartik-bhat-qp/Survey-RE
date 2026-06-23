@@ -1,0 +1,75 @@
+.root {
+  display: block;
+  min-width: 0;
+}
+
+:global(.staticContentCard) {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: visible;
+}
+
+.cardInner {
+  padding: 0.75rem 1rem 0.5rem;
+}
+
+.topBar {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.topSpacer {
+  flex: 1;
+  min-width: 0;
+}
+
+.menuBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.menuBtn:hover {
+  background: #f1f5f9;
+}
+
+.contentWrap {
+  border-bottom: 1px solid #cbd5e1;
+  margin-left: 1.5rem;
+  min-width: 0;
+  padding-bottom: 0.25rem;
+}
+
+.contentWrapPresentation {
+  font-size: 0.9375rem;
+}
+
+.contentWrapSectionHeading {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.contentWrapSectionSubheading {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.footer {
+  align-items: center;
+  background: transparent;
+  border-top: none;
+  display: flex;
+  padding: 0.5rem 1rem;
+}

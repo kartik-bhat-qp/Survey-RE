@@ -19,7 +19,7 @@ export const TEXT_AI_MODELING_GOAL_PLACEHOLDER =
   'Ex. I want to track my restaurant customers\u2019 emotions to identify where I can improve my service.';
 
 export const TEXT_AI_CODEBOOK_OPTIONS: { value: TextAiCodebookSource; label: string }[] = [
-  { value: 'none', label: 'None' },
+  { value: 'none', label: 'Generate with QuestionPro AI' },
   { value: 'template', label: 'Upload from template file' },
   { value: 'report', label: 'Upload from report codebook' },
 ];

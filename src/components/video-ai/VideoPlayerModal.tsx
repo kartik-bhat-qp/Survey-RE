@@ -1,23 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
-import { useWickUILib } from '@/components/ui/useWickUILib';
 import type { VideoAiResponse, SentimentValue } from '@/data/mock-video-ai-detail';
 import {
-  getNativeLangCode,
-  getTranslatedSummary,
-  getTranslatedTranscript,
-  getLanguageLabel,
-} from '@/data/mock-video-ai-translations';
-import {
   AVAILABLE_LANGUAGES,
+  TRANSLATIONS,
   RESPONSE_VIDEO_URLS,
   RESPONSE_VOICE_IDX,
   type TranscriptSegment,
-  type ReelClip,
 } from '@/data/mock-video-ai-reel';
-import { SENTIMENT_BADGE_COLORS } from '@/data/sentiment-colors';
 import styles from './VideoPlayerModal.module.css';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -64,6 +57,13 @@ function deriveWordTiming(segs: TranscriptSegment[]) {
   return result;
 }
 
+
+const SENTIMENT_CFG: Record<SentimentValue, { bg: string; text: string }> = {
+  Positive: { bg: '#E1F5EE', text: '#15803d' },
+  Neutral:  { bg: '#FAEEDA', text: '#92400e' },
+  Negative: { bg: '#FCEBEB', text: '#991b1b' },
+};
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
@@ -77,7 +77,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 }
 
 function SentimentBadge({ sentiment }: { sentiment: SentimentValue }) {
-  const cfg = SENTIMENT_BADGE_COLORS[sentiment];
+  const cfg = SENTIMENT_CFG[sentiment];
   return (
     <span className={styles.sentimentBadge} style={{ background: cfg.bg, color: cfg.text }}>
       {sentiment}
@@ -190,34 +190,23 @@ export interface VideoPlayerModalProps {
   initialResponseId: string;
   sentimentOverrides: Record<string, SentimentValue>;
   textOverrides: Record<string, { summary?: string; transcript?: string }>;
-  onSaveClip?: (clip: ReelClip) => void;
   onClose: () => void;
 }
 
 export function VideoPlayerModal({
   responses, initialResponseId,
   sentimentOverrides, textOverrides,
-  onSaveClip,
   onClose,
 }: VideoPlayerModalProps) {
   const { showToast } = useWuShowToast();
-  const wick = useWickUILib();
 
   const [currentId, setCurrentId] = useState(initialResponseId);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [ccEnabled, setCcEnabled] = useState(true);
+  const [ccEnabled, setCcEnabled] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'summary' | 'transcript'>('summary');
-  const [activeLang, setActiveLang] = useState(() => {
-    const initial = responses.find((r) => r.id === initialResponseId) ?? responses[0];
-    return initial ? getNativeLangCode(initial) : 'en';
-  });
+  const [activeLang, setActiveLang] = useState('en');
   const [showOriginal, setShowOriginal] = useState(false);
-  const [reelPanelOpen, setReelPanelOpen] = useState(false);
-  const [modalOpen, setModalOpen] = useState(true);
-  const [clipStart, setClipStart] = useState(0);
-  const [clipEnd, setClipEnd] = useState(0);
-  const [clipTheme, setClipTheme] = useState('');
   /** Global word index driven by SpeechSynthesis boundary events; -1 = not active */
   const [currentWordGlobalIdx, setCurrentWordGlobalIdx] = useState(-1);
 
@@ -230,30 +219,34 @@ export function VideoPlayerModal({
   const responseIdx      = responses.findIndex((r) => r.id === currentId);
   const currentResponse  = responses[responseIdx] ?? responses[0];
   const effectiveSentiment = (sentimentOverrides[currentId] ?? currentResponse?.sentiment) as SentimentValue;
-  const nativeLang = currentResponse ? getNativeLangCode(currentResponse) : 'en';
-  const textOverride = textOverrides[currentId];
-  const originalSummary = textOverride?.summary ?? currentResponse?.summary ?? '';
-  const originalTranscript = textOverride?.transcript ?? currentResponse?.transcript ?? '';
-  const displaySummary = currentResponse
-    ? getTranslatedSummary(currentResponse, activeLang, textOverride)
-    : '';
-  const displayTranscript = currentResponse
-    ? getTranslatedTranscript(currentResponse, activeLang, textOverride)
-    : '';
+  const displaySummary   = textOverrides[currentId]?.summary ?? currentResponse?.summary ?? '';
+  const displayTranscript = textOverrides[currentId]?.transcript ?? currentResponse?.transcript ?? '';
   const totalDuration    = currentResponse?.durationSeconds ?? 18;
 
-  const segments = useMemo(
-    () => segmentTranscript(displayTranscript, totalDuration),
-    [displayTranscript, totalDuration],
-  );
-  const originalSegments = useMemo(
-    () => segmentTranscript(originalTranscript, totalDuration),
-    [originalTranscript, totalDuration],
-  );
+  const segments   = useMemo(() => segmentTranscript(displayTranscript, totalDuration), [displayTranscript, totalDuration]);
   const wordTiming = useMemo(() => deriveWordTiming(segments), [segments]);
 
-  const segmentsRef = useRef(segments);
-  useEffect(() => { segmentsRef.current = segments; }, [segments]);
+  const translatedSegs: TranscriptSegment[] = useMemo(() => {
+    if (activeLang === 'en') return segments;
+    const tlTexts = TRANSLATIONS[activeLang] ?? [];
+    return segments.map((seg, i) => ({
+      ...seg,
+      text: tlTexts[i % Math.max(tlTexts.length, 1)]?.text ?? seg.text,
+    }));
+  }, [activeLang, segments]);
+
+  // Keep a ref for stable closure access inside speech callbacks
+  const translatedSegsRef = useRef(translatedSegs);
+  useEffect(() => { translatedSegsRef.current = translatedSegs; }, [translatedSegs]);
+
+  const activeSegIdx   = segments.findIndex((s) => currentTime >= s.start && currentTime < s.end);
+  const captionPrimary = activeLang !== 'en'
+    ? (translatedSegs[activeSegIdx]?.text ?? '')
+    : (segments[activeSegIdx]?.text ?? '');
+  const captionSecondary = activeLang !== 'en' && showOriginal
+    ? (segments[activeSegIdx]?.text ?? '')
+    : undefined;
+  void captionPrimary; void captionSecondary; // used below
 
   const progressPct = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
 
@@ -363,7 +356,7 @@ export function VideoPlayerModal({
       (RESPONSE_VOICE_IDX[currentId] ?? responseIdx) %
       Math.max(englishVoicesRef.current.length, 1);
 
-    startSpeechFrom(fromTime, segmentsRef.current, voiceIdx, () => {
+    startSpeechFrom(fromTime, translatedSegsRef.current, voiceIdx, () => {
       // Timer starts in sync with speech onset
       intervalRef.current = setInterval(() => {
         setCurrentTime((prev) => {
@@ -405,47 +398,6 @@ export function VideoPlayerModal({
     setCurrentId(responses[newIdx].id);
   }
 
-  function openReelPanel() {
-    setClipStart(Math.floor(currentTime));
-    setClipEnd(Math.min(Math.floor(currentTime) + 10, Math.floor(totalDuration) || Math.floor(currentTime) + 10));
-    setClipTheme('');
-    setReelPanelOpen(true);
-  }
-
-  function closeReelPanel() {
-    setReelPanelOpen(false);
-  }
-
-  function handleModalOpenChange(open: boolean) {
-    if (open) return;
-    if (reelPanelOpen) {
-      closeReelPanel();
-      return;
-    }
-    setModalOpen(false);
-    onClose();
-  }
-
-  function handleSaveReel() {
-    if (!onSaveClip || clipEnd <= clipStart) return;
-    const dur = clipEnd - clipStart;
-    const m = Math.floor(dur / 60);
-    const s = dur % 60;
-    onSaveClip({
-      clipNumber: Date.now(),
-      responseId: currentId,
-      start: clipStart,
-      end: clipEnd,
-      duration: `${m}:${String(s).padStart(2, '0')}`,
-      durationSeconds: dur,
-      transcript: displayTranscript.slice(0, 120),
-      sentiment: effectiveSentiment,
-      theme: clipTheme.trim() || 'Highlight',
-      language: currentResponse.language ?? 'EN',
-    });
-    setReelPanelOpen(false);
-  }
-
   // ── Effects ─────────────────────────────────────────────────────────────────
   useEffect(() => () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -457,125 +409,31 @@ export function VideoPlayerModal({
     setCurrentTime(0);
     setIsPlaying(false);
     setCurrentWordGlobalIdx(-1);
-    setReelPanelOpen(false);
-    setClipTheme('');
-    setShowOriginal(false);
     if (intervalRef.current) clearInterval(intervalRef.current);
-    const response = responses.find((r) => r.id === currentId);
-    if (response) {
-      setActiveLang(getNativeLangCode(response));
-    }
-  }, [currentId, responses]);
+  }, [currentId]);
 
   useEffect(() => {
-    if (!isPlaying) return;
-    beginPlayingFrom(currentTime);
-    // Re-sync captions and speech when display language changes during playback.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeLang]);
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
-  if (!currentResponse || !wick) return null;
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
 
-  const reelDurationLabel = fmtTime(Math.max(0, clipEnd - clipStart));
-  const {
-    WuModal,
-    WuModalHeader,
-    WuModalContent,
-    WuButton,
-    WuInput,
-  } = wick;
+  if (!currentResponse) return null;
 
-  const reelFormFields = (
-    <div className={styles.reelPanelContent}>
-      <p className={styles.reelModalIntro}>
-        Select the start and end of the highlight from this response. The clip will be saved to the Reels tab.
-      </p>
+  return createPortal(
+    <div className={styles.overlay} onClick={onClose} role="dialog" aria-modal aria-label="Video response player">
+      <div className={styles.container} onClick={(e) => e.stopPropagation()}>
 
-      <div className={styles.reelDurationPill}>
-        <span className="wm-schedule" aria-hidden />
-        Clip duration: <strong>{reelDurationLabel}</strong>
-        <span className={styles.reelDurationRange}>
-          ({fmtTime(clipStart)} – {fmtTime(clipEnd)})
-        </span>
-      </div>
-
-      <div className={styles.reelTimeGrid}>
-        <div className={styles.reelField}>
-          <label className={styles.reelLabel} htmlFor="reel-start">Start (seconds)</label>
-          <div className={styles.reelInputRow}>
-            <WuInput
-              id="reel-start"
-              variant="outlined"
-              type="number"
-              value={String(clipStart)}
-              onChange={(e) =>
-                setClipStart(Math.max(0, Math.min(clipEnd - 1, Number(e.target.value) || 0)))
-              }
-              aria-label="Clip start time in seconds"
-            />
-            <WuButton
-              variant="secondary"
-              size="sm"
-              onClick={() => setClipStart(Math.floor(currentTime))}
-              title="Use current playhead"
-            >
-              Use playhead
-            </WuButton>
-          </div>
-        </div>
-
-        <div className={styles.reelField}>
-          <label className={styles.reelLabel} htmlFor="reel-end">End (seconds)</label>
-          <div className={styles.reelInputRow}>
-            <WuInput
-              id="reel-end"
-              variant="outlined"
-              type="number"
-              value={String(clipEnd)}
-              onChange={(e) =>
-                setClipEnd(Math.max(clipStart + 1, Math.min(Math.floor(totalDuration), Number(e.target.value) || 0)))
-              }
-              aria-label="Clip end time in seconds"
-            />
-            <WuButton
-              variant="secondary"
-              size="sm"
-              onClick={() =>
-                setClipEnd(Math.min(Math.floor(totalDuration), Math.max(clipStart + 1, Math.floor(currentTime))))
-              }
-              title="Use current playhead"
-            >
-              Use playhead
-            </WuButton>
-          </div>
-        </div>
-      </div>
-
-      <div className={styles.reelField}>
-        <label className={styles.reelLabel} htmlFor="reel-theme">Theme label</label>
-        <WuInput
-          id="reel-theme"
-          variant="outlined"
-          placeholder="e.g. Brand affinity, Navigation accuracy"
-          value={clipTheme}
-          onChange={(e) => setClipTheme(e.target.value)}
-          maxLength={60}
-          aria-label="Reel theme label"
-        />
-      </div>
-    </div>
-  );
-
-  return (
-    <WuModal
-      open={modalOpen}
-      onOpenChange={handleModalOpenChange}
-      variant="action"
-      size="lg"
-      className={styles.playerModal}
-    >
-      <WuModalHeader className={styles.playerHeader}>
-        <div className={styles.headerNav}>
+        {/* ── Top bar ───────────────────────────────────── */}
+        <div className={styles.topBar}>
           <button type="button" className={styles.navBtn}
             onClick={() => navigateResponse(-1)} disabled={responseIdx <= 0}
             aria-label="Previous response">
@@ -589,17 +447,19 @@ export function VideoPlayerModal({
             aria-label="Next response">
             <span className="wm-chevron-right" aria-hidden />
           </button>
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Close player">
+            <span className="wm-close" aria-hidden />
+          </button>
         </div>
-        <p className={styles.playerHeaderTitle}>Video response</p>
-      </WuModalHeader>
 
-      <WuModalContent className={styles.playerModalContent}>
+        {/* ── Main area ─────────────────────────────────── */}
         <div className={styles.mainArea}>
 
           {/* Portrait video panel */}
           <div className={styles.videoPanel}>
             <div className={styles.videoWrap}>
 
+              {/* Blurred background fill — same video, heavily blurred */}
               <video
                 key={`bg-${currentId}`}
                 src={videoUrl}
@@ -608,6 +468,7 @@ export function VideoPlayerModal({
                 className={styles.avatarBgBlur}
               />
 
+              {/* Primary portrait video */}
               <video
                 key={currentId}
                 src={videoUrl}
@@ -615,13 +476,16 @@ export function VideoPlayerModal({
                 className={styles.avatarVideo}
               />
 
+              {/* Bottom gradient for caption readability */}
               <div className={styles.portraitGradient} />
 
+              {/* REC badge */}
               <div className={styles.recBadge} aria-hidden>
                 <span className={styles.recDot} />
                 REC
               </div>
 
+              {/* Speaking audio wave bars */}
               {isPlaying && (
                 <div className={styles.speakWave} aria-hidden>
                   <span className={styles.speakBar} />
@@ -631,6 +495,7 @@ export function VideoPlayerModal({
                 </div>
               )}
 
+              {/* TikTok-style dynamic caption */}
               {ccEnabled && (
                 <DynamicCaption
                   currentTime={currentTime}
@@ -641,6 +506,7 @@ export function VideoPlayerModal({
               )}
             </div>
 
+            {/* Control bar */}
             <div className={styles.controlBar}>
               <button type="button" className={styles.ctrlBtn} onClick={togglePlay}
                 aria-label={isPlaying ? 'Pause' : 'Play'}>
@@ -663,13 +529,7 @@ export function VideoPlayerModal({
               <span className={styles.timeDisplay}>{fmtTime(currentTime)}</span>
 
               <div className={styles.ctrlRight}>
-                <button type="button"
-                  className={`${styles.ctrlBtn} ${reelPanelOpen ? styles.ctrlBtnActive : ''}`}
-                  title="Create Reels" aria-label="Create Reels"
-                  onClick={openReelPanel}>
-                  <span className="wm-movie" aria-hidden />
-                </button>
-
+                {/* CC: direct toggle for TikTok captions */}
                 <button type="button"
                   className={`${styles.ctrlBtnCC} ${ccEnabled ? styles.ctrlBtnActive : ''}`}
                   onClick={() => setCcEnabled((v) => !v)}
@@ -677,6 +537,7 @@ export function VideoPlayerModal({
                   CC
                 </button>
 
+                {/* Fullscreen (mock) */}
                 <button type="button" className={styles.ctrlBtn}
                   title="Fullscreen" aria-label="Fullscreen"
                   onClick={() => showToast({ message: 'Fullscreen not available in prototype', variant: 'info' })}>
@@ -686,129 +547,94 @@ export function VideoPlayerModal({
             </div>
           </div>
 
-          {/* Sidebar — summary/transcript or inline Create Reels panel */}
+          {/* ── Sidebar ──────────────────────────────────── */}
           <div className={styles.sidebar}>
-            {reelPanelOpen ? (
-              <div className={styles.reelPanel}>
-                <div className={styles.reelPanelHeader}>
-                  <button type="button" className={styles.reelPanelBack}
-                    onClick={closeReelPanel} aria-label="Back to response details">
-                    <span className="wm-chevron-left" aria-hidden />
-                  </button>
-                  <h3 className={styles.reelPanelTitle}>Create Reels</h3>
-                </div>
-                <div className={styles.reelPanelBody}>
-                  {reelFormFields}
-                </div>
-                <div className={styles.reelPanelFooter}>
-                  <WuButton variant="secondary" onClick={closeReelPanel}>
-                    Cancel
-                  </WuButton>
-                  <WuButton
-                    variant="primary"
-                    disabled={!onSaveClip || clipEnd <= clipStart}
-                    onClick={handleSaveReel}
-                  >
-                    <span className="wm-movie" aria-hidden />
-                    Add to Reels
-                  </WuButton>
-                </div>
+            <div className={styles.sidebarHeader}>
+              <div className={styles.sidebarRespondentRow}>
+                <span className={styles.respondentId}>{currentResponse.id}</span>
+                <span className={styles.respondentDate}>{currentResponse.date}</span>
               </div>
-            ) : (
-              <>
-                <div className={styles.sidebarHeader}>
-                  <div className={styles.sidebarRespondentRow}>
-                    <span className={styles.respondentId}>{currentResponse.id}</span>
-                    <span className={styles.respondentDate}>{currentResponse.date}</span>
-                  </div>
-                  <div className={styles.sidebarActionsRow}>
-                    <SentimentBadge sentiment={effectiveSentiment} />
-                    <div className={styles.sidebarActions}>
-                      <div className={styles.langSelectorCompact}>
-                        <span className={`wm-translate ${styles.langSelectorIcon}`} aria-hidden />
-                        <select
-                          className={styles.langSelectCompact}
-                          value={activeLang}
-                          onChange={(e) => setActiveLang(e.target.value)}
-                          aria-label="Select display language"
-                        >
-                          {AVAILABLE_LANGUAGES.map((lang) => (
-                            <option key={lang.code} value={lang.code}>
-                              {lang.native}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <button type="button" className={styles.sidebarActionBtn} title="Like" aria-label="Like"
-                        onClick={() => showToast({ message: 'Liked', variant: 'success' })}>
-                        <span className="wm-thumb-up" aria-hidden />
-                      </button>
-                      <button type="button" className={styles.sidebarActionBtn} title="Dislike" aria-label="Dislike"
-                        onClick={() => showToast({ message: 'Disliked', variant: 'info' })}>
-                        <span className="wm-thumb-down" aria-hidden />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.sidebarTabRow} role="tablist">
-                  {(['summary', 'transcript'] as const).map((tab) => (
-                    <button key={tab} role="tab" aria-selected={sidebarTab === tab}
-                      className={`${styles.sidebarTab} ${sidebarTab === tab ? styles.sidebarTabActive : ''}`}
-                      onClick={() => setSidebarTab(tab)}>
-                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              <div className={styles.sidebarActionsRow}>
+                <SentimentBadge sentiment={effectiveSentiment} />
+                <div className={styles.sidebarActions}>
+                  {[
+                    { icon: 'wm-thumb-up', label: 'Like', msg: 'Liked' },
+                    { icon: 'wm-thumb-down', label: 'Dislike', msg: 'Disliked' },
+                    { icon: 'wm-bookmark', label: 'Bookmark', msg: 'Bookmarked' },
+                  ].map(({ icon, label, msg }) => (
+                    <button key={icon} type="button" className={styles.sidebarActionBtn}
+                      title={label} aria-label={label}
+                      onClick={() => showToast({ message: msg, variant: 'success' })}>
+                      <span className={icon} aria-hidden />
                     </button>
                   ))}
                 </div>
+              </div>
+            </div>
 
-                <div className={styles.sidebarContent}>
-                  {sidebarTab === 'summary' && (
-                    <div className={styles.summaryPanel}>
-                      {activeLang !== nativeLang && (
-                        <label className={styles.showOrigInline}>
-                          <input
-                            type="checkbox"
-                            checked={showOriginal}
-                            onChange={(e) => setShowOriginal(e.target.checked)}
-                          />
-                          Show original ({getLanguageLabel(nativeLang)})
-                        </label>
-                      )}
-                      <p className={styles.summaryText}>{displaySummary}</p>
-                      {activeLang !== nativeLang && showOriginal && (
-                        <p className={styles.summaryTextSecondary}>{originalSummary}</p>
-                      )}
-                    </div>
-                  )}
-                  {sidebarTab === 'transcript' && (
-                    <div className={styles.transcriptPanel}>
-                      {activeLang !== nativeLang && (
-                        <label className={styles.showOrigInline}>
-                          <input
-                            type="checkbox"
-                            checked={showOriginal}
-                            onChange={(e) => setShowOriginal(e.target.checked)}
-                          />
-                          Show original ({getLanguageLabel(nativeLang)})
-                        </label>
-                      )}
+            <div className={styles.sidebarTabRow} role="tablist">
+              {(['summary', 'transcript'] as const).map((tab) => (
+                <button key={tab} role="tab" aria-selected={sidebarTab === tab}
+                  className={`${styles.sidebarTab} ${sidebarTab === tab ? styles.sidebarTabActive : ''}`}
+                  onClick={() => setSidebarTab(tab)}>
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
 
-                      <div className={styles.transcriptScrollArea}>
-                        <TranscriptPanel
-                          segments={segments}
-                          secondarySegments={activeLang !== nativeLang && showOriginal ? originalSegments : undefined}
-                          currentTime={currentTime}
-                          onSeek={(t) => { seekTo(t); }}
+            <div className={styles.sidebarContent}>
+              {sidebarTab === 'summary' && (
+                <p className={styles.summaryText}>{displaySummary}</p>
+              )}
+              {sidebarTab === 'transcript' && (
+                <div className={styles.transcriptPanel}>
+                  {/* ── Translation bar ── */}
+                  <div className={styles.transcriptLangBar}>
+                    <span className="wm-translate" aria-hidden
+                      style={{ color: '#64748b', fontSize: '0.9375rem', flexShrink: 0 }} />
+                    <select
+                      className={styles.langSelect}
+                      value={activeLang}
+                      onChange={(e) => {
+                        setActiveLang(e.target.value);
+                        if (e.target.value !== 'en') setSidebarTab('transcript');
+                      }}
+                      aria-label="Select transcript language"
+                    >
+                      {AVAILABLE_LANGUAGES.map((lang) => (
+                        <option key={lang.code} value={lang.code}>
+                          {lang.native} — {lang.label}
+                        </option>
+                      ))}
+                    </select>
+                    {activeLang !== 'en' && (
+                      <label className={styles.showOrigInline}>
+                        <input
+                          type="checkbox"
+                          checked={showOriginal}
+                          onChange={(e) => setShowOriginal(e.target.checked)}
                         />
-                      </div>
-                    </div>
-                  )}
+                        Show original
+                      </label>
+                    )}
+                  </div>
+
+                  {/* ── Segment list ── */}
+                  <div className={styles.transcriptScrollArea}>
+                    <TranscriptPanel
+                      segments={translatedSegs}
+                      secondarySegments={activeLang !== 'en' && showOriginal ? segments : undefined}
+                      currentTime={currentTime}
+                      onSeek={(t) => { seekTo(t); }}
+                    />
+                  </div>
                 </div>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </WuModalContent>
-    </WuModal>
+      </div>
+    </div>,
+    document.body
   );
 }

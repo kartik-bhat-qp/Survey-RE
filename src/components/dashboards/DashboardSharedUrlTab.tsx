@@ -5,9 +5,11 @@ import dynamic from 'next/dynamic';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { SharedUrlLicenseUpsellModal } from '@/components/dashboards/SharedUrlLicenseUpsellModal';
 import {
   MOCK_SHARED_URLS,
-  SHARED_URLS_PER_PAGE,
+  SHARED_URL_LICENSE_LIMIT,
+  SHARED_URL_UPSELL,
   type SharedUrlLink,
 } from '@/data/mock-shared-urls';
 import { formatShortDate, truncate } from '@/data/mock-utils';
@@ -36,6 +38,9 @@ export function DashboardSharedUrlTab() {
   const { showToast } = useWuShowToast();
   const [links, setLinks] = useState<SharedUrlLink[]>(MOCK_SHARED_URLS);
   const [search, setSearch] = useState('');
+  const [upsellOpen, setUpsellOpen] = useState(false);
+
+  const atLinkLimit = links.length >= SHARED_URL_LICENSE_LIMIT;
 
   const filteredLinks = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -43,10 +48,34 @@ export function DashboardSharedUrlTab() {
     return links.filter((link) => link.name.toLowerCase().includes(term));
   }, [links, search]);
 
-  const paginatedLinks = useMemo(() => {
-    const start = 0;
-    return filteredLinks.slice(start, start + SHARED_URLS_PER_PAGE);
-  }, [filteredLinks]);
+  const visibleLinks = useMemo(
+    () => filteredLinks.slice(0, SHARED_URL_LICENSE_LIMIT),
+    [filteredLinks]
+  );
+
+  const handleCreate = useCallback(() => {
+    if (atLinkLimit) {
+      setUpsellOpen(true);
+      return;
+    }
+
+    const nextId = links.reduce((max, link) => Math.max(max, link.id), 0) + 1;
+    const newLink: SharedUrlLink = {
+      id: nextId,
+      name: `Shared link ${nextId}`,
+      url: `https://bi.questionpro.com/sd/${crypto.randomUUID()}`,
+      createdAt: new Date().toISOString().slice(0, 10),
+      status: true,
+    };
+
+    setLinks((prev) => [...prev, newLink]);
+    showToast({ message: 'Shared link created', variant: 'success' });
+  }, [atLinkLimit, links, showToast]);
+
+  const handleExploreBi = useCallback(() => {
+    setUpsellOpen(false);
+    showToast({ message: SHARED_URL_UPSELL.exploreToast, variant: 'success' });
+  }, [showToast]);
 
   const handleCopyUrl = useCallback(
     async (url: string) => {
@@ -169,10 +198,7 @@ export function DashboardSharedUrlTab() {
   return (
     <div className={`${styles.panel} dashboard-settings-shared-url-panel`}>
       <div className={styles.toolbarRow}>
-        <WuButton
-          Icon={<span className="wm-add" />}
-          onClick={() => showToast({ message: 'Create shared link', variant: 'success' })}
-        >
+        <WuButton Icon={<span className="wm-add" />} onClick={handleCreate}>
           Create
         </WuButton>
         <div className={styles.searchWrap}>
@@ -187,9 +213,27 @@ export function DashboardSharedUrlTab() {
         </div>
       </div>
 
+      {atLinkLimit ? (
+        <div className={styles.upsellBanner}>
+          <div className={styles.upsellCopy}>
+            <span className={`wm-diamond ${styles.upsellIcon}`} aria-hidden />
+            <div>
+              <p className={styles.upsellTitle}>{SHARED_URL_UPSELL.title}</p>
+              <p className={styles.upsellText}>
+                You&apos;re using all {SHARED_URL_LICENSE_LIMIT} shared links on your current plan.
+                Upgrade to BI for unlimited external sharing.
+              </p>
+            </div>
+          </div>
+          <WuButton variant="secondary" size="sm" onClick={() => setUpsellOpen(true)}>
+            {SHARED_URL_UPSELL.primaryCta}
+          </WuButton>
+        </div>
+      ) : null}
+
       <div className={styles.tableWrap}>
         <WuTable
-          data={paginatedLinks as unknown[]}
+          data={visibleLinks as unknown[]}
           columns={columns as unknown as IWuTableColumnDef<unknown>[]}
           variant="striped"
           sort={{ enabled: true }}
@@ -205,12 +249,7 @@ export function DashboardSharedUrlTab() {
               }
               action={
                 !search.trim() ? (
-                  <WuButton
-                    Icon={<span className="wm-add" />}
-                    onClick={() =>
-                      showToast({ message: 'Create shared link', variant: 'success' })
-                    }
-                  >
+                  <WuButton Icon={<span className="wm-add" />} onClick={handleCreate}>
                     Create
                   </WuButton>
                 ) : undefined
@@ -219,6 +258,12 @@ export function DashboardSharedUrlTab() {
           }
         />
       </div>
+
+      <SharedUrlLicenseUpsellModal
+        open={upsellOpen}
+        onOpenChange={setUpsellOpen}
+        onExplore={handleExploreBi}
+      />
     </div>
   );
 }

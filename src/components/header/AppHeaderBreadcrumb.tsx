@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { getDashboardById } from '@/data/get-dashboard-by-id';
 import { getTextAiDashboardById } from '@/data/get-text-ai-dashboard-by-id';
 import { MOCK_CURRENT_WORKSPACE } from '@/data/mock-workspace';
+import { getBiProductBasePath, withBiProductBasePath } from '@/hooks/useBiProductBasePath';
 import styles from './AppHeaderBreadcrumb.module.css';
 
 const WuTruncatedLabel = dynamic(
@@ -19,38 +20,45 @@ interface BreadcrumbItem {
 }
 
 function buildBreadcrumbItems(pathname: string): BreadcrumbItem[] {
+  const basePath = getBiProductBasePath(pathname);
+  const routePath =
+    basePath && pathname.startsWith(basePath)
+      ? pathname.slice(basePath.length) || '/'
+      : pathname;
+  const path = (href: string) => withBiProductBasePath(basePath, href);
+
   const workspaces: BreadcrumbItem = { label: 'Workspaces', href: '/workspaces' };
   const workspace: BreadcrumbItem = { label: MOCK_CURRENT_WORKSPACE.name };
-  const dashboards: BreadcrumbItem = { label: 'Dashboards', href: '/dashboards' };
+  const dashboards: BreadcrumbItem = { label: 'Dashboards', href: path('/dashboards') };
 
-  if (pathname === '/workspaces') {
+  if (routePath === '/workspaces') {
     return [{ label: 'Workspaces' }];
   }
 
-  if (pathname === '/dashboards') {
+  if (routePath === '/dashboards') {
     return [workspaces, workspace, { label: 'Dashboards' }];
   }
 
-  if (pathname === '/settings') {
+  if (routePath === '/settings') {
     return [workspaces, workspace, { label: 'Settings' }];
   }
 
-  if (pathname === '/text-ai') {
+  if (routePath === '/text-ai') {
     return [workspaces, workspace, { label: 'TextAI' }];
   }
 
-  const textAiMatch = pathname.match(/^\/text-ai\/(\d+)$/);
+  const textAiMatch = routePath.match(/^\/text-ai\/(\d+)$/);
   if (textAiMatch) {
     const dashboard = getTextAiDashboardById(Number(textAiMatch[1]));
     return [
       workspaces,
       workspace,
-      { label: 'TextAI', href: '/text-ai' },
+      { label: 'TextAI', href: path('/text-ai') },
       { label: dashboard?.name ?? 'Untitled' },
     ];
   }
 
-  const dashboardMatch = pathname.match(/^\/dashboards\/(\d+)$/);
+  const dashboardMatch = routePath.match(/^\/dashboards\/(\d+)$/);
   if (dashboardMatch) {
     const dashboard = getDashboardById(Number(dashboardMatch[1]));
     return [

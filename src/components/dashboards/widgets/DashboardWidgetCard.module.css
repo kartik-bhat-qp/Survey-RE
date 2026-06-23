@@ -42,6 +42,10 @@
   padding: 0;
 }
 
+.diamondBtn {
+  color: #1b87e6;
+}
+
 .body {
   flex: 1;
   min-height: 0;

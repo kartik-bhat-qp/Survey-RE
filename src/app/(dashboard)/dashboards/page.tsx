@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { useBiProductBasePath, withBiProductBasePath } from '@/hooks/useBiProductBasePath';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -113,6 +114,8 @@ function FirstTimeExperience({ onCreateClick }: { onCreateClick: () => void }) {
 export default function DashboardsPage() {
   const wick = useWickUILib();
   const router = useRouter();
+  const basePath = useBiProductBasePath();
+  const dashboardsPath = withBiProductBasePath(basePath, '/dashboards');
   const { showToast } = useWuShowToast();
   const [dashboards, setDashboards] = useState<Dashboard[]>(MOCK_DASHBOARDS);
   const [search, setSearch] = useState('');
@@ -146,7 +149,7 @@ export default function DashboardsPage() {
       enableSorting: true,
       cell: ({ row }) => (
         <Link
-          href={`/dashboards/${row.original.id}`}
+          href={`${dashboardsPath}/${row.original.id}`}
           className="font-medium text-[#1B87E6] hover:underline"
         >
           {row.original.name}
@@ -209,7 +212,7 @@ export default function DashboardsPage() {
         variant: 'success',
       });
     }
-    router.push(`/dashboards/${newDashboard.id}`);
+    router.push(`${dashboardsPath}/${newDashboard.id}`);
   }
 
   function handleDelete() {

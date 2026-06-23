@@ -6,6 +6,23 @@ export interface SharedUrlLink {
   status: boolean;
 }
 
+/** Maximum shared links allowed on the current license. */
+export const SHARED_URL_LICENSE_LIMIT = 5;
+
+export const SHARED_URL_UPSELL = {
+  title: 'Unlock more shared links with BI',
+  subtitle:
+    'Your current plan includes up to 5 shared URLs. A BI license lets you share live dashboards with anyone—no seat limits.',
+  benefits: [
+    'Unlimited shared URLs for clients, leadership, and partners',
+    'Live dashboard views that update as new survey responses arrive',
+    'Secure, read-only access without giving away your QuestionPro account',
+  ],
+  primaryCta: 'Explore BI licenses',
+  secondaryCta: 'Maybe later',
+  exploreToast: 'A QuestionPro specialist will reach out about BI licensing.',
+} as const;
+
 export const MOCK_SHARED_URLS: SharedUrlLink[] = [
   {
     id: 1,

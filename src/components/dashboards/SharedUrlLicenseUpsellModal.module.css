@@ -1,0 +1,72 @@
+.header {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.headerIcon {
+  color: #1b87e6;
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.subtitle {
+  color: #545e6b;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.highlight {
+  background: linear-gradient(135deg, #f0f7fd 0%, #f8fbff 100%);
+  border: 1px solid #d4e8f8;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.highlightTitle {
+  color: #333;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.benefitList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.benefitItem {
+  align-items: flex-start;
+  color: #545e6b;
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+  line-height: 1.45;
+}
+
+.checkIcon {
+  color: #1b87e6;
+  flex-shrink: 0;
+  font-size: 16px;
+  line-height: 1.2;
+  margin-top: 1px;
+}
+
+.footnote {
+  color: #9b9b9b;
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}

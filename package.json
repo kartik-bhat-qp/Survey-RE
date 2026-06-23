@@ -36,7 +36,7 @@
     "date-fns": "^4.1.0",
     "highcharts": "^12.6.0",
     "highcharts-react-official": "^3.2.3",
-    "next": "16.2.6",
+    "next": "^16.2.9",
     "openai": "^6.39.1",
     "react": "^19.2.6",
     "react-day-picker": "^9.5.1",
@@ -54,5 +54,9 @@
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "sharp@0.34.5": true,
+    "unrs-resolver@1.11.1": true
   }
 }

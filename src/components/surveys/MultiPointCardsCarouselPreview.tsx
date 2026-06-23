@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { SurveyMatrix, SurveyMatrixColumn } from '@/data/mock-survey-detail';
 import type {
   CardsCarouselResponseLayout,
@@ -9,6 +9,9 @@ import type {
 import { plainTextFromRichValue } from '@/components/surveys/QuestionRichTextField';
 import { isHtmlContent, toEditorHtml } from '@/components/surveys/rich-text-utils';
 import { SurveyPreviewFollowUpQuestion } from '@/components/surveys/SurveyPreviewFollowUpQuestion';
+import { SurveyPreviewRespondentFooter } from '@/components/surveys/SurveyPreviewRespondentFooter';
+import { useSurveyPreviewDevice } from '@/components/surveys/SurveyPreviewDeviceContext';
+import { useSurveyPreviewScroll } from '@/components/surveys/SurveyPreviewScrollContext';
 import { useSurveyPreviewPagination } from '@/components/surveys/useSurveyPreviewPagination';
 import type { SurveyQuestionPreviewFollowUp } from '@/data/survey-question-preview-session';
 import styles from './MultiPointCardsCarouselPreview.module.css';
@@ -76,7 +79,7 @@ interface CardCarouselNavProps {
   onPrev: () => void;
   onNext: () => void;
   rowIds: { id: string }[];
-  variant?: 'inline' | 'below';
+  variant?: 'inline' | 'below' | 'mobile';
 }
 
 function CardCarouselNav({
@@ -88,6 +91,32 @@ function CardCarouselNav({
   rowIds,
   variant = 'inline',
 }: CardCarouselNavProps) {
+  if (variant === 'mobile') {
+    return (
+      <div className={styles.cardNavRowMobile}>
+        <div className={styles.cardDotsInline} aria-hidden>
+          {rowIds.map((row, index) => (
+            <span
+              key={row.id}
+              className={`${styles.cardDot} ${
+                index === activeRowIndex ? styles.cardDotActive : ''
+              }`}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          className={styles.cardNavBtnMobileNext}
+          aria-label="Next card"
+          disabled={!canGoNext}
+          onClick={onNext}
+        >
+          <span className="wm-chevron-right" aria-hidden />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       className={
@@ -168,13 +197,15 @@ export function MultiPointCardsCarouselPreview({
   onDone,
   onClose,
 }: MultiPointCardsCarouselPreviewProps) {
-  const { pageIndex, getFooterLabel, handleFooterAction } = useSurveyPreviewPagination(
-    1 + nextPages.length
-  );
+  const device = useSurveyPreviewDevice();
+  const isMobile = device === 'mobile';
+  const { pageIndex, getFooterLabel, handleFooterAction, goToPrevPage } =
+    useSurveyPreviewPagination(1 + nextPages.length);
   const [activeRowIndex, setActiveRowIndex] = useState(0);
   const [selectionsByRowId, setSelectionsByRowId] = useState<Record<string, string>>({});
   const [slideDirection, setSlideDirection] = useState<SlideDirection>('next');
   const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previewScroll = useSurveyPreviewScroll();
   const rowCount = matrix.rows.length;
   const isFullWidth = questionWidthPercent >= 100;
 
@@ -204,6 +235,16 @@ export function MultiPointCardsCarouselPreview({
     String(responseLayout).toLowerCase() === 'horizontal';
   const canGoPrev = activeRowIndex > 0;
   const canGoNext = rowCount > 1 && activeRowIndex < rowCount - 1;
+
+  const scrollMobilePreviewToTop = useCallback((): void => {
+    if (!isMobile) return;
+    previewScroll?.scrollToTop('smooth');
+  }, [isMobile, previewScroll]);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    scrollMobilePreviewToTop();
+  }, [activeRowIndex, isMobile, scrollMobilePreviewToTop]);
 
   useEffect(() => {
     return () => {
@@ -239,6 +280,10 @@ export function MultiPointCardsCarouselPreview({
 
     setSelectionsByRowId((prev) => ({ ...prev, [rowId]: columnId }));
 
+    if (isMobile) {
+      scrollMobilePreviewToTop();
+    }
+
     if (activeRowIndex >= rowCount - 1) {
       return;
     }
@@ -247,6 +292,9 @@ export function MultiPointCardsCarouselPreview({
       advanceTimeoutRef.current = null;
       setSlideDirection('next');
       setActiveRowIndex((index) => Math.min(index + 1, rowCount - 1));
+      window.requestAnimationFrame(() => {
+        previewScroll?.scrollToTop('auto');
+      });
     }, ADVANCE_AFTER_SELECT_MS);
   }
 
@@ -372,41 +420,126 @@ export function MultiPointCardsCarouselPreview({
       onPrev={goToPrevCard}
       onNext={goToNextCard}
       rowIds={matrix.rows}
-      variant="below"
+      variant={isMobile ? 'mobile' : 'below'}
     />
   );
+
+  const mobileLeftAnchor = plainTextFromRichValue(matrix.leftAnchor).trim();
+  const mobileRightAnchor = plainTextFromRichValue(matrix.rightAnchor).trim();
+
+  const mobileScaleBlock = activeRow ? (
+    <div className={styles.mobileScaleBlock}>
+      {mobileLeftAnchor ? (
+        <p className={styles.mobileScaleAnchorTop}>{mobileLeftAnchor}</p>
+      ) : null}
+      <ul className={styles.mobileScaleOptions} aria-label="Rating scale">
+        {matrix.columns.map((column, index) => {
+          const isChecked = selectionsByRowId[activeRow.id] === column.id;
+          return (
+            <li key={column.id} className={styles.mobileScaleOption}>
+              <label
+                className={`${styles.mobileScaleLabel} ${
+                  isChecked ? styles.mobileScaleLabelSelected : ''
+                }`}
+              >
+                <input
+                  type={inputType}
+                  name={`preview-mobile-${activeRow.id}`}
+                  checked={isChecked}
+                  aria-label={columnDisplayLabel(column.label, index)}
+                  onChange={() => handleOptionSelect(activeRow.id, column.id)}
+                />
+                <span>{columnDisplayLabel(column.label, index)}</span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+      {mobileRightAnchor ? (
+        <p className={styles.mobileScaleAnchorBottom}>{mobileRightAnchor}</p>
+      ) : null}
+    </div>
+  ) : null;
+
+  function handleMobileBack(): void {
+    if (pageIndex > 0) {
+      goToPrevPage();
+      return;
+    }
+    if (activeRowIndex > 0) {
+      goToPrevCard();
+    }
+  }
+
+  const canMobileBack = pageIndex > 0 || activeRowIndex > 0;
 
   const currentPageQuestions = pageIndex > 0 ? (nextPages[pageIndex - 1] ?? []) : [];
   const currentPagePrimary = currentPageQuestions[0] ?? null;
   const currentPageFollowUps = currentPageQuestions.slice(1);
 
   return (
-    <div className={styles.shell}>
-      <header className={styles.previewHeader}>
-        <span className={styles.previewHeaderTitle}>{surveyTitle}</span>
-        <button
-          type="button"
-          className={styles.previewCloseBtn}
-          aria-label="Close preview"
-          onClick={onClose}
-        >
-          <span className="wm-close" aria-hidden />
-        </button>
-      </header>
+    <div className={`${styles.shell} ${isMobile ? styles.shellMobile : ''}`}>
+      {isMobile ? (
+        <div className={styles.mobileStripeBar} aria-hidden />
+      ) : (
+        <header className={styles.previewHeader}>
+          <span className={styles.previewHeaderTitle}>{surveyTitle}</span>
+          <button
+            type="button"
+            className={styles.previewCloseBtn}
+            aria-label="Close preview"
+            onClick={onClose}
+          >
+            <span className="wm-close" aria-hidden />
+          </button>
+        </header>
+      )}
 
-      <div className={styles.previewCanvas}>
-        <div className={styles.questionContainer}>
-          <p className={styles.requiredNote}>Questions marked with a * are required</p>
+      <div className={`${styles.previewCanvas} ${isMobile ? styles.previewCanvasMobile : ''}`}>
+        <div
+          className={`${styles.questionContainer} ${
+            isMobile ? styles.questionContainerMobile : ''
+          }`}
+        >
+          {!isMobile ? (
+            <p className={styles.requiredNote}>Questions marked with a * are required</p>
+          ) : null}
 
           {pageIndex === 0 ? (
             <>
-          <h2 className={styles.questionTitle}>
-            {required ? <span className={styles.requiredMark}>*</span> : null}
-            <span>{plainTextFromRichValue(questionText)}</span>
-          </h2>
+              {!isMobile ? (
+                <h2 className={styles.questionTitle}>
+                  {required ? <span className={styles.requiredMark}>*</span> : null}
+                  <span>{plainTextFromRichValue(questionText)}</span>
+                </h2>
+              ) : null}
 
-          <div className={styles.questionContent}>
-            {isHorizontal ? (
+              <div className={styles.questionContent}>
+                {isMobile ? (
+                  <CarouselSlide
+                    slideKey={activeRow?.id ?? String(activeRowIndex)}
+                    direction={slideDirection}
+                    className={styles.mobileSlideWrap}
+                  >
+                    <div className={styles.mobileCarouselUnit}>
+                      <article className={styles.mobileCard}>
+                        {activeRow?.imageSrc ? (
+                          <img
+                            src={activeRow.imageSrc}
+                            alt={plainTextFromRichValue(activeRow.label)}
+                            className={styles.mobileCardImage}
+                          />
+                        ) : (
+                          <div className={styles.mobileCardFallback}>
+                            {activeRow ? <CardRowLabel label={activeRow.label} /> : null}
+                          </div>
+                        )}
+                      </article>
+                      {cardNav}
+                      {mobileScaleBlock}
+                    </div>
+                  </CarouselSlide>
+                ) : isHorizontal ? (
               <div className={styles.respondentLayoutHorizontal}>
                 <CarouselSlide
                   slideKey={activeRow?.id ?? String(activeRowIndex)}
@@ -489,17 +622,42 @@ export function MultiPointCardsCarouselPreview({
             </>
           ) : null}
 
-          <div className={styles.previewFooter}>
-            <button
-              type="button"
-              className={styles.doneBtn}
-              onClick={() => handleFooterAction(onDone)}
-            >
-              {getFooterLabel(false)}
-            </button>
+          <div
+            className={`${styles.previewFooter} ${isMobile ? styles.previewFooterMobile : ''}`}
+          >
+            {isMobile ? (
+              <>
+                <button
+                  type="button"
+                  className={styles.mobileBackBtn}
+                  aria-label="Back"
+                  disabled={!canMobileBack}
+                  onClick={handleMobileBack}
+                >
+                  <span className="wm-chevron-left" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  className={styles.mobileNextBtn}
+                  onClick={() => handleFooterAction(onDone)}
+                >
+                  {getFooterLabel(false)}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className={styles.doneBtn}
+                onClick={() => handleFooterAction(onDone)}
+              >
+                {getFooterLabel(false)}
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {isMobile ? <SurveyPreviewRespondentFooter /> : null}
     </div>
   );
 }

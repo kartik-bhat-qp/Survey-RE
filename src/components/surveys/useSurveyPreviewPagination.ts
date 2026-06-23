@@ -11,6 +11,10 @@ export function useSurveyPreviewPagination(totalPages: number, initialPageIndex 
     setPageIndex((current) => Math.min(current + 1, safeTotalPages - 1));
   }, [safeTotalPages]);
 
+  const goToPrevPage = useCallback(() => {
+    setPageIndex((current) => Math.max(current - 1, 0));
+  }, []);
+
   const getFooterLabel = useCallback(
     (isFirstSurveyPage: boolean) => {
       if (pageIndex === 0 && isFirstSurveyPage) return 'Start';
@@ -37,5 +41,6 @@ export function useSurveyPreviewPagination(totalPages: number, initialPageIndex 
     isLastPage,
     getFooterLabel,
     handleFooterAction,
+    goToPrevPage,
   };
 }
