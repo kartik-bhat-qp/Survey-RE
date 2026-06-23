@@ -141,6 +141,11 @@
 
 .pageTab span[class^="wm-"] { font-size: 1rem; }
 
+.pageTabAiIcon {
+  font-size: 1rem;
+  color: #6366f1;
+}
+
 .pageTab:hover { color: #334155; }
 
 .pageTabActive {

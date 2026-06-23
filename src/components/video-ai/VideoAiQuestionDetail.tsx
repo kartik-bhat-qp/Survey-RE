@@ -652,6 +652,7 @@ export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
             {tab === 'responses' && <span className="wm-videocam" aria-hidden />}
             {tab === 'reels' && <span className="wm-movie" aria-hidden />}
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {tab === 'reels' && <span className={`wc-ai ${styles.pageTabAiIcon}`} aria-hidden />}
             {tab === 'reels' && (
               <span className={styles.pageTabComingSoon}>Coming Soon</span>
             )}
