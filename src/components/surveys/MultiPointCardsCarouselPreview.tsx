@@ -259,9 +259,9 @@ export function MultiPointCardsCarouselPreview({
   }, [isMobile, previewScroll]);
 
   useEffect(() => {
-    if (!isMobile) return;
+    if (!isMobile || isCheckbox) return;
     scrollMobilePreviewToTop();
-  }, [activeRowIndex, isMobile, scrollMobilePreviewToTop]);
+  }, [activeRowIndex, isCheckbox, isMobile, scrollMobilePreviewToTop]);
 
   useEffect(() => {
     return () => {
@@ -278,6 +278,9 @@ export function MultiPointCardsCarouselPreview({
     }
     setSlideDirection('next');
     setActiveRowIndex((index) => Math.min(index + 1, rowCount - 1));
+    if (isCheckbox) {
+      scrollMobilePreviewToTop();
+    }
   }
 
   function goToPrevCard(): void {
@@ -303,10 +306,6 @@ export function MultiPointCardsCarouselPreview({
           : [...current, columnId];
         return { ...prev, [rowId]: next };
       });
-
-      if (isMobile) {
-        scrollMobilePreviewToTop();
-      }
       return;
     }
 
