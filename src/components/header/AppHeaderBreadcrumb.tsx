@@ -39,6 +39,10 @@ function buildBreadcrumbItems(pathname: string): BreadcrumbItem[] {
     return [workspaces, workspace, { label: 'Dashboards' }];
   }
 
+  if (routePath === '/reports') {
+    return [workspaces, workspace, { label: 'Reports' }];
+  }
+
   if (routePath === '/settings') {
     return [workspaces, workspace, { label: 'Settings' }];
   }

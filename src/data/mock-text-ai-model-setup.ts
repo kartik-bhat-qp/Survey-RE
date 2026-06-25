@@ -23,3 +23,8 @@ export const TEXT_AI_CODEBOOK_OPTIONS: { value: TextAiCodebookSource; label: str
   { value: 'template', label: 'Upload from template file' },
   { value: 'report', label: 'Upload from report codebook' },
 ];
+
+export const TEXT_AI_EXPERT_REVIEW_TITLE = 'QuestionPro Expert Review';
+
+export const TEXT_AI_EXPERT_REVIEW_DESCRIPTION =
+  'Have a QuestionPro research expert review your codeframe';

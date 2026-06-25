@@ -58,6 +58,38 @@
   width: 16px;
 }
 
+.expertReviewOption {
+  border-top: 1px solid #e8e8e8;
+  padding-top: 1rem;
+}
+
+.expertReviewLabel {
+  align-items: flex-start;
+  cursor: pointer;
+  display: flex;
+  gap: 0.625rem;
+}
+
+.expertReviewText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.expertReviewTitle {
+  color: #545e6b;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.expertReviewDescription {
+  color: #909090;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 @media (max-width: 639px) {
   .languageSelect {
     max-width: none;

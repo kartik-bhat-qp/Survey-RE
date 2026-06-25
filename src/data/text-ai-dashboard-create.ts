@@ -5,4 +5,5 @@ export interface TextAiDashboardCreatePayload {
   survey: SurveyListItem;
   questionIds: number[];
   separateDashboardPerQuestion: boolean;
+  expertReviewRequested: boolean;
 }

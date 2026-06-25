@@ -209,6 +209,7 @@ export default function TextAiPage() {
     survey,
     questionIds,
     separateDashboardPerQuestion,
+    expertReviewRequested,
   }: TextAiDashboardCreatePayload): void {
     const baseTimestamp = Date.now();
     const estimatedComments = questionIds.length * 964;
@@ -246,6 +247,13 @@ export default function TextAiPage() {
       showToast({
         message: `TextAI dashboard '${name}' created from "${survey.name}"`,
         variant: 'success',
+      });
+    }
+
+    if (expertReviewRequested) {
+      showToast({
+        message: 'QuestionPro Expert Review requested — a research expert will review your model setup',
+        variant: 'info',
       });
     }
 

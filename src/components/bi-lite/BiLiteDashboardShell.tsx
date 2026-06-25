@@ -2,6 +2,10 @@
 
 import dynamic from 'next/dynamic';
 import { AppHeaderContent } from '@/components/header/AppHeaderContent';
+import {
+  HEADER_BRAND_COLOR,
+  MOCK_HEADER_CATEGORIES,
+} from '@/data/mock-header-categories';
 import { MOCK_HEADER_USER } from '@/data/mock-header-user';
 import { BiLiteAppHeaderBreadcrumb } from '@/components/bi-lite/BiLiteAppHeaderBreadcrumb';
 import { BiLiteGlobalFooter } from '@/components/bi-lite/BiLiteGlobalFooter';
@@ -26,7 +30,12 @@ export function BiLiteDashboardShell({ children }: { children: React.ReactNode }
     <div className={styles.shell}>
       <WuToast />
       <header className={styles.header}>
-        <WuAppHeader productName="BI Lite" categories={[]} user={MOCK_HEADER_USER}>
+        <WuAppHeader
+          productName="BI Lite"
+          categories={MOCK_HEADER_CATEGORIES}
+          brandColor={HEADER_BRAND_COLOR}
+          user={MOCK_HEADER_USER}
+        >
           <AppHeaderContent>
             <BiLiteAppHeaderBreadcrumb />
           </AppHeaderContent>

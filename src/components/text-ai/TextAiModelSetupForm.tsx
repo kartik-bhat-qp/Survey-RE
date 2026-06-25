@@ -4,6 +4,8 @@ import dynamic from 'next/dynamic';
 import {
   DEFAULT_TEXT_AI_OUTPUT_LANGUAGE,
   TEXT_AI_CODEBOOK_OPTIONS,
+  TEXT_AI_EXPERT_REVIEW_DESCRIPTION,
+  TEXT_AI_EXPERT_REVIEW_TITLE,
   TEXT_AI_MODELING_GOAL_PLACEHOLDER,
   TEXT_AI_OUTPUT_LANGUAGES,
   type TextAiCodebookSource,
@@ -31,12 +33,17 @@ const WuTextarea = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTextarea })),
   { ssr: false }
 );
+const WuCheckbox = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCheckbox })),
+  { ssr: false }
+);
 
 export interface TextAiModelSetupValues {
   name: string;
   outputLanguage: TextAiLanguageOption;
   modelingGoal: string;
   codebookSource: TextAiCodebookSource;
+  expertReviewRequested: boolean;
 }
 
 interface TextAiModelSetupFormProps {
@@ -123,6 +130,22 @@ export function TextAiModelSetupForm({
           })}
         </div>
       </fieldset>
+
+      <div className={styles.expertReviewOption}>
+        <label className={styles.expertReviewLabel}>
+          <WuCheckbox
+            checked={values.expertReviewRequested}
+            onChange={(checked) => patch({ expertReviewRequested: checked })}
+            aria-label={TEXT_AI_EXPERT_REVIEW_TITLE}
+          />
+          <span className={styles.expertReviewText}>
+            <span className={styles.expertReviewTitle}>{TEXT_AI_EXPERT_REVIEW_TITLE}</span>
+            <span className={styles.expertReviewDescription}>
+              {TEXT_AI_EXPERT_REVIEW_DESCRIPTION}
+            </span>
+          </span>
+        </label>
+      </div>
     </div>
   );
 }
@@ -133,5 +156,6 @@ export function createDefaultModelSetupValues(defaultName: string): TextAiModelS
     outputLanguage: DEFAULT_TEXT_AI_OUTPUT_LANGUAGE,
     modelingGoal: '',
     codebookSource: 'none',
+    expertReviewRequested: false,
   };
 }

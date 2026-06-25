@@ -35,6 +35,10 @@ function buildBreadcrumbItems(pathname: string): BreadcrumbItem[] {
     return [workspaces, workspace, { label: 'Dashboards' }];
   }
 
+  if (routePath === '/reports') {
+    return [workspaces, workspace, { label: 'Reports' }];
+  }
+
   const dashboardMatch = routePath.match(/^\/dashboards\/(\d+)$/);
   if (dashboardMatch) {
     const dashboard = getDashboardById(Number(dashboardMatch[1]));

@@ -95,6 +95,7 @@ export function CreateTextAiDashboardModal({
       questionIds: selectedQuestionIds,
       separateDashboardPerQuestion:
         separateDashboardPerQuestion && selectedQuestionIds.length > 1,
+      expertReviewRequested: modelSetup.expertReviewRequested,
     });
     handleOpenChange(false);
   }
