@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useMounted } from '@/hooks/useMounted';
 import styles from './SurveyPreviewLayout.module.css';
 
 const WuToast = dynamic(
@@ -9,9 +10,11 @@ const WuToast = dynamic(
 );
 
 export default function SurveyPreviewLayout({ children }: { children: React.ReactNode }) {
+  const mounted = useMounted();
+
   return (
     <div className={styles.root}>
-      <WuToast />
+      {mounted ? <WuToast /> : null}
       {children}
     </div>
   );

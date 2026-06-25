@@ -1,9 +1,14 @@
 'use client';
 
+import { useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
   DEFAULT_TEXT_AI_OUTPUT_LANGUAGE,
   TEXT_AI_CODEBOOK_OPTIONS,
+  TEXT_AI_CODEBOOK_TEMPLATE_DOWNLOAD_LABEL,
+  TEXT_AI_CODEBOOK_TEMPLATE_SUPPORTED_FILES,
+  TEXT_AI_CODEBOOK_TEMPLATE_UPLOAD_LABEL,
   TEXT_AI_EXPERT_REVIEW_DESCRIPTION,
   TEXT_AI_EXPERT_REVIEW_TITLE,
   TEXT_AI_MODELING_GOAL_PLACEHOLDER,
@@ -37,6 +42,10 @@ const WuCheckbox = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCheckbox })),
   { ssr: false }
 );
+const WuButton = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
+  { ssr: false }
+);
 
 export interface TextAiModelSetupValues {
   name: string;
@@ -59,8 +68,22 @@ export function TextAiModelSetupForm({
   nameError = false,
   onChange,
 }: TextAiModelSetupFormProps) {
+  const { showToast } = useWuShowToast();
+  const templateFileInputRef = useRef<HTMLInputElement>(null);
+
   function patch(partial: Partial<TextAiModelSetupValues>): void {
     onChange({ ...values, ...partial });
+  }
+
+  function handleTemplateDownload(): void {
+    showToast({ message: 'Template file downloaded', variant: 'success' });
+  }
+
+  function handleTemplateFileChange(event: React.ChangeEvent<HTMLInputElement>): void {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    showToast({ message: `Uploaded "${file.name}"`, variant: 'success' });
   }
 
   return (
@@ -129,6 +152,57 @@ export function TextAiModelSetupForm({
             );
           })}
         </div>
+
+        {values.codebookSource === 'template' ? (
+          <div className={styles.templatePanel}>
+            <div className={styles.downloadRow}>
+              <span className={styles.downloadLabel}>
+                {TEXT_AI_CODEBOOK_TEMPLATE_DOWNLOAD_LABEL}
+              </span>
+              <WuButton
+                size="sm"
+                Icon={<span className="wm-download" />}
+                onClick={handleTemplateDownload}
+              >
+                Download
+              </WuButton>
+            </div>
+            <input
+              ref={templateFileInputRef}
+              type="file"
+              accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              className={styles.hiddenFileInput}
+              onChange={handleTemplateFileChange}
+            />
+            <button
+              type="button"
+              className={styles.uploadZone}
+              onClick={() => templateFileInputRef.current?.click()}
+            >
+              <span className={styles.uploadIcon} aria-hidden>
+                <svg viewBox="0 0 24 24" className={styles.uploadIconSvg} focusable="false">
+                  <path
+                    d="M12 4v10M8.5 10.5 12 7l3.5 3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.75"
+                  />
+                  <path
+                    d="M5 18h14"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeWidth="1.75"
+                  />
+                </svg>
+              </span>
+              {TEXT_AI_CODEBOOK_TEMPLATE_UPLOAD_LABEL}
+            </button>
+            <p className={styles.supportedFiles}>{TEXT_AI_CODEBOOK_TEMPLATE_SUPPORTED_FILES}</p>
+          </div>
+        ) : null}
       </fieldset>
 
       <div className={styles.expertReviewOption}>

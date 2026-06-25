@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import type { SurveyMatrix, SurveyMatrixColumn } from '@/data/mock-survey-detail';
 import type {
@@ -15,6 +16,11 @@ import { useSurveyPreviewScroll } from '@/components/surveys/SurveyPreviewScroll
 import { useSurveyPreviewPagination } from '@/components/surveys/useSurveyPreviewPagination';
 import type { SurveyQuestionPreviewFollowUp } from '@/data/survey-question-preview-session';
 import styles from './MultiPointCardsCarouselPreview.module.css';
+
+const WuButton = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
+  { ssr: false }
+);
 
 export interface MultiPointCardsCarouselPreviewProps {
   surveyId: number;
@@ -107,7 +113,7 @@ function CardCarouselNav({
         <button
           type="button"
           className={styles.cardNavBtnMobileNext}
-          aria-label="Next card"
+          aria-label="Next Item"
           disabled={!canGoNext}
           onClick={onNext}
         >
@@ -145,7 +151,7 @@ function CardCarouselNav({
       <button
         type="button"
         className={styles.cardNavBtnRound}
-        aria-label="Next card"
+        aria-label="Next Item"
         disabled={!canGoNext}
         onClick={onNext}
       >
@@ -202,12 +208,21 @@ export function MultiPointCardsCarouselPreview({
   const { pageIndex, getFooterLabel, handleFooterAction, goToPrevPage } =
     useSurveyPreviewPagination(1 + nextPages.length);
   const [activeRowIndex, setActiveRowIndex] = useState(0);
-  const [selectionsByRowId, setSelectionsByRowId] = useState<Record<string, string>>({});
+  const [selectionsByRowId, setSelectionsByRowId] = useState<Record<string, string[]>>({});
   const [slideDirection, setSlideDirection] = useState<SlideDirection>('next');
   const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewScroll = useSurveyPreviewScroll();
   const rowCount = matrix.rows.length;
   const isFullWidth = questionWidthPercent >= 100;
+  const isCheckbox = answerType === 'checkbox';
+
+  function getRowSelections(rowId: string): string[] {
+    return selectionsByRowId[rowId] ?? [];
+  }
+
+  function isColumnSelected(rowId: string, columnId: string): boolean {
+    return getRowSelections(rowId).includes(columnId);
+  }
 
   const cardColumnStyle: CSSProperties = isFullWidth
     ? { flex: '1 1 0', minWidth: 0, maxWidth: '100%' }
@@ -229,12 +244,14 @@ export function MultiPointCardsCarouselPreview({
       };
 
   const activeRow = matrix.rows[activeRowIndex];
-  const inputType = answerType === 'checkbox' ? 'checkbox' : 'radio';
+  const inputType = isCheckbox ? 'checkbox' : 'radio';
   const isHorizontal =
     responseLayout === 'horizontal' ||
     String(responseLayout).toLowerCase() === 'horizontal';
   const canGoPrev = activeRowIndex > 0;
   const canGoNext = rowCount > 1 && activeRowIndex < rowCount - 1;
+  const activeRowHasSelection = activeRow ? getRowSelections(activeRow.id).length > 0 : false;
+  const showNextCardAction = isCheckbox && activeRowHasSelection && canGoNext;
 
   const scrollMobilePreviewToTop = useCallback((): void => {
     if (!isMobile) return;
@@ -278,7 +295,22 @@ export function MultiPointCardsCarouselPreview({
       advanceTimeoutRef.current = null;
     }
 
-    setSelectionsByRowId((prev) => ({ ...prev, [rowId]: columnId }));
+    if (isCheckbox) {
+      setSelectionsByRowId((prev) => {
+        const current = prev[rowId] ?? [];
+        const next = current.includes(columnId)
+          ? current.filter((id) => id !== columnId)
+          : [...current, columnId];
+        return { ...prev, [rowId]: next };
+      });
+
+      if (isMobile) {
+        scrollMobilePreviewToTop();
+      }
+      return;
+    }
+
+    setSelectionsByRowId((prev) => ({ ...prev, [rowId]: [columnId] }));
 
     if (isMobile) {
       scrollMobilePreviewToTop();
@@ -298,9 +330,25 @@ export function MultiPointCardsCarouselPreview({
     }, ADVANCE_AFTER_SELECT_MS);
   }
 
+  function renderNextCardButton(className?: string): ReactNode {
+    if (!showNextCardAction) return null;
+
+    return (
+      <WuButton
+        type="button"
+        variant="secondary"
+        size="sm"
+        className={className ?? styles.nextCardBtn}
+        onClick={goToNextCard}
+      >
+        Next Item
+      </WuButton>
+    );
+  }
+
   function renderVerticalScaleOption(column: SurveyMatrixColumn, globalIndex: number) {
     if (!activeRow) return null;
-    const isChecked = selectionsByRowId[activeRow.id] === column.id;
+    const isChecked = isColumnSelected(activeRow.id, column.id);
 
     return (
       <li key={column.id} className={styles.scaleOption}>
@@ -357,7 +405,7 @@ export function MultiPointCardsCarouselPreview({
         <ul className={`${styles.scaleHorizontalGridRow} ${styles.scaleRadioRow}`}>
           {rowColumns.map((column, indexInRow) => {
             const globalIndex = rowStartIndex + indexInRow;
-            const isChecked = selectionsByRowId[activeRow.id] === column.id;
+            const isChecked = isColumnSelected(activeRow.id, column.id);
             return (
               <li key={`radio-${column.id}`} className={styles.scaleGridCell}>
                 <label
@@ -380,7 +428,7 @@ export function MultiPointCardsCarouselPreview({
         <ul className={`${styles.scaleHorizontalGridRow} ${styles.scaleLabelRow}`}>
           {rowColumns.map((column, indexInRow) => {
             const globalIndex = rowStartIndex + indexInRow;
-            const isChecked = selectionsByRowId[activeRow.id] === column.id;
+            const isChecked = isColumnSelected(activeRow.id, column.id);
             return (
               <li key={`label-${column.id}`} className={styles.scaleGridCell}>
                 <span
@@ -434,7 +482,7 @@ export function MultiPointCardsCarouselPreview({
       ) : null}
       <ul className={styles.mobileScaleOptions} aria-label="Rating scale">
         {matrix.columns.map((column, index) => {
-          const isChecked = selectionsByRowId[activeRow.id] === column.id;
+          const isChecked = isColumnSelected(activeRow.id, column.id);
           return (
             <li key={column.id} className={styles.mobileScaleOption}>
               <label
@@ -458,6 +506,7 @@ export function MultiPointCardsCarouselPreview({
       {mobileRightAnchor ? (
         <p className={styles.mobileScaleAnchorBottom}>{mobileRightAnchor}</p>
       ) : null}
+      {renderNextCardButton(styles.mobileNextCardBtn)}
     </div>
   ) : null;
 
@@ -560,7 +609,10 @@ export function MultiPointCardsCarouselPreview({
                       </div>
                       {cardNav}
                     </div>
-                    <div className={styles.scaleBelowCard}>{horizontalScaleOptions}</div>
+                    <div className={styles.scaleBelowCard}>
+                      {horizontalScaleOptions}
+                      {renderNextCardButton()}
+                    </div>
                   </div>
                 </CarouselSlide>
               </div>
@@ -592,6 +644,7 @@ export function MultiPointCardsCarouselPreview({
                   <p className={styles.scaleAnchorBottom}>
                     {plainTextFromRichValue(matrix.rightAnchor)}
                   </p>
+                  {renderNextCardButton()}
                 </div>
               </CarouselSlide>
             )}

@@ -37,7 +37,7 @@ function MenuItemWithIcon({
 }: {
   iconClass: string;
   label: string;
-  onSelect: () => void;
+  onSelect: (event: Event) => void;
 }) {
   return (
     <WuMenuItem onSelect={onSelect}>
@@ -64,7 +64,10 @@ export function QuestionOptionsMenu({ onAction, triggerClassName }: QuestionOpti
       <MenuItemWithIcon
         iconClass="wm-visibility"
         label="Preview"
-        onSelect={() => onAction('preview')}
+        onSelect={(event) => {
+          event.preventDefault();
+          onAction('preview');
+        }}
       />
       <MenuItemWithIcon
         iconClass="wm-content-copy"

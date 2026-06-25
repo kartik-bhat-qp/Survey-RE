@@ -1106,6 +1106,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   const pendingScrollQuestionRef = useRef<{ sectionId: string; questionId: string } | null>(
     null
   );
+  const previewLaunchGuardRef = useRef<{ signature: string; at: number } | null>(null);
   const toast = useCallback(
     (message: string) => {
       showToast({ message, variant: 'success' });
@@ -1779,6 +1780,16 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     []
   );
 
+  const openQuestionPreviewTab = useCallback((signature: string, url: string) => {
+    const now = Date.now();
+    const lastLaunch = previewLaunchGuardRef.current;
+    if (lastLaunch && lastLaunch.signature === signature && now - lastLaunch.at < 750) {
+      return;
+    }
+    previewLaunchGuardRef.current = { signature, at: now };
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }, []);
+
   const updateQuestionMatrix = useCallback(
     (
       sectionId: string,
@@ -1925,6 +1936,31 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             pageBreakBySlotKey,
             buildPreviewFollowUp
           );
+          const previewBaseUrl = `${window.location.origin}/surveys/preview/${detail.survey.id}`;
+          const previewSignature = `${detail.survey.id}:${questionKey}`;
+
+          if (isMultiPointScalesQuestion(question) && question.matrix) {
+            const mpSettings = getMultiPointSettings(questionKey);
+            if (isCardsCarouselPreview(mpSettings)) {
+              writeMultiPointQuestionPreviewSession({
+                surveyId: detail.survey.id,
+                surveyTitle: detail.editorTitle,
+                questionText: question.text,
+                required: question.required,
+                matrix: question.matrix,
+                settings: mpSettings,
+                samePageFollowUps,
+                nextPages,
+              });
+              openQuestionPreviewTab(previewSignature, previewBaseUrl);
+              return;
+            }
+            showToast({
+              message: 'Preview requires Cards carousel layout',
+              variant: 'info',
+            });
+            return;
+          }
 
           if (isSelectManyPreviewQuestion(question, questionSettings)) {
             writeSelectManyQuestionPreviewSession({
@@ -1947,10 +1983,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
               samePageFollowUps,
               nextPages,
             });
-            const previewUrl = `${window.location.origin}/surveys/preview/${detail.survey.id}?kind=select-many`;
-            window.open(previewUrl, '_blank', 'noopener,noreferrer');
+            openQuestionPreviewTab(
+              `${previewSignature}:select-many`,
+              `${previewBaseUrl}?kind=select-many`
+            );
             return;
           }
+
           if (isSelectOnePreviewQuestion(question, questionSettings)) {
             writeSelectOneQuestionPreviewSession({
               surveyId: detail.survey.id,
@@ -1973,33 +2012,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
               samePageFollowUps,
               nextPages,
             });
-            const previewUrl = `${window.location.origin}/surveys/preview/${detail.survey.id}?kind=select-one`;
-            window.open(previewUrl, '_blank', 'noopener,noreferrer');
+            openQuestionPreviewTab(
+              `${previewSignature}:select-one`,
+              `${previewBaseUrl}?kind=select-one`
+            );
             return;
           }
-          if (isMultiPointScalesQuestion(question) && question.matrix) {
-            const mpSettings = getMultiPointSettings(questionKey);
-            if (isCardsCarouselPreview(mpSettings)) {
-              writeMultiPointQuestionPreviewSession({
-                surveyId: detail.survey.id,
-                surveyTitle: detail.editorTitle,
-                questionText: question.text,
-                required: question.required,
-                matrix: question.matrix,
-                settings: mpSettings,
-                samePageFollowUps,
-                nextPages,
-              });
-              const previewUrl = `${window.location.origin}/surveys/preview/${detail.survey.id}`;
-              window.open(previewUrl, '_blank', 'noopener,noreferrer');
-              return;
-            }
-            showToast({
-              message: 'Preview requires Cards carousel layout',
-              variant: 'info',
-            });
-            return;
-          }
+
           showToast({
             message: `Preview is not available for ${questionLabel}`,
             variant: 'info',
@@ -2057,6 +2076,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       getQuestionSettings,
       getQuestionLogic,
       buildPreviewFollowUp,
+      openQuestionPreviewTab,
     ]
   );
 

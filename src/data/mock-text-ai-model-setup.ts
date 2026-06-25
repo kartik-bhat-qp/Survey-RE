@@ -28,3 +28,9 @@ export const TEXT_AI_EXPERT_REVIEW_TITLE = 'QuestionPro Expert Review';
 
 export const TEXT_AI_EXPERT_REVIEW_DESCRIPTION =
   'Have a QuestionPro research expert review your codeframe';
+
+export const TEXT_AI_CODEBOOK_TEMPLATE_DOWNLOAD_LABEL = 'Download template file';
+
+export const TEXT_AI_CODEBOOK_TEMPLATE_UPLOAD_LABEL = 'Choose File to Upload';
+
+export const TEXT_AI_CODEBOOK_TEMPLATE_SUPPORTED_FILES = 'Files supported: .xls, .xlsx';

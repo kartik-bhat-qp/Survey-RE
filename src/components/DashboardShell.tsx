@@ -1,17 +1,18 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
 import { AppHeaderBreadcrumb } from '@/components/header/AppHeaderBreadcrumb';
 import { AppHeaderContent } from '@/components/header/AppHeaderContent';
 import { GlobalFooter } from '@/components/GlobalFooter';
 import { SideNav } from '@/components/SideNav';
 import {
   HEADER_BRAND_COLOR,
-  HEADER_PRODUCT_NAME,
   MOCK_HEADER_CATEGORIES,
 } from '@/data/mock-header-categories';
 import { MOCK_HEADER_USER } from '@/data/mock-header-user';
 import { useMounted } from '@/hooks/useMounted';
+import { getBiHeaderProductName } from '@/lib/bi-header-product';
 import styles from './DashboardShell.module.css';
 
 const WuAppHeader = dynamic(
@@ -29,6 +30,8 @@ const WuToast = dynamic(
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const mounted = useMounted();
+  const pathname = usePathname();
+  const productName = getBiHeaderProductName(pathname);
 
   return (
     <div className={styles.shell}>
@@ -36,7 +39,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <header className={styles.header}>
         {mounted ? (
           <WuAppHeader
-            productName={HEADER_PRODUCT_NAME}
+            productName={productName}
             categories={MOCK_HEADER_CATEGORIES}
             brandColor={HEADER_BRAND_COLOR}
             user={MOCK_HEADER_USER}

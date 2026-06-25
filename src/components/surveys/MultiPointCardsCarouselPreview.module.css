@@ -139,6 +139,39 @@
   font-weight: 500;
 }
 
+@keyframes nextItemEnter {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nextCardBtn,
+.mobileNextCardBtn {
+  align-self: center;
+  animation: nextItemEnter 0.35s ease-out;
+  margin-top: 0.25rem;
+}
+
+.mobileNextCardBtn {
+  align-self: flex-start;
+  margin-left: -0.5rem;
+  margin-top: 0.5rem;
+  padding-left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nextCardBtn,
+  .mobileNextCardBtn {
+    animation: none;
+  }
+}
+
 .previewFooterMobile {
   border-top: 1px solid #e2e8f0;
   display: flex;

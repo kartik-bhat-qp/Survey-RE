@@ -57,10 +57,21 @@ export function resolveQuestionPreviewInputKind(
   return resolvePreviewInputKind(question, settings);
 }
 
+function isMatrixKindQuestion(question: SurveyQuestion): boolean {
+  return (
+    question.kind === 'multi-point-scales' ||
+    question.kind === 'matrix-multi-select' ||
+    question.kind === 'matrix-spreadsheet'
+  );
+}
+
 export function isSelectManyPreviewQuestion(
   question: SurveyQuestion,
   settings?: Pick<QuestionSettings, 'answerType'>
 ): boolean {
+  if (isMatrixKindQuestion(question)) {
+    return false;
+  }
   return resolveQuestionPreviewInputKind(question, settings) === 'checkbox';
 }
 

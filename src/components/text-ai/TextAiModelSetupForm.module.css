@@ -58,6 +58,66 @@
   width: 16px;
 }
 
+.templatePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+  padding-left: 1.5rem;
+}
+
+.downloadRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.downloadLabel {
+  color: #545e6b;
+  font-size: 14px;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.uploadZone {
+  align-items: center;
+  background-color: #fff;
+  border: 1px dashed #c5c5c5;
+  color: #545e6b;
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 5.5rem;
+  padding: 1rem;
+  width: 100%;
+}
+
+.uploadZone:hover {
+  background-color: #fafafa;
+  border-color: #1b87e6;
+}
+
+.uploadIcon {
+  color: #909090;
+  display: inline-flex;
+}
+
+.uploadIconSvg {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.supportedFiles {
+  color: #909090;
+  font-size: 12px;
+  margin: 0;
+}
+
 .expertReviewOption {
   border-top: 1px solid #e8e8e8;
   padding-top: 1rem;
