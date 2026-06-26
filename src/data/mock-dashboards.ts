@@ -110,7 +110,7 @@ function generateCreationDate(index: number): string {
 const HAND_CRAFTED: Dashboard[] = [
   {
     id: 1,
-    name: 'Executive CX Overview',
+    name: 'Executive CX Overview.',
     creationDate: '2025-05-15T10:30:00Z',
     enableSharing: true,
   },
