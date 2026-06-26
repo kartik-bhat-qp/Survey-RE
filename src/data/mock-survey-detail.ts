@@ -129,6 +129,8 @@ export const DEFAULT_COMMENT_BOX_QUESTION_TEXT = 'Comments / suggestions:';
 
 export const DEFAULT_COMMENT_BOX_ANSWER_PLACEHOLDER = 'Multiple Row Answer Text';
 
+export const DEFAULT_CAPTCHA_QUESTION_TEXT = 'Select Captcha and Verify';
+
 export const DEFAULT_SINGLE_ROW_QUESTION_TEXT = 'Name';
 
 export const DEFAULT_SINGLE_ROW_ANSWER_PLACEHOLDER = 'Single Row Answer Text';

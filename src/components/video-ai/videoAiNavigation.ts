@@ -37,10 +37,16 @@ export function consumeVideoAiRestoreState(surveyId: number): VideoAiRestoreStat
   return state;
 }
 
-export function videoAiDetailHref(questionId: string, surveyId: number): string {
-  return `/video-ai/${questionId}?surveyId=${surveyId}`;
+export function videoAiDetailHref(questionId: string, surveyId?: number): string {
+  if (surveyId !== undefined && Number.isFinite(surveyId)) {
+    return `/video-ai/${questionId}?surveyId=${surveyId}`;
+  }
+  return `/video-ai/${questionId}`;
 }
 
-export function videoAiListHref(surveyId: number): string {
-  return `/surveys/${surveyId}`;
+export function videoAiListHref(surveyId?: number): string {
+  if (surveyId !== undefined && Number.isFinite(surveyId)) {
+    return `/surveys/${surveyId}`;
+  }
+  return '/video-ai';
 }

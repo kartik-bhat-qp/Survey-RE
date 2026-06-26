@@ -2,6 +2,7 @@
 
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { CaptchaSurveyQuestionPreview } from '@/components/surveys/CaptchaSurveyQuestionPreview';
 import { MultiPointCardsCarouselPreview } from '@/components/surveys/MultiPointCardsCarouselPreview';
 import { SelectManyQuestionPreview } from '@/components/surveys/SelectManyQuestionPreview';
 import { SelectOneQuestionPreview } from '@/components/surveys/SelectOneQuestionPreview';
@@ -10,12 +11,15 @@ import { SurveyQuestionPreviewChrome } from '@/components/surveys/SurveyQuestion
 import { EmptyState } from '@/components/ui/EmptyState';
 import { DEFAULT_MULTI_POINT_SETTINGS } from '@/data/mock-multi-point-settings';
 import {
+  captchaPreviewStorageKey,
   multiPointPreviewStorageKey,
+  readCaptchaQuestionPreviewSession,
   readMultiPointQuestionPreviewSession,
   readSelectManyQuestionPreviewSession,
   readSelectOneQuestionPreviewSession,
   selectManyPreviewStorageKey,
   selectOnePreviewStorageKey,
+  type CaptchaQuestionPreviewSession,
   type MultiPointQuestionPreviewSession,
   type SelectManyQuestionPreviewSession,
   type SelectOneQuestionPreviewSession,
@@ -34,6 +38,8 @@ export default function SurveyQuestionPreviewPage() {
     useState<SelectManyQuestionPreviewSession | null>(null);
   const [selectOnePayload, setSelectOnePayload] =
     useState<SelectOneQuestionPreviewSession | null>(null);
+  const [captchaPayload, setCaptchaPayload] =
+    useState<CaptchaQuestionPreviewSession | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -47,14 +53,22 @@ export default function SurveyQuestionPreviewPage() {
         setSelectManyPayload(readSelectManyQuestionPreviewSession(surveyId));
         setSelectOnePayload(null);
         setMultiPointPayload(null);
+        setCaptchaPayload(null);
       } else if (previewKind === 'select-one') {
         setSelectOnePayload(readSelectOneQuestionPreviewSession(surveyId));
         setSelectManyPayload(null);
+        setMultiPointPayload(null);
+        setCaptchaPayload(null);
+      } else if (previewKind === 'captcha') {
+        setCaptchaPayload(readCaptchaQuestionPreviewSession(surveyId));
+        setSelectManyPayload(null);
+        setSelectOnePayload(null);
         setMultiPointPayload(null);
       } else {
         setMultiPointPayload(readMultiPointQuestionPreviewSession(surveyId));
         setSelectManyPayload(null);
         setSelectOnePayload(null);
+        setCaptchaPayload(null);
       }
       setReady(true);
     }
@@ -67,7 +81,9 @@ export default function SurveyQuestionPreviewPage() {
           ? selectManyPreviewStorageKey(surveyId)
           : previewKind === 'select-one'
             ? selectOnePreviewStorageKey(surveyId)
-            : multiPointPreviewStorageKey(surveyId);
+            : previewKind === 'captcha'
+              ? captchaPreviewStorageKey(surveyId)
+              : multiPointPreviewStorageKey(surveyId);
       if (event.key === key) {
         loadPayload();
       }
@@ -153,6 +169,40 @@ export default function SurveyQuestionPreviewPage() {
             isFirstQuestion={selectOnePayload.isFirstQuestion}
             samePageFollowUps={selectOnePayload.samePageFollowUps ?? []}
             nextPages={selectOnePayload.nextPages ?? []}
+            onDone={() => window.close()}
+            onClose={() => window.close()}
+          />
+        </SurveyPreviewAnswerProvider>
+      </SurveyQuestionPreviewChrome>
+    );
+  }
+
+  if (previewKind === 'captcha') {
+    if (!captchaPayload) {
+      return (
+        <div className={styles.emptyWrap}>
+          <EmptyState
+            icon="wm-visibility"
+            title="No preview available"
+            description="Open preview from the question menu in the survey editor."
+          />
+        </div>
+      );
+    }
+
+    return (
+      <SurveyQuestionPreviewChrome onClose={() => window.close()}>
+        <SurveyPreviewAnswerProvider>
+          <CaptchaSurveyQuestionPreview
+            surveyId={captchaPayload.surveyId}
+            surveyTitle={captchaPayload.surveyTitle}
+            questionCode={captchaPayload.questionCode ?? 'Q'}
+            questionText={captchaPayload.questionText}
+            required={captchaPayload.required}
+            captchaSettings={captchaPayload.captchaSettings}
+            isFirstQuestion={captchaPayload.isFirstQuestion}
+            samePageFollowUps={captchaPayload.samePageFollowUps ?? []}
+            nextPages={captchaPayload.nextPages ?? []}
             onDone={() => window.close()}
             onClose={() => window.close()}
           />

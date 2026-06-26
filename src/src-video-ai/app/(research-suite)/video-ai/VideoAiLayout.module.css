@@ -1,0 +1,12 @@
+/*
+ * Flex item in ResearchSuiteShell's .content (row flex).
+ * align-self: stretch gives it the full container height so this div
+ * becomes the scroll container. VideoAiQuestionDetail's .page grows to
+ * its natural content height inside here and this wrapper scrolls.
+ */
+.scrollArea {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+}

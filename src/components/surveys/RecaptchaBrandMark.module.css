@@ -1,0 +1,42 @@
+.root {
+  align-items: center;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+  line-height: 1;
+}
+
+.rootIconOnly {
+  gap: 0;
+}
+
+.icon {
+  display: block;
+  flex-shrink: 0;
+  height: 2.25rem;
+  width: 2.25rem;
+}
+
+.rootIconOnly .icon {
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.wordmark {
+  color: #9aa0a6;
+  font-family: Roboto, Helvetica, Arial, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.wordRe {
+  font-weight: 400;
+}
+
+.wordCaptcha {
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}

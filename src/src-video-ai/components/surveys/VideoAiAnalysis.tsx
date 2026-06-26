@@ -13,7 +13,6 @@ import {
   type FilterOption,
 } from '@/data/mock-video-ai';
 import {
-  saveVideoAiReturnState,
   videoAiDetailHref,
 } from '@/components/video-ai/videoAiNavigation';
 import styles from './VideoAiAnalysis.module.css';
@@ -170,13 +169,7 @@ function QuestionCard({
   );
 }
 
-export function VideoAiAnalysis({
-  surveyId,
-  embeddedInSurvey = false,
-}: {
-  surveyId?: number;
-  embeddedInSurvey?: boolean;
-}) {
+export function VideoAiAnalysis({ surveyId }: { surveyId: number }) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [questionFilter, setQuestionFilter] = useState<FilterOption>(VIDEO_AI_SURVEY_OPTIONS[0]);
@@ -315,12 +308,7 @@ export function VideoAiAnalysis({
               key={q.id}
               question={q}
               onClick={() => {
-                if (embeddedInSurvey && surveyId !== undefined) {
-                  saveVideoAiReturnState(surveyId);
-                  router.push(videoAiDetailHref(q.id, surveyId));
-                  return;
-                }
-                router.push(videoAiDetailHref(q.id));
+                router.push(videoAiDetailHref(q.id, surveyId));
               }}
             />
           ))

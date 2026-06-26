@@ -29,6 +29,7 @@ import { PushToSocialQuestionPreview } from '@/components/surveys/PushToSocialQu
 import { NumericSliderQuestionPreview } from '@/components/surveys/NumericSliderQuestionPreview';
 import { ConstantSumQuestionPreview } from '@/components/surveys/ConstantSumQuestionPreview';
 import { CalendarQuestionPreview } from '@/components/surveys/CalendarQuestionPreview';
+import { CaptchaQuestionPreview } from '@/components/surveys/CaptchaQuestionPreview';
 import { DateTimeQuestionPreview } from '@/components/surveys/DateTimeQuestionPreview';
 import { DragDropQuestionPreview } from '@/components/surveys/DragDropQuestionPreview';
 import { ImageChooserRatingQuestionPreview } from '@/components/surveys/ImageChooserRatingQuestionPreview';
@@ -350,6 +351,8 @@ function QuestionTypeHoverPreview({
         {content.variant === 'date-time' && content.dateTime ? (
           <DateTimeQuestionPreview data={content.dateTime} />
         ) : null}
+
+        {content.variant === 'captcha' ? <CaptchaQuestionPreview /> : null}
 
         {content.variant === 'calendar' && content.calendar ? (
           <CalendarQuestionPreview data={content.calendar} />

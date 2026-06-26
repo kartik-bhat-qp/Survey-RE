@@ -14,6 +14,8 @@ import {
   type QuestionSettings,
   type RandomizeAnswerCount,
 } from '@/data/mock-question-settings';
+import type { CaptchaSettings } from '@/data/mock-captcha-settings';
+import { DEFAULT_CAPTCHA_SETTINGS } from '@/data/mock-captcha-settings';
 import type { ShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
 
 export interface SurveyQuestionPreviewFollowUp {
@@ -80,7 +82,23 @@ export interface SelectOneQuestionPreviewSession {
   nextPages?: SurveyQuestionPreviewFollowUp[][];
 }
 
-export type SurveyQuestionPreviewKind = 'multi-point' | 'select-many' | 'select-one';
+export interface CaptchaQuestionPreviewSession {
+  surveyId: number;
+  surveyTitle: string;
+  questionCode?: string;
+  questionText: string;
+  required?: boolean;
+  captchaSettings: CaptchaSettings;
+  isFirstQuestion?: boolean;
+  samePageFollowUps?: SurveyQuestionPreviewFollowUp[];
+  nextPages?: SurveyQuestionPreviewFollowUp[][];
+}
+
+export type SurveyQuestionPreviewKind =
+  | 'multi-point'
+  | 'select-many'
+  | 'select-one'
+  | 'captcha';
 
 export function multiPointPreviewStorageKey(surveyId: number): string {
   return `survey-multipoint-preview-${surveyId}`;
@@ -92,6 +110,10 @@ export function selectManyPreviewStorageKey(surveyId: number): string {
 
 export function selectOnePreviewStorageKey(surveyId: number): string {
   return `survey-select-one-preview-${surveyId}`;
+}
+
+export function captchaPreviewStorageKey(surveyId: number): string {
+  return `survey-captcha-preview-${surveyId}`;
 }
 
 /** localStorage so data is available when preview opens in a new browser tab. */
@@ -233,6 +255,45 @@ export function readSelectOneQuestionPreviewSession(
         },
         parsed.options.length
       ),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function mergeCaptchaPreviewSettings(
+  settings?: Partial<CaptchaSettings>
+): CaptchaSettings {
+  return {
+    ...DEFAULT_CAPTCHA_SETTINGS,
+    ...settings,
+  };
+}
+
+export function writeCaptchaQuestionPreviewSession(
+  payload: CaptchaQuestionPreviewSession
+): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(
+    captchaPreviewStorageKey(payload.surveyId),
+    JSON.stringify({
+      ...payload,
+      captchaSettings: mergeCaptchaPreviewSettings(payload.captchaSettings),
+    })
+  );
+}
+
+export function readCaptchaQuestionPreviewSession(
+  surveyId: number
+): CaptchaQuestionPreviewSession | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem(captchaPreviewStorageKey(surveyId));
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as CaptchaQuestionPreviewSession;
+    return {
+      ...parsed,
+      captchaSettings: mergeCaptchaPreviewSettings(parsed.captchaSettings),
     };
   } catch {
     return null;

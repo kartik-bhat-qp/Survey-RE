@@ -21,6 +21,7 @@ export type QuestionPreviewVariant =
   | 'matrix-multi-select'
   | 'matrix-spreadsheet'
   | 'date-time'
+  | 'captcha'
   | 'calendar'
   | 'maps'
   | 'nps'
@@ -69,6 +70,9 @@ export interface CalendarPreviewData {
 
 /** Maps preview uses {@link UsStatesChoroplethMap} — no extra data required. */
 export type MapsPreviewData = Record<string, never>;
+
+/** Captcha reCAPTCHA checkbox preview — rendered by {@link CaptchaQuestionPreview}. */
+export type CaptchaPreviewData = Record<string, never>;
 
 /** Heatmap preview uses {@link UsStatesHeatmapMap} — no extra data required. */
 export type HeatmapPreviewData = Record<string, never>;
@@ -326,6 +330,8 @@ export interface QuestionTypePreviewContent {
   matrixSpreadsheet?: MatrixSpreadsheetPreviewData;
   /** Date / time dropdown fields (e.g. Month, Day, Year). */
   dateTime?: DateTimePreviewData;
+  /** reCAPTCHA checkbox verification widget. */
+  captcha?: CaptchaPreviewData;
   /** Calendar single-line picker with trailing icon. */
   calendar?: CalendarPreviewData;
   /** US choropleth map image. */
@@ -699,10 +705,11 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     },
   },
   captcha: {
-    variant: 'placeholder',
+    variant: 'captcha',
     headerIcon: 'wm-verified-user',
-    headerLabel: 'Captcha',
-    question: 'Bot verification challenge before continuing.',
+    headerLabel: 'Misc (Captcha)',
+    question: 'Select Captcha and Verify',
+    captcha: {},
   },
   calendar: {
     variant: 'calendar',

@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
   getVideoAiQuestionDetail,
@@ -431,17 +431,11 @@ function ResponseCard({
 
 export function VideoAiQuestionDetail({ questionId }: { questionId: string }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const surveyIdParam = searchParams.get('surveyId');
-  const surveyId =
-    surveyIdParam !== null && Number.isFinite(Number(surveyIdParam))
-      ? Number(surveyIdParam)
-      : undefined;
   const detail = getVideoAiQuestionDetail(questionId);
   const { showToast } = useWuShowToast();
 
   function handleBreadcrumbBack() {
-    router.push(videoAiListHref(surveyId));
+    router.push(videoAiListHref());
   }
 
   const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>('all');

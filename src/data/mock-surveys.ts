@@ -154,6 +154,15 @@ export const MOCK_SURVEYS: Survey[] = [
     status: 'Active - Published',
     responses: 46,
   },
+  {
+    id: 14,
+    name: 'reCAPTCHA v3',
+    folderId: 'all',
+    createdAt: '2026-06-23T10:00:00Z',
+    modifiedAt: '2026-06-23T10:00:00Z',
+    status: 'Active - Draft',
+    responses: 0,
+  },
 ];
 
 export const SURVEYS_PAGE_SIZE = 100;

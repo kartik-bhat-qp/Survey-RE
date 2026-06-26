@@ -1,0 +1,153 @@
+.root {
+  border-top: 1px dashed #d5dde6;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.rootRespondent {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.v2FallbackBlock {
+  margin-bottom: 1rem;
+}
+
+.v2FallbackNote {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  margin: 0 0 0.75rem;
+}
+
+.inlineError {
+  color: #dc2626;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  margin: 0.5rem 0 0;
+}
+
+.previewLabel {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.375rem;
+  text-transform: uppercase;
+}
+
+.previewHint {
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 0 0 0.75rem;
+}
+
+.verifyBanner {
+  align-items: flex-start;
+  background: #1b3380;
+  border-radius: 0.25rem;
+  color: #fff;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+  padding: 0.75rem 0.875rem 0.625rem;
+  position: relative;
+}
+
+.verifyBannerSuccess {
+  background: #166534;
+}
+
+.bannerIcon {
+  color: #fff;
+  flex-shrink: 0;
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.bannerText {
+  flex: 1;
+  min-width: 0;
+}
+
+.bannerTitle {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+.bannerBody {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  margin: 0;
+  opacity: 0.92;
+}
+
+.bannerProgressTrack {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  bottom: 0;
+  height: 0.1875rem;
+  left: 0;
+  position: absolute;
+  right: 0;
+}
+
+.bannerProgressFill {
+  animation: captchaBannerProgress 1.8s ease-out forwards;
+  background: #fff;
+  border-radius: 999px;
+  height: 100%;
+  width: 0;
+}
+
+.bannerProgressComplete {
+  background: #fff;
+  border-radius: 999px;
+  height: 100%;
+  width: 100%;
+}
+
+@keyframes captchaBannerProgress {
+  from {
+    width: 0;
+  }
+
+  to {
+    width: 100%;
+  }
+}
+
+.btnContent {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.375rem;
+}
+
+.btnSpinner {
+  animation: captchaBtnSpin 0.8s linear infinite;
+  display: inline-block;
+  font-size: 0.875rem;
+}
+
+@keyframes captchaBtnSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.doneBtnBusy:disabled {
+  cursor: wait;
+}

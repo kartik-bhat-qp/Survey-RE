@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { SurveyAnalyticsPieChart } from '@/components/surveys/analytics/SurveyAnalyticsPieChart';
 import { SurveyAnalyticsWorldMap } from '@/components/surveys/analytics/SurveyAnalyticsWorldMap';
 import { useSurveyAnalyticsView } from '@/components/surveys/SurveyAnalyticsViewContext';
 import { VideoAiAnalysis } from '@/components/surveys/VideoAiAnalysis';
+import { consumeVideoAiRestoreState } from '@/components/video-ai/videoAiNavigation';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { SurveyDetail } from '@/data/mock-survey-detail';
 import {
@@ -116,11 +117,18 @@ function QuestionAnalyticsCard({
 
 export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardProps) {
   const { showToast } = useWuShowToast();
-  const { activeTab, activeSubView } = useSurveyAnalyticsView();
+  const { activeTab, activeSubView, setAnalyticsSelection } = useSurveyAnalyticsView();
   const data = useMemo(() => getSurveyAnalyticsDashboardData(detail), [detail]);
   const activeViewLabel = getAnalyticsViewLabel(activeTab, activeSubView);
   const showDashboardContent = activeTab === 'dashboard' && activeSubView === 'dashboard';
   const showVideoAiAnalysis = activeTab === 'analysis' && activeSubView === 'video-ai-analysis';
+
+  useEffect(() => {
+    const restored = consumeVideoAiRestoreState(detail.survey.id);
+    if (restored) {
+      setAnalyticsSelection(restored.tab, restored.subView);
+    }
+  }, [detail.survey.id, setAnalyticsSelection]);
 
   function handleAction(label: string) {
     showToast({ message: label, variant: 'info' });
@@ -136,7 +144,9 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
   ];
 
   if (showVideoAiAnalysis) {
-    return <VideoAiAnalysis />;
+    return (
+      <VideoAiAnalysis surveyId={detail.survey.id} embeddedInSurvey />
+    );
   }
 
   if (!showDashboardContent) {
