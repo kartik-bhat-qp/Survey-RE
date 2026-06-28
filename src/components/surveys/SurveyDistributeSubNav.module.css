@@ -1,0 +1,105 @@
+.navbar {
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.utilityArea {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  padding-right: 0.75rem;
+}
+
+.userCountBtn {
+  align-items: center;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  gap: 0.25rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+}
+
+.userCountBtn span:first-child {
+  font-size: 1rem;
+}
+
+.urlField {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  color: #64748b;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  height: 2rem;
+  max-width: 14rem;
+  overflow: hidden;
+  padding: 0 0.625rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.iconBtn {
+  align-items: center;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.iconBtn span {
+  font-size: 1.125rem;
+}
+
+.previewBtn {
+  align-items: center;
+  background: #1b87e6;
+  border: none;
+  border-radius: 0.375rem;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.previewBtn span {
+  font-size: 1.125rem;
+}
+
+.previewBtn:hover {
+  background: #1570c2;
+}
+
+.channelLink {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.channelLink:hover {
+  color: #1b87e6;
+}
+
+@media (max-width: 1023px) {
+  .urlField {
+    display: none;
+  }
+}

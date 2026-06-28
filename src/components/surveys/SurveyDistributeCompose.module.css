@@ -1,0 +1,292 @@
+.workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar {
+  background: #fff;
+  border-right: 1px solid #e5e9ef;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 0.75rem 0;
+  width: 9.5rem;
+}
+
+.sidebarItem {
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  color: #475569;
+  cursor: pointer;
+  display: block;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  padding: 0.625rem 1rem;
+  text-align: left;
+  width: 100%;
+}
+
+.sidebarItem:hover {
+  background: #f8fafc;
+  color: #1b87e6;
+}
+
+.sidebarItemActive {
+  background: #f0f7ff;
+  border-left-color: #1b87e6;
+  color: #1b87e6;
+  font-weight: 500;
+}
+
+.main {
+  background: #f4f6f8;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 1rem 1.25rem 1.5rem;
+}
+
+.composeCard {
+  background: #fff;
+  border: 1px solid #e5e9ef;
+  border-radius: 0.25rem;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.composeHeader {
+  border-bottom: 1px solid #e5e9ef;
+  display: grid;
+  gap: 0.75rem 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  padding: 0.875rem 1rem;
+}
+
+.fieldRow {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+}
+
+.fieldRowWide {
+  grid-column: 1 / -1;
+}
+
+.fieldLabel {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.fieldControl {
+  min-width: 0;
+}
+
+.fieldControlWithToggle {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.selectWrap {
+  min-width: 0;
+  width: 100%;
+}
+
+.templateRow {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+
+.templateLabel {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.templateSelect {
+  min-width: 11rem;
+}
+
+.editorSection {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 16rem;
+}
+
+.bodyField {
+  border: none;
+  flex: 1;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  min-height: 12rem;
+  outline: none;
+  padding: 1rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.toolbar {
+  align-items: center;
+  border-top: 1px solid #e5e9ef;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.125rem;
+  padding: 0.375rem 0.5rem;
+}
+
+.toolbarBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  gap: 0.25rem;
+  height: 1.75rem;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0 0.375rem;
+}
+
+.toolbarBtn:hover {
+  background: #f1f5f9;
+  color: #1b87e6;
+}
+
+.toolbarBtn span {
+  font-size: 1rem;
+}
+
+.toolbarDivider {
+  background: #e2e8f0;
+  height: 1.25rem;
+  margin: 0 0.25rem;
+  width: 1px;
+}
+
+.composeFooter {
+  align-items: center;
+  border-top: 1px solid #e5e9ef;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.875rem 1rem;
+}
+
+.footerLeft {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.creditLine {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+}
+
+.creditLink {
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font: inherit;
+  margin-left: 0.25rem;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.footerActions {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+}
+
+.sendBtn {
+  background: #1b87e6;
+  border: none;
+  border-radius: 0.25rem;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-width: 5.5rem;
+  padding: 0.5rem 1.25rem;
+}
+
+.sendBtn:hover {
+  background: #1570c2;
+}
+
+.scheduleBtn {
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  padding: 0;
+}
+
+.canSpamBadge {
+  align-items: center;
+  color: #64748b;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  gap: 0.25rem;
+}
+
+.canSpamBadge span {
+  color: #1b87e6;
+  font-size: 1rem;
+}
+
+.placeholderPanel {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e5e9ef;
+  border-radius: 0.25rem;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  min-height: 20rem;
+  padding: 2rem;
+}
+
+@media (max-width: 900px) {
+  .composeHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .fieldRow {
+    grid-template-columns: 1fr;
+  }
+
+  .fieldLabel {
+    margin-bottom: -0.25rem;
+  }
+}

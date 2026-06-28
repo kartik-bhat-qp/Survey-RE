@@ -7,6 +7,8 @@ import { SurveyAnalyticsViewProvider } from '@/components/surveys/SurveyAnalytic
 import { SurveyEditorPhaseProvider, useSurveyEditorPhase } from '@/components/surveys/SurveyEditorPhaseContext';
 import { SurveyWorkspaceSectionsProvider } from '@/components/surveys/SurveyWorkspaceSectionsContext';
 import { SurveyEditorPhaseTabs } from '@/components/surveys/SurveyEditorPhaseTabs';
+import { SurveyDistributeSubNav } from '@/components/surveys/SurveyDistributeSubNav';
+import { SurveyDistributeViewProvider } from '@/components/surveys/SurveyDistributeViewContext';
 import { SurveyEditorWorkspaceToolbar } from '@/components/surveys/SurveyEditorWorkspaceToolbar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useSurveyById } from '@/hooks/useSurveyById';
@@ -21,8 +23,12 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
   const { activePhase } = useSurveyEditorPhase();
 
   useEffect(() => {
-    if (!ready || !survey || activePhase !== 'analytics') return;
-    if (pathname.includes('/advance-quotas')) {
+    if (!ready || !survey) return;
+    if (activePhase === 'analytics' && pathname.includes('/advance-quotas')) {
+      router.replace(`/surveys/${survey.id}`);
+      return;
+    }
+    if (activePhase === 'distribute' && pathname.includes('/advance-quotas')) {
       router.replace(`/surveys/${survey.id}`);
     }
   }, [activePhase, pathname, ready, router, survey]);
@@ -50,12 +56,15 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
   }
 
   const showAnalytics = activePhase === 'analytics';
+  const showDistribute = activePhase === 'distribute';
 
   return (
     <div className={styles.page}>
       <SurveyEditorPhaseTabs />
       {showAnalytics ? (
         <SurveyAnalyticsSubNav />
+      ) : showDistribute ? (
+        <SurveyDistributeSubNav surveyId={survey.id} />
       ) : (
         <SurveyEditorWorkspaceToolbar surveyId={survey.id} />
       )}
@@ -69,7 +78,9 @@ export default function SurveyEditorLayout({ children }: { children: React.React
     <SurveyEditorPhaseProvider>
       <SurveyWorkspaceSectionsProvider>
         <SurveyAnalyticsViewProvider>
-          <SurveyEditorLayoutBody>{children}</SurveyEditorLayoutBody>
+          <SurveyDistributeViewProvider>
+            <SurveyEditorLayoutBody>{children}</SurveyEditorLayoutBody>
+          </SurveyDistributeViewProvider>
         </SurveyAnalyticsViewProvider>
       </SurveyWorkspaceSectionsProvider>
     </SurveyEditorPhaseProvider>

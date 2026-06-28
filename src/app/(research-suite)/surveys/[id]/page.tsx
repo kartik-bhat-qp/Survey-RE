@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { SurveyAnalyticsDashboard } from '@/components/surveys/SurveyAnalyticsDashboard';
+import { SurveyDistributeDashboard } from '@/components/surveys/SurveyDistributeDashboard';
 import { useSurveyEditorPhase } from '@/components/surveys/SurveyEditorPhaseContext';
 import { SurveyEditorCanvas } from '@/components/surveys/SurveyEditorCanvas';
 import { readVideoAiReturnState } from '@/components/video-ai/videoAiNavigation';
@@ -30,6 +31,10 @@ export default function SurveyEditorPage() {
 
   if (activePhase === 'analytics') {
     return <SurveyAnalyticsDashboard detail={detail} />;
+  }
+
+  if (activePhase === 'distribute') {
+    return <SurveyDistributeDashboard detail={detail} />;
   }
 
   return <SurveyEditorCanvas detail={detail} />;
