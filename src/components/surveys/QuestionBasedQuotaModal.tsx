@@ -346,6 +346,7 @@ export function QuestionBasedQuotaModal({
           </div>
         ) : (
           <QuotaDimensionStep
+            surveyId={surveyId}
             questions={selectedQuestions}
             distribution={distribution}
             onDistributionChange={setDistribution}

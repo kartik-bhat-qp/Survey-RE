@@ -215,6 +215,7 @@ function buildQuotasFromSelection(
         label,
         target,
         current: 0,
+        overLimitAction: entry.overLimitActions[label],
       };
     });
     const minSum = options.reduce((sum, o) => sum + o.target, 0);
@@ -1360,6 +1361,7 @@ export function SurveyAdvanceQuotasDashboard({
           if (!open) setViewCriteriaQuotaId(null);
         }}
         quota={viewCriteriaQuota}
+        surveyId={surveyId}
         groupCheckCodes={viewCriteriaGroupChecks}
       />
 

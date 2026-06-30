@@ -1,4 +1,78 @@
+import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
+import {
+  findBranchTargetOption,
+  NO_BRANCHING_OPTION,
+  QUOTA_OVER_LIMIT_ACTION_OPTIONS,
+  type BranchTargetOption,
+} from '@/data/mock-question-logic';
+
 export type QuotaType = 'Question Based' | 'Advanced' | 'Criteria based' | 'Cross variable';
+
+/** Primary over-limit actions shown above the menu separator. */
+export const ADVANCE_QUOTA_PRIMARY_OVER_LIMIT_VALUES = [
+  'terminate-survey',
+  'quota-overlimit',
+  'quota-full-hide-option',
+] as const;
+
+export function buildAdvanceQuotaOverLimitPrimaryOptions(): BranchTargetOption[] {
+  return ADVANCE_QUOTA_PRIMARY_OVER_LIMIT_VALUES.map((value) => {
+    const match = QUOTA_OVER_LIMIT_ACTION_OPTIONS.find((option) => option.value === value);
+    return match ?? { value, label: value };
+  });
+}
+
+export function buildAdvanceQuotaOverLimitBranchingOptions(
+  surveyId: number,
+  currentQuestionId: number
+): BranchTargetOption[] {
+  const questions = getQuestionsBySurvey(surveyId).filter(
+    (question) =>
+      question.parentQuestionId === undefined && question.id !== currentQuestionId
+  );
+  const questionOptions: BranchTargetOption[] = questions.map((question, index) => ({
+    value: `goto-question:${question.id}`,
+    label: `${index + 1}. [${question.code}] ${question.text}`,
+  }));
+  return [NO_BRANCHING_OPTION, ...questionOptions];
+}
+
+/** Jump-to options when a question-based quota cell is met / over limit. */
+export function buildAdvanceQuotaOverLimitOptions(
+  surveyId: number,
+  currentQuestionId: number
+): BranchTargetOption[] {
+  return [
+    ...buildAdvanceQuotaOverLimitPrimaryOptions(),
+    ...buildAdvanceQuotaOverLimitBranchingOptions(surveyId, currentQuestionId),
+  ];
+}
+
+export function findAdvanceQuotaOverLimitOption(
+  surveyId: number,
+  currentQuestionId: number,
+  value: string
+): BranchTargetOption | null {
+  return findBranchTargetOption(
+    buildAdvanceQuotaOverLimitOptions(surveyId, currentQuestionId),
+    value
+  );
+}
+
+export function getAdvanceQuotaOverLimitActionLabel(
+  surveyId: number | undefined,
+  currentQuestionId: number | undefined,
+  action: string | undefined
+): string {
+  if (!action) return 'Quota Overlimit';
+  if (surveyId != null && currentQuestionId != null) {
+    const found = findAdvanceQuotaOverLimitOption(surveyId, currentQuestionId, action);
+    if (found) return found.label;
+  }
+  const standard = QUOTA_OVER_LIMIT_ACTION_OPTIONS.find((option) => option.value === action);
+  if (standard) return standard.label;
+  return 'Quota Overlimit';
+}
 
 /** Question-based quota distribution type (matches QuotaDimensionStep scope). */
 export type QuestionQuotaScope = 'max-count' | 'min-count' | 'min-pct';
@@ -82,6 +156,8 @@ export interface QuotaOption {
   label: string;
   target: number;
   current?: number;
+  /** Action when this option's quota is met / over limit. */
+  overLimitAction?: string;
 }
 
 export interface AdvanceQuota {

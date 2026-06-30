@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { SurveyQuestion } from '@/data/mock-survey-questions';
 import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
+import { AdvanceQuotaOverLimitSelect } from '@/components/surveys/AdvanceQuotaOverLimitSelect';
+import { NO_BRANCHING_OPTION } from '@/data/mock-question-logic';
 import styles from './QuotaDimensionStep.module.css';
 
 const WuInput = dynamic(
@@ -81,6 +83,8 @@ export interface QuotaDimensionEntry {
   scope: QuotaScopeType;
   /** Option label → numeric value (percentage 0-100 or absolute count). */
   values: Record<string, number>;
+  /** Per-option action when quota is met / over limit. */
+  overLimitActions: Record<string, string>;
   /** Sample-size target for the `min-count` scope. */
   target?: number;
 }
@@ -90,6 +94,7 @@ export interface QuotaDimensionState {
 }
 
 interface QuotaDimensionStepProps {
+  surveyId: number;
   questions: SurveyQuestion[];
   distribution: QuotaDimensionState;
   onDistributionChange: (next: QuotaDimensionState) => void;
@@ -127,16 +132,32 @@ function buildValuesForScope(options: string[], scope: QuotaScopeType): Record<s
   return map;
 }
 
-function buildEntryForScope(options: string[], scope: QuotaScopeType): QuotaDimensionEntry {
+function buildOverLimitActions(
+  options: string[],
+  previous?: Record<string, string>
+): Record<string, string> {
+  const actions: Record<string, string> = {};
+  for (const option of options) {
+    actions[option] = previous?.[option] ?? 'quota-overlimit';
+  }
+  return actions;
+}
+
+function buildEntryForScope(
+  options: string[],
+  scope: QuotaScopeType,
+  previousActions?: Record<string, string>
+): QuotaDimensionEntry {
   const values = buildValuesForScope(options, scope);
+  const overLimitActions = buildOverLimitActions(options, previousActions);
   if (scope === 'min-count') {
     const sum = Object.values(values).reduce((a, b) => a + b, 0);
-    return { scope, values, target: Math.max(sum * 2, 100) };
+    return { scope, values, overLimitActions, target: Math.max(sum * 2, 100) };
   }
   if (scope === 'min-pct') {
-    return { scope, values, target: 100 };
+    return { scope, values, overLimitActions, target: 100 };
   }
-  return { scope, values };
+  return { scope, values, overLimitActions };
 }
 
 export function buildInitialDistribution(questions: SurveyQuestion[]): QuotaDimensionState {
@@ -168,8 +189,10 @@ function questionTitle(question: SurveyQuestion): string {
 
 interface QuestionCardProps {
   question: SurveyQuestion;
+  surveyId: number;
   entry: QuotaDimensionEntry;
   onValueChange: (option: string, value: number) => void;
+  onOverLimitActionChange: (option: string, action: string) => void;
   onScopeChange: (scope: QuotaScopeType) => void;
   onTargetChange: (target: number) => void;
   onRemove: () => void;
@@ -178,8 +201,10 @@ interface QuestionCardProps {
 
 function QuestionCard({
   question,
+  surveyId,
   entry,
   onValueChange,
+  onOverLimitActionChange,
   onScopeChange,
   onTargetChange,
   onRemove,
@@ -289,8 +314,14 @@ function QuestionCard({
       </header>
       {collapsed ? null : (
         <div className={styles.cardBody}>
+          <div className={styles.optionHeaderRow}>
+            <span className={styles.optionHeaderLabel} />
+            <span className={styles.optionHeaderCount}>Quota</span>
+            <span className={styles.optionHeaderAction}>If over limit: jump to</span>
+          </div>
           {options.map((option) => {
             const value = entry.values[option] ?? 0;
+            const actionValue = entry.overLimitActions[option] ?? NO_BRANCHING_OPTION.value;
             return (
               <div key={option} className={styles.optionRow}>
                 <span className={styles.optionLabel}>{option}</span>
@@ -301,6 +332,14 @@ function QuestionCard({
                   className={styles.percentInput}
                   ariaLabel={`${option} ${isPercent ? 'percentage' : 'count'}`}
                 />
+                <div className={styles.actionSelect}>
+                  <AdvanceQuotaOverLimitSelect
+                    surveyId={surveyId}
+                    currentQuestionId={question.id}
+                    value={actionValue}
+                    onChange={(next) => onOverLimitActionChange(option, next)}
+                  />
+                </div>
               </div>
             );
           })}
@@ -371,6 +410,7 @@ function QuestionCard({
 }
 
 export function QuotaDimensionStep({
+  surveyId,
   questions,
   distribution,
   onDistributionChange,
@@ -400,14 +440,35 @@ export function QuotaDimensionStep({
   function handleValueChange(questionId: number, option: string, value: number): void {
     const existing = distribution[questionId];
     if (!existing) return;
+    const nextActions = { ...existing.overLimitActions };
+    if (value > 0 && nextActions[option] === NO_BRANCHING_OPTION.value) {
+      nextActions[option] = 'quota-overlimit';
+    }
     const next: QuotaDimensionState = {
       ...distribution,
       [questionId]: {
         ...existing,
         values: { ...existing.values, [option]: value },
+        overLimitActions: nextActions,
       },
     };
     onDistributionChange(next);
+  }
+
+  function handleOverLimitActionChange(
+    questionId: number,
+    option: string,
+    action: string
+  ): void {
+    const existing = distribution[questionId];
+    if (!existing) return;
+    onDistributionChange({
+      ...distribution,
+      [questionId]: {
+        ...existing,
+        overLimitActions: { ...existing.overLimitActions, [option]: action },
+      },
+    });
   }
 
   function handleScopeChange(
@@ -415,9 +476,10 @@ export function QuotaDimensionStep({
     scope: QuotaScopeType
   ): void {
     const options = resolveOptionsFor(question);
+    const existing = distribution[question.id];
     const next: QuotaDimensionState = {
       ...distribution,
-      [question.id]: buildEntryForScope(options, scope),
+      [question.id]: buildEntryForScope(options, scope, existing?.overLimitActions),
     };
     onDistributionChange(next);
   }
@@ -456,8 +518,12 @@ export function QuotaDimensionStep({
             <QuestionCard
               key={question.id}
               question={question}
+              surveyId={surveyId}
               entry={entryFor(question)}
               onValueChange={(option, value) => handleValueChange(question.id, option, value)}
+              onOverLimitActionChange={(option, action) =>
+                handleOverLimitActionChange(question.id, option, action)
+              }
               onScopeChange={(scope) => handleScopeChange(question, scope)}
               onTargetChange={(target) => handleTargetChange(question.id, target)}
               onRemove={() => onRemoveQuestion(question.id)}

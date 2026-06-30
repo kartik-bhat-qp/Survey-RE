@@ -1,0 +1,82 @@
+.rulesPanel {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  max-width: 100%;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.rulesPanelInline {
+  max-width: 100%;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.rulesTable {
+  min-width: min(100%, 40rem);
+  width: 100%;
+}
+
+.rulesHeader,
+.rulesRow {
+  align-items: center;
+  column-gap: 0.5rem;
+  display: grid;
+  grid-template-columns: minmax(10rem, 1.4fr) 5.5rem minmax(5rem, 0.9fr) 4rem minmax(9rem, 1fr);
+}
+
+.rulesHeader {
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.rulesHeader > span {
+  padding: 0.5rem 0.625rem;
+}
+
+.rulesRow {
+  background: #fff;
+  border-bottom: 1px solid #f0f2f5;
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+}
+
+.rulesRow:last-child {
+  border-bottom: none;
+}
+
+.colQuestion,
+.colOperator,
+.colOptions,
+.colTarget,
+.colAction {
+  padding: 0.5rem 0.625rem;
+}
+
+.colQuestion {
+  line-height: 1.35;
+}
+
+.colOperator,
+.colOptions,
+.colTarget,
+.colAction {
+  color: #475569;
+}
+
+.emptyRules {
+  padding: 0.75rem;
+}
+
+.emptyRulesText {
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+}

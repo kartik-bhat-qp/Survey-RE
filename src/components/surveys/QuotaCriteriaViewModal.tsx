@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import { CriteriaRulesExpanded } from '@/components/surveys/CriteriaRulesExpanded';
+import { QuestionBasedQuotaRulesExpanded } from '@/components/surveys/QuestionBasedQuotaRulesExpanded';
 import type {
   AdvanceQuota,
   AdvanceQuotaCheckPoint,
@@ -21,6 +22,7 @@ export interface QuotaCriteriaViewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   quota: AdvanceQuota | null;
+  surveyId?: number;
   /** Group-level checks for Advanced quotas (overrides quota.quotaChecks when set). */
   groupCheckCodes?: ReadonlyArray<{ questionCode: string; questionText?: string }>;
 }
@@ -54,6 +56,7 @@ export function QuotaCriteriaViewModal({
   open,
   onOpenChange,
   quota,
+  surveyId,
   groupCheckCodes = [],
 }: QuotaCriteriaViewModalProps) {
   const wick = useWickUILib();
@@ -149,15 +152,23 @@ export function QuotaCriteriaViewModal({
 
         <div className={styles.rulesSection}>
           <h3 className={styles.rulesHeading}>Rules</h3>
-          <CriteriaRulesExpanded
-            blocks={blocks}
-            checksSuffix={
-              quotaChecks.length > 0
-                ? undefined
-                : checksSuffix || undefined
-            }
-            variant="panel"
-          />
+          {quota.quotaType === 'Question Based' ? (
+            <QuestionBasedQuotaRulesExpanded
+              quota={quota}
+              surveyId={surveyId}
+              variant="panel"
+            />
+          ) : (
+            <CriteriaRulesExpanded
+              blocks={blocks}
+              checksSuffix={
+                quotaChecks.length > 0
+                  ? undefined
+                  : checksSuffix || undefined
+              }
+              variant="panel"
+            />
+          )}
         </div>
       </WuModalContent>
       <WuModalFooter>
