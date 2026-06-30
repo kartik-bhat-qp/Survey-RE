@@ -15,7 +15,10 @@
 
 .muted {
   color: #9b9b9b;
-  font-size: 12px;
+  font-family: var(--dashboard-widget-font-family, inherit);
+  font-size: var(--dashboard-widget-body-size, 12px);
+  font-style: var(--dashboard-widget-font-style, normal);
+  font-weight: var(--dashboard-widget-font-weight, 400);
 }
 
 /* Response info */
@@ -35,14 +38,19 @@
 
 .responseValue {
   color: #1b4f9c;
-  font-size: 28px;
-  font-weight: 600;
+  font-family: var(--dashboard-widget-font-family, inherit);
+  font-size: var(--dashboard-widget-metric-size, 28px);
+  font-style: var(--dashboard-widget-font-style, normal);
+  font-weight: var(--dashboard-widget-font-weight, 600);
   line-height: 1.1;
 }
 
 .responseLabel {
   color: #666;
-  font-size: 12px;
+  font-family: var(--dashboard-widget-font-family, inherit);
+  font-size: var(--dashboard-widget-body-size, 12px);
+  font-style: var(--dashboard-widget-font-style, normal);
+  font-weight: var(--dashboard-widget-font-weight, 400);
 }
 
 /* Bars */
@@ -76,7 +84,7 @@
 
 .barPct {
   color: #545e6b;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 12px);
   text-align: right;
 }
 
@@ -93,7 +101,7 @@
 .leaderItem {
   align-items: center;
   display: grid;
-  font-size: 13px;
+  font-size: var(--dashboard-widget-body-size, 13px);
   gap: 8px;
   grid-template-columns: 24px 1fr auto;
 }
@@ -106,7 +114,7 @@
 /* Tabular */
 .table {
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 12px);
   width: 100%;
 }
 
@@ -134,20 +142,22 @@
 
 .statValue {
   color: #1b4f9c;
-  font-size: 42px;
-  font-weight: 700;
+  font-family: var(--dashboard-widget-font-family, inherit);
+  font-size: var(--dashboard-widget-metric-size, 42px);
+  font-style: var(--dashboard-widget-font-style, normal);
+  font-weight: var(--dashboard-widget-font-weight, 700);
   line-height: 1;
 }
 
 .statLabel {
   color: #666;
-  font-size: 13px;
+  font-size: var(--dashboard-widget-body-size, 13px);
   margin-top: 8px;
 }
 
 .statDelta {
   color: #2e7d32;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 12px);
   margin-top: 6px;
 }
 
@@ -178,7 +188,7 @@
 
 .pictorialPct {
   color: #545e6b;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 12px);
 }
 
 /* Image bar */

@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { AiDataSourceSelection } from '@/components/dashboards/AiDataSourceSelection';
 import { AiDashboardConfirmation } from '@/components/dashboards/AiDashboardConfirmation';
 import { CreateDashboardStepBreadcrumb } from '@/components/dashboards/CreateDashboardStepBreadcrumb';
@@ -34,9 +35,37 @@ const WuHelpButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuHelpButton })),
   { ssr: false }
 );
+const WuCard = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCard })),
+  { ssr: false }
+);
+const WuCheckbox = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCheckbox })),
+  { ssr: false }
+);
+const WuTable = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTable })),
+  { ssr: false }
+);
+const WuTextarea = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTextarea })),
+  { ssr: false }
+);
+const WuToggle = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
+  { ssr: false }
+);
 
 type DashboardType = 'blank' | 'ai';
-type WizardStep = 'type' | 'survey' | 'confirmation';
+type AiMethod = 'learn' | 'prompt';
+type WizardStep = 'type' | 'method' | 'survey' | 'learn' | 'prompt' | 'confirmation';
+
+type ReferenceDashboard = {
+  id: number;
+  name: string;
+  updated: string;
+  source: string;
+};
 
 export interface CreateDashboardSurvey {
   id: number;
@@ -59,6 +88,45 @@ interface DashboardTypeCardProps {
   helpButton?: React.ReactNode;
   onSelect: () => void;
 }
+
+const REFERENCE_DASHBOARDS: ReferenceDashboard[] = [
+  {
+    id: 101,
+    name: 'Executive Customer Health',
+    updated: 'Updated 2 days ago',
+    source: 'Customer Experience Tracker',
+  },
+  {
+    id: 102,
+    name: 'NPS Across Demographics',
+    updated: 'Updated 3 days ago',
+    source: 'Brand Loyalty Survey',
+  },
+  {
+    id: 103,
+    name: 'Guest Dining Preferences',
+    updated: 'Updated 7 days ago',
+    source: 'Hospitality Feedback Study',
+  },
+  {
+    id: 104,
+    name: 'Product Feedback Command Center',
+    updated: 'Updated Apr 28 2026',
+    source: 'Product Experience Program',
+  },
+  {
+    id: 105,
+    name: 'Market Segmentation Overview',
+    updated: 'Updated Apr 20 2026',
+    source: 'Market Insights Panel',
+  },
+  {
+    id: 106,
+    name: 'Employee Engagement Pulse',
+    updated: 'Updated Apr 17 2026',
+    source: 'People Operations Survey',
+  },
+];
 
 function DashboardTypeCard({
   selected,
@@ -100,8 +168,233 @@ function DashboardTypeCard({
   );
 }
 
+function AiMethodSelection({
+  selectedMethod,
+  onSelectMethod,
+}: {
+  selectedMethod: AiMethod;
+  onSelectMethod: (method: AiMethod) => void;
+}) {
+  const methods = [
+    {
+      id: 'learn' as const,
+      icon: 'wm-school',
+      title: 'Learn from Existing Dashboards',
+      description:
+        'Analyze layout structure, widget patterns, color themes, and reporting behavior from dashboards your team already trusts.',
+    },
+    {
+      id: 'prompt' as const,
+      icon: 'wm-edit-note',
+      title: 'Create from Prompt',
+      description:
+        'Describe the dashboard you want and let AI propose widgets, filters, and data slicers.',
+    },
+  ];
+
+  return (
+    <div className={styles.methodGrid}>
+      {methods.map((method) => {
+        const isSelected = selectedMethod === method.id;
+
+        return (
+          <WuCard
+            key={method.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => onSelectMethod(method.id)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onSelectMethod(method.id);
+              }
+            }}
+            className={`${styles.methodCard} ${isSelected ? styles.methodCardSelected : ''}`}
+          >
+            <span className={styles.methodIcon}>
+              <span className={`${method.icon} text-[24px]`} aria-hidden="true" />
+            </span>
+            <span className={styles.methodText}>
+              <span className={styles.methodTitle}>{method.title}</span>
+              <span className={styles.methodDescription}>{method.description}</span>
+            </span>
+          </WuCard>
+        );
+      })}
+    </div>
+  );
+}
+
+function AiLearnFromDashboards({
+  selectedReferences,
+  onToggleReference,
+}: {
+  selectedReferences: number[];
+  onToggleReference: (id: number) => void;
+}) {
+  const [search, setSearch] = useState('');
+
+  const filteredReferences = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      return REFERENCE_DASHBOARDS;
+    }
+
+    return REFERENCE_DASHBOARDS.filter((dashboard) =>
+      `${dashboard.name} ${dashboard.source}`.toLowerCase().includes(normalizedSearch)
+    );
+  }, [search]);
+
+  const columns: IWuTableColumnDef<ReferenceDashboard>[] = [
+    {
+      accessorKey: 'selected',
+      header: '',
+      size: 56,
+      cellAlign: 'center',
+      cell: ({ row }) => {
+        const isSelected = selectedReferences.includes(row.original.id);
+        const isDisabled = !isSelected && selectedReferences.length >= 5;
+
+        return (
+          <WuCheckbox
+            checked={isSelected}
+            disabled={isDisabled}
+            onChange={() => onToggleReference(row.original.id)}
+            aria-label={`Select ${row.original.name}`}
+          />
+        );
+      },
+    },
+    {
+      accessorKey: 'name',
+      header: 'Dashboard',
+      filterable: true,
+      size: 260,
+      cell: ({ row }) => (
+        <span title={row.original.name} className={styles.referenceName}>
+          {row.original.name}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'source',
+      header: 'Survey source',
+      filterable: true,
+      size: 220,
+      cell: ({ row }) => (
+        <span title={row.original.source} className={styles.referenceSource}>
+          {row.original.source}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'updated',
+      header: 'Updated',
+      filterable: true,
+      size: 152,
+      cell: ({ row }) => row.original.updated,
+    },
+  ];
+
+  return (
+    <div className={styles.aiStep}>
+      <div className={styles.aiStepHeader}>
+        <div>
+          <h3 className={styles.aiStepTitle}>Learn from existing dashboards</h3>
+          <p className={styles.aiStepDescription}>
+            Select up to 5 dashboards for AI to learn layout, widgets, and styling.
+          </p>
+        </div>
+        <span className={styles.referenceCount}>{selectedReferences.length}/5 selected</span>
+      </div>
+
+      <WuInput
+        variant="outlined"
+        placeholder="Search dashboards or survey sources"
+        Icon={<span className="wm-search text-[14px]" aria-hidden="true" />}
+        iconPosition="left"
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        className={styles.referenceSearch}
+      />
+
+      <div className={styles.referenceTable}>
+        <WuTable
+          data={filteredReferences as unknown[]}
+          columns={columns as unknown as IWuTableColumnDef<unknown>[]}
+          variant="bordered"
+          size="compact"
+          sort={{ enabled: true }}
+          tableLayout="fixed"
+          NoDataContent="No dashboards match your search."
+        />
+      </div>
+    </div>
+  );
+}
+
+function AiPromptStep({
+  prompt,
+  onPromptChange,
+  createFilters,
+  onCreateFiltersChange,
+  createDataSlicers,
+  onCreateDataSlicersChange,
+}: {
+  prompt: string;
+  onPromptChange: (prompt: string) => void;
+  createFilters: boolean;
+  onCreateFiltersChange: (enabled: boolean) => void;
+  createDataSlicers: boolean;
+  onCreateDataSlicersChange: (enabled: boolean) => void;
+}) {
+  return (
+    <div className={styles.aiStep}>
+      <h3 className={styles.aiStepTitle}>Provide dashboard context</h3>
+      <p className={styles.aiStepDescription}>
+        Describe the dashboard you want AI to create from the selected survey.
+      </p>
+      <WuTextarea
+        value={prompt}
+        onChange={(event) => onPromptChange(event.target.value)}
+        placeholder="Example: Create an executive dashboard for the selected survey that highlights response volume, NPS, satisfaction trends, demographic differences, and key open-text themes."
+        className={styles.promptTextarea}
+      />
+      <div className={styles.promptOptions}>
+        <div className={styles.promptOptionRow}>
+          <div>
+            <span className={styles.promptOptionLabel}>Create filters</span>
+            <span className={styles.promptOptionDescription}>
+              Let AI generate dashboard-level filters from the selected survey fields.
+            </span>
+          </div>
+          <WuToggle
+            checked={createFilters}
+            onChange={onCreateFiltersChange}
+            aria-label="Create filters"
+          />
+        </div>
+        <div className={styles.promptOptionRow}>
+          <div>
+            <span className={styles.promptOptionLabel}>Create data slicers</span>
+            <span className={styles.promptOptionDescription}>
+              Let AI add slicers for quick segment comparisons across widgets.
+            </span>
+          </div>
+          <WuToggle
+            checked={createDataSlicers}
+            onChange={onCreateDataSlicersChange}
+            aria-label="Create data slicers"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function stepToBreadcrumb(step: WizardStep): 'dashboard' | 'survey' | 'confirmation' {
-  if (step === 'type') return 'dashboard';
+  if (step === 'type' || step === 'method') return 'dashboard';
   if (step === 'survey') return 'survey';
   return 'confirmation';
 }
@@ -116,17 +409,27 @@ export function CreateDashboardModal({
   const { showToast } = useWuShowToast();
   const [step, setStep] = useState<WizardStep>('type');
   const [dashboardType, setDashboardType] = useState<DashboardType>('blank');
+  const [aiMethod, setAiMethod] = useState<AiMethod>('learn');
   const [name, setName] = useState('');
   const [isNameError, setIsNameError] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedSurvey, setSelectedSurvey] = useState<SurveyListItem | null>(null);
+  const [selectedReferences, setSelectedReferences] = useState<number[]>([]);
+  const [prompt, setPrompt] = useState('');
+  const [createFilters, setCreateFilters] = useState(true);
+  const [createDataSlicers, setCreateDataSlicers] = useState(true);
 
   const resetWizard = useCallback(() => {
     setStep('type');
     setName('');
     setDashboardType('blank');
+    setAiMethod('learn');
     setIsNameError(false);
     setSelectedSurvey(null);
+    setSelectedReferences([]);
+    setPrompt('');
+    setCreateFilters(true);
+    setCreateDataSlicers(true);
   }, []);
 
   const handleOpenChange = useCallback(
@@ -165,6 +468,10 @@ export function CreateDashboardModal({
       return;
     }
 
+    setStep('method');
+  }
+
+  function handleMethodNext() {
     setStep('survey');
   }
 
@@ -173,12 +480,32 @@ export function CreateDashboardModal({
       showToast({ message: 'Select a survey to continue', variant: 'error' });
       return;
     }
+    setStep(aiMethod === 'learn' ? 'learn' : 'prompt');
+  }
+
+  function handleAiDetailNext() {
+    if (step === 'learn' && selectedReferences.length === 0) {
+      showToast({
+        message: 'Select at least one dashboard to continue',
+        variant: 'error',
+      });
+      return;
+    }
+
+    if (step === 'prompt' && !prompt.trim()) {
+      showToast({
+        message: 'Enter a prompt to continue',
+        variant: 'error',
+      });
+      return;
+    }
+
     setStep('confirmation');
   }
 
   function handleBreadcrumbClick(target: 'dashboard' | 'survey' | 'confirmation') {
     if (target === 'dashboard') setStep('type');
-    if (target === 'survey') setStep('survey');
+    if (target === 'survey' && step !== 'method') setStep('survey');
   }
 
   async function handleCreate() {
@@ -190,6 +517,20 @@ export function CreateDashboardModal({
     });
     setIsSaving(false);
     handleClose();
+  }
+
+  function toggleReference(id: number) {
+    setSelectedReferences((currentSelection) => {
+      if (currentSelection.includes(id)) {
+        return currentSelection.filter((selectedId) => selectedId !== id);
+      }
+
+      if (currentSelection.length >= 5) {
+        return currentSelection;
+      }
+
+      return [...currentSelection, id];
+    });
   }
 
   const modalClassName = step === 'type' ? styles.modal : styles.modalWide;
@@ -278,6 +619,37 @@ export function CreateDashboardModal({
         </WuModalContent>
       )}
 
+      {step === 'method' && (
+        <WuModalContent className="!overflow-hidden !min-h-0">
+          <AiMethodSelection
+            selectedMethod={aiMethod}
+            onSelectMethod={setAiMethod}
+          />
+        </WuModalContent>
+      )}
+
+      {step === 'learn' && (
+        <WuModalContent className={styles.aiStepContent}>
+          <AiLearnFromDashboards
+            selectedReferences={selectedReferences}
+            onToggleReference={toggleReference}
+          />
+        </WuModalContent>
+      )}
+
+      {step === 'prompt' && (
+        <WuModalContent className={styles.aiStepContent}>
+          <AiPromptStep
+            prompt={prompt}
+            onPromptChange={setPrompt}
+            createFilters={createFilters}
+            onCreateFiltersChange={setCreateFilters}
+            createDataSlicers={createDataSlicers}
+            onCreateDataSlicersChange={setCreateDataSlicers}
+          />
+        </WuModalContent>
+      )}
+
       {step === 'confirmation' && selectedSurvey && (
         <WuModalContent className="!overflow-hidden !min-h-0">
           <AiDashboardConfirmation surveyName={selectedSurvey.name} />
@@ -304,13 +676,34 @@ export function CreateDashboardModal({
             <div className={styles.wizardActions}>
               <WuButton
                 variant="secondary"
-                onClick={() => setStep(step === 'confirmation' ? 'survey' : 'type')}
+                onClick={() => {
+                  if (step === 'confirmation') {
+                    setStep(aiMethod === 'learn' ? 'learn' : 'prompt');
+                    return;
+                  }
+                  if (step === 'learn' || step === 'prompt') {
+                    setStep('survey');
+                    return;
+                  }
+                  if (step === 'survey') {
+                    setStep('method');
+                    return;
+                  }
+                  setStep('type');
+                }}
               >
                 Back
               </WuButton>
-              {step === 'survey' ? (
+              {step === 'method' && (
+                <WuButton onClick={handleMethodNext}>Continue</WuButton>
+              )}
+              {step === 'survey' && (
                 <WuButton onClick={handleSurveyNext}>Next</WuButton>
-              ) : (
+              )}
+              {(step === 'learn' || step === 'prompt') && (
+                <WuButton onClick={handleAiDetailNext}>Next</WuButton>
+              )}
+              {step === 'confirmation' && (
                 <WuButton onClick={handleCreate} disabled={isSaving}>
                   Create
                 </WuButton>

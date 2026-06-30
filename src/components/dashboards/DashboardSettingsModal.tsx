@@ -7,6 +7,16 @@ import type { IWuTabItem } from '@npm-questionpro/wick-ui-lib';
 import { DashboardDataSlicersTab } from '@/components/dashboards/DashboardDataSlicersTab';
 import { DashboardSharedUrlTab } from '@/components/dashboards/DashboardSharedUrlTab';
 import { DashboardGlobalSettingsTab } from '@/components/dashboards/DashboardGlobalSettingsTab';
+import {
+  DashboardDesignSettingsTab,
+  DEFAULT_DESIGN_TYPOGRAPHY,
+  DESIGN_PALETTE_OPTIONS,
+  DESIGN_SENTIMENT_OPTIONS,
+  DESIGN_THEME_OPTIONS,
+  getNextDesignFontSizeOption,
+  type DesignTypographyOptions,
+  type DesignSelectOption,
+} from '@/components/dashboards/DashboardDesignSettingsTab';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import styles from './DashboardSettingsModal.module.css';
@@ -23,6 +33,14 @@ const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false }
 );
+const WuToggle = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
+  { ssr: false }
+);
+const WuPopover = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuPopover })),
+  { ssr: false }
+);
 
 interface DashboardSettingsModalProps {
   open: boolean;
@@ -31,6 +49,8 @@ interface DashboardSettingsModalProps {
   onNameChange: (name: string) => void;
   onDuplicate?: () => void;
   onDelete?: () => void;
+  appliedDesignTypography?: DesignTypographyOptions;
+  onDesignTypographyChange?: (typography: DesignTypographyOptions) => void;
 }
 
 function SettingsPlaceholder({ label }: { label: string }) {
@@ -47,18 +67,19 @@ function GeneralTab({
   onNameChange,
   onDuplicate,
   onDeleteRequest,
+  accessibilityShortcutsEnabled,
+  onAccessibilityShortcutsChange,
 }: {
   dashboardName: string;
   onNameChange: (name: string) => void;
   onDuplicate: () => void;
   onDeleteRequest: () => void;
+  accessibilityShortcutsEnabled: boolean;
+  onAccessibilityShortcutsChange: (enabled: boolean) => void;
 }) {
   const { showToast } = useWuShowToast();
   const [name, setName] = useState(dashboardName);
-
-  useEffect(() => {
-    setName(dashboardName);
-  }, [dashboardName]);
+  const [showAccessibilityShortcuts, setShowAccessibilityShortcuts] = useState(false);
 
   const handleNameBlur = (): void => {
     const trimmed = name.trim();
@@ -103,6 +124,48 @@ function GeneralTab({
           Delete dashboard
         </WuButton>
       </div>
+      <div className={styles.accessibilityRow}>
+        <span className={styles.accessibilityLabel}>Accessibility shortcuts</span>
+        <div className={styles.accessibilityControls}>
+          <WuToggle
+            checked={accessibilityShortcutsEnabled}
+            onChange={onAccessibilityShortcutsChange}
+            aria-label="Enable accessibility shortcuts"
+          />
+          <WuPopover
+            open={showAccessibilityShortcuts}
+            onOpenChange={setShowAccessibilityShortcuts}
+            side="right"
+            align="start"
+            className={styles.shortcutPopover}
+            Trigger={
+              <WuButton
+                type="button"
+                variant="iconOnly"
+                aria-label="Show accessibility shortcuts"
+                aria-expanded={showAccessibilityShortcuts}
+                className={styles.shortcutHelpButton}
+              >
+                <span className="wm-help" aria-hidden="true" />
+              </WuButton>
+            }
+          >
+            <div className={styles.shortcutContent}>
+              <p className={styles.shortcutTitle}>Available shortcuts</p>
+              <div className={styles.shortcutList}>
+                <div className={styles.shortcutItem}>
+                  <span>Increase dashboard font size</span>
+                  <kbd>Alt + Shift + Up</kbd>
+                </div>
+                <div className={styles.shortcutItem}>
+                  <span>Decrease dashboard font size</span>
+                  <kbd>Alt + Shift + Down</kbd>
+                </div>
+              </div>
+            </div>
+          </WuPopover>
+        </div>
+      </div>
     </div>
   );
 }
@@ -114,11 +177,21 @@ export function DashboardSettingsModal({
   onNameChange,
   onDuplicate,
   onDelete,
+  appliedDesignTypography = DEFAULT_DESIGN_TYPOGRAPHY,
+  onDesignTypographyChange,
 }: DashboardSettingsModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
+  const [accessibilityShortcutsEnabled, setAccessibilityShortcutsEnabled] = useState(false);
+  const [designTheme, setDesignTheme] = useState(DESIGN_THEME_OPTIONS[0]);
+  const [designPalette, setDesignPalette] = useState(DESIGN_PALETTE_OPTIONS[0]);
+  const [designSentiment, setDesignSentiment] = useState(DESIGN_SENTIMENT_OPTIONS[0]);
+  const [designFontSize, setDesignFontSize] = useState(appliedDesignTypography.fontSize);
+  const [designFontStyle, setDesignFontStyle] = useState(appliedDesignTypography.fontStyle);
+  const [designFontFamily, setDesignFontFamily] = useState(appliedDesignTypography.fontFamily);
+  const [hasUnsavedDesignChanges, setHasUnsavedDesignChanges] = useState(false);
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -137,6 +210,77 @@ export function DashboardSettingsModal({
       variant: 'success',
     });
   }, [showToast]);
+
+  const updateDesignSelect = useCallback(
+    (option: DesignSelectOption, onChange: (nextOption: DesignSelectOption) => void) => {
+      onChange(option);
+      setHasUnsavedDesignChanges(true);
+    },
+    []
+  );
+
+  const changeDashboardFontSizeByShortcut = useCallback(
+    (direction: -1 | 1) => {
+      const nextFontSize = getNextDesignFontSizeOption(designFontSize, direction);
+      setDesignFontSize(nextFontSize);
+      setHasUnsavedDesignChanges(true);
+      onDesignTypographyChange?.({
+        fontSize: nextFontSize,
+        fontStyle: designFontStyle,
+        fontFamily: designFontFamily,
+      });
+      showToast({
+        message: `Dashboard font size set to ${nextFontSize.label}`,
+        variant: 'success',
+      });
+    },
+    [designFontFamily, designFontSize, designFontStyle, onDesignTypographyChange, showToast]
+  );
+
+  useEffect(() => {
+    if (!accessibilityShortcutsEnabled) return;
+
+    function handleAccessibilityShortcut(event: KeyboardEvent) {
+      if (!event.altKey || !event.shiftKey) return;
+
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        changeDashboardFontSizeByShortcut(1);
+        return;
+      }
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        changeDashboardFontSizeByShortcut(-1);
+      }
+    }
+
+    document.addEventListener('keydown', handleAccessibilityShortcut);
+    return () => document.removeEventListener('keydown', handleAccessibilityShortcut);
+  }, [accessibilityShortcutsEnabled, changeDashboardFontSizeByShortcut]);
+
+  const handleSaveDesignSettings = useCallback(() => {
+    onDesignTypographyChange?.({
+      fontSize: designFontSize,
+      fontStyle: designFontStyle,
+      fontFamily: designFontFamily,
+    });
+    setHasUnsavedDesignChanges(false);
+    showToast({
+      message: 'Dashboard design settings saved successfully',
+      variant: 'success',
+      duration: 3000,
+      position: 'top',
+    });
+    handleOpenChange(false);
+  }, [
+    designFontFamily,
+    designFontSize,
+    designFontStyle,
+    handleOpenChange,
+    onDesignTypographyChange,
+    showToast,
+  ]);
 
   const handleDuplicate = useCallback(() => {
     const copyName = `${dashboardName.trim() || 'Untitled'} (Copy)`;
@@ -160,10 +304,13 @@ export function DashboardSettingsModal({
         Trigger: 'General',
         Content: (
           <GeneralTab
+            key={dashboardName}
             dashboardName={dashboardName}
             onNameChange={onNameChange}
             onDuplicate={handleDuplicate}
             onDeleteRequest={() => setDeleteConfirmOpen(true)}
+            accessibilityShortcutsEnabled={accessibilityShortcutsEnabled}
+            onAccessibilityShortcutsChange={setAccessibilityShortcutsEnabled}
           />
         ),
       },
@@ -180,7 +327,22 @@ export function DashboardSettingsModal({
       {
         value: 'design',
         Trigger: 'Design',
-        Content: <SettingsPlaceholder label="Design" />,
+        Content: (
+          <DashboardDesignSettingsTab
+            designTheme={designTheme}
+            designPalette={designPalette}
+            designSentiment={designSentiment}
+            designFontSize={designFontSize}
+            designFontStyle={designFontStyle}
+            designFontFamily={designFontFamily}
+            onDesignThemeChange={(option) => updateDesignSelect(option, setDesignTheme)}
+            onDesignPaletteChange={(option) => updateDesignSelect(option, setDesignPalette)}
+            onDesignSentimentChange={(option) => updateDesignSelect(option, setDesignSentiment)}
+            onDesignFontSizeChange={(option) => updateDesignSelect(option, setDesignFontSize)}
+            onDesignFontStyleChange={(option) => updateDesignSelect(option, setDesignFontStyle)}
+            onDesignFontFamilyChange={(option) => updateDesignSelect(option, setDesignFontFamily)}
+          />
+        ),
       },
       {
         value: 'weightings',
@@ -203,7 +365,19 @@ export function DashboardSettingsModal({
         Content: <DashboardSharedUrlTab />,
       },
     ],
-    [dashboardName, handleDuplicate, onNameChange]
+    [
+      accessibilityShortcutsEnabled,
+      dashboardName,
+      designFontFamily,
+      designFontSize,
+      designFontStyle,
+      designPalette,
+      designSentiment,
+      designTheme,
+      handleDuplicate,
+      onNameChange,
+      updateDesignSelect,
+    ]
   );
 
   if (!wick) {
@@ -239,6 +413,15 @@ export function DashboardSettingsModal({
             <WuModalFooter className={styles.globalFooter}>
               <WuButton onClick={handleApplyGlobalSettings}>
                 Apply to existing widgets
+              </WuButton>
+            </WuModalFooter>
+          ) : activeTab === 'design' ? (
+            <WuModalFooter className={styles.globalFooter}>
+              <WuButton
+                onClick={handleSaveDesignSettings}
+                disabled={!hasUnsavedDesignChanges}
+              >
+                Save
               </WuButton>
             </WuModalFooter>
           ) : null}

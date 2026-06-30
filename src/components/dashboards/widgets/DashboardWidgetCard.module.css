@@ -2,6 +2,9 @@
   background: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 2px;
+  font-family: var(--dashboard-widget-font-family, inherit);
+  font-style: var(--dashboard-widget-font-style, normal);
+  font-weight: var(--dashboard-widget-font-weight, 400);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -20,8 +23,8 @@
 
 .title {
   color: #3f559a;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--dashboard-widget-title-size, 14px);
+  font-weight: var(--dashboard-widget-font-weight, 600);
   margin: 0;
 }
 
@@ -48,6 +51,7 @@
 
 .body {
   flex: 1;
+  font-size: var(--dashboard-widget-body-size, 12px);
   min-height: 0;
   overflow: hidden;
   padding: 12px 14px 12px;

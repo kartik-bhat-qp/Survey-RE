@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { BiAmChart } from '@/components/charts/amcharts/BiAmChart';
 import type { AiWidgetChartPayload } from '@/components/charts/amcharts/types';
+import type { AmChartTypography } from '@/components/charts/amcharts/theme';
 import { AGE_BAR_DEMO_DATA } from '@/data/mock-age-bar';
 import {
   type AiWidgetType,
@@ -58,6 +59,8 @@ function isAmChartType(type: AiWidgetType): type is DashboardAmChartType {
 interface AiWidgetRendererProps {
   widgetId: string;
   type: AiWidgetType;
+  typography?: AmChartTypography;
+  chartInstanceId?: string;
 }
 
 function buildChartPayload(widgetId: string): AiWidgetChartPayload {
@@ -165,7 +168,12 @@ function buildChartPayload(widgetId: string): AiWidgetChartPayload {
   };
 }
 
-export function AiWidgetRenderer({ widgetId, type }: AiWidgetRendererProps) {
+export function AiWidgetRenderer({
+  widgetId,
+  type,
+  typography,
+  chartInstanceId,
+}: AiWidgetRendererProps) {
   const chartPayload = useMemo(() => buildChartPayload(widgetId), [widgetId]);
 
   if (type === 'benchmark') {
@@ -177,7 +185,14 @@ export function AiWidgetRenderer({ widgetId, type }: AiWidgetRendererProps) {
   }
 
   if (isAmChartType(type)) {
-    return <BiAmChart widgetId={widgetId} chartType={type} data={chartPayload} />;
+    return (
+      <BiAmChart
+        widgetId={chartInstanceId ?? widgetId}
+        chartType={type}
+        data={chartPayload}
+        typography={typography}
+      />
+    );
   }
 
   switch (type) {

@@ -45,6 +45,206 @@
   padding: 0 !important;
 }
 
+.aiStepContent {
+  max-height: min(70vh, calc(100dvh - 11rem));
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.methodGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .methodGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.methodCard {
+  align-items: center;
+  background: #ffffff;
+  border-color: #dbe3f0 !important;
+  border-radius: 8px !important;
+  cursor: pointer;
+  display: flex;
+  gap: 16px;
+  min-height: 144px;
+  padding: 24px !important;
+  text-align: left;
+}
+
+.methodCard:hover {
+  box-shadow: 0 8px 20px rgba(37, 52, 73, 0.1);
+}
+
+.methodCard:focus {
+  outline: 2px solid #1e88e5;
+  outline-offset: 2px;
+}
+
+.methodCardSelected {
+  background: #f5f9ff;
+  border-color: #1e88e5 !important;
+}
+
+.methodIcon {
+  align-items: center;
+  background: #e8f1ff;
+  border-radius: 8px;
+  color: #1e63d7;
+  display: grid;
+  flex-shrink: 0;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.methodText {
+  display: block;
+  min-width: 0;
+}
+
+.methodTitle {
+  color: #1f2a44;
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.methodDescription {
+  color: #687385;
+  display: block;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+.aiStep {
+  color: #253449;
+  min-width: 0;
+}
+
+.aiStepHeader {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.aiStepTitle {
+  color: #1f2a44;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.aiStepDescription {
+  color: #687385;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 8px 0 0;
+}
+
+.referenceCount {
+  background: #eef6ff;
+  border-radius: 999px;
+  color: #1e63d7;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+}
+
+.referenceSearch {
+  margin-top: 24px;
+}
+
+.referenceTable {
+  border: 1px solid #e1e5ec;
+  border-radius: 4px;
+  margin-top: 16px;
+  max-height: 360px;
+  min-width: 0;
+  overflow: auto;
+}
+
+.referenceTable :global(table) {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.referenceName,
+.referenceSource {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.referenceName {
+  color: #253449;
+  font-weight: 500;
+}
+
+.referenceSource {
+  color: #566173;
+}
+
+.promptTextarea {
+  border: 1px solid #cfd8ea;
+  border-radius: 8px;
+  color: #253449;
+  line-height: 1.6;
+  margin-top: 16px;
+  min-height: 176px;
+  padding: 16px;
+  resize: vertical;
+  width: 100%;
+}
+
+.promptOptions {
+  border: 1px solid #e1e5ec;
+  border-radius: 8px;
+  display: grid;
+  gap: 0;
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.promptOptionRow {
+  align-items: center;
+  background: #ffffff;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 14px 16px;
+}
+
+.promptOptionRow + .promptOptionRow {
+  border-top: 1px solid #e1e5ec;
+}
+
+.promptOptionLabel {
+  color: #1f2a44;
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.promptOptionDescription {
+  color: #687385;
+  display: block;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 3px;
+}
+
 .wizardFooter {
   align-items: stretch;
   display: flex;

@@ -1,5 +1,5 @@
 .modal {
-  max-width: min(920px, calc(100vw - 1.5rem)) !important;
+  max-width: min(1280px, calc(100vw - 1.5rem)) !important;
   width: 100%;
 }
 
@@ -86,7 +86,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-width: 360px;
+  max-width: 640px;
 }
 
 .actions {
@@ -109,6 +109,86 @@
 
 .deleteBtn:hover {
   background-color: #fff5f5 !important;
+}
+
+.accessibilityRow {
+  align-items: flex-start;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(140px, max-content) minmax(0, 1fr);
+  margin-top: 8px;
+}
+
+.accessibilityLabel {
+  color: #5f6b7a;
+  font-size: 14px;
+  line-height: 32px;
+}
+
+.accessibilityControls {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.shortcutHelpButton {
+  align-items: center;
+  color: #1e88e5;
+  display: grid;
+  height: 32px;
+  justify-content: center;
+  padding: 0 !important;
+  width: 32px;
+}
+
+.shortcutHelpButton:hover {
+  background: #eef6ff !important;
+}
+
+.shortcutPopover {
+  background: #ffffff;
+  border: 1px solid #dbe3f0;
+  border-radius: 0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+  padding: 0;
+  width: 420px;
+  z-index: 120;
+}
+
+.shortcutContent {
+  padding: 16px;
+}
+
+.shortcutTitle {
+  color: #253449;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.shortcutList {
+  color: #5f6b7a;
+  display: grid;
+  font-size: 13px;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.shortcutItem {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 144px;
+}
+
+.shortcutItem kbd {
+  background: #f8fafc;
+  border: 1px solid #d7deea;
+  color: #253449;
+  font-size: 12px;
+  padding: 4px 8px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .placeholder {

@@ -1,0 +1,263 @@
+.panel {
+  background: #ffffff;
+  color: #253449;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(260px, 340px) minmax(750px, 1.55fr);
+  min-height: 500px;
+  overflow: visible;
+}
+
+.controls {
+  min-height: 0;
+  overflow: visible;
+  padding: 12px 24px 128px 0;
+}
+
+.field {
+  margin-top: 24px;
+}
+
+.field:first-child {
+  margin-top: 0;
+}
+
+.fieldLabel {
+  color: #5f6b7a;
+  display: block;
+  font-size: 13px;
+  font-weight: 400;
+  margin-bottom: 6px;
+}
+
+.select {
+  background: #ffffff;
+  border-radius: 0;
+  color: #5f6b7a;
+  font-size: 13px;
+  height: 32px;
+  width: 100%;
+}
+
+.sentimentSelect {
+  max-width: 300px;
+}
+
+.themeColorRow {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.themeSwatch {
+  background: #182d81;
+  border-radius: 4px;
+  height: 20px;
+  width: 20px;
+}
+
+.swatches {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding-left: 12px;
+}
+
+.swatch {
+  border-radius: 4px;
+  height: 20px;
+  width: 20px;
+}
+
+.fontGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 24px;
+}
+
+.hint {
+  color: #98a2b3;
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 16px 0 0;
+}
+
+.previewWrap {
+  align-items: center;
+  background: #f0f0f0;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  padding: 16px;
+}
+
+.device {
+  background: #ffffff;
+  border: 10px solid #303838;
+  border-radius: 16px;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08);
+  height: 380px;
+  outline: 3px solid #303838;
+  overflow: hidden;
+  padding: 18px 22px;
+  position: relative;
+  width: 100%;
+}
+
+.notch {
+  background: #303838;
+  border-radius: 0 0 8px 8px;
+  height: 8px;
+  left: 50%;
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  width: 64px;
+}
+
+.previewHeader {
+  border-bottom: 3px solid #d8d8d8;
+  color: #5b6573;
+  padding-bottom: 16px;
+}
+
+.previewGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  height: 272px;
+  margin-top: 16px;
+}
+
+.previewCard {
+  background: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 0;
+  padding: 16px;
+}
+
+.previewCardTitle {
+  align-items: flex-start;
+  border-bottom: 1px solid #d9d9d9;
+  color: #11296f;
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 16px;
+}
+
+.barPreview {
+  align-items: end;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 132px minmax(0, 1fr);
+  margin-top: 18px;
+}
+
+.barLabels {
+  color: #4d4d4d;
+  display: grid;
+  gap: 14px;
+}
+
+.barLabel {
+  height: 33px;
+  line-height: 33px;
+}
+
+.barPlot {
+  border-left: 1px solid #cfd3da;
+  position: relative;
+}
+
+.barMidline {
+  border-left: 1px solid #d9dde3;
+  height: 100%;
+  left: 50%;
+  position: absolute;
+  top: 0;
+}
+
+.bars {
+  display: grid;
+  gap: 14px;
+}
+
+.barTrack {
+  border-bottom: 1px solid #d9dde3;
+  height: 33px;
+  position: relative;
+}
+
+.barValue {
+  align-items: center;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  left: 0;
+  padding-right: 20px;
+  position: absolute;
+  top: 0;
+}
+
+.axis {
+  color: #454545;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  width: 67%;
+}
+
+.sideCards {
+  display: grid;
+  gap: 16px;
+}
+
+.smallCard {
+  height: 118px;
+}
+
+.chartCenter {
+  display: grid;
+  height: 52px;
+  place-items: center;
+}
+
+.donut {
+  background: conic-gradient(#52649d 0deg 108deg, #6684b8 108deg 216deg, #45a5b8 216deg 270deg, #45b7a3 270deg 330deg, #9bd79b 330deg 360deg);
+  border-radius: 50%;
+  height: 50px;
+  mask: radial-gradient(circle 18px at center, transparent 98%, #000 100%);
+  width: 50px;
+  -webkit-mask: radial-gradient(circle 18px at center, transparent 98%, #000 100%);
+}
+
+.gaugeClip {
+  height: 42px;
+  overflow: hidden;
+  position: relative;
+  width: 88px;
+}
+
+.gauge {
+  background: conic-gradient(from 270deg, #ff5274 0deg 32deg, #ff967e 32deg 72deg, #f2d46f 72deg 112deg, #98d493 112deg 150deg, #3dbb83 150deg 180deg, transparent 180deg 360deg);
+  border-radius: 50%;
+  height: 88px;
+  left: 0;
+  mask: radial-gradient(circle 31px at center, transparent 98%, #000 100%);
+  position: absolute;
+  top: 0;
+  width: 88px;
+  -webkit-mask: radial-gradient(circle 31px at center, transparent 98%, #000 100%);
+}
+
+@media (max-width: 980px) {
+  .panel {
+    grid-template-columns: 1fr;
+  }
+
+  .previewWrap {
+    min-height: 540px;
+  }
+}

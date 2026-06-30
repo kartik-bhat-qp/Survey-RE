@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import styles from './DashboardDetailToolbar.module.css';
@@ -13,6 +13,14 @@ const WuTooltip = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
+const WuMenu = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
+  { ssr: false }
+);
+const WuMenuItem = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
+  { ssr: false }
+);
 
 const DASHBOARD_SETTINGS_TOOLTIP = 'Dashboard settings';
 
@@ -22,6 +30,8 @@ interface DashboardDetailToolbarProps {
   showPresentation?: boolean;
   onAddWidget?: () => void;
   onOpenSettings?: () => void;
+  onExportPowerPoint?: () => void;
+  onOpenPresentation?: () => void;
 }
 
 export function DashboardDetailToolbar({
@@ -30,13 +40,12 @@ export function DashboardDetailToolbar({
   showPresentation = true,
   onAddWidget,
   onOpenSettings,
+  onExportPowerPoint,
+  onOpenPresentation,
 }: DashboardDetailToolbarProps) {
   const { showToast } = useWuShowToast();
   const [nameState, setNameState] = useState(name);
-
-  useEffect(() => {
-    setNameState(name);
-  }, [name]);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
   const handleNameBlur = (): void => {
     const trimmed = nameState.trim();
@@ -73,7 +82,13 @@ export function DashboardDetailToolbar({
             variant="iconOnly"
             size="sm"
             aria-label="Presentation mode"
-            onClick={() => showToast({ message: 'Preview mode', variant: 'success' })}
+            onClick={() => {
+              if (onOpenPresentation) {
+                onOpenPresentation();
+                return;
+              }
+              showToast({ message: 'Preview mode', variant: 'success' });
+            }}
             Icon={<span className="wm-visibility" />}
           />
         )}
@@ -85,13 +100,43 @@ export function DashboardDetailToolbar({
         >
           Filter
         </WuButton>
-        <WuButton
-          variant="iconOnly"
-          size="sm"
-          aria-label="Download PDF"
-          onClick={() => showToast({ message: 'PDF download started', variant: 'success' })}
-          Icon={<span className="wm-download" />}
-        />
+        <WuMenu
+          open={isExportMenuOpen}
+          onOpenChange={setIsExportMenuOpen}
+          align="end"
+          side="bottom"
+          sideOffset={6}
+          className="w-[224px] rounded-md border border-[#dbe3f0] bg-white p-1.5 shadow-lg"
+          Trigger={(
+            <WuButton
+              variant="iconOnly"
+              size="sm"
+              aria-label="Export dashboard"
+              Icon={<span className="wm-download" />}
+            />
+          )}
+        >
+          <WuMenuItem
+            Icon={<span className="wm-picture-as-pdf text-[17px] text-[#536277]" aria-hidden="true" />}
+            onSelect={() => {
+              showToast({ message: 'PDF download started', variant: 'success' });
+              setIsExportMenuOpen(false);
+            }}
+            className="flex w-full justify-start rounded-[4px] px-3 py-2 text-[13px] font-normal text-[#1f2a44] hover:bg-[#eef3f8]"
+          >
+            PDF Export
+          </WuMenuItem>
+          <WuMenuItem
+            Icon={<span className="wm-slideshow text-[17px] text-[#536277]" aria-hidden="true" />}
+            onSelect={() => {
+              setIsExportMenuOpen(false);
+              onExportPowerPoint?.();
+            }}
+            className="flex w-full justify-start rounded-[4px] px-3 py-2 text-[13px] font-normal text-[#1f2a44] hover:bg-[#eef3f8]"
+          >
+            PowerPoint Export
+          </WuMenuItem>
+        </WuMenu>
         <WuButton
           variant="iconOnly"
           size="sm"

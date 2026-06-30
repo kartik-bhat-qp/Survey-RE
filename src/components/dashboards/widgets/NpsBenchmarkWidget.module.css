@@ -14,7 +14,10 @@
   border-top: 1px solid #f0f0f0;
   color: #9b9b9b;
   flex-shrink: 0;
-  font-size: 12px;
+  font-family: var(--dashboard-widget-font-family, inherit);
+  font-size: var(--dashboard-widget-body-size, 12px);
+  font-style: var(--dashboard-widget-font-style, normal);
+  font-weight: var(--dashboard-widget-font-weight, 400);
   padding: 8px 4px 2px;
 }
 

@@ -17,6 +17,12 @@ import {
   AI_DASHBOARD_LAYOUT,
   AI_DASHBOARD_WIDGETS,
 } from '@/data/mock-ai-widgets';
+import {
+  DEFAULT_DESIGN_TYPOGRAPHY,
+  getDashboardTypographyCssVars,
+  type DesignTypographyOptions,
+} from '@/components/dashboards/DashboardDesignSettingsTab';
+import type { AmChartTypography } from '@/components/charts/amcharts/theme';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { stackLayoutSingleColumn } from '@/lib/ai-dashboard-layout';
 import { DashboardWidgetCard } from '@/components/dashboards/widgets/DashboardWidgetCard';
@@ -27,6 +33,14 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
 const GridLayoutWithWidth = WidthProvider(ReactGridLayout);
+
+const CHART_BODY_FONT_SIZE_BY_DESIGN_SIZE: Record<string, number> = {
+  'extra-small': 11,
+  small: 13,
+  medium: 15,
+  large: 18,
+  'extra-large': 21,
+};
 
 function renderResizeHandle(
   _axis: ResizeHandleAxis,
@@ -43,7 +57,13 @@ function renderResizeHandle(
   );
 }
 
-export function AiDashboardCanvas() {
+interface AiDashboardCanvasProps {
+  designTypography?: DesignTypographyOptions;
+}
+
+export function AiDashboardCanvas({
+  designTypography = DEFAULT_DESIGN_TYPOGRAPHY,
+}: AiDashboardCanvasProps) {
   const isMobile = useIsMobile();
   const [desktopLayout, setDesktopLayout] = useState<Layout>(AI_DASHBOARD_LAYOUT);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -88,11 +108,26 @@ export function AiDashboardCanvas() {
   const gridCols = isMobile ? 1 : AI_DASHBOARD_GRID_COLS;
   const rowHeight = isMobile ? MOBILE_GRID_ROW_HEIGHT : GRID_ROW_HEIGHT;
   const margin = isMobile ? MOBILE_GRID_MARGIN : GRID_MARGIN;
+  const typographyStyle = useMemo(
+    () => getDashboardTypographyCssVars(designTypography),
+    [designTypography]
+  );
+  const chartTypography = useMemo<AmChartTypography>(
+    () => ({
+      fontFamily: designTypography.fontFamily.value,
+      fontSize:
+        CHART_BODY_FONT_SIZE_BY_DESIGN_SIZE[designTypography.fontSize.value] ?? 13,
+      fontStyle: designTypography.fontStyle.value === 'italic' ? 'italic' : 'normal',
+      fontWeight: designTypography.fontStyle.value === 'bold' ? '600' : '400',
+    }),
+    [designTypography]
+  );
 
   return (
     <div
       ref={canvasRef}
       className={`${styles.canvas} ${isMobile ? styles.canvasMobile : ''}`}
+      style={typographyStyle}
     >
       <GridLayoutWithWidth
         key={isMobile ? 'mobile' : 'desktop'}
@@ -129,7 +164,11 @@ export function AiDashboardCanvas() {
                   widget.id === 'w-segment-trend'
                 }
               >
-                <AiWidgetRenderer widgetId={widget.id} type={widget.type} />
+                <AiWidgetRenderer
+                  widgetId={widget.id}
+                  type={widget.type}
+                  typography={chartTypography}
+                />
               </DashboardWidgetCard>
             </div>
           );

@@ -4,7 +4,11 @@ import * as am5percent from '@amcharts/amcharts5/percent';
 import * as am5radar from '@amcharts/amcharts5/radar';
 import * as am5xy from '@amcharts/amcharts5/xy';
 import am5geodataWorldLow from '@amcharts/amcharts5-geodata/worldLow';
-import { addAmChartLicense, applyBiTheme } from '@/components/charts/amcharts/theme';
+import {
+  addAmChartLicense,
+  applyBiTheme,
+  type AmChartTypography,
+} from '@/components/charts/amcharts/theme';
 import type {
   AiWidgetChartPayload,
   AmChartWidgetType,
@@ -22,10 +26,28 @@ import type { SegmentTrendSeriesConfig } from '@/data/mock-segment-trend';
 const NPS_BENCHMARK_NEGATIVE = '#FF7681';
 const NPS_BENCHMARK_POSITIVE = '#17B26B';
 
-function createRoot(containerId: string): am5.Root {
+function chartText(typography: AmChartTypography | undefined, defaultFontSize: number) {
+  return {
+    fontFamily: typography?.fontFamily,
+    fontSize: typography?.fontSize ?? defaultFontSize,
+    fontStyle: typography?.fontStyle,
+    fontWeight: typography?.fontWeight,
+  };
+}
+
+function chartStrongText(typography: AmChartTypography | undefined, defaultFontSize: number) {
+  return {
+    fontFamily: typography?.fontFamily,
+    fontSize: typography?.fontSize ?? defaultFontSize,
+    fontStyle: typography?.fontStyle,
+    fontWeight: typography?.fontWeight === '400' ? '500' : typography?.fontWeight,
+  };
+}
+
+function createRoot(containerId: string, typography?: AmChartTypography): am5.Root {
   addAmChartLicense();
   const root = am5.Root.new(containerId);
-  applyBiTheme(root);
+  applyBiTheme(root, typography);
   return root;
 }
 
@@ -96,7 +118,11 @@ function createHorizontalBarChart(
   chart.appear(400, 50);
 }
 
-function createAgeBarChart(root: am5.Root, data: ColoredChartDataPoint[]): void {
+function createAgeBarChart(
+  root: am5.Root,
+  data: ColoredChartDataPoint[],
+  typography?: AmChartTypography
+): void {
   const chart = root.container.children.push(
     am5xy.XYChart.new(root, {
       panX: false,
@@ -119,7 +145,7 @@ function createAgeBarChart(root: am5.Root, data: ColoredChartDataPoint[]): void 
   });
   xRenderer.labels.template.setAll({
     fill: am5.color(0x9b9b9b),
-    fontSize: 11,
+    ...chartText(typography, 11),
   });
 
   const xAxis = chart.xAxes.push(
@@ -142,7 +168,7 @@ function createAgeBarChart(root: am5.Root, data: ColoredChartDataPoint[]): void 
   });
   yRenderer.labels.template.setAll({
     fill: am5.color(0x545e6b),
-    fontSize: 12,
+    ...chartText(typography, 12),
     textAlign: 'left',
   });
 
@@ -182,8 +208,7 @@ function createAgeBarChart(root: am5.Root, data: ColoredChartDataPoint[]): void 
       sprite: am5.Label.new(root, {
         text: '{valueX}%',
         populateText: true,
-        fontSize: 11,
-        fontWeight: '500',
+        ...chartStrongText(typography, 11),
         fill: am5.color(0xffffff),
         textAlign: 'right',
         centerX: am5.p100,
@@ -352,7 +377,11 @@ function createGaugeChart(root: am5.Root, score: number): void {
   chart.appear(400, 50);
 }
 
-function createNpsBenchmarkChart(root: am5.Root, data: NpsBenchmarkDataPoint[]): void {
+function createNpsBenchmarkChart(
+  root: am5.Root,
+  data: NpsBenchmarkDataPoint[],
+  typography?: AmChartTypography
+): void {
   const chart = root.container.children.push(
     am5xy.XYChart.new(root, {
       panX: false,
@@ -377,7 +406,7 @@ function createNpsBenchmarkChart(root: am5.Root, data: NpsBenchmarkDataPoint[]):
   });
   xRenderer.labels.template.setAll({
     fill: am5.color(0x545e6b),
-    fontSize: 12,
+    ...chartText(typography, 12),
   });
 
   const xAxis = chart.xAxes.push(
@@ -397,7 +426,7 @@ function createNpsBenchmarkChart(root: am5.Root, data: NpsBenchmarkDataPoint[]):
   });
   yRenderer.labels.template.setAll({
     fill: am5.color(0x9b9b9b),
-    fontSize: 11,
+    ...chartText(typography, 11),
   });
 
   const yAxis = chart.yAxes.push(
@@ -451,8 +480,7 @@ function createNpsBenchmarkChart(root: am5.Root, data: NpsBenchmarkDataPoint[]):
       sprite: am5.Label.new(bulletRoot, {
         text: '{valueY.formatNumber("#.0")}',
         populateText: true,
-        fontSize: 11,
-        fontWeight: '500',
+        ...chartStrongText(typography, 11),
         fill: am5.color(0xffffff),
         centerX: am5.p50,
         centerY: npsScore > 0 ? 0 : am5.p100,
@@ -467,7 +495,8 @@ function createNpsBenchmarkChart(root: am5.Root, data: NpsBenchmarkDataPoint[]):
 function createSegmentTrendChart(
   root: am5.Root,
   rows: AiWidgetChartPayload['segmentTrendRows'],
-  seriesConfig: SegmentTrendSeriesConfig[]
+  seriesConfig: SegmentTrendSeriesConfig[],
+  typography?: AmChartTypography
 ): void {
   const chart = root.container.children.push(
     am5xy.XYChart.new(root, {
@@ -492,7 +521,7 @@ function createSegmentTrendChart(
   });
   xRenderer.labels.template.setAll({
     fill: am5.color(0x9b9b9b),
-    fontSize: 10,
+    ...chartText(typography, 10),
     oversizedBehavior: 'truncate',
     maxWidth: 72,
   });
@@ -514,7 +543,7 @@ function createSegmentTrendChart(
   });
   yRenderer.labels.template.setAll({
     fill: am5.color(0x9b9b9b),
-    fontSize: 11,
+    ...chartText(typography, 11),
   });
 
   const yAxis = chart.yAxes.push(
@@ -562,7 +591,7 @@ function createSegmentTrendChart(
           centerX: am5.p50,
           centerY: am5.p100,
           dy: -10,
-          fontSize: 11,
+          ...chartText(typography, 11),
           fill: am5.color(0x000000),
         }),
       })
@@ -579,7 +608,7 @@ function createSegmentTrendChart(
     })
   );
   legend.labels.template.setAll({
-    fontSize: 11,
+    ...chartText(typography, 11),
     fill: am5.color(0x545e6b),
   });
   legend.valueLabels.template.set('forceHidden', true);
@@ -595,7 +624,8 @@ function createSegmentTrendChart(
 function createComparativeBarChart(
   root: am5.Root,
   rows: AiWidgetChartPayload['comparativeBarRows'],
-  seriesConfig: ComparativeBarSeriesConfig[]
+  seriesConfig: ComparativeBarSeriesConfig[],
+  typography?: AmChartTypography
 ): void {
   const chart = root.container.children.push(
     am5xy.XYChart.new(root, {
@@ -622,7 +652,7 @@ function createComparativeBarChart(
   });
   xRenderer.labels.template.setAll({
     fill: am5.color(0x9b9b9b),
-    fontSize: 11,
+    ...chartText(typography, 11),
   });
 
   const xAxis = chart.xAxes.push(
@@ -642,7 +672,7 @@ function createComparativeBarChart(
   });
   yRenderer.labels.template.setAll({
     fill: am5.color(0x9b9b9b),
-    fontSize: 11,
+    ...chartText(typography, 11),
   });
 
   const yAxis = chart.yAxes.push(
@@ -684,7 +714,7 @@ function createComparativeBarChart(
           centerX: am5.p50,
           centerY: am5.p100,
           dy: -4,
-          fontSize: 10,
+          ...chartText(typography, 10),
           fill: am5.color(0xffffff),
         }),
       })
@@ -705,7 +735,7 @@ function createComparativeBarChart(
     })
   );
   legend.labels.template.setAll({
-    fontSize: 10,
+    ...chartText(typography, 10),
     fill: am5.color(0x545e6b),
     maxWidth: 200,
     oversizedBehavior: 'truncate',
@@ -1084,16 +1114,17 @@ export interface ChartInstance {
 export function buildChart(
   containerId: string,
   chartType: AmChartWidgetType,
-  payload: AiWidgetChartPayload
+  payload: AiWidgetChartPayload,
+  typography?: AmChartTypography
 ): ChartInstance {
-  const root = createRoot(containerId);
+  const root = createRoot(containerId, typography);
 
   switch (chartType) {
     case 'map':
       createMapChart(root, payload.mapPoints);
       break;
     case 'bar':
-      createAgeBarChart(root, payload.ageBarItems);
+      createAgeBarChart(root, payload.ageBarItems, typography);
       break;
     case 'image-bar':
       createHorizontalBarChart(root, payload.imageBars, true);
@@ -1126,7 +1157,7 @@ export function buildChart(
       createGaugeChart(root, payload.gaugeScore);
       break;
     case 'benchmark':
-      createNpsBenchmarkChart(root, payload.npsBenchmarkItems);
+      createNpsBenchmarkChart(root, payload.npsBenchmarkItems, typography);
       break;
     case 'stackbar':
       createStackBarChart(root, payload.stackSegments);
@@ -1135,14 +1166,16 @@ export function buildChart(
       createComparativeBarChart(
         root,
         payload.comparativeBarRows,
-        payload.comparativeBarSeries
+        payload.comparativeBarSeries,
+        typography
       );
       break;
     case 'segment-trend':
       createSegmentTrendChart(
         root,
         payload.segmentTrendRows,
-        payload.segmentTrendSeries
+        payload.segmentTrendSeries,
+        typography
       );
       break;
     case 'pictorial':
