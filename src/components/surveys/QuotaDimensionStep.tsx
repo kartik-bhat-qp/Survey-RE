@@ -314,6 +314,37 @@ function QuestionCard({
       </header>
       {collapsed ? null : (
         <div className={styles.cardBody}>
+          {isMinCount ? (
+            <div
+              className={`${styles.totalRow} ${styles.totalRowAtTop} ${
+                totalIsValid ? '' : styles.totalInvalid
+              }`}
+            >
+              <span className={styles.totalLabel}>Target (count)</span>
+              <FormattedNumberInput
+                value={targetValue}
+                onChange={onTargetChange}
+                decimals={0}
+                className={`${styles.percentInput} ${
+                  minCountInvalid ? styles.percentInputInvalid : ''
+                }`}
+                ariaLabel="Target count"
+              />
+              <span className={styles.totalRowSpacer} aria-hidden />
+            </div>
+          ) : isPercent ? (
+            <div className={`${styles.totalRow} ${styles.totalRowAtTop}`}>
+              <span className={styles.totalLabel}>Target (count)</span>
+              <FormattedNumberInput
+                value={targetValue}
+                onChange={onTargetChange}
+                decimals={0}
+                className={styles.percentInput}
+                ariaLabel="Target count"
+              />
+              <span className={styles.totalRowSpacer} aria-hidden />
+            </div>
+          ) : null}
           <div className={styles.optionHeaderRow}>
             <span className={styles.optionHeaderLabel} />
             <span className={styles.optionHeaderCount}>Quota</span>
@@ -344,63 +375,36 @@ function QuestionCard({
             );
           })}
           {isMinCount ? (
-            <>
-              <div
-                className={`${styles.totalRow} ${totalIsValid ? '' : styles.totalInvalid}`}
+            <div className={styles.helperRow}>
+              <span
+                className={`${styles.helperText} ${
+                  minCountInvalid ? styles.helperTextInvalid : ''
+                }`}
               >
-                <span className={styles.totalLabel}>Target (count)</span>
-                <FormattedNumberInput
-                  value={targetValue}
-                  onChange={onTargetChange}
-                  decimals={0}
-                  className={`${styles.percentInput} ${
-                    minCountInvalid ? styles.percentInputInvalid : ''
-                  }`}
-                  ariaLabel="Target count"
-                />
-              </div>
-              <div className={styles.helperRow}>
-                <span
-                  className={`${styles.helperText} ${
-                    minCountInvalid ? styles.helperTextInvalid : ''
-                  }`}
-                >
-                  Sum of minimums: {formatNumber(total)}
-                  {minCountInvalid
-                    ? ` — exceeds target by ${formatNumber(total - targetValue)}`
-                    : ''}
-                </span>
-              </div>
-            </>
+                Sum of minimums: {formatNumber(total)}
+                {minCountInvalid
+                  ? ` — exceeds target by ${formatNumber(total - targetValue)}`
+                  : ''}
+              </span>
+            </div>
           ) : isPercent ? (
-            <>
-              <div className={styles.totalRow}>
-                <span className={styles.totalLabel}>Target (count)</span>
-                <FormattedNumberInput
-                  value={targetValue}
-                  onChange={onTargetChange}
-                  decimals={0}
-                  className={styles.percentInput}
-                  ariaLabel="Target count"
-                />
-              </div>
-              <div className={styles.helperRow}>
-                <span
-                  className={`${styles.helperText} ${
-                    minPctInvalid ? styles.helperTextInvalid : ''
-                  }`}
-                >
-                  Sum of minimums: {formatNumber(total, 2)}%
-                  {minPctInvalid
-                    ? ` — exceeds 100% by ${formatNumber(total - 100, 2)}%`
-                    : ''}
-                </span>
-              </div>
-            </>
+            <div className={styles.helperRow}>
+              <span
+                className={`${styles.helperText} ${
+                  minPctInvalid ? styles.helperTextInvalid : ''
+                }`}
+              >
+                Sum of minimums: {formatNumber(total, 2)}%
+                {minPctInvalid
+                  ? ` — exceeds 100% by ${formatNumber(total - 100, 2)}%`
+                  : ''}
+              </span>
+            </div>
           ) : (
             <div className={styles.totalRow}>
-              <span className={styles.totalLabel}>Target (count)</span>
+              <span className={styles.totalLabel}>Total</span>
               <span className={styles.totalValue}>{formatNumber(total)}</span>
+              <span className={styles.totalRowSpacer} aria-hidden />
             </div>
           )}
         </div>
