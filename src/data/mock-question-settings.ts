@@ -15,7 +15,7 @@ export type AnswerDisplayOrder =
 /** How many answer options to include when display order is Random. */
 export type RandomizeAnswerCount = 'all' | number;
 
-export type QuestionDisplayMode = 'show-question' | 'hide-question';
+export type QuestionDisplayMode = 'show-question' | 'hide-question' | 'hide-after-answering';
 
 export type VideoOption = 'none' | 'before-question' | 'after-question';
 
@@ -109,7 +109,17 @@ export function normalizeRandomizeAnswerCount(
 export const QUESTION_DISPLAY_OPTIONS = [
   { value: 'show-question' as const, label: 'Show Question' },
   { value: 'hide-question' as const, label: 'Hide Question' },
+  { value: 'hide-after-answering' as const, label: 'Hide after answering' },
 ];
+
+export function getQuestionDisplayOptions(
+  answerType: AnswerType
+): typeof QUESTION_DISPLAY_OPTIONS {
+  if (answerType === 'radio') {
+    return QUESTION_DISPLAY_OPTIONS;
+  }
+  return QUESTION_DISPLAY_OPTIONS.filter((option) => option.value !== 'hide-after-answering');
+}
 
 export const VIDEO_OPTIONS = [
   { value: 'none' as const, label: 'None' },

@@ -132,7 +132,7 @@ export function CaptchaQuestionSettingsPanel({
               <div className={panelStyles.toggleRow}>
                 <WuToggle
                   Label={CAPTCHA_FAILURE_HANDLING_COPY.toggleLabel}
-                  labelPosition="left"
+                  labelPosition="right"
                   checked={settings.showV2OnV3VerificationFailed}
                   onChange={(showV2OnV3VerificationFailed) =>
                     patch({ showV2OnV3VerificationFailed })

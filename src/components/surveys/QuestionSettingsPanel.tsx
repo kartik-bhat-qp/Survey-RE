@@ -6,9 +6,9 @@ import type { SurveyQuestion } from '@/data/mock-survey-detail';
 import {
   ANSWER_DISPLAY_ORDER_OPTIONS,
   buildRandomizeAnswerCountOptions,
+  getQuestionDisplayOptions,
   getQuestionTypeLabel,
   normalizeRandomizeAnswerCount,
-  QUESTION_DISPLAY_OPTIONS,
   SCALE_TYPE_OPTIONS,
   VIDEO_OPTIONS,
   type AnswerDisplayOrder,
@@ -30,6 +30,14 @@ const WuToggle = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
   { ssr: false }
 );
+
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
+
+const AUTO_SELECT_SHOWN_OPTION_HELP =
+  'If multiple options are shown, the first option will be selected';
 
 type SettingsTab = 'metadata' | 'communities';
 
@@ -112,8 +120,14 @@ export function QuestionSettingsPanel({
     randomizeAnswerCountOptions.find((o) => o.value === normalizedRandomizeAnswerCount) ??
     randomizeAnswerCountOptions[0] ??
     null;
+  const questionDisplayOptions = useMemo(
+    () => getQuestionDisplayOptions(settings.answerType),
+    [settings.answerType]
+  );
   const questionDisplayValue =
-    QUESTION_DISPLAY_OPTIONS.find((o) => o.value === settings.questionDisplay) ?? null;
+    questionDisplayOptions.find((o) => o.value === settings.questionDisplay) ??
+    questionDisplayOptions[0] ??
+    null;
   const videoValue = VIDEO_OPTIONS.find((o) => o.value === settings.video) ?? null;
 
   return (
@@ -130,7 +144,14 @@ export function QuestionSettingsPanel({
           label="Answer Type"
           options={ANSWER_TYPE_OPTIONS}
           value={settings.answerType}
-          onChange={(answerType) => patch({ answerType })}
+          onChange={(answerType) =>
+            patch({
+              answerType,
+              ...(answerType !== 'radio' && settings.questionDisplay === 'hide-after-answering'
+                ? { questionDisplay: 'show-question' }
+                : {}),
+            })
+          }
         />
 
         <ToggleButtonGroup
@@ -194,11 +215,13 @@ export function QuestionSettingsPanel({
           </div>
         ) : null}
 
+        <hr className={styles.sectionDivider} aria-hidden />
+
         <div className={styles.field}>
           <div className={styles.toggleRow}>
             <WuToggle
               Label="Alternate colors"
-              labelPosition="left"
+              labelPosition="right"
               checked={settings.alternateColors}
               onChange={(alternateColors) => patch({ alternateColors })}
             />
@@ -209,7 +232,7 @@ export function QuestionSettingsPanel({
           <span className={styles.fieldLabel}>Question Display</span>
           <div className={styles.selectWrap}>
             <WuSelect
-              data={QUESTION_DISPLAY_OPTIONS}
+              data={questionDisplayOptions}
               accessorKey={{ value: 'value', label: 'label' }}
               value={questionDisplayValue}
               onSelect={(item) => {
@@ -226,24 +249,47 @@ export function QuestionSettingsPanel({
           </div>
         </div>
 
-        {settings.questionDisplay === 'hide-question' ? (
+        {settings.questionDisplay === 'hide-question' &&
+        (settings.answerType === 'radio' || settings.answerType === 'checkbox') ? (
           <div className={styles.field}>
-            <div className={styles.toggleRow}>
-              <WuToggle
-                Label="Auto select shown options"
-                labelPosition="left"
-                checked={settings.autoSelectShownOptions}
-                onChange={(autoSelectShownOptions) => patch({ autoSelectShownOptions })}
-              />
-            </div>
+            {settings.answerType === 'radio' ? (
+              <div className={styles.toggleLabelRow}>
+                <WuToggle
+                  Label="Auto select shown option"
+                  labelPosition="right"
+                  checked={settings.autoSelectShownOptions}
+                  onChange={(autoSelectShownOptions) => patch({ autoSelectShownOptions })}
+                />
+                <WuTooltip content={AUTO_SELECT_SHOWN_OPTION_HELP} position="top">
+                  <button
+                    type="button"
+                    className={styles.helpBtn}
+                    aria-label={AUTO_SELECT_SHOWN_OPTION_HELP}
+                  >
+                    <span className="wm-help-outline" aria-hidden />
+                  </button>
+                </WuTooltip>
+              </div>
+            ) : (
+              <div className={styles.toggleRow}>
+                <WuToggle
+                  Label="Auto select shown options"
+                  labelPosition="right"
+                  checked={settings.autoSelectShownOptions}
+                  onChange={(autoSelectShownOptions) => patch({ autoSelectShownOptions })}
+                />
+              </div>
+            )}
           </div>
         ) : null}
+
+        <hr className={styles.sectionDivider} aria-hidden />
 
         <div className={styles.field}>
           <div className={styles.toggleRow}>
             <WuToggle
               Label="Question Tips"
-              labelPosition="left"
+              labelPosition="right"
               checked={settings.questionTips}
               onChange={(questionTips) => patch({ questionTips })}
             />

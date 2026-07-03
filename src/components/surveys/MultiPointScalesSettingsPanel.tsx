@@ -184,7 +184,7 @@ export function MultiPointScalesSettingsPanel({
           <div className={styles.toggleLabelRow}>
             <WuToggle
               Label="Bipolar"
-              labelPosition="left"
+              labelPosition="right"
               checked={settings.bipolar}
               onChange={(bipolar) => patch({ bipolar })}
             />
@@ -203,7 +203,7 @@ export function MultiPointScalesSettingsPanel({
           <div className={styles.toggleLabelRow}>
             <WuToggle
               Label="Auto-focus"
-              labelPosition="left"
+              labelPosition="right"
               checked={settings.autoFocus}
               onChange={(autoFocus) => patch({ autoFocus })}
             />
@@ -258,7 +258,7 @@ export function MultiPointScalesSettingsPanel({
           <div className={panelStyles.toggleRow}>
             <WuToggle
               Label="Mobile Rendering"
-              labelPosition="left"
+              labelPosition="right"
               checked={settings.mobileRendering}
               onChange={(mobileRendering) => patch({ mobileRendering })}
             />
@@ -334,7 +334,7 @@ export function MultiPointScalesSettingsPanel({
           <div className={panelStyles.toggleRow}>
             <WuToggle
               Label="Alternate Colors"
-              labelPosition="left"
+              labelPosition="right"
               checked={settings.alternateColors}
               onChange={(alternateColors) => patch({ alternateColors })}
             />
@@ -366,7 +366,7 @@ export function MultiPointScalesSettingsPanel({
           <div className={styles.toggleLabelRow}>
             <WuToggle
               Label="Question Tips"
-              labelPosition="left"
+              labelPosition="right"
               checked={settings.questionTips}
               onChange={(questionTips) => patch({ questionTips })}
             />
