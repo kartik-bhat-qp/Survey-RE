@@ -250,6 +250,48 @@ export function buildInitialDistribution(questions: SurveyQuestion[]): QuotaDime
   return state;
 }
 
+/** Rebuilds dimension editor state from a saved question-based quota. */
+export function buildDistributionFromQuota(
+  quota: {
+    questionCode?: string;
+    questionQuotaScope?: QuotaScopeType;
+    questionQuotaTotalTarget?: number;
+    target: number;
+    options?: { label: string; target: number; overLimitAction?: string }[];
+  },
+  questions: SurveyQuestion[]
+): QuotaDimensionState | null {
+  if (!quota.questionCode || !quota.options?.length) return null;
+  const question = questions.find((q) => q.code === quota.questionCode);
+  if (!question) return null;
+
+  const scope = quota.questionQuotaScope ?? 'max-count';
+  const values: Record<string, number> = {};
+  const overLimitActions: Record<string, string> = {};
+  const sampleTarget = quota.questionQuotaTotalTarget ?? quota.target;
+
+  for (const option of quota.options) {
+    if (scope === 'min-pct') {
+      values[option.label] =
+        sampleTarget > 0 ? (option.target / sampleTarget) * 100 : 0;
+    } else {
+      values[option.label] = option.target;
+    }
+    overLimitActions[option.label] = option.overLimitAction ?? 'quota-overlimit';
+  }
+
+  const entry: QuotaDimensionEntry = {
+    scope,
+    values,
+    overLimitActions,
+  };
+  if (scope === 'min-count' || scope === 'min-pct') {
+    entry.target = sampleTarget;
+  }
+
+  return { [question.id]: entry };
+}
+
 function resolveOptionsFor(question: SurveyQuestion): string[] {
   if (question.options && question.options.length > 0) return question.options;
   if (question.parentQuestionId !== undefined) {

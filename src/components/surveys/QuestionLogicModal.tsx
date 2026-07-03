@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type { SurveyQuestion } from '@/data/mock-survey-detail';
 import {
@@ -23,7 +24,6 @@ import { HelpFileLink } from '@/components/surveys/HelpFileLink';
 import { DynamicTextCommentsLogicPanel } from '@/components/surveys/DynamicTextCommentsLogicPanel';
 import { ExtractionLogicPanel } from '@/components/surveys/ExtractionLogicPanel';
 import { QuotaControlAppliedIcon } from '@/components/surveys/QuotaControlAppliedIcon';
-import { QuotaControlLogicPanel } from '@/components/surveys/QuotaControlLogicPanel';
 import { ShowHideOptionsAppliedIcon } from '@/components/surveys/ShowHideOptionsAppliedIcon';
 import { ShowHideOptionsLogicPanel } from '@/components/surveys/ShowHideOptionsLogicPanel';
 import { plainTextFromRichValue } from '@/components/surveys/QuestionRichTextField';
@@ -59,6 +59,7 @@ export function QuestionLogicModal({
   onSave,
 }: QuestionLogicModalProps) {
   const wick = useWickUILib();
+  const router = useRouter();
   const { showToast } = useWuShowToast();
   const [state, setState] = useState<QuestionLogicState>(() =>
     createDefaultQuestionLogicState(question.options.map((option) => option.id))
@@ -160,6 +161,11 @@ export function QuestionLogicModal({
     showToast({ message: 'Dynamic Text/Comments logic reset', variant: 'success' });
   }
 
+  function handleGoToQuotaManagement(): void {
+    onOpenChange(false);
+    router.push(`/surveys/${surveyId}/advance-quotas`);
+  }
+
   if (!open || !wick) {
     return null;
   }
@@ -221,11 +227,21 @@ export function QuestionLogicModal({
             onChange={(showHideOptions) => setState((prev) => ({ ...prev, showHideOptions }))}
           />
         ) : isQuotaControl ? (
-          <QuotaControlLogicPanel
-            question={question}
-            state={state.quotaControl}
-            onChange={(quotaControl) => setState((prev) => ({ ...prev, quotaControl }))}
-          />
+          <div className={styles.quotaControlRedirectPanel}>
+            <div className={styles.quotaControlRedirectCard}>
+              <div className={styles.quotaControlRedirectIconWrap} aria-hidden>
+                <span className={`wm-pie-chart ${styles.quotaControlRedirectIcon}`} />
+              </div>
+              <p className={styles.quotaControlRedirectTitle}>Quota Control has moved</p>
+              <p className={styles.quotaControlRedirectText}>
+                Quota control logic has been moved to Quota Management. Set up limits, targets, and
+                over-limit actions there instead of in question logic.
+              </p>
+              <WuButton variant="primary" size="sm" onClick={handleGoToQuotaManagement}>
+                Go to Quota Management
+              </WuButton>
+            </div>
+          </div>
         ) : isDynamicTextComments ? (
           <DynamicTextCommentsLogicPanel
             question={question}
@@ -365,9 +381,11 @@ export function QuestionLogicModal({
             Reset
           </WuButton>
         ) : null}
-        <WuButton variant="primary" disabled={!canSave} onClick={handleSave}>
-          {isExtraction ? 'Save Extraction Logic' : 'Save Logic'}
-        </WuButton>
+        {!isQuotaControl ? (
+          <WuButton variant="primary" disabled={!canSave} onClick={handleSave}>
+            {isExtraction ? 'Save Extraction Logic' : 'Save Logic'}
+          </WuButton>
+        ) : null}
       </WuModalFooter>
     </WuModal>
   );

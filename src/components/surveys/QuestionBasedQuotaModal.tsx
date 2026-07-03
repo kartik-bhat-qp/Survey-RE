@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
@@ -11,9 +11,11 @@ import {
   questionHasExpandableRows,
   type SurveyQuestion,
 } from '@/data/mock-survey-questions';
+import type { AdvanceQuota } from '@/data/mock-advance-quotas';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
   buildInitialDistribution,
+  buildDistributionFromQuota,
   isQuotaDistributionValid,
   QuotaDimensionStep,
   type QuotaDimensionState,
@@ -39,8 +41,14 @@ interface QuestionBasedQuotaModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   surveyId: number;
+  editQuota?: AdvanceQuota | null;
   onBack?: () => void;
   onSave?: (
+    questions: SurveyQuestion[],
+    distribution: QuotaDimensionState
+  ) => void;
+  onUpdate?: (
+    quotaId: string,
     questions: SurveyQuestion[],
     distribution: QuotaDimensionState
   ) => void;
@@ -50,8 +58,10 @@ export function QuestionBasedQuotaModal({
   open,
   onOpenChange,
   surveyId,
+  editQuota = null,
   onBack,
   onSave,
+  onUpdate,
 }: QuestionBasedQuotaModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
@@ -62,6 +72,18 @@ export function QuestionBasedQuotaModal({
   const [distribution, setDistribution] = useState<QuotaDimensionState>({});
 
   const questions = useMemo(() => getQuestionsBySurvey(surveyId), [surveyId]);
+
+  useEffect(() => {
+    if (!open || !editQuota) return;
+    const question = questions.find((q) => q.code === editQuota.questionCode);
+    const nextDistribution = buildDistributionFromQuota(editQuota, questions);
+    if (!question || !nextDistribution) return;
+    setStep('dimension');
+    setSearch('');
+    setExpandedParentIds(new Set());
+    setSelectedIds(new Set([question.id]));
+    setDistribution(nextDistribution);
+  }, [editQuota, open, questions]);
 
   const displayQuestions = useMemo(
     () => flattenQuestionsForPicker(questions, expandedParentIds),
@@ -217,13 +239,21 @@ export function QuestionBasedQuotaModal({
 
   function handleSave(): void {
     if (selectedQuestions.length === 0 || !distributionIsValid) return;
-    onSave?.(selectedQuestions, distribution);
-    showToast({
-      message: `Quota created with ${selectedQuestions.length} ${
-        selectedQuestions.length === 1 ? 'question' : 'questions'
-      }`,
-      variant: 'success',
-    });
+    if (editQuota) {
+      onUpdate?.(editQuota.id, selectedQuestions, distribution);
+      showToast({
+        message: `Quota "${editQuota.name}" updated`,
+        variant: 'success',
+      });
+    } else {
+      onSave?.(selectedQuestions, distribution);
+      showToast({
+        message: `Quota created with ${selectedQuestions.length} ${
+          selectedQuestions.length === 1 ? 'question' : 'questions'
+        }`,
+        variant: 'success',
+      });
+    }
     resetState();
     onOpenChange(false);
   }
@@ -295,7 +325,11 @@ export function QuestionBasedQuotaModal({
       variant="action"
     >
       <WuModalHeader className={styles.header}>
-        {step === 'question' ? 'Question Based Quota' : 'Create Quota'}
+        {editQuota
+          ? 'Edit Quota'
+          : step === 'question'
+            ? 'Question Based Quota'
+            : 'Create Quota'}
       </WuModalHeader>
       <WuModalContent className={styles.content}>
         {step === 'question' ? (

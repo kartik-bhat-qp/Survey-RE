@@ -159,6 +159,58 @@
   justify-content: space-between !important;
 }
 
+.quotaControlRedirectPanel {
+  padding: 1rem 1rem 1.5rem;
+}
+
+.quotaControlRedirectCard {
+  align-items: center;
+  background: linear-gradient(180deg, #f0f7ff 0%, #f8fbff 100%);
+  border: 1px solid #cfe5f7;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+}
+
+.quotaControlRedirectIconWrap {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d7e9f8;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgb(27 135 230 / 8%);
+  display: inline-flex;
+  height: 3rem;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+  width: 3rem;
+}
+
+.quotaControlRedirectIcon {
+  color: #1b87e6;
+  font-size: 1.375rem;
+  line-height: 1;
+}
+
+.quotaControlRedirectTitle {
+  color: #1b3380;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.quotaControlRedirectText {
+  color: #475569;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 26rem;
+}
+
 @media (max-width: 767px) {
   .controlsRow {
     align-items: stretch;

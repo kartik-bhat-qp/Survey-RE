@@ -37,7 +37,7 @@ const WuTooltip = dynamic(
 );
 
 const AUTO_SELECT_SHOWN_OPTION_HELP =
-  'If multiple options are shown, the first option will be selected';
+  'If multiple options shown, the first option will be selected';
 
 type SettingsTab = 'metadata' | 'communities';
 
@@ -129,6 +129,8 @@ export function QuestionSettingsPanel({
     questionDisplayOptions[0] ??
     null;
   const videoValue = VIDEO_OPTIONS.find((o) => o.value === settings.video) ?? null;
+  const isSelectOne = question.inputKind === 'radio';
+  const isSelectMany = question.inputKind === 'checkbox';
 
   return (
     <aside className={styles.panel} aria-label="Question settings">
@@ -249,10 +251,9 @@ export function QuestionSettingsPanel({
           </div>
         </div>
 
-        {settings.questionDisplay === 'hide-question' &&
-        (settings.answerType === 'radio' || settings.answerType === 'checkbox') ? (
+        {settings.questionDisplay === 'hide-question' && (isSelectOne || isSelectMany) ? (
           <div className={styles.field}>
-            {settings.answerType === 'radio' ? (
+            {isSelectOne ? (
               <div className={styles.toggleLabelRow}>
                 <WuToggle
                   Label="Auto select shown option"
@@ -266,7 +267,7 @@ export function QuestionSettingsPanel({
                     className={styles.helpBtn}
                     aria-label={AUTO_SELECT_SHOWN_OPTION_HELP}
                   >
-                    <span className="wm-help-outline" aria-hidden />
+                    <span className="wm-info-outline" aria-hidden />
                   </button>
                 </WuTooltip>
               </div>

@@ -14,6 +14,7 @@ import { AddQuotaModal } from '@/components/surveys/AddQuotaModal';
 import { QuestionBasedQuotaModal } from '@/components/surveys/QuestionBasedQuotaModal';
 import { CrossVariableQuotaModal } from '@/components/surveys/CrossVariableQuotaModal';
 import { CrossVariableQuotaTrackingPanel } from '@/components/surveys/CrossVariableQuotaTrackingPanel';
+import { CrossVariableQuotaEditModal } from '@/components/surveys/CrossVariableQuotaEditModal';
 import { QuotaAiAgentSidebar } from '@/components/surveys/QuotaAiAgentSidebar';
 import type { QuotaAiGenerationResult } from '@/data/mock-quota-ai-agent';
 import {
@@ -50,6 +51,7 @@ import {
   resolveCrossVariableTrackingSets,
   type CrossVariableQuotaBatch,
   type CrossVariableQuotaSaveResult,
+  type CrossVariableTrackingSet,
 } from '@/data/mock-cross-variable-quota';
 import {
   applyQuotaGroupCheckOverrides,
@@ -243,6 +245,47 @@ function buildQuotasFromSelection(
   return quotas;
 }
 
+function updateQuotaFromSelection(
+  existing: AdvanceQuota,
+  questions: SurveyQuestion[],
+  distribution: QuotaDimensionState
+): AdvanceQuota | null {
+  const built = buildQuotasFromSelection(questions, distribution, existing.quotaGroup);
+  const updated = built[0];
+  if (!updated) return null;
+
+  const options = updated.options?.map((option) => {
+    const previous = existing.options?.find((item) => item.label === option.label);
+    return previous ? { ...option, id: previous.id, current: previous.current } : option;
+  });
+
+  return {
+    ...updated,
+    id: existing.id,
+    current: existing.current,
+    options,
+    multipleQuotaHandling: existing.multipleQuotaHandling,
+  };
+}
+
+function updateCriteriaQuotaFromSubmit(
+  existing: AdvanceQuota,
+  data: CriteriaQuotaSubmit,
+  selection?: QuotaGroupSelection | null
+): AdvanceQuota {
+  const built =
+    existing.quotaType === 'Advanced' && selection
+      ? buildAdvancedGroupQuota(data, selection, 0)
+      : buildCriteriaQuota(data, existing.quotaGroup, 0);
+  return {
+    ...built,
+    id: existing.id,
+    quotaType: existing.quotaType,
+    multipleQuotaHandling: existing.multipleQuotaHandling,
+    current: existing.current,
+  };
+}
+
 function applyGroupChecksToDescription(
   description: string,
   checks: ReadonlyArray<{ questionCode: string }>
@@ -375,6 +418,91 @@ const WuTooltip = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
+
+function QuotaNameCell({
+  name,
+  className,
+  showEdit,
+  variant = 'default',
+  expandable,
+  isExpanded,
+  onExpand,
+  onEdit,
+}: {
+  name: string;
+  className?: string;
+  showEdit: boolean;
+  variant?: 'default' | 'option';
+  expandable?: boolean;
+  isExpanded?: boolean;
+  onExpand?: () => void;
+  onEdit: () => void;
+}) {
+  const editButton = showEdit ? (
+    <button
+      type="button"
+      className={styles.nameEditBtn}
+      title="Edit quota"
+      aria-label={`Edit ${name}`}
+      onClick={(event) => {
+        event.stopPropagation();
+        onEdit();
+      }}
+    >
+      <span className="wm-edit" aria-hidden />
+    </button>
+  ) : null;
+
+  if (expandable) {
+    return (
+      <span className={styles.nameCellWrap}>
+        <span
+          role="button"
+          tabIndex={0}
+          className={`${styles.nameCell} ${styles.expandableNameCell}`}
+          title={name}
+          aria-expanded={isExpanded}
+          aria-label={`${isExpanded ? 'Collapse' : 'Expand'} options for ${name}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onExpand?.();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              onExpand?.();
+            }
+          }}
+        >
+          <i
+            className={`wm wm-chevron-right ${styles.expandChevron} ${
+              isExpanded ? styles.expandChevronOpen : ''
+            }`}
+            aria-hidden
+          />
+          <span className={styles.expandableNameText}>{name}</span>
+        </span>
+        {editButton}
+      </span>
+    );
+  }
+
+  return (
+    <span className={styles.nameCellWrap}>
+      <span
+        className={
+          className ??
+          `${styles.nameCell}${variant === 'option' ? ` ${styles.optionNameCell}` : ''}`
+        }
+        title={name}
+      >
+        {variant === 'option' ? <span className={styles.optionBullet} aria-hidden /> : null}
+        {name}
+      </span>
+      {editButton}
+    </span>
+  );
+}
 
 function QuotaTargetCell({ quota }: { quota: AdvanceQuotaRow }) {
   const isOptionRow = Boolean(quota.isOption);
@@ -678,6 +806,10 @@ export function SurveyAdvanceQuotasDashboard({
       null
     );
   const [clientShareModalOpen, setClientShareModalOpen] = useState(false);
+  const [editingQuota, setEditingQuota] = useState<AdvanceQuota | null>(null);
+  const [crossVariableEditSet, setCrossVariableEditSet] =
+    useState<CrossVariableTrackingSet | null>(null);
+  const [crossVariableEditOpen, setCrossVariableEditOpen] = useState(false);
 
   const mockQuotaIdSet = useMemo(
     () => new Set(MOCK_ADVANCE_QUOTAS.map((quota) => quota.id)),
@@ -814,6 +946,86 @@ export function SurveyAdvanceQuotasDashboard({
   );
 
   const hasCrossVariableTracking = crossVariableTrackingSets.length > 0;
+
+  function upsertQuota(updated: AdvanceQuota): void {
+    setAddedQuotas((prev) => {
+      const index = prev.findIndex((quota) => quota.id === updated.id);
+      if (index >= 0) {
+        const next = [...prev];
+        next[index] = updated;
+        return next;
+      }
+      return [updated, ...prev];
+    });
+    if (mockQuotaIdSet.has(updated.id)) {
+      setDeletedMockQuotaIds((prev) => {
+        const next = new Set(prev);
+        next.add(updated.id);
+        return next;
+      });
+    }
+  }
+
+  function clearEditingQuota(): void {
+    setEditingQuota(null);
+  }
+
+  function handleEditQuota(row: AdvanceQuotaRow): void {
+    const quota =
+      row.isOption && row.parentId
+        ? displayQuotas.find((item) => item.id === row.parentId) ?? null
+        : row;
+
+    if (!quota) return;
+
+    if (quota.quotaType === 'Cross variable') {
+      const trackingSet = crossVariableTrackingSets.find((set) =>
+        set.rows.some((item) => item.id === quota.id)
+      );
+      if (!trackingSet) {
+        showToast({ message: 'Open the cross matrix view to edit this quota', variant: 'info' });
+        setDashboardView('cross-matrix');
+        return;
+      }
+      setCrossVariableEditSet(trackingSet);
+      setCrossVariableEditOpen(true);
+      setDashboardView('cross-matrix');
+      return;
+    }
+
+    setEditingQuota(quota);
+
+    if (quota.quotaType === 'Question Based') {
+      setQuestionQuotaOpen(true);
+      return;
+    }
+
+    if (quota.quotaType === 'Advanced') {
+      const group = customGroups.find(
+        (item) => item.name.trim().toLowerCase() === quota.quotaGroup.trim().toLowerCase()
+      );
+      if (group) {
+        setCriteriaQuotaGroup({
+          name: group.name,
+          handlingType: group.handlingType,
+          firstCheck: group.firstCheck,
+          secondCheck: group.secondCheck,
+        });
+        setCriteriaFlow('advanced-group');
+      } else {
+        setCriteriaFlow('standalone');
+        setCriteriaQuotaGroup(null);
+      }
+      setCriteriaQuotaOpen(true);
+      return;
+    }
+
+    if (quota.quotaType === 'Criteria based') {
+      setCriteriaFlow('standalone');
+      setCriteriaQuotaGroup(null);
+      setCriteriaQuotaOpen(true);
+    }
+  }
 
   function handleCrossVariableBatchUpdate(result: CrossVariableQuotaSaveResult): void {
     const batchId = result.batch.id;
@@ -1013,51 +1225,38 @@ export function SurveyAdvanceQuotasDashboard({
           const quota = row.original;
           const hasOptions = !!quota.options && quota.options.length > 0;
           const isExpanded = hasOptions && expandedQuotaIds.has(quota.id);
+          const showEdit = !clientView;
+
           if (quota.isOption) {
             return (
-              <span
-                className={`${styles.nameCell} ${styles.optionNameCell}`}
-                title={quota.name}
-              >
-                <span className={styles.optionBullet} aria-hidden />
-                {quota.name}
-              </span>
+              <QuotaNameCell
+                name={quota.name}
+                variant="option"
+                showEdit={showEdit}
+                onEdit={() => handleEditQuota(quota)}
+              />
             );
           }
+
           if (hasOptions) {
             return (
-              <span
-                role="button"
-                tabIndex={0}
-                className={`${styles.nameCell} ${styles.expandableNameCell}`}
-                title={quota.name}
-                aria-expanded={isExpanded}
-                aria-label={`${isExpanded ? 'Collapse' : 'Expand'} options for ${quota.name}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  toggleQuotaExpand(quota.id);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    toggleQuotaExpand(quota.id);
-                  }
-                }}
-              >
-                <i
-                  className={`wm wm-chevron-right ${styles.expandChevron} ${
-                    isExpanded ? styles.expandChevronOpen : ''
-                  }`}
-                  aria-hidden
-                />
-                <span className={styles.expandableNameText}>{quota.name}</span>
-              </span>
+              <QuotaNameCell
+                name={quota.name}
+                showEdit={showEdit}
+                expandable
+                isExpanded={isExpanded}
+                onExpand={() => toggleQuotaExpand(quota.id)}
+                onEdit={() => handleEditQuota(quota)}
+              />
             );
           }
+
           return (
-            <span className={styles.nameCell} title={quota.name}>
-              {quota.name}
-            </span>
+            <QuotaNameCell
+              name={quota.name}
+              showEdit={showEdit}
+              onEdit={() => handleEditQuota(quota)}
+            />
           );
         },
       });
@@ -1417,6 +1616,7 @@ export function SurveyAdvanceQuotasDashboard({
         open={addQuotaOpen}
         onOpenChange={setAddQuotaOpen}
         onSelectType={(type: AddQuotaType) => {
+          clearEditingQuota();
           if (type === 'question-based') {
             setQuestionQuotaOpen(true);
             return;
@@ -1460,10 +1660,15 @@ export function SurveyAdvanceQuotasDashboard({
 
       <QuestionBasedQuotaModal
         open={questionQuotaOpen}
-        onOpenChange={setQuestionQuotaOpen}
+        onOpenChange={(open) => {
+          setQuestionQuotaOpen(open);
+          if (!open) clearEditingQuota();
+        }}
         surveyId={surveyId}
+        editQuota={editingQuota?.quotaType === 'Question Based' ? editingQuota : null}
         onBack={() => {
           setQuestionQuotaOpen(false);
+          clearEditingQuota();
           setAddQuotaOpen(true);
         }}
         onSave={(questions, distribution) => {
@@ -1476,6 +1681,13 @@ export function SurveyAdvanceQuotasDashboard({
             return next;
           });
         }}
+        onUpdate={(quotaId, questions, distribution) => {
+          const existing = displayQuotas.find((quota) => quota.id === quotaId);
+          if (!existing) return;
+          const updated = updateQuotaFromSelection(existing, questions, distribution);
+          if (!updated) return;
+          upsertQuota(updated);
+        }}
       />
 
       <CriteriaBasedQuotaModal
@@ -1485,20 +1697,28 @@ export function SurveyAdvanceQuotasDashboard({
           if (!open) {
             setCriteriaFlow('standalone');
             setCriteriaQuotaGroup(null);
+            clearEditingQuota();
           }
         }}
         surveyId={surveyId}
         flow={criteriaFlow}
         quotaGroupSelection={criteriaQuotaGroup}
         existingQuotasInSelectedGroup={existingQuotasForAdvancedCriteriaModal}
+        editQuota={
+          editingQuota?.quotaType === 'Criteria based' || editingQuota?.quotaType === 'Advanced'
+            ? editingQuota
+            : null
+        }
         onBack={() => {
           setCriteriaQuotaOpen(false);
           setCriteriaFlow('standalone');
           setCriteriaQuotaGroup(null);
+          clearEditingQuota();
           setAddQuotaOpen(true);
         }}
         onBackToQuotaGroup={() => {
           setCriteriaQuotaOpen(false);
+          clearEditingQuota();
           setQuotaGroupModalOpen(true);
         }}
         onSave={(submissions: CriteriaQuotaSubmit[]) => {
@@ -1511,6 +1731,29 @@ export function SurveyAdvanceQuotasDashboard({
               : submissions.map((data, idx) => buildCriteriaQuota(data, 'NA', idx));
           setAddedQuotas((prev) => [...newQuotas, ...prev]);
         }}
+        onUpdate={(quotaId, submissions) => {
+          const existing = displayQuotas.find((quota) => quota.id === quotaId);
+          if (!existing || submissions.length === 0) return;
+          const updated = updateCriteriaQuotaFromSubmit(
+            existing,
+            submissions[0],
+            criteriaFlow === 'advanced-group' ? criteriaQuotaGroup : null
+          );
+          upsertQuota(updated);
+        }}
+      />
+
+      <CrossVariableQuotaEditModal
+        open={crossVariableEditOpen}
+        onOpenChange={(open) => {
+          setCrossVariableEditOpen(open);
+          if (!open) setCrossVariableEditSet(null);
+        }}
+        trackingSet={crossVariableEditSet}
+        batch={crossVariableBatches.find(
+          (batch) => batch.id === crossVariableEditSet?.batchId
+        )}
+        onSave={handleCrossVariableBatchUpdate}
       />
         </>
       ) : null}

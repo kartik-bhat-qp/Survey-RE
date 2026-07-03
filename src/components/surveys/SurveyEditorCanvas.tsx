@@ -2220,8 +2220,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2238,18 +2238,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Select One question added', variant: 'success' });
@@ -2260,8 +2256,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2278,18 +2274,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Select Many question added', variant: 'success' });
@@ -2300,8 +2292,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2318,23 +2310,19 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            const questionKey = `${firstSection.id}:${firstQuestion.id}`;
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(questionKey);
-            setQuestionSettingsByKey((settings) => ({
-              ...settings,
-              [questionKey]: getDefaultSettingsForQuestion('radio', 'dropdown'),
-            }));
-          }
+          const questionKey = `${sectionId}:${newId}`;
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(questionKey);
+          setQuestionSettingsByKey((settings) => ({
+            ...settings,
+            [questionKey]: getDefaultSettingsForQuestion('radio', 'dropdown'),
+          }));
           return next;
         });
         showToast({ message: 'Drop-down Menu question added', variant: 'success' });
@@ -2345,8 +2333,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2359,18 +2347,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Comment Box question added', variant: 'success' });
@@ -2381,8 +2365,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2395,18 +2379,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Single Row Text question added', variant: 'success' });
@@ -2417,8 +2397,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2431,18 +2411,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Email Address question added', variant: 'success' });
@@ -2453,8 +2429,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2470,18 +2446,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Contact Information question added', variant: 'success' });
@@ -2492,8 +2464,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2508,18 +2480,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Star Rating question added', variant: 'success' });
@@ -2530,8 +2498,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2546,18 +2514,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Smiley Rating question added', variant: 'success' });
@@ -2568,8 +2532,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2584,18 +2548,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Thumbs Up/Down question added', variant: 'success' });
@@ -2606,8 +2566,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2622,18 +2582,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Text Slider question added', variant: 'success' });
@@ -2644,8 +2600,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2660,18 +2616,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Numeric Slider question added', variant: 'success' });
@@ -2682,8 +2634,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2697,18 +2649,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Image Chooser Select One question added', variant: 'success' });
@@ -2719,8 +2667,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2734,18 +2682,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Image Chooser Select Many question added', variant: 'success' });
@@ -2756,8 +2700,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2772,18 +2716,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Image Chooser Rating question added', variant: 'success' });
@@ -2794,8 +2734,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2809,18 +2749,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Rank Order question added', variant: 'success' });
@@ -2831,8 +2767,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2846,18 +2782,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Constant Sum question added', variant: 'success' });
@@ -2868,8 +2800,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2884,18 +2816,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Drag and Drop question added', variant: 'success' });
@@ -2916,8 +2844,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
               ? 'Section Heading'
               : 'Section Sub-Heading';
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2930,18 +2858,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: `${toastLabel} added`, variant: 'success' });
@@ -2953,8 +2877,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const newId = `q-new-${ts}`;
         setSettingsTarget(null);
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -2969,24 +2893,20 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            const questionKey = `${firstSection.id}:${firstQuestion.id}`;
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(questionKey);
-            setSettingsTarget({ sectionId: firstSection.id, questionId: firstQuestion.id });
-            setMultiPointSettingsByKey((settings) => ({
-              ...settings,
-              [questionKey]: DEFAULT_NEW_MULTI_POINT_QUESTION_SETTINGS,
-            }));
-          }
+          const questionKey = `${sectionId}:${newId}`;
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(questionKey);
+          setSettingsTarget({ sectionId, questionId: newId });
+          setMultiPointSettingsByKey((settings) => ({
+            ...settings,
+            [questionKey]: DEFAULT_NEW_MULTI_POINT_QUESTION_SETTINGS,
+          }));
           return next;
         });
         showToast({ message: 'Multi-Point Scales question added', variant: 'success' });
@@ -2997,8 +2917,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -3013,18 +2933,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Basic Matrix Multi-Select question added', variant: 'success' });
@@ -3035,8 +2951,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -3051,18 +2967,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Spreadsheet question added', variant: 'success' });
@@ -3073,8 +2985,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -3092,18 +3004,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Net Promoter Score question added', variant: 'success' });
@@ -3114,8 +3022,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -3130,18 +3038,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Lookup Table question added', variant: 'success' });
@@ -3152,8 +3056,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
             const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
@@ -3168,18 +3072,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Van Westendorp question added', variant: 'success' });
@@ -3190,12 +3090,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
-              code: 'Q1',
-              number: 1,
+              code: `Q${nextNum}`,
+              number: nextNum,
               text: DEFAULT_CAPTCHA_QUESTION_TEXT,
               required: true,
               addQuestionTypeId: 'captcha',
@@ -3203,18 +3104,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: 'Captcha question added', variant: 'success' });
@@ -3226,12 +3123,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
         setSections((prev) => {
-          const next = prev.map((sec, sectionIndex) => {
-            if (sectionIndex !== 0) return sec;
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
             const newQuestion: SurveyQuestion = {
               id: newId,
-              code: 'Q1',
-              number: 1,
+              code: `Q${nextNum}`,
+              number: nextNum,
               text: preview.question,
               required: true,
               addQuestionTypeId: typeId,
@@ -3242,18 +3140,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             };
             return {
               ...sec,
-              questions: replaceFirstQuestionInList(sec.questions, newQuestion),
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
             };
           });
-          const firstSection = next[0];
-          const firstQuestion = firstSection?.questions[0];
-          if (firstSection && firstQuestion) {
-            pendingScrollQuestionRef.current = {
-              sectionId: firstSection.id,
-              questionId: firstQuestion.id,
-            };
-            setSelectedQuestionKey(`${firstSection.id}:${firstQuestion.id}`);
-          }
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
           return next;
         });
         showToast({ message: `${typeLabel} question added`, variant: 'success' });

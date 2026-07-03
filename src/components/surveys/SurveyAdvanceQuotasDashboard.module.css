@@ -389,6 +389,50 @@
   font-weight: 500;
 }
 
+.nameCellWrap {
+  align-items: flex-start;
+  display: inline-flex;
+  gap: 0.375rem;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.nameCellWrap:hover .nameEditBtn,
+.nameCellWrap:focus-within .nameEditBtn {
+  opacity: 1;
+  visibility: visible;
+}
+
+.nameEditBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 1rem;
+  height: 1.25rem;
+  justify-content: center;
+  margin-top: 0.05rem;
+  opacity: 0;
+  padding: 0;
+  transition:
+    color 0.15s ease,
+    opacity 0.15s ease,
+    visibility 0.15s ease;
+  visibility: hidden;
+  width: 1.25rem;
+}
+
+.nameEditBtn:hover,
+.nameEditBtn:focus-visible {
+  color: #1b87e6;
+  outline: none;
+}
+
 .descriptionCell {
   composes: clamp;
 }

@@ -97,9 +97,11 @@ interface CriteriaBasedQuotaModalProps {
   quotaGroupSelection?: QuotaGroupSelection | null;
   /** Advanced flow: quotas already in the selected group (shown read-only on the criteria step). */
   existingQuotasInSelectedGroup?: AdvanceQuota[];
+  editQuota?: AdvanceQuota | null;
   onBack?: () => void;
   onBackToQuotaGroup?: () => void;
   onSave?: (quotas: CriteriaQuotaSubmit[]) => void;
+  onUpdate?: (quotaId: string, quotas: CriteriaQuotaSubmit[]) => void;
 }
 
 function formatNumber(value: number): string {
@@ -126,6 +128,53 @@ function newQuotaBlock(checks?: {
     collapsedCriterionIds: new Set(),
     firstCheckId: checks?.firstCheckId ?? null,
     secondCheckId: checks?.secondCheckId ?? null,
+    collapsed: false,
+  };
+}
+
+function quotaBlockFromAdvanceQuota(quota: AdvanceQuota, questions: SurveyQuestion[]): QuotaBlock {
+  const firstCheck = quota.quotaChecks?.[0];
+  const secondCheck = quota.quotaChecks?.[1];
+  const firstCheckId = firstCheck
+    ? (questions.find((q) => q.code === firstCheck.questionCode)?.id ?? null)
+    : null;
+  const secondCheckId = secondCheck
+    ? (questions.find((q) => q.code === secondCheck.questionCode)?.id ?? null)
+    : null;
+
+  const criteria: Criterion[] = (quota.criterionBlocks ?? [])
+    .map((block) => ({
+      id: uniqueId('crit'),
+      name: block.name,
+      mode: 'new' as const,
+      existingCriteriaId: null,
+      existingConditionsSnapshot: null,
+      requiresRename: false,
+      conditions: block.conditions
+        .filter((cond) => cond.source !== 'Summary')
+        .map((cond) => ({
+          id: uniqueId('cond'),
+          source: cond.source as ConditionSource,
+          questionId: cond.questionCode
+            ? (questions.find((q) => q.code === cond.questionCode)?.id ?? null)
+            : null,
+          systemVariable: cond.source === 'System Variable' ? cond.subject : null,
+          operator: cond.operator,
+          value: cond.value,
+          valueEnd: cond.valueEnd ?? '',
+          connector: cond.connector ?? 'AND',
+        })),
+    }))
+    .filter((criterion) => criterion.conditions.length > 0);
+
+  return {
+    id: uniqueId('quota'),
+    name: quota.name,
+    target: quota.target,
+    criteria: criteria.length > 0 ? criteria : [newCriterion()],
+    collapsedCriterionIds: new Set(),
+    firstCheckId,
+    secondCheckId,
     collapsed: false,
   };
 }
@@ -572,9 +621,11 @@ export function CriteriaBasedQuotaModal({
   flow = 'standalone',
   quotaGroupSelection = null,
   existingQuotasInSelectedGroup,
+  editQuota = null,
   onBack,
   onBackToQuotaGroup,
   onSave,
+  onUpdate,
 }: CriteriaBasedQuotaModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
@@ -591,12 +642,16 @@ export function CriteriaBasedQuotaModal({
   );
 
   const resetState = useCallback(() => {
+    if (editQuota) {
+      setBlocks([quotaBlockFromAdvanceQuota(editQuota, questions)]);
+      return;
+    }
     if (flow === 'advanced-group' && quotaGroupSelection) {
       setBlocks([quotaBlockFromGroupSelection(quotaGroupSelection)]);
       return;
     }
     setBlocks([newQuotaBlock()]);
-  }, [flow, quotaGroupSelection]);
+  }, [editQuota, flow, questions, quotaGroupSelection]);
 
   useEffect(() => {
     if (!open) {
@@ -685,19 +740,27 @@ export function CriteriaBasedQuotaModal({
 
   function handleSave(): void {
     if (!canSave) return;
-    onSave?.(validQuotas);
-    const groupLabel = quotaGroupSelection?.name;
-    showToast({
-      message:
-        validQuotas.length === 1
-          ? isAdvancedGroupFlow && groupLabel
-            ? `Quota "${validQuotas[0].name}" added to ${groupLabel}`
-            : `Criteria based quota "${validQuotas[0].name}" created`
-          : isAdvancedGroupFlow && groupLabel
-            ? `${validQuotas.length} quotas added to ${groupLabel}`
-            : `${validQuotas.length} criteria based quotas created`,
-      variant: 'success',
-    });
+    if (editQuota) {
+      onUpdate?.(editQuota.id, validQuotas);
+      showToast({
+        message: `Quota "${validQuotas[0]?.name ?? editQuota.name}" updated`,
+        variant: 'success',
+      });
+    } else {
+      onSave?.(validQuotas);
+      const groupLabel = quotaGroupSelection?.name;
+      showToast({
+        message:
+          validQuotas.length === 1
+            ? isAdvancedGroupFlow && groupLabel
+              ? `Quota "${validQuotas[0].name}" added to ${groupLabel}`
+              : `Criteria based quota "${validQuotas[0].name}" created`
+            : isAdvancedGroupFlow && groupLabel
+              ? `${validQuotas.length} quotas added to ${groupLabel}`
+              : `${validQuotas.length} criteria based quotas created`,
+        variant: 'success',
+      });
+    }
     resetState();
     onOpenChange(false);
   }
@@ -715,7 +778,9 @@ export function CriteriaBasedQuotaModal({
       className={styles.modal}
       variant="action"
     >
-      <WuModalHeader className={styles.header}>Criteria Based Quota</WuModalHeader>
+      <WuModalHeader className={styles.header}>
+        {editQuota ? 'Edit Quota' : 'Criteria Based Quota'}
+      </WuModalHeader>
       <WuModalContent className={styles.content}>
         <div className={styles.body}>
           <p className={styles.instructions}>
