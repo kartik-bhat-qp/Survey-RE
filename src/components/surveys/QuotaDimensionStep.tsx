@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { SurveyQuestion } from '@/data/mock-survey-questions';
 import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
@@ -47,9 +47,21 @@ function formatNumber(value: number, decimals = 0): string {
 
 function parseFormattedNumber(raw: string, decimals: number): number {
   const cleaned = raw.replace(/,/g, '').trim();
-  if (cleaned === '' || cleaned === '-') return 0;
+  if (cleaned === '' || cleaned === '-' || cleaned === '.') return 0;
   const parsed = decimals > 0 ? parseFloat(cleaned) : parseInt(cleaned, 10);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function toEditableString(value: number, decimals: number): string {
+  if (!Number.isFinite(value) || value === 0) return '';
+  if (decimals === 0) return formatNumber(value, 0);
+  return String(value);
+}
+
+function isValidNumberDraft(raw: string, decimals: number): boolean {
+  if (raw === '') return true;
+  if (decimals === 0) return /^\d*$/.test(raw);
+  return /^\d*\.?\d*$/.test(raw);
 }
 
 interface FormattedNumberInputProps {
@@ -67,12 +79,44 @@ function FormattedNumberInput({
   className,
   ariaLabel,
 }: FormattedNumberInputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [draft, setDraft] = useState('');
+
+  useEffect(() => {
+    if (!isFocused) {
+      setDraft('');
+      return;
+    }
+    if (draft.endsWith('.') || draft === '') return;
+    const parsedDraft = parseFormattedNumber(draft, decimals);
+    if (Math.abs(parsedDraft - value) > 0.001) {
+      setDraft(toEditableString(value, decimals));
+    }
+  }, [value, isFocused, draft, decimals]);
+
+  const displayValue = isFocused ? draft : formatNumber(value, decimals);
+
   return (
     <input
       type="text"
       inputMode={decimals > 0 ? 'decimal' : 'numeric'}
-      value={formatNumber(value, decimals)}
-      onChange={(event) => onChange(parseFormattedNumber(event.target.value, decimals))}
+      value={displayValue}
+      onFocus={() => {
+        setIsFocused(true);
+        setDraft(toEditableString(value, decimals));
+      }}
+      onChange={(event) => {
+        const raw = event.target.value.replace(/,/g, '');
+        if (!isValidNumberDraft(raw, decimals)) return;
+        setDraft(raw);
+        onChange(parseFormattedNumber(raw, decimals));
+      }}
+      onBlur={() => {
+        const parsed = parseFormattedNumber(draft, decimals);
+        onChange(parsed);
+        setIsFocused(false);
+        setDraft('');
+      }}
       className={className}
       aria-label={ariaLabel}
     />
@@ -130,6 +174,42 @@ function buildValuesForScope(options: string[], scope: QuotaScopeType): Record<s
     });
   }
   return map;
+}
+
+function clampPercentValue(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return +Math.min(100, Math.max(0, value)).toFixed(2);
+}
+
+export function isQuotaDistributionValid(
+  questions: SurveyQuestion[],
+  distribution: QuotaDimensionState
+): boolean {
+  for (const question of questions) {
+    const entry = distribution[question.id];
+    if (!entry) return false;
+    const options = resolveOptionsFor(question);
+    if (options.length === 0) continue;
+
+    if (entry.scope === 'min-pct') {
+      let total = 0;
+      for (const opt of options) {
+        const v = entry.values[opt] ?? 0;
+        total += v;
+      }
+      if (total > 100 + 0.01) return false;
+    }
+
+    if (entry.scope === 'min-count') {
+      const target = Number.isFinite(entry.target) ? (entry.target as number) : 0;
+      const total = options.reduce(
+        (acc, opt) => acc + (Number.isFinite(entry.values[opt]) ? entry.values[opt] : 0),
+        0
+      );
+      if (total > target) return false;
+    }
+  }
+  return true;
 }
 
 function buildOverLimitActions(
@@ -223,7 +303,8 @@ function QuestionCard({
   }, [options, entry.values, isPercent]);
   const targetValue = Number.isFinite(entry.target) ? (entry.target as number) : 0;
   const minCountInvalid = isMinCount && total > targetValue;
-  const minPctInvalid = isPercent && total > 100 + 0.01;
+  const minPctTotalInvalid = isPercent && total > 100 + 0.01;
+  const minPctInvalid = minPctTotalInvalid;
   const totalIsValid = isPercent
     ? !minPctInvalid
     : isMinCount
@@ -376,29 +457,37 @@ function QuestionCard({
           })}
           {isMinCount ? (
             <div className={styles.helperRow}>
-              <span
-                className={`${styles.helperText} ${
-                  minCountInvalid ? styles.helperTextInvalid : ''
-                }`}
-              >
-                Sum of minimums: {formatNumber(total)}
-                {minCountInvalid
-                  ? ` — exceeds target by ${formatNumber(total - targetValue)}`
-                  : ''}
-              </span>
+              <div className={styles.helperSummary}>
+                <span className={styles.helperLabel}>Sum of minimums:</span>
+                <span
+                  className={`${styles.helperValue} ${
+                    minCountInvalid ? styles.helperTextInvalid : ''
+                  }`}
+                >
+                  {formatNumber(total)}
+                  {minCountInvalid
+                    ? ` (exceeds by ${formatNumber(total - targetValue)})`
+                    : ''}
+                </span>
+              </div>
+              <span className={styles.helperRowSpacer} aria-hidden />
             </div>
           ) : isPercent ? (
             <div className={styles.helperRow}>
-              <span
-                className={`${styles.helperText} ${
-                  minPctInvalid ? styles.helperTextInvalid : ''
-                }`}
-              >
-                Sum of minimums: {formatNumber(total, 2)}%
-                {minPctInvalid
-                  ? ` — exceeds 100% by ${formatNumber(total - 100, 2)}%`
-                  : ''}
-              </span>
+              <div className={styles.helperSummary}>
+                <span className={styles.helperLabel}>Sum of minimums:</span>
+                <span
+                  className={`${styles.helperValue} ${
+                    minPctTotalInvalid ? styles.helperTextInvalid : ''
+                  }`}
+                >
+                  {formatNumber(total, 2)}%
+                  {minPctTotalInvalid
+                    ? ` (exceeds by ${formatNumber(total - 100, 2)}%)`
+                    : ''}
+                </span>
+              </div>
+              <span className={styles.helperRowSpacer} aria-hidden />
             </div>
           ) : (
             <div className={styles.totalRow}>
@@ -444,15 +533,21 @@ export function QuotaDimensionStep({
   function handleValueChange(questionId: number, option: string, value: number): void {
     const existing = distribution[questionId];
     if (!existing) return;
+    let nextValue = value;
+    if (existing.scope === 'min-pct') {
+      nextValue = clampPercentValue(value);
+    } else {
+      nextValue = Math.max(0, Math.round(value));
+    }
     const nextActions = { ...existing.overLimitActions };
-    if (value > 0 && nextActions[option] === NO_BRANCHING_OPTION.value) {
+    if (nextValue > 0 && nextActions[option] === NO_BRANCHING_OPTION.value) {
       nextActions[option] = 'quota-overlimit';
     }
     const next: QuotaDimensionState = {
       ...distribution,
       [questionId]: {
         ...existing,
-        values: { ...existing.values, [option]: value },
+        values: { ...existing.values, [option]: nextValue },
         overLimitActions: nextActions,
       },
     };

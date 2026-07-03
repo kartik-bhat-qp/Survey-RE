@@ -14,6 +14,7 @@ import {
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
   buildInitialDistribution,
+  isQuotaDistributionValid,
   QuotaDimensionStep,
   type QuotaDimensionState,
 } from '@/components/surveys/QuotaDimensionStep';
@@ -80,6 +81,11 @@ export function QuestionBasedQuotaModal({
   const selectedQuestions = useMemo(
     () => displayQuestions.filter((q) => selectedIds.has(q.id)),
     [displayQuestions, selectedIds]
+  );
+
+  const distributionIsValid = useMemo(
+    () => isQuotaDistributionValid(selectedQuestions, distribution),
+    [selectedQuestions, distribution]
   );
 
   const toggleExpand = useCallback((parentId: number) => {
@@ -210,7 +216,7 @@ export function QuestionBasedQuotaModal({
   }
 
   function handleSave(): void {
-    if (selectedQuestions.length === 0) return;
+    if (selectedQuestions.length === 0 || !distributionIsValid) return;
     onSave?.(selectedQuestions, distribution);
     showToast({
       message: `Quota created with ${selectedQuestions.length} ${
@@ -369,7 +375,10 @@ export function QuestionBasedQuotaModal({
                 Next
               </WuButton>
             ) : (
-              <WuButton onClick={handleSave} disabled={selectedQuestions.length === 0}>
+              <WuButton
+                onClick={handleSave}
+                disabled={selectedQuestions.length === 0 || !distributionIsValid}
+              >
                 Save
               </WuButton>
             )}
