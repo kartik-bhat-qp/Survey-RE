@@ -37,7 +37,7 @@ const WuTooltip = dynamic(
 );
 
 const AUTO_SELECT_SHOWN_OPTION_HELP =
-  'If multiple options shown, the first option will be selected';
+  'If multiple options are displayed, the first option will be selected by default.';
 
 type SettingsTab = 'metadata' | 'communities';
 
@@ -131,6 +131,7 @@ export function QuestionSettingsPanel({
   const videoValue = VIDEO_OPTIONS.find((o) => o.value === settings.video) ?? null;
   const isSelectOne = question.inputKind === 'radio';
   const isSelectMany = question.inputKind === 'checkbox';
+  const showAutoSelectOption = isSelectOne && settings.answerType !== 'dropdown';
 
   return (
     <aside className={styles.panel} aria-label="Question settings">
@@ -152,6 +153,7 @@ export function QuestionSettingsPanel({
               ...(answerType !== 'radio' && settings.questionDisplay === 'hide-after-answering'
                 ? { questionDisplay: 'show-question' }
                 : {}),
+              ...(answerType === 'dropdown' ? { autoSelectShownOptions: false } : {}),
             })
           }
         />
@@ -251,9 +253,10 @@ export function QuestionSettingsPanel({
           </div>
         </div>
 
-        {settings.questionDisplay === 'hide-question' && (isSelectOne || isSelectMany) ? (
+        {settings.questionDisplay === 'hide-question' &&
+        (showAutoSelectOption || isSelectMany) ? (
           <div className={styles.field}>
-            {isSelectOne ? (
+            {showAutoSelectOption ? (
               <div className={styles.toggleLabelRow}>
                 <WuToggle
                   Label="Auto select shown option"
@@ -262,13 +265,13 @@ export function QuestionSettingsPanel({
                   onChange={(autoSelectShownOptions) => patch({ autoSelectShownOptions })}
                 />
                 <WuTooltip content={AUTO_SELECT_SHOWN_OPTION_HELP} position="top">
-                  <button
-                    type="button"
+                  <span
                     className={styles.helpBtn}
+                    role="img"
                     aria-label={AUTO_SELECT_SHOWN_OPTION_HELP}
                   >
-                    <span className="wm-info-outline" aria-hidden />
-                  </button>
+                    <span className="wm-info" aria-hidden />
+                  </span>
                 </WuTooltip>
               </div>
             ) : (
