@@ -2,12 +2,14 @@
 
 import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { useParams } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { NavLink } from '@/components/surveys/NavLink';
 import {
   useSurveyEditorPhase,
   type SurveyEditorPhase,
 } from '@/components/surveys/SurveyEditorPhaseContext';
+import { getSurveyEditorPhasePath } from '@/components/surveys/survey-editor-navigation';
 import styles from './SurveyEditorPhaseTabs.module.css';
 
 const WuPrimaryNavbar = dynamic(
@@ -23,6 +25,8 @@ const PHASE_TABS: { id: SurveyEditorPhase; label: string }[] = [
 ];
 
 export function SurveyEditorPhaseTabs() {
+  const params = useParams();
+  const surveyId = Number(params.id);
   const { showToast } = useWuShowToast();
   const { activePhase, setActivePhase } = useSurveyEditorPhase();
 
@@ -31,7 +35,11 @@ export function SurveyEditorPhaseTabs() {
       PHASE_TABS.map((tab) => (
         <NavLink
           key={tab.id}
-          href="#"
+          href={
+            tab.id === 'integration'
+              ? '#'
+              : getSurveyEditorPhasePath(surveyId, tab.id as SurveyEditorPhase)
+          }
           active={activePhase === tab.id}
           onClick={(event) => {
             event.preventDefault();
@@ -48,7 +56,7 @@ export function SurveyEditorPhaseTabs() {
           {tab.label}
         </NavLink>
       )),
-    [activePhase, setActivePhase, showToast]
+    [activePhase, setActivePhase, showToast, surveyId]
   );
 
   return (

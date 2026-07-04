@@ -1,11 +1,11 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { SurveyEditorCanvas } from '@/components/surveys/SurveyEditorCanvas';
+import { SurveyAnalyticsDashboard } from '@/components/surveys/SurveyAnalyticsDashboard';
 import { getSurveyDetail } from '@/data/mock-survey-detail';
 import { useSurveyById } from '@/hooks/useSurveyById';
 
-export default function SurveyEditorPage() {
+export default function SurveyAnalyticsPage() {
   const params = useParams();
   const surveyId = Number(params.id);
   const { survey, ready } = useSurveyById(surveyId);
@@ -14,5 +14,5 @@ export default function SurveyEditorPage() {
     return null;
   }
 
-  return <SurveyEditorCanvas detail={getSurveyDetail(survey)} />;
+  return <SurveyAnalyticsDashboard detail={getSurveyDetail(survey)} />;
 }

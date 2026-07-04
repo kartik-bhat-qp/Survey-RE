@@ -10,6 +10,8 @@ import { SurveyEditorPhaseTabs } from '@/components/surveys/SurveyEditorPhaseTab
 import { SurveyDistributeSubNav } from '@/components/surveys/SurveyDistributeSubNav';
 import { SurveyDistributeViewProvider } from '@/components/surveys/SurveyDistributeViewContext';
 import { SurveyEditorWorkspaceToolbar } from '@/components/surveys/SurveyEditorWorkspaceToolbar';
+import { getSurveyEditorPhasePath } from '@/components/surveys/survey-editor-navigation';
+import { readVideoAiReturnState } from '@/components/video-ai/videoAiNavigation';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useSurveyById } from '@/hooks/useSurveyById';
 import styles from './SurveyEditorPage.module.css';
@@ -24,12 +26,21 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!ready || !survey) return;
-    if (activePhase === 'analytics' && pathname.includes('/advance-quotas')) {
-      router.replace(`/surveys/${survey.id}`);
+
+    const restored = readVideoAiReturnState();
+    if (restored?.surveyId === survey.id) {
+      router.replace(getSurveyEditorPhasePath(survey.id, 'analytics'));
       return;
     }
-    if (activePhase === 'distribute' && pathname.includes('/advance-quotas')) {
-      router.replace(`/surveys/${survey.id}`);
+
+    if (pathname.includes('/advance-quotas')) {
+      if (activePhase === 'analytics') {
+        router.replace(getSurveyEditorPhasePath(survey.id, 'analytics'));
+        return;
+      }
+      if (activePhase === 'distribute') {
+        router.replace(getSurveyEditorPhasePath(survey.id, 'distribute'));
+      }
     }
   }, [activePhase, pathname, ready, router, survey]);
 
@@ -74,8 +85,11 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
 }
 
 export default function SurveyEditorLayout({ children }: { children: React.ReactNode }) {
+  const params = useParams();
+  const surveyId = Number(params.id);
+
   return (
-    <SurveyEditorPhaseProvider>
+    <SurveyEditorPhaseProvider surveyId={surveyId}>
       <SurveyWorkspaceSectionsProvider>
         <SurveyAnalyticsViewProvider>
           <SurveyDistributeViewProvider>
