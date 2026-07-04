@@ -1,4 +1,9 @@
-export type DistributeChannelId = 'email' | 'community' | 'mobile-app' | 'audience';
+export type DistributeChannelId =
+  | 'email'
+  | 'community'
+  | 'mobile-app'
+  | 'audience'
+  | 'qr-codes';
 
 export type EmailSidebarId = 'compose' | 'sent' | 'scheduled' | 'lists' | 'templates';
 
@@ -41,6 +46,7 @@ export const DISTRIBUTE_CHANNELS: DistributeChannel[] = [
   { id: 'community', label: 'Community', icon: 'wm-groups' },
   { id: 'mobile-app', label: 'Mobile App', icon: 'wm-smartphone' },
   { id: 'audience', label: 'Audience', icon: 'wm-group' },
+  { id: 'qr-codes', label: 'QR codes', icon: 'wm-qr-code-2' },
 ];
 
 export const EMAIL_SIDEBAR_ITEMS: EmailSidebarItem[] = [

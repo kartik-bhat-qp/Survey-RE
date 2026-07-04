@@ -1,9 +1,13 @@
 'use client';
 
 import { SurveyEmailComposePanel } from '@/components/surveys/SurveyDistributeCompose';
+import { SurveyQrCodePanel } from '@/components/surveys/SurveyQrCodePanel';
 import { useSurveyDistributeView } from '@/components/surveys/SurveyDistributeViewContext';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { DISTRIBUTE_CHANNELS } from '@/data/mock-survey-distribute';
+import {
+  DISTRIBUTE_CHANNELS,
+  getSurveyDistributionUrl,
+} from '@/data/mock-survey-distribute';
 import type { SurveyDetail } from '@/data/mock-survey-detail';
 import styles from './SurveyDistributeDashboard.module.css';
 
@@ -22,6 +26,14 @@ export function SurveyDistributeDashboard({ detail }: SurveyDistributeDashboardP
           activeSidebar={activeEmailSidebar}
           onSidebarChange={setActiveEmailSidebar}
         />
+      </div>
+    );
+  }
+
+  if (activeChannel === 'qr-codes') {
+    return (
+      <div className={styles.shell}>
+        <SurveyQrCodePanel baseSurveyUrl={getSurveyDistributionUrl(detail.survey.id)} />
       </div>
     );
   }

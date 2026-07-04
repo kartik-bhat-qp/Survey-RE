@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
-import { NavLink } from '@/components/surveys/NavLink';
 import { useSurveyDistributeView } from '@/components/surveys/SurveyDistributeViewContext';
 import {
   DISTRIBUTE_CHANNELS,
@@ -32,7 +31,7 @@ export function SurveyDistributeSubNav({ surveyId }: SurveyDistributeSubNavProps
           <button
             type="button"
             className={`${styles.channelLink} ${
-              activeChannel === channel.id ? styles.channelTabActive : ''
+              activeChannel === channel.id ? 'wu-secondary-nav-active-link' : ''
             }`}
             aria-current={activeChannel === channel.id ? 'page' : undefined}
             onClick={() => setActiveChannel(channel.id)}
@@ -48,22 +47,6 @@ export function SurveyDistributeSubNav({ surveyId }: SurveyDistributeSubNavProps
   return (
     <WuSecondaryNavbar Links={links} className={styles.navbar}>
       <div className={styles.utilityArea}>
-        <button
-          type="button"
-          className={styles.userCountBtn}
-          onClick={() => showToast({ message: 'Collaborators', variant: 'success' })}
-        >
-          <span className="wm-group" aria-hidden />
-          1K
-        </button>
-        <button
-          type="button"
-          className={styles.iconBtn}
-          aria-label="QR code"
-          onClick={() => showToast({ message: 'QR code', variant: 'info' })}
-        >
-          <span className="wm-qr-code-2" aria-hidden />
-        </button>
         <span className={styles.urlField} title={surveyUrl}>
           {surveyUrl}
         </span>
@@ -74,14 +57,6 @@ export function SurveyDistributeSubNav({ surveyId }: SurveyDistributeSubNavProps
           onClick={() => showToast({ message: 'Edit survey link', variant: 'info' })}
         >
           <span className="wm-edit" aria-hidden />
-        </button>
-        <button
-          type="button"
-          className={styles.previewBtn}
-          aria-label="Preview survey"
-          onClick={() => showToast({ message: 'Preview survey', variant: 'success' })}
-        >
-          <span className="wm-visibility" aria-hidden />
         </button>
       </div>
     </WuSecondaryNavbar>
