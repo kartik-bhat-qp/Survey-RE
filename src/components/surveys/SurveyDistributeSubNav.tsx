@@ -32,7 +32,7 @@ export function SurveyDistributeSubNav({ surveyId }: SurveyDistributeSubNavProps
           <button
             type="button"
             className={`${styles.channelLink} ${
-              activeChannel === channel.id ? 'wu-secondary-nav-active-link' : ''
+              activeChannel === channel.id ? styles.channelTabActive : ''
             }`}
             aria-current={activeChannel === channel.id ? 'page' : undefined}
             onClick={() => setActiveChannel(channel.id)}
@@ -40,7 +40,7 @@ export function SurveyDistributeSubNav({ surveyId }: SurveyDistributeSubNavProps
             {channel.label}
           </button>
         ),
-        imgOrIcon: <span className={channel.icon} aria-hidden />,
+        imgOrIcon: <span className={`${channel.icon} ${styles.channelIcon}`} aria-hidden />,
       })),
     [activeChannel, setActiveChannel]
   );

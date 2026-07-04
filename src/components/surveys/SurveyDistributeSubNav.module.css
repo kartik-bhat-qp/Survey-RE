@@ -86,16 +86,36 @@
 }
 
 .channelLink {
-  background: transparent;
   border: none;
-  color: inherit;
+  color: #64748b;
   cursor: pointer;
   font: inherit;
   padding: 0;
 }
 
-.channelLink:hover {
+.channelLink:hover:not(.channelTabActive) {
+  background: #f8fafc;
   color: #1b87e6;
+}
+
+.channelTabActive {
+  background: #eee;
+  box-shadow: inset 0 -2px 0 #1b87e6;
+  color: #334155;
+}
+
+.channelTabActive:hover {
+  background: #eee;
+  color: #334155;
+}
+
+.channelIcon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.channelTabActive .channelIcon {
+  color: #475569;
 }
 
 @media (max-width: 1023px) {

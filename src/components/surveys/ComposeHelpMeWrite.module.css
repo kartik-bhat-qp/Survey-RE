@@ -1,0 +1,173 @@
+.trigger {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 0.0625rem;
+  height: 1.75rem;
+  justify-content: center;
+  min-width: 2.25rem;
+  padding: 0 0.25rem;
+}
+
+.trigger:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.triggerActive {
+  background: #eef6fd;
+}
+
+.triggerPencil {
+  color: #209aeb;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.triggerAi {
+  color: #209aeb;
+  font-size: 0.75rem;
+  line-height: 1;
+  margin-top: 0.0625rem;
+}
+
+.bar {
+  align-items: center;
+  background: #f8fafc;
+  border-top: 1px solid #e5e9ef;
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  padding: 0.4375rem 0.75rem;
+}
+
+.barPencil {
+  color: #64748b;
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.promptForm {
+  flex: 1;
+  min-width: 0;
+}
+
+.promptInput {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  color: #0f172a;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  outline: none;
+  padding: 0.4375rem 0.875rem;
+  width: 100%;
+}
+
+.promptInput::placeholder {
+  color: #94a3b8;
+}
+
+.promptInput:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px rgb(27 135 230 / 10%);
+}
+
+.promptInput:disabled {
+  background: #f8fafc;
+  cursor: not-allowed;
+}
+
+.actionGroup {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.125rem;
+}
+
+.actionBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+}
+
+.actionBtn:hover:not(:disabled) {
+  background: #e8f3fd;
+  color: #1b87e6;
+}
+
+.actionBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.actionBtnActive {
+  background: #dbeafe;
+  color: #1b87e6;
+}
+
+.actionBtn span {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.closeBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+}
+
+.closeBtn:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.closeBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.closeBtn span {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+@media (max-width: 720px) {
+  .bar {
+    flex-wrap: wrap;
+    padding: 0.5rem;
+  }
+
+  .promptForm {
+    flex-basis: 100%;
+    order: 2;
+  }
+
+  .actionGroup {
+    margin-left: auto;
+  }
+}
