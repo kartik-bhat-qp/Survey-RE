@@ -4,7 +4,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
-  COMPOSE_WRITING_ACTIONS,
+  COMPOSE_WRITING_BAR_ACTIONS,
   COMPOSE_WRITING_PROMPT_PLACEHOLDER,
   generateComposeWriting,
   readComposeBodySelection,
@@ -19,7 +19,7 @@ const WuTooltip = dynamic(
   { ssr: false }
 );
 
-const BAR_ACTIONS = COMPOSE_WRITING_ACTIONS.slice(0, 4);
+const BAR_ACTIONS = COMPOSE_WRITING_BAR_ACTIONS;
 
 interface ComposeWritingSnapshot {
   subject: string;
@@ -106,9 +106,15 @@ export function ComposeHelpMeWrite({
     if (isGenerating) return;
 
     const selection = readComposeBodySelection(bodyFieldRef.current);
-    if (!selection) {
-      showToast({ message: 'Highlight text in the email body first', variant: 'error' });
-      bodyFieldRef.current?.focus();
+
+    if (request.type === 'action') {
+      if (!selection) {
+        showToast({ message: 'Highlight text in the email body first', variant: 'error' });
+        bodyFieldRef.current?.focus();
+        return;
+      }
+    } else if (!request.prompt.trim()) {
+      showToast({ message: 'Enter a prompt to continue', variant: 'error' });
       return;
     }
 
@@ -122,7 +128,11 @@ export function ComposeHelpMeWrite({
     }
 
     try {
-      const result = await generateComposeWriting(request, { body, subject }, selection);
+      const result = await generateComposeWriting(
+        request,
+        { body, subject },
+        selection ?? undefined
+      );
       setUndoStack((current) => [...current, { subject, body }]);
       onBodyChange(result.body);
       if (result.subject) {
@@ -155,17 +165,17 @@ export function ComposeHelpMeWrite({
 
   return (
     <section className={styles.bar} aria-label="Help me write">
-      <span className={`wm-edit ${styles.barPencil}`} aria-hidden />
+      <p
+        className={hasSelection ? styles.selectionHint : styles.selectionHintMuted}
+        title={hasSelection ? selectionPreview : undefined}
+      >
+        {hasSelection
+          ? `Editing: "${truncate(selectionPreview, 56)}"`
+          : 'Describe what to write, or highlight text for quick actions like Proofread'}
+      </p>
 
-      <div className={styles.barMain}>
-        <p
-          className={hasSelection ? styles.selectionHint : styles.selectionHintMuted}
-          title={hasSelection ? selectionPreview : undefined}
-        >
-          {hasSelection
-            ? `Editing: "${truncate(selectionPreview, 56)}"`
-            : 'Highlight text in the email body to use these actions'}
-        </p>
+      <div className={styles.barRow}>
+        <span className={`wm-edit ${styles.barPencil}`} aria-hidden />
 
         <form className={styles.promptForm} onSubmit={handleCustomPromptSubmit}>
           <input
@@ -174,54 +184,59 @@ export function ComposeHelpMeWrite({
             onChange={(event) => setCustomPrompt(event.target.value)}
             placeholder={COMPOSE_WRITING_PROMPT_PLACEHOLDER}
             className={styles.promptInput}
-            disabled={isGenerating || !hasSelection}
-            aria-label="Describe how to change the highlighted text"
+            disabled={isGenerating}
+            aria-label="Describe what to write or how to edit highlighted text"
           />
         </form>
-      </div>
 
-      <div className={styles.actionGroup} role="group" aria-label="Writing actions">
-        {BAR_ACTIONS.map((action) => {
-          const isActive = activeActionId === action.id && isGenerating;
+        <div className={styles.actionGroup} role="group" aria-label="Writing actions">
+          {BAR_ACTIONS.map((action) => {
+            const isActive = activeActionId === action.id && isGenerating;
+            const isActionDisabled = isGenerating || !hasSelection;
+            const actionTooltip =
+              !hasSelection && !isGenerating
+                ? `${action.label} (Highlight text to use)`
+                : action.label;
 
-          return (
-            <WuTooltip key={action.id} content={action.label} position="top">
-              <button
-                type="button"
-                className={`${styles.actionBtn} ${isActive ? styles.actionBtnActive : ''}`}
-                aria-label={action.label}
-                title={action.description}
-                onClick={() => handleActionClick(action.id)}
-                disabled={isGenerating || !hasSelection}
-              >
-                <span className={action.icon} aria-hidden />
-              </button>
-            </WuTooltip>
-          );
-        })}
-      </div>
+            return (
+              <WuTooltip key={action.id} content={actionTooltip} position="top">
+                <button
+                  type="button"
+                  className={`${styles.actionBtn} ${isActive ? styles.actionBtnActive : ''}`}
+                  aria-label={actionTooltip}
+                  title={isActionDisabled ? undefined : action.description}
+                  onClick={() => handleActionClick(action.id)}
+                  disabled={isActionDisabled}
+                >
+                  <span className={action.icon} aria-hidden />
+                </button>
+              </WuTooltip>
+            );
+          })}
+        </div>
 
-      <WuTooltip content="Undo last change" position="top">
+        <WuTooltip content="Undo last change" position="top">
+          <button
+            type="button"
+            className={styles.undoBtn}
+            aria-label="Undo last change"
+            onClick={handleUndo}
+            disabled={isGenerating || undoStack.length === 0}
+          >
+            Undo
+          </button>
+        </WuTooltip>
+
         <button
           type="button"
-          className={styles.undoBtn}
-          aria-label="Undo last change"
-          onClick={handleUndo}
-          disabled={isGenerating || undoStack.length === 0}
+          className={styles.closeBtn}
+          aria-label="Close help me write"
+          onClick={() => onOpenChange(false)}
+          disabled={isGenerating}
         >
-          Undo
+          <span className="wm-close" aria-hidden />
         </button>
-      </WuTooltip>
-
-      <button
-        type="button"
-        className={styles.closeBtn}
-        aria-label="Close help me write"
-        onClick={() => onOpenChange(false)}
-        disabled={isGenerating}
-      >
-        <span className="wm-close" aria-hidden />
-      </button>
+      </div>
     </section>
   );
 }

@@ -282,13 +282,27 @@ export const COMPOSE_WRITING_ACTIONS: ComposeWritingAction[] = [
   },
   {
     id: 'expand',
-    label: 'Expand',
+    label: 'Lengthen',
     description: 'Add helpful detail and context',
     icon: 'wm-unfold-more',
   },
 ];
 
-export const COMPOSE_WRITING_PROMPT_PLACEHOLDER = 'Describe how to change the highlighted text…';
+const COMPOSE_WRITING_BAR_ACTION_IDS: ComposeWritingActionId[] = [
+  'proofread',
+  'formal',
+  'friendly',
+  'shorten',
+  'expand',
+];
+
+export const COMPOSE_WRITING_BAR_ACTIONS: ComposeWritingAction[] =
+  COMPOSE_WRITING_BAR_ACTION_IDS.map(
+    (actionId) => COMPOSE_WRITING_ACTIONS.find((action) => action.id === actionId)!
+  );
+
+export const COMPOSE_WRITING_PROMPT_PLACEHOLDER =
+  'Describe what to write or how to edit highlighted text…';
 
 export interface ComposeWritingSelection {
   start: number;
@@ -422,6 +436,60 @@ function buildCustomPromptBody(prompt: string, currentBody: string): string {
   return `${currentBody.trim()}\n\n${prompt.trim()}`;
 }
 
+function buildCustomPromptFromScratch(
+  prompt: string,
+  current: { body: string; subject: string }
+): { body: string; summary: string } {
+  const lower = prompt.toLowerCase();
+  const summary = 'Email draft created from your prompt.';
+
+  if (lower.includes('formal')) {
+    return { body: buildFormalBody(current.body), summary };
+  }
+
+  if (lower.includes('friendly') || lower.includes('casual')) {
+    return { body: buildFriendlyBody(current.body), summary };
+  }
+
+  if (lower.includes('professional')) {
+    return { body: buildProfessionalBody(current.body), summary };
+  }
+
+  if (lower.includes('short') || lower.includes('brief') || lower.includes('concise')) {
+    return { body: buildShortenBody(current.body), summary };
+  }
+
+  if (lower.includes('expand') || lower.includes('detail') || lower.includes('longer')) {
+    return { body: buildExpandBody(current.body), summary };
+  }
+
+  if (lower.includes('reminder') || lower.includes('follow up')) {
+    return {
+      body: `Hello,\n\nThis is a friendly reminder to share your feedback when you have a moment.\n\n<SURVEY_LINK>\n\nThank you for your time.`,
+      summary,
+    };
+  }
+
+  if (lower.includes('confidential') || lower.includes('anonymous')) {
+    return {
+      body: `Hello,\n\nYour responses are completely confidential and will only be reviewed in aggregate.\n\n<SURVEY_LINK>\n\nThank you for your time.`,
+      summary,
+    };
+  }
+
+  if (lower.includes('deadline') || lower.includes('friday') || lower.includes('by ')) {
+    return {
+      body: `Hello,\n\n${prompt.trim()}\n\nPlease complete the survey by Friday so we can review responses before next week's planning session.\n\n<SURVEY_LINK>\n\nThank you for your time.`,
+      summary,
+    };
+  }
+
+  return {
+    body: `Hello,\n\n${prompt.trim()}\n\n<SURVEY_LINK>\n\nThank you for your time.`,
+    summary,
+  };
+}
+
 function buildCustomPromptSubject(prompt: string, currentSubject: string): string | undefined {
   const lower = prompt.toLowerCase();
 
@@ -492,7 +560,7 @@ function getSelectionActionSummary(actionId: ComposeWritingActionId): string {
     case 'shorten':
       return 'Highlighted text shortened.';
     case 'expand':
-      return 'Highlighted text expanded with more context.';
+      return 'Highlighted text lengthened with more context.';
     default:
       return 'Highlighted text updated.';
   }
@@ -501,17 +569,17 @@ function getSelectionActionSummary(actionId: ComposeWritingActionId): string {
 export async function generateComposeWriting(
   request: ComposeWritingRequest,
   current: { body: string; subject: string },
-  selection?: ComposeWritingSelection
+  selection?: ComposeWritingSelection | null
 ): Promise<ComposeWritingResult> {
   await new Promise((resolve) => {
     window.setTimeout(resolve, COMPOSE_WRITING_DELAY_MS);
   });
 
-  if (!selection) {
-    throw new Error('Highlight text in the email body first');
-  }
-
   if (request.type === 'action') {
+    if (!selection) {
+      throw new Error('Highlight text in the email body first');
+    }
+
     const replacement = transformSelectionForAction(request.actionId, selection.text);
 
     return {
@@ -523,6 +591,21 @@ export async function generateComposeWriting(
   const trimmedPrompt = request.prompt.trim();
   if (!trimmedPrompt) {
     throw new Error('Enter a prompt to continue');
+  }
+
+  if (!selection) {
+    const draft = buildCustomPromptFromScratch(trimmedPrompt, current);
+    const subject =
+      trimmedPrompt.toLowerCase().includes('subject') ||
+      trimmedPrompt.toLowerCase().includes('title')
+        ? buildCustomPromptSubject(trimmedPrompt, current.subject)
+        : current.subject;
+
+    return {
+      body: draft.body,
+      subject: subject !== current.subject ? subject : undefined,
+      summary: draft.summary,
+    };
   }
 
   const replacement = buildCustomPromptBody(trimmedPrompt, selection.text);
