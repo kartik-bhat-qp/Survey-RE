@@ -345,6 +345,62 @@ export interface ComposeWritingResult {
 
 const COMPOSE_WRITING_DELAY_MS = 1400;
 
+const COMPOSE_TEMPLATE_VARIABLE_PATTERN =
+  /<[A-Z][A-Z0-9_]*>|\{\{[a-z][a-z0-9_]*\}\}|\{[a-z][a-z0-9_]*\}/g;
+
+export function extractComposeTemplateVariables(text: string): string[] {
+  const matches = text.match(COMPOSE_TEMPLATE_VARIABLE_PATTERN) ?? [];
+  return [...new Set(matches)];
+}
+
+export function preserveComposeTemplateVariables(
+  sourceText: string,
+  transformedText: string
+): string {
+  const variables = extractComposeTemplateVariables(sourceText);
+  if (variables.length === 0) {
+    return transformedText;
+  }
+
+  let result = transformedText.trim();
+
+  for (const variable of variables) {
+    if (result.includes(variable)) {
+      continue;
+    }
+
+    if (variable === '<SURVEY_LINK>') {
+      result = `${result}\n\n<SURVEY_LINK>`;
+      continue;
+    }
+
+    if (/^\{[a-z][a-z0-9_]*\}$/i.test(variable)) {
+      if (/^Hello([,.!]?)/m.test(result)) {
+        result = result.replace(/^Hello([,.!]?)/m, `Hello ${variable}$1`);
+        continue;
+      }
+
+      if (/^Hi([,.!]?)/m.test(result)) {
+        result = result.replace(/^Hi([,.!]?)/m, `Hi ${variable}$1`);
+        continue;
+      }
+
+      if (/^Dear /m.test(result)) {
+        result = result.replace(/^Dear /m, `Dear ${variable} `);
+        continue;
+      }
+    }
+
+    result = `${result}\n\n${variable}`;
+  }
+
+  return result;
+}
+
+function finalizeComposeBody(sourceText: string, transformedText: string): string {
+  return preserveComposeTemplateVariables(sourceText, transformedText);
+}
+
 function buildProofreadBody(body: string): string {
   return body
     .replace(/\.\.\./g, '.')
@@ -356,13 +412,12 @@ function buildProofreadBody(body: string): string {
     );
 }
 
-function buildProfessionalBody(body: string): string {
-  const link = body.match(/<SURVEY_LINK>/) ? '<SURVEY_LINK>' : 'the survey link below';
+function buildProfessionalBody(_body: string): string {
   return `Hello,
 
 We are reaching out to request your feedback on a recent experience with our team. Your insights are valuable and will help us continue improving our products and services.
 
-Please share your thoughts using ${link}.
+Please share your thoughts using <SURVEY_LINK>.
 
 Thank you for your participation.`;
 }
@@ -580,7 +635,10 @@ export async function generateComposeWriting(
       throw new Error('Highlight text in the email body first');
     }
 
-    const replacement = transformSelectionForAction(request.actionId, selection.text);
+    const replacement = finalizeComposeBody(
+      selection.text,
+      transformSelectionForAction(request.actionId, selection.text)
+    );
 
     return {
       body: applyComposeWritingSelection(current.body, selection, replacement),
@@ -602,13 +660,16 @@ export async function generateComposeWriting(
         : current.subject;
 
     return {
-      body: draft.body,
+      body: finalizeComposeBody(current.body, draft.body),
       subject: subject !== current.subject ? subject : undefined,
       summary: draft.summary,
     };
   }
 
-  const replacement = buildCustomPromptBody(trimmedPrompt, selection.text);
+  const replacement = finalizeComposeBody(
+    selection.text,
+    buildCustomPromptBody(trimmedPrompt, selection.text)
+  );
   const subject =
     trimmedPrompt.toLowerCase().includes('subject') ||
     trimmedPrompt.toLowerCase().includes('title')
