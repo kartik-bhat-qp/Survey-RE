@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
   buildSurveyUrlWithVariables,
+  copyBrandedQrCodeToClipboard,
   createQrVariable,
   downloadBulkTemplateCsv,
   getNextQrVariableName,
@@ -53,6 +54,7 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
   const [bulkSummary, setBulkSummary] = useState<BulkQrImportSummary | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isCopyingQr, setIsCopyingQr] = useState(false);
 
   const generatedUrl = useMemo(
     () => buildSurveyUrlWithVariables(baseSurveyUrl, variables),
@@ -101,6 +103,20 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
       showToast({ message: 'Survey URL copied', variant: 'success' });
     } catch {
       showToast({ message: 'Unable to copy URL', variant: 'error' });
+    }
+  }
+
+  async function handleCopyQrImage(): Promise<void> {
+    if (isCopyingQr) return;
+
+    setIsCopyingQr(true);
+    try {
+      await copyBrandedQrCodeToClipboard(generatedUrl);
+      showToast({ message: 'QR code copied to clipboard', variant: 'success' });
+    } catch {
+      showToast({ message: 'Unable to copy QR code', variant: 'error' });
+    } finally {
+      setIsCopyingQr(false);
     }
   }
 
@@ -246,22 +262,43 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
 
             <div className={styles.previewPanel}>
               <div className={styles.qrPreview}>
-                <div className={styles.qrImageWrap}>
-                  <img
-                    src={qrImageUrl}
-                    alt="QR code preview"
-                    className={styles.qrImage}
-                    width={144}
-                    height={144}
-                  />
-                  <div className={styles.qrLogoBadge} aria-hidden>
-                    <img src={QR_LOGO_PATH} alt="" className={styles.qrLogoImage} />
+                <button
+                  type="button"
+                  className={styles.qrImageButton}
+                  aria-label="Copy QR code to clipboard"
+                  disabled={isCopyingQr}
+                  onClick={() => void handleCopyQrImage()}
+                >
+                  <div className={styles.qrImageWrap}>
+                    <img
+                      src={qrImageUrl}
+                      alt=""
+                      className={styles.qrImage}
+                      width={144}
+                      height={144}
+                    />
+                    <div className={styles.qrLogoBadge} aria-hidden>
+                      <img src={QR_LOGO_PATH} alt="" className={styles.qrLogoImage} />
+                    </div>
                   </div>
-                </div>
+                  <span className={styles.qrCopyHint}>
+                    {isCopyingQr ? 'Copying…' : 'Click to copy QR code'}
+                  </span>
+                </button>
               </div>
               <div>
                 <span className={styles.urlPreviewLabel}>Generated survey URL</span>
-                <p className={styles.urlPreview}>{generatedUrl}</p>
+                <div className={styles.urlPreviewField}>
+                  <span className={styles.urlPreviewText}>{generatedUrl}</span>
+                  <button
+                    type="button"
+                    className={styles.urlCopyBtn}
+                    aria-label="Copy generated survey URL"
+                    onClick={() => void handleCopyUrl()}
+                  >
+                    <span className="wm-content-copy" aria-hidden />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -307,20 +344,15 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
 
         <footer className={styles.footer}>
           {mode === 'single' ? (
-            <>
-              <WuButton variant="secondary" onClick={() => void handleCopyUrl()}>
-                Copy URL
-              </WuButton>
-              <WuButton onClick={() => void handleDownloadSingleQr()} disabled={isDownloading}>
-                {isDownloading ? 'Downloading…' : 'Download QR code'}
-              </WuButton>
-            </>
+            <WuButton onClick={() => void handleDownloadSingleQr()} disabled={isDownloading}>
+              {isDownloading ? 'Downloading…' : 'Download QR code'}
+            </WuButton>
           ) : (
             <WuButton
               onClick={() => void handleDownloadZip()}
               disabled={!bulkSummary || isDownloading}
             >
-              {isDownloading ? 'Preparing ZIP…' : 'Download ZIP of QR codes'}
+              {isDownloading ? 'Preparing download…' : 'Download QR codes'}
             </WuButton>
           )}
         </footer>

@@ -1,3 +1,5 @@
+import { zipSync } from 'fflate';
+
 export type QrCodeModalMode = 'single' | 'bulk';
 
 export interface QrUrlVariable {
@@ -6,11 +8,20 @@ export interface QrUrlVariable {
   value: string;
 }
 
+export interface BulkQrImportRow {
+  surveyUrl: string;
+  variables: Record<string, string>;
+}
+
 export interface BulkQrImportSummary {
   urlCount: number;
   variablesPerUrl: number;
   fileName: string;
+  variableNames: string[];
+  rows: BulkQrImportRow[];
 }
+
+export const QR_BULK_MANIFEST_FILENAME = 'qr-codes-manifest.csv';
 
 export const QR_BULK_IMPORT_ACCEPT = '.csv,.txt';
 export const QR_BULK_TEMPLATE_FILENAME = 'survey-qr-bulk-template.csv';
@@ -40,6 +51,14 @@ export function getNextQrVariableName(usedNames: string[]): string {
 
 const BULK_IMPORT_DELAY_MS = 900;
 const ZIP_DOWNLOAD_DELAY_MS = 1200;
+
+/** Prototype-only encoding so variable values never appear in plain text in URLs. */
+export function encryptQrVariableValue(plainText: string): string {
+  const bytes = new TextEncoder().encode(plainText);
+  const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join('');
+  const encoded = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `enc.${encoded}`;
+}
 
 export function createQrVariable(
   partial: Partial<QrUrlVariable> = {}
@@ -72,7 +91,7 @@ export function buildSurveyUrlWithVariables(
   const query = params
     .map(
       (variable) =>
-        `${encodeURIComponent(variable.name)}=${encodeURIComponent(variable.value)}`
+        `${encodeURIComponent(variable.name)}=${encodeURIComponent(encryptQrVariableValue(variable.value))}`
     )
     .join('&');
 
@@ -82,6 +101,60 @@ export function buildSurveyUrlWithVariables(
 
 export function getQrCodeImageUrl(url: string, size = 180): string {
   return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&ecc=H&data=${encodeURIComponent(url)}`;
+}
+
+function parseCsvLine(line: string): string[] {
+  return line.split(',').map((cell) => cell.trim());
+}
+
+function buildSurveyUrlFromBulkRow(headerCells: string[], rowCells: string[]): string {
+  const baseUrl = rowCells[0] ?? '';
+  const variables = headerCells.slice(1).map((name, index) =>
+    createQrVariable({
+      name,
+      value: rowCells[index + 1] ?? '',
+    })
+  );
+
+  return buildSurveyUrlWithVariables(baseUrl, variables);
+}
+
+function buildBulkRow(headerCells: string[], rowCells: string[]): BulkQrImportRow {
+  const variableNames = headerCells.slice(1);
+  const variables: Record<string, string> = {};
+
+  variableNames.forEach((name, index) => {
+    variables[name] = rowCells[index + 1] ?? '';
+  });
+
+  return {
+    surveyUrl: buildSurveyUrlFromBulkRow(headerCells, rowCells),
+    variables,
+  };
+}
+
+function escapeCsvCell(value: string): string {
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+function buildBulkQrManifestCsv(summary: BulkQrImportSummary, qrFileNames: string[]): string {
+  const header = ['qr_file_name', 'survey_url', ...summary.variableNames];
+  const dataRows = summary.rows.map((row, index) =>
+    [
+      escapeCsvCell(qrFileNames[index] ?? ''),
+      escapeCsvCell(row.surveyUrl),
+      ...summary.variableNames.map((name) => escapeCsvCell(row.variables[name] ?? '')),
+    ].join(',')
+  );
+
+  return [header.join(','), ...dataRows].join('\n');
+}
+
+function getQrFileName(index: number): string {
+  return `survey-qr-code-${index + 1}.png`;
 }
 
 function loadImageElement(src: string, crossOrigin?: string): Promise<HTMLImageElement> {
@@ -176,9 +249,11 @@ export async function parseBulkQrImportFile(file: File): Promise<BulkQrImportSum
     throw new Error('Import file must include a header row and at least one URL row.');
   }
 
-  const headerCells = lines[0].split(',').map((cell) => cell.trim());
-  const variablesPerUrl = Math.max(headerCells.length - 1, 0);
-  const urlCount = lines.length - 1;
+  const headerCells = parseCsvLine(lines[0]);
+  const variableNames = headerCells.slice(1);
+  const variablesPerUrl = variableNames.length;
+  const rows = lines.slice(1).map((line) => buildBulkRow(headerCells, parseCsvLine(line)));
+  const urlCount = rows.length;
 
   if (urlCount === 0) {
     throw new Error('No survey URLs were found in the import file.');
@@ -188,6 +263,8 @@ export async function parseBulkQrImportFile(file: File): Promise<BulkQrImportSum
     urlCount,
     variablesPerUrl,
     fileName: file.name,
+    variableNames,
+    rows,
   };
 }
 
@@ -208,21 +285,37 @@ export async function mockDownloadSingleQrCode(url: string): Promise<void> {
   URL.revokeObjectURL(objectUrl);
 }
 
+export async function copyBrandedQrCodeToClipboard(url: string, size = 512): Promise<void> {
+  if (typeof ClipboardItem === 'undefined' || !navigator.clipboard?.write) {
+    throw new Error('Image clipboard is not supported in this browser');
+  }
+
+  const blob = await composeBrandedQrCodeBlob(url, size);
+  await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+}
+
 export async function mockDownloadQrCodeZip(summary: BulkQrImportSummary): Promise<void> {
   await new Promise((resolve) => {
     window.setTimeout(resolve, ZIP_DOWNLOAD_DELAY_MS);
   });
 
-  const content = [
-    'Prototype QR export',
-    `Source file: ${summary.fileName}`,
-    `URLs: ${summary.urlCount}`,
-    `Variables per URL: ${summary.variablesPerUrl}`,
-    '',
-    'In production, this download would contain one PNG QR code per imported URL.',
-  ].join('\n');
+  const files: Record<string, Uint8Array> = {};
+  const qrFileNames: string[] = [];
 
-  const blob = new Blob([content], { type: 'text/plain' });
+  for (let index = 0; index < summary.rows.length; index++) {
+    const { surveyUrl } = summary.rows[index];
+    const qrFileName = getQrFileName(index);
+    qrFileNames.push(qrFileName);
+    const qrBlob = await composeBrandedQrCodeBlob(surveyUrl, 512);
+    const qrBytes = new Uint8Array(await qrBlob.arrayBuffer());
+    files[qrFileName] = qrBytes;
+  }
+
+  const manifestCsv = buildBulkQrManifestCsv(summary, qrFileNames);
+  files[QR_BULK_MANIFEST_FILENAME] = new TextEncoder().encode(manifestCsv);
+
+  const zipped = zipSync(files);
+  const blob = new Blob([zipped], { type: 'application/zip' });
   const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = objectUrl;
