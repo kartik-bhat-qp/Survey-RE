@@ -1,7 +1,28 @@
 .sidebarShell {
+  bottom: 0;
   display: flex;
   flex-shrink: 0;
   min-height: 0;
+  top: 0;
+  z-index: 200;
+}
+
+.sidebarShellViewport {
+  position: fixed;
+}
+
+.sidebarShellParent {
+  position: absolute;
+}
+
+.sidebarShellLeft {
+  flex-direction: row-reverse;
+  left: 0;
+}
+
+.sidebarShellRight {
+  flex-direction: row;
+  right: 0;
 }
 
 .historyPanel {

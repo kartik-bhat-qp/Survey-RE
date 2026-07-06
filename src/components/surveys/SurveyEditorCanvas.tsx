@@ -111,6 +111,10 @@ import {
   type QuestionSettings,
 } from '@/data/mock-question-settings';
 import {
+  getLinkedCommunityDisplay,
+  type LinkedCommunityDisplay,
+} from '@/data/mock-question-communities';
+import {
   DEFAULT_CAPTCHA_SETTINGS,
   type CaptchaSettings,
 } from '@/data/mock-captcha-settings';
@@ -136,6 +140,7 @@ import { toShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview
 import { QuotaControlOptionTag } from '@/components/surveys/QuotaControlOptionTag';
 import { DynamicTextCommentsOptionIcon } from '@/components/surveys/DynamicTextCommentsOptionIcon';
 import { ExtractedQuestionBanner } from '@/components/surveys/ExtractedQuestionBanner';
+import { LinkedCommunityBanner } from '@/components/surveys/LinkedCommunityBanner';
 import { ExtractionOptionTag } from '@/components/surveys/ExtractionOptionTag';
 import {
   getExtractionOptionLabels,
@@ -672,6 +677,7 @@ function QuestionRow({
   onMenuAction,
   onQuestionTextChange,
   onOptionLabelChange,
+  linkedCommunity,
 }: {
   question: SurveyQuestion;
   sectionId: string;
@@ -697,11 +703,13 @@ function QuestionRow({
     optionId: string,
     label: string
   ) => void;
+  linkedCommunity?: LinkedCommunityDisplay | null;
 }) {
   return (
     <article className={styles.questionRow}>
       <div className={styles.questionRowMain}>
         <div className={styles.questionBody}>
+          {linkedCommunity ? <LinkedCommunityBanner link={linkedCommunity} /> : null}
           <div className={styles.questionTextWrap}>
             {question.required ? <span className={styles.required}>*</span> : null}
             <QuestionRichTextField
@@ -809,6 +817,7 @@ function SelectOneQuestionRow({
   onBulkEdit,
   onQuestionTextChange,
   onOptionLabelChange,
+  linkedCommunity,
 }: {
   question: SurveyQuestion;
   sectionId: string;
@@ -836,6 +845,7 @@ function SelectOneQuestionRow({
     optionId: string,
     label: string
   ) => void;
+  linkedCommunity?: LinkedCommunityDisplay | null;
 }) {
   return (
     <article className={styles.selectManyBlock}>
@@ -853,6 +863,7 @@ function SelectOneQuestionRow({
               menuBtnClassName={styles.menuBtn}
             />
           </div>
+          {linkedCommunity ? <LinkedCommunityBanner link={linkedCommunity} /> : null}
           <div className={styles.selectManyQuestionTextWrap}>
             {question.required ? <span className={styles.required}>*</span> : null}
             <QuestionRichTextField
@@ -969,6 +980,7 @@ function SelectManyQuestionRow({
   onBulkEdit,
   onQuestionTextChange,
   onOptionLabelChange,
+  linkedCommunity,
 }: {
   question: SurveyQuestion;
   sectionId: string;
@@ -995,6 +1007,7 @@ function SelectManyQuestionRow({
     optionId: string,
     label: string
   ) => void;
+  linkedCommunity?: LinkedCommunityDisplay | null;
 }) {
   return (
     <article className={styles.selectManyBlock}>
@@ -1011,6 +1024,7 @@ function SelectManyQuestionRow({
               menuBtnClassName={styles.menuBtn}
             />
           </div>
+          {linkedCommunity ? <LinkedCommunityBanner link={linkedCommunity} /> : null}
           <div className={styles.selectManyQuestionTextWrap}>
             {question.required ? <span className={styles.required}>*</span> : null}
             <QuestionRichTextField
@@ -3293,6 +3307,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         open={surveyAgentOpen}
         surveyId={detail.survey.id}
         agentContext="workspace"
+        placement="left"
+        layout="parent"
         onClose={() => setSurveyAgentOpen(false)}
       />
 
@@ -3380,6 +3396,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const isSelectOne = isSelectOneQuestion(question);
                     const multiPointSettings = getMultiPointSettings(questionKey);
                     const captchaSettings = getCaptchaSettings(questionKey);
+                    const questionSettings = getQuestionSettings(question, questionKey);
+                    const linkedCommunity = isMultiPoint
+                      ? getLinkedCommunityDisplay(multiPointSettings)
+                      : getLinkedCommunityDisplay(questionSettings);
                     const savedLogic = logicByQuestionKey[questionKey];
                     const questionOptionIds = question.options.map((option) => option.id);
                     const showHideOptionsApplied =
@@ -4132,6 +4152,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 answerType={multiPointSettings.answerType}
                                 sectionId={section.id}
                                 showHideOptionsApplied={showHideOptionsApplied}
+                                linkedCommunity={linkedCommunity}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -4173,6 +4194,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 quotaControlApplied={quotaControlApplied}
                                 quotaOptionLabels={quotaOptionLabels}
                                 extractionOptionLabels={extractionOptionLabels}
+                                linkedCommunity={linkedCommunity}
                                 {...extractionRowProps}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
@@ -4203,6 +4225,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 quotaControlApplied={quotaControlApplied}
                                 quotaOptionLabels={quotaOptionLabels}
                                 extractionOptionLabels={extractionOptionLabels}
+                                linkedCommunity={linkedCommunity}
                                 {...extractionRowProps}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
@@ -4230,6 +4253,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 quotaControlApplied={quotaControlApplied}
                                 quotaOptionLabels={quotaOptionLabels}
                                 extractionOptionLabels={extractionOptionLabels}
+                                linkedCommunity={linkedCommunity}
                                 {...extractionRowProps}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)

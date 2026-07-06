@@ -20,6 +20,11 @@ import {
   type VideoOption,
 } from '@/data/mock-question-settings';
 import styles from './QuestionSettingsPanel.module.css';
+import { QuestionCommunitiesTab } from '@/components/surveys/QuestionCommunitiesTab';
+import {
+  AUTO_SELECT_COMMUNITY_MAPPING_CONFLICT_MESSAGE,
+  isCommunityMappingActive,
+} from '@/data/mock-question-communities';
 
 const WuSelect = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
@@ -132,6 +137,38 @@ export function QuestionSettingsPanel({
   const isSelectOne = question.inputKind === 'radio';
   const isSelectMany = question.inputKind === 'checkbox';
   const showAutoSelectOption = isSelectOne && settings.answerType !== 'dropdown';
+  const communityMappingActive = isCommunityMappingActive(settings);
+  const autoSelectDisabled = communityMappingActive;
+
+  function handleAutoSelectShownOptionsChange(autoSelectShownOptions: boolean): void {
+    if (autoSelectShownOptions && communityMappingActive) {
+      return;
+    }
+    patch({ autoSelectShownOptions });
+  }
+
+  function handleCommunityChange(communityId: QuestionSettings['communityId']): void {
+    if (settings.autoSelectShownOptions) {
+      return;
+    }
+    patch({
+      communityId,
+      ...(communityId === '' ? { customProfileFieldId: '' as const } : {}),
+      ...(communityId !== '' ? { autoSelectShownOptions: false } : {}),
+    });
+  }
+
+  function handleCustomProfileFieldChange(
+    customProfileFieldId: QuestionSettings['customProfileFieldId']
+  ): void {
+    if (settings.autoSelectShownOptions) {
+      return;
+    }
+    patch({
+      customProfileFieldId,
+      ...(customProfileFieldId ? { autoSelectShownOptions: false } : {}),
+    });
+  }
 
   return (
     <aside className={styles.panel} aria-label="Question settings">
@@ -258,12 +295,20 @@ export function QuestionSettingsPanel({
           <div className={styles.field}>
             {showAutoSelectOption ? (
               <div className={styles.toggleLabelRow}>
-                <WuToggle
-                  Label="Auto select shown option"
-                  labelPosition="right"
-                  checked={settings.autoSelectShownOptions}
-                  onChange={(autoSelectShownOptions) => patch({ autoSelectShownOptions })}
-                />
+                <WuTooltip
+                  content={autoSelectDisabled ? AUTO_SELECT_COMMUNITY_MAPPING_CONFLICT_MESSAGE : undefined}
+                  position="top"
+                >
+                  <div className={autoSelectDisabled ? styles.toggleDisabled : undefined}>
+                    <WuToggle
+                      Label="Auto select shown option"
+                      labelPosition="right"
+                      checked={settings.autoSelectShownOptions}
+                      onChange={handleAutoSelectShownOptionsChange}
+                      disabled={autoSelectDisabled}
+                    />
+                  </div>
+                </WuTooltip>
                 <WuTooltip content={AUTO_SELECT_SHOWN_OPTION_HELP} position="top">
                   <span
                     className={styles.helpBtn}
@@ -276,12 +321,20 @@ export function QuestionSettingsPanel({
               </div>
             ) : (
               <div className={styles.toggleRow}>
-                <WuToggle
-                  Label="Auto select shown options"
-                  labelPosition="right"
-                  checked={settings.autoSelectShownOptions}
-                  onChange={(autoSelectShownOptions) => patch({ autoSelectShownOptions })}
-                />
+                <WuTooltip
+                  content={autoSelectDisabled ? AUTO_SELECT_COMMUNITY_MAPPING_CONFLICT_MESSAGE : undefined}
+                  position="top"
+                >
+                  <div className={autoSelectDisabled ? styles.toggleDisabled : undefined}>
+                    <WuToggle
+                      Label="Auto select shown options"
+                      labelPosition="right"
+                      checked={settings.autoSelectShownOptions}
+                      onChange={handleAutoSelectShownOptionsChange}
+                      disabled={autoSelectDisabled}
+                    />
+                  </div>
+                </WuTooltip>
               </div>
             )}
           </div>
@@ -370,9 +423,13 @@ export function QuestionSettingsPanel({
               </div>
             </div>
           ) : (
-            <p className={styles.placeholder}>
-              Community targeting for this question is not configured in this prototype.
-            </p>
+            <QuestionCommunitiesTab
+              communityId={settings.communityId}
+              customProfileFieldId={settings.customProfileFieldId}
+              onCommunityChange={handleCommunityChange}
+              onCustomProfileFieldChange={handleCustomProfileFieldChange}
+              disabled={settings.autoSelectShownOptions}
+            />
           )}
         </div>
       </div>

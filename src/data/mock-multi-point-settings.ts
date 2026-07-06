@@ -1,3 +1,8 @@
+import {
+  DEFAULT_QUESTION_COMMUNITY_SETTINGS,
+  type QuestionCommunitySettings,
+} from '@/data/mock-question-communities';
+
 export type MultiPointLayout = 'matrix' | 'cards-carousel';
 
 /** Cards carousel only: how each card is oriented in the respondent view. */
@@ -41,6 +46,8 @@ export interface MultiPointScalesSettings {
   video: MultiPointVideoOption;
   reportLabel: string;
   scaleType: MultiPointScaleType;
+  communityId: QuestionCommunitySettings['communityId'];
+  customProfileFieldId: QuestionCommunitySettings['customProfileFieldId'];
 }
 
 export const DEFAULT_MULTI_POINT_SETTINGS: MultiPointScalesSettings = {
@@ -60,6 +67,7 @@ export const DEFAULT_MULTI_POINT_SETTINGS: MultiPointScalesSettings = {
   video: 'none',
   reportLabel: '',
   scaleType: 'undefined',
+  ...DEFAULT_QUESTION_COMMUNITY_SETTINGS,
 };
 
 /** Defaults applied when adding a new Basic Matrix (Multi-Point Scales) question. */

@@ -42,6 +42,9 @@ interface SurveyAgentSidebarProps {
   open: boolean;
   surveyId?: number;
   agentContext?: ResearchAgentContext;
+  placement?: 'left' | 'right';
+  /** Viewport = full-height fixed overlay; parent = contained in nearest positioned ancestor. */
+  layout?: 'viewport' | 'parent';
   onClose: () => void;
   onGenerated?: (result: SurveyAiGenerationResult) => void;
   onSubmit?: (prompt: string) => Promise<SurveyAiGenerationResult>;
@@ -63,6 +66,8 @@ export function SurveyAgentSidebar({
   open,
   surveyId = 0,
   agentContext = 'workspace',
+  placement = 'right',
+  layout = 'viewport',
   onClose,
   onGenerated,
   onSubmit,
@@ -335,7 +340,13 @@ export function SurveyAgentSidebar({
   return (
     <>
       <SurveyAgentThinkingOverlay open={isGenerating} />
-      <div className={styles.sidebarShell}>
+      <div
+        className={`${styles.sidebarShell} ${
+          layout === 'parent' ? styles.sidebarShellParent : styles.sidebarShellViewport
+        } ${
+          placement === 'left' ? styles.sidebarShellLeft : styles.sidebarShellRight
+        }`}
+      >
         {historyOpen ? (
           <aside className={styles.historyPanel} aria-label="Chat history">
             {sessions.length === 0 ? (

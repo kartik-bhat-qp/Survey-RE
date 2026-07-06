@@ -10,6 +10,8 @@ import {
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
+import { LinkedCommunityBanner } from '@/components/surveys/LinkedCommunityBanner';
+import type { LinkedCommunityDisplay } from '@/data/mock-question-communities';
 import styles from './MultiPointScalesQuestionRow.module.css';
 
 function stopQuestionEvent(event: SyntheticEvent): void {
@@ -48,6 +50,7 @@ export interface MultiPointScalesQuestionRowProps {
   onAddRow: (sectionId: string, questionId: string) => void;
   onBulkEditRows: (sectionId: string, questionId: string) => void;
   onBulkEditColumns: (sectionId: string, questionId: string) => void;
+  linkedCommunity?: LinkedCommunityDisplay | null;
 }
 
 export function MultiPointScalesQuestionRow({
@@ -67,6 +70,7 @@ export function MultiPointScalesQuestionRow({
   onAddRow,
   onBulkEditRows,
   onBulkEditColumns,
+  linkedCommunity,
 }: MultiPointScalesQuestionRowProps) {
   const inputType =
     answerType === 'checkbox' ? 'checkbox' : answerType === 'radio' ? 'radio' : 'radio';
@@ -87,6 +91,8 @@ export function MultiPointScalesQuestionRow({
               menuBtnClassName={styles.menuBtn}
             />
           </div>
+
+          {linkedCommunity ? <LinkedCommunityBanner link={linkedCommunity} /> : null}
 
           <div className={styles.questionTextWrap}>
             {question.required ? <span className={styles.required}>*</span> : null}

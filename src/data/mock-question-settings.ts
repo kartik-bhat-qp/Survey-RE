@@ -1,4 +1,8 @@
 import { plainTextFromRichValue } from '@/components/surveys/rich-text-utils';
+import {
+  DEFAULT_QUESTION_COMMUNITY_SETTINGS,
+  type QuestionCommunitySettings,
+} from '@/data/mock-question-communities';
 
 export type AnswerType = 'radio' | 'checkbox' | 'dropdown' | 'select-list';
 
@@ -40,6 +44,8 @@ export interface QuestionSettings {
   video: VideoOption;
   reportLabel: string;
   scaleType: ScaleType;
+  communityId: QuestionCommunitySettings['communityId'];
+  customProfileFieldId: QuestionCommunitySettings['customProfileFieldId'];
 }
 
 export const DEFAULT_QUESTION_SETTINGS: QuestionSettings = {
@@ -55,6 +61,7 @@ export const DEFAULT_QUESTION_SETTINGS: QuestionSettings = {
   video: 'none',
   reportLabel: '',
   scaleType: 'undefined',
+  ...DEFAULT_QUESTION_COMMUNITY_SETTINGS,
 };
 
 export const ANSWER_DISPLAY_ORDER_OPTIONS = [

@@ -56,74 +56,21 @@ export const DISTRIBUTE_EMAIL_AI_EXAMPLE_PROMPTS = [
 
 export const DISTRIBUTE_EMAIL_AI_CAPABILITY_PILLS: SurveyAiCapabilityPill[] = [
   {
-    id: 'survey_send_add_email_addresses',
-    label: 'Add email addresses',
+    id: 'survey_send_recipients',
+    label: 'Recipients',
     icon: 'wm-person-add',
-    prompt: 'Add email addresses to this invitation',
+    prompt:
+      'Add email addresses, create an email list, or list email lists available for this survey',
   },
   {
     id: 'survey_send_compose_email',
     label: 'Compose email',
     icon: 'wm-edit',
-    prompt: 'Compose a survey invitation email',
-  },
-  {
-    id: 'survey_send_create_email_list',
-    label: 'Create email list',
-    icon: 'wm-playlist-add',
-    prompt: 'Create a new email list for this survey',
-  },
-  {
-    id: 'survey_send_list_distribution_history',
-    label: 'View distribution history',
-    icon: 'wm-history',
-    prompt: 'Show distribution history for this survey',
-  },
-  {
-    id: 'survey_send_list_email_lists',
-    label: 'View email lists',
-    icon: 'wm-list',
-    prompt: 'List email lists available for this survey',
-  },
-  {
-    id: 'survey_send_list_scheduled_emails',
-    label: 'View scheduled emails',
-    icon: 'wm-schedule',
-    prompt: 'Show scheduled emails for this survey',
-  },
-  {
-    id: 'survey_send_preview_email',
-    label: 'Preview email',
-    icon: 'wm-preview',
-    prompt: 'Preview the current invitation email',
-  },
-  {
-    id: 'survey_send_schedule_email',
-    label: 'Schedule email',
-    icon: 'wm-schedule',
-    prompt: 'Schedule this invitation email to send later',
-  },
-  {
-    id: 'survey_send_schedule_reminder',
-    label: 'Schedule reminder',
-    icon: 'wm-notifications',
-    prompt: 'Schedule a reminder email for non-responders',
-  },
-  {
-    id: 'survey_send_scheduled_now_preview',
-    label: 'Preview scheduled send',
-    icon: 'wm-preview',
-    prompt: 'Preview the scheduled send before it goes out',
-  },
-  {
-    id: 'survey_send_scheduled_now_send',
-    label: 'Send scheduled email now',
-    icon: 'wm-send',
-    prompt: 'Send the scheduled email immediately',
+    prompt: 'Compose or preview the current survey invitation email',
   },
   {
     id: 'survey_send_select_from_replyto',
-    label: 'Select from and reply-to',
+    label: 'From and reply-to',
     icon: 'wm-reply',
     prompt: 'Help me choose the from and reply-to addresses',
   },
@@ -134,10 +81,23 @@ export const DISTRIBUTE_EMAIL_AI_CAPABILITY_PILLS: SurveyAiCapabilityPill[] = [
     prompt: 'Send this survey invitation email now',
   },
   {
-    id: 'survey_send_send_reminder',
-    label: 'Send reminder',
+    id: 'survey_send_scheduled_emails',
+    label: 'Scheduled emails',
+    icon: 'wm-schedule',
+    prompt:
+      'Show scheduled emails, schedule this invitation, preview the scheduled send, or send it now',
+  },
+  {
+    id: 'survey_send_reminders',
+    label: 'Reminders',
     icon: 'wm-notifications',
-    prompt: 'Send a reminder to non-responders',
+    prompt: 'Schedule or send a reminder email for non-responders',
+  },
+  {
+    id: 'survey_send_list_distribution_history',
+    label: 'Distribution history',
+    icon: 'wm-history',
+    prompt: 'Show distribution history for this survey',
   },
 ];
 
@@ -484,6 +444,16 @@ export async function generateDistributeEmailFromAiPrompt(
     };
   }
 
+  if (
+    lower.includes('recipients') ||
+    (lower.includes('create') && lower.includes('list') && lower.includes('email lists'))
+  ) {
+    return {
+      summary:
+        'Recipients updated — added sample addresses and listed available lists: All customers (2,410), Beta testers (186).',
+    };
+  }
+
   if (lower.includes('compose')) {
     return {
       summary: 'Composed a survey invitation email.',
@@ -513,7 +483,8 @@ export async function generateDistributeEmailFromAiPrompt(
 
   if (lower.includes('scheduled emails') || lower.includes('show scheduled')) {
     return {
-      summary: '1 scheduled email: Product feedback follow-up on Jan 15 at 9:00 AM.',
+      summary:
+        'Scheduled emails: 1 invitation on Jan 15 at 9:00 AM. You can schedule, preview, or send it now.',
     };
   }
 
@@ -528,7 +499,15 @@ export async function generateDistributeEmailFromAiPrompt(
 
   if (lower.includes('schedule') && lower.includes('reminder')) {
     return {
-      summary: 'Scheduled a reminder for non-responders 3 days after the initial send.',
+      summary: 'Reminder scheduled for non-responders 3 days after the initial send.',
+      subject: 'Reminder: share your feedback when you have a moment',
+      body: `Hello,\n\nWe noticed you have not had a chance to complete our survey yet. Your input helps us improve.\n\n<SURVEY_LINK>\n\nThank you for your time.`,
+    };
+  }
+
+  if (lower.includes('send reminder') || (lower.includes('reminder') && lower.includes('non-respond'))) {
+    return {
+      summary: 'Sent a reminder to 142 non-responders.',
       subject: 'Reminder: share your feedback when you have a moment',
       body: `Hello,\n\nWe noticed you have not had a chance to complete our survey yet. Your input helps us improve.\n\n<SURVEY_LINK>\n\nThank you for your time.`,
     };
@@ -555,14 +534,6 @@ export async function generateDistributeEmailFromAiPrompt(
   if (lower.includes('from') && lower.includes('reply')) {
     return {
       summary: 'Updated sender to Kartik Bhat and reply-to to kartik.bhat@questionpro.com.',
-    };
-  }
-
-  if (lower.includes('send reminder') || (lower.includes('reminder') && lower.includes('non-respond'))) {
-    return {
-      summary: 'Sent a reminder to 142 non-responders.',
-      subject: 'Reminder: share your feedback when you have a moment',
-      body: `Hello,\n\nWe noticed you have not had a chance to complete our survey yet. Your input helps us improve.\n\n<SURVEY_LINK>\n\nThank you for your time.`,
     };
   }
 

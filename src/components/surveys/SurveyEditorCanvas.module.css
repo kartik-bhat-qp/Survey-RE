@@ -33,7 +33,7 @@
   height: 3.25rem;
   justify-content: center;
   left: 1.5rem;
-  position: fixed;
+  position: absolute;
   transition:
     box-shadow 0.15s ease,
     transform 0.15s ease;

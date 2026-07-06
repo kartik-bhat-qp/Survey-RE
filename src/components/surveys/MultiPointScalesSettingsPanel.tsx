@@ -23,6 +23,7 @@ import {
 } from '@/data/mock-multi-point-settings';
 import panelStyles from './QuestionSettingsPanel.module.css';
 import styles from './MultiPointScalesSettingsPanel.module.css';
+import { QuestionCommunitiesTab } from '@/components/surveys/QuestionCommunitiesTab';
 
 const WuSelect = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
@@ -481,9 +482,19 @@ export function MultiPointScalesSettingsPanel({
               </div>
             </div>
           ) : (
-            <p className={panelStyles.placeholder}>
-              Community targeting for this question is not configured in this prototype.
-            </p>
+            <QuestionCommunitiesTab
+              communityId={settings.communityId}
+              customProfileFieldId={settings.customProfileFieldId}
+              onCommunityChange={(communityId) =>
+                patch({
+                  communityId,
+                  ...(communityId === '' ? { customProfileFieldId: '' as const } : {}),
+                })
+              }
+              onCustomProfileFieldChange={(customProfileFieldId) =>
+                patch({ customProfileFieldId })
+              }
+            />
           )}
         </div>
       </div>

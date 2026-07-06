@@ -147,6 +147,8 @@ export function SurveyEmailComposePanel({
         open={researchAgentOpen}
         surveyId={surveyId}
         agentContext="distribute-email"
+        placement="left"
+        layout="parent"
         onClose={() => setResearchAgentOpen(false)}
         onSubmit={handleResearchAgentSubmit}
         onGenerated={handleResearchAgentGenerated}
