@@ -1,5 +1,10 @@
 import { zipSync } from 'fflate';
-import { subDays } from 'date-fns';
+
+function subtractDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() - days);
+  return result;
+}
 
 export type QrCodeModalMode = 'manual' | 'bulk';
 
@@ -670,7 +675,7 @@ export function getMockBulkQrGenerationHistory(
   return [
     buildMockBulkHistoryBatch(baseSurveyUrl, {
       fileName: 'retail-locations-march.csv',
-      generatedAt: subDays(now, 12),
+      generatedAt: subtractDays(now, 12),
       variableNames: MOCK_BULK_VARIABLE_NAMES,
       rows: [
         {
@@ -777,7 +782,7 @@ export function getMockBulkQrGenerationHistory(
     }),
     buildMockBulkHistoryBatch(baseSurveyUrl, {
       fileName: 'event-booths-q2-rollout-with-extra-long-filename.csv',
-      generatedAt: subDays(now, 5),
+      generatedAt: subtractDays(now, 5),
       variableNames: MOCK_BULK_VARIABLE_NAMES,
       rows: [
         {
@@ -844,7 +849,7 @@ export function getMockBulkQrGenerationHistory(
     }),
     buildMockBulkHistoryBatch(baseSurveyUrl, {
       fileName: 'partner-channels.csv',
-      generatedAt: subDays(now, 2),
+      generatedAt: subtractDays(now, 2),
       variableNames: MOCK_BULK_VARIABLE_NAMES,
       rows: [
         {
