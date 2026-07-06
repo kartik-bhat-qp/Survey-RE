@@ -1,16 +1,19 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
-  buildSurveyUrlWithVariables,
+  allocateManualQrUrl,
   copyBrandedQrCodeToClipboard,
+  createBulkQrHistoryEntry,
   createManualQrEntry,
   createQrVariable,
   downloadBulkTemplateCsv,
+  getMockBulkQrGenerationHistory,
   getNextQrVariableName,
   getQrCodeImageUrl,
+  mockDownloadBulkQrHistoryZip,
   mockDownloadManualQrCodes,
   mockDownloadQrCodeZip,
   parseBulkQrImportFile,
@@ -18,12 +21,16 @@ import {
   QR_LOGO_PATH,
   QR_VARIABLE_NAME_OPTIONS,
   SAMPLE_QR_VARIABLES,
+  updateManualQrEntry,
+  type BulkQrGenerationHistoryEntry,
   type BulkQrImportSummary,
   type ManualQrEntry,
   type QrCodeModalMode,
   type QrUrlVariable,
 } from '@/data/mock-survey-qr-code';
+import { formatDate, formatRelativeDate, truncate } from '@/data/mock-utils';
 import styles from './SurveyQrCodePanel.module.css';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
@@ -55,22 +62,96 @@ function getDefaultDraftName(savedCount: number): string {
 export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
   const { showToast } = useWuShowToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const newDraftRef = useRef<HTMLDivElement>(null);
+  const highlightTimeoutRef = useRef<number | null>(null);
   const [mode, setMode] = useState<QrCodeModalMode>('manual');
   const [savedQrs, setSavedQrs] = useState<ManualQrEntry[]>([]);
   const [expandedSavedId, setExpandedSavedId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState(() => getDefaultDraftName(0));
   const [draftVariables, setDraftVariables] = useState<QrUrlVariable[]>(createInitialVariables);
+  const [draftLockedUrl, setDraftLockedUrl] = useState(() =>
+    allocateManualQrUrl(baseSurveyUrl)
+  );
   const [bulkSummary, setBulkSummary] = useState<BulkQrImportSummary | null>(null);
+  const [bulkHistory, setBulkHistory] = useState<BulkQrGenerationHistoryEntry[]>(() =>
+    getMockBulkQrGenerationHistory(baseSurveyUrl)
+  );
+  const [expandedBulkHistoryId, setExpandedBulkHistoryId] = useState<string | null>(null);
+  const [downloadingHistoryId, setDownloadingHistoryId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [copyingQrKey, setCopyingQrKey] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ManualQrEntry | null>(null);
+  const [recentlySavedQrId, setRecentlySavedQrId] = useState<string | null>(null);
+  const [highlightNewDraft, setHighlightNewDraft] = useState(false);
+  const [scrollToDraftNonce, setScrollToDraftNonce] = useState(0);
 
-  const draftUrl = useMemo(
-    () => buildSurveyUrlWithVariables(baseSurveyUrl, draftVariables),
-    [baseSurveyUrl, draftVariables]
-  );
-
+  const draftUrl = draftLockedUrl.surveyUrl;
   const draftQrImageUrl = useMemo(() => getQrCodeImageUrl(draftUrl), [draftUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current !== null) {
+        window.clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  function scrollNewDraftIntoView(): void {
+    const panel = panelRef.current;
+    const draft = newDraftRef.current;
+    if (!draft) return;
+
+    if (panel) {
+      const panelRect = panel.getBoundingClientRect();
+      const draftRect = draft.getBoundingClientRect();
+      const targetTop = panel.scrollTop + (draftRect.top - panelRect.top) - 20;
+      panel.scrollTo({
+        top: Math.max(0, targetTop),
+        behavior: 'smooth',
+      });
+      return;
+    }
+
+    draft.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  useEffect(() => {
+    if (scrollToDraftNonce === 0) return;
+
+    let frameId = 0;
+    let timeoutId = 0;
+
+    const runScroll = () => {
+      scrollNewDraftIntoView();
+    };
+
+    frameId = window.requestAnimationFrame(() => {
+      frameId = window.requestAnimationFrame(runScroll);
+    });
+    timeoutId = window.setTimeout(runScroll, 150);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [scrollToDraftNonce]);
+
+  function flashCreateNewQrFeedback(savedEntryId: string): void {
+    setRecentlySavedQrId(savedEntryId);
+    setHighlightNewDraft(true);
+
+    if (highlightTimeoutRef.current !== null) {
+      window.clearTimeout(highlightTimeoutRef.current);
+    }
+
+    highlightTimeoutRef.current = window.setTimeout(() => {
+      setRecentlySavedQrId(null);
+      setHighlightNewDraft(false);
+      highlightTimeoutRef.current = null;
+    }, 2800);
+  }
 
   function updateDraftVariable(
     id: string,
@@ -116,23 +197,98 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
       return;
     }
 
-    const entry = createManualQrEntry(baseSurveyUrl, trimmedName, draftVariables);
+    const entry = createManualQrEntry(baseSurveyUrl, trimmedName, draftVariables, draftLockedUrl);
+    const nextDraftName = getDefaultDraftName(savedQrs.length + 1);
     setSavedQrs((current) => [...current, entry]);
     setExpandedSavedId(null);
-    setDraftName(getDefaultDraftName(savedQrs.length + 1));
+    setDraftName(nextDraftName);
     setDraftVariables(createInitialVariables());
-    showToast({ message: `"${entry.name}" saved`, variant: 'success' });
+    setDraftLockedUrl(allocateManualQrUrl(baseSurveyUrl));
+    flashCreateNewQrFeedback(entry.id);
+    setScrollToDraftNonce((current) => current + 1);
+    showToast({
+      message: `"${entry.name}" saved and collapsed above. You're now editing ${nextDraftName}.`,
+      variant: 'success',
+    });
   }
 
   function toggleSavedQrExpanded(id: string): void {
     setExpandedSavedId((current) => (current === id ? null : id));
   }
 
+  function updateSavedQr(
+    entryId: string,
+    patch: { name?: string; variables?: QrUrlVariable[] }
+  ): void {
+    setSavedQrs((current) =>
+      current.map((entry) =>
+        entry.id === entryId ? updateManualQrEntry(entry, patch) : entry
+      )
+    );
+  }
+
+  function updateSavedQrVariable(
+    entryId: string,
+    variableId: string,
+    patch: Partial<Pick<QrUrlVariable, 'name' | 'value'>>
+  ): void {
+    setSavedQrs((current) =>
+      current.map((entry) => {
+        if (entry.id !== entryId) return entry;
+        return updateManualQrEntry(entry, {
+          variables: entry.variables.map((variable) =>
+            variable.id === variableId ? { ...variable, ...patch } : variable
+          ),
+        });
+      })
+    );
+  }
+
+  function addSavedQrVariable(entryId: string): void {
+    setSavedQrs((current) =>
+      current.map((entry) => {
+        if (entry.id !== entryId) return entry;
+        return updateManualQrEntry(entry, {
+          variables: [
+            ...entry.variables,
+            createQrVariable({
+              name: getNextQrVariableName(entry.variables.map((variable) => variable.name)),
+            }),
+          ],
+        });
+      })
+    );
+  }
+
+  function removeSavedQrVariable(entryId: string, variableId: string): void {
+    setSavedQrs((current) =>
+      current.map((entry) => {
+        if (entry.id !== entryId) return entry;
+        if (entry.variables.length === 1) return entry;
+        return updateManualQrEntry(entry, {
+          variables: entry.variables.filter((variable) => variable.id !== variableId),
+        });
+      })
+    );
+  }
+
+  function handleDeleteSavedQr(): void {
+    if (!deleteTarget) return;
+
+    const deletedName = deleteTarget.name;
+    setSavedQrs((current) => current.filter((entry) => entry.id !== deleteTarget.id));
+    setExpandedSavedId((current) => (current === deleteTarget.id ? null : current));
+    setDeleteTarget(null);
+    showToast({ message: `"${deletedName}" deleted`, variant: 'success' });
+  }
+
   function collectDownloadableEntries(): ManualQrEntry[] {
     const entries = [...savedQrs];
     const trimmedName = draftName.trim();
     if (trimmedName) {
-      entries.push(createManualQrEntry(baseSurveyUrl, trimmedName, draftVariables));
+      entries.push(
+        createManualQrEntry(baseSurveyUrl, trimmedName, draftVariables, draftLockedUrl)
+      );
     }
     return entries;
   }
@@ -220,6 +376,25 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
     }
   }
 
+  function toggleBulkHistoryExpanded(id: string): void {
+    setExpandedBulkHistoryId((current) => (current === id ? null : id));
+  }
+
+  async function handleDownloadHistoryZip(entry: BulkQrGenerationHistoryEntry): Promise<void> {
+    setDownloadingHistoryId(entry.id);
+    try {
+      await mockDownloadBulkQrHistoryZip(entry);
+      showToast({
+        message: `Downloading ZIP with ${entry.urlCount} QR codes`,
+        variant: 'success',
+      });
+    } catch {
+      showToast({ message: 'Unable to download ZIP file', variant: 'error' });
+    } finally {
+      setDownloadingHistoryId(null);
+    }
+  }
+
   async function handleDownloadZip(): Promise<void> {
     if (!bulkSummary) {
       showToast({ message: 'Import a file to generate QR codes', variant: 'error' });
@@ -229,8 +404,11 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
     setIsDownloading(true);
     try {
       await mockDownloadQrCodeZip(bulkSummary);
+      const historyEntry = createBulkQrHistoryEntry(bulkSummary);
+      setBulkHistory((current) => [historyEntry, ...current]);
+      setExpandedBulkHistoryId(historyEntry.id);
       showToast({
-        message: `Downloading ZIP with ${bulkSummary.urlCount} QR codes`,
+        message: `Downloading ZIP with ${bulkSummary.urlCount} QR codes. Added to generation history.`,
         variant: 'success',
       });
     } catch {
@@ -238,6 +416,84 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
     } finally {
       setIsDownloading(false);
     }
+  }
+
+  function renderBulkGenerationHistory(): React.ReactNode {
+    return (
+      <div className={styles.bulkHistorySection}>
+        <div className={styles.bulkHistorySectionHeader}>
+          <p className={styles.bulkHistorySectionTitle}>Generation history</p>
+          <p className={styles.bulkHistorySectionHint}>
+            Previously generated bulk QR code files
+          </p>
+        </div>
+
+        <div className={styles.bulkHistoryList}>
+          {bulkHistory.map((entry) => {
+            const isSelected = expandedBulkHistoryId === entry.id;
+
+            return (
+              <div
+                key={entry.id}
+                className={`${styles.bulkHistoryCard} ${isSelected ? styles.bulkHistoryCardSelected : ''}`}
+              >
+                <button
+                  type="button"
+                  className={styles.bulkHistoryHeaderToggle}
+                  aria-expanded={isSelected}
+                  onClick={() => toggleBulkHistoryExpanded(entry.id)}
+                >
+                  <span className={`wm-history ${styles.bulkHistoryIcon}`} aria-hidden />
+                  <span className={styles.bulkHistoryFileName} title={entry.fileName}>
+                    {truncate(entry.fileName, 42)}
+                  </span>
+                  <span className={styles.bulkHistoryMeta}>
+                    {entry.urlCount} URL{entry.urlCount === 1 ? '' : 's'} ·{' '}
+                    {formatRelativeDate(entry.generatedAt)}
+                  </span>
+                  <span
+                    className={`${isSelected ? 'wm-chevron-down' : 'wm-chevron-right'} ${styles.bulkHistoryChevron}`}
+                    aria-hidden
+                  />
+                </button>
+
+                {isSelected ? (
+                  <div className={styles.bulkHistoryDetailPanel}>
+                    <dl className={styles.bulkHistorySummary}>
+                      <div className={styles.bulkHistorySummaryRow}>
+                        <dt>Generated</dt>
+                        <dd>
+                          {formatDate(entry.generatedAt)} ({formatRelativeDate(entry.generatedAt)})
+                        </dd>
+                      </div>
+                      <div className={styles.bulkHistorySummaryRow}>
+                        <dt>QR codes</dt>
+                        <dd>{entry.urlCount}</dd>
+                      </div>
+                      <div className={styles.bulkHistorySummaryRow}>
+                        <dt>Variables per row</dt>
+                        <dd>{entry.variableNames.length}</dd>
+                      </div>
+                    </dl>
+                    <div className={styles.bulkHistoryFooter}>
+                      <WuButton
+                        variant="secondary"
+                        onClick={() => void handleDownloadHistoryZip(entry)}
+                        disabled={downloadingHistoryId === entry.id}
+                      >
+                        {downloadingHistoryId === entry.id
+                          ? 'Preparing download…'
+                          : 'Download QR codes'}
+                      </WuButton>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   }
 
   function renderQrPreview(
@@ -343,7 +599,7 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
   const manualDownloadCount = collectDownloadableEntries().length;
 
   return (
-    <div className={styles.panel}>
+    <div ref={panelRef} className={styles.panel}>
       <div className={styles.content}>
         <header className={styles.header}>
           <h2 className={styles.title}>QR codes</h2>
@@ -370,48 +626,103 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
             className={`${styles.modeTab} ${mode === 'bulk' ? styles.modeTabActive : ''}`}
             onClick={() => setMode('bulk')}
           >
-            Bulk import
+            Bulk creation
           </button>
         </div>
 
         {mode === 'manual' ? (
           <div className={styles.manualPanel} role="tabpanel">
             {savedQrs.length > 0 ? (
-              <div className={styles.savedQrList}>
+              <div className={styles.savedQrSection}>
+                <div className={styles.savedQrSectionHeader}>
+                  <p className={styles.savedQrSectionTitle}>Saved QR codes</p>
+                  <p className={styles.savedQrSectionHint}>
+                    {savedQrs.length} saved · collapsed — expand to edit
+                  </p>
+                </div>
+                <div className={styles.savedQrList}>
                 {savedQrs.map((entry) => {
                   const isExpanded = expandedSavedId === entry.id;
                   const qrImageUrl = getQrCodeImageUrl(entry.surveyUrl);
+                  const isRecentlySaved = recentlySavedQrId === entry.id;
 
                   return (
-                    <div key={entry.id} className={styles.savedQrCard}>
-                      <button
-                        type="button"
-                        className={styles.savedQrHeader}
-                        aria-expanded={isExpanded}
-                        onClick={() => toggleSavedQrExpanded(entry.id)}
-                      >
-                        <span className={`wm-qr-code-2 ${styles.savedQrIcon}`} aria-hidden />
-                        <span className={styles.savedQrName}>{entry.name}</span>
-                        <span className={styles.savedQrMeta}>
-                          {entry.cid ? `cid: ${entry.cid}` : 'Base survey URL'}
-                        </span>
-                        <span
-                          className={`${isExpanded ? 'wm-chevron-down' : 'wm-chevron-right'} ${styles.savedQrChevron}`}
-                          aria-hidden
-                        />
-                      </button>
+                    <div
+                      key={entry.id}
+                      className={`${styles.savedQrCard} ${isRecentlySaved ? styles.savedQrCardRecent : ''}`}
+                    >
+                      <div className={styles.savedQrHeader}>
+                        <button
+                          type="button"
+                          className={styles.savedQrHeaderToggle}
+                          aria-expanded={isExpanded}
+                          onClick={() => toggleSavedQrExpanded(entry.id)}
+                        >
+                          <span className={`wm-qr-code-2 ${styles.savedQrIcon}`} aria-hidden />
+                          <span className={styles.savedQrName}>{entry.name}</span>
+                          <span className={styles.savedQrMeta}>
+                            {entry.cid ? `cid: ${entry.cid}` : 'Base survey URL'}
+                          </span>
+                          <span
+                            className={`${isExpanded ? 'wm-chevron-down' : 'wm-chevron-right'} ${styles.savedQrChevron}`}
+                            aria-hidden
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.savedQrDeleteBtn}
+                          aria-label={`Delete ${entry.name}`}
+                          onClick={() => setDeleteTarget(entry)}
+                        >
+                          <span className="wm-delete" aria-hidden />
+                        </button>
+                      </div>
                       {isExpanded ? (
                         <div className={styles.savedQrBody}>
+                          <label className={styles.nameLabel} htmlFor={`qr-name-${entry.id}`}>
+                            QR code name
+                          </label>
+                          <WuInput
+                            id={`qr-name-${entry.id}`}
+                            value={entry.name}
+                            onChange={(event) =>
+                              updateSavedQr(entry.id, { name: event.target.value })
+                            }
+                            variant="outlined"
+                          />
+                          {renderVariableEditor(
+                            entry.variables,
+                            (variableId, patch) =>
+                              updateSavedQrVariable(entry.id, variableId, patch),
+                            () => addSavedQrVariable(entry.id),
+                            (variableId) => removeSavedQrVariable(entry.id, variableId)
+                          )}
+                          <p className={styles.lockedUrlNote}>
+                            Survey URL and QR code stay the same after creation. You can update the
+                            name and variables without changing the link.
+                          </p>
                           {renderQrPreview(entry.surveyUrl, qrImageUrl, entry.id)}
                         </div>
                       ) : null}
                     </div>
                   );
                 })}
+                </div>
               </div>
             ) : null}
 
-            <div className={styles.activeQrCard}>
+            {savedQrs.length > 0 ? (
+              <div className={styles.newQrDivider} role="status" aria-live="polite">
+                <span className={styles.newQrDividerLine} aria-hidden />
+                <span className={styles.newQrDividerLabel}>Create another QR code below</span>
+                <span className={styles.newQrDividerLine} aria-hidden />
+              </div>
+            ) : null}
+
+            <div
+              ref={newDraftRef}
+              className={`${styles.activeQrCard} ${highlightNewDraft ? styles.activeQrCardHighlight : ''}`}
+            >
               <p className={styles.activeQrTitle}>New QR code</p>
 
               <label className={styles.nameLabel} htmlFor="qr-code-name">
@@ -431,6 +742,11 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
                 addDraftVariable,
                 removeDraftVariable
               )}
+
+              <p className={styles.lockedUrlNote}>
+                Survey URL and QR code are set when this QR is created. Editing variables updates
+                metadata only and does not change the link.
+              </p>
 
               {renderQrPreview(draftUrl, draftQrImageUrl, 'draft')}
 
@@ -474,7 +790,7 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
                 {isImporting ? 'Importing…' : 'Choose file'}
               </WuButton>
               <button type="button" className={styles.templateLink} onClick={handleTemplateDownload}>
-                Download template CSV
+                Download template
               </button>
             </div>
 
@@ -485,6 +801,8 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
                 <strong>{bulkSummary.variablesPerUrl} variables</strong> per row.
               </p>
             ) : null}
+
+            {renderBulkGenerationHistory()}
           </div>
         )}
 
@@ -503,6 +821,22 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
           )}
         </footer>
       </div>
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title="Delete QR code?"
+        description={
+          deleteTarget
+            ? `"${deleteTarget.name}" will be removed. This cannot be undone.`
+            : ''
+        }
+        confirmLabel="Delete"
+        variant="critical"
+        onConfirm={handleDeleteSavedQr}
+      />
     </div>
   );
 }

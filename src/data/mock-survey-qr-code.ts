@@ -1,4 +1,5 @@
 import { zipSync } from 'fflate';
+import { subDays } from 'date-fns';
 
 export type QrCodeModalMode = 'manual' | 'bulk';
 
@@ -28,6 +29,22 @@ export interface BulkQrImportSummary {
   fileName: string;
   variableNames: string[];
   rows: BulkQrImportRow[];
+}
+
+export interface BulkQrGeneratedUrl {
+  rowNumber: number;
+  cid: string;
+  surveyUrl: string;
+  variables: Record<string, string>;
+}
+
+export interface BulkQrGenerationHistoryEntry {
+  id: string;
+  fileName: string;
+  generatedAt: string;
+  urlCount: number;
+  variableNames: string[];
+  urls: BulkQrGeneratedUrl[];
 }
 
 export const QR_BULK_MANIFEST_FILENAME = 'qr-codes-manifest.csv';
@@ -81,9 +98,19 @@ function registerCidVariables(variableMap: Record<string, string>): string {
   return cid;
 }
 
-function buildSurveyUrlWithCid(baseUrl: string, cid: string): string {
+export function buildSurveyUrlWithCid(baseUrl: string, cid: string): string {
   const separator = baseUrl.includes('?') ? '&' : '?';
   return `${baseUrl}${separator}${QR_CONTACT_ID_PARAM}=${cid}`;
+}
+
+export function allocateManualQrUrl(
+  baseSurveyUrl: string
+): Pick<ManualQrEntry, 'cid' | 'surveyUrl'> {
+  const cid = generateCid();
+  return {
+    cid,
+    surveyUrl: buildSurveyUrlWithCid(baseSurveyUrl, cid),
+  };
 }
 
 function buildActiveVariableMap(
@@ -168,19 +195,36 @@ export function hasQrVariableValues(variables: QrUrlVariable[]): boolean {
 export function createManualQrEntry(
   baseSurveyUrl: string,
   name: string,
-  variables: QrUrlVariable[]
+  variables: QrUrlVariable[],
+  lockedUrl?: Pick<ManualQrEntry, 'cid' | 'surveyUrl'>
 ): ManualQrEntry {
   const clonedVariables = variables.map((variable) =>
     createQrVariable({ name: variable.name, value: variable.value })
   );
-  const surveyUrl = buildSurveyUrlWithVariables(baseSurveyUrl, clonedVariables);
+  const { cid, surveyUrl } = lockedUrl ?? allocateManualQrUrl(baseSurveyUrl);
 
   return {
     id: createQrVariable().id,
     name: name.trim(),
-    cid: extractCidFromSurveyUrl(surveyUrl),
+    cid,
     surveyUrl,
     variables: clonedVariables,
+  };
+}
+
+export function updateManualQrEntry(
+  entry: ManualQrEntry,
+  patch: {
+    name?: string;
+    variables?: QrUrlVariable[];
+  }
+): ManualQrEntry {
+  return {
+    ...entry,
+    name: patch.name !== undefined ? patch.name.trim() : entry.name,
+    variables: patch.variables
+      ? patch.variables.map((variable) => ({ ...variable }))
+      : entry.variables,
   };
 }
 
@@ -539,4 +583,301 @@ export function downloadBulkTemplateCsv(): void {
   link.click();
   link.remove();
   URL.revokeObjectURL(objectUrl);
+}
+
+export function createBulkQrHistoryEntry(
+  summary: BulkQrImportSummary
+): BulkQrGenerationHistoryEntry {
+  return {
+    id: createQrVariable().id,
+    fileName: summary.fileName,
+    generatedAt: new Date().toISOString(),
+    urlCount: summary.urlCount,
+    variableNames: [...summary.variableNames],
+    urls: summary.rows.map((row, index) => ({
+      rowNumber: index + 1,
+      cid: row.cid,
+      surveyUrl: row.surveyUrl,
+      variables: { ...row.variables },
+    })),
+  };
+}
+
+export function bulkQrHistoryEntryToImportSummary(
+  entry: BulkQrGenerationHistoryEntry
+): BulkQrImportSummary {
+  return {
+    urlCount: entry.urlCount,
+    variablesPerUrl: entry.variableNames.length,
+    fileName: entry.fileName,
+    variableNames: [...entry.variableNames],
+    rows: entry.urls.map((urlEntry) => ({
+      cid: urlEntry.cid,
+      surveyUrl: urlEntry.surveyUrl,
+      variables: { ...urlEntry.variables },
+    })),
+  };
+}
+
+export async function mockDownloadBulkQrHistoryZip(
+  entry: BulkQrGenerationHistoryEntry
+): Promise<void> {
+  await mockDownloadQrCodeZip(bulkQrHistoryEntryToImportSummary(entry));
+}
+
+function buildMockBulkGeneratedUrl(
+  baseSurveyUrl: string,
+  cid: string,
+  variables: Record<string, string>,
+  rowNumber: number
+): BulkQrGeneratedUrl {
+  return {
+    rowNumber,
+    cid,
+    surveyUrl: buildSurveyUrlWithCid(baseSurveyUrl, cid),
+    variables,
+  };
+}
+
+function buildMockBulkHistoryBatch(
+  baseSurveyUrl: string,
+  partial: {
+    fileName: string;
+    generatedAt: Date;
+    variableNames: string[];
+    rows: Array<{ cid: string; variables: Record<string, string> }>;
+  }
+): BulkQrGenerationHistoryEntry {
+  return {
+    id: createQrVariable().id,
+    fileName: partial.fileName,
+    generatedAt: partial.generatedAt.toISOString(),
+    urlCount: partial.rows.length,
+    variableNames: partial.variableNames,
+    urls: partial.rows.map((row, index) =>
+      buildMockBulkGeneratedUrl(baseSurveyUrl, row.cid, row.variables, index + 1)
+    ),
+  };
+}
+
+const MOCK_BULK_VARIABLE_NAMES = ['custom1', 'custom2', 'custom3', 'custom4', 'custom5'];
+
+export function getMockBulkQrGenerationHistory(
+  baseSurveyUrl: string
+): BulkQrGenerationHistoryEntry[] {
+  const now = new Date();
+
+  return [
+    buildMockBulkHistoryBatch(baseSurveyUrl, {
+      fileName: 'retail-locations-march.csv',
+      generatedAt: subDays(now, 12),
+      variableNames: MOCK_BULK_VARIABLE_NAMES,
+      rows: [
+        {
+          cid: 'a8k2m9xq4pn7vrwt',
+          variables: {
+            custom1: '1001',
+            custom2: 'email',
+            custom3: 'store-west',
+            custom4: 'en',
+            custom5: 'q1-invite',
+          },
+        },
+        {
+          cid: 'b3n7p1ks8wm2qhx5',
+          variables: {
+            custom1: '1002',
+            custom2: 'email',
+            custom3: 'store-east',
+            custom4: 'en',
+            custom5: 'q1-invite',
+          },
+        },
+        {
+          cid: 'c9r4t6vy1zl8jdf3',
+          variables: {
+            custom1: '1003',
+            custom2: 'sms',
+            custom3: 'mall-north',
+            custom4: 'en',
+            custom5: 'q1-invite',
+          },
+        },
+        {
+          cid: 'd2w8h5mk0xp9cnt7',
+          variables: {
+            custom1: '1004',
+            custom2: 'sms',
+            custom3: 'mall-south',
+            custom4: 'es',
+            custom5: 'q1-invite',
+          },
+        },
+        {
+          cid: 'e7j1q3nb6rs4gva8',
+          variables: {
+            custom1: '1005',
+            custom2: 'print',
+            custom3: 'airport-kiosk',
+            custom4: 'en',
+            custom5: 'q1-invite',
+          },
+        },
+        {
+          cid: 'f4m9c2tx7yk5bwh1',
+          variables: {
+            custom1: '1006',
+            custom2: 'print',
+            custom3: 'transit-hub',
+            custom4: 'fr',
+            custom5: 'q1-invite',
+          },
+        },
+        {
+          cid: 'g8p5v1nd3qu6jxr9',
+          variables: {
+            custom1: '1007',
+            custom2: 'email',
+            custom3: 'flagship-downtown',
+            custom4: 'en',
+            custom5: 'q1-invite',
+          },
+        },
+        {
+          cid: 'h1s6w4mb9tk2nyc5',
+          variables: {
+            custom1: '1008',
+            custom2: 'email',
+            custom3: 'pop-up-union-square-holiday-season-display',
+            custom4: 'en',
+            custom5: 'q1-invite',
+          },
+        },
+        {
+          cid: 'j5x3f8rq2vm7pld4',
+          variables: {
+            custom1: '1009',
+            custom2: 'partner',
+            custom3: 'reseller-west',
+            custom4: 'en',
+            custom5: '',
+          },
+        },
+        {
+          cid: 'k9t2h7nc4wb1mzs6',
+          variables: {
+            custom1: '1010',
+            custom2: 'partner',
+            custom3: 'reseller-east',
+            custom4: 'en',
+            custom5: 'q1-invite',
+          },
+        },
+      ],
+    }),
+    buildMockBulkHistoryBatch(baseSurveyUrl, {
+      fileName: 'event-booths-q2-rollout-with-extra-long-filename.csv',
+      generatedAt: subDays(now, 5),
+      variableNames: MOCK_BULK_VARIABLE_NAMES,
+      rows: [
+        {
+          cid: 'm3q8v1pk6rn4txw2',
+          variables: {
+            custom1: '2001',
+            custom2: 'event',
+            custom3: 'ces-booth',
+            custom4: 'en',
+            custom5: 'badge-scan',
+          },
+        },
+        {
+          cid: 'n7b2s9hm5wc3jyr8',
+          variables: {
+            custom1: '2002',
+            custom2: 'event',
+            custom3: 'sxsw-lounge',
+            custom4: 'en',
+            custom5: 'badge-scan',
+          },
+        },
+        {
+          cid: 'p1d6k4tn8qx2mvb7',
+          variables: {
+            custom1: '2003',
+            custom2: 'event',
+            custom3: 'hr-summit',
+            custom4: 'en',
+            custom5: 'badge-scan',
+          },
+        },
+        {
+          cid: 'q4f9r2wj7hp5nxc1',
+          variables: {
+            custom1: '2004',
+            custom2: 'event',
+            custom3: 'research-expo',
+            custom4: 'de',
+            custom5: 'badge-scan',
+          },
+        },
+        {
+          cid: 'r8m1t5vq3ks6pyh9',
+          variables: {
+            custom1: '2005',
+            custom2: 'event',
+            custom3: 'partner-day',
+            custom4: 'en',
+            custom5: 'badge-scan',
+          },
+        },
+        {
+          cid: 's2w7n4jb9rm1kxt5',
+          variables: {
+            custom1: '2006',
+            custom2: 'event',
+            custom3: 'customer-advisory-board',
+            custom4: 'en',
+            custom5: '',
+          },
+        },
+      ],
+    }),
+    buildMockBulkHistoryBatch(baseSurveyUrl, {
+      fileName: 'partner-channels.csv',
+      generatedAt: subDays(now, 2),
+      variableNames: MOCK_BULK_VARIABLE_NAMES,
+      rows: [
+        {
+          cid: 't6h3p8nk2vw4qrm7',
+          variables: {
+            custom1: '3001',
+            custom2: 'partner',
+            custom3: 'channel-alpha',
+            custom4: 'en',
+            custom5: 'wave-1',
+          },
+        },
+        {
+          cid: 'v9k5m2tx7qn1bwh4',
+          variables: {
+            custom1: '3002',
+            custom2: 'partner',
+            custom3: 'channel-beta',
+            custom4: 'en',
+            custom5: 'wave-1',
+          },
+        },
+        {
+          cid: 'w4n8r1pj6sk3mvt2',
+          variables: {
+            custom1: '3003',
+            custom2: 'partner',
+            custom3: 'channel-gamma',
+            custom4: 'pt',
+            custom5: 'wave-1',
+          },
+        },
+      ],
+    }),
+  ];
 }
