@@ -56,6 +56,8 @@ import {
   DEFAULT_CAPTCHA_QUESTION_TEXT,
 } from '@/data/mock-survey-detail';
 import { getQuestionTypePreview } from '@/data/mock-add-question-previews';
+import { SectionBlockOptionsButton } from '@/components/surveys/SectionBlockOptionsButton';
+import { BlockFlowModal } from '@/components/surveys/BlockFlowModal';
 import { LookupTableBulkConversionModal } from '@/components/surveys/LookupTableBulkConversionModal';
 import { LookupTableQuestionRow } from '@/components/surveys/LookupTableQuestionRow';
 import { DropdownQuestionRow } from '@/components/surveys/DropdownQuestionRow';
@@ -162,7 +164,9 @@ import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceF
 import {
   useSurveyWorkspaceSections,
   type SurveyQuestionTarget,
+  type QuestionCodeUpdate,
 } from '@/components/surveys/SurveyWorkspaceSectionsContext';
+import { useSurveyEditorBulkEdit } from '@/components/surveys/SurveyEditorBulkEditContext';
 import { getSurveyEditorSectionsStorageKey } from '@/data/survey-editor-persistence';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import styles from './SurveyEditorCanvas.module.css';
@@ -172,8 +176,19 @@ const WuButton = dynamic(
   { ssr: false }
 );
 
+const WuCheckbox = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCheckbox })),
+  { ssr: false }
+);
+
 interface SurveyEditorCanvasProps {
   detail: SurveyDetail;
+}
+
+function getAllQuestionKeys(sections: SurveySection[]): string[] {
+  return sections.flatMap((section) =>
+    section.questions.map((question) => `${section.id}:${question.id}`)
+  );
 }
 
 function cloneMatrix(matrix: SurveyMatrix): SurveyMatrix {
@@ -1093,10 +1108,17 @@ function SelectManyQuestionRow({
 export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   const { showToast } = useWuShowToast();
   const {
+    bulkEditModeEnabled,
+    selectAll,
+    setSelectAll,
+    setBulkEditQuestionCounts,
+  } = useSurveyEditorBulkEdit();
+  const {
     setWorkspaceSections,
     setWorkspaceLogic,
     registerRemoveQuestions,
     registerClearShowHideLogic,
+    registerUpdateQuestionCodes,
   } = useSurveyWorkspaceSections();
   const sectionsStorageKey = useMemo(
     () => getSurveyEditorSectionsStorageKey(detail.survey.id),
@@ -1107,6 +1129,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     cloneSections(detail.sections)
   );
   const [selectedQuestionKey, setSelectedQuestionKey] = useState<string | null>(null);
+  const [checkedQuestionKeys, setCheckedQuestionKeys] = useState<Record<string, boolean>>({});
   const [bulkEditTarget, setBulkEditTarget] = useState<{
     sectionId: string;
     questionId: string;
@@ -1149,6 +1172,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   } | null>(null);
   const [lookupTableBulkConversionOpen, setLookupTableBulkConversionOpen] = useState(false);
   const [surveyAgentOpen, setSurveyAgentOpen] = useState(false);
+  const [blockFlowOpen, setBlockFlowOpen] = useState(false);
   const [lookupTableBulkConversionConflicts, setLookupTableBulkConversionConflicts] = useState<
     LookupTableConversionLogicConflict[]
   >([]);
@@ -1195,6 +1219,85 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   useEffect(() => {
     setWorkspaceLogic(logicByQuestionKey);
   }, [logicByQuestionKey, setWorkspaceLogic]);
+
+  const totalQuestionCount = useMemo(
+    () => sections.reduce((count, section) => count + section.questions.length, 0),
+    [sections]
+  );
+
+  const selectedQuestionCount = useMemo(
+    () => Object.values(checkedQuestionKeys).filter(Boolean).length,
+    [checkedQuestionKeys]
+  );
+
+  useEffect(() => {
+    setBulkEditQuestionCounts(totalQuestionCount, selectedQuestionCount);
+  }, [selectedQuestionCount, setBulkEditQuestionCounts, totalQuestionCount]);
+
+  useEffect(() => {
+    if (!bulkEditModeEnabled) {
+      setCheckedQuestionKeys({});
+    }
+  }, [bulkEditModeEnabled]);
+
+  const prevSelectAll = useRef(selectAll);
+
+  useEffect(() => {
+    if (!bulkEditModeEnabled) {
+      prevSelectAll.current = selectAll;
+      return;
+    }
+    if (selectAll) {
+      setCheckedQuestionKeys(
+        Object.fromEntries(getAllQuestionKeys(sections).map((key) => [key, true]))
+      );
+    } else if (prevSelectAll.current) {
+      setCheckedQuestionKeys({});
+    }
+    prevSelectAll.current = selectAll;
+  }, [bulkEditModeEnabled, selectAll, sections]);
+
+  const handleQuestionCheckChange = useCallback(
+    (questionKey: string, checked: boolean) => {
+      setCheckedQuestionKeys((prev) => {
+        const next = { ...prev, [questionKey]: checked };
+        const allKeys = getAllQuestionKeys(sections);
+        const allChecked = allKeys.length > 0 && allKeys.every((key) => next[key]);
+        setSelectAll(allChecked);
+        return next;
+      });
+    },
+    [sections, setSelectAll]
+  );
+
+  const handleSectionCheckChange = useCallback(
+    (sectionId: string, checked: boolean) => {
+      const section = sections.find((item) => item.id === sectionId);
+      if (!section) return;
+
+      setCheckedQuestionKeys((prev) => {
+        const next = { ...prev };
+        for (const question of section.questions) {
+          next[`${sectionId}:${question.id}`] = checked;
+        }
+        const allKeys = getAllQuestionKeys(sections);
+        const allChecked = allKeys.length > 0 && allKeys.every((key) => next[key]);
+        setSelectAll(allChecked);
+        return next;
+      });
+    },
+    [sections, setSelectAll]
+  );
+
+  const isSectionChecked = useCallback(
+    (section: SurveySection) => {
+      if (section.questions.length === 0) return false;
+      return section.questions.every(
+        (question) => checkedQuestionKeys[`${section.id}:${question.id}`]
+      );
+    },
+    [checkedQuestionKeys]
+  );
 
   const removeQuestionsByTarget = useCallback(
     (targets: SurveyQuestionTarget[]) => {
@@ -1264,6 +1367,25 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     });
   }, []);
 
+  const updateQuestionCodesByTarget = useCallback((updates: QuestionCodeUpdate[]) => {
+    if (updates.length === 0) return;
+
+    const updateMap = new Map(
+      updates.map((update) => [`${update.sectionId}:${update.questionId}`, update.code])
+    );
+
+    setSections((prev) =>
+      prev.map((section) => ({
+        ...section,
+        questions: section.questions.map((question) => {
+          const key = `${section.id}:${question.id}`;
+          const nextCode = updateMap.get(key);
+          return nextCode !== undefined ? { ...question, code: nextCode } : question;
+        }),
+      }))
+    );
+  }, []);
+
   useEffect(() => {
     registerRemoveQuestions(removeQuestionsByTarget);
     return () => registerRemoveQuestions(null);
@@ -1273,6 +1395,11 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     registerClearShowHideLogic(clearShowHideLogicByTarget);
     return () => registerClearShowHideLogic(null);
   }, [registerClearShowHideLogic, clearShowHideLogicByTarget]);
+
+  useEffect(() => {
+    registerUpdateQuestionCodes(updateQuestionCodesByTarget);
+    return () => registerUpdateQuestionCodes(null);
+  }, [registerUpdateQuestionCodes, updateQuestionCodesByTarget]);
 
   useEffect(() => {
     const pending = pendingScrollQuestionRef.current;
@@ -3171,12 +3298,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
 
       <div className={styles.canvasMain}>
       <div className={styles.workspace}>
-        <div className={styles.titleCard}>
-          <button type="button" className={styles.addLogoBtn} onClick={() => toast('Add logo')}>
-            Add Logo
-          </button>
-          <h1 className={styles.title}>{detail.editorTitle}</h1>
-        </div>
+        {!bulkEditModeEnabled ? (
+          <div className={styles.titleCard}>
+            <button type="button" className={styles.addLogoBtn} onClick={() => toast('Add logo')}>
+              Add Logo
+            </button>
+            <h1 className={styles.title}>{detail.editorTitle}</h1>
+          </div>
+        ) : null}
 
         <div className={styles.addBlockRow}>
           <WuButton size="sm" variant="secondary" onClick={() => toast('Add block')}>
@@ -3185,19 +3314,26 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           </WuButton>
         </div>
 
-        {sections.map((section) => (
+        {sections.map((section, sectionIndex) => (
           <section key={section.id} className={styles.sectionCard}>
             <div className={styles.sectionBlockSurface}>
               <header className={styles.sectionHeader}>
-                <h2 className={styles.sectionTitle}>{section.title}</h2>
-                <button
-                  type="button"
-                  className={styles.menuBtn}
-                  aria-label="Block options"
-                  onClick={() => toast(`${section.title} block options`)}
-                >
-                  <span className="wm-more-vert" />
-                </button>
+                <div className={styles.sectionHeaderMain}>
+                  {bulkEditModeEnabled ? (
+                    <WuCheckbox
+                      checked={isSectionChecked(section)}
+                      onChange={(checked) => handleSectionCheckChange(section.id, checked)}
+                      aria-label={`Select ${section.title}`}
+                    />
+                  ) : null}
+                  <h2 className={styles.sectionTitle}>{section.title}</h2>
+                </div>
+                <SectionBlockOptionsButton
+                  sectionTitle={section.title}
+                  showBlockFlowHint={sectionIndex === 0}
+                  onBlockFlowSelect={() => setBlockFlowOpen(true)}
+                  onLearnMore={() => setBlockFlowOpen(true)}
+                />
               </header>
 
               <div className={styles.sectionQuestionCanvas}>
@@ -3330,6 +3466,20 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                             className={styles.questionCodeColumn}
                             onClick={() => setSelectedQuestionKey(questionKey)}
                           >
+                            {bulkEditModeEnabled ? (
+                              <div
+                                className={styles.questionBulkCheck}
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                <WuCheckbox
+                                  checked={Boolean(checkedQuestionKeys[questionKey])}
+                                  onChange={(checked) =>
+                                    handleQuestionCheckChange(questionKey, checked)
+                                  }
+                                  aria-label={`Select ${question.code}`}
+                                />
+                              </div>
+                            ) : null}
                             <QuestionCodeField
                               sectionId={section.id}
                               question={question}
@@ -4282,6 +4432,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         onRemoveLogic={handleRemoveLookupTableConflict}
         onSaveAsLookupTable={handleSaveAsLookupTable}
       />
+
+      <BlockFlowModal open={blockFlowOpen} onOpenChange={setBlockFlowOpen} />
 
       <ConfirmModal
         open={deleteQuestionTarget !== null}

@@ -104,6 +104,13 @@
   margin: 0;
 }
 
+.sectionHeaderMain {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
 .addBlockRow {
   display: flex;
   justify-content: center;
@@ -144,14 +151,17 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 0;
+  overflow: visible;
   padding: 0.625rem 1rem;
+  position: relative;
+  z-index: 2;
 }
 
 .sectionBlockSurface {
   background: #fff;
   border: 1px solid #d5dde6;
   border-radius: 2px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .sectionTitle {
@@ -246,9 +256,16 @@
   border-right: none;
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
   padding: 1rem 0.5rem 0.75rem;
   position: static;
   width: auto;
+}
+
+.questionBulkCheck {
+  align-items: center;
+  display: flex;
+  justify-content: center;
 }
 
 .questionBlockSelectMany .questionCodeColumn,

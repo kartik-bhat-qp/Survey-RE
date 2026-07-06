@@ -17,8 +17,13 @@ export interface SurveyQuestionTarget {
   questionId: string;
 }
 
+export interface QuestionCodeUpdate extends SurveyQuestionTarget {
+  code: string;
+}
+
 type RemoveQuestionsHandler = (targets: SurveyQuestionTarget[]) => void;
 type ClearShowHideLogicHandler = (targets: SurveyQuestionTarget[]) => void;
+type UpdateQuestionCodesHandler = (updates: QuestionCodeUpdate[]) => void;
 
 interface SurveyWorkspaceSectionsContextValue {
   sections: SurveySection[];
@@ -27,8 +32,10 @@ interface SurveyWorkspaceSectionsContextValue {
   setWorkspaceLogic: (logicByQuestionKey: Record<string, QuestionLogicState>) => void;
   registerRemoveQuestions: (handler: RemoveQuestionsHandler | null) => void;
   registerClearShowHideLogic: (handler: ClearShowHideLogicHandler | null) => void;
+  registerUpdateQuestionCodes: (handler: UpdateQuestionCodesHandler | null) => void;
   removeQuestions: (targets: SurveyQuestionTarget[]) => void;
   clearShowHideLogic: (targets: SurveyQuestionTarget[]) => void;
+  updateQuestionCodes: (updates: QuestionCodeUpdate[]) => void;
 }
 
 const SurveyWorkspaceSectionsContext =
@@ -41,6 +48,7 @@ export function SurveyWorkspaceSectionsProvider({ children }: { children: ReactN
   >({});
   const removeHandlerRef = useRef<RemoveQuestionsHandler | null>(null);
   const clearShowHideLogicHandlerRef = useRef<ClearShowHideLogicHandler | null>(null);
+  const updateQuestionCodesHandlerRef = useRef<UpdateQuestionCodesHandler | null>(null);
 
   const setWorkspaceSections = useCallback((next: SurveySection[]) => {
     setSections(next);
@@ -58,12 +66,20 @@ export function SurveyWorkspaceSectionsProvider({ children }: { children: ReactN
     clearShowHideLogicHandlerRef.current = handler;
   }, []);
 
+  const registerUpdateQuestionCodes = useCallback((handler: UpdateQuestionCodesHandler | null) => {
+    updateQuestionCodesHandlerRef.current = handler;
+  }, []);
+
   const removeQuestions = useCallback((targets: SurveyQuestionTarget[]) => {
     removeHandlerRef.current?.(targets);
   }, []);
 
   const clearShowHideLogic = useCallback((targets: SurveyQuestionTarget[]) => {
     clearShowHideLogicHandlerRef.current?.(targets);
+  }, []);
+
+  const updateQuestionCodes = useCallback((updates: QuestionCodeUpdate[]) => {
+    updateQuestionCodesHandlerRef.current?.(updates);
   }, []);
 
   const value = useMemo(
@@ -74,8 +90,10 @@ export function SurveyWorkspaceSectionsProvider({ children }: { children: ReactN
       setWorkspaceLogic,
       registerRemoveQuestions,
       registerClearShowHideLogic,
+      registerUpdateQuestionCodes,
       removeQuestions,
       clearShowHideLogic,
+      updateQuestionCodes,
     }),
     [
       sections,
@@ -84,8 +102,10 @@ export function SurveyWorkspaceSectionsProvider({ children }: { children: ReactN
       setWorkspaceLogic,
       registerRemoveQuestions,
       registerClearShowHideLogic,
+      registerUpdateQuestionCodes,
       removeQuestions,
       clearShowHideLogic,
+      updateQuestionCodes,
     ]
   );
 

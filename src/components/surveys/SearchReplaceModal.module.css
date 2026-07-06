@@ -1,0 +1,15 @@
+.field + .field {
+  margin-top: 1rem;
+}
+
+.fieldLabel {
+  color: #334155;
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin: 0 0 0.5rem;
+}
+
+.input {
+  width: 100%;
+}

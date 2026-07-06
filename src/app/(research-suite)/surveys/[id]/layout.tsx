@@ -6,6 +6,8 @@ import { SurveyAnalyticsSubNav } from '@/components/surveys/SurveyAnalyticsSubNa
 import { SurveyAnalyticsViewProvider } from '@/components/surveys/SurveyAnalyticsViewContext';
 import { SurveyEditorPhaseProvider, useSurveyEditorPhase } from '@/components/surveys/SurveyEditorPhaseContext';
 import { SurveyWorkspaceSectionsProvider } from '@/components/surveys/SurveyWorkspaceSectionsContext';
+import { SurveyEditorBulkEditProvider, useSurveyEditorBulkEdit } from '@/components/surveys/SurveyEditorBulkEditContext';
+import { SurveyEditorBulkEditToolbar } from '@/components/surveys/SurveyEditorBulkEditToolbar';
 import { SurveyEditorPhaseTabs } from '@/components/surveys/SurveyEditorPhaseTabs';
 import { SurveyDistributeSubNav } from '@/components/surveys/SurveyDistributeSubNav';
 import { SurveyDistributeViewProvider } from '@/components/surveys/SurveyDistributeViewContext';
@@ -24,6 +26,7 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
   const surveyId = Number(params.id);
   const { survey, ready } = useSurveyById(surveyId);
   const { activePhase } = useSurveyEditorPhase();
+  const { bulkEditModeEnabled, disableBulkEditMode } = useSurveyEditorBulkEdit();
 
   useEffect(() => {
     if (!ready || !survey) return;
@@ -44,6 +47,12 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
       }
     }
   }, [activePhase, pathname, ready, router, survey]);
+
+  useEffect(() => {
+    if (activePhase !== 'edit' && bulkEditModeEnabled) {
+      disableBulkEditMode();
+    }
+  }, [activePhase, bulkEditModeEnabled, disableBulkEditMode]);
 
   if (!ready) {
     return (
@@ -78,7 +87,10 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
       ) : showDistribute ? (
         <SurveyDistributeSubNav surveyId={survey.id} />
       ) : (
-        <SurveyEditorWorkspaceToolbar surveyId={survey.id} />
+        <>
+          <SurveyEditorWorkspaceToolbar surveyId={survey.id} />
+          {bulkEditModeEnabled ? <SurveyEditorBulkEditToolbar /> : null}
+        </>
       )}
       {children}
     </div>
@@ -91,13 +103,15 @@ export default function SurveyEditorLayout({ children }: { children: React.React
 
   return (
     <SurveyEditorPhaseProvider surveyId={surveyId}>
-      <SurveyWorkspaceSectionsProvider>
-        <SurveyAnalyticsViewProvider>
-          <SurveyDistributeViewProvider surveyId={surveyId}>
-            <SurveyEditorLayoutBody>{children}</SurveyEditorLayoutBody>
-          </SurveyDistributeViewProvider>
-        </SurveyAnalyticsViewProvider>
-      </SurveyWorkspaceSectionsProvider>
+      <SurveyEditorBulkEditProvider>
+        <SurveyWorkspaceSectionsProvider>
+          <SurveyAnalyticsViewProvider>
+            <SurveyDistributeViewProvider surveyId={surveyId}>
+              <SurveyEditorLayoutBody>{children}</SurveyEditorLayoutBody>
+            </SurveyDistributeViewProvider>
+          </SurveyAnalyticsViewProvider>
+        </SurveyWorkspaceSectionsProvider>
+      </SurveyEditorBulkEditProvider>
     </SurveyEditorPhaseProvider>
   );
 }

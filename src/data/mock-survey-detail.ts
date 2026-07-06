@@ -6,6 +6,10 @@ import {
   createCokeResearchSurveySections,
 } from '@/data/mock-coke-research-survey';
 import { NEW_BLANK_SURVEY_ID } from '@/data/mock-survey-creation-flow';
+import {
+  SURVEY_MENU_SURVEY_ID,
+  createSurveyMenuSections,
+} from '@/data/mock-survey-menu';
 
 export type SurveyQuestionInputKind = 'radio' | 'checkbox';
 
@@ -599,6 +603,14 @@ export function getSurveyDetail(survey: Survey): SurveyDetail {
       survey,
       editorTitle: COKE_RESEARCH_SURVEY_TITLE,
       sections: COKE_RESEARCH_SECTIONS,
+    };
+  }
+
+  if (survey.id === SURVEY_MENU_SURVEY_ID) {
+    return {
+      survey,
+      editorTitle: getSurveyEditorTitle(survey),
+      sections: createSurveyMenuSections(),
     };
   }
 

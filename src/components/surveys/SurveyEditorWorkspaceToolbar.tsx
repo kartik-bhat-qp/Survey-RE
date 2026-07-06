@@ -28,6 +28,13 @@ const WuSecondaryNavbar = dynamic(
   { ssr: false }
 );
 
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
+
+const SURVEY_VERSION_TOOLTIP = 'Survey Version';
+
 type PublishMode = 'draft' | 'publish';
 
 function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null {
@@ -201,6 +208,18 @@ export function SurveyEditorWorkspaceToolbar({
       <WuSecondaryNavbar Links={links} className={styles.navbar}>
         {showPublishArea ? (
           <div className={styles.publishArea}>
+            <WuTooltip content={SURVEY_VERSION_TOOLTIP} position="bottom">
+              <button
+                type="button"
+                className={styles.surveyVersionBtn}
+                aria-label={SURVEY_VERSION_TOOLTIP}
+                onClick={() =>
+                  showToast({ message: SURVEY_VERSION_TOOLTIP, variant: 'success' })
+                }
+              >
+                <span className="wm-history" aria-hidden />
+              </button>
+            </WuTooltip>
             <div className={styles.statusToggle} role="group" aria-label="Survey status">
               <button
                 type="button"

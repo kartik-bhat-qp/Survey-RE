@@ -50,6 +50,29 @@
   padding-right: 0.75rem;
 }
 
+.surveyVersionBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 2rem;
+  justify-content: center;
+  padding: 0;
+  width: 2rem;
+}
+
+.surveyVersionBtn span {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.surveyVersionBtn:hover {
+  color: #1b87e6;
+}
+
 .statusToggle {
   align-items: center;
   background: #e8edf2;
