@@ -10,6 +10,7 @@ import { SurveyEditorPhaseTabs } from '@/components/surveys/SurveyEditorPhaseTab
 import { SurveyDistributeSubNav } from '@/components/surveys/SurveyDistributeSubNav';
 import { SurveyDistributeViewProvider } from '@/components/surveys/SurveyDistributeViewContext';
 import { SurveyEditorWorkspaceToolbar } from '@/components/surveys/SurveyEditorWorkspaceToolbar';
+import { getCanonicalDistributePath, getDefaultDistributeRouteState } from '@/components/surveys/survey-distribute-navigation';
 import { getSurveyEditorPhasePath } from '@/components/surveys/survey-editor-navigation';
 import { readVideoAiReturnState } from '@/components/video-ai/videoAiNavigation';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -39,7 +40,7 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
         return;
       }
       if (activePhase === 'distribute') {
-        router.replace(getSurveyEditorPhasePath(survey.id, 'distribute'));
+        router.replace(getCanonicalDistributePath(survey.id, getDefaultDistributeRouteState()));
       }
     }
   }, [activePhase, pathname, ready, router, survey]);
@@ -92,7 +93,7 @@ export default function SurveyEditorLayout({ children }: { children: React.React
     <SurveyEditorPhaseProvider surveyId={surveyId}>
       <SurveyWorkspaceSectionsProvider>
         <SurveyAnalyticsViewProvider>
-          <SurveyDistributeViewProvider>
+          <SurveyDistributeViewProvider surveyId={surveyId}>
             <SurveyEditorLayoutBody>{children}</SurveyEditorLayoutBody>
           </SurveyDistributeViewProvider>
         </SurveyAnalyticsViewProvider>

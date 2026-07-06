@@ -6,18 +6,20 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
   buildSurveyUrlWithVariables,
   copyBrandedQrCodeToClipboard,
+  createManualQrEntry,
   createQrVariable,
   downloadBulkTemplateCsv,
   getNextQrVariableName,
   getQrCodeImageUrl,
+  mockDownloadManualQrCodes,
   mockDownloadQrCodeZip,
-  mockDownloadSingleQrCode,
   parseBulkQrImportFile,
   QR_BULK_IMPORT_ACCEPT,
   QR_LOGO_PATH,
   QR_VARIABLE_NAME_OPTIONS,
   SAMPLE_QR_VARIABLES,
   type BulkQrImportSummary,
+  type ManualQrEntry,
   type QrCodeModalMode,
   type QrUrlVariable,
 } from '@/data/mock-survey-qr-code';
@@ -46,41 +48,51 @@ function createInitialVariables(): QrUrlVariable[] {
   return SAMPLE_QR_VARIABLES.map((variable) => createQrVariable(variable));
 }
 
+function getDefaultDraftName(savedCount: number): string {
+  return `QR code ${savedCount + 1}`;
+}
+
 export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
   const { showToast } = useWuShowToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [mode, setMode] = useState<QrCodeModalMode>('single');
-  const [variables, setVariables] = useState<QrUrlVariable[]>(createInitialVariables);
+  const [mode, setMode] = useState<QrCodeModalMode>('manual');
+  const [savedQrs, setSavedQrs] = useState<ManualQrEntry[]>([]);
+  const [expandedSavedId, setExpandedSavedId] = useState<string | null>(null);
+  const [draftName, setDraftName] = useState(() => getDefaultDraftName(0));
+  const [draftVariables, setDraftVariables] = useState<QrUrlVariable[]>(createInitialVariables);
   const [bulkSummary, setBulkSummary] = useState<BulkQrImportSummary | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isCopyingQr, setIsCopyingQr] = useState(false);
+  const [copyingQrKey, setCopyingQrKey] = useState<string | null>(null);
 
-  const generatedUrl = useMemo(
-    () => buildSurveyUrlWithVariables(baseSurveyUrl, variables),
-    [baseSurveyUrl, variables]
+  const draftUrl = useMemo(
+    () => buildSurveyUrlWithVariables(baseSurveyUrl, draftVariables),
+    [baseSurveyUrl, draftVariables]
   );
 
-  const qrImageUrl = useMemo(() => getQrCodeImageUrl(generatedUrl), [generatedUrl]);
+  const draftQrImageUrl = useMemo(() => getQrCodeImageUrl(draftUrl), [draftUrl]);
 
-  function updateVariable(id: string, patch: Partial<Pick<QrUrlVariable, 'name' | 'value'>>): void {
-    setVariables((current) =>
+  function updateDraftVariable(
+    id: string,
+    patch: Partial<Pick<QrUrlVariable, 'name' | 'value'>>
+  ): void {
+    setDraftVariables((current) =>
       current.map((variable) => (variable.id === id ? { ...variable, ...patch } : variable))
     );
   }
 
-  function addVariable(): void {
-    setVariables((current) => [
+  function addDraftVariable(): void {
+    setDraftVariables((current) => [
       ...current,
       createQrVariable({ name: getNextQrVariableName(current.map((variable) => variable.name)) }),
     ]);
   }
 
-  function getVariableNameOptions(variable: QrUrlVariable) {
+  function getVariableNameOptions(variable: QrUrlVariable, allVariables: QrUrlVariable[]) {
     return QR_VARIABLE_NAME_OPTIONS.filter(
       (option) =>
         option.value === variable.name ||
-        !variables.some((entry) => entry.id !== variable.id && entry.name === option.value)
+        !allVariables.some((entry) => entry.id !== variable.id && entry.name === option.value)
     );
   }
 
@@ -91,42 +103,89 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
     );
   }
 
-  function removeVariable(id: string): void {
-    setVariables((current) =>
+  function removeDraftVariable(id: string): void {
+    setDraftVariables((current) =>
       current.length === 1 ? current : current.filter((variable) => variable.id !== id)
     );
   }
 
-  async function handleCopyUrl(): Promise<void> {
+  function handleCreateNewQr(): void {
+    const trimmedName = draftName.trim();
+    if (!trimmedName) {
+      showToast({ message: 'Enter a name for this QR code', variant: 'error' });
+      return;
+    }
+
+    const entry = createManualQrEntry(baseSurveyUrl, trimmedName, draftVariables);
+    setSavedQrs((current) => [...current, entry]);
+    setExpandedSavedId(null);
+    setDraftName(getDefaultDraftName(savedQrs.length + 1));
+    setDraftVariables(createInitialVariables());
+    showToast({ message: `"${entry.name}" saved`, variant: 'success' });
+  }
+
+  function toggleSavedQrExpanded(id: string): void {
+    setExpandedSavedId((current) => (current === id ? null : id));
+  }
+
+  function collectDownloadableEntries(): ManualQrEntry[] {
+    const entries = [...savedQrs];
+    const trimmedName = draftName.trim();
+    if (trimmedName) {
+      entries.push(createManualQrEntry(baseSurveyUrl, trimmedName, draftVariables));
+    }
+    return entries;
+  }
+
+  async function copyTextToClipboard(text: string, successMessage: string): Promise<void> {
     try {
-      await navigator.clipboard.writeText(generatedUrl);
-      showToast({ message: 'Survey URL copied', variant: 'success' });
+      await navigator.clipboard.writeText(text);
+      showToast({ message: successMessage, variant: 'success' });
     } catch {
       showToast({ message: 'Unable to copy URL', variant: 'error' });
     }
   }
 
-  async function handleCopyQrImage(): Promise<void> {
-    if (isCopyingQr) return;
+  async function handleCopyUrl(url: string): Promise<void> {
+    await copyTextToClipboard(url, 'Survey URL copied');
+  }
 
-    setIsCopyingQr(true);
+  async function handleCopyQrImage(url: string, copyKey: string): Promise<void> {
+    if (copyingQrKey) return;
+
+    setCopyingQrKey(copyKey);
     try {
-      await copyBrandedQrCodeToClipboard(generatedUrl);
+      await copyBrandedQrCodeToClipboard(url);
       showToast({ message: 'QR code copied to clipboard', variant: 'success' });
     } catch {
       showToast({ message: 'Unable to copy QR code', variant: 'error' });
     } finally {
-      setIsCopyingQr(false);
+      setCopyingQrKey(null);
     }
   }
 
-  async function handleDownloadSingleQr(): Promise<void> {
+  async function handleDownloadManualQrs(): Promise<void> {
+    const entries = collectDownloadableEntries();
+    if (entries.length === 0) {
+      showToast({ message: 'Create at least one QR code before downloading', variant: 'error' });
+      return;
+    }
+
     setIsDownloading(true);
     try {
-      await mockDownloadSingleQrCode(generatedUrl);
-      showToast({ message: 'QR code downloaded', variant: 'success' });
-    } catch {
-      showToast({ message: 'Unable to download QR code', variant: 'error' });
+      await mockDownloadManualQrCodes(entries);
+      showToast({
+        message:
+          entries.length === 1
+            ? 'QR code downloaded'
+            : `Downloading ZIP with ${entries.length} QR codes`,
+        variant: 'success',
+      });
+    } catch (error) {
+      showToast({
+        message: error instanceof Error ? error.message : 'Unable to download QR codes',
+        variant: 'error',
+      });
     } finally {
       setIsDownloading(false);
     }
@@ -144,10 +203,10 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
 
     setIsImporting(true);
     try {
-      const summary = await parseBulkQrImportFile(file);
+      const summary = await parseBulkQrImportFile(file, baseSurveyUrl);
       setBulkSummary(summary);
       showToast({
-        message: `Imported ${summary.urlCount} URLs with ${summary.variablesPerUrl} variables each`,
+        message: `Imported ${summary.urlCount} rows with ${summary.variablesPerUrl} variables each`,
         variant: 'success',
       });
     } catch (error) {
@@ -181,14 +240,116 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
     }
   }
 
+  function renderQrPreview(
+    surveyUrl: string,
+    qrImageUrl: string,
+    copyKey: string
+  ): React.ReactNode {
+    const isCopying = copyingQrKey === copyKey;
+
+    return (
+      <div className={styles.previewPanel}>
+        <div className={styles.qrPreview}>
+          <button
+            type="button"
+            className={styles.qrImageButton}
+            aria-label="Copy QR code to clipboard"
+            disabled={isCopying}
+            onClick={() => void handleCopyQrImage(surveyUrl, copyKey)}
+          >
+            <div className={styles.qrImageWrap}>
+              <img src={qrImageUrl} alt="" className={styles.qrImage} width={144} height={144} />
+              <div className={styles.qrLogoBadge} aria-hidden>
+                <img src={QR_LOGO_PATH} alt="" className={styles.qrLogoImage} />
+              </div>
+            </div>
+            <span className={styles.qrCopyHint}>
+              {isCopying ? 'Copying…' : 'Click to copy QR code'}
+            </span>
+          </button>
+        </div>
+        <div>
+          <span className={styles.urlPreviewLabel}>Generated survey URL</span>
+          <div className={styles.urlPreviewField}>
+            <span className={styles.urlPreviewText}>{surveyUrl}</span>
+            <button
+              type="button"
+              className={styles.urlCopyBtn}
+              aria-label="Copy generated survey URL"
+              onClick={() => void handleCopyUrl(surveyUrl)}
+            >
+              <span className="wm-content-copy" aria-hidden />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderVariableEditor(
+    variables: QrUrlVariable[],
+    onUpdate: (id: string, patch: Partial<Pick<QrUrlVariable, 'name' | 'value'>>) => void,
+    onAdd: () => void,
+    onRemove: (id: string) => void
+  ): React.ReactNode {
+    return (
+      <>
+        <p className={styles.sectionTitle}>Survey variables</p>
+        <div className={styles.variableTable}>
+          <div className={styles.variableRow}>
+            <span className={styles.variableHeader}>Variable name</span>
+            <span className={styles.variableHeader}>Value</span>
+            <span className={styles.variableHeader} aria-hidden />
+          </div>
+          {variables.map((variable) => (
+            <div key={variable.id} className={styles.variableRow}>
+              <WuSelect
+                className={styles.variableNameSelect}
+                data={getVariableNameOptions(variable, variables)}
+                accessorKey={{ value: 'value', label: 'label' }}
+                value={getSelectedVariableNameOption(variable)}
+                onSelect={(item) =>
+                  onUpdate(variable.id, {
+                    name: (item as (typeof QR_VARIABLE_NAME_OPTIONS)[number]).value,
+                  })
+                }
+                variant="outlined"
+              />
+              <WuInput
+                value={variable.value}
+                onChange={(event) => onUpdate(variable.id, { value: event.target.value })}
+                placeholder="Value"
+                variant="outlined"
+              />
+              <button
+                type="button"
+                className={styles.removeVarBtn}
+                aria-label={`Remove ${variable.name || 'variable'}`}
+                onClick={() => onRemove(variable.id)}
+                disabled={variables.length === 1}
+              >
+                <span className="wm-close" aria-hidden />
+              </button>
+            </div>
+          ))}
+        </div>
+        <button type="button" className={styles.addVarBtn} onClick={onAdd}>
+          + Add variable
+        </button>
+      </>
+    );
+  }
+
+  const manualDownloadCount = collectDownloadableEntries().length;
+
   return (
     <div className={styles.panel}>
       <div className={styles.content}>
         <header className={styles.header}>
           <h2 className={styles.title}>QR codes</h2>
           <p className={styles.intro}>
-            Generate a QR code from a survey URL with variables, or import a file with multiple
-            URLs and download a ZIP of QR codes.
+            Name and generate QR codes from a survey URL with variables, or import a CSV of
+            variables for this survey and download QR codes in bulk.
           </p>
         </header>
 
@@ -196,11 +357,11 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
           <button
             type="button"
             role="tab"
-            aria-selected={mode === 'single'}
-            className={`${styles.modeTab} ${mode === 'single' ? styles.modeTabActive : ''}`}
-            onClick={() => setMode('single')}
+            aria-selected={mode === 'manual'}
+            className={`${styles.modeTab} ${mode === 'manual' ? styles.modeTabActive : ''}`}
+            onClick={() => setMode('manual')}
           >
-            Single URL
+            Manual
           </button>
           <button
             type="button"
@@ -213,92 +374,77 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
           </button>
         </div>
 
-        {mode === 'single' ? (
-          <div role="tabpanel">
-            <p className={styles.sectionTitle}>Survey variables</p>
-            <div className={styles.variableTable}>
-              <div className={styles.variableRow}>
-                <span className={styles.variableHeader}>Variable name</span>
-                <span className={styles.variableHeader}>Value</span>
-                <span className={styles.variableHeader} aria-hidden />
-              </div>
-              {variables.map((variable) => (
-                <div key={variable.id} className={styles.variableRow}>
-                  <WuSelect
-                    className={styles.variableNameSelect}
-                    data={getVariableNameOptions(variable)}
-                    accessorKey={{ value: 'value', label: 'label' }}
-                    value={getSelectedVariableNameOption(variable)}
-                    onSelect={(item) =>
-                      updateVariable(variable.id, {
-                        name: (item as (typeof QR_VARIABLE_NAME_OPTIONS)[number]).value,
-                      })
-                    }
-                    variant="outlined"
-                  />
-                  <WuInput
-                    value={variable.value}
-                    onChange={(event) =>
-                      updateVariable(variable.id, { value: event.target.value })
-                    }
-                    placeholder="Value"
-                    variant="outlined"
-                  />
-                  <button
-                    type="button"
-                    className={styles.removeVarBtn}
-                    aria-label={`Remove ${variable.name || 'variable'}`}
-                    onClick={() => removeVariable(variable.id)}
-                    disabled={variables.length === 1}
-                  >
-                    <span className="wm-close" aria-hidden />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <button type="button" className={styles.addVarBtn} onClick={addVariable}>
-              + Add variable
-            </button>
+        {mode === 'manual' ? (
+          <div className={styles.manualPanel} role="tabpanel">
+            {savedQrs.length > 0 ? (
+              <div className={styles.savedQrList}>
+                {savedQrs.map((entry) => {
+                  const isExpanded = expandedSavedId === entry.id;
+                  const qrImageUrl = getQrCodeImageUrl(entry.surveyUrl);
 
-            <div className={styles.previewPanel}>
-              <div className={styles.qrPreview}>
-                <button
-                  type="button"
-                  className={styles.qrImageButton}
-                  aria-label="Copy QR code to clipboard"
-                  disabled={isCopyingQr}
-                  onClick={() => void handleCopyQrImage()}
-                >
-                  <div className={styles.qrImageWrap}>
-                    <img
-                      src={qrImageUrl}
-                      alt=""
-                      className={styles.qrImage}
-                      width={144}
-                      height={144}
-                    />
-                    <div className={styles.qrLogoBadge} aria-hidden>
-                      <img src={QR_LOGO_PATH} alt="" className={styles.qrLogoImage} />
+                  return (
+                    <div key={entry.id} className={styles.savedQrCard}>
+                      <button
+                        type="button"
+                        className={styles.savedQrHeader}
+                        aria-expanded={isExpanded}
+                        onClick={() => toggleSavedQrExpanded(entry.id)}
+                      >
+                        <span className={`wm-qr-code-2 ${styles.savedQrIcon}`} aria-hidden />
+                        <span className={styles.savedQrName}>{entry.name}</span>
+                        <span className={styles.savedQrMeta}>
+                          {entry.cid ? `cid: ${entry.cid}` : 'Base survey URL'}
+                        </span>
+                        <span
+                          className={`${isExpanded ? 'wm-chevron-down' : 'wm-chevron-right'} ${styles.savedQrChevron}`}
+                          aria-hidden
+                        />
+                      </button>
+                      {isExpanded ? (
+                        <div className={styles.savedQrBody}>
+                          {renderQrPreview(entry.surveyUrl, qrImageUrl, entry.id)}
+                        </div>
+                      ) : null}
                     </div>
-                  </div>
-                  <span className={styles.qrCopyHint}>
-                    {isCopyingQr ? 'Copying…' : 'Click to copy QR code'}
-                  </span>
-                </button>
+                  );
+                })}
               </div>
-              <div>
-                <span className={styles.urlPreviewLabel}>Generated survey URL</span>
-                <div className={styles.urlPreviewField}>
-                  <span className={styles.urlPreviewText}>{generatedUrl}</span>
-                  <button
-                    type="button"
-                    className={styles.urlCopyBtn}
-                    aria-label="Copy generated survey URL"
-                    onClick={() => void handleCopyUrl()}
-                  >
-                    <span className="wm-content-copy" aria-hidden />
-                  </button>
-                </div>
+            ) : null}
+
+            <div className={styles.activeQrCard}>
+              <p className={styles.activeQrTitle}>New QR code</p>
+
+              <label className={styles.nameLabel} htmlFor="qr-code-name">
+                QR code name
+              </label>
+              <WuInput
+                id="qr-code-name"
+                value={draftName}
+                onChange={(event) => setDraftName(event.target.value)}
+                placeholder="e.g. Store front display"
+                variant="outlined"
+              />
+
+              {renderVariableEditor(
+                draftVariables,
+                updateDraftVariable,
+                addDraftVariable,
+                removeDraftVariable
+              )}
+
+              {renderQrPreview(draftUrl, draftQrImageUrl, 'draft')}
+
+              <div className={styles.activeQrFooter}>
+                <WuButton
+                  onClick={() => void handleDownloadManualQrs()}
+                  disabled={manualDownloadCount === 0 || isDownloading}
+                >
+                  {isDownloading
+                    ? 'Preparing download…'
+                    : manualDownloadCount <= 1
+                      ? 'Download QR code'
+                      : 'Download QR codes'}
+                </WuButton>
               </div>
             </div>
           </div>
@@ -306,10 +452,10 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
           <div className={styles.bulkPanel} role="tabpanel">
             <div className={styles.uploadBox}>
               <span className={`wm-upload-file ${styles.uploadIcon}`} aria-hidden />
-              <p className={styles.uploadTitle}>Import URLs with variables</p>
+              <p className={styles.uploadTitle}>Import variables</p>
               <p className={styles.uploadHint}>
-                Upload a CSV with one survey URL per row and one column per variable. For example,
-                50 rows can produce 50 QR codes with 5 variables appended to each URL.
+                Upload a CSV with one row per QR code and one column per variable. Each row
+                generates a QR code for this survey using the values in that row.
               </p>
               <input
                 ref={fileInputRef}
@@ -336,16 +482,16 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
               <p className={styles.importSummary}>
                 Ready to generate <strong>{bulkSummary.urlCount} QR codes</strong> from{' '}
                 <strong>{bulkSummary.fileName}</strong> with{' '}
-                <strong>{bulkSummary.variablesPerUrl} variables</strong> per URL.
+                <strong>{bulkSummary.variablesPerUrl} variables</strong> per row.
               </p>
             ) : null}
           </div>
         )}
 
         <footer className={styles.footer}>
-          {mode === 'single' ? (
-            <WuButton onClick={() => void handleDownloadSingleQr()} disabled={isDownloading}>
-              {isDownloading ? 'Downloading…' : 'Download QR code'}
+          {mode === 'manual' ? (
+            <WuButton variant="secondary" onClick={handleCreateNewQr}>
+              Create new QR
             </WuButton>
           ) : (
             <WuButton

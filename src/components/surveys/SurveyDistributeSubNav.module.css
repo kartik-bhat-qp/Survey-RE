@@ -51,6 +51,7 @@
   cursor: pointer;
   font: inherit;
   padding: 0;
+  text-decoration: none;
 }
 
 .channelLink:hover:not(:global(.wu-secondary-nav-active-link)) {

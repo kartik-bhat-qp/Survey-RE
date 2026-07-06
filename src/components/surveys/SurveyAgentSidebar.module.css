@@ -1,3 +1,73 @@
+.sidebarShell {
+  display: flex;
+  flex-shrink: 0;
+  min-height: 0;
+}
+
+.historyPanel {
+  background: #eef6fd;
+  border-right: 1px solid #bfdbfe;
+  display: flex;
+  flex: 0 0 11.5rem;
+  flex-direction: column;
+  max-width: 11.5rem;
+  min-height: 0;
+  min-width: 11.5rem;
+  overflow-y: auto;
+  width: 11.5rem;
+}
+
+.historyEmpty {
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  margin: 0;
+  padding: 1rem 0.75rem;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  padding: 0.375rem 0;
+}
+
+.historyItem {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  width: 100%;
+}
+
+.historyItem:hover {
+  background: rgb(255 255 255 / 55%);
+}
+
+.historyItemActive {
+  background: #dbeafe;
+}
+
+.historyItemTitle {
+  color: #1e3a5f;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.historyItemMeta {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+}
+
 .sidebar {
   background: #f4f6f8;
   border-right: 1px solid #e2e8f0;
@@ -27,6 +97,17 @@
   display: flex;
   gap: 0.5rem;
   min-width: 0;
+}
+
+.headerLeading {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.headerHistoryBtnActive {
+  background: rgb(255 255 255 / 20%);
 }
 
 .headerTitle {
@@ -128,6 +209,40 @@
   margin: 0;
 }
 
+.messageList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.userMessage,
+.assistantMessage {
+  border-radius: 0.5rem;
+  max-width: 100%;
+  padding: 0.75rem;
+}
+
+.userMessage {
+  align-self: flex-end;
+  background: #dbeafe;
+  border: 1px solid #bfdbfe;
+}
+
+.assistantMessage {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+}
+
+.messageText {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
 .exampleList {
   display: flex;
   flex-direction: column;
@@ -207,8 +322,183 @@
 .footer {
   background: #f4f6f8;
   border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
   flex-shrink: 0;
+  gap: 0.5rem;
   padding: 0.75rem 0.875rem 0.875rem;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.attachmentTray {
+  background: #fff;
+  border: 1px solid #dbe3ec;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem 0.5rem 0.625rem;
+}
+
+.attachmentTrayHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.attachmentCount {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.clearAttachmentsBtn {
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  padding: 0;
+}
+
+.clearAttachmentsBtn:hover {
+  text-decoration: underline;
+}
+
+.imageAttachmentStrip {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  overflow-x: auto;
+  padding: 0.125rem 0.125rem 0.25rem;
+  scrollbar-width: thin;
+}
+
+.imageAttachmentStrip::-webkit-scrollbar {
+  height: 0.25rem;
+}
+
+.imageAttachmentStrip::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.imageAttachmentItem {
+  flex-shrink: 0;
+  height: 3.25rem;
+  position: relative;
+  width: 3.25rem;
+}
+
+.imageAttachmentThumb {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.imageAttachmentRemove {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 12%);
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.125rem;
+  justify-content: center;
+  position: absolute;
+  right: -0.3125rem;
+  top: -0.3125rem;
+  width: 1.125rem;
+}
+
+.imageAttachmentRemove:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.imageAttachmentRemove span {
+  font-size: 0.6875rem;
+  line-height: 1;
+}
+
+.fileAttachmentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  max-height: 4.75rem;
+  overflow-y: auto;
+  padding: 0;
+  scrollbar-width: thin;
+}
+
+.fileAttachmentItem {
+  align-items: center;
+  background: #f8fafc;
+  border-radius: 0.25rem;
+  display: grid;
+  gap: 0.375rem;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  padding: 0.3125rem 0.375rem;
+}
+
+.fileAttachmentItem span[aria-hidden] {
+  color: #64748b;
+  font-size: 0.875rem;
+  line-height: 1;
+}
+
+.fileAttachmentName {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileAttachmentSize {
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.625rem;
+  white-space: nowrap;
+}
+
+.fileAttachmentRemove {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.25rem;
+  justify-content: center;
+  width: 1.25rem;
+}
+
+.fileAttachmentRemove:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.fileAttachmentRemove span {
+  font-size: 0.75rem;
+  line-height: 1;
 }
 
 .inputWrap {
@@ -274,6 +564,13 @@
 }
 
 @media (max-width: 900px) {
+  .historyPanel {
+    flex: 0 0 min(100%, 10rem);
+    max-width: min(100%, 10rem);
+    min-width: min(100%, 10rem);
+    width: min(100%, 10rem);
+  }
+
   .sidebar {
     flex: 0 0 min(100%, 20rem);
     max-width: min(100%, 20rem);

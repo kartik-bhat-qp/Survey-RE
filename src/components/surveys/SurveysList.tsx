@@ -12,6 +12,7 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatDate, formatNumber, formatRelativeDate } from '@/data/mock-utils';
 import type { Survey, SurveyStatus } from '@/data/mock-surveys';
+import { getSurveyEditorPhasePath } from '@/components/surveys/survey-editor-navigation';
 import styles from './SurveysList.module.css';
 
 const WuButton = dynamic(
@@ -94,7 +95,7 @@ function SurveyRowActions({ survey }: { survey: Survey }) {
         variant="iconOnly"
         Icon={<span className="wm-send" />}
         aria-label="Distribute"
-        onClick={() => action('Distribute')}
+        onClick={() => router.push(getSurveyEditorPhasePath(survey.id, 'distribute'))}
       />
       <WuButton
         size="sm"

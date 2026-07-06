@@ -3,7 +3,9 @@
 import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { NavLink } from '@/components/surveys/NavLink';
 import { useSurveyDistributeView } from '@/components/surveys/SurveyDistributeViewContext';
+import { getDistributeChannelPath } from '@/components/surveys/survey-distribute-navigation';
 import {
   DISTRIBUTE_CHANNELS,
   getSurveyDistributionUrl,
@@ -21,27 +23,25 @@ interface SurveyDistributeSubNavProps {
 
 export function SurveyDistributeSubNav({ surveyId }: SurveyDistributeSubNavProps) {
   const { showToast } = useWuShowToast();
-  const { activeChannel, setActiveChannel } = useSurveyDistributeView();
+  const { activeChannel } = useSurveyDistributeView();
   const surveyUrl = getSurveyDistributionUrl(surveyId);
 
   const links = useMemo(
     () =>
       DISTRIBUTE_CHANNELS.map((channel) => ({
         link: (
-          <button
-            type="button"
-            className={`${styles.channelLink} ${
-              activeChannel === channel.id ? 'wu-secondary-nav-active-link' : ''
-            }`}
-            aria-current={activeChannel === channel.id ? 'page' : undefined}
-            onClick={() => setActiveChannel(channel.id)}
+          <NavLink
+            href={getDistributeChannelPath(surveyId, channel.id)}
+            active={activeChannel === channel.id}
+            variant="secondary"
+            className={styles.channelLink}
           >
             {channel.label}
-          </button>
+          </NavLink>
         ),
         imgOrIcon: <span className={`${channel.icon} ${styles.channelIcon}`} aria-hidden />,
       })),
-    [activeChannel, setActiveChannel]
+    [activeChannel, surveyId]
   );
 
   return (

@@ -1,13 +1,17 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { WuLoaderWrapper } from '@/components/ui/WuLoaderWrapper';
+import { useParams } from 'next/navigation';
 import { ComposeEmailToolbar } from '@/components/surveys/ComposeEmailToolbar';
 import { ComposeHelpMeWrite } from '@/components/surveys/ComposeHelpMeWrite';
 import { ComposeRecipientsField } from '@/components/surveys/ComposeRecipientsField';
+import { NavLink } from '@/components/surveys/NavLink';
+import { SurveyAgentSidebar } from '@/components/surveys/SurveyAgentSidebar';
+import { getDistributeChannelPath } from '@/components/surveys/survey-distribute-navigation';
 import {
   DEFAULT_EMAIL_COMPOSE,
   EMAIL_SIDEBAR_ITEMS,
@@ -18,8 +22,18 @@ import {
   MOCK_REPLY_TO_OPTIONS,
   SMS_SEGMENT_CHAR_LIMIT,
   getSmsSegmentUsage,
+  readComposeBodySelection,
+  type ComposeWritingSelection,
   type EmailSidebarId,
 } from '@/data/mock-survey-distribute';
+import {
+  DISTRIBUTE_EMAIL_AI_CAPABILITY_PILLS,
+  DISTRIBUTE_EMAIL_AI_EXAMPLE_PROMPTS,
+  DISTRIBUTE_EMAIL_AI_GREETING,
+  generateDistributeEmailFromAiPrompt,
+  RESEARCH_AGENT_DISTRIBUTE_BASE_CONTEXT_TOKENS,
+  type SurveyAiGenerationResult,
+} from '@/data/mock-survey-ai-agent';
 import styles from './SurveyDistributeCompose.module.css';
 
 const WuSelect = dynamic(
@@ -49,15 +63,19 @@ const SMS_TOOLBAR_ACTIONS = [
 ] as const;
 
 interface SurveyEmailComposePanelProps {
+  surveyId: number;
   activeSidebar: EmailSidebarId;
-  onSidebarChange: (item: EmailSidebarId) => void;
 }
 
 export function SurveyEmailComposePanel({
+  surveyId,
   activeSidebar,
-  onSidebarChange,
 }: SurveyEmailComposePanelProps) {
+  const params = useParams();
+  const routeSurveyId = Number(params.id);
+  const resolvedSurveyId = Number.isFinite(routeSurveyId) ? routeSurveyId : surveyId;
   const { showToast } = useWuShowToast();
+  const bodyFieldRef = useRef<HTMLTextAreaElement>(null);
   const [selectedList, setSelectedList] = useState<typeof MOCK_EMAIL_LISTS[number] | null>(null);
   const [recipientEmails, setRecipientEmails] = useState<string[]>([]);
   const [selectedSender, setSelectedSender] = useState(MOCK_EMAIL_SENDERS[0] ?? null);
@@ -71,6 +89,8 @@ export function SurveyEmailComposePanel({
   const [smsEnabled, setSmsEnabled] = useState(DEFAULT_EMAIL_COMPOSE.smsEnabled);
   const [helpMeWriteOpen, setHelpMeWriteOpen] = useState(false);
   const [isWritingWithAi, setIsWritingWithAi] = useState(false);
+  const [researchAgentOpen, setResearchAgentOpen] = useState(false);
+  const [bodySelection, setBodySelection] = useState<ComposeWritingSelection | null>(null);
 
   const sidebarPlaceholder = useMemo(() => {
     const item = EMAIL_SIDEBAR_ITEMS.find((entry) => entry.id === activeSidebar);
@@ -99,21 +119,55 @@ export function SurveyEmailComposePanel({
     showToast({ message: label, variant: 'info' });
   }
 
+  function updateBodySelection(): void {
+    setBodySelection(readComposeBodySelection(bodyFieldRef.current));
+  }
+
+  const handleResearchAgentSubmit = useCallback(
+    async (prompt: string) => generateDistributeEmailFromAiPrompt(prompt, subject, body),
+    [body, subject]
+  );
+
+  function handleResearchAgentGenerated(result: SurveyAiGenerationResult): void {
+    if (result.subject) {
+      setSubject(result.subject);
+    }
+    if (result.body) {
+      setBody(result.body);
+    }
+    if (result.smsBody) {
+      setSmsBody(result.smsBody);
+      setSmsEnabled(true);
+    }
+  }
+
   return (
     <div className={styles.workspace}>
+      <SurveyAgentSidebar
+        open={researchAgentOpen}
+        surveyId={surveyId}
+        agentContext="distribute-email"
+        onClose={() => setResearchAgentOpen(false)}
+        onSubmit={handleResearchAgentSubmit}
+        onGenerated={handleResearchAgentGenerated}
+        greeting={DISTRIBUTE_EMAIL_AI_GREETING}
+        examplePrompts={DISTRIBUTE_EMAIL_AI_EXAMPLE_PROMPTS}
+        capabilityPills={DISTRIBUTE_EMAIL_AI_CAPABILITY_PILLS}
+        aboutMessage="Research agent helps you craft and improve survey invitations with AI"
+        baseContextTokens={RESEARCH_AGENT_DISTRIBUTE_BASE_CONTEXT_TOKENS}
+      />
       <nav className={styles.sidebar} aria-label="Email distribution">
         {EMAIL_SIDEBAR_ITEMS.map((item) => (
-          <button
+          <NavLink
             key={item.id}
-            type="button"
+            href={getDistributeChannelPath(resolvedSurveyId, 'email', item.id)}
+            active={activeSidebar === item.id}
             className={`${styles.sidebarItem} ${
               activeSidebar === item.id ? styles.sidebarItemActive : ''
             }`}
-            aria-current={activeSidebar === item.id ? 'page' : undefined}
-            onClick={() => onSidebarChange(item.id)}
           >
             {item.label}
-          </button>
+          </NavLink>
         ))}
       </nav>
 
@@ -214,9 +268,13 @@ export function SurveyEmailComposePanel({
                       message="Updating your message…"
                     >
                       <textarea
+                        ref={bodyFieldRef}
                         className={styles.bodyField}
                         value={body}
                         onChange={(event) => setBody(event.target.value)}
+                        onSelect={updateBodySelection}
+                        onMouseUp={updateBodySelection}
+                        onKeyUp={updateBodySelection}
                         rows={12}
                         aria-label="Email body"
                         disabled={isWritingWithAi}
@@ -228,6 +286,8 @@ export function SurveyEmailComposePanel({
                       onOpenChange={setHelpMeWriteOpen}
                       body={body}
                       subject={subject}
+                      bodyFieldRef={bodyFieldRef}
+                      bodySelection={bodySelection}
                       onBodyChange={setBody}
                       onSubjectChange={setSubject}
                       onGeneratingChange={setIsWritingWithAi}
@@ -379,18 +439,29 @@ export function SurveyEmailComposePanel({
               title={`${sidebarPlaceholder} is empty`}
               description="Distribution records will appear here in a future release."
               action={
-                <button
-                  type="button"
+                <NavLink
+                  href={getDistributeChannelPath(resolvedSurveyId, 'email', 'compose')}
                   className={styles.scheduleBtn}
-                  onClick={() => onSidebarChange('compose')}
                 >
                   Back to Compose
-                </button>
+                </NavLink>
               }
             />
           </div>
         )}
       </div>
+
+      {!researchAgentOpen ? (
+        <button
+          type="button"
+          className={styles.researchAgentFab}
+          aria-label="Open research agent"
+          title="Open research agent"
+          onClick={() => setResearchAgentOpen(true)}
+        >
+          <span className={`wc-ai ${styles.researchAgentFabIcon}`} aria-hidden />
+        </button>
+      ) : null}
     </div>
   );
 }

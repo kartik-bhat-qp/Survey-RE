@@ -288,7 +288,36 @@ export const COMPOSE_WRITING_ACTIONS: ComposeWritingAction[] = [
   },
 ];
 
-export const COMPOSE_WRITING_PROMPT_PLACEHOLDER = 'Describe how to change this message…';
+export const COMPOSE_WRITING_PROMPT_PLACEHOLDER = 'Describe how to change the highlighted text…';
+
+export interface ComposeWritingSelection {
+  start: number;
+  end: number;
+  text: string;
+}
+
+export function readComposeBodySelection(
+  textarea: HTMLTextAreaElement | null
+): ComposeWritingSelection | null {
+  if (!textarea) return null;
+
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  if (start === end) return null;
+
+  const text = textarea.value.slice(start, end);
+  if (!text.trim()) return null;
+
+  return { start, end, text };
+}
+
+export function applyComposeWritingSelection(
+  body: string,
+  selection: ComposeWritingSelection,
+  replacement: string
+): string {
+  return `${body.slice(0, selection.start)}${replacement}${body.slice(selection.end)}`;
+}
 
 export type ComposeWritingRequest =
   | { type: 'action'; actionId: ComposeWritingActionId }
@@ -418,52 +447,77 @@ function buildCustomPromptSubject(prompt: string, currentSubject: string): strin
   return currentSubject;
 }
 
+function transformSelectionForAction(actionId: ComposeWritingActionId, text: string): string {
+  const trimmed = text.trim();
+
+  switch (actionId) {
+    case 'proofread':
+      return buildProofreadBody(text);
+    case 'professional':
+      return trimmed
+        .replace(/\bhi\b/gi, 'Hello')
+        .replace(/\bthanks\b/gi, 'Thank you')
+        .replace(/\.\.\./g, '.')
+        .replace(/\s+$/g, '');
+    case 'formal':
+      return trimmed
+        .replace(/\bhello\b/gi, 'Greetings')
+        .replace(/\bthanks\b/gi, 'Thank you for your consideration')
+        .replace(/!/g, '.');
+    case 'friendly':
+      return trimmed
+        .replace(/\bhello\b/gi, 'Hi there')
+        .replace(/\bthank you\b/gi, 'Thanks so much');
+    case 'shorten': {
+      const firstSentence = trimmed.split(/(?<=[.!?])\s+/)[0]?.trim();
+      return firstSentence || trimmed;
+    }
+    case 'expand':
+      return `${trimmed} Your input helps us improve and make better decisions.`;
+    default:
+      return text;
+  }
+}
+
+function getSelectionActionSummary(actionId: ComposeWritingActionId): string {
+  switch (actionId) {
+    case 'proofread':
+      return 'Proofread complete for the highlighted text.';
+    case 'professional':
+      return 'Highlighted text rewritten in a professional tone.';
+    case 'formal':
+      return 'Highlighted text updated with formal language.';
+    case 'friendly':
+      return 'Highlighted text updated with a friendly tone.';
+    case 'shorten':
+      return 'Highlighted text shortened.';
+    case 'expand':
+      return 'Highlighted text expanded with more context.';
+    default:
+      return 'Highlighted text updated.';
+  }
+}
+
 export async function generateComposeWriting(
   request: ComposeWritingRequest,
-  current: { body: string; subject: string }
+  current: { body: string; subject: string },
+  selection?: ComposeWritingSelection
 ): Promise<ComposeWritingResult> {
   await new Promise((resolve) => {
     window.setTimeout(resolve, COMPOSE_WRITING_DELAY_MS);
   });
 
+  if (!selection) {
+    throw new Error('Highlight text in the email body first');
+  }
+
   if (request.type === 'action') {
-    switch (request.actionId) {
-      case 'proofread':
-        return {
-          body: buildProofreadBody(current.body),
-          summary: 'Proofread complete — grammar and punctuation updated.',
-        };
-      case 'professional':
-        return {
-          body: buildProfessionalBody(current.body),
-          subject: 'We value your feedback',
-          summary: 'Message rewritten in a professional tone.',
-        };
-      case 'formal':
-        return {
-          body: buildFormalBody(current.body),
-          subject: 'Invitation to Participate in Our Research Survey',
-          summary: 'Message updated with formal language.',
-        };
-      case 'friendly':
-        return {
-          body: buildFriendlyBody(current.body),
-          subject: 'We would love your feedback!',
-          summary: 'Message updated with a friendly tone.',
-        };
-      case 'shorten':
-        return {
-          body: buildShortenBody(current.body),
-          summary: 'Message shortened while keeping the survey link.',
-        };
-      case 'expand':
-        return {
-          body: buildExpandBody(current.body),
-          summary: 'Message expanded with more context.',
-        };
-      default:
-        return { body: current.body, summary: 'No changes applied.' };
-    }
+    const replacement = transformSelectionForAction(request.actionId, selection.text);
+
+    return {
+      body: applyComposeWritingSelection(current.body, selection, replacement),
+      summary: getSelectionActionSummary(request.actionId),
+    };
   }
 
   const trimmedPrompt = request.prompt.trim();
@@ -471,13 +525,17 @@ export async function generateComposeWriting(
     throw new Error('Enter a prompt to continue');
   }
 
-  const subject = buildCustomPromptSubject(trimmedPrompt, current.subject);
-  const body = buildCustomPromptBody(trimmedPrompt, current.body);
+  const replacement = buildCustomPromptBody(trimmedPrompt, selection.text);
+  const subject =
+    trimmedPrompt.toLowerCase().includes('subject') ||
+    trimmedPrompt.toLowerCase().includes('title')
+      ? buildCustomPromptSubject(trimmedPrompt, current.subject)
+      : current.subject;
 
   return {
-    body,
+    body: applyComposeWritingSelection(current.body, selection, replacement),
     subject: subject !== current.subject ? subject : undefined,
-    summary: 'Message updated based on your prompt.',
+    summary: 'Highlighted text updated based on your prompt.',
   };
 }
 

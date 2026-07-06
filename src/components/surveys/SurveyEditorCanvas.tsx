@@ -3165,6 +3165,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       <SurveyAgentSidebar
         open={surveyAgentOpen}
         surveyId={detail.survey.id}
+        agentContext="workspace"
         onClose={() => setSurveyAgentOpen(false)}
       />
 

@@ -1,8 +1,10 @@
 'use client';
 
+import { NavLink } from '@/components/surveys/NavLink';
 import { SurveyEmailComposePanel } from '@/components/surveys/SurveyDistributeCompose';
 import { SurveyQrCodePanel } from '@/components/surveys/SurveyQrCodePanel';
 import { useSurveyDistributeView } from '@/components/surveys/SurveyDistributeViewContext';
+import { getDistributeChannelPath } from '@/components/surveys/survey-distribute-navigation';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
   DISTRIBUTE_CHANNELS,
@@ -16,15 +18,14 @@ interface SurveyDistributeDashboardProps {
 }
 
 export function SurveyDistributeDashboard({ detail }: SurveyDistributeDashboardProps) {
-  const { activeChannel, activeEmailSidebar, setActiveEmailSidebar, setActiveChannel } =
-    useSurveyDistributeView();
+  const { activeChannel, activeEmailSidebar } = useSurveyDistributeView();
 
   if (activeChannel === 'email') {
     return (
       <div className={styles.shell}>
         <SurveyEmailComposePanel
+          surveyId={detail.survey.id}
           activeSidebar={activeEmailSidebar}
-          onSidebarChange={setActiveEmailSidebar}
         />
       </div>
     );
@@ -48,13 +49,12 @@ export function SurveyDistributeDashboard({ detail }: SurveyDistributeDashboardP
           title={`${channel?.label ?? 'Channel'} distribution`}
           description={`Send "${detail.editorTitle}" through ${channel?.label.toLowerCase() ?? 'this channel'} in a future release.`}
           action={
-            <button
-              type="button"
+            <NavLink
+              href={getDistributeChannelPath(detail.survey.id, 'email', 'compose')}
               className="text-sm text-[#1b87e6] underline"
-              onClick={() => setActiveChannel('email')}
             >
               Back to Email
-            </button>
+            </NavLink>
           }
         />
       </div>

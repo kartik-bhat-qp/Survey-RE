@@ -7,8 +7,11 @@ import {
   COMPOSE_WRITING_ACTIONS,
   COMPOSE_WRITING_PROMPT_PLACEHOLDER,
   generateComposeWriting,
+  readComposeBodySelection,
   type ComposeWritingActionId,
+  type ComposeWritingSelection,
 } from '@/data/mock-survey-distribute';
+import { truncate } from '@/data/mock-utils';
 import styles from './ComposeHelpMeWrite.module.css';
 
 const WuTooltip = dynamic(
@@ -17,6 +20,11 @@ const WuTooltip = dynamic(
 );
 
 const BAR_ACTIONS = COMPOSE_WRITING_ACTIONS.slice(0, 4);
+
+interface ComposeWritingSnapshot {
+  subject: string;
+  body: string;
+}
 
 interface ComposeHelpMeWriteTriggerProps {
   active: boolean;
@@ -49,6 +57,8 @@ interface ComposeHelpMeWriteProps {
   onOpenChange: (open: boolean) => void;
   body: string;
   subject: string;
+  bodyFieldRef: React.RefObject<HTMLTextAreaElement | null>;
+  bodySelection: ComposeWritingSelection | null;
   onBodyChange: (body: string) => void;
   onSubjectChange: (subject: string) => void;
   onGeneratingChange?: (isGenerating: boolean) => void;
@@ -59,6 +69,8 @@ export function ComposeHelpMeWrite({
   onOpenChange,
   body,
   subject,
+  bodyFieldRef,
+  bodySelection,
   onBodyChange,
   onSubjectChange,
   onGeneratingChange,
@@ -67,9 +79,23 @@ export function ComposeHelpMeWrite({
   const [customPrompt, setCustomPrompt] = useState('');
   const [activeActionId, setActiveActionId] = useState<ComposeWritingActionId | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [undoStack, setUndoStack] = useState<ComposeWritingSnapshot[]>([]);
 
   if (!open) {
     return null;
+  }
+
+  const hasSelection = Boolean(bodySelection?.text.trim());
+  const selectionPreview = bodySelection?.text.trim() ?? '';
+
+  function handleUndo(): void {
+    if (isGenerating || undoStack.length === 0) return;
+
+    const snapshot = undoStack[undoStack.length - 1];
+    setUndoStack((current) => current.slice(0, -1));
+    onBodyChange(snapshot.body);
+    onSubjectChange(snapshot.subject);
+    showToast({ message: 'Changes undone', variant: 'info' });
   }
 
   async function runGeneration(
@@ -78,6 +104,13 @@ export function ComposeHelpMeWrite({
       | { type: 'prompt'; prompt: string }
   ): Promise<void> {
     if (isGenerating) return;
+
+    const selection = readComposeBodySelection(bodyFieldRef.current);
+    if (!selection) {
+      showToast({ message: 'Highlight text in the email body first', variant: 'error' });
+      bodyFieldRef.current?.focus();
+      return;
+    }
 
     setIsGenerating(true);
     onGeneratingChange?.(true);
@@ -89,7 +122,8 @@ export function ComposeHelpMeWrite({
     }
 
     try {
-      const result = await generateComposeWriting(request, { body, subject });
+      const result = await generateComposeWriting(request, { body, subject }, selection);
+      setUndoStack((current) => [...current, { subject, body }]);
       onBodyChange(result.body);
       if (result.subject) {
         onSubjectChange(result.subject);
@@ -123,17 +157,28 @@ export function ComposeHelpMeWrite({
     <section className={styles.bar} aria-label="Help me write">
       <span className={`wm-edit ${styles.barPencil}`} aria-hidden />
 
-      <form className={styles.promptForm} onSubmit={handleCustomPromptSubmit}>
-        <input
-          type="text"
-          value={customPrompt}
-          onChange={(event) => setCustomPrompt(event.target.value)}
-          placeholder={COMPOSE_WRITING_PROMPT_PLACEHOLDER}
-          className={styles.promptInput}
-          disabled={isGenerating}
-          aria-label="Describe how to change this message"
-        />
-      </form>
+      <div className={styles.barMain}>
+        <p
+          className={hasSelection ? styles.selectionHint : styles.selectionHintMuted}
+          title={hasSelection ? selectionPreview : undefined}
+        >
+          {hasSelection
+            ? `Editing: "${truncate(selectionPreview, 56)}"`
+            : 'Highlight text in the email body to use these actions'}
+        </p>
+
+        <form className={styles.promptForm} onSubmit={handleCustomPromptSubmit}>
+          <input
+            type="text"
+            value={customPrompt}
+            onChange={(event) => setCustomPrompt(event.target.value)}
+            placeholder={COMPOSE_WRITING_PROMPT_PLACEHOLDER}
+            className={styles.promptInput}
+            disabled={isGenerating || !hasSelection}
+            aria-label="Describe how to change the highlighted text"
+          />
+        </form>
+      </div>
 
       <div className={styles.actionGroup} role="group" aria-label="Writing actions">
         {BAR_ACTIONS.map((action) => {
@@ -147,7 +192,7 @@ export function ComposeHelpMeWrite({
                 aria-label={action.label}
                 title={action.description}
                 onClick={() => handleActionClick(action.id)}
-                disabled={isGenerating}
+                disabled={isGenerating || !hasSelection}
               >
                 <span className={action.icon} aria-hidden />
               </button>
@@ -155,6 +200,18 @@ export function ComposeHelpMeWrite({
           );
         })}
       </div>
+
+      <WuTooltip content="Undo last change" position="top">
+        <button
+          type="button"
+          className={styles.undoBtn}
+          aria-label="Undo last change"
+          onClick={handleUndo}
+          disabled={isGenerating || undoStack.length === 0}
+        >
+          Undo
+        </button>
+      </WuTooltip>
 
       <button
         type="button"

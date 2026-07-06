@@ -4,12 +4,18 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import {
-  getDefaultDistributeChannel,
+  getDefaultDistributeRouteState,
+  getDistributeChannelPath,
+  parseDistributeRouteFromPathname,
+} from '@/components/surveys/survey-distribute-navigation';
+import {
   getDefaultEmailSidebarItem,
   type DistributeChannelId,
   type EmailSidebarId,
@@ -26,29 +32,76 @@ const SurveyDistributeViewContext = createContext<SurveyDistributeViewContextVal
   null
 );
 
-export function SurveyDistributeViewProvider({ children }: { children: ReactNode }) {
-  const [activeChannel, setActiveChannel] = useState<DistributeChannelId>(
-    getDefaultDistributeChannel()
+interface SurveyDistributeViewProviderProps {
+  children: ReactNode;
+  surveyId: number;
+}
+
+export function SurveyDistributeViewProvider({
+  children,
+  surveyId,
+}: SurveyDistributeViewProviderProps) {
+  const pathname = usePathname() ?? '';
+  const router = useRouter();
+  const routeFromPath =
+    parseDistributeRouteFromPathname(pathname, surveyId) ?? getDefaultDistributeRouteState();
+
+  const [activeChannel, setActiveChannelState] = useState<DistributeChannelId>(
+    routeFromPath.channel
   );
-  const [activeEmailSidebar, setActiveEmailSidebar] = useState<EmailSidebarId>(
-    getDefaultEmailSidebarItem()
+  const [activeEmailSidebar, setActiveEmailSidebarState] = useState<EmailSidebarId>(
+    routeFromPath.emailSidebar
   );
 
-  const handleSetActiveChannel = useCallback((channel: DistributeChannelId) => {
-    setActiveChannel(channel);
-    if (channel === 'email') {
-      setActiveEmailSidebar(getDefaultEmailSidebarItem());
-    }
-  }, []);
+  useEffect(() => {
+    setActiveChannelState(routeFromPath.channel);
+    setActiveEmailSidebarState(routeFromPath.emailSidebar);
+  }, [routeFromPath.channel, routeFromPath.emailSidebar]);
+
+  const setActiveChannel = useCallback(
+    (channel: DistributeChannelId) => {
+      const emailSidebar =
+        channel === 'email'
+          ? activeChannel === 'email'
+            ? activeEmailSidebar
+            : getDefaultEmailSidebarItem()
+          : getDefaultEmailSidebarItem();
+      const targetPath = getDistributeChannelPath(surveyId, channel, emailSidebar);
+
+      if (pathname !== targetPath) {
+        router.push(targetPath);
+      }
+
+      setActiveChannelState(channel);
+      if (channel === 'email') {
+        setActiveEmailSidebarState(emailSidebar);
+      }
+    },
+    [activeEmailSidebar, pathname, router, surveyId]
+  );
+
+  const setActiveEmailSidebar = useCallback(
+    (item: EmailSidebarId) => {
+      const targetPath = getDistributeChannelPath(surveyId, 'email', item);
+
+      if (pathname !== targetPath) {
+        router.push(targetPath);
+      }
+
+      setActiveChannelState('email');
+      setActiveEmailSidebarState(item);
+    },
+    [pathname, router, surveyId]
+  );
 
   const value = useMemo(
     () => ({
       activeChannel,
       activeEmailSidebar,
-      setActiveChannel: handleSetActiveChannel,
+      setActiveChannel,
       setActiveEmailSidebar,
     }),
-    [activeChannel, activeEmailSidebar, handleSetActiveChannel]
+    [activeChannel, activeEmailSidebar, setActiveChannel, setActiveEmailSidebar]
   );
 
   return (

@@ -1,4 +1,8 @@
 import type { SurveyEditorPhase } from '@/components/surveys/SurveyEditorPhaseContext';
+import {
+  getCanonicalDistributePath,
+  getDefaultDistributeRouteState,
+} from '@/components/surveys/survey-distribute-navigation';
 
 export function getSurveyEditorPhaseFromPathname(
   pathname: string,
@@ -20,7 +24,7 @@ export function getSurveyEditorPhasePath(
 ): string {
   const base = `/surveys/${surveyId}`;
   if (phase === 'distribute') {
-    return `${base}/distribute`;
+    return getCanonicalDistributePath(surveyId, getDefaultDistributeRouteState());
   }
   if (phase === 'analytics') {
     return `${base}/analytics`;
