@@ -3308,7 +3308,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         surveyId={detail.survey.id}
         agentContext="workspace"
         placement="left"
-        layout="parent"
+        layout="inline"
         onClose={() => setSurveyAgentOpen(false)}
       />
 

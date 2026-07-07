@@ -1,27 +1,49 @@
 .sidebarShell {
-  bottom: 0;
   display: flex;
   flex-shrink: 0;
   min-height: 0;
+}
+
+.sidebarShellViewport {
+  bottom: 0;
+  position: fixed;
   top: 0;
   z-index: 200;
 }
 
-.sidebarShellViewport {
-  position: fixed;
+.sidebarShellParent {
+  bottom: 0;
+  position: absolute;
+  top: 0;
+  z-index: 200;
 }
 
-.sidebarShellParent {
-  position: absolute;
+.sidebarShellInline {
+  align-self: stretch;
+  height: 100%;
+  max-height: 100%;
+  position: relative;
+}
+
+.sidebarShellInline .sidebar {
+  max-height: 100%;
 }
 
 .sidebarShellLeft {
   flex-direction: row-reverse;
-  left: 0;
 }
 
 .sidebarShellRight {
   flex-direction: row;
+}
+
+.sidebarShellViewport.sidebarShellLeft,
+.sidebarShellParent.sidebarShellLeft {
+  left: 0;
+}
+
+.sidebarShellViewport.sidebarShellRight,
+.sidebarShellParent.sidebarShellRight {
   right: 0;
 }
 

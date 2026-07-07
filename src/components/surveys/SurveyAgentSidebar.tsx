@@ -43,8 +43,8 @@ interface SurveyAgentSidebarProps {
   surveyId?: number;
   agentContext?: ResearchAgentContext;
   placement?: 'left' | 'right';
-  /** Viewport = full-height fixed overlay; parent = contained in nearest positioned ancestor. */
-  layout?: 'viewport' | 'parent';
+  /** Viewport/parent = overlay; inline = in-flow flex sibling that compresses content. */
+  layout?: 'viewport' | 'parent' | 'inline';
   onClose: () => void;
   onGenerated?: (result: SurveyAiGenerationResult) => void;
   onSubmit?: (prompt: string) => Promise<SurveyAiGenerationResult>;
@@ -53,6 +53,19 @@ interface SurveyAgentSidebarProps {
   capabilityPills?: typeof SURVEY_AI_CAPABILITY_PILLS;
   aboutMessage?: string;
   baseContextTokens?: number;
+}
+
+function getSidebarShellLayoutClass(
+  layout: 'viewport' | 'parent' | 'inline'
+): string {
+  switch (layout) {
+    case 'inline':
+      return styles.sidebarShellInline;
+    case 'parent':
+      return styles.sidebarShellParent;
+    default:
+      return styles.sidebarShellViewport;
+  }
 }
 
 function cloneHistorySessions(sessions: ResearchAgentChatSession[]): ResearchAgentChatSession[] {
@@ -341,9 +354,7 @@ export function SurveyAgentSidebar({
     <>
       <SurveyAgentThinkingOverlay open={isGenerating} />
       <div
-        className={`${styles.sidebarShell} ${
-          layout === 'parent' ? styles.sidebarShellParent : styles.sidebarShellViewport
-        } ${
+        className={`${styles.sidebarShell} ${getSidebarShellLayoutClass(layout)} ${
           placement === 'left' ? styles.sidebarShellLeft : styles.sidebarShellRight
         }`}
       >
