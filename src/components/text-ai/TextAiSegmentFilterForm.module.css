@@ -1,0 +1,350 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  font-family: 'Fira Sans', sans-serif;
+  gap: 14px;
+  height: 100%;
+  min-height: min(480px, calc(100dvh - 13rem));
+  padding: 8px 0 2px;
+}
+
+.form :where(button, input) {
+  font-family: inherit;
+}
+
+.topArea {
+  padding: 4px 0 10px;
+}
+
+.topFilters {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 28px;
+}
+
+.inlineField {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  color: #5f6b7a;
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.menuTrigger {
+  align-items: center;
+  background: #f5f7fb;
+  border: 1px solid #eef1f6;
+  color: #4b5563;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 13px;
+  height: 34px;
+  justify-content: space-between;
+  padding: 0 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.menuItem {
+  font-family: 'Fira Sans', sans-serif;
+}
+
+.topTrigger {
+  width: 240px;
+}
+
+.menuTriggerLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menuCaret {
+  color: #8d98aa;
+  flex-shrink: 0;
+  font-size: 16px;
+  margin-left: 8px;
+}
+
+.dateTrigger {
+  width: 240px;
+}
+
+.datePopover {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 280px;
+  padding: 4px 0;
+}
+
+.presetButton {
+  background: none;
+  border: none;
+  color: #253449;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.presetButton:hover {
+  background: #f3f6fa;
+}
+
+.customRange {
+  border-top: 1px solid #eef1f6;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.customRangeTitle {
+  color: #5f6b7a;
+  font-size: 12px;
+  margin: 0;
+}
+
+.customRangeInputs {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.dateInput {
+  background: #f5f7fb;
+  border: 1px solid #eef1f6;
+  color: #253449;
+  font: inherit;
+  font-size: 13px;
+  height: 34px;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.dateActions {
+  border-top: 1px solid #eef1f6;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 10px 12px 4px;
+}
+
+.dateActionLink {
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  padding: 0;
+}
+
+.addCriteriaButton {
+  align-items: center;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 13px;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 0;
+  width: fit-content;
+}
+
+.addCriteriaIcon {
+  align-items: center;
+  background: #8f98a6;
+  border-radius: 50%;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 11px;
+  height: 14px;
+  justify-content: center;
+  width: 14px;
+}
+
+.criteriaGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.orDivider {
+  align-items: center;
+  color: #8d98aa;
+  display: flex;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 10px 0;
+}
+
+.orDivider::before,
+.orDivider::after {
+  background: #e5e7eb;
+  content: '';
+  flex: 1;
+  height: 1px;
+}
+
+.criteriaGroup {
+  border: 1px solid #cfe6ff;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+
+.conditionRow {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 56px repeat(4, minmax(0, 1fr)) 72px;
+  min-height: 72px;
+  padding: 10px 12px;
+  position: relative;
+}
+
+.conditionRow::before {
+  background: #1b87e6;
+  border-radius: 2px 0 0 2px;
+  bottom: 0;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 4px;
+}
+
+.conditionLabel {
+  align-items: center;
+  color: #5f6b7a;
+  display: flex;
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 58px;
+  padding-left: 4px;
+}
+
+.conditionActions {
+  display: flex;
+  gap: 6px;
+  grid-column: -2 / -1;
+  justify-content: flex-end;
+  padding-top: 20px;
+}
+
+.conditionActionBtn {
+  align-items: center;
+  background: #f3f4f6;
+  border: 1px solid #eef1f6;
+  border-radius: 50%;
+  color: #536277;
+  cursor: pointer;
+  display: grid;
+  height: 28px;
+  place-items: center;
+  width: 28px;
+}
+
+.conditionActionBtn:hover {
+  background: #e9eef7;
+}
+
+.addOrButtonWrap {
+  border-top: 1px solid #eef1f6;
+  padding: 10px 12px;
+}
+
+.addOrButton {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 13px;
+  gap: 8px;
+  height: 36px;
+  justify-content: center;
+  width: 100%;
+}
+
+.addOrButton:hover {
+  background: #f8fafc;
+}
+
+.valueInput {
+  width: 100%;
+}
+
+.responseCountFooter {
+  align-items: center;
+  align-self: flex-end;
+  color: #64748b;
+  display: inline-flex;
+  gap: 4px;
+  margin-top: auto;
+  padding: 8px 0 0;
+}
+
+.responseCountLabel {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.responseCountValue {
+  color: #253449;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (max-width: 960px) {
+  .topFilters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .conditionRow {
+    grid-template-columns: 1fr;
+    padding-left: 16px;
+  }
+
+  .conditionLabel {
+    min-height: auto;
+    padding-left: 0;
+  }
+
+  .conditionActions {
+    justify-content: flex-end;
+    padding-top: 0;
+  }
+
+  .responseCountFooter {
+    align-self: stretch;
+    justify-content: flex-end;
+  }
+}

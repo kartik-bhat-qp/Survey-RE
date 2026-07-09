@@ -210,6 +210,7 @@ export default function TextAiPage() {
     questionIds,
     separateDashboardPerQuestion,
     expertReviewRequested,
+    segmentFilters,
   }: TextAiDashboardCreatePayload): void {
     const baseTimestamp = Date.now();
     const estimatedComments = questionIds.length * 964;
@@ -223,6 +224,7 @@ export default function TextAiPage() {
             creationDate: new Date().toISOString(),
             commentCount: 964,
             status: 'Completed',
+            segmentFilters,
           };
         })
       : [
@@ -232,6 +234,7 @@ export default function TextAiPage() {
             creationDate: new Date().toISOString(),
             commentCount: estimatedComments,
             status: 'Completed',
+            segmentFilters,
           },
         ];
 
@@ -254,6 +257,15 @@ export default function TextAiPage() {
       showToast({
         message: 'QuestionPro Expert Review requested — a research expert will review your model setup',
         variant: 'info',
+      });
+    }
+
+    const appliedSegmentFilters =
+      segmentFilters.criteriaGroups.length > 0 || segmentFilters.dateRangeLabel;
+    if (appliedSegmentFilters) {
+      showToast({
+        message: 'Segment filters applied to the selected responses',
+        variant: 'success',
       });
     }
 

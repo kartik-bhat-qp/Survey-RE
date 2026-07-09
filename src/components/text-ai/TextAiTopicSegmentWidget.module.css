@@ -49,6 +49,11 @@
   color: #1b87e6;
 }
 
+.chiToggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .cardTitle {
   color: #545e6b;
   flex: 1;
@@ -85,6 +90,34 @@
 .table thead th:not(:first-child) {
   text-align: center;
   width: 13%;
+}
+
+.headerWithToggle {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.headerCheckbox {
+  accent-color: #1b87e6;
+  cursor: pointer;
+  height: 14px;
+  margin: 0;
+  width: 14px;
+}
+
+.headerCheckbox:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.columnHeaderDisabled {
+  color: #94a3b8 !important;
+}
+
+.segmentCellDisabled {
+  opacity: 0.55;
 }
 
 .table tbody td {
@@ -281,12 +314,27 @@
 }
 
 .chiLegend {
+  background: #fbfdff;
   border-top: 1px solid #f0f0f0;
-  color: #94a3b8;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.625rem 1rem 0.75rem;
+}
+
+.chiLegendTitle {
+  color: #475569;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.chiLegendText {
   font-size: 11px;
   line-height: 1.45;
   margin: 0;
-  padding: 0.5rem 1rem 0.75rem;
 }
 
 .chiLegendNote {

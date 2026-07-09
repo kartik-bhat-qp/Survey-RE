@@ -269,7 +269,7 @@ async function loadWatermarkMedia(): Promise<PptMedia> {
 
   try {
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new Image();
+      const img = document.createElement('img');
       img.onload = () => resolve(img);
       img.onerror = () => reject(new Error('Unable to render watermark'));
       img.src = objectUrl;

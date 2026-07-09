@@ -3,14 +3,25 @@
 }
 
 .modelSetupContent {
+  font-family: 'Fira Sans', sans-serif;
   max-height: min(70vh, calc(100dvh - 11rem));
-  min-height: 0;
+  min-height: min(520px, calc(100dvh - 11rem));
   overflow-y: auto;
 }
 
 .questionSelectionContent {
   max-height: min(70vh, calc(100dvh - 11rem));
   min-height: 0;
+  overflow-y: auto;
+  padding-top: 0.5rem !important;
+}
+
+.segmentFilterContent {
+  display: flex;
+  flex-direction: column;
+  font-family: 'Fira Sans', sans-serif;
+  max-height: min(70vh, calc(100dvh - 11rem));
+  min-height: min(520px, calc(100dvh - 11rem));
   overflow-y: auto;
   padding-top: 0.5rem !important;
 }

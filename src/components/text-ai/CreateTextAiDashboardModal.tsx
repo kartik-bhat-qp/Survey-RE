@@ -13,9 +13,14 @@ import {
   type TextAiModelSetupValues,
 } from '@/components/text-ai/TextAiModelSetupForm';
 import { TextAiQuestionSelection } from '@/components/text-ai/TextAiQuestionSelection';
+import { TextAiSegmentFilterForm } from '@/components/text-ai/TextAiSegmentFilterForm';
 import { TextAiSurveySelection } from '@/components/text-ai/TextAiSurveySelection';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import { getDefaultSelectedTextAiQuestionIds } from '@/data/mock-text-ai-questions';
+import {
+  createDefaultSegmentFilterState,
+  type TextAiSegmentFilterState,
+} from '@/data/mock-text-ai-segment-filters';
 import type { TextAiDashboardCreatePayload } from '@/data/text-ai-dashboard-create';
 import type { SurveyListItem } from '@/data/mock-survey-folders';
 import modalStyles from '@/components/dashboards/CreateDashboardModal.module.css';
@@ -25,6 +30,13 @@ const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false }
 );
+
+const TEXT_AI_CREATE_STEP_ORDER: TextAiCreateStep[] = [
+  'survey',
+  'model-setup',
+  'segment',
+  'select-questions',
+];
 
 interface CreateTextAiDashboardModalProps {
   open: boolean;
@@ -51,6 +63,9 @@ export function CreateTextAiDashboardModal({
     getDefaultSelectedTextAiQuestionIds()
   );
   const [separateDashboardPerQuestion, setSeparateDashboardPerQuestion] = useState(false);
+  const [segmentFilters, setSegmentFilters] = useState<TextAiSegmentFilterState>(() =>
+    createDefaultSegmentFilterState()
+  );
 
   const resetWizard = useCallback(() => {
     setStep('survey');
@@ -59,6 +74,7 @@ export function CreateTextAiDashboardModal({
     setNameError(false);
     setSelectedQuestionIds(getDefaultSelectedTextAiQuestionIds());
     setSeparateDashboardPerQuestion(false);
+    setSegmentFilters(createDefaultSegmentFilterState());
   }, [defaultName]);
 
   const handleOpenChange = useCallback(
@@ -80,6 +96,10 @@ export function CreateTextAiDashboardModal({
       return;
     }
     setNameError(false);
+    setStep('segment');
+  }
+
+  function handleSegmentNext(): void {
     setStep('select-questions');
   }
 
@@ -96,6 +116,7 @@ export function CreateTextAiDashboardModal({
       separateDashboardPerQuestion:
         separateDashboardPerQuestion && selectedQuestionIds.length > 1,
       expertReviewRequested: modelSetup.expertReviewRequested,
+      segmentFilters,
     });
     handleOpenChange(false);
   }
@@ -109,14 +130,20 @@ export function CreateTextAiDashboardModal({
       setStep('survey');
       return;
     }
-    if (step === 'select-questions') {
+    if (step === 'segment') {
       setStep('model-setup');
+      return;
+    }
+    if (step === 'select-questions') {
+      setStep('segment');
     }
   }
 
   function handleBreadcrumbClick(target: TextAiCreateStep): void {
-    if (target === 'survey' && step !== 'survey') {
-      setStep('survey');
+    const currentIndex = TEXT_AI_CREATE_STEP_ORDER.indexOf(step);
+    const targetIndex = TEXT_AI_CREATE_STEP_ORDER.indexOf(target);
+    if (targetIndex >= 0 && targetIndex < currentIndex) {
+      setStep(target);
     }
   }
 
@@ -141,9 +168,11 @@ export function CreateTextAiDashboardModal({
 
   const { WuModal, WuModalHeader, WuModalContent, WuModalFooter } = wick;
   const modalTitle =
-    step === 'model-setup' || step === 'select-questions'
-      ? 'Create TextAI dashboard'
-      : 'Create dashboard';
+    step === 'segment'
+      ? 'Filter the data you want to analyze'
+      : step === 'model-setup' || step === 'select-questions'
+        ? 'Create TextAI dashboard'
+        : 'Create dashboard';
 
   return (
     <WuModal
@@ -188,6 +217,12 @@ export function CreateTextAiDashboardModal({
         </WuModalContent>
       )}
 
+      {step === 'segment' && (
+        <WuModalContent className={styles.segmentFilterContent}>
+          <TextAiSegmentFilterForm values={segmentFilters} onChange={setSegmentFilters} />
+        </WuModalContent>
+      )}
+
       <WuModalFooter>
         <div className={modalStyles.wizardFooter}>
           <TextAiCreateDashboardStepBreadcrumb
@@ -206,6 +241,9 @@ export function CreateTextAiDashboardModal({
                 </WuButton>
                 {step === 'model-setup' && (
                   <WuButton onClick={handleModelSetupNext}>Next</WuButton>
+                )}
+                {step === 'segment' && (
+                  <WuButton onClick={handleSegmentNext}>Next</WuButton>
                 )}
                 {step === 'select-questions' && (
                   <WuButton onClick={handleFinish}>{createButtonLabel}</WuButton>

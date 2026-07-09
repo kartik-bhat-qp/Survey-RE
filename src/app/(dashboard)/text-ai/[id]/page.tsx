@@ -10,12 +10,20 @@ import { PageContainer } from '@/components/ui/PageContainer';
 import { StandardLoader } from '@/components/ui/StandardLoader';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import { getTextAiDashboardById } from '@/data/get-text-ai-dashboard-by-id';
+import { saveRuntimeTextAiDashboard } from '@/data/text-ai-dashboard-runtime';
+import {
+  createDefaultSegmentFilterState,
+  type TextAiSegmentFilterState,
+} from '@/data/mock-text-ai-segment-filters';
 
 function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
   const dashboard = getTextAiDashboardById(numericId);
   const [name, setName] = useState(dashboard?.name ?? 'Untitled');
+  const [segmentFilters, setSegmentFilters] = useState<TextAiSegmentFilterState>(
+    () => dashboard?.segmentFilters ?? createDefaultSegmentFilterState()
+  );
 
   if (!dashboard) {
     if (!wick) {
@@ -44,6 +52,17 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     );
   }
 
+  const currentDashboard = dashboard;
+
+  function handleSegmentFiltersChange(nextFilters: TextAiSegmentFilterState): void {
+    setSegmentFilters(nextFilters);
+    saveRuntimeTextAiDashboard({
+      ...currentDashboard,
+      name,
+      segmentFilters: nextFilters,
+    });
+  }
+
   return (
     <div className="flex flex-col h-full min-h-0">
       <TextAiDashboardToolbar
@@ -52,6 +71,8 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         onNameChange={setName}
         onAddWidget={() => showToast({ message: 'Add widget', variant: 'success' })}
         onOpenSettings={() => showToast({ message: 'Dashboard settings', variant: 'success' })}
+        segmentFilters={segmentFilters}
+        onSegmentFiltersChange={handleSegmentFiltersChange}
       />
       <TextAiDashboardCanvas dashboardId={numericId} />
     </div>

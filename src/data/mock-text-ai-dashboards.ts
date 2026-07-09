@@ -1,3 +1,5 @@
+import type { TextAiSegmentFilterState } from '@/data/mock-text-ai-segment-filters';
+
 export type TextAiDashboardStatus = 'Completed' | 'In progress' | 'Draft';
 
 export interface TextAiDashboardQuestion {
@@ -15,6 +17,8 @@ export interface TextAiDashboard {
   status: TextAiDashboardStatus;
   /** Optional list of source questions this TextAI dashboard analyses. */
   questions?: TextAiDashboardQuestion[];
+  /** Current response filters used for TextAI processing. */
+  segmentFilters?: TextAiSegmentFilterState;
 }
 
 export const MOCK_TEXT_AI_DASHBOARDS: TextAiDashboard[] = [
