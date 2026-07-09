@@ -184,7 +184,7 @@ export function DashboardSettingsModal({
   const { showToast } = useWuShowToast();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
-  const [accessibilityShortcutsEnabled, setAccessibilityShortcutsEnabled] = useState(false);
+  const [accessibilityShortcutsEnabled, setAccessibilityShortcutsEnabled] = useState(true);
   const [designTheme, setDesignTheme] = useState(DESIGN_THEME_OPTIONS[0]);
   const [designPalette, setDesignPalette] = useState(DESIGN_PALETTE_OPTIONS[0]);
   const [designSentiment, setDesignSentiment] = useState(DESIGN_SENTIMENT_OPTIONS[0]);

@@ -11,6 +11,7 @@ import {
   type DesignSelectOption,
   type DesignTypographyOptions,
 } from './DashboardDesignSettingsTab';
+import styles from './DashboardPowerPointExportModal.module.css';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
@@ -116,6 +117,21 @@ const WIDGET_DATA_SOURCE = 'Guest dining preferences';
 const MAX_WIDGETS_PER_SLIDE = 4;
 const PPT_SLIDE_WIDTH_EMU = 9144000;
 const PPT_SLIDE_HEIGHT_EMU = 5143500;
+const PPT_WATERMARK_SRC = '/questionpro-logo-nw.svg';
+const PPT_WATERMARK_VIEWBOX_WIDTH = 166.365;
+const PPT_WATERMARK_VIEWBOX_HEIGHT = 32;
+const PPT_WATERMARK_ASPECT = PPT_WATERMARK_VIEWBOX_HEIGHT / PPT_WATERMARK_VIEWBOX_WIDTH;
+const PPT_WATERMARK_PREVIEW_WIDTH = {
+  compact: 56,
+  full: 80,
+} as const;
+
+function getWatermarkDimensions(width: number) {
+  return {
+    width,
+    height: Math.round(width * PPT_WATERMARK_ASPECT),
+  };
+}
 
 const WIDGETS: DashboardWidget[] = [
   {
@@ -238,6 +254,59 @@ async function loadPptMedia(widgets: DashboardWidget[]) {
   );
 
   return mediaBySrc;
+}
+
+async function loadWatermarkMedia(): Promise<PptMedia> {
+  const response = await fetch(PPT_WATERMARK_SRC);
+
+  if (!response.ok) {
+    throw new Error(`Unable to load ${PPT_WATERMARK_SRC}`);
+  }
+
+  const svgText = await response.text();
+  const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+  const objectUrl = URL.createObjectURL(svgBlob);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Unable to render watermark'));
+      img.src = objectUrl;
+    });
+
+    const width = 833;
+    const height = Math.round(width * PPT_WATERMARK_ASPECT);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Unable to render watermark');
+    }
+
+    context.drawImage(image, 0, 0, width, height);
+
+    const pngBlob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('Unable to encode watermark'));
+      }, 'image/png');
+    });
+
+    const bytes = new Uint8Array(await pngBlob.arrayBuffer());
+
+    return {
+      src: PPT_WATERMARK_SRC,
+      width: PPT_WATERMARK_VIEWBOX_WIDTH,
+      height: PPT_WATERMARK_VIEWBOX_HEIGHT,
+      bytes,
+      fileName: 'questionpro-watermark.png',
+    };
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -405,13 +474,39 @@ function getPptWidgetBounds(widgetCount: number, index: number) {
   };
 }
 
+function getWatermarkPlacement() {
+  const cx = 800000;
+  const cy = Math.round(cx * PPT_WATERMARK_ASPECT);
+  const marginX = 120000;
+  const marginY = 80000;
+
+  return {
+    x: PPT_SLIDE_WIDTH_EMU - cx - marginX,
+    y: PPT_SLIDE_HEIGHT_EMU - cy - marginY,
+    cx,
+    cy,
+  };
+}
+
+function getWatermarkRelId(widgetCount: number) {
+  return `rId${widgetCount + 1}`;
+}
+
+function createWatermarkImageXml(shapeId: number, relId: string) {
+  const placement = getWatermarkPlacement();
+
+  return `<p:pic><p:nvPicPr><p:cNvPr id="${shapeId}" name="QuestionPro watermark"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${relId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${placement.x}" y="${placement.y}"/><a:ext cx="${placement.cx}" cy="${placement.cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+}
+
 function createTextSlideXml(slideText: string, fontFamily: string) {
+  const watermark = createWatermarkImageXml(3, getWatermarkRelId(0));
+
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
   <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
       <p:sp><p:nvSpPr><p:cNvPr id="2" name="Bookend title"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="540000" y="1900000"/><a:ext cx="8064000" cy="1300000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/></p:spPr>
         <p:txBody><a:bodyPr anchor="ctr"/><a:lstStyle/><a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="en-US" sz="4400" b="1" i="1"><a:solidFill><a:srgbClr val="1F2A44"/></a:solidFill><a:latin typeface="${escapeXml(fontFamily)}"/></a:rPr><a:t>${escapeXml(slideText)}</a:t></a:r></a:p></p:txBody>
-      </p:sp>
+      </p:sp>${watermark}
     </p:spTree></p:cSld>
   <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
 </p:sld>`;
@@ -432,15 +527,23 @@ function createImageSlideXml(slide: PreviewSlideGroup, mediaBySrc: Map<string, P
       return `<p:pic><p:nvPicPr><p:cNvPr id="${shapeId}" name="${escapeXml(widget.name)}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${relId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${placement.x}" y="${placement.y}"/><a:ext cx="${placement.cx}" cy="${placement.cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
     })
     .join('');
+  const watermark = createWatermarkImageXml(
+    slide.widgets.length + 2,
+    getWatermarkRelId(slide.widgets.length)
+  );
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
-  <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${pictures}</p:spTree></p:cSld>
+  <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>${pictures}${watermark}</p:spTree></p:cSld>
   <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
 </p:sld>`;
 }
 
-function createSlideRelationships(slide: PreviewSlideGroup, mediaBySrc: Map<string, PptMedia>) {
+function createSlideRelationships(
+  slide: PreviewSlideGroup,
+  mediaBySrc: Map<string, PptMedia>,
+  watermarkMedia: PptMedia
+) {
   const relationships = slide.widgets
     .map((widget, index) => {
       const image = getPptWidgetImage(widget);
@@ -450,11 +553,13 @@ function createSlideRelationships(slide: PreviewSlideGroup, mediaBySrc: Map<stri
         : '';
     })
     .join('');
-  const slideLayoutRelId = `rId${slide.widgets.length + 1}`;
+  const watermarkRelId = getWatermarkRelId(slide.widgets.length);
+  const slideLayoutRelId = `rId${slide.widgets.length + 2}`;
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   ${relationships}
+  <Relationship Id="${watermarkRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${watermarkMedia.fileName}"/>
   <Relationship Id="${slideLayoutRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>
 </Relationships>`;
 }
@@ -477,10 +582,10 @@ function createSlideLayoutXml() {
 </p:sldLayout>`;
 }
 
-function createThemeXml() {
+function createThemeXml(fontFamily: string) {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="QuestionPro">
-  <a:themeElements><a:clrScheme name="QuestionPro"><a:dk1><a:srgbClr val="1F2A44"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="253449"/></a:dk2><a:lt2><a:srgbClr val="F3F6FA"/></a:lt2><a:accent1><a:srgbClr val="1E88E5"/></a:accent1><a:accent2><a:srgbClr val="4F63A2"/></a:accent2><a:accent3><a:srgbClr val="43A3B5"/></a:accent3><a:accent4><a:srgbClr val="43B69F"/></a:accent4><a:accent5><a:srgbClr val="9BD598"/></a:accent5><a:accent6><a:srgbClr val="E6963D"/></a:accent6><a:hlink><a:srgbClr val="1E63D7"/></a:hlink><a:folHlink><a:srgbClr val="6B5DD3"/></a:folHlink></a:clrScheme><a:fontScheme name="QuestionPro"><a:majorFont><a:latin typeface="Arial"/></a:majorFont><a:minorFont><a:latin typeface="Arial"/></a:minorFont></a:fontScheme><a:fmtScheme name="QuestionPro"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="9525"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements>
+  <a:themeElements><a:clrScheme name="QuestionPro"><a:dk1><a:srgbClr val="1F2A44"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="253449"/></a:dk2><a:lt2><a:srgbClr val="F3F6FA"/></a:lt2><a:accent1><a:srgbClr val="1E88E5"/></a:accent1><a:accent2><a:srgbClr val="4F63A2"/></a:accent2><a:accent3><a:srgbClr val="43A3B5"/></a:accent3><a:accent4><a:srgbClr val="43B69F"/></a:accent4><a:accent5><a:srgbClr val="9BD598"/></a:accent5><a:accent6><a:srgbClr val="E6963D"/></a:accent6><a:hlink><a:srgbClr val="1E63D7"/></a:hlink><a:folHlink><a:srgbClr val="6B5DD3"/></a:folHlink></a:clrScheme><a:fontScheme name="QuestionPro"><a:majorFont><a:latin typeface="${escapeXml(fontFamily)}"/></a:majorFont><a:minorFont><a:latin typeface="${escapeXml(fontFamily)}"/></a:minorFont></a:fontScheme><a:fmtScheme name="QuestionPro"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="9525"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements>
 </a:theme>`;
 }
 
@@ -491,6 +596,7 @@ async function createPowerPointBlob(
 ) {
   const selectedWidgets = slides.flatMap((slide) => slide.widgets);
   const mediaBySrc = await loadPptMedia(selectedWidgets);
+  const watermarkMedia = await loadWatermarkMedia();
   const contentTypes = slides
     .map(
       (_, index) =>
@@ -543,7 +649,7 @@ async function createPowerPointBlob(
       'ppt/slideLayouts/_rels/slideLayout1.xml.rels',
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`
     ),
-    xmlEntry('ppt/theme/theme1.xml', createThemeXml()),
+    xmlEntry('ppt/theme/theme1.xml', createThemeXml(fontFamily)),
   ];
 
   slides.forEach((slide, index) => {
@@ -557,7 +663,7 @@ async function createPowerPointBlob(
     entries.push(
       xmlEntry(
         `ppt/slides/_rels/slide${slideNumber}.xml.rels`,
-        createSlideRelationships(slide, mediaBySrc)
+        createSlideRelationships(slide, mediaBySrc, watermarkMedia)
       )
     );
   });
@@ -565,6 +671,7 @@ async function createPowerPointBlob(
   mediaBySrc.forEach((media) => {
     entries.push({ path: `ppt/media/${media.fileName}`, data: media.bytes });
   });
+  entries.push({ path: `ppt/media/${watermarkMedia.fileName}`, data: watermarkMedia.bytes });
 
   return new Blob([createZip(entries)], {
     type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -578,7 +685,7 @@ function getSafeFilename(value: string) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
-  return `${safeName || 'dashboard'}.pptx`;
+  return `${safeName || 'dashboard'}-questionpro-ppt.pptx`;
 }
 
 export function DashboardPowerPointExportModal({
@@ -598,7 +705,6 @@ export function DashboardPowerPointExportModal({
     useState<WidgetSlideAssignments>(() =>
       createDefaultWidgetSlideAssignments(WIDGETS.map((widget) => widget.id), 1)
     );
-  const [extraSlideCount, setExtraSlideCount] = useState(0);
   const [maximizedSlideIndex, setMaximizedSlideIndex] = useState<number | null>(null);
   const [includeIntroSlide, setIncludeIntroSlide] = useState(false);
   const [includeOutroSlide, setIncludeOutroSlide] = useState(false);
@@ -639,7 +745,7 @@ export function DashboardPowerPointExportModal({
       const fallbackSlide = Math.floor(index / widgetsPerSlide) + 1;
       return Math.max(highestSlide, widgetSlideAssignments[widget.id] ?? fallbackSlide);
     }, 0);
-    const totalSlideCount = Math.max(baseSlideCount + extraSlideCount, highestAssignedSlide);
+    const totalSlideCount = Math.max(baseSlideCount, highestAssignedSlide);
     const groups = Array.from({ length: totalSlideCount }, (_, index) => ({
       slideNumber: index + 1,
       widgets: [] as DashboardWidget[],
@@ -655,7 +761,7 @@ export function DashboardPowerPointExportModal({
     });
 
     return groups;
-  }, [extraSlideCount, selectedWidgets, widgetSlideAssignments, widgetsPerSlide]);
+  }, [selectedWidgets, widgetSlideAssignments, widgetsPerSlide]);
 
   const previewSlideGroups = useMemo<PreviewSlideGroup[]>(() => {
     let previewSlideNumber = 1;
@@ -683,10 +789,6 @@ export function DashboardPowerPointExportModal({
     return groups;
   }, [includeIntroSlide, includeOutroSlide, slideGroups]);
 
-  const compactPreviewSlideGroups = useMemo(
-    () => [...previewSlideGroups].reverse(),
-    [previewSlideGroups]
-  );
   const hasOverCapacitySlides = slideGroups.some(
     (slide) => slide.widgets.length > widgetsPerSlide
   );
@@ -705,7 +807,6 @@ export function DashboardPowerPointExportModal({
         1
       )
     );
-    setExtraSlideCount(0);
     setLayoutMode('manual');
     setWidgetsPerSlideInput('1');
     setMaximizedSlideIndex(null);
@@ -783,11 +884,6 @@ export function DashboardPowerPointExportModal({
     });
   }
 
-  function addSlide() {
-    setExtraSlideCount((currentCount) => currentCount + 1);
-    setMaximizedSlideIndex(null);
-  }
-
   function removeSlide(slideNumber: number) {
     const slide = slideGroups.find((currentSlide) => currentSlide.slideNumber === slideNumber);
     const widgetIdsOnSlide = slide?.widgets.map((widget) => widget.id) ?? [];
@@ -796,10 +892,6 @@ export function DashboardPowerPointExportModal({
       setSelectedWidgetIds((currentSelection) =>
         currentSelection.filter((widgetId) => !widgetIdsOnSlide.includes(widgetId))
       );
-    }
-
-    if (widgetIdsOnSlide.length === 0 && extraSlideCount > 0) {
-      setExtraSlideCount((currentCount) => Math.max(0, currentCount - 1));
     }
 
     setWidgetSlideAssignments((currentAssignments) => {
@@ -936,6 +1028,24 @@ export function DashboardPowerPointExportModal({
     );
   }
 
+  function renderSlideWatermark(isCompact = false) {
+    const { width, height } = getWatermarkDimensions(
+      isCompact ? PPT_WATERMARK_PREVIEW_WIDTH.compact : PPT_WATERMARK_PREVIEW_WIDTH.full
+    );
+
+    return (
+      <Image
+        src={PPT_WATERMARK_SRC}
+        alt="QuestionPro"
+        width={width}
+        height={height}
+        unoptimized
+        className="pointer-events-none absolute bottom-2 right-2 z-10"
+        style={{ width, height, maxWidth: width, maxHeight: height }}
+      />
+    );
+  }
+
   function renderSupplementalSlide(slide: PreviewSlideGroup, isCompact = false) {
     const slideText = slide.kind === 'intro' ? dashboardName : 'Thank you';
     const bookendTypography = {
@@ -951,7 +1061,7 @@ export function DashboardPowerPointExportModal({
 
     return (
       <div
-        className={`grid h-full w-full place-items-center overflow-hidden bg-white text-center ${
+        className={`relative grid h-full w-full place-items-center overflow-hidden bg-white text-center ${
           isCompact ? 'p-2' : 'p-6'
         }`}
       >
@@ -963,6 +1073,7 @@ export function DashboardPowerPointExportModal({
         >
           {slideText}
         </h4>
+        {renderSlideWatermark(isCompact)}
       </div>
     );
   }
@@ -1080,6 +1191,7 @@ export function DashboardPowerPointExportModal({
       onOpenChange={handleOpenChange}
       maxWidth="1120px"
       maxHeight="calc(100vh - 48px)"
+      className={styles.modal}
     >
       <WuModalHeader className="h-[64px] bg-[#eef6ff] px-6">
         <span className="text-[24px] font-medium leading-none text-[#17358f]">
@@ -1144,7 +1256,7 @@ export function DashboardPowerPointExportModal({
                 </div>
               </div>
               <div
-                className={`aspect-[16/9] w-full overflow-hidden rounded-none border bg-white p-3 ${
+                className={`relative aspect-[16/9] w-full overflow-hidden rounded-none border bg-white p-3 ${
                   previewSlideGroups[activeMaximizedSlideIndex].kind === 'content' &&
                   previewSlideGroups[activeMaximizedSlideIndex].widgets.length > widgetsPerSlide
                     ? 'border-[#d92d20]'
@@ -1177,6 +1289,7 @@ export function DashboardPowerPointExportModal({
                           </div>
                         ))}
                 </div>
+                {renderSlideWatermark()}
               </div>
             </section>
           )}
@@ -1315,27 +1428,10 @@ export function DashboardPowerPointExportModal({
                   <div className="flex flex-col items-end gap-2">
                     <WuButton
                       type="button"
-                      variant="secondary"
-                      color="primary"
-                      size="sm"
-                      onClick={addSlide}
-                      Icon={<span className="wm-add text-[14px]" aria-hidden="true" />}
-                      className="h-8 rounded-[4px] border border-[#1e88e5] bg-white px-3 text-[12px] font-medium text-[#1e63d7] hover:bg-[#eef6ff]"
-                    >
-                      Add Slide
-                    </WuButton>
-                    <WuButton
-                      type="button"
                       variant="iconOnly"
                       aria-label="Open expanded preview"
                       disabled={previewSlideGroups.length === 0}
-                      onClick={() =>
-                        setMaximizedSlideIndex(
-                          compactPreviewSlideGroups[0]?.previewSlideNumber
-                            ? compactPreviewSlideGroups[0].previewSlideNumber - 1
-                            : 0
-                        )
-                      }
+                      onClick={() => setMaximizedSlideIndex(0)}
                       className="grid h-8 w-8 place-items-center rounded-[3px] bg-white p-0 text-[#536277] hover:bg-[#eef3f8] disabled:text-[#a8b2c1]"
                     >
                       <span className="wm-open-in-full text-[16px]" aria-hidden="true" />
@@ -1349,7 +1445,7 @@ export function DashboardPowerPointExportModal({
                       Select at least one widget to preview slide grouping.
                     </div>
                   ) : (
-                    compactPreviewSlideGroups.map((slide) => {
+                    previewSlideGroups.map((slide) => {
                       const group = slide.widgets;
                       const slideIndex = slide.previewSlideNumber - 1;
                       const isOverCapacity =
@@ -1399,8 +1495,8 @@ export function DashboardPowerPointExportModal({
                           <div
                             className={
                               slide.kind !== 'content' || group.length === 1
-                                ? 'mt-3 grid aspect-[16/9] w-full place-items-center'
-                                : 'mt-3 grid aspect-[16/9] w-full grid-cols-2 auto-rows-fr gap-2'
+                                ? 'relative mt-3 grid aspect-[16/9] w-full place-items-center'
+                                : 'relative mt-3 grid aspect-[16/9] w-full grid-cols-2 auto-rows-fr gap-2'
                             }
                             style={proofPreviewTypographyStyle}
                           >
@@ -1434,6 +1530,7 @@ export function DashboardPowerPointExportModal({
                                       </div>
                                     </div>
                                   ))}
+                            {slide.kind === 'content' ? renderSlideWatermark(true) : null}
                           </div>
                         </div>
                       );

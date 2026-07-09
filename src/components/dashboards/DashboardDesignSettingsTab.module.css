@@ -2,6 +2,7 @@
   background: #ffffff;
   color: #253449;
   display: grid;
+  font-family: 'Fira Sans', sans-serif;
   gap: 24px;
   grid-template-columns: minmax(260px, 340px) minmax(750px, 1.55fr);
   min-height: 500px;

@@ -117,7 +117,7 @@ export default function SurveyStacksPage() {
   }, [searchTerm]);
 
   return (
-    <div className="min-h-[calc(100vh-46px)] bg-white text-[#253449]">
+    <div className="min-h-[calc(100vh-46px)] bg-white font-['Fira_Sans',sans-serif] text-[#253449]">
       <div className="flex h-[66px] items-center justify-between border-b border-[#e7eaf0] px-[15px]">
         <h1 className="text-[18px] font-semibold leading-none text-[#515b6b]">
           Survey stacks

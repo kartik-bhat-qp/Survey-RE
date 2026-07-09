@@ -214,7 +214,6 @@ export function DashboardDesignSettingsTab({
   onDesignPaletteChange,
   onDesignSentimentChange,
   onDesignFontSizeChange,
-  onDesignFontStyleChange,
   onDesignFontFamilyChange,
 }: DashboardDesignSettingsTabProps) {
   const draftTypography = {
@@ -298,45 +297,37 @@ export function DashboardDesignSettingsTab({
 
         <div className={styles.fontGrid}>
           <div>
-            <label className={styles.fieldLabel}>Font size</label>
+            <label className={styles.fieldLabel}>Font family</label>
             <WuSelect
-              data={DESIGN_FONT_SIZE_OPTIONS}
+              data={DESIGN_FONT_FAMILY_OPTIONS}
               accessorKey={{ value: 'value', label: 'label' }}
-              value={designFontSize}
+              value={designFontFamily}
               onSelect={(option) =>
-                handleSelect(option as DesignSelectOption | DesignSelectOption[], onDesignFontSizeChange)
+                handleSelect(
+                  option as DesignSelectOption | DesignSelectOption[],
+                  onDesignFontFamilyChange
+                )
               }
               variant="outlined"
               className={styles.select}
             />
           </div>
           <div>
-            <label className={styles.fieldLabel}>Font style</label>
+            <label className={styles.fieldLabel}>Font size</label>
             <WuSelect
-              data={DESIGN_FONT_STYLE_OPTIONS}
+              data={DESIGN_FONT_SIZE_OPTIONS}
               accessorKey={{ value: 'value', label: 'label' }}
-              value={designFontStyle}
+              value={designFontSize}
               onSelect={(option) =>
-                handleSelect(option as DesignSelectOption | DesignSelectOption[], onDesignFontStyleChange)
+                handleSelect(
+                  option as DesignSelectOption | DesignSelectOption[],
+                  onDesignFontSizeChange
+                )
               }
               variant="outlined"
               className={styles.select}
             />
           </div>
-        </div>
-
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Font family</label>
-          <WuSelect
-            data={DESIGN_FONT_FAMILY_OPTIONS}
-            accessorKey={{ value: 'value', label: 'label' }}
-            value={designFontFamily}
-            onSelect={(option) =>
-              handleSelect(option as DesignSelectOption | DesignSelectOption[], onDesignFontFamilyChange)
-            }
-            variant="outlined"
-            className={styles.select}
-          />
         </div>
 
         <p className={styles.hint}>

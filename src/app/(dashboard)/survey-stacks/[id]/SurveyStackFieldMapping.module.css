@@ -1,0 +1,37 @@
+.mappingList {
+  margin-top: 8px;
+  width: 100%;
+}
+
+.mappingItem {
+  margin-left: 5%;
+  margin-top: 2px;
+  width: 90%;
+}
+
+.mappingItem:first-child {
+  margin-top: 0;
+}
+
+.mappingLabelBox {
+  align-items: center;
+  background: #f1f1f1;
+  color: #606978;
+  display: flex;
+  font-size: 13px;
+  height: 40px;
+  overflow: hidden;
+  padding: 0 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.mappingSelect {
+  width: 100%;
+}
+
+.mappingSelect :global(button) {
+  justify-content: space-between !important;
+  width: 100% !important;
+}

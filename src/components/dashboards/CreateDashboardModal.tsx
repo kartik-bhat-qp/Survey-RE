@@ -47,14 +47,6 @@ const WuTable = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTable })),
   { ssr: false }
 );
-const WuTextarea = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTextarea })),
-  { ssr: false }
-);
-const WuToggle = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
-  { ssr: false }
-);
 
 type DashboardType = 'blank' | 'ai';
 type AiMethod = 'learn' | 'prompt';
@@ -337,57 +329,70 @@ function AiLearnFromDashboards({
 function AiPromptStep({
   prompt,
   onPromptChange,
-  createFilters,
-  onCreateFiltersChange,
-  createDataSlicers,
-  onCreateDataSlicersChange,
+  letAiDecide,
+  onLetAiDecideChange,
 }: {
   prompt: string;
   onPromptChange: (prompt: string) => void;
-  createFilters: boolean;
-  onCreateFiltersChange: (enabled: boolean) => void;
-  createDataSlicers: boolean;
-  onCreateDataSlicersChange: (enabled: boolean) => void;
+  letAiDecide: boolean;
+  onLetAiDecideChange: (enabled: boolean) => void;
 }) {
   return (
     <div className={styles.aiStep}>
       <h3 className={styles.aiStepTitle}>Provide dashboard context</h3>
       <p className={styles.aiStepDescription}>
-        Describe the dashboard you want AI to create from the selected survey.
+        Describe the dashboard you want AI to create from the selected survey, or let AI decide the
+        best layout and insights.
       </p>
-      <WuTextarea
-        value={prompt}
-        onChange={(event) => onPromptChange(event.target.value)}
-        placeholder="Example: Create an executive dashboard for the selected survey that highlights response volume, NPS, satisfaction trends, demographic differences, and key open-text themes."
-        className={styles.promptTextarea}
-      />
-      <div className={styles.promptOptions}>
-        <div className={styles.promptOptionRow}>
-          <div>
-            <span className={styles.promptOptionLabel}>Create filters</span>
-            <span className={styles.promptOptionDescription}>
-              Let AI generate dashboard-level filters from the selected survey fields.
-            </span>
+
+      <div className={styles.promptSplit}>
+        <div className={styles.promptInputPanel}>
+          <div
+            className={`${styles.promptInputFieldWrap} ${
+              letAiDecide ? styles.promptInputFieldWrapInactive : ''
+            }`}
+          >
+            <textarea
+              value={prompt}
+              onChange={(event) => onPromptChange(event.target.value)}
+              placeholder="Example: Create an executive dashboard for the selected survey that highlights response volume, NPS, satisfaction trends, demographic differences, and key open-text themes."
+              className={styles.promptTextarea}
+              disabled={letAiDecide}
+              aria-disabled={letAiDecide}
+            />
+            {letAiDecide ? (
+              <div className={styles.promptCustomizeOverlay}>
+                <WuButton
+                  type="button"
+                  variant="outline"
+                  color="primary"
+                  onClick={() => onLetAiDecideChange(false)}
+                  className={styles.customizeButton}
+                >
+                  Customize
+                </WuButton>
+              </div>
+            ) : null}
           </div>
-          <WuToggle
-            checked={createFilters}
-            onChange={onCreateFiltersChange}
-            aria-label="Create filters"
-          />
         </div>
-        <div className={styles.promptOptionRow}>
-          <div>
-            <span className={styles.promptOptionLabel}>Create data slicers</span>
-            <span className={styles.promptOptionDescription}>
-              Let AI add slicers for quick segment comparisons across widgets.
-            </span>
-          </div>
-          <WuToggle
-            checked={createDataSlicers}
-            onChange={onCreateDataSlicersChange}
-            aria-label="Create data slicers"
-          />
-        </div>
+
+        <button
+          type="button"
+          className={`${styles.promptAiPanel} ${
+            letAiDecide ? styles.promptAiPanelSelected : ''
+          }`}
+          onClick={() => onLetAiDecideChange(true)}
+          aria-pressed={letAiDecide}
+        >
+          <span className={styles.promptAiPanelIcon} aria-hidden="true">
+            <span className="wm-auto-awesome text-[28px]" />
+          </span>
+          <span className={styles.promptAiPanelTitle}>Let AI Decide</span>
+          <span className={styles.promptAiPanelDescription}>
+            AI will choose the dashboard context, widgets, filters, and data slicers for your
+            survey.
+          </span>
+        </button>
       </div>
     </div>
   );
@@ -416,8 +421,7 @@ export function CreateDashboardModal({
   const [selectedSurvey, setSelectedSurvey] = useState<SurveyListItem | null>(null);
   const [selectedReferences, setSelectedReferences] = useState<number[]>([]);
   const [prompt, setPrompt] = useState('');
-  const [createFilters, setCreateFilters] = useState(true);
-  const [createDataSlicers, setCreateDataSlicers] = useState(true);
+  const [letAiDecide, setLetAiDecide] = useState(false);
 
   const resetWizard = useCallback(() => {
     setStep('type');
@@ -428,8 +432,7 @@ export function CreateDashboardModal({
     setSelectedSurvey(null);
     setSelectedReferences([]);
     setPrompt('');
-    setCreateFilters(true);
-    setCreateDataSlicers(true);
+    setLetAiDecide(false);
   }, []);
 
   const handleOpenChange = useCallback(
@@ -492,9 +495,9 @@ export function CreateDashboardModal({
       return;
     }
 
-    if (step === 'prompt' && !prompt.trim()) {
+    if (step === 'prompt' && !letAiDecide && !prompt.trim()) {
       showToast({
-        message: 'Enter a prompt to continue',
+        message: 'Enter a prompt or choose Let AI Decide to continue',
         variant: 'error',
       });
       return;
@@ -642,10 +645,8 @@ export function CreateDashboardModal({
           <AiPromptStep
             prompt={prompt}
             onPromptChange={setPrompt}
-            createFilters={createFilters}
-            onCreateFiltersChange={setCreateFilters}
-            createDataSlicers={createDataSlicers}
-            onCreateDataSlicersChange={setCreateDataSlicers}
+            letAiDecide={letAiDecide}
+            onLetAiDecideChange={setLetAiDecide}
           />
         </WuModalContent>
       )}

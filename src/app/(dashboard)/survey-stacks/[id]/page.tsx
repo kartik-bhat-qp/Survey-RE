@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useBiProductBasePath, withBiProductBasePath } from '@/hooks/useBiProductBasePath';
+import mappingStyles from './SurveyStackFieldMapping.module.css';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
@@ -94,6 +95,9 @@ const STACK_FIELDS: StackField[] = [
   },
 ];
 
+const QUESTION_SELECT_CLASS =
+  'h-10 w-full rounded-none border-0 bg-[#f1f1f1] text-[13px] text-[#606978]';
+
 function getQuestion(value: string) {
   return FIELD_OPTIONS.find((option) => option.value === value);
 }
@@ -108,12 +112,41 @@ function getAutoMatches(sourceOneValue: string, sourceTwoValue: string) {
 
   if (!sourceOneQuestion || !sourceTwoQuestion) return [];
 
-  return sourceOneQuestion.responseOptions.map((sourceOption, index) => {
+  const matches = sourceOneQuestion.responseOptions.map((sourceOption, index) => {
     const exactMatch = sourceTwoQuestion.responseOptions.find(
       (targetOption) => targetOption.toLowerCase() === sourceOption.toLowerCase()
     );
 
     return exactMatch ?? sourceTwoQuestion.responseOptions[index] ?? sourceTwoQuestion.responseOptions[0] ?? '';
+  });
+
+  return normalizeOptionMatches(matches);
+}
+
+function normalizeOptionMatches(matches: string[]) {
+  const seen = new Set<string>();
+
+  return matches.map((match) => {
+    if (!match || seen.has(match)) return '';
+    seen.add(match);
+    return match;
+  });
+}
+
+function getSelectedMappingValue(value: string | undefined) {
+  if (!value) return null;
+  return { value, label: value };
+}
+
+function fieldMappingsAreComplete(field: StackField) {
+  const sourceOneQuestion = getQuestion(field.sourceOneValue);
+  const sourceTwoQuestion = getQuestion(field.sourceTwoValue);
+
+  if (!sourceOneQuestion || !sourceTwoQuestion) return true;
+
+  return sourceOneQuestion.responseOptions.every((_, index) => {
+    const match = field.optionMatches[index] ?? '';
+    return match.trim() !== '';
   });
 }
 
@@ -128,6 +161,10 @@ export default function SurveyStackDetailPage() {
   const { showToast } = useWuShowToast();
 
   const title = useMemo(() => stack.name || 'Survey stack', [stack.name]);
+  const canUpdate = useMemo(
+    () => fields.every((field) => fieldMappingsAreComplete(field)),
+    [fields]
+  );
 
   function updateQuestion(fieldId: number, key: 'sourceOneValue' | 'sourceTwoValue', option: QuestionOption | QuestionOption[]) {
     if (Array.isArray(option)) return;
@@ -165,9 +202,17 @@ export default function SurveyStackDetailPage() {
         if (field.id !== fieldId) return field;
 
         const nextMatches = [...field.optionMatches];
-        nextMatches[optionIndex] = option.value;
+        const selectedValue = option.value;
 
-        return { ...field, optionMatches: nextMatches };
+        nextMatches.forEach((match, index) => {
+          if (index !== optionIndex && match === selectedValue) {
+            nextMatches[index] = '';
+          }
+        });
+
+        nextMatches[optionIndex] = selectedValue;
+
+        return { ...field, optionMatches: normalizeOptionMatches(nextMatches) };
       })
     );
   }
@@ -221,14 +266,14 @@ export default function SurveyStackDetailPage() {
       : currentQuestion.responseOptions;
 
     return (
-      <div className="mt-2 w-full border border-[#d7dbe2] bg-white">
+      <div className={mappingStyles.mappingList}>
         {responseOptions.map((responseOption, optionIndex) => (
           <div
             key={`${field.id}-${source}-${responseOption}-${optionIndex}`}
-            className="flex h-9 items-center border-b border-[#e7eaf0] px-3 text-[13px] text-[#606978] last:border-b-0"
+            className={mappingStyles.mappingItem}
           >
             {source === 'one' || !sourceTwoQuestion ? (
-              <span className="truncate">{responseOption}</span>
+              <span className={mappingStyles.mappingLabelBox}>{responseOption}</span>
             ) : (
               <WuSelect
                 data={sourceTwoQuestion.responseOptions.map((targetOption) => ({
@@ -236,13 +281,11 @@ export default function SurveyStackDetailPage() {
                   label: targetOption,
                 }))}
                 accessorKey={{ value: 'value', label: 'label' }}
-                value={{
-                  value: field.optionMatches[optionIndex] ?? sourceTwoQuestion.responseOptions[optionIndex] ?? '',
-                  label: field.optionMatches[optionIndex] ?? sourceTwoQuestion.responseOptions[optionIndex] ?? '',
-                }}
+                value={getSelectedMappingValue(field.optionMatches[optionIndex])}
+                placeholder="Select a value"
                 onSelect={(option) => updateOptionMatch(field.id, optionIndex, option as SelectOption | SelectOption[])}
                 variant="flat"
-                className="h-8 w-full rounded-none border-0 bg-transparent text-[13px] text-[#606978]"
+                className={`${mappingStyles.mappingSelect} ${QUESTION_SELECT_CLASS}`}
               />
             )}
           </div>
@@ -252,7 +295,7 @@ export default function SurveyStackDetailPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-46px)] flex-col bg-white text-[#566173]">
+    <div className="flex min-h-[calc(100vh-46px)] flex-col bg-white font-['Fira_Sans',sans-serif] text-[#566173]">
       <header className="flex h-[52px] items-center justify-between border-b border-[#e7eaf0] px-5">
         <h1 className="truncate text-[25px] font-normal leading-none text-[#606978]">
           {title}
@@ -271,7 +314,8 @@ export default function SurveyStackDetailPage() {
             variant="primary"
             color="primary"
             onClick={updateStack}
-            className="h-9 w-[122px] rounded-[3px] bg-[#1e88e5] text-[14px] font-normal text-white hover:bg-[#1976d2]"
+            disabled={!canUpdate}
+            className="h-9 w-[122px] rounded-[3px] bg-[#1e88e5] text-[14px] font-normal text-white hover:bg-[#1976d2] disabled:cursor-not-allowed disabled:opacity-50"
           >
             Update
           </WuButton>
@@ -319,7 +363,7 @@ export default function SurveyStackDetailPage() {
                     onSelect={(option) =>
                       updateQuestion(field.id, 'sourceOneValue', option as QuestionOption | QuestionOption[])}
                     variant="flat"
-                    className="h-10 w-full rounded-none border-0 bg-[#f1f1f1] text-[13px] text-[#606978]"
+                    className={QUESTION_SELECT_CLASS}
                   />
                   {isExpanded && renderResponseOptions(field, 'one')}
                 </div>
@@ -332,7 +376,7 @@ export default function SurveyStackDetailPage() {
                     onSelect={(option) =>
                       updateQuestion(field.id, 'sourceTwoValue', option as QuestionOption | QuestionOption[])}
                     variant="flat"
-                    className="h-10 w-full rounded-none border-0 bg-[#f1f1f1] text-[13px] text-[#606978]"
+                    className={QUESTION_SELECT_CLASS}
                   />
                   {isExpanded && renderResponseOptions(field, 'two')}
                 </div>
