@@ -128,6 +128,7 @@ export function SurveyPreviewFollowUpQuestion({
           options={displayOptions}
           inputKind={inputType}
           groupName={`follow-up-${question.code}`}
+          deepDiveFollowUpSettings={question.deepDiveFollowUpSettings ?? null}
         />
       )}
     </section>

@@ -994,6 +994,12 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     headerLabel: 'Custom Logic Engine',
     question: 'Advanced scripted logic and validation.',
   },
+  deepdive: {
+    variant: 'placeholder',
+    headerIcon: 'wc-ai',
+    headerLabel: 'DeepDive',
+    question: 'AI-powered follow-up questions after a selected answer.',
+  },
   'flex-matrix': {
     variant: 'placeholder',
     headerIcon: 'wm-view-module',

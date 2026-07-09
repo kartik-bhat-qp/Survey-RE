@@ -10,6 +10,15 @@
   width: min(22rem, 100%);
 }
 
+.panelDeepDiveActive {
+  width: min(28rem, 100%);
+}
+
+.deepDiveToggleSection {
+  flex-shrink: 0;
+  padding: 1rem 1rem 0;
+}
+
 .header {
   align-items: center;
   border-bottom: 1px solid #e8edf2;
@@ -120,6 +129,37 @@
 
 .toggleRow :global(.wu-toggle-container) {
   width: fit-content;
+}
+
+.deepDiveToggleLabel {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.deepDiveToggleRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.deepDiveToggleRow :global(.wu-toggle-container) {
+  width: fit-content;
+}
+
+.newBadge {
+  background: #22c55e;
+  border-radius: 0.125rem;
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.125rem 0.3125rem;
+  text-transform: uppercase;
 }
 
 .toggleLabelRow {

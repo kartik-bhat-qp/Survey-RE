@@ -12,6 +12,11 @@
   margin: 0;
 }
 
+.deepDiveSlot {
+  list-style: none;
+  margin: 0;
+}
+
 .optionLabel {
   align-items: flex-start;
   color: #334155;

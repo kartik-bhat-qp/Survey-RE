@@ -16,6 +16,11 @@ import {
 } from '@/data/mock-question-settings';
 import type { CaptchaSettings } from '@/data/mock-captcha-settings';
 import { DEFAULT_CAPTCHA_SETTINGS } from '@/data/mock-captcha-settings';
+import {
+  resolveDeepDiveFollowUpSettings,
+  toPreviewDeepDiveSettings,
+  type DeepDiveFollowUpSettings,
+} from '@/data/mock-deepdive-question-settings';
 import type { ShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
 
 export interface SurveyQuestionPreviewFollowUp {
@@ -31,6 +36,7 @@ export interface SurveyQuestionPreviewFollowUp {
   /** When answer display order is alternate-flip, whether this preview uses reversed order. */
   alternateFlipReversed?: boolean;
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
+  deepDiveFollowUpSettings?: DeepDiveFollowUpSettings | null;
 }
 
 export interface SurveyQuestionPreviewPagination {
@@ -60,6 +66,7 @@ export interface SelectManyQuestionPreviewSession {
   randomizeAnswerCount?: RandomizeAnswerCount;
   alternateFlipReversed?: boolean;
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
+  deepDiveFollowUpSettings?: DeepDiveFollowUpSettings | null;
   priorPages?: SurveyQuestionPreviewFollowUp[][];
   samePageFollowUps?: SurveyQuestionPreviewFollowUp[];
   nextPages?: SurveyQuestionPreviewFollowUp[][];
@@ -76,6 +83,7 @@ export interface SelectOneQuestionPreviewSession {
   randomizeAnswerCount?: RandomizeAnswerCount;
   alternateFlipReversed?: boolean;
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
+  deepDiveFollowUpSettings?: DeepDiveFollowUpSettings | null;
   isFirstQuestion?: boolean;
   priorPages?: SurveyQuestionPreviewFollowUp[][];
   samePageFollowUps?: SurveyQuestionPreviewFollowUp[];
@@ -114,6 +122,80 @@ export function selectOnePreviewStorageKey(surveyId: number): string {
 
 export function captchaPreviewStorageKey(surveyId: number): string {
   return `survey-captcha-preview-${surveyId}`;
+}
+
+function deepDiveLivePreviewStorageKey(surveyId: number, questionCode: string): string {
+  return `survey-deepdive-live-${surveyId}-${questionCode}`;
+}
+
+/** Keeps an open preview tab in sync with workspace DeepDive settings. */
+export function writeLiveDeepDivePreviewSettings(
+  surveyId: number,
+  questionCode: string,
+  settings: DeepDiveFollowUpSettings | null
+): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(
+    deepDiveLivePreviewStorageKey(surveyId, questionCode),
+    JSON.stringify(settings)
+  );
+}
+
+function readLiveDeepDivePreviewSettings(
+  surveyId: number,
+  questionCode: string | undefined
+): DeepDiveFollowUpSettings | null {
+  if (typeof window === 'undefined' || !questionCode) return null;
+  const raw = localStorage.getItem(deepDiveLivePreviewStorageKey(surveyId, questionCode));
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as DeepDiveFollowUpSettings | null;
+    if (!parsed) return null;
+    return resolveDeepDiveFollowUpSettings(parsed);
+  } catch {
+    return null;
+  }
+}
+
+function resolveSessionDeepDiveSettings(
+  surveyId: number,
+  questionCode: string | undefined,
+  fromSession: DeepDiveFollowUpSettings | null | undefined
+): DeepDiveFollowUpSettings | null {
+  const live = readLiveDeepDivePreviewSettings(surveyId, questionCode);
+  if (live !== null) {
+    return live.enabled ? live : null;
+  }
+  if (!fromSession) return null;
+  const resolved = resolveDeepDiveFollowUpSettings(fromSession);
+  return resolved.enabled ? resolved : null;
+}
+
+export function syncDeepDiveSettingsToPreviewSessions(
+  surveyId: number,
+  questionCode: string,
+  settings: DeepDiveFollowUpSettings
+): void {
+  if (typeof window === 'undefined') return;
+
+  const previewSettings = toPreviewDeepDiveSettings(settings);
+  writeLiveDeepDivePreviewSettings(surveyId, questionCode, previewSettings);
+
+  const selectManySession = readSelectManyQuestionPreviewSession(surveyId);
+  if (selectManySession?.questionCode === questionCode) {
+    writeSelectManyQuestionPreviewSession({
+      ...selectManySession,
+      deepDiveFollowUpSettings: previewSettings,
+    });
+  }
+
+  const selectOneSession = readSelectOneQuestionPreviewSession(surveyId);
+  if (selectOneSession?.questionCode === questionCode) {
+    writeSelectOneQuestionPreviewSession({
+      ...selectOneSession,
+      deepDiveFollowUpSettings: previewSettings,
+    });
+  }
 }
 
 /** localStorage so data is available when preview opens in a new browser tab. */
@@ -181,10 +263,23 @@ export function writeSelectManyQuestionPreviewSession(
   payload: SelectManyQuestionPreviewSession
 ): void {
   if (typeof window === 'undefined') return;
+  const deepDiveFollowUpSettings = resolveSessionDeepDiveSettings(
+    payload.surveyId,
+    payload.questionCode,
+    payload.deepDiveFollowUpSettings
+  );
+  if (payload.questionCode) {
+    writeLiveDeepDivePreviewSettings(
+      payload.surveyId,
+      payload.questionCode,
+      deepDiveFollowUpSettings
+    );
+  }
   localStorage.setItem(
     selectManyPreviewStorageKey(payload.surveyId),
     JSON.stringify({
       ...payload,
+      deepDiveFollowUpSettings,
       ...mergeOptionQuestionPreviewSettings(
         {
           answerDisplayOrder: payload.answerDisplayOrder,
@@ -206,6 +301,11 @@ export function readSelectManyQuestionPreviewSession(
     const parsed = JSON.parse(raw) as SelectManyQuestionPreviewSession;
     return {
       ...parsed,
+      deepDiveFollowUpSettings: resolveSessionDeepDiveSettings(
+        surveyId,
+        parsed.questionCode,
+        parsed.deepDiveFollowUpSettings
+      ),
       ...mergeOptionQuestionPreviewSettings(
         {
           answerDisplayOrder: parsed.answerDisplayOrder,
@@ -223,10 +323,23 @@ export function writeSelectOneQuestionPreviewSession(
   payload: SelectOneQuestionPreviewSession
 ): void {
   if (typeof window === 'undefined') return;
+  const deepDiveFollowUpSettings = resolveSessionDeepDiveSettings(
+    payload.surveyId,
+    payload.questionCode,
+    payload.deepDiveFollowUpSettings
+  );
+  if (payload.questionCode) {
+    writeLiveDeepDivePreviewSettings(
+      payload.surveyId,
+      payload.questionCode,
+      deepDiveFollowUpSettings
+    );
+  }
   localStorage.setItem(
     selectOnePreviewStorageKey(payload.surveyId),
     JSON.stringify({
       ...payload,
+      deepDiveFollowUpSettings,
       ...mergeOptionQuestionPreviewSettings(
         {
           answerDisplayOrder: payload.answerDisplayOrder,
@@ -248,6 +361,11 @@ export function readSelectOneQuestionPreviewSession(
     const parsed = JSON.parse(raw) as SelectOneQuestionPreviewSession;
     return {
       ...parsed,
+      deepDiveFollowUpSettings: resolveSessionDeepDiveSettings(
+        surveyId,
+        parsed.questionCode,
+        parsed.deepDiveFollowUpSettings
+      ),
       ...mergeOptionQuestionPreviewSettings(
         {
           answerDisplayOrder: parsed.answerDisplayOrder,

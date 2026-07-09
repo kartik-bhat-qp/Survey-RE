@@ -8,6 +8,7 @@ import {
   type AnswerDisplayOrder,
   type RandomizeAnswerCount,
 } from '@/data/mock-question-settings';
+import type { DeepDiveFollowUpSettings } from '@/data/mock-deepdive-question-settings';
 import type { SurveyQuestionInputKind } from '@/data/mock-survey-detail';
 import type { SurveyQuestionPreviewFollowUp } from '@/data/survey-question-preview-session';
 import type { ShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
@@ -26,6 +27,7 @@ export interface SelectOneQuestionPreviewProps {
   randomizeAnswerCount?: RandomizeAnswerCount;
   alternateFlipReversed?: boolean;
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
+  deepDiveFollowUpSettings?: DeepDiveFollowUpSettings | null;
   isFirstQuestion?: boolean;
   samePageFollowUps?: SurveyQuestionPreviewFollowUp[];
   nextPages?: SurveyQuestionPreviewFollowUp[][];
@@ -45,6 +47,7 @@ export function SelectOneQuestionPreview({
   randomizeAnswerCount = DEFAULT_QUESTION_SETTINGS.randomizeAnswerCount,
   alternateFlipReversed,
   showHideOptions = null,
+  deepDiveFollowUpSettings = null,
   isFirstQuestion = false,
   samePageFollowUps = [],
   nextPages = [],
@@ -63,6 +66,7 @@ export function SelectOneQuestionPreview({
       randomizeAnswerCount,
       alternateFlipReversed,
       showHideOptions,
+      deepDiveFollowUpSettings,
     };
 
     return [[anchorPage, ...samePageFollowUps], ...nextPages];
@@ -78,6 +82,7 @@ export function SelectOneQuestionPreview({
     required,
     samePageFollowUps,
     showHideOptions,
+    deepDiveFollowUpSettings,
   ]);
 
   const startsFromSurveyBeginning = isFirstQuestion;

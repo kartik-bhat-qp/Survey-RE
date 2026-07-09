@@ -434,6 +434,23 @@
   min-width: 0;
 }
 
+.questionTextMain {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.questionTextMain > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.selectManyQuestionTextWrap .questionTextMain {
+  padding-left: 0;
+}
+
 .questionTextWrap .required {
   line-height: 1.45;
   padding-top: 0.2rem;

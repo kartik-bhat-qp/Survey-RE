@@ -95,6 +95,9 @@ import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMen
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { CaptchaQuestionSettingsPanel } from '@/components/surveys/CaptchaQuestionSettingsPanel';
+import { DeepDiveFollowUpQuestionRow } from '@/components/surveys/DeepDiveFollowUpQuestionRow';
+import { DeepDiveAttachedBadge } from '@/components/surveys/DeepDiveAttachedBadge';
+import { DeepDiveQuestionSettingsPanel } from '@/components/surveys/DeepDiveQuestionSettingsPanel';
 import { MultiPointScalesSettingsPanel } from '@/components/surveys/MultiPointScalesSettingsPanel';
 import { QuestionLogicModal } from '@/components/surveys/QuestionLogicModal';
 import { QuestionSettingsPanel } from '@/components/surveys/QuestionSettingsPanel';
@@ -119,6 +122,27 @@ import {
   type CaptchaSettings,
 } from '@/data/mock-captcha-settings';
 import {
+  DEFAULT_DEEPDIVE_FOLLOW_UP_SETTINGS,
+  resolveDeepDiveFollowUpSettings,
+  toPreviewDeepDiveSettings,
+  getDeepDiveFollowUpWorkspaceStorageKey,
+  type DeepDiveFollowUpQuestionConfig,
+  type DeepDiveFollowUpSettings,
+} from '@/data/mock-deepdive-question-settings';
+import {
+  createDeepDiveFollowUpConfigQuestion,
+  findDeepDiveFollowUpConfigQuestion,
+  findSurveyQuestionById,
+  hasDeepDiveAttachedToQuestion,
+  isDeepDiveFollowUpConfigQuestion,
+  nextVisibleQuestionNumber,
+  migrateLegacyDeepDiveSurveySections,
+  normalizeSurveyEditorSections,
+  readDeepDiveFollowUpQuestionConfig,
+  updateDeepDiveFollowUpConfigQuestion,
+} from '@/data/mock-deepdive-follow-up-question';
+import { isDeepDiveFollowUpSettingsQuestion } from '@/data/mock-deepdive-v2-survey';
+import {
   DEFAULT_MULTI_POINT_SETTINGS,
   DEFAULT_NEW_MULTI_POINT_QUESTION_SETTINGS,
   isCardsCarouselPreview,
@@ -131,6 +155,7 @@ import {
   toQuestionPreviewFollowUp,
 } from '@/data/survey-question-preview-utils';
 import {
+  syncDeepDiveSettingsToPreviewSessions,
   writeCaptchaQuestionPreviewSession,
   writeMultiPointQuestionPreviewSession,
   writeSelectManyQuestionPreviewSession,
@@ -172,7 +197,13 @@ import {
   type QuestionCodeUpdate,
 } from '@/components/surveys/SurveyWorkspaceSectionsContext';
 import { useSurveyEditorBulkEdit } from '@/components/surveys/SurveyEditorBulkEditContext';
-import { getSurveyEditorSectionsStorageKey } from '@/data/survey-editor-persistence';
+import {
+  getLegacySurveyEditorSectionsStorageKey,
+  getSurveyEditorSectionsMigrationFlag,
+  getSurveyEditorSectionsStorageKey,
+  readPersistedSurveyEditorValue,
+  writePersistedSurveyEditorFlag,
+} from '@/data/survey-editor-persistence';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import styles from './SurveyEditorCanvas.module.css';
 
@@ -319,6 +350,10 @@ function isCaptchaQuestion(question: SurveyQuestion): boolean {
   return question.addQuestionTypeId === 'captcha';
 }
 
+function isDeepDiveConfigQuestion(question: SurveyQuestion): boolean {
+  return isDeepDiveFollowUpConfigQuestion(question);
+}
+
 function isSingleRowTextQuestion(question: SurveyQuestion): boolean {
   return question.addQuestionTypeId === 'single-row';
 }
@@ -337,6 +372,7 @@ function isSelectOneQuestion(question: SurveyQuestion): boolean {
     !isDropdownQuestion(question) &&
     !isCommentBoxQuestion(question) &&
     !isCaptchaQuestion(question) &&
+    !isDeepDiveConfigQuestion(question) &&
     !isSingleRowTextQuestion(question) &&
     !isEmailAddressQuestion(question) &&
     !isContactInformationQuestion(question) &&
@@ -377,6 +413,7 @@ function isSelectOnePreviewQuestion(
     !isDropdownQuestion(question) &&
     !isCommentBoxQuestion(question) &&
     !isCaptchaQuestion(question) &&
+    !isDeepDiveConfigQuestion(question) &&
     !isSingleRowTextQuestion(question) &&
     !isEmailAddressQuestion(question) &&
     !isContactInformationQuestion(question) &&
@@ -678,6 +715,7 @@ function QuestionRow({
   onQuestionTextChange,
   onOptionLabelChange,
   linkedCommunity,
+  hasDeepDiveAttached = false,
 }: {
   question: SurveyQuestion;
   sectionId: string;
@@ -704,6 +742,7 @@ function QuestionRow({
     label: string
   ) => void;
   linkedCommunity?: LinkedCommunityDisplay | null;
+  hasDeepDiveAttached?: boolean;
 }) {
   return (
     <article className={styles.questionRow}>
@@ -712,13 +751,16 @@ function QuestionRow({
           {linkedCommunity ? <LinkedCommunityBanner link={linkedCommunity} /> : null}
           <div className={styles.questionTextWrap}>
             {question.required ? <span className={styles.required}>*</span> : null}
-            <QuestionRichTextField
-              value={question.text}
-              onChange={(text) => onQuestionTextChange(sectionId, question.id, text)}
-              ariaLabel="Question text"
-              placeholder="Enter question text"
-              onPointerDown={stopQuestionEvent}
-            />
+            <div className={styles.questionTextMain}>
+              <QuestionRichTextField
+                value={question.text}
+                onChange={(text) => onQuestionTextChange(sectionId, question.id, text)}
+                ariaLabel="Question text"
+                placeholder="Enter question text"
+                onPointerDown={stopQuestionEvent}
+              />
+              {hasDeepDiveAttached ? <DeepDiveAttachedBadge /> : null}
+            </div>
           </div>
           {extractionSource && onModifyExtraction && onExtractionSourceClick ? (
             <ExtractedQuestionBanner
@@ -818,6 +860,7 @@ function SelectOneQuestionRow({
   onQuestionTextChange,
   onOptionLabelChange,
   linkedCommunity,
+  hasDeepDiveAttached = false,
 }: {
   question: SurveyQuestion;
   sectionId: string;
@@ -846,6 +889,7 @@ function SelectOneQuestionRow({
     label: string
   ) => void;
   linkedCommunity?: LinkedCommunityDisplay | null;
+  hasDeepDiveAttached?: boolean;
 }) {
   return (
     <article className={styles.selectManyBlock}>
@@ -866,13 +910,16 @@ function SelectOneQuestionRow({
           {linkedCommunity ? <LinkedCommunityBanner link={linkedCommunity} /> : null}
           <div className={styles.selectManyQuestionTextWrap}>
             {question.required ? <span className={styles.required}>*</span> : null}
-            <QuestionRichTextField
-              value={question.text}
-              onChange={(text) => onQuestionTextChange(sectionId, question.id, text)}
-              ariaLabel="Question text"
-              placeholder="Enter question text"
-              onPointerDown={stopQuestionEvent}
-            />
+            <div className={styles.questionTextMain}>
+              <QuestionRichTextField
+                value={question.text}
+                onChange={(text) => onQuestionTextChange(sectionId, question.id, text)}
+                ariaLabel="Question text"
+                placeholder="Enter question text"
+                onPointerDown={stopQuestionEvent}
+              />
+              {hasDeepDiveAttached ? <DeepDiveAttachedBadge /> : null}
+            </div>
           </div>
           {extractionSource && onModifyExtraction && onExtractionSourceClick ? (
             <ExtractedQuestionBanner
@@ -981,6 +1028,7 @@ function SelectManyQuestionRow({
   onQuestionTextChange,
   onOptionLabelChange,
   linkedCommunity,
+  hasDeepDiveAttached = false,
 }: {
   question: SurveyQuestion;
   sectionId: string;
@@ -1008,6 +1056,7 @@ function SelectManyQuestionRow({
     label: string
   ) => void;
   linkedCommunity?: LinkedCommunityDisplay | null;
+  hasDeepDiveAttached?: boolean;
 }) {
   return (
     <article className={styles.selectManyBlock}>
@@ -1027,13 +1076,16 @@ function SelectManyQuestionRow({
           {linkedCommunity ? <LinkedCommunityBanner link={linkedCommunity} /> : null}
           <div className={styles.selectManyQuestionTextWrap}>
             {question.required ? <span className={styles.required}>*</span> : null}
-            <QuestionRichTextField
-              value={question.text}
-              onChange={(text) => onQuestionTextChange(sectionId, question.id, text)}
-              ariaLabel="Question text"
-              placeholder="Enter question text"
-              onPointerDown={stopQuestionEvent}
-            />
+            <div className={styles.questionTextMain}>
+              <QuestionRichTextField
+                value={question.text}
+                onChange={(text) => onQuestionTextChange(sectionId, question.id, text)}
+                ariaLabel="Question text"
+                placeholder="Enter question text"
+                onPointerDown={stopQuestionEvent}
+              />
+              {hasDeepDiveAttached ? <DeepDiveAttachedBadge /> : null}
+            </div>
           </div>
           {extractionSource && onModifyExtraction && onExtractionSourceClick ? (
             <ExtractedQuestionBanner
@@ -1138,10 +1190,44 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     () => getSurveyEditorSectionsStorageKey(detail.survey.id),
     [detail.survey.id]
   );
+  const deepDiveFollowUpStorageKey = useMemo(
+    () => getDeepDiveFollowUpWorkspaceStorageKey(detail.survey.id),
+    [detail.survey.id]
+  );
   const [sections, setSections] = usePersistedState<SurveySection[]>(
     sectionsStorageKey,
-    cloneSections(detail.sections)
+    normalizeSurveyEditorSections(cloneSections(detail.sections))
   );
+  const sectionsMigratedRef = useRef(false);
+
+  useEffect(() => {
+    if (sectionsMigratedRef.current) return;
+    sectionsMigratedRef.current = true;
+
+    const migrationFlag = getSurveyEditorSectionsMigrationFlag(detail.survey.id);
+    if (!readPersistedSurveyEditorValue<boolean>(migrationFlag)) {
+      const legacySections = readPersistedSurveyEditorValue<SurveySection[]>(
+        getLegacySurveyEditorSectionsStorageKey(detail.survey.id)
+      );
+
+      if (legacySections) {
+        setSections(migrateLegacyDeepDiveSurveySections(legacySections));
+      } else {
+        setSections((prev) => {
+          const normalized = normalizeSurveyEditorSections(prev);
+          return normalized === prev ? prev : normalized;
+        });
+      }
+
+      writePersistedSurveyEditorFlag(migrationFlag);
+      return;
+    }
+
+    setSections((prev) => {
+      const normalized = normalizeSurveyEditorSections(prev);
+      return normalized === prev ? prev : normalized;
+    });
+  }, [detail.survey.id, setSections]);
   const [selectedQuestionKey, setSelectedQuestionKey] = useState<string | null>(null);
   const [checkedQuestionKeys, setCheckedQuestionKeys] = useState<Record<string, boolean>>({});
   const [bulkEditTarget, setBulkEditTarget] = useState<{
@@ -1175,6 +1261,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   const [captchaSettingsByKey, setCaptchaSettingsByKey] = useState<
     Record<string, CaptchaSettings>
   >({});
+  const [deepDiveFollowUpSettingsByKey, setDeepDiveFollowUpSettingsByKey] =
+    usePersistedState<Record<string, DeepDiveFollowUpSettings>>(deepDiveFollowUpStorageKey, {});
   const [bulkEditMatrixTarget, setBulkEditMatrixTarget] = useState<{
     sectionId: string;
     questionId: string;
@@ -1776,6 +1864,11 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         ?.questions.find((q) => q.id === settingsTarget.questionId)
     : undefined;
 
+  const settingsDeepDiveConfig =
+    settingsQuestion && isDeepDiveConfigQuestion(settingsQuestion)
+      ? readDeepDiveFollowUpQuestionConfig(settingsQuestion)
+      : null;
+
   const validationQuestion = validationTarget
     ? sections
         .find((sec) => sec.id === validationTarget.sectionId)
@@ -2007,6 +2100,71 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     []
   );
 
+  const getDeepDiveFollowUpSettings = useCallback(
+    (sectionId: string, questionId: string): DeepDiveFollowUpSettings => {
+      const questionKey = `${sectionId}:${questionId}`;
+      if (deepDiveFollowUpSettingsByKey[questionKey] !== undefined) {
+        return resolveDeepDiveFollowUpSettings(deepDiveFollowUpSettingsByKey[questionKey]);
+      }
+
+      const configEntry = findDeepDiveFollowUpConfigQuestion(sections);
+      if (configEntry) {
+        const config = readDeepDiveFollowUpQuestionConfig(configEntry.question);
+        if (
+          config &&
+          config.targetSectionId === sectionId &&
+          config.targetQuestionId === questionId
+        ) {
+          return resolveDeepDiveFollowUpSettings(config);
+        }
+      }
+
+      const question = sections
+        .find((section) => section.id === sectionId)
+        ?.questions.find((item) => item.id === questionId);
+      if (
+        question &&
+        isDeepDiveFollowUpSettingsQuestion(
+          detail.survey.id,
+          question,
+          detail.survey.name
+        )
+      ) {
+        return resolveDeepDiveFollowUpSettings({ enabled: true });
+      }
+
+      return { ...DEFAULT_DEEPDIVE_FOLLOW_UP_SETTINGS };
+    },
+    [deepDiveFollowUpSettingsByKey, detail.survey.id, detail.survey.name, sections]
+  );
+
+  const handleDeepDiveFollowUpSettingsChange = useCallback(
+    (questionKey: string, settings: DeepDiveFollowUpSettings, questionCode: string) => {
+      const resolved = resolveDeepDiveFollowUpSettings(settings);
+      setDeepDiveFollowUpSettingsByKey((prev) => ({ ...prev, [questionKey]: resolved }));
+      syncDeepDiveSettingsToPreviewSessions(detail.survey.id, questionCode, resolved);
+    },
+    [detail.survey.id, setDeepDiveFollowUpSettingsByKey]
+  );
+
+  const handleDeepDiveConfigChange = useCallback(
+    (nextConfig: DeepDiveFollowUpQuestionConfig) => {
+      setSections((prev) => {
+        const next = updateDeepDiveFollowUpConfigQuestion(prev, nextConfig);
+        const target = findSurveyQuestionById(
+          next,
+          nextConfig.targetSectionId,
+          nextConfig.targetQuestionId
+        );
+        if (target) {
+          syncDeepDiveSettingsToPreviewSessions(detail.survey.id, target.code, nextConfig);
+        }
+        return next;
+      });
+    },
+    [detail.survey.id]
+  );
+
   const updateQuestionMatrix = useCallback(
     (
       sectionId: string,
@@ -2180,6 +2338,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           }
 
           if (isSelectManyPreviewQuestion(question, questionSettings)) {
+            const deepDiveSettings = getDeepDiveFollowUpSettings(sectionId, questionId);
             writeSelectManyQuestionPreviewSession({
               surveyId: detail.survey.id,
               surveyTitle: detail.editorTitle,
@@ -2197,6 +2356,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                   ? getAndAdvanceAlternateFlipState(detail.survey.id, question.code)
                   : undefined,
               showHideOptions,
+              deepDiveFollowUpSettings: toPreviewDeepDiveSettings(deepDiveSettings),
               samePageFollowUps,
               nextPages,
             });
@@ -2208,6 +2368,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           }
 
           if (isSelectOnePreviewQuestion(question, questionSettings)) {
+            const deepDiveSettings = getDeepDiveFollowUpSettings(sectionId, questionId);
             writeSelectOneQuestionPreviewSession({
               surveyId: detail.survey.id,
               surveyTitle: detail.editorTitle,
@@ -2225,6 +2386,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                   ? getAndAdvanceAlternateFlipState(detail.survey.id, question.code)
                   : undefined,
               showHideOptions,
+              deepDiveFollowUpSettings: toPreviewDeepDiveSettings(deepDiveSettings),
               isFirstQuestion: isFirstSurveyQuestion(sections, sectionId, questionId),
               samePageFollowUps,
               nextPages,
@@ -3227,6 +3389,51 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         return;
       }
 
+      if (typeId === 'deepdive') {
+        const existing = findDeepDiveFollowUpConfigQuestion(sections);
+        if (existing) {
+          const existingKey = `${existing.sectionId}:${existing.question.id}`;
+          pendingScrollQuestionRef.current = {
+            sectionId: existing.sectionId,
+            questionId: existing.question.id,
+          };
+          setSelectedQuestionKey(existingKey);
+          showToast({
+            message: 'DeepDive is already configured for this survey',
+            variant: 'info',
+          });
+          return;
+        }
+
+        const ts = Date.now();
+        const newId = `q-deepdive-config-${ts}`;
+        const questionNumber = nextVisibleQuestionNumber(sections);
+        const newQuestion = createDeepDiveFollowUpConfigQuestion(
+          newId,
+          '',
+          '',
+          questionNumber,
+          { enabled: true }
+        );
+
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        pendingScrollQuestionRef.current = {
+          sectionId,
+          questionId: newId,
+        };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        showToast({ message: 'DeepDive added', variant: 'success' });
+        return;
+      }
+
       if (typeId === 'captcha') {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
@@ -3294,7 +3501,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         showToast({ message: `${typeLabel} question added`, variant: 'success' });
       }
     },
-    [showToast]
+    [sections, showToast]
   );
 
   return (
@@ -3378,6 +3585,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const isDropdown = isDropdownQuestion(question);
                     const isCommentBox = isCommentBoxQuestion(question);
                     const isCaptcha = isCaptchaQuestion(question);
+                    const isDeepDive = isDeepDiveConfigQuestion(question);
                     const isSingleRowText = isSingleRowTextQuestion(question);
                     const isEmailAddress = isEmailAddressQuestion(question);
                     const isContactInformation = isContactInformationQuestion(question);
@@ -3400,6 +3608,15 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const linkedCommunity = isMultiPoint
                       ? getLinkedCommunityDisplay(multiPointSettings)
                       : getLinkedCommunityDisplay(questionSettings);
+                    const deepDiveConfig = isDeepDive
+                      ? readDeepDiveFollowUpQuestionConfig(question)
+                      : null;
+                    const deepDiveAttached = hasDeepDiveAttachedToQuestion(
+                      sections,
+                      section.id,
+                      question.id,
+                      deepDiveFollowUpSettingsByKey
+                    );
                     const savedLogic = logicByQuestionKey[questionKey];
                     const questionOptionIds = question.options.map((option) => option.id);
                     const showHideOptionsApplied =
@@ -3478,7 +3695,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                             isConstantSum ? styles.questionBlockConstantSum : ''
                           } ${isDragDrop ? styles.questionBlockDragDrop : ''} ${
                             isStaticContent ? styles.questionBlockStaticContent : ''
-                          } ${
+                          } ${isDeepDive ? styles.questionBlockSingleRowText : ''} ${
                             isSelected ? styles.questionBlockSelected : ''
                           }`}
                         >
@@ -3572,6 +3789,26 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 }
                                 onBulkEdit={handleBulkEdit}
                                 onQuestionTextChange={handleQuestionTextChange}
+                              />
+                            ) : isDeepDive && deepDiveConfig ? (
+                              <DeepDiveFollowUpQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                sections={sections}
+                                config={deepDiveConfig}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onConfigChange={handleDeepDiveConfigChange}
                               />
                             ) : isCaptcha ? (
                               <CaptchaQuestionRow
@@ -4195,6 +4432,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 quotaOptionLabels={quotaOptionLabels}
                                 extractionOptionLabels={extractionOptionLabels}
                                 linkedCommunity={linkedCommunity}
+                                hasDeepDiveAttached={deepDiveAttached}
                                 {...extractionRowProps}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
@@ -4226,6 +4464,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 quotaOptionLabels={quotaOptionLabels}
                                 extractionOptionLabels={extractionOptionLabels}
                                 linkedCommunity={linkedCommunity}
+                                hasDeepDiveAttached={deepDiveAttached}
                                 {...extractionRowProps}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
@@ -4254,6 +4493,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 quotaOptionLabels={quotaOptionLabels}
                                 extractionOptionLabels={extractionOptionLabels}
                                 linkedCommunity={linkedCommunity}
+                                hasDeepDiveAttached={deepDiveAttached}
                                 {...extractionRowProps}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
@@ -4337,7 +4577,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         </button>
       ) : null}
 
-      {settingsQuestion && settingsQuestionKey ? (
+      {settingsQuestion && settingsQuestionKey && settingsTarget ? (
         isCaptchaQuestion(settingsQuestion) ? (
           <CaptchaQuestionSettingsPanel
             settings={getCaptchaSettings(settingsQuestionKey)}
@@ -4350,6 +4590,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             onChange={(next) => handleMultiPointSettingsChange(settingsQuestionKey, next)}
             onClose={() => setSettingsTarget(null)}
           />
+        ) : isDeepDiveConfigQuestion(settingsQuestion) && settingsDeepDiveConfig && settingsTarget ? (
+          <DeepDiveQuestionSettingsPanel
+            question={settingsQuestion}
+            sections={sections}
+            config={settingsDeepDiveConfig}
+            onChange={handleDeepDiveConfigChange}
+            onClose={() => setSettingsTarget(null)}
+          />
         ) : (
           <QuestionSettingsPanel
             question={settingsQuestion}
@@ -4358,6 +4606,32 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
               handleSettingsChange(settingsQuestionKey, next, settingsQuestion)
             }
             onClose={() => setSettingsTarget(null)}
+            sections={sections}
+            settingsSectionId={settingsTarget.sectionId}
+            showDeepDiveFollowUpSettings={isDeepDiveFollowUpSettingsQuestion(
+              detail.survey.id,
+              settingsQuestion,
+              detail.survey.name
+            )}
+            deepDiveFollowUpSettings={
+              isDeepDiveFollowUpSettingsQuestion(
+                detail.survey.id,
+                settingsQuestion,
+                detail.survey.name
+              )
+                ? getDeepDiveFollowUpSettings(
+                    settingsTarget.sectionId,
+                    settingsTarget.questionId
+                  )
+                : undefined
+            }
+            onDeepDiveFollowUpSettingsChange={(next) =>
+              handleDeepDiveFollowUpSettingsChange(
+                settingsQuestionKey,
+                next,
+                settingsQuestion.code
+              )
+            }
           />
         )
       ) : null}

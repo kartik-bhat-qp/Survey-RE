@@ -84,7 +84,10 @@ export default function SurveyQuestionPreviewPage() {
             : previewKind === 'captcha'
               ? captchaPreviewStorageKey(surveyId)
               : multiPointPreviewStorageKey(surveyId);
-      if (event.key === key) {
+      if (
+        event.key === key ||
+        event.key?.startsWith(`survey-deepdive-live-${surveyId}-`)
+      ) {
         loadPayload();
       }
     }
@@ -129,6 +132,7 @@ export default function SurveyQuestionPreviewPage() {
             randomizeAnswerCount={selectManyPayload.randomizeAnswerCount}
             alternateFlipReversed={selectManyPayload.alternateFlipReversed}
             showHideOptions={selectManyPayload.showHideOptions ?? null}
+            deepDiveFollowUpSettings={selectManyPayload.deepDiveFollowUpSettings ?? null}
             samePageFollowUps={selectManyPayload.samePageFollowUps ?? []}
             nextPages={selectManyPayload.nextPages ?? []}
             onDone={() => window.close()}
@@ -166,6 +170,7 @@ export default function SurveyQuestionPreviewPage() {
             randomizeAnswerCount={selectOnePayload.randomizeAnswerCount}
             alternateFlipReversed={selectOnePayload.alternateFlipReversed}
             showHideOptions={selectOnePayload.showHideOptions ?? null}
+            deepDiveFollowUpSettings={selectOnePayload.deepDiveFollowUpSettings ?? null}
             isFirstQuestion={selectOnePayload.isFirstQuestion}
             samePageFollowUps={selectOnePayload.samePageFollowUps ?? []}
             nextPages={selectOnePayload.nextPages ?? []}

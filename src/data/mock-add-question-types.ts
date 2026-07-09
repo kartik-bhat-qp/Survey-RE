@@ -197,6 +197,7 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
     tier: 'advanced',
     types: [
       { id: 'custom-logic', label: 'Custom Logic Engine', icon: 'wm-code' },
+      { id: 'deepdive', label: 'DeepDive', icon: 'wc-ai', highlight: true },
     ],
   },
   {

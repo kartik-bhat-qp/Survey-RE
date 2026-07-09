@@ -10,6 +10,11 @@ import {
   SURVEY_MENU_SURVEY_ID,
   createSurveyMenuSections,
 } from '@/data/mock-survey-menu';
+import type { DeepDiveFollowUpQuestionConfig } from '@/data/mock-deepdive-question-settings';
+import {
+  DEEPDIVE_V2_SURVEY_ID,
+  createDeepDiveV2Sections,
+} from '@/data/mock-deepdive-v2-survey';
 
 export type SurveyQuestionInputKind = 'radio' | 'checkbox';
 
@@ -34,7 +39,8 @@ export type SurveyQuestionKind =
   | 'drag-drop'
   | 'presentation'
   | 'section-heading'
-  | 'section-subheading';
+  | 'section-subheading'
+  | 'deep-dive-follow-ups';
 
 export type SurveySmileyRatingTone =
   | 'very-unsatisfied'
@@ -243,6 +249,10 @@ export interface SurveyQuestion {
   extractionSource?: SurveyQuestionExtractionSource;
   /** Add Question menu type id (e.g. `nps`, `select-many`) for license diamond display. */
   addQuestionTypeId?: string;
+  /** Hidden from survey takers; shown in the workspace with a hidden-question treatment. */
+  editorHidden?: boolean;
+  /** Target question and follow-up settings for DeepDive config questions. */
+  deepDiveFollowUpConfig?: DeepDiveFollowUpQuestionConfig;
 }
 
 /** Resolves the Add Question type id used for license diamond and tier checks. */
@@ -268,6 +278,7 @@ export function resolveAddQuestionTypeId(question: SurveyQuestion): string | und
   if (question.kind === 'presentation') return 'presentation';
   if (question.kind === 'section-heading') return 'section-heading';
   if (question.kind === 'section-subheading') return 'section-subheading';
+  if (question.kind === 'deep-dive-follow-ups') return 'deepdive';
   if (question.inputKind === 'checkbox') return 'select-many';
   if (question.inputKind === 'radio') return 'select-one';
   return undefined;
@@ -611,6 +622,14 @@ export function getSurveyDetail(survey: Survey): SurveyDetail {
       survey,
       editorTitle: getSurveyEditorTitle(survey),
       sections: createSurveyMenuSections(),
+    };
+  }
+
+  if (survey.id === DEEPDIVE_V2_SURVEY_ID) {
+    return {
+      survey,
+      editorTitle: getSurveyEditorTitle(survey),
+      sections: createDeepDiveV2Sections(),
     };
   }
 

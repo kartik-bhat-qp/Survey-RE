@@ -8,6 +8,7 @@ import {
   type AnswerDisplayOrder,
   type RandomizeAnswerCount,
 } from '@/data/mock-question-settings';
+import type { DeepDiveFollowUpSettings } from '@/data/mock-deepdive-question-settings';
 import type { SurveyQuestionPreviewFollowUp } from '@/data/survey-question-preview-session';
 import type { ShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
 import shellStyles from './MultiPointCardsCarouselPreview.module.css';
@@ -24,6 +25,7 @@ export interface SelectManyQuestionPreviewProps {
   randomizeAnswerCount?: RandomizeAnswerCount;
   alternateFlipReversed?: boolean;
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
+  deepDiveFollowUpSettings?: DeepDiveFollowUpSettings | null;
   samePageFollowUps?: SurveyQuestionPreviewFollowUp[];
   nextPages?: SurveyQuestionPreviewFollowUp[][];
   onDone?: () => void;
@@ -41,6 +43,7 @@ export function SelectManyQuestionPreview({
   randomizeAnswerCount = DEFAULT_QUESTION_SETTINGS.randomizeAnswerCount,
   alternateFlipReversed,
   showHideOptions = null,
+  deepDiveFollowUpSettings = null,
   samePageFollowUps = [],
   nextPages = [],
   onDone,
@@ -58,6 +61,7 @@ export function SelectManyQuestionPreview({
       randomizeAnswerCount,
       alternateFlipReversed,
       showHideOptions,
+      deepDiveFollowUpSettings,
     };
 
     return [[anchorPage, ...samePageFollowUps], ...nextPages];
@@ -72,6 +76,7 @@ export function SelectManyQuestionPreview({
     required,
     samePageFollowUps,
     showHideOptions,
+    deepDiveFollowUpSettings,
   ]);
 
   const { pageIndex, getFooterLabel, handleFooterAction } = useSurveyPreviewPagination(

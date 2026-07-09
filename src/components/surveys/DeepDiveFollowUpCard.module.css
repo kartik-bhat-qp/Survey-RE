@@ -1,0 +1,237 @@
+.card {
+  background: #fff;
+  border: 1px solid #d5dde6;
+  border-radius: 4px;
+  font-family: 'Fira Sans', sans-serif;
+  margin: 0.375rem 0 0 1.625rem;
+  padding: 0.875rem 1rem 1rem;
+  width: calc(100% - 1.625rem);
+}
+
+.cardHeader {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.progressSection {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.progressMeta {
+  align-items: center;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.progressStep {
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.progressTrack {
+  background: #e2e8f0;
+  border-radius: 9999px;
+  height: 0.25rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.progressFill {
+  background: #1b87e6;
+  border-radius: 9999px;
+  height: 100%;
+  transition: width 0.2s ease;
+}
+
+.skipLink {
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.skipLink:hover {
+  color: #1565b8;
+}
+
+.skipLink:focus-visible {
+  outline: 2px solid #1b87e6;
+  outline-offset: 2px;
+}
+
+.priorAnswer {
+  color: #64748b;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  margin: 0 0 0.625rem;
+}
+
+.priorAnswerQuote {
+  font-style: italic;
+}
+
+.questionText {
+  color: #1e293b;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.45;
+  margin: 0 0 0.75rem;
+}
+
+.formRow {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+@media (min-width: 36rem) {
+  .formRow {
+    align-items: stretch;
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+}
+
+.textInput {
+  background: #fff;
+  border: 1px solid #d5dde6;
+  border-radius: 4px;
+  color: #1e293b;
+  flex: 1;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  min-height: 2.375rem;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.textInput::placeholder {
+  color: #94a3b8;
+}
+
+.textInput:focus {
+  border-color: #1b87e6;
+  outline: none;
+}
+
+.textInput:focus-visible {
+  box-shadow: 0 0 0 2px rgb(27 135 230 / 20%);
+}
+
+.submitBtn {
+  align-self: flex-start;
+  background: #1b87e6;
+  border: 1px solid #1b87e6;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  min-height: 2.375rem;
+  padding: 0.4375rem 1rem;
+}
+
+.submitBtn:hover {
+  background: #1565b8;
+  border-color: #1565b8;
+}
+
+.submitBtn:focus-visible {
+  outline: 2px solid #1b87e6;
+  outline-offset: 2px;
+}
+
+.submitBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.summaryChip {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  gap: 0.375rem;
+  line-height: 1.3;
+  margin: 0.375rem 0 0 1.625rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.summaryChip:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.summaryChip:focus-visible {
+  outline: 2px solid #1b87e6;
+  outline-offset: 2px;
+}
+
+.summaryIcon {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.reviewPanel {
+  background: #fff;
+  border: 1px solid #d5dde6;
+  border-radius: 4px;
+  font-family: 'Fira Sans', sans-serif;
+  margin: 0.5rem 0 0 1.625rem;
+  padding: 0.75rem 1rem;
+  width: calc(100% - 1.625rem);
+}
+
+.reviewItem {
+  border-bottom: 1px solid #e2e8f0;
+  margin: 0;
+  padding: 0.625rem 0;
+}
+
+.reviewItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.reviewQuestion {
+  color: #64748b;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  margin: 0 0 0.25rem;
+}
+
+.reviewAnswer {
+  color: #1e293b;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  margin: 0;
+}

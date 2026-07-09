@@ -172,6 +172,15 @@ export const MOCK_SURVEYS: Survey[] = [
     status: 'Active - Draft',
     responses: 0,
   },
+  {
+    id: 16,
+    name: 'DeepDive V2',
+    folderId: 'all',
+    createdAt: '2026-07-01T09:00:00Z',
+    modifiedAt: '2026-07-08T14:20:00Z',
+    status: 'Active - Draft',
+    responses: 0,
+  },
 ];
 
 export const SURVEYS_PAGE_SIZE = 100;
