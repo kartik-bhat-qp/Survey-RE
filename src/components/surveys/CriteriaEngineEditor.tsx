@@ -222,6 +222,8 @@ function ValueMultiSelect({
   );
 }
 
+export type CriteriaEngineEditorVariant = 'default' | 'quota';
+
 export interface CriteriaEngineEditorProps {
   criteria: Criterion[];
   collapsedCriterionIds: Set<string>;
@@ -231,6 +233,9 @@ export interface CriteriaEngineEditorProps {
   renderCriterionFooter?: (criterion: Criterion) => ReactNode;
   showAddCriteria?: boolean;
   minCriteria?: number;
+  /** Quota flow: numbered criteria blocks, no name/mode fields, OR semantics between blocks. */
+  variant?: CriteriaEngineEditorVariant;
+  addCriteriaLabel?: string;
 }
 
 export function CriteriaEngineEditor({
@@ -241,7 +246,11 @@ export function CriteriaEngineEditor({
   renderCriterionFooter,
   showAddCriteria = false,
   minCriteria = 1,
+  variant = 'default',
+  addCriteriaLabel = '+ Criteria',
 }: CriteriaEngineEditorProps) {
+  const isQuotaVariant = variant === 'quota';
+  const canAddCriteria = showAddCriteria || isQuotaVariant;
   function patch(next: Partial<{ criteria: Criterion[]; collapsedCriterionIds: Set<string> }>) {
     onChange({
       criteria: next.criteria ?? criteria,
@@ -374,8 +383,20 @@ export function CriteriaEngineEditor({
     patch({ criteria: [...criteria, newCriterion()] });
   }
 
+  function criterionDisplayLabel(criterion: Criterion, critIdx: number): string {
+    if (isQuotaVariant) {
+      return `Criteria ${critIdx + 1}`;
+    }
+    return criterion.name.trim() || 'Criteria';
+  }
+
   return (
     <div className={styles.criteriaSection}>
+      {isQuotaVariant && criteria.length > 1 ? (
+        <p className={styles.criteriaOrHint}>
+          A respondent matches this quota when any one of the criteria below is met.
+        </p>
+      ) : null}
       <div className={styles.criteriaList}>
         {criteria.map((criterion, critIdx) => {
           const collapsed = collapsedCriterionIds.has(criterion.id);
@@ -386,26 +407,34 @@ export function CriteriaEngineEditor({
               : undefined;
 
           return (
-            <section key={criterion.id} className={styles.criterionCard}>
+            <div key={criterion.id} className={styles.criterionGroup}>
+              {isQuotaVariant && critIdx > 0 ? (
+                <div className={styles.criteriaOrDivider} aria-hidden>
+                  OR
+                </div>
+              ) : null}
+              <section className={styles.criterionCard}>
               <header className={styles.criterionHeader}>
                 <div className={styles.criterionHeaderLeft}>
                   <span className={styles.criterionTag}>
                     <span className={styles.criterionTagLabel}>
-                      {criterion.name.trim() || 'Criteria'}
+                      {criterionDisplayLabel(criterion, critIdx)}
                     </span>
                   </span>
-                  <WuInput
-                    variant="outlined"
-                    placeholder="Criteria name"
-                    value={criterion.name}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                      handleUpdateCriterionName(criterion.id, event.target.value)
-                    }
-                    disabled={criterion.mode === 'existing'}
-                    className={`${styles.criterionNameInput} ${
-                      criterion.mode === 'existing' ? styles.criterionNameInputReadOnly : ''
-                    }`}
-                  />
+                  {!isQuotaVariant ? (
+                    <WuInput
+                      variant="outlined"
+                      placeholder="Criteria name"
+                      value={criterion.name}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                        handleUpdateCriterionName(criterion.id, event.target.value)
+                      }
+                      disabled={criterion.mode === 'existing'}
+                      className={`${styles.criterionNameInput} ${
+                        criterion.mode === 'existing' ? styles.criterionNameInputReadOnly : ''
+                      }`}
+                    />
+                  ) : null}
                 </div>
                 <div className={styles.criterionHeaderRight}>
                   <button
@@ -437,32 +466,34 @@ export function CriteriaEngineEditor({
 
               {!collapsed ? (
                 <div className={styles.criterionBody}>
-                  <div className={styles.criteriaModeRow}>
-                    <span className={styles.label}>Use</span>
-                    <div
-                      className={styles.criteriaModeToggle}
-                      role="group"
-                      aria-label="New or existing criteria"
-                    >
-                      {CRITERIA_MODES.map((mode) => (
-                        <button
-                          key={mode}
-                          type="button"
-                          className={
-                            criterion.mode === mode
-                              ? styles.modeToggleActive
-                              : styles.modeToggleInactive
-                          }
-                          onClick={() => handleCriterionModeChange(criterion.id, mode)}
-                          aria-pressed={criterion.mode === mode}
-                        >
-                          {mode === 'new' ? 'New' : 'Existing'}
-                        </button>
-                      ))}
+                  {!isQuotaVariant ? (
+                    <div className={styles.criteriaModeRow}>
+                      <span className={styles.label}>Use</span>
+                      <div
+                        className={styles.criteriaModeToggle}
+                        role="group"
+                        aria-label="New or existing criteria"
+                      >
+                        {CRITERIA_MODES.map((mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            className={
+                              criterion.mode === mode
+                                ? styles.modeToggleActive
+                                : styles.modeToggleInactive
+                            }
+                            onClick={() => handleCriterionModeChange(criterion.id, mode)}
+                            aria-pressed={criterion.mode === mode}
+                          >
+                            {mode === 'new' ? 'New' : 'Existing'}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
 
-                  {criterion.mode === 'existing' ? (
+                  {!isQuotaVariant && criterion.mode === 'existing' ? (
                     <div className={styles.existingCriteriaPanel}>
                       <div className={styles.field}>
                         <label className={styles.label}>Select criteria</label>
@@ -816,14 +847,16 @@ export function CriteriaEngineEditor({
                   {renderCriterionFooter ? renderCriterionFooter(criterion) : null}
                 </div>
               ) : null}
-            </section>
+              </section>
+            </div>
           );
         })}
       </div>
 
-      {showAddCriteria ? (
+      {canAddCriteria ? (
         <button type="button" className={styles.addCriteriaBtn} onClick={handleAddCriteria}>
-          + Criteria
+          <span className="wm-add" aria-hidden />
+          <span>{addCriteriaLabel}</span>
         </button>
       ) : null}
     </div>

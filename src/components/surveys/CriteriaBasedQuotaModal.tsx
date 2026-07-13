@@ -254,7 +254,7 @@ function validateBlock(
       : undefined;
   }
   const criteria: CriteriaQuotaCriterion[] = block.criteria
-    .map((crit) => {
+    .map((crit, critIdx) => {
       const conditions: CriteriaQuotaCondition[] = crit.conditions
         .filter((cond) => {
           if (cond.source === 'Question') {
@@ -292,7 +292,7 @@ function validateBlock(
             connector: cond.connector,
           };
         });
-      return { name: crit.name.trim(), conditions };
+      return { name: crit.name.trim() || `Criteria ${critIdx + 1}`, conditions };
     })
     // Criteria name is optional in the prototype; we still want to keep the
     // conditions so advanced-group quotas can show the actual rules.
@@ -514,6 +514,8 @@ function QuotaBlockEditor({
             criteria={block.criteria}
             collapsedCriterionIds={block.collapsedCriterionIds}
             questions={questions}
+            variant="quota"
+            addCriteriaLabel="Add criteria"
             onChange={({ criteria, collapsedCriterionIds }) =>
               update({ criteria, collapsedCriterionIds })
             }
@@ -793,8 +795,9 @@ export function CriteriaBasedQuotaModal({
               </>
             ) : (
               <>
-                Define one or more criteria based quotas. Each quota has its own name, target,
-                criteria, and check points.
+                Define a criteria based quota with one or more criteria. The quota applies when{' '}
+                <strong>any</strong> criteria is met. Each criteria has its own conditions (AND/OR
+                within the block), plus check points.
               </>
             )}
           </p>

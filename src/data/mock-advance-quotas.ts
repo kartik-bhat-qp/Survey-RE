@@ -390,14 +390,51 @@ export const MOCK_ADVANCE_QUOTAS: AdvanceQuota[] = [
   },
   {
     id: 'quota-7',
-    name: '[Q3] Employment - Full time',
+    name: 'Employed adults — age or gender',
     quotaType: 'Criteria based',
     description:
-      'Selected "Full time" in [Q3] Employment status and Checked after [Q3], re-checked after [Q12]',
+      'Criteria 1: Selected "18-24" in [Q5] What is your age? AND Selected "Male" in [Q1] What is your gender? OR Criteria 2: Selected "Full time" in [Q3] Employment status and Checked after [Q3], re-checked after [Q12]',
     quotaGroup: 'NA',
     multipleQuotaHandling: 'NA',
     target: 200,
     current: 188,
+    criterionBlocks: [
+      {
+        name: 'Criteria 1',
+        conditions: [
+          {
+            source: 'Question',
+            questionCode: 'Q5',
+            questionText: 'What is your age?',
+            subject: 'What is your age?',
+            operator: 'is',
+            value: '18-24, 25-34',
+          },
+          {
+            source: 'Question',
+            questionCode: 'Q1',
+            questionText: 'What is your gender?',
+            subject: 'What is your gender?',
+            operator: 'is',
+            value: 'Male',
+            connector: 'AND',
+          },
+        ],
+      },
+      {
+        name: 'Criteria 2',
+        conditions: [
+          {
+            source: 'Question',
+            questionCode: 'Q3',
+            questionText: 'Employment status',
+            subject: 'Employment status',
+            operator: 'is',
+            value: 'Full time',
+          },
+        ],
+      },
+    ],
     quotaChecks: [
       { questionCode: 'Q3', questionText: 'Employment status' },
       { questionCode: 'Q12', questionText: 'How often do you consume alcohol?' },

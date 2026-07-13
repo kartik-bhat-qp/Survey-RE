@@ -70,6 +70,7 @@ export function CriteriaRulesExpanded({
   variant = 'panel',
 }: CriteriaRulesExpandedProps) {
   const rows = buildCriteriaRuleRows(blocks);
+  const hasMultipleBlocks = blocks.filter((block) => block.conditions.length > 0).length > 1;
 
   if (rows.length === 0) {
     return (
@@ -81,6 +82,71 @@ export function CriteriaRulesExpanded({
 
   const panelClass =
     variant === 'inline' ? styles.rulesPanelInline : styles.rulesPanel;
+
+  if (hasMultipleBlocks) {
+    const visibleBlocks = blocks.filter((block) => block.conditions.length > 0);
+    let questionIndex = 0;
+
+    return (
+      <div className={panelClass}>
+        <p className={styles.blockOrHint}>Quota matches when any criteria below is met.</p>
+        {visibleBlocks.map((block, blockIdx) => {
+          const blockRows = block.conditions.map((cond) => {
+            questionIndex += 1;
+            return formatConditionRow(cond, questionIndex);
+          });
+
+          return (
+            <div key={`${block.name}-${blockIdx}`} className={styles.criteriaBlockGroup}>
+              {blockIdx > 0 ? (
+                <div className={styles.blockOrDivider} aria-hidden>
+                  OR
+                </div>
+              ) : null}
+              {block.name ? (
+                <div className={styles.blockName} role="heading" aria-level={4}>
+                  {block.name}
+                </div>
+              ) : null}
+              <div className={styles.rulesTable} role="table" aria-label={`${block.name} rules`}>
+                {showHeader && blockIdx === 0 ? (
+                  <div className={styles.rulesHeader} role="row">
+                    <span className={styles.colConnector} aria-hidden />
+                    <span className={styles.colType}>Type</span>
+                    <span className={styles.colQuestion}>Question</span>
+                    <span className={styles.colOperator}> </span>
+                    <span className={styles.colValue}> </span>
+                  </div>
+                ) : null}
+                {blockRows.map((row, idx) => (
+                  <div key={idx} className={styles.rulesRow} role="row">
+                    <span
+                      className={`${styles.colConnector} ${
+                        row.connector === 'IF'
+                          ? styles.connectorIf
+                          : row.connector === 'Or'
+                            ? styles.connectorOr
+                            : styles.connectorAnd
+                      }`}
+                    >
+                      {row.connector}
+                    </span>
+                    <span className={styles.colType}>{row.typeLabel}</span>
+                    <span className={styles.colQuestion}>{row.questionLabel}</span>
+                    <span className={styles.colOperator}>{row.operator}</span>
+                    <span className={styles.colValue}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+        {checksSuffix ? (
+          <p className={styles.checksSuffix}>{checksSuffix}</p>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className={panelClass}>
@@ -128,6 +194,17 @@ function formatRowAsPhrase(row: CriteriaRuleDisplayRow): string {
 export function getCriteriaPreviewLine(
   blocks: AdvanceQuotaCriterionBlock[]
 ): string {
+  const visibleBlocks = blocks.filter((block) => block.conditions.length > 0);
+  if (visibleBlocks.length === 0) return '';
+
+  if (visibleBlocks.length > 1) {
+    const blockSummaries = visibleBlocks.map((block) => {
+      const rows = buildCriteriaRuleRows([block]);
+      return rows.length > 0 ? formatRowAsPhrase(rows[0]) : block.name;
+    });
+    return blockSummaries.join(' OR ');
+  }
+
   const rows = buildCriteriaRuleRows(blocks);
   if (rows.length === 0) return '';
 

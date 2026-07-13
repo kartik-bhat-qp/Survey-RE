@@ -139,7 +139,7 @@ function buildCriteriaQuota(
   }
   const descriptionParts: string[] = [];
   if (criterionParts.length > 0) {
-    descriptionParts.push(criterionParts.join(' | '));
+    descriptionParts.push(criterionParts.join(' OR '));
   } else if (data.name.trim()) {
     descriptionParts.push(data.name.trim());
   }
