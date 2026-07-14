@@ -66,7 +66,7 @@ export function SurveyAnalyticsResponses() {
       {
         id: '#',
         header: '#',
-        accessorFn: () => '',
+        accessorKey: 'id',
         cell: ({ row }) => (
           <span className={styles.rowNum}>{row.index + 1}</span>
         ),
@@ -211,7 +211,7 @@ export function SurveyAnalyticsResponses() {
             <span className={styles.questionsLabel}>Questions</span>
             <WuToggle
               checked={questionsVisible}
-              onChange={setQuestionsVisible}
+              onChange={(checked) => setQuestionsVisible(checked)}
               aria-label="Show question columns"
             />
           </div>
