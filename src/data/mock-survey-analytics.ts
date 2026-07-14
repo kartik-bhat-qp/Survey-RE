@@ -5,6 +5,10 @@ export type AnalyticsTabId = 'dashboard' | 'analysis' | 'net-insights' | 'manage
 export interface AnalyticsNavItem {
   id: string;
   label: string;
+  icon?: string;
+  isNew?: boolean;
+  /** Relative path to open in a new browser tab instead of navigating in-app. */
+  openInNewTab?: string;
   requiresAdvancedLicense?: boolean;
 }
 
@@ -16,11 +20,18 @@ export const ANALYTICS_TAB_CONFIG: Record<
     label: 'Dashboard',
     icon: 'wm-dashboard',
     items: [
-      { id: 'dashboard', label: 'Dashboard' },
-      { id: 'participant-statistics', label: 'Participant Statistics' },
-      { id: 'responses', label: 'Responses' },
-      { id: 'datapad', label: 'Datapad' },
-      { id: 'infographic', label: 'InfoGraphic', requiresAdvancedLicense: true },
+      { id: 'dashboard', label: 'Dashboard', icon: 'wm-dashboard' },
+      {
+        id: 'bi-dashboard',
+        label: 'BI Dashboard',
+        icon: 'wm-bar-chart',
+        isNew: true,
+        openInNewTab: '/bi-lite/dashboards',
+      },
+      { id: 'participant-statistics', label: 'Participant Statistics', icon: 'wm-people' },
+      { id: 'responses', label: 'Responses', icon: 'wm-format-list-bulleted' },
+      { id: 'datapad', label: 'Datapad', icon: 'wm-table-chart' },
+      { id: 'infographic', label: 'InfoGraphic', icon: 'wm-insert-chart', requiresAdvancedLicense: true },
     ],
   },
   analysis: {
@@ -69,6 +80,7 @@ export const ANALYTICS_TAB_IDS = Object.keys(ANALYTICS_TAB_CONFIG) as AnalyticsT
 export const ANALYTICS_DASHBOARD_NAV_ITEMS = ANALYTICS_TAB_CONFIG.dashboard.items;
 
 export function getDefaultAnalyticsSubView(tabId: AnalyticsTabId): string {
+  if (tabId === 'dashboard') return 'responses';
   return ANALYTICS_TAB_CONFIG[tabId].items[0]?.id ?? tabId;
 }
 

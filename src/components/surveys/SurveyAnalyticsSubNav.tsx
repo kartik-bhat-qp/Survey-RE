@@ -26,6 +26,33 @@ const WuMenuItem = dynamic(
   { ssr: false }
 );
 
+function AnalyticsTabNavIcon({
+  tabId,
+  defaultIcon,
+  items,
+}: {
+  tabId: AnalyticsTabId;
+  defaultIcon: string;
+  items: AnalyticsNavItem[];
+}) {
+  const { activeTab, activeSubView } = useSurveyAnalyticsView();
+  const isActiveTab = activeTab === tabId;
+  const icon =
+    isActiveTab
+      ? (items.find((item) => item.id === activeSubView)?.icon ?? defaultIcon)
+      : defaultIcon;
+
+  return (
+    <div className={styles.tabIconWrap}>
+      <div className={styles.tabNavGrid}>
+        <span className={styles.tabGridSpacer} aria-hidden />
+        <span className={`${icon} ${styles.tabIcon}`} aria-hidden />
+        <span className={styles.tabGridSpacer} aria-hidden />
+      </div>
+    </div>
+  );
+}
+
 function AnalyticsTabNavMenu({
   tabId,
   label,
@@ -39,8 +66,17 @@ function AnalyticsTabNavMenu({
   const [menuOpen, setMenuOpen] = useState(false);
   const isActiveTab = activeTab === tabId;
 
-  function handleSelectView(subViewId: string) {
-    setAnalyticsSelection(tabId, subViewId);
+  const displayLabel = isActiveTab
+    ? (items.find((item) => item.id === activeSubView)?.label ?? label)
+    : label;
+
+  function handleSelectView(item: AnalyticsNavItem) {
+    if (item.openInNewTab) {
+      window.open(item.openInNewTab, '_blank', 'noopener,noreferrer');
+      setMenuOpen(false);
+      return;
+    }
+    setAnalyticsSelection(tabId, item.id);
     setMenuOpen(false);
   }
 
@@ -58,7 +94,7 @@ function AnalyticsTabNavMenu({
           aria-expanded={menuOpen}
         >
           <span className={styles.tabGridSpacer} aria-hidden />
-          <span className={styles.tabLabel}>{label}</span>
+          <span className={styles.tabLabel}>{displayLabel}</span>
           <span className={`wm-arrow-drop-down ${styles.tabChevron}`} aria-hidden />
         </button>
       }
@@ -69,19 +105,31 @@ function AnalyticsTabNavMenu({
         <WuMenuItem
           key={item.id}
           className={
-            isActiveTab && activeSubView === item.id
+            isActiveTab && activeSubView === item.id && !item.openInNewTab
               ? styles.tabMenuItemActive
               : styles.tabMenuItem
           }
-          onSelect={() => handleSelectView(item.id)}
+          onSelect={() => handleSelectView(item)}
         >
           <span className={styles.tabMenuItemContent}>
-            <span>{item.label}</span>
-            {item.requiresAdvancedLicense ? (
-              <span className={styles.advancedBadge} aria-label="Advanced license required">
-                <span className="wm-science" aria-hidden />
-              </span>
-            ) : null}
+            <span className={styles.tabMenuItemLabel}>
+              {item.label}
+              {item.openInNewTab ? (
+                <span className={`wm-open-in-new ${styles.redirectIcon}`} aria-label="Opens in new tab" />
+              ) : null}
+            </span>
+            <span className={styles.tabMenuItemBadges}>
+              {item.isNew ? (
+                <span className={styles.newBadge} aria-label="New feature">
+                  New
+                </span>
+              ) : null}
+              {item.requiresAdvancedLicense ? (
+                <span className={styles.advancedBadge} aria-label="Advanced license required">
+                  <span className="wm-science" aria-hidden />
+                </span>
+              ) : null}
+            </span>
           </span>
         </WuMenuItem>
       ))}
@@ -102,11 +150,11 @@ export function SurveyAnalyticsSubNav() {
           ),
           imgOrIcon: (
             <div className={styles.tabIconWrap}>
-              <div className={styles.tabNavGrid}>
-                <span className={styles.tabGridSpacer} aria-hidden />
-                <span className={`${tab.icon} ${styles.tabIcon}`} aria-hidden />
-                <span className={styles.tabGridSpacer} aria-hidden />
-              </div>
+              <AnalyticsTabNavIcon
+                tabId={tabId}
+                defaultIcon={tab.icon}
+                items={tab.items}
+              />
             </div>
           ),
         };

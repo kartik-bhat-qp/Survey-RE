@@ -8,6 +8,7 @@ import { useSurveyAnalyticsView } from '@/components/surveys/SurveyAnalyticsView
 import { VideoAiAnalysis } from '@/components/surveys/VideoAiAnalysis';
 import { consumeVideoAiRestoreState } from '@/components/video-ai/videoAiNavigation';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { SurveyAnalyticsResponses } from '@/components/surveys/SurveyAnalyticsResponses';
 import type { SurveyDetail } from '@/data/mock-survey-detail';
 import {
   getAnalyticsViewLabel,
@@ -121,6 +122,7 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
   const data = useMemo(() => getSurveyAnalyticsDashboardData(detail), [detail]);
   const activeViewLabel = getAnalyticsViewLabel(activeTab, activeSubView);
   const showDashboardContent = activeTab === 'dashboard' && activeSubView === 'dashboard';
+  const showResponsesContent = activeTab === 'dashboard' && activeSubView === 'responses';
   const showVideoAiAnalysis = activeTab === 'analysis' && activeSubView === 'video-ai-analysis';
 
   useEffect(() => {
@@ -149,20 +151,13 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
     );
   }
 
+  if (showResponsesContent) {
+    return <SurveyAnalyticsResponses />;
+  }
+
   if (!showDashboardContent) {
     return (
       <div className={styles.shell}>
-        <aside className={styles.sidebar} aria-label="My dashboards">
-          <p className={styles.sidebarTitle}>My Dashboard</p>
-          <button
-            type="button"
-            className={styles.newDashboardBtn}
-            onClick={() => handleAction('New dashboard')}
-          >
-            <span aria-hidden>+</span> New Dashboard
-          </button>
-        </aside>
-
         <div className={styles.main}>
           <h1 className={styles.surveyTitle}>{detail.survey.name}</h1>
           <div className={styles.placeholderCard}>
@@ -179,17 +174,6 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
 
   return (
     <div className={styles.shell}>
-      <aside className={styles.sidebar} aria-label="My dashboards">
-        <p className={styles.sidebarTitle}>My Dashboard</p>
-        <button
-          type="button"
-          className={styles.newDashboardBtn}
-          onClick={() => handleAction('New dashboard')}
-        >
-          <span aria-hidden>+</span> New Dashboard
-        </button>
-      </aside>
-
       <div className={styles.main}>
         <h1 className={styles.surveyTitle}>{detail.survey.name}</h1>
         <section className={styles.card} aria-labelledby="analytics-summary-title">

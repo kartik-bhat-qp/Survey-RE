@@ -78,6 +78,35 @@
   width: 100%;
 }
 
+.tabMenuItemLabel {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.redirectIcon {
+  color: #8898a9;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.tabMenuItemBadges {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.newBadge {
+  background: #22c55e;
+  border-radius: 0.125rem;
+  color: #fff;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.125rem 0.3125rem;
+}
+
 .advancedBadge {
   align-items: center;
   background: #fef3c7;

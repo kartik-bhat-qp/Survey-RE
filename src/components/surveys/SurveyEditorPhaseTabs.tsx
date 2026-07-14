@@ -41,6 +41,11 @@ const WuMenuItemGroup = dynamic(
   { ssr: false }
 );
 
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
+
 const PHASE_TABS: { id: SurveyEditorPhase; label: string }[] = [
   { id: 'edit', label: 'Edit' },
   { id: 'distribute', label: 'Distribute' },
@@ -179,14 +184,16 @@ export function SurveyEditorPhaseTabs() {
     <>
       <WuPrimaryNavbar Links={links}>
         <div className={styles.actions}>
-          <button
-            type="button"
-            className={`${styles.iconBtn} ${searchReplaceOpen ? styles.iconBtnActive : ''}`}
-            aria-label="Search and replace"
-            onClick={() => setSearchReplaceOpen(true)}
-          >
-            <SearchReplaceIcon className={styles.actionIcon} />
-          </button>
+          <WuTooltip content="Search and Replace" position="bottom">
+            <button
+              type="button"
+              className={`${styles.iconBtn} ${searchReplaceOpen ? styles.iconBtnActive : ''}`}
+              aria-label="Search and replace"
+              onClick={() => setSearchReplaceOpen(true)}
+            >
+              <SearchReplaceIcon className={styles.actionIcon} />
+            </button>
+          </WuTooltip>
           <WuMenu
             open={downloadMenuOpen}
             onOpenChange={handleDownloadMenuOpenChange}
@@ -200,6 +207,7 @@ export function SurveyEditorPhaseTabs() {
                 aria-label="Download"
                 aria-haspopup="menu"
                 aria-expanded={downloadMenuOpen}
+                title="Download"
               >
                 <span className={`wm-download ${styles.actionIcon}`} aria-hidden />
               </button>
@@ -311,13 +319,15 @@ export function SurveyEditorPhaseTabs() {
               </WuMenuItem>
             </WuMenuItemGroup>
           </WuMenu>
-          <button
-            type="button"
-            className={styles.testResponsesBtn}
-            onClick={() => setTestResponsesOpen(true)}
-          >
-            Test Responses
-          </button>
+          <WuTooltip content="Test Responses" position="bottom">
+            <button
+              type="button"
+              className={styles.testResponsesBtn}
+              onClick={() => setTestResponsesOpen(true)}
+            >
+              Test Responses
+            </button>
+          </WuTooltip>
           <button
             type="button"
             className={styles.userCountBtn}

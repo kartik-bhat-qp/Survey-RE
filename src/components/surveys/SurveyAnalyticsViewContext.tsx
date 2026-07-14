@@ -23,10 +23,18 @@ const SurveyAnalyticsViewContext = createContext<SurveyAnalyticsViewContextValue
   null
 );
 
-export function SurveyAnalyticsViewProvider({ children }: { children: ReactNode }) {
-  const [activeTab, setActiveTab] = useState<AnalyticsTabId>('dashboard');
+export function SurveyAnalyticsViewProvider({
+  children,
+  initialTab = 'dashboard',
+  initialSubView,
+}: {
+  children: ReactNode;
+  initialTab?: AnalyticsTabId;
+  initialSubView?: string;
+}) {
+  const [activeTab, setActiveTab] = useState<AnalyticsTabId>(initialTab);
   const [activeSubView, setActiveSubView] = useState<string>(
-    getDefaultAnalyticsSubView('dashboard')
+    initialSubView ?? getDefaultAnalyticsSubView(initialTab)
   );
 
   const setAnalyticsSelection = useCallback((tab: AnalyticsTabId, subView: string) => {
