@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CaptchaFeedbackStyle } from '@/data/mock-captcha-settings';
-import { CAPTCHA_FAILURE_HANDLING_COPY } from '@/data/mock-captcha-settings';
 import { CaptchaQuestionPreview } from '@/components/surveys/CaptchaQuestionPreview';
 import shellStyles from './MultiPointCardsCarouselPreview.module.css';
 import styles from './CaptchaInvisibleRespondentPreview.module.css';
@@ -237,7 +236,9 @@ export function CaptchaInvisibleVerification({
 
       {showV2Fallback ? (
         <div className={styles.v2FallbackBlock}>
-          <p className={styles.v2FallbackNote}>{CAPTCHA_FAILURE_HANDLING_COPY.toggleDescription}</p>
+          <p className={styles.v2FallbackNote}>
+            If invisible verification fails, the &ldquo;I&apos;m not a robot&rdquo; checkbox appears automatically.
+          </p>
           <CaptchaQuestionPreview variant="v2" />
         </div>
       ) : null}

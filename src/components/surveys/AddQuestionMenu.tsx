@@ -69,6 +69,8 @@ const WuButton = dynamic(
 
 export interface AddQuestionMenuProps {
   onSelect: (category: string, typeLabel: string, typeId: string) => void;
+  /** Type IDs to hide from the palette (e.g. ['captcha'] for non-reCAPTCHA surveys). */
+  excludeTypeIds?: string[];
 }
 
 type DrawerTab = 'all' | 'library';
@@ -552,7 +554,7 @@ function TierSection({
   );
 }
 
-export function AddQuestionMenu({ onSelect }: AddQuestionMenuProps) {
+export function AddQuestionMenu({ onSelect, excludeTypeIds }: AddQuestionMenuProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<DrawerTab>('all');
@@ -572,9 +574,17 @@ export function AddQuestionMenu({ onSelect }: AddQuestionMenuProps) {
     }
   }, [open]);
 
+  const visibleCategories = useMemo(() => {
+    if (!excludeTypeIds?.length) return ADD_QUESTION_CATEGORIES;
+    return ADD_QUESTION_CATEGORIES.map((category) => ({
+      ...category,
+      types: category.types.filter((type) => !excludeTypeIds.includes(type.id)),
+    })).filter((category) => category.types.length > 0);
+  }, [excludeTypeIds]);
+
   const filteredCategories = useMemo(
-    () => filterAddQuestionCategories(ADD_QUESTION_CATEGORIES, search),
-    [search]
+    () => filterAddQuestionCategories(visibleCategories, search),
+    [visibleCategories, search]
   );
 
   const basicCategories = useMemo(

@@ -13,7 +13,8 @@ export interface CaptchaSettings {
 
 export const DEFAULT_CAPTCHA_SETTINGS: CaptchaSettings = {
   recaptchaType: 'v2',
-  showV2OnV3VerificationFailed: false,
+  /** Always true — falling back to the V2 checkbox on invisible failure is mandatory. */
+  showV2OnV3VerificationFailed: true,
   captchaFeedbackStyle: 'button',
 };
 
@@ -35,28 +36,3 @@ export const CAPTCHA_RECAPTCHA_TYPE_OPTIONS: {
     isNew: true,
   },
 ];
-
-export const CAPTCHA_FEEDBACK_STYLE_OPTIONS: {
-  value: CaptchaFeedbackStyle;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'button',
-    label: 'Show status on the Next button',
-    description:
-      'Display "Verifying…" with a spinner on the Next button while verification is in progress.',
-  },
-  {
-    value: 'banner',
-    label: 'Show an inline status banner',
-    description: 'Display a banner above the button while verification is in progress.',
-  },
-];
-
-export const CAPTCHA_FAILURE_HANDLING_COPY = {
-  sectionLabel: 'Verification Failure Handling',
-  toggleLabel: 'Fall back to the checkbox',
-  toggleDescription:
-    'If invisible verification fails, show the "I\'m not a robot" checkbox automatically.',
-} as const;

@@ -35,7 +35,7 @@ export function CaptchaQuestionRow({
   sectionId,
   recaptchaType = 'v2',
   captchaFeedbackStyle = 'button',
-  showV2OnV3VerificationFailed = false,
+  showV2OnV3VerificationFailed = true,
   showHideOptionsApplied = false,
   onAction,
   onMenuAction,

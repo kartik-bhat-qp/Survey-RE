@@ -54,6 +54,7 @@ import {
   DEFAULT_NPS_MIN_LABEL,
   DEFAULT_VAN_WESTENDORP_QUESTION_TEXT,
   DEFAULT_CAPTCHA_QUESTION_TEXT,
+  RECAPTCHA_V3_SURVEY_ID,
 } from '@/data/mock-survey-detail';
 import { getQuestionTypePreview } from '@/data/mock-add-question-previews';
 import { SectionBlockOptionsButton } from '@/components/surveys/SectionBlockOptionsButton';
@@ -640,6 +641,7 @@ function AddQuestionToolbar({
   sectionId,
   insertIndex,
   hasPageBreak,
+  excludeTypeIds,
   onSelect,
   onPageControl,
   onTogglePageBreak,
@@ -648,6 +650,7 @@ function AddQuestionToolbar({
   /** Position in the section's question list where the new question is inserted. */
   insertIndex: number;
   hasPageBreak: boolean;
+  excludeTypeIds?: string[];
   onSelect: (
     sectionId: string,
     insertIndex: number,
@@ -662,6 +665,7 @@ function AddQuestionToolbar({
     <div className={styles.addQuestionToolbar}>
       <div className={styles.addQuestionToolbarCenter}>
         <AddQuestionMenu
+          excludeTypeIds={excludeTypeIds}
           onSelect={(category, typeLabel, typeId) =>
             onSelect(sectionId, insertIndex, category, typeLabel, typeId)
           }
@@ -2085,12 +2089,16 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
 
   const getCaptchaSettings = useCallback(
     (questionKey: string): CaptchaSettings => {
+      const surveyDefaults: CaptchaSettings =
+        detail.survey.id === RECAPTCHA_V3_SURVEY_ID
+          ? { ...DEFAULT_CAPTCHA_SETTINGS, recaptchaType: 'invisible' }
+          : DEFAULT_CAPTCHA_SETTINGS;
       return {
-        ...DEFAULT_CAPTCHA_SETTINGS,
+        ...surveyDefaults,
         ...captchaSettingsByKey[questionKey],
       };
     },
-    [captchaSettingsByKey]
+    [captchaSettingsByKey, detail.survey.id]
   );
 
   const handleCaptchaSettingsChange = useCallback(
@@ -3568,6 +3576,9 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                       pageBreakBySlotKey,
                       getPageBreakSlotKey(section.id, 0, section.questions)
                     )}
+                    excludeTypeIds={
+                      detail.survey.id !== RECAPTCHA_V3_SURVEY_ID ? ['captcha'] : undefined
+                    }
                     onSelect={handleAddQuestionSelect}
                     onPageControl={handlePageControl}
                     onTogglePageBreak={() => handleTogglePageBreak(section.id, 0)}
@@ -4522,6 +4533,9 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                             pageBreakBySlotKey,
                             getPageBreakSlotKey(section.id, questionIndex + 1, section.questions)
                           )}
+                          excludeTypeIds={
+                            detail.survey.id !== RECAPTCHA_V3_SURVEY_ID ? ['captcha'] : undefined
+                          }
                           onSelect={handleAddQuestionSelect}
                           onPageControl={handlePageControl}
                           onTogglePageBreak={() =>

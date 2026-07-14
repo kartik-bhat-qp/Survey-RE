@@ -596,6 +596,28 @@ export interface SurveyDetail {
   sections: SurveySection[];
 }
 
+export const RECAPTCHA_V3_SURVEY_ID = 14;
+
+export function createRecaptchaV3Sections(): SurveySection[] {
+  return [
+    {
+      id: 'section-recaptcha-1',
+      title: 'Page 1',
+      questions: [
+        {
+          id: 'q-recaptcha-v3-captcha',
+          code: 'Q1',
+          number: 1,
+          text: DEFAULT_CAPTCHA_QUESTION_TEXT,
+          required: true,
+          addQuestionTypeId: 'captcha',
+          options: [],
+        },
+      ],
+    },
+  ];
+}
+
 const COKE_RESEARCH_SECTIONS = createCokeResearchSurveySections();
 
 export function getSurveyDetail(survey: Survey): SurveyDetail {
@@ -630,6 +652,14 @@ export function getSurveyDetail(survey: Survey): SurveyDetail {
       survey,
       editorTitle: getSurveyEditorTitle(survey),
       sections: createDeepDiveV2Sections(),
+    };
+  }
+
+  if (survey.id === RECAPTCHA_V3_SURVEY_ID) {
+    return {
+      survey,
+      editorTitle: getSurveyEditorTitle(survey),
+      sections: createRecaptchaV3Sections(),
     };
   }
 
