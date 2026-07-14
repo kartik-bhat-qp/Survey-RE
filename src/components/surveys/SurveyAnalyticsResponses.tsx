@@ -66,6 +66,7 @@ export function SurveyAnalyticsResponses() {
       {
         id: '#',
         header: '#',
+        accessorFn: () => '',
         cell: ({ row }) => (
           <span className={styles.rowNum}>{row.index + 1}</span>
         ),
