@@ -1,0 +1,154 @@
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #545e6b;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 24px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cardHeader {
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 8px 16px;
+}
+
+.cardHeaderMain {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+}
+
+.cardTitle {
+  color: #1b3380;
+  flex: 1 1 20rem;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 32px;
+  margin: 0;
+  min-width: 0;
+}
+
+.summaryTypeControl {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.summaryTypeSelect {
+  min-width: 11rem;
+  width: min(100%, 14rem);
+}
+
+.reportBody {
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+  color: #545e6b;
+  flex: none;
+  font-size: 14px;
+  font-weight: 400;
+  height: clamp(24rem, 52vh, 34rem);
+  line-height: 24px;
+  overflow-y: auto;
+  padding: 1.75rem 1.5rem 2.25rem;
+  scrollbar-gutter: stable;
+  scrollbar-color: #8d8d8d transparent;
+  scrollbar-width: thin;
+}
+
+.reportBody::-webkit-scrollbar {
+  width: 10px;
+}
+
+.reportBody::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.reportBody::-webkit-scrollbar-thumb {
+  background: #8d8d8d;
+  background-clip: padding-box;
+  border: 2px solid #fff;
+  border-radius: 999px;
+}
+
+.reportBody:focus-visible {
+  outline: 2px solid #1b87e6;
+  outline-offset: -3px;
+}
+
+.section + .section {
+  margin-top: 1.5rem;
+}
+
+.sectionTitle {
+  color: #545e6b;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 24px;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+}
+
+.section p {
+  margin: 0;
+}
+
+.section p + p,
+.section ul + p {
+  margin-top: 1rem;
+}
+
+.section ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.4rem;
+}
+
+.section li {
+  padding-left: 0.2rem;
+}
+
+.section li + li {
+  margin-top: 0.5rem;
+}
+
+.listLabel {
+  font-weight: 500;
+}
+
+@media (min-width: 640px) {
+  .cardHeader {
+    padding: 8px 16px;
+  }
+
+  .reportBody {
+    font-size: 14px;
+    padding: 2rem 2rem 2.5rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .summaryTypeControl {
+    width: 100%;
+  }
+
+  .summaryTypeSelect {
+    width: 100%;
+  }
+}

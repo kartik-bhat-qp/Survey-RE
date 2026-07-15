@@ -1,23 +1,28 @@
 .card {
   background: #fff;
-  border: 1px solid #e8e8e8;
+  border: 1px solid #e5e7eb;
   border-radius: 2px;
+  color: #545e6b;
   display: flex;
   flex-direction: column;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 24px;
   min-width: 0;
 }
 
 .cardHeader {
-  align-items: flex-start;
-  border-bottom: 1px solid #f0f0f0;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
   display: flex;
   gap: 0.75rem;
   justify-content: space-between;
-  padding: 0.875rem 1rem;
+  padding: 8px 16px;
 }
 
 .cardHeaderMain {
-  align-items: flex-start;
+  align-items: center;
   display: flex;
   flex: 1;
   flex-wrap: wrap;
@@ -29,7 +34,7 @@
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 3px;
-  color: #64748b;
+  color: #545e6b;
   cursor: pointer;
   flex-shrink: 0;
   font-family: inherit;
@@ -40,7 +45,7 @@
 
 .chiToggle:hover {
   border-color: #cbd5e1;
-  color: #475569;
+  color: #1b3380;
 }
 
 .chiToggleActive {
@@ -55,11 +60,11 @@
 }
 
 .cardTitle {
-  color: #545e6b;
+  color: #1b3380;
   flex: 1;
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 500;
-  line-height: 1.45;
+  line-height: 32px;
   margin: 0;
   min-width: 0;
 }
@@ -78,10 +83,11 @@
 
 .table thead th {
   background: #fafafa;
-  border-bottom: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e5e7eb;
   color: #545e6b;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
+  line-height: 24px;
   padding: 0.625rem 0.875rem;
   text-align: left;
   white-space: nowrap;
@@ -113,7 +119,7 @@
 }
 
 .columnHeaderDisabled {
-  color: #94a3b8 !important;
+  color: #9b9b9b !important;
 }
 
 .segmentCellDisabled {
@@ -122,6 +128,10 @@
 
 .table tbody td {
   border-bottom: 1px solid #f0f0f0;
+  color: #545e6b;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 24px;
   padding: 0.75rem 0.875rem;
   vertical-align: middle;
 }
@@ -169,14 +179,14 @@
 .topicLabel {
   color: #545e6b;
   flex: 1;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 24px;
   min-width: 0;
 }
 
 .topicChevron {
-  color: #909090;
+  color: #9b9b9b;
   flex-shrink: 0;
   font-size: 1rem;
   transition: transform 0.15s ease;
@@ -187,7 +197,7 @@
 }
 
 .headerLetter {
-  color: #64748b;
+  color: #9b9b9b;
   font-size: 10px;
   font-weight: 700;
   margin-left: 0.125rem;
@@ -228,9 +238,10 @@
 
 .count,
 .countBtn {
-  color: #333;
+  color: #545e6b;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 24px;
 }
 
 .countBtn {
@@ -257,8 +268,9 @@
 }
 
 .percentage {
-  color: #909090;
+  color: #9b9b9b;
   font-size: 12px;
+  line-height: 24px;
 }
 
 .barTrack {
@@ -296,11 +308,11 @@
 }
 
 .subtopicLabel {
-  color: #64748b;
+  color: #545e6b;
   flex: 1;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 24px;
   min-width: 0;
 }
 
@@ -316,7 +328,7 @@
 .chiLegend {
   background: #fbfdff;
   border-top: 1px solid #f0f0f0;
-  color: #64748b;
+  color: #545e6b;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -324,16 +336,16 @@
 }
 
 .chiLegendTitle {
-  color: #475569;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.35;
+  color: #545e6b;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 24px;
   margin: 0;
 }
 
 .chiLegendText {
-  font-size: 11px;
-  line-height: 1.45;
+  font-size: 12px;
+  line-height: 20px;
   margin: 0;
 }
 
