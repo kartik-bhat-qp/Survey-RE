@@ -709,7 +709,7 @@ export function MultiPointCardsCarouselPreview({
         </div>
       </div>
 
-      {isMobile ? <SurveyPreviewRespondentFooter /> : null}
+      <SurveyPreviewRespondentFooter surveyId={surveyId} />
     </div>
   );
 }

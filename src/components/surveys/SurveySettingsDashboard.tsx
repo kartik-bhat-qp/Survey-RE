@@ -1,20 +1,24 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { ConfirmEnableRaaModal } from '@/components/surveys/ConfirmEnableRaaModal';
 import { RespondentAnonymityModal } from '@/components/surveys/RespondentAnonymityModal';
 import { SurveySettingsRichText } from '@/components/surveys/SurveySettingsRichText';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import {
   getDefaultSurveySettings,
   getSurveyDisplayId,
   RAA_CANNOT_DISABLE_MESSAGE,
   SURVEY_SETTINGS_TABS,
   SURVEY_STATUS_OPTIONS,
+  surveySettingsStorageKey,
   type ParticipationLogic,
   type RespondentAnonymityConfig,
   type SurveyNotificationSettings,
   type SurveySecuritySettings,
+  type SurveySettings,
   type SurveySettingsStatus,
   type SurveySettingsTab,
 } from '@/data/mock-survey-settings';
@@ -58,14 +62,18 @@ function parseFormattedNumber(raw: string): number {
 export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardProps) {
   const { showToast } = useWuShowToast();
   const [activeTab, setActiveTab] = useState<SurveySettingsTab>('security');
-  const [security, setSecurity] = useState<SurveySecuritySettings>(
-    () => getDefaultSurveySettings().security
+  const [settings, setSettings] = usePersistedState<SurveySettings>(
+    surveySettingsStorageKey(surveyId),
+    getDefaultSurveySettings()
   );
-  const [notifications, setNotifications] = useState<SurveyNotificationSettings>(
-    () => getDefaultSurveySettings().notifications
-  );
+  const security = settings.security;
+  const notifications = settings.notifications;
   const [anonymityModalOpen, setAnonymityModalOpen] = useState(false);
   const [anonymityPendingEnable, setAnonymityPendingEnable] = useState(false);
+  const [anonymityConfirmOpen, setAnonymityConfirmOpen] = useState(false);
+  const [anonymityPendingConfig, setAnonymityPendingConfig] =
+    useState<RespondentAnonymityConfig | null>(null);
+  const transitioningToConfirmRef = useRef(false);
 
   const displayId = useMemo(() => getSurveyDisplayId(surveyId), [surveyId]);
   const statusValue =
@@ -75,11 +83,17 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
     security.respondentAnonymityAssurance && !anonymityPendingEnable;
 
   function patchSecurity(partial: Partial<SurveySecuritySettings>): void {
-    setSecurity((prev) => ({ ...prev, ...partial }));
+    setSettings((prev) => ({
+      ...prev,
+      security: { ...prev.security, ...partial },
+    }));
   }
 
   function patchNotifications(partial: Partial<SurveyNotificationSettings>): void {
-    setNotifications((prev) => ({ ...prev, ...partial }));
+    setSettings((prev) => ({
+      ...prev,
+      notifications: { ...prev.notifications, ...partial },
+    }));
   }
 
   function handleAnonymityToggle(checked: boolean): void {
@@ -87,14 +101,12 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
       return;
     }
     if (checked) {
-      patchSecurity({ respondentAnonymityAssurance: true });
       setAnonymityPendingEnable(true);
       setAnonymityModalOpen(true);
       return;
     }
     setAnonymityPendingEnable(false);
     setAnonymityModalOpen(false);
-    patchSecurity({ respondentAnonymityAssurance: false });
   }
 
   function handleAnonymityView(): void {
@@ -105,25 +117,58 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
   function handleAnonymityModalOpenChange(open: boolean): void {
     setAnonymityModalOpen(open);
     if (!open && anonymityPendingEnable) {
+      if (transitioningToConfirmRef.current) {
+        transitioningToConfirmRef.current = false;
+        return;
+      }
       setAnonymityPendingEnable(false);
-      patchSecurity({ respondentAnonymityAssurance: false });
+      setAnonymityPendingConfig(null);
     }
   }
 
   function handleAnonymitySave(next: RespondentAnonymityConfig): void {
-    const wasPendingEnable = anonymityPendingEnable;
-    setAnonymityPendingEnable(false);
+    if (anonymityPendingEnable) {
+      transitioningToConfirmRef.current = true;
+      setAnonymityPendingConfig(next);
+      setAnonymityConfirmOpen(true);
+      setAnonymityModalOpen(false);
+      return;
+    }
     patchSecurity({
       respondentAnonymityAssurance: true,
       respondentAnonymity: next,
     });
     setAnonymityModalOpen(false);
     showToast({
-      message: wasPendingEnable
-        ? 'Enabled RAA successfully'
-        : 'Respondent Anonymity Assurance updated',
+      message: 'Respondent Anonymity Assurance updated',
       variant: 'success',
     });
+  }
+
+  function handleAnonymityConfirmBack(): void {
+    setAnonymityConfirmOpen(false);
+    setAnonymityModalOpen(true);
+  }
+
+  function handleAnonymityConfirmOpenChange(open: boolean): void {
+    setAnonymityConfirmOpen(open);
+    if (!open && anonymityPendingEnable && !anonymityModalOpen) {
+      setAnonymityPendingEnable(false);
+      setAnonymityPendingConfig(null);
+    }
+  }
+
+  function handleAnonymityConfirmEnable(): void {
+    if (!anonymityPendingConfig) return;
+    setAnonymityPendingEnable(false);
+    patchSecurity({
+      respondentAnonymityAssurance: true,
+      respondentAnonymity: anonymityPendingConfig,
+    });
+    setAnonymityPendingConfig(null);
+    setAnonymityConfirmOpen(false);
+    setAnonymityModalOpen(false);
+    showToast({ message: 'Enabled RAA successfully', variant: 'success' });
   }
 
   function handleSave(): void {
@@ -411,9 +456,16 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
       <RespondentAnonymityModal
         open={anonymityModalOpen}
         onOpenChange={handleAnonymityModalOpenChange}
-        value={security.respondentAnonymity}
+        value={anonymityPendingConfig ?? security.respondentAnonymity}
         onSave={handleAnonymitySave}
         expandOnly={raaLocked}
+      />
+
+      <ConfirmEnableRaaModal
+        open={anonymityConfirmOpen}
+        onOpenChange={handleAnonymityConfirmOpenChange}
+        onBack={handleAnonymityConfirmBack}
+        onConfirm={handleAnonymityConfirmEnable}
       />
     </div>
   );

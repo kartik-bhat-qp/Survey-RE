@@ -5,7 +5,24 @@
 @layer base {
   html,
   body {
+    font-family: var(--font-fira-sans), 'Fira Sans', sans-serif;
+    font-weight: 300;
     height: 100%;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-fira-sans), 'Fira Sans', sans-serif;
+    font-weight: 500;
+  }
+
+  button,
+  [role='button'] {
+    font-family: var(--font-fira-sans), 'Fira Sans', sans-serif;
   }
 }
 

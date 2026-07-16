@@ -73,7 +73,64 @@ export const CAN_SPAM_INFO_TOOLTIP =
   'CAN-SPAM requires a valid physical mailing address in commercial email messages.';
 
 export const RAA_COMPLIANCE_INFO_TOOLTIP =
-  'Respondent Anonymity Assurance anonymizes selected identifiers in response data. Once enabled on a survey, it cannot be disabled.';
+  'Preview the respondent popup and add your own additional content shown with Respondent Anonymity Assurance.';
+
+export interface RaaPopupCopy {
+  /** Heading shown inside the popup body above the intro. */
+  bodyTitle: string;
+  intro: string;
+  /** Fixed assurance copy shown after enabled fields — not editable. */
+  outro: string;
+  /** Optional client additional content shown below the fixed outro. */
+  additionalContent: string;
+}
+
+export const DEFAULT_RAA_POPUP_COPY: RaaPopupCopy = {
+  bodyTitle: 'Your Privacy is Protected',
+  intro:
+    "This survey is protected by QuestionPro's Respondent Anonymity Assurance. The following information is encrypted before it is stored:",
+  outro:
+    'Once encrypted, this information cannot be accessed or decrypted by the survey owner, QuestionPro, or any third party. Your identity remains permanently protected.',
+  additionalContent: '',
+};
+
+/** Older fixed outro strings that must not be treated as client additional content. */
+const LEGACY_FIXED_OUTROS = [
+  'There is no way for the sender or even QuestionPro to access this data. This data can never be decrypted.',
+  DEFAULT_RAA_POPUP_COPY.outro,
+] as const;
+
+export const RAA_POPUP_COPY_STORAGE_KEY = 'raa-popup-copy';
+
+const PERSIST_PREFIX = 'survey-re:';
+
+export function readRaaPopupCopy(): RaaPopupCopy {
+  if (typeof window === 'undefined') return { ...DEFAULT_RAA_POPUP_COPY };
+  try {
+    const raw = window.localStorage.getItem(PERSIST_PREFIX + RAA_POPUP_COPY_STORAGE_KEY);
+    if (raw === null || raw.trim() === '') return { ...DEFAULT_RAA_POPUP_COPY };
+    return normalizeRaaPopupCopy(JSON.parse(raw) as Partial<RaaPopupCopy>);
+  } catch {
+    return { ...DEFAULT_RAA_POPUP_COPY };
+  }
+}
+
+export function normalizeRaaPopupCopy(parsed: Partial<RaaPopupCopy>): RaaPopupCopy {
+  const legacyOutro = typeof parsed.outro === 'string' ? parsed.outro.trim() : '';
+  const migratedAdditional =
+    typeof parsed.additionalContent === 'string'
+      ? parsed.additionalContent.trim()
+      : legacyOutro &&
+          !(LEGACY_FIXED_OUTROS as readonly string[]).includes(legacyOutro)
+        ? legacyOutro
+        : '';
+  return {
+    bodyTitle: DEFAULT_RAA_POPUP_COPY.bodyTitle,
+    intro: DEFAULT_RAA_POPUP_COPY.intro,
+    outro: DEFAULT_RAA_POPUP_COPY.outro,
+    additionalContent: migratedAdditional,
+  };
+}
 
 export const RAA_COMPLIANCE_FIELDS: RaaComplianceField[] = [
   {

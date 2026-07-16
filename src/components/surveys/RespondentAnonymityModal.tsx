@@ -7,6 +7,7 @@ import {
   ANONYMITY_CUSTOM_VARIABLES,
   ANONYMITY_REQUIRED_STANDARD_FIELD,
   ANONYMITY_STANDARD_FIELDS,
+  CUSTOM_VARIABLE_MAPPING_TOOLTIP,
   ensureRequiredAnonymityFields,
   RAA_CANNOT_DISABLE_MESSAGE,
   RESPONDENT_EMAIL_LOCKED_MESSAGE,
@@ -188,9 +189,19 @@ export function RespondentAnonymityModal({
         </section>
 
         <section className={styles.section} aria-labelledby="anonymity-custom-variables">
-          <h3 id="anonymity-custom-variables" className={styles.sectionTitle}>
-            Custom Variables
-          </h3>
+          <div className={styles.sectionTitleRow}>
+            <h3 id="anonymity-custom-variables" className={styles.sectionTitle}>
+              Custom Variables
+            </h3>
+            <WuTooltip content={CUSTOM_VARIABLE_MAPPING_TOOLTIP} position="top">
+              <span
+                className={styles.helpIcon}
+                aria-label={CUSTOM_VARIABLE_MAPPING_TOOLTIP}
+              >
+                <span className="wm-info" aria-hidden />
+              </span>
+            </WuTooltip>
+          </div>
           <WuMenu
             Trigger={
               <button

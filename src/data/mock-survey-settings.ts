@@ -91,8 +91,11 @@ export const RAA_CANNOT_DISABLE_MESSAGE =
 
 export const RESPONDENT_EMAIL_LOCKED_MESSAGE = 'Respondent email cannot be disabled';
 
+export const CUSTOM_VARIABLE_MAPPING_TOOLTIP =
+  'The custom variable name will be populated from the Variable Mapping configured in the survey.';
+
 export const DEFAULT_RESPONDENT_ANONYMITY: RespondentAnonymityConfig = {
-  standardFields: ['respondent-email', 'ip-address', 'country-code'],
+  standardFields: ['respondent-email', 'ip-address', 'country-code', 'region'],
   customVariableIds: ['cv-1'],
 };
 
@@ -145,7 +148,50 @@ export function getDefaultSurveySettings(): SurveySettings {
   };
 }
 
-/** Display ID shown next to Survey Status (prototype). */
 export function getSurveyDisplayId(surveyId: number): string {
   return String(10425000 + surveyId);
+}
+
+export function surveySettingsStorageKey(surveyId: number): string {
+  return `survey-settings-${surveyId}`;
+}
+
+const PERSIST_PREFIX = 'survey-re:';
+
+export function readSurveySettings(surveyId: number): SurveySettings {
+  const fallback = getDefaultSurveySettings();
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = window.localStorage.getItem(PERSIST_PREFIX + surveySettingsStorageKey(surveyId));
+    if (raw === null || raw.trim() === '') return fallback;
+    const parsed = JSON.parse(raw) as Partial<SurveySettings>;
+    return {
+      security: {
+        ...fallback.security,
+        ...parsed.security,
+        respondentAnonymity: ensureRequiredAnonymityFields(
+          parsed.security?.respondentAnonymity ?? fallback.security.respondentAnonymity
+        ),
+      },
+      notifications: {
+        ...fallback.notifications,
+        ...parsed.notifications,
+      },
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+export function getEnabledAnonymityFieldLabels(
+  config: RespondentAnonymityConfig
+): string[] {
+  const ensured = ensureRequiredAnonymityFields(config);
+  const standardLabels = ANONYMITY_STANDARD_FIELDS.filter((field) =>
+    ensured.standardFields.includes(field.id)
+  ).map((field) => field.label);
+  const customLabels = ANONYMITY_CUSTOM_VARIABLES.filter((variable) =>
+    ensured.customVariableIds.includes(variable.id)
+  ).map((variable) => variable.label);
+  return [...standardLabels, ...customLabels];
 }

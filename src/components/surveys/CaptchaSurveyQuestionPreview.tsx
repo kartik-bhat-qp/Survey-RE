@@ -9,7 +9,7 @@ import { SurveyPreviewFollowUpQuestion } from '@/components/surveys/SurveyPrevie
 import { useSurveyPreviewPagination } from '@/components/surveys/useSurveyPreviewPagination';
 import shellStyles from './MultiPointCardsCarouselPreview.module.css';
 import questionStyles from './SurveyPreviewFollowUpQuestion.module.css';
-import footerStyles from './SelectOneQuestionPreview.module.css';
+import { SurveyPreviewRespondentFooter } from '@/components/surveys/SurveyPreviewRespondentFooter';
 
 export interface CaptchaSurveyQuestionPreviewProps {
   surveyId: number;
@@ -142,20 +142,7 @@ export function CaptchaSurveyQuestionPreview({
         </div>
       </div>
 
-      <footer className={footerStyles.respondentFooter}>
-        <a href="#" className={footerStyles.footerLink} onClick={(event) => event.preventDefault()}>
-          Powered by QuestionPro
-        </a>
-        <span className={footerStyles.footerLinks}>
-          <a href="#" className={footerStyles.footerLink} onClick={(event) => event.preventDefault()}>
-            Privacy &amp; Data Security
-          </a>
-          <span className={footerStyles.footerDivider}>|</span>
-          <a href="#" className={footerStyles.footerLink} onClick={(event) => event.preventDefault()}>
-            Respondent Anonymity Assurance
-          </a>
-        </span>
-      </footer>
+      <SurveyPreviewRespondentFooter surveyId={surveyId} />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import type { SurveyQuestionInputKind } from '@/data/mock-survey-detail';
 import type { SurveyQuestionPreviewFollowUp } from '@/data/survey-question-preview-session';
 import type { ShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
 import shellStyles from './MultiPointCardsCarouselPreview.module.css';
+import { SurveyPreviewRespondentFooter } from '@/components/surveys/SurveyPreviewRespondentFooter';
 import styles from './SelectOneQuestionPreview.module.css';
 
 export interface SelectOneQuestionPreviewProps {
@@ -132,20 +133,7 @@ export function SelectOneQuestionPreview({
         </div>
       </div>
 
-      <footer className={styles.respondentFooter}>
-        <a href="#" className={styles.footerLink} onClick={(event) => event.preventDefault()}>
-          Powered by QuestionPro
-        </a>
-        <span className={styles.footerLinks}>
-          <a href="#" className={styles.footerLink} onClick={(event) => event.preventDefault()}>
-            Privacy &amp; Data Security
-          </a>
-          <span className={styles.footerDivider}>|</span>
-          <a href="#" className={styles.footerLink} onClick={(event) => event.preventDefault()}>
-            Respondent Anonymity Assurance
-          </a>
-        </span>
-      </footer>
+      <SurveyPreviewRespondentFooter surveyId={surveyId} />
     </div>
   );
 }

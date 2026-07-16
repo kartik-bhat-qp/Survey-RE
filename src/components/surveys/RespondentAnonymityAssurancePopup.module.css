@@ -1,0 +1,91 @@
+.modal {
+  border: 1px solid #1b87e6;
+  font-family: var(--font-fira-sans), 'Fira Sans', sans-serif;
+  max-width: min(32rem, calc(100vw - 1.5rem)) !important;
+  width: 100%;
+}
+
+.header {
+  color: #1b3380 !important;
+  font-family: var(--font-fira-sans), 'Fira Sans', sans-serif !important;
+  font-size: 1.125rem !important;
+  font-weight: 500 !important;
+  padding-right: 3rem !important;
+}
+
+.bodyTitle {
+  color: #1f2937;
+  font-family: var(--font-fira-sans), 'Fira Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1.25rem 1.5rem !important;
+}
+
+.paragraph {
+  color: #334155;
+  font-family: var(--font-fira-sans), 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 300;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.paragraphMuted {
+  color: #94a3b8;
+  font-family: var(--font-fira-sans), 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 300;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.richText {
+  color: #334155;
+  font-family: var(--font-fira-sans), 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 300;
+  line-height: 1.5;
+}
+
+.richText p {
+  margin: 0 0 0.5rem;
+}
+
+.richText p:last-child {
+  margin-bottom: 0;
+}
+
+.richText strong,
+.richText b {
+  font-weight: 700;
+}
+
+.fieldList {
+  color: #1f2937;
+  font-family: var(--font-fira-sans), 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 300;
+  line-height: 1.5;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.fieldList li {
+  margin: 0.125rem 0;
+}
+
+.separator {
+  background: #e5e7eb;
+  border: none;
+  height: 1px;
+  margin: 0.125rem 0;
+  width: 100%;
+}

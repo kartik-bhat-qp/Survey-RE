@@ -1,5 +1,5 @@
-/** Matches `/surveys/[id]` including draft ids `-1` (AI) and `0` (blank). */
-const SURVEY_EDITOR_PATH = /^\/surveys\/(-?\d+)$/;
+/** Matches `/surveys/[id]` and nested routes like `/surveys/[id]/settings`. */
+const SURVEY_EDITOR_PATH = /^\/surveys\/(-?\d+)(?:\/.*)?$/;
 
 export function parseSurveyEditorIdFromPathname(pathname: string): number | null {
   const match = pathname.match(SURVEY_EDITOR_PATH);
