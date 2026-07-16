@@ -2,7 +2,9 @@
 
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
+import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { AppHeaderContent } from '@/components/header/AppHeaderContent';
+import { HeaderDataCenter } from '@/components/header/HeaderDataCenter';
 import {
   HEADER_BRAND_COLOR,
   MOCK_HEADER_CATEGORIES,
@@ -32,6 +34,7 @@ export function BiLiteDashboardShell({ children }: { children: React.ReactNode }
   const mounted = useMounted();
   const pathname = usePathname();
   const productName = getBiHeaderProductName(pathname);
+  const { showToast } = useWuShowToast();
 
   return (
     <div className={styles.shell}>
@@ -43,6 +46,8 @@ export function BiLiteDashboardShell({ children }: { children: React.ReactNode }
             categories={MOCK_HEADER_CATEGORIES}
             brandColor={HEADER_BRAND_COLOR}
             user={MOCK_HEADER_USER}
+            DataCenter={<HeaderDataCenter />}
+            onLogout={() => showToast({ message: 'Logged out', variant: 'success' })}
           >
             <AppHeaderContent>
               <BiLiteAppHeaderBreadcrumb />

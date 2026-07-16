@@ -2,8 +2,10 @@
 
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
+import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { GlobalFooter } from '@/components/GlobalFooter';
 import { AppHeaderContent } from '@/components/header/AppHeaderContent';
+import { HeaderDataCenter } from '@/components/header/HeaderDataCenter';
 import { SurveyFooterBrandSync } from '@/components/surveys/SurveyFooterBrandSync';
 import { SurveysAppHeaderContent } from '@/components/surveys/SurveysAppHeaderContent';
 import { useSurveyFooterBrand } from '@/components/surveys/useSurveyFooterBrand';
@@ -29,6 +31,7 @@ export function ResearchSuiteShell({ children }: { children: React.ReactNode }) 
   const mounted = useMounted();
   const footerBrand = useSurveyFooterBrand();
   const footerCopy = formatSurveySuiteFooterCopy(footerBrand);
+  const { showToast } = useWuShowToast();
 
   return (
     <div className={styles.shell}>
@@ -45,6 +48,8 @@ export function ResearchSuiteShell({ children }: { children: React.ReactNode }) 
             categories={MOCK_HEADER_CATEGORIES}
             brandColor={HEADER_BRAND_COLOR}
             user={MOCK_HEADER_USER}
+            DataCenter={<HeaderDataCenter />}
+            onLogout={() => showToast({ message: 'Logged out', variant: 'success' })}
           >
             <AppHeaderContent>
               <SurveysAppHeaderContent />

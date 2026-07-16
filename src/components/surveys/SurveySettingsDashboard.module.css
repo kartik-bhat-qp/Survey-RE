@@ -1,0 +1,264 @@
+.workspace {
+  background: #fff;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sidebar {
+  background: #fff;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  padding: 1.25rem 0.75rem 1.25rem 1rem;
+  width: 12.5rem;
+}
+
+.sidebarTitle {
+  color: #1f2937;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0.5rem;
+}
+
+.sidebarNav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.sidebarItem,
+.sidebarItemActive {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #67727e;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.sidebarItem:hover,
+.sidebarItem:focus-visible {
+  background: #f3f4f6;
+  color: #1f2937;
+  outline: none;
+}
+
+.sidebarItemActive {
+  background: #e8f4fd;
+  color: #1b87e6;
+  font-weight: 500;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 56rem;
+  padding: 1.5rem 2rem 2.5rem;
+}
+
+.settingRow {
+  align-items: flex-start;
+  border-bottom: 1px solid #f0f2f5;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(11rem, 16rem) minmax(0, 1fr);
+  padding: 1rem 0;
+}
+
+.settingRow:last-of-type {
+  border-bottom: none;
+}
+
+.settingLabel {
+  color: #67727e;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  padding-top: 0.25rem;
+}
+
+.statusCluster {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.selectWrap {
+  max-width: 12rem;
+  min-width: 10rem;
+  width: 100%;
+}
+
+.surveyId {
+  align-items: center;
+  color: #67727e;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  gap: 0.375rem;
+}
+
+.infoIconWrap {
+  align-items: center;
+  color: #94a3b8;
+  cursor: default;
+  display: inline-flex;
+  font-size: 0.875rem;
+}
+
+.controlStack {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.raaControls {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.raaToggleLocked {
+  cursor: not-allowed;
+  display: inline-flex;
+}
+
+.raaToggleLocked :global(button),
+.raaToggleLocked :global([role='switch']) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.raaViewBtn {
+  align-items: center;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  color: #334155;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 1.125rem;
+  height: 2rem;
+  justify-content: center;
+  padding: 0;
+  width: 2rem;
+}
+
+.raaViewBtn:hover,
+.raaViewBtn:focus-visible {
+  background: #e8f4fd;
+  border-color: #1b87e6;
+  color: #1b87e6;
+  outline: none;
+}
+
+.numberInput,
+.dateInput {
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  max-width: 14rem;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+}
+
+.numberInput:focus,
+.dateInput:focus {
+  border-color: #1b87e6;
+  outline: none;
+}
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.radioOption {
+  align-items: flex-start;
+  color: #334155;
+  cursor: pointer;
+  display: flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  gap: 0.5rem;
+  line-height: 1.4;
+}
+
+.radioOption input {
+  accent-color: #1b87e6;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.warningBanner {
+  background: #fff8e6;
+  border: 1px solid #f5e0a3;
+  border-radius: 4px;
+  color: #8a6d1d;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  max-width: 28rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.actions {
+  margin-top: 1.25rem;
+  padding-top: 0.5rem;
+}
+
+@media (max-width: 767px) {
+  .workspace {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    border-bottom: 1px solid #e5e7eb;
+    border-right: none;
+    width: 100%;
+  }
+
+  .sidebarNav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .panel {
+    padding: 1rem 1.25rem 2rem;
+  }
+
+  .settingRow {
+    gap: 0.75rem;
+    grid-template-columns: 1fr;
+  }
+
+  .settingLabel {
+    padding-top: 0;
+  }
+}
