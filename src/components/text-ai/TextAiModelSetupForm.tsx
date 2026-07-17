@@ -13,8 +13,10 @@ import {
   TEXT_AI_EXPERT_REVIEW_TITLE,
   TEXT_AI_MODELING_GOAL_PLACEHOLDER,
   TEXT_AI_OUTPUT_LANGUAGES,
+  TEXT_AI_REPORT_CODEBOOKS,
   type TextAiCodebookSource,
   type TextAiLanguageOption,
+  type TextAiReportCodebookOption,
 } from '@/data/mock-text-ai-model-setup';
 import styles from './TextAiModelSetupForm.module.css';
 
@@ -46,12 +48,17 @@ const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false }
 );
+const WuCombobox = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCombobox })),
+  { ssr: false }
+);
 
 export interface TextAiModelSetupValues {
   name: string;
   outputLanguage: TextAiLanguageOption;
   modelingGoal: string;
   codebookSource: TextAiCodebookSource;
+  reportCodebook: TextAiReportCodebookOption | null;
   expertReviewRequested: boolean;
 }
 
@@ -144,7 +151,13 @@ export function TextAiModelSetupForm({
                   name="text-ai-codebook"
                   value={option.value}
                   checked={checked}
-                  onChange={() => patch({ codebookSource: option.value })}
+                  onChange={() =>
+                    patch({
+                      codebookSource: option.value,
+                      reportCodebook:
+                        option.value === 'report' ? values.reportCodebook : null,
+                    })
+                  }
                   className={styles.codebookRadio}
                 />
                 <span>{option.label}</span>
@@ -203,6 +216,24 @@ export function TextAiModelSetupForm({
             <p className={styles.supportedFiles}>{TEXT_AI_CODEBOOK_TEMPLATE_SUPPORTED_FILES}</p>
           </div>
         ) : null}
+
+        {values.codebookSource === 'report' ? (
+          <div className={styles.reportCodebookSelect}>
+            <WuCombobox
+              data={TEXT_AI_REPORT_CODEBOOKS}
+              accessorKey={{ value: 'value', label: 'label' }}
+              value={values.reportCodebook}
+              placeholder="Select a report"
+              variant="outlined"
+              enableSearch
+              maxHeight={220}
+              aria-label="Select a report codebook"
+              onSelect={(option) =>
+                patch({ reportCodebook: option as TextAiReportCodebookOption })
+              }
+            />
+          </div>
+        ) : null}
       </fieldset>
 
       <div className={styles.expertReviewOption}>
@@ -230,6 +261,7 @@ export function createDefaultModelSetupValues(defaultName: string): TextAiModelS
     outputLanguage: DEFAULT_TEXT_AI_OUTPUT_LANGUAGE,
     modelingGoal: '',
     codebookSource: 'none',
+    reportCodebook: null,
     expertReviewRequested: false,
   };
 }

@@ -3,6 +3,13 @@ export interface TextAiLanguageOption {
   label: string;
 }
 
+export interface TextAiReportCodebookOption {
+  value: string;
+  name: string;
+  relativeDate: string;
+  label: string;
+}
+
 export type TextAiCodebookSource = 'none' | 'template' | 'report';
 
 export const TEXT_AI_OUTPUT_LANGUAGES: TextAiLanguageOption[] = [
@@ -22,6 +29,33 @@ export const TEXT_AI_CODEBOOK_OPTIONS: { value: TextAiCodebookSource; label: str
   { value: 'none', label: 'Generate with QuestionPro AI' },
   { value: 'template', label: 'Upload from template file' },
   { value: 'report', label: 'Upload from report codebook' },
+];
+
+export const TEXT_AI_REPORT_CODEBOOKS: TextAiReportCodebookOption[] = [
+  {
+    value: 'restaurant-feedback',
+    name: 'Restaurant feedback',
+    relativeDate: '5 mins ago',
+    label: 'Restaurant feedback · 5 mins ago',
+  },
+  {
+    value: 'customer-experience-study',
+    name: 'Customer experience study',
+    relativeDate: '1 day ago',
+    label: 'Customer experience study · 1 day ago',
+  },
+  {
+    value: 'employee-pulse-feedback',
+    name: 'Employee pulse feedback',
+    relativeDate: '3 days ago',
+    label: 'Employee pulse feedback · 3 days ago',
+  },
+  {
+    value: 'product-concept-testing',
+    name: 'Product concept testing',
+    relativeDate: '1 week ago',
+    label: 'Product concept testing · 1 week ago',
+  },
 ];
 
 export const TEXT_AI_EXPERT_REVIEW_TITLE = 'QuestionPro Expert Review';

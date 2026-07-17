@@ -81,7 +81,7 @@
 .filters {
   align-items: center;
   display: flex;
-  flex-flow: row nowrap;
+  flex-flow: row wrap;
   gap: 1.25rem;
   min-width: 0;
 }
@@ -104,6 +104,11 @@
 .filterSelect {
   min-width: 11rem;
   width: min(100%, 14rem);
+}
+
+.questionSelect {
+  min-width: 18rem;
+  width: min(34vw, 28rem);
 }
 
 .newCommentsBanner {
@@ -196,6 +201,10 @@
   .filterSelect {
     flex: 1;
     min-width: 0;
+    width: auto;
+  }
+
+  .questionSelect {
     width: auto;
   }
 

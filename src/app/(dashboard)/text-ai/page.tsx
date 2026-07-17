@@ -31,6 +31,10 @@ const WuInput = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
   { ssr: false }
 );
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
 
 type TextAiDashboardRow = TextAiDashboard & {
   /** When set, this row represents a question listed under the parent dashboard. */
@@ -200,8 +204,64 @@ export default function TextAiPage() {
         cell: ({ row }) =>
           row.original.parentDashboardId !== undefined ? null : row.original.status,
       },
+      {
+        accessorKey: 'actions',
+        header: '',
+        enableSorting: false,
+        cell: ({ row }) => {
+          const item = row.original;
+          if (item.parentDashboardId !== undefined) return null;
+
+          return (
+            <div className={styles.rowActions} aria-label={`Actions for ${item.name}`}>
+              <WuTooltip content="Edit dashboard" position="top">
+                <WuButton
+                  type="button"
+                  variant="iconOnly"
+                  size="sm"
+                  className={styles.rowActionButton}
+                  aria-label="Edit dashboard"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    showToast({ message: `Edit '${item.name}'`, variant: 'info' });
+                  }}
+                  Icon={<span className="wm-edit" aria-hidden />}
+                />
+              </WuTooltip>
+              <WuTooltip content="Theme configuration" position="top">
+                <WuButton
+                  type="button"
+                  variant="iconOnly"
+                  size="sm"
+                  className={styles.rowActionButton}
+                  aria-label="Theme configuration"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    router.push(`/text-ai/${item.id}/theme-configuration`);
+                  }}
+                  Icon={<span className="wm-table-edit" aria-hidden />}
+                />
+              </WuTooltip>
+              <WuTooltip content="Delete dashboard" position="top">
+                <WuButton
+                  type="button"
+                  variant="iconOnly"
+                  size="sm"
+                  className={styles.rowActionButton}
+                  aria-label="Delete dashboard"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    showToast({ message: `Delete '${item.name}'`, variant: 'info' });
+                  }}
+                  Icon={<span className="wm-delete" aria-hidden />}
+                />
+              </WuTooltip>
+            </div>
+          );
+        },
+      },
     ],
-    [expandedDashboardIds, toggleExpand]
+    [expandedDashboardIds, router, showToast, toggleExpand]
   );
 
   function handleCreate({
@@ -214,6 +274,14 @@ export default function TextAiPage() {
   }: TextAiDashboardCreatePayload): void {
     const baseTimestamp = Date.now();
     const estimatedComments = questionIds.length * 964;
+    const selectedQuestions = questionIds.map((questionId, index) => {
+      const question = getTextAiQuestionById(questionId);
+      return {
+        id: `question-${question?.id ?? questionId}`,
+        text: question?.text ?? `Question ${index + 1}`,
+        creditsUsed: 964,
+      };
+    });
     const createdDashboards: TextAiDashboard[] = separateDashboardPerQuestion
       ? questionIds.map((questionId, index) => {
           const question = getTextAiQuestionById(questionId);
@@ -224,6 +292,7 @@ export default function TextAiPage() {
             creationDate: new Date().toISOString(),
             commentCount: 964,
             status: 'Completed',
+            questions: [selectedQuestions[index]],
             segmentFilters,
           };
         })
@@ -234,6 +303,7 @@ export default function TextAiPage() {
             creationDate: new Date().toISOString(),
             commentCount: estimatedComments,
             status: 'Completed',
+            questions: selectedQuestions,
             segmentFilters,
           },
         ];

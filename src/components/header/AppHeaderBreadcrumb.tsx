@@ -51,6 +51,21 @@ function buildBreadcrumbItems(pathname: string): BreadcrumbItem[] {
     return [workspaces, workspace, { label: 'TextAI' }];
   }
 
+  const textAiThemeMatch = routePath.match(/^\/text-ai\/(\d+)\/theme-configuration$/);
+  if (textAiThemeMatch) {
+    const dashboard = getTextAiDashboardById(Number(textAiThemeMatch[1]));
+    return [
+      workspaces,
+      workspace,
+      { label: 'TextAI', href: path('/text-ai') },
+      {
+        label: dashboard?.name ?? 'Untitled',
+        href: path(`/text-ai/${textAiThemeMatch[1]}`),
+      },
+      { label: 'Theme configuration' },
+    ];
+  }
+
   const textAiMatch = routePath.match(/^\/text-ai\/(\d+)$/);
   if (textAiMatch) {
     const dashboard = getTextAiDashboardById(Number(textAiMatch[1]));

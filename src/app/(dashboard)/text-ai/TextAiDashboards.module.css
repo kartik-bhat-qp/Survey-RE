@@ -7,7 +7,11 @@
 }
 
 .headerBlock {
+  align-items: center;
+  display: flex;
   flex-shrink: 0;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1rem;
 }
 
@@ -20,7 +24,7 @@
 }
 
 .createBtn {
-  margin-top: 0.75rem;
+  flex-shrink: 0;
 }
 
 .toolbar {
@@ -56,6 +60,12 @@
 
 .tableWrap :global(thead th:nth-child(3) button) {
   justify-content: center;
+}
+
+.tableWrap :global(thead th:last-child),
+.tableWrap :global(tbody td:last-child) {
+  min-width: 7.25rem;
+  width: 7.25rem;
 }
 
 .commentCountCell {
@@ -154,4 +164,51 @@
 
 .dashboardNameButton:hover {
   text-decoration: underline;
+}
+
+.rowActions {
+  align-items: center;
+  display: flex;
+  gap: 0.125rem;
+  justify-content: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  visibility: hidden;
+}
+
+.tableWrap :global(tbody tr:hover) .rowActions,
+.tableWrap :global(tbody tr:focus-within) .rowActions {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.rowActionButton {
+  background: transparent;
+  border: none;
+  color: #545e6b;
+  height: 1.75rem;
+  min-height: 1.75rem;
+  min-width: 1.75rem;
+  padding: 0;
+  width: 1.75rem;
+}
+
+.rowActionButton:hover,
+.rowActionButton:focus-visible {
+  background-color: #eef3f8;
+}
+
+.rowActionButton :global([class^='wm-']),
+.rowActionButton :global([class*=' wm-']) {
+  font-size: 16px;
+}
+
+@media (hover: none) {
+  .rowActions {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+  }
 }

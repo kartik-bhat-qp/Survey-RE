@@ -15,6 +15,7 @@ import {
   TEXT_AI_TOPIC_FILTER_OPTIONS,
   type TextAiFilterOption,
 } from '@/data/mock-text-ai-widget-data';
+import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
 import modalStyles from '@/components/dashboards/CreateDashboardModal.module.css';
 import createModalStyles from './CreateTextAiDashboardModal.module.css';
 import styles from './TextAiDashboardToolbar.module.css';
@@ -24,6 +25,9 @@ interface TextAiDashboardToolbarProps {
   onNameChange: (name: string) => void;
   onAddWidget?: () => void;
   onOpenSettings?: () => void;
+  questions: TextAiDashboardQuestion[];
+  selectedQuestion: TextAiDashboardQuestion;
+  onQuestionChange: (question: TextAiDashboardQuestion) => void;
   segmentFilters?: TextAiSegmentFilterState;
   onSegmentFiltersChange?: (filters: TextAiSegmentFilterState) => void;
 }
@@ -33,6 +37,9 @@ export function TextAiDashboardToolbar({
   onNameChange,
   onAddWidget,
   onOpenSettings,
+  questions,
+  selectedQuestion,
+  onQuestionChange,
   segmentFilters,
   onSegmentFiltersChange,
 }: TextAiDashboardToolbarProps) {
@@ -156,6 +163,23 @@ export function TextAiDashboardToolbar({
 
         <div className={styles.filterRow}>
           <div className={styles.filters}>
+            <div className={styles.inlineFilter}>
+              <span className={styles.filterLabel}>Question</span>
+              <WuSelect
+                data={questions}
+                accessorKey={{ value: 'id', label: 'text' }}
+                value={selectedQuestion}
+                onSelect={(option) => {
+                  if (!option || Array.isArray(option)) return;
+                  onQuestionChange(option as TextAiDashboardQuestion);
+                  setTopic(TEXT_AI_TOPIC_FILTER_OPTIONS[0]);
+                  setSubtopic(TEXT_AI_SUBTOPIC_FILTER_OPTIONS[0]);
+                }}
+                variant="outlined"
+                className={`${styles.filterSelect} ${styles.questionSelect}`}
+                aria-label="Question"
+              />
+            </div>
             <div className={styles.inlineFilter}>
               <span className={styles.filterLabel}>Topic</span>
               <WuSelect
