@@ -1554,7 +1554,7 @@ export function DashboardPowerPointExportModal({
         </div>
         <WuButton
           type="button"
-          size="sm"
+          size="md"
           onClick={handleExportPowerPoint}
           disabled={
             isPowerPointExporting ||
@@ -1562,7 +1562,7 @@ export function DashboardPowerPointExportModal({
             isManualLayoutMissing ||
             hasOverCapacitySlides
           }
-          className="h-8 min-w-[160px] rounded-[4px] bg-[#1e88e5] px-4 text-[14px] font-normal text-white hover:bg-[#1976d2]"
+          className="min-w-[160px] rounded-[4px] bg-[#1e88e5] px-4 text-[14px] font-normal text-white hover:bg-[#1976d2]"
         >
           {isPowerPointExporting ? 'Exporting...' : 'Export'}
         </WuButton>

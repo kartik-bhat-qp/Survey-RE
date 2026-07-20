@@ -37,7 +37,11 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (pathname.includes('/advance-quotas') || pathname.includes('/settings')) {
+    if (
+      pathname.includes('/advance-quotas') ||
+      pathname.includes('/settings') ||
+      pathname.includes('/languages')
+    ) {
       if (activePhase === 'analytics') {
         router.replace(getSurveyEditorPhasePath(survey.id, 'analytics'));
         return;

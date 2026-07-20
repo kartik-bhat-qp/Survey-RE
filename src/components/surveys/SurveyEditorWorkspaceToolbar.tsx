@@ -39,12 +39,14 @@ type PublishMode = 'draft' | 'publish';
 
 function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null {
   if (tool === 'workspace') return `/surveys/${surveyId}`;
+  if (tool === 'languages') return `/surveys/${surveyId}/languages`;
   if (tool === 'advance-quotas') return `/surveys/${surveyId}/advance-quotas`;
   if (tool === 'settings') return `/surveys/${surveyId}/settings`;
   return null;
 }
 
 function getActiveTool(pathname: string, surveyId: number): SurveyWorkspaceTool {
+  if (pathname === `/surveys/${surveyId}/languages`) return 'languages';
   if (pathname === `/surveys/${surveyId}/advance-quotas`) return 'advance-quotas';
   if (pathname === `/surveys/${surveyId}/settings`) return 'settings';
   return 'workspace';
@@ -203,7 +205,10 @@ export function SurveyEditorWorkspaceToolbar({
     [activeTool, handleToolClick, surveyId]
   );
 
-  const showPublishArea = activeTool !== 'advance-quotas' && activeTool !== 'settings';
+  const showPublishArea =
+    activeTool !== 'advance-quotas' &&
+    activeTool !== 'settings' &&
+    activeTool !== 'languages';
 
   return (
     <>
