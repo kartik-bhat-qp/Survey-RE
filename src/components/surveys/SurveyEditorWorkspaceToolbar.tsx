@@ -41,6 +41,7 @@ function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null
   if (tool === 'workspace') return `/surveys/${surveyId}`;
   if (tool === 'languages') return `/surveys/${surveyId}/languages`;
   if (tool === 'advance-quotas') return `/surveys/${surveyId}/advance-quotas`;
+  if (tool === 'variables') return `/surveys/${surveyId}/variables`;
   if (tool === 'settings') return `/surveys/${surveyId}/settings`;
   return null;
 }
@@ -48,6 +49,7 @@ function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null
 function getActiveTool(pathname: string, surveyId: number): SurveyWorkspaceTool {
   if (pathname === `/surveys/${surveyId}/languages`) return 'languages';
   if (pathname === `/surveys/${surveyId}/advance-quotas`) return 'advance-quotas';
+  if (pathname === `/surveys/${surveyId}/variables`) return 'variables';
   if (pathname === `/surveys/${surveyId}/settings`) return 'settings';
   return 'workspace';
 }
@@ -208,7 +210,8 @@ export function SurveyEditorWorkspaceToolbar({
   const showPublishArea =
     activeTool !== 'advance-quotas' &&
     activeTool !== 'settings' &&
-    activeTool !== 'languages';
+    activeTool !== 'languages' &&
+    activeTool !== 'variables';
 
   return (
     <>

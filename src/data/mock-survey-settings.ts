@@ -1,8 +1,20 @@
-export type SurveySettingsTab = 'security' | 'notifications';
+export type SurveySettingsTab = 'settings' | 'security' | 'notifications';
 
 export type SurveySettingsStatus = 'Active' | 'Inactive' | 'Closed';
 
 export type ParticipationLogic = 'allow-multiple' | 'once-only';
+
+export type SurveyAuthenticationMethod =
+  | 'none'
+  | 'global-password'
+  | 'email-invites'
+  | 'email-password'
+  | 'username-password'
+  | 'participant-id'
+  | 'password-email-detected'
+  | 'facebook-connect'
+  | 'des-encrypted'
+  | 'communities-invites';
 
 export type AnonymityStandardFieldId =
   | 'respondent-email'
@@ -51,6 +63,7 @@ export interface SurveyNotificationSettings {
 
 export interface SurveySettings {
   security: SurveySecuritySettings;
+  authenticationMethod: SurveyAuthenticationMethod;
   notifications: SurveyNotificationSettings;
 }
 
@@ -61,8 +74,28 @@ export const SURVEY_STATUS_OPTIONS: { value: SurveySettingsStatus; label: string
 ];
 
 export const SURVEY_SETTINGS_TABS: { id: SurveySettingsTab; label: string }[] = [
+  { id: 'settings', label: 'Settings' },
   { id: 'security', label: 'Security' },
   { id: 'notifications', label: 'Notifications' },
+];
+
+export const SURVEY_AUTHENTICATION_HELP =
+  'Choose how respondents authenticate before taking this survey.';
+
+export const SURVEY_AUTHENTICATION_OPTIONS: {
+  id: SurveyAuthenticationMethod;
+  label: string;
+}[] = [
+  { id: 'none', label: 'None' },
+  { id: 'global-password', label: 'Global Password Protect' },
+  { id: 'email-invites', label: 'Email Invites Only' },
+  { id: 'email-password', label: 'Email/Password' },
+  { id: 'username-password', label: 'Username/Password' },
+  { id: 'participant-id', label: 'Participant ID' },
+  { id: 'password-email-detected', label: 'Password (Email detected automatically)' },
+  { id: 'facebook-connect', label: 'Facebook Connect' },
+  { id: 'des-encrypted', label: 'DES Encrypted Custom Variables' },
+  { id: 'communities-invites', label: 'Communities Invites Only' },
 ];
 
 export const ANONYMITY_STANDARD_FIELDS: AnonymityStandardField[] = [
@@ -144,6 +177,7 @@ export function getDefaultSurveySettings(): SurveySettings {
         customVariableIds: [...DEFAULT_RESPONDENT_ANONYMITY.customVariableIds],
       },
     },
+    authenticationMethod: 'none',
     notifications: { ...DEFAULT_SURVEY_NOTIFICATION_SETTINGS },
   };
 }

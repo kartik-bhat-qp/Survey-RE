@@ -80,7 +80,7 @@
 }
 
 .toolbarRight {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
   flex-wrap: wrap;
   gap: 1rem 1.5rem;
@@ -88,7 +88,7 @@
 }
 
 .screenerField {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
   gap: 0.5rem;
 }
@@ -98,15 +98,49 @@
   font-family: 'Fira Sans', sans-serif;
   font-size: 0.8125rem;
   font-weight: 500;
+  line-height: 2rem;
   white-space: nowrap;
 }
 
-.screenerSelect {
-  min-width: 16rem;
+.screenerInput {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: text;
+  min-width: 18rem;
+  padding: 0.25rem 0.5rem;
+  width: 22rem;
+}
+
+.screenerInput:focus-within {
+  border-color: #1b87e6;
+  box-shadow: 0 0 0 1px #1b87e6;
+}
+
+.screenerInput :global([class*='editorRowFocused']) {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.screenerInput :global([class*='editor']) {
+  cursor: text;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  min-height: 1.75rem;
+  padding: 0.25rem 0;
+}
+
+.screenerInput :global([class*='editor']:focus) {
+  background: transparent;
+}
+
+.screenerInput :global([class*='toolbar']) {
+  margin-top: 0.25rem;
 }
 
 .changeLanguageToggle {
   flex-shrink: 0;
+  padding-top: 0.25rem;
 }
 
 .tableWrap {
@@ -399,7 +433,7 @@
     width: 100%;
   }
 
-  .screenerSelect {
+  .screenerInput {
     min-width: 0;
     width: 100%;
   }

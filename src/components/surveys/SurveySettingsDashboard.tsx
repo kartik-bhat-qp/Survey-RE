@@ -11,11 +11,14 @@ import {
   getDefaultSurveySettings,
   getSurveyDisplayId,
   RAA_CANNOT_DISABLE_MESSAGE,
+  SURVEY_AUTHENTICATION_HELP,
+  SURVEY_AUTHENTICATION_OPTIONS,
   SURVEY_SETTINGS_TABS,
   SURVEY_STATUS_OPTIONS,
   surveySettingsStorageKey,
   type ParticipationLogic,
   type RespondentAnonymityConfig,
+  type SurveyAuthenticationMethod,
   type SurveyNotificationSettings,
   type SurveySecuritySettings,
   type SurveySettings,
@@ -61,13 +64,14 @@ function parseFormattedNumber(raw: string): number {
 
 export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardProps) {
   const { showToast } = useWuShowToast();
-  const [activeTab, setActiveTab] = useState<SurveySettingsTab>('security');
+  const [activeTab, setActiveTab] = useState<SurveySettingsTab>('settings');
   const [settings, setSettings] = usePersistedState<SurveySettings>(
     surveySettingsStorageKey(surveyId),
     getDefaultSurveySettings()
   );
   const security = settings.security;
   const notifications = settings.notifications;
+  const authenticationMethod = settings.authenticationMethod ?? 'none';
   const [anonymityModalOpen, setAnonymityModalOpen] = useState(false);
   const [anonymityPendingEnable, setAnonymityPendingEnable] = useState(false);
   const [anonymityConfirmOpen, setAnonymityConfirmOpen] = useState(false);
@@ -93,6 +97,13 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
     setSettings((prev) => ({
       ...prev,
       notifications: { ...prev.notifications, ...partial },
+    }));
+  }
+
+  function setAuthenticationMethod(method: SurveyAuthenticationMethod): void {
+    setSettings((prev) => ({
+      ...prev,
+      authenticationMethod: method,
     }));
   }
 
@@ -178,7 +189,6 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
   return (
     <div className={styles.workspace}>
       <aside className={styles.sidebar} aria-label="Settings">
-        <h2 className={styles.sidebarTitle}>Settings</h2>
         <nav className={styles.sidebarNav}>
           {SURVEY_SETTINGS_TABS.map((tab) => (
             <button
@@ -197,7 +207,7 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
       </aside>
 
       <div className={styles.content}>
-        {activeTab === 'security' ? (
+        {activeTab === 'settings' ? (
           <div className={styles.panel}>
             <div className={styles.settingRow}>
               <span className={styles.settingLabel}>Survey Status</span>
@@ -410,6 +420,43 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
                 onChange={(checked) => patchSecurity({ ageVerification: checked })}
                 aria-label="Age Verification"
               />
+            </div>
+
+            <div className={styles.actions}>
+              <WuButton onClick={handleSave}>Save Changes</WuButton>
+            </div>
+          </div>
+        ) : activeTab === 'security' ? (
+          <div className={`${styles.panel} ${styles.authPanel}`}>
+            <div className={styles.authHeader}>
+              <h2 className={styles.authTitle}>Survey Authentication</h2>
+              <WuTooltip content={SURVEY_AUTHENTICATION_HELP} position="top">
+                <button
+                  type="button"
+                  className={styles.authHelpBtn}
+                  aria-label={SURVEY_AUTHENTICATION_HELP}
+                >
+                  <span className="wm-help-outline" aria-hidden />
+                </button>
+              </WuTooltip>
+            </div>
+
+            <div
+              className={styles.authOptions}
+              role="radiogroup"
+              aria-label="Survey Authentication"
+            >
+              {SURVEY_AUTHENTICATION_OPTIONS.map((option) => (
+                <label key={option.id} className={styles.authOption}>
+                  <input
+                    type="radio"
+                    name="survey-authentication"
+                    checked={authenticationMethod === option.id}
+                    onChange={() => setAuthenticationMethod(option.id)}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
             </div>
 
             <div className={styles.actions}>

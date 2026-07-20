@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { AddLanguageVersionDropdown } from '@/components/surveys/AddLanguageVersionDropdown';
+import { QuestionRichTextField } from '@/components/surveys/QuestionRichTextField';
 import {
   createSurveyLanguageFromOption,
   getDefaultSurveyLanguages,
@@ -31,16 +32,10 @@ const WuTooltip = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
-const WuSelect = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
-  { ssr: false }
-);
 
 interface SurveyLanguagesDashboardProps {
   surveyId: number;
 }
-
-const SCREENER_OPTIONS = [{ value: 'preferred-language', label: SCREENER_QUESTION_LABEL }];
 
 export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguagesDashboardProps) {
   const { showToast } = useWuShowToast();
@@ -49,7 +44,7 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
     getDefaultSurveyLanguages()
   );
   const [changeLanguageWithinSurvey, setChangeLanguageWithinSurvey] = useState(false);
-  const [screenerQuestion, setScreenerQuestion] = useState(SCREENER_OPTIONS[0]);
+  const [screenerQuestion, setScreenerQuestion] = useState(SCREENER_QUESTION_LABEL);
   const [deleteTarget, setDeleteTarget] = useState<SurveyLanguageVersion | null>(null);
 
   const hasAdditionalLanguages = languages.some((language) => !language.isDefault);
@@ -95,6 +90,20 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
   function handleAction(action: string, language: SurveyLanguageVersion): void {
     showToast({
       message: `${action} — ${getSurveyLanguageDisplayName(language)}`,
+      variant: 'success',
+    });
+  }
+
+  function handleAutoTranslate(language: SurveyLanguageVersion): void {
+    setLanguages((prev) =>
+      prev.map((item) =>
+        item.id === language.id
+          ? { ...item, progressPercent: 100, status: 'complete' }
+          : item
+      )
+    );
+    showToast({
+      message: `Auto Translate complete — ${getSurveyLanguageDisplayName(language)}`,
       variant: 'success',
     });
   }
@@ -181,17 +190,13 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
                 <div className={styles.toolbarRight}>
                   <label className={styles.screenerField}>
                     <span className={styles.screenerLabel}>Screener Question :</span>
-                    <div className={styles.screenerSelect}>
-                      <WuSelect
-                        data={SCREENER_OPTIONS}
-                        accessorKey={{ value: 'value', label: 'label' }}
+                    <div className={styles.screenerInput}>
+                      <QuestionRichTextField
                         value={screenerQuestion}
-                        onSelect={(item) =>
-                          setScreenerQuestion(
-                            item as { value: string; label: string }
-                          )
-                        }
-                        variant="outlined"
+                        onChange={setScreenerQuestion}
+                        variant="option"
+                        placeholder="Screener Question"
+                        ariaLabel="Screener Question"
                       />
                     </div>
                   </label>
@@ -305,7 +310,7 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
                             <button
                               type="button"
                               className={styles.autoTranslateBtn}
-                              onClick={() => handleAction('Auto Translate', language)}
+                              onClick={() => handleAutoTranslate(language)}
                             >
                               <span className="wm-translate" aria-hidden />
                               Auto Translate

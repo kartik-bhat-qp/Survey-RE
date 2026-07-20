@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { NavLink } from '@/components/surveys/NavLink';
 import { SearchReplaceModal } from '@/components/surveys/SearchReplaceModal';
@@ -59,6 +59,7 @@ function deferOpenChange(setOpen: (open: boolean) => void, open: boolean) {
 
 export function SurveyEditorPhaseTabs() {
   const params = useParams();
+  const pathname = usePathname() ?? '';
   const surveyId = Number(params.id);
   const { showToast } = useWuShowToast();
   const { activePhase, setActivePhase } = useSurveyEditorPhase();
@@ -73,6 +74,9 @@ export function SurveyEditorPhaseTabs() {
   const [customJsOpen, setCustomJsOpen] = useState(false);
   const [removeAllLogicOpen, setRemoveAllLogicOpen] = useState(false);
   const [customJs, setCustomJs] = useState(DEFAULT_SURVEY_CUSTOM_JS);
+  const isWorkspaceView =
+    activePhase === 'edit' &&
+    (pathname === `/surveys/${surveyId}` || pathname === `/surveys/${surveyId}/`);
 
   const handleToolsMenuOpenChange = useCallback((open: boolean) => {
     deferOpenChange(setToolsMenuOpen, open);
@@ -184,150 +188,154 @@ export function SurveyEditorPhaseTabs() {
     <>
       <WuPrimaryNavbar Links={links}>
         <div className={styles.actions}>
-          <WuTooltip content="Search and Replace" position="bottom">
-            <button
-              type="button"
-              className={`${styles.iconBtn} ${searchReplaceOpen ? styles.iconBtnActive : ''}`}
-              aria-label="Search and replace"
-              onClick={() => setSearchReplaceOpen(true)}
-            >
-              <SearchReplaceIcon className={styles.actionIcon} />
-            </button>
-          </WuTooltip>
-          <WuMenu
-            open={downloadMenuOpen}
-            onOpenChange={handleDownloadMenuOpenChange}
-            align="end"
-            variant="outlined"
-            className={styles.toolsMenu}
-            Trigger={
-              <button
-                type="button"
-                className={`${styles.iconBtn} ${downloadMenuOpen ? styles.iconBtnActive : ''}`}
-                aria-label="Download"
-                aria-haspopup="menu"
-                aria-expanded={downloadMenuOpen}
-                title="Download"
-              >
-                <span className={`wm-download ${styles.actionIcon}`} aria-hidden />
-              </button>
-            }
-          >
-            <WuMenuItemGroup
-              className={styles.toolsMenuGroup}
-              Label={
-                <div className={styles.toolsMenuSectionLabel}>
-                  <span className={styles.toolsMenuSectionHeading}>Download</span>
-                  <div className={styles.toolsMenuSectionDivider} aria-hidden />
-                </div>
-              }
-            >
-              <WuMenuItem
-                className={styles.toolsMenuItem}
-                onSelect={() => handleDownloadAction('Download PDF V3')}
-              >
-                PDF V3
-              </WuMenuItem>
-              <WuMenuItem
-                className={styles.toolsMenuItem}
-                onSelect={() => handleDownloadAction('Download Microsoft Word')}
-              >
-                Microsoft Word
-              </WuMenuItem>
-              <WuMenuItem
-                className={styles.toolsMenuItem}
-                onSelect={() => handleDownloadAction('Download PDF')}
-              >
-                PDF
-              </WuMenuItem>
-              <WuMenuItem
-                className={styles.toolsMenuItem}
-                onSelect={() => handleDownloadAction('Print')}
-              >
-                Print
-              </WuMenuItem>
-            </WuMenuItemGroup>
-          </WuMenu>
-          <WuMenu
-            open={toolsMenuOpen}
-            onOpenChange={handleToolsMenuOpenChange}
-            align="end"
-            variant="outlined"
-            className={styles.toolsMenu}
-            Trigger={
-              <button
-                type="button"
-                className={`${styles.toolsBtn} ${toolsMenuOpen ? styles.toolsBtnActive : ''}`}
-                aria-haspopup="menu"
-                aria-expanded={toolsMenuOpen}
-              >
-                Tools
-                <span className="wm-arrow-drop-down" />
-              </button>
-            }
-          >
-            <WuMenuItemGroup
-              className={styles.toolsMenuGroup}
-              Label={
-                <div className={styles.toolsMenuSectionLabel}>
-                  <span className={styles.toolsMenuSectionHeading}>Survey Options</span>
-                  <div className={styles.toolsMenuSectionDivider} aria-hidden />
-                </div>
-              }
-            >
-              <WuMenuItem
-                className={
-                  bulkEditModeEnabled ? styles.toolsMenuItemExit : styles.toolsMenuItem
+          {isWorkspaceView ? (
+            <>
+              <WuTooltip content="Search and Replace" position="bottom">
+                <button
+                  type="button"
+                  className={`${styles.iconBtn} ${searchReplaceOpen ? styles.iconBtnActive : ''}`}
+                  aria-label="Search and replace"
+                  onClick={() => setSearchReplaceOpen(true)}
+                >
+                  <SearchReplaceIcon className={styles.actionIcon} />
+                </button>
+              </WuTooltip>
+              <WuMenu
+                open={downloadMenuOpen}
+                onOpenChange={handleDownloadMenuOpenChange}
+                align="end"
+                variant="outlined"
+                className={styles.toolsMenu}
+                Trigger={
+                  <button
+                    type="button"
+                    className={`${styles.iconBtn} ${downloadMenuOpen ? styles.iconBtnActive : ''}`}
+                    aria-label="Download"
+                    aria-haspopup="menu"
+                    aria-expanded={downloadMenuOpen}
+                    title="Download"
+                  >
+                    <span className={`wm-download ${styles.actionIcon}`} aria-hidden />
+                  </button>
                 }
-                onSelect={handleBulkEditModeToggle}
               >
-                {bulkEditModeEnabled ? 'Exit Bulk Edit Mode' : 'Bulk Edit Mode'}
-              </WuMenuItem>
-              <WuMenuItem
-                className={styles.toolsMenuItem}
-                onSelect={handleOpenUpdateQuestionCodes}
+                <WuMenuItemGroup
+                  className={styles.toolsMenuGroup}
+                  Label={
+                    <div className={styles.toolsMenuSectionLabel}>
+                      <span className={styles.toolsMenuSectionHeading}>Download</span>
+                      <div className={styles.toolsMenuSectionDivider} aria-hidden />
+                    </div>
+                  }
+                >
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
+                    onSelect={() => handleDownloadAction('Download PDF V3')}
+                  >
+                    PDF V3
+                  </WuMenuItem>
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
+                    onSelect={() => handleDownloadAction('Download Microsoft Word')}
+                  >
+                    Microsoft Word
+                  </WuMenuItem>
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
+                    onSelect={() => handleDownloadAction('Download PDF')}
+                  >
+                    PDF
+                  </WuMenuItem>
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
+                    onSelect={() => handleDownloadAction('Print')}
+                  >
+                    Print
+                  </WuMenuItem>
+                </WuMenuItemGroup>
+              </WuMenu>
+              <WuMenu
+                open={toolsMenuOpen}
+                onOpenChange={handleToolsMenuOpenChange}
+                align="end"
+                variant="outlined"
+                className={styles.toolsMenu}
+                Trigger={
+                  <button
+                    type="button"
+                    className={`${styles.toolsBtn} ${toolsMenuOpen ? styles.toolsBtnActive : ''}`}
+                    aria-haspopup="menu"
+                    aria-expanded={toolsMenuOpen}
+                  >
+                    Tools
+                    <span className="wm-arrow-drop-down" />
+                  </button>
+                }
               >
-                Update Question Codes
-              </WuMenuItem>
-            </WuMenuItemGroup>
-            <WuMenuItemGroup
-              className={styles.toolsMenuGroup}
-              Label={
-                <div className={styles.toolsMenuSectionLabel}>
-                  <span className={styles.toolsMenuSectionHeading}>Logic</span>
-                  <div className={styles.toolsMenuSectionDivider} aria-hidden />
-                </div>
-              }
-            >
-              <WuMenuItem
-                className={styles.toolsMenuItem}
-                onSelect={handleOpenLogicCriteria}
-              >
-                View Logic Criteria
-              </WuMenuItem>
-              <WuMenuItem
-                className={styles.toolsMenuItem}
-                onSelect={handleOpenCustomJs}
-              >
-                Custom JS
-              </WuMenuItem>
-              <WuMenuItem
-                className={styles.toolsMenuItem}
-                onSelect={handleOpenRemoveAllLogic}
-              >
-                Remove All Logic
-              </WuMenuItem>
-            </WuMenuItemGroup>
-          </WuMenu>
-          <WuTooltip content="Test Responses" position="bottom">
-            <button
-              type="button"
-              className={styles.testResponsesBtn}
-              onClick={() => setTestResponsesOpen(true)}
-            >
-              Test Responses
-            </button>
-          </WuTooltip>
+                <WuMenuItemGroup
+                  className={styles.toolsMenuGroup}
+                  Label={
+                    <div className={styles.toolsMenuSectionLabel}>
+                      <span className={styles.toolsMenuSectionHeading}>Survey Options</span>
+                      <div className={styles.toolsMenuSectionDivider} aria-hidden />
+                    </div>
+                  }
+                >
+                  <WuMenuItem
+                    className={
+                      bulkEditModeEnabled ? styles.toolsMenuItemExit : styles.toolsMenuItem
+                    }
+                    onSelect={handleBulkEditModeToggle}
+                  >
+                    {bulkEditModeEnabled ? 'Exit Bulk Edit Mode' : 'Bulk Edit Mode'}
+                  </WuMenuItem>
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
+                    onSelect={handleOpenUpdateQuestionCodes}
+                  >
+                    Update Question Codes
+                  </WuMenuItem>
+                </WuMenuItemGroup>
+                <WuMenuItemGroup
+                  className={styles.toolsMenuGroup}
+                  Label={
+                    <div className={styles.toolsMenuSectionLabel}>
+                      <span className={styles.toolsMenuSectionHeading}>Logic</span>
+                      <div className={styles.toolsMenuSectionDivider} aria-hidden />
+                    </div>
+                  }
+                >
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
+                    onSelect={handleOpenLogicCriteria}
+                  >
+                    View Logic Criteria
+                  </WuMenuItem>
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
+                    onSelect={handleOpenCustomJs}
+                  >
+                    Custom JS
+                  </WuMenuItem>
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
+                    onSelect={handleOpenRemoveAllLogic}
+                  >
+                    Remove All Logic
+                  </WuMenuItem>
+                </WuMenuItemGroup>
+              </WuMenu>
+              <WuTooltip content="Test Responses" position="bottom">
+                <button
+                  type="button"
+                  className={styles.testResponsesBtn}
+                  onClick={() => setTestResponsesOpen(true)}
+                >
+                  Test Responses
+                </button>
+              </WuTooltip>
+            </>
+          ) : null}
           <button
             type="button"
             className={styles.userCountBtn}
