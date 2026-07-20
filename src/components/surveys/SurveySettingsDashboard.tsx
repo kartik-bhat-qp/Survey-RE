@@ -45,6 +45,7 @@ const WuTooltip = dynamic(
 );
 
 const SURVEY_ID_TOOLTIP = 'Unique identifier for this survey.';
+const COPY_SURVEY_ID_TOOLTIP = 'Copy Survey ID';
 
 interface SurveySettingsDashboardProps {
   surveyId: number;
@@ -186,6 +187,15 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
     showToast({ message: 'Settings saved', variant: 'success' });
   }
 
+  async function handleCopySurveyId(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(String(displayId));
+      showToast({ message: 'Survey ID copied', variant: 'success' });
+    } catch {
+      showToast({ message: 'Unable to copy Survey ID', variant: 'error' });
+    }
+  }
+
   return (
     <div className={styles.workspace}>
       <aside className={styles.sidebar} aria-label="Settings">
@@ -226,10 +236,20 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
                   />
                 </div>
                 <span className={styles.surveyId}>
-                  Survey ID: {displayId}
+                  <span>Survey ID:{' '}</span>
+                  <WuTooltip content={COPY_SURVEY_ID_TOOLTIP} position="bottom">
+                    <button
+                      type="button"
+                      className={styles.surveyIdCopyBtn}
+                      onClick={() => void handleCopySurveyId()}
+                      aria-label={`${COPY_SURVEY_ID_TOOLTIP}: ${displayId}`}
+                    >
+                      {displayId}
+                    </button>
+                  </WuTooltip>
                   <WuTooltip content={SURVEY_ID_TOOLTIP} position="bottom">
                     <span className={styles.infoIconWrap} aria-label={SURVEY_ID_TOOLTIP}>
-                      <span className="wm-info" aria-hidden />
+                      <span className="wm-help-outline" aria-hidden />
                     </span>
                   </WuTooltip>
                 </span>

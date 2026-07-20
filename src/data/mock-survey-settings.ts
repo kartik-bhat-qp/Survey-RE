@@ -207,6 +207,8 @@ export function readSurveySettings(surveyId: number): SurveySettings {
           parsed.security?.respondentAnonymity ?? fallback.security.respondentAnonymity
         ),
       },
+      authenticationMethod:
+        parsed.authenticationMethod ?? fallback.authenticationMethod,
       notifications: {
         ...fallback.notifications,
         ...parsed.notifications,
