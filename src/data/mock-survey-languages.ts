@@ -30,9 +30,6 @@ export interface AddableSurveyLanguage {
 export const LANGUAGE_VERSIONS_HELP =
   'Language versions let respondents take this survey in different languages. The default language is used when no other version is selected.';
 
-export const ADD_LANGUAGE_VERSION_HELP =
-  'Select one or more languages to add as survey language versions. English is the default and cannot be removed.';
-
 export const SCREENER_QUESTION_LABEL = 'Select your preferred language:';
 
 export const SURVEY_LANGUAGES_SIDEBAR_ITEMS: {

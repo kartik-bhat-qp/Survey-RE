@@ -4,16 +4,16 @@ import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
-import { AddLanguageVersionModal } from '@/components/surveys/AddLanguageVersionModal';
+import { AddLanguageVersionDropdown } from '@/components/surveys/AddLanguageVersionDropdown';
 import {
   createSurveyLanguageFromOption,
-  getAddableSurveyLanguageById,
   getDefaultSurveyLanguages,
   getSurveyLanguageDisplayName,
   getSurveyLanguageStatusLabel,
   LANGUAGE_VERSIONS_HELP,
   SCREENER_QUESTION_LABEL,
   SURVEY_LANGUAGES_SIDEBAR_ITEMS,
+  type AddableSurveyLanguage,
   type SurveyLanguageVersion,
   type SurveyLanguagesSidebarTab,
 } from '@/data/mock-survey-languages';
@@ -51,31 +51,36 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
   const [changeLanguageWithinSurvey, setChangeLanguageWithinSurvey] = useState(false);
   const [screenerQuestion, setScreenerQuestion] = useState(SCREENER_OPTIONS[0]);
   const [deleteTarget, setDeleteTarget] = useState<SurveyLanguageVersion | null>(null);
-  const [addLanguagesOpen, setAddLanguagesOpen] = useState(false);
 
   const hasAdditionalLanguages = languages.some((language) => !language.isDefault);
+
+  const sidebarItems = useMemo(
+    () =>
+      SURVEY_LANGUAGES_SIDEBAR_ITEMS.filter(
+        (item) => item.id === 'languages' || hasAdditionalLanguages
+      ),
+    [hasAdditionalLanguages]
+  );
 
   const selectedLanguageIds = useMemo(
     () => languages.map((language) => language.id),
     [languages]
   );
 
-  function handleSaveLanguageSelection(nextIds: string[]): void {
-    setLanguages((prev) => {
-      const existingById = new Map(prev.map((language) => [language.id, language]));
-      const next: SurveyLanguageVersion[] = [];
-      for (const id of nextIds) {
-        const existing = existingById.get(id);
-        if (existing) {
-          next.push(existing);
-          continue;
-        }
-        const option = getAddableSurveyLanguageById(id);
-        if (option) {
-          next.push(createSurveyLanguageFromOption(option));
-        }
-      }
-      return next.length > 0 ? next : getDefaultSurveyLanguages();
+  function handleAddLanguages(options: AddableSurveyLanguage[]): void {
+    if (options.length === 0) return;
+
+    const existingIds = new Set(languages.map((language) => language.id));
+    const toAdd = options
+      .filter((option) => option.id !== 'en' && !existingIds.has(option.id))
+      .map(createSurveyLanguageFromOption);
+
+    if (toAdd.length === 0) return;
+
+    setLanguages((prev) => [...prev, ...toAdd]);
+    showToast({
+      message: `${toAdd.length} language${toAdd.length === 1 ? '' : 's'} added`,
+      variant: 'success',
     });
   }
 
@@ -97,7 +102,11 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
   function handleConfirmDelete(): void {
     if (!deleteTarget) return;
     const removed = deleteTarget;
-    setLanguages((prev) => prev.filter((language) => language.id !== removed.id));
+    const nextLanguages = languages.filter((language) => language.id !== removed.id);
+    setLanguages(nextLanguages);
+    if (!nextLanguages.some((language) => !language.isDefault) && activeTab !== 'languages') {
+      setActiveTab('languages');
+    }
     setDeleteTarget(null);
     showToast({
       message: `${getSurveyLanguageDisplayName(removed)} removed`,
@@ -126,7 +135,7 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
     <div className={styles.workspace}>
       <aside className={styles.sidebar} aria-label="Languages navigation">
         <nav className={styles.sidebarNav}>
-          {SURVEY_LANGUAGES_SIDEBAR_ITEMS.map((item) => (
+          {sidebarItems.map((item) => (
             <button
               key={item.id}
               type="button"
@@ -155,20 +164,17 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
         {activeTab !== 'languages' ? (
           <div className={styles.panel}>
             {renderPlaceholder(
-              SURVEY_LANGUAGES_SIDEBAR_ITEMS.find((item) => item.id === activeTab)?.label ??
-                'Languages'
+              sidebarItems.find((item) => item.id === activeTab)?.label ?? 'Languages'
             )}
           </div>
         ) : (
           <div className={styles.panel}>
             <div className={styles.toolbar}>
               <div className={styles.toolbarLeft}>
-                <WuButton
-                  Icon={<span className="wm-add" aria-hidden />}
-                  onClick={() => setAddLanguagesOpen(true)}
-                >
-                  Add Languages
-                </WuButton>
+                <AddLanguageVersionDropdown
+                  addedIds={selectedLanguageIds}
+                  onSave={handleAddLanguages}
+                />
               </div>
 
               {hasAdditionalLanguages ? (
@@ -384,13 +390,6 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
           </div>
         )}
       </div>
-
-      <AddLanguageVersionModal
-        open={addLanguagesOpen}
-        onOpenChange={setAddLanguagesOpen}
-        selectedIds={selectedLanguageIds}
-        onSave={handleSaveLanguageSelection}
-      />
 
       <ConfirmModal
         open={deleteTarget != null}
