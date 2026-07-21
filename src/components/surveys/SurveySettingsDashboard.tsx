@@ -10,6 +10,7 @@ import { RespondentAnonymityModal } from '@/components/surveys/RespondentAnonymi
 import { SaveAndContinueEmailModal } from '@/components/surveys/SaveAndContinueEmailModal';
 import { SurveySettingsRichText } from '@/components/surveys/SurveySettingsRichText';
 import { usePersistedState } from '@/hooks/usePersistedState';
+import { MOCK_EMAIL_LISTS } from '@/data/mock-survey-distribute';
 import {
   getDefaultSurveySettings,
   getSurveyDisplayId,
@@ -22,11 +23,14 @@ import {
   SURVEY_TIMER_EXPIRY_OPTIONS,
   surveySettingsStorageKey,
   type AgeVerificationSettings,
+  type EmailPasswordAuthenticationSettings,
   type ParticipationLogic,
+  type ParticipantIdAuthenticationSettings,
   type RespondentAnonymityConfig,
   type SaveAndContinueEmailSettings,
   type SurveyAuthenticationMethod,
   type SurveyTimerExpiryAction,
+  type UsernamePasswordAuthenticationSettings,
   type SurveyNotificationSettings,
   type SurveySecuritySettings,
   type SurveySettings,
@@ -53,6 +57,10 @@ const WuTooltip = dynamic(
 );
 const WuDatePicker = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuDatePicker })),
+  { ssr: false }
+);
+const WuInput = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
   { ssr: false }
 );
 const WuTimePicker = dynamic(
@@ -234,6 +242,72 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
       return { ...prev, authenticationMethod: method };
     });
   }
+
+  function setGlobalPassword(globalPassword: string): void {
+    setSettings((prev) => {
+      if (prev.globalPassword === globalPassword) return prev;
+      return { ...prev, globalPassword };
+    });
+  }
+
+  function patchEmailPasswordAuth(partial: Partial<EmailPasswordAuthenticationSettings>): void {
+    setSettings((prev) => {
+      const nextEmailPasswordAuth = { ...prev.emailPasswordAuth, ...partial };
+      const hasChanges = (
+        Object.keys(partial) as (keyof EmailPasswordAuthenticationSettings)[]
+      ).some((key) => !Object.is(prev.emailPasswordAuth[key], nextEmailPasswordAuth[key]));
+      if (!hasChanges) return prev;
+      return { ...prev, emailPasswordAuth: nextEmailPasswordAuth };
+    });
+  }
+
+  function patchUsernamePasswordAuth(
+    partial: Partial<UsernamePasswordAuthenticationSettings>
+  ): void {
+    setSettings((prev) => {
+      const nextUsernamePasswordAuth = { ...prev.usernamePasswordAuth, ...partial };
+      const hasChanges = (
+        Object.keys(partial) as (keyof UsernamePasswordAuthenticationSettings)[]
+      ).some(
+        (key) => !Object.is(prev.usernamePasswordAuth[key], nextUsernamePasswordAuth[key])
+      );
+      if (!hasChanges) return prev;
+      return { ...prev, usernamePasswordAuth: nextUsernamePasswordAuth };
+    });
+  }
+
+  const selectedEmailList = useMemo(
+    () =>
+      MOCK_EMAIL_LISTS.find((list) => list.value === settings.emailPasswordAuth.emailListId) ??
+      null,
+    [settings.emailPasswordAuth.emailListId]
+  );
+
+  const selectedUsernameEmailList = useMemo(
+    () =>
+      MOCK_EMAIL_LISTS.find(
+        (list) => list.value === settings.usernamePasswordAuth.emailListId
+      ) ?? null,
+    [settings.usernamePasswordAuth.emailListId]
+  );
+
+  function patchParticipantIdAuth(partial: Partial<ParticipantIdAuthenticationSettings>): void {
+    setSettings((prev) => {
+      const nextParticipantIdAuth = { ...prev.participantIdAuth, ...partial };
+      const hasChanges = (
+        Object.keys(partial) as (keyof ParticipantIdAuthenticationSettings)[]
+      ).some((key) => !Object.is(prev.participantIdAuth[key], nextParticipantIdAuth[key]));
+      if (!hasChanges) return prev;
+      return { ...prev, participantIdAuth: nextParticipantIdAuth };
+    });
+  }
+
+  const selectedParticipantEmailList = useMemo(
+    () =>
+      MOCK_EMAIL_LISTS.find((list) => list.value === settings.participantIdAuth.emailListId) ??
+      null,
+    [settings.participantIdAuth.emailListId]
+  );
 
   function handleAnonymityToggle(checked: boolean): void {
     if (security.respondentAnonymityAssurance && !anonymityPendingEnable) {
@@ -648,15 +722,292 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
               aria-label="Survey Authentication"
             >
               {SURVEY_AUTHENTICATION_OPTIONS.map((option) => (
-                <label key={option.id} className={styles.authOption}>
-                  <input
-                    type="radio"
-                    name="survey-authentication"
-                    checked={authenticationMethod === option.id}
-                    onChange={() => setAuthenticationMethod(option.id)}
-                  />
-                  <span>{option.label}</span>
-                </label>
+                <div key={option.id} className={styles.authOptionGroup}>
+                  <label className={styles.authOption}>
+                    <input
+                      type="radio"
+                      name="survey-authentication"
+                      checked={authenticationMethod === option.id}
+                      onChange={() => setAuthenticationMethod(option.id)}
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                  {option.id === 'global-password' &&
+                  authenticationMethod === 'global-password' ? (
+                    <div className={styles.authNestedFields}>
+                      <div className={styles.authFieldRow}>
+                        <label
+                          className={styles.authFieldLabel}
+                          htmlFor="global-survey-password"
+                        >
+                          Password
+                        </label>
+                        <WuInput
+                          id="global-survey-password"
+                          type="password"
+                          variant="outlined"
+                          value={settings.globalPassword}
+                          onChange={(event) => setGlobalPassword(event.target.value)}
+                          placeholder="Enter password"
+                          aria-label="Global survey password"
+                        />
+                      </div>
+                    </div>
+                  ) : null}
+                  {option.id === 'email-password' && authenticationMethod === 'email-password' ? (
+                    <div className={styles.authNestedFields}>
+                      <div className={styles.authFieldRow}>
+                        <label className={styles.authFieldLabel} htmlFor="auth-email-address">
+                          Email Address
+                        </label>
+                        <WuInput
+                          id="auth-email-address"
+                          type="email"
+                          variant="outlined"
+                          value={settings.emailPasswordAuth.emailAddress}
+                          onChange={(event) =>
+                            patchEmailPasswordAuth({ emailAddress: event.target.value })
+                          }
+                          aria-label="Email address"
+                        />
+                      </div>
+                      <div className={styles.authFieldRow}>
+                        <label className={styles.authFieldLabel} htmlFor="auth-email-password">
+                          Password
+                        </label>
+                        <WuInput
+                          id="auth-email-password"
+                          type="password"
+                          variant="outlined"
+                          value={settings.emailPasswordAuth.password}
+                          onChange={(event) =>
+                            patchEmailPasswordAuth({ password: event.target.value })
+                          }
+                          aria-label="Password"
+                        />
+                      </div>
+                      <div className={styles.authFieldRow}>
+                        <label
+                          className={styles.authFieldLabel}
+                          htmlFor="auth-invalid-credentials"
+                        >
+                          Invalid Credentials
+                        </label>
+                        <WuInput
+                          id="auth-invalid-credentials"
+                          variant="outlined"
+                          value={settings.emailPasswordAuth.invalidCredentialsMessage}
+                          onChange={(event) =>
+                            patchEmailPasswordAuth({
+                              invalidCredentialsMessage: event.target.value,
+                            })
+                          }
+                          aria-label="Invalid credentials message"
+                        />
+                      </div>
+                      <div className={styles.authFieldRow}>
+                        <label className={styles.authFieldLabel} htmlFor="auth-email-list">
+                          Choose an Email List
+                        </label>
+                        <WuSelect
+                          data={MOCK_EMAIL_LISTS}
+                          accessorKey={{ value: 'value', label: 'label' }}
+                          value={selectedEmailList}
+                          onSelect={(item) => {
+                            const selected = item as { value: string } | null;
+                            patchEmailPasswordAuth({
+                              emailListId: selected?.value ?? '',
+                            });
+                          }}
+                          placeholder="-- Select --"
+                          variant="outlined"
+                          aria-label="Choose an email list"
+                        />
+                      </div>
+                      <div className={styles.authFieldRow}>
+                        <span className={styles.authFieldLabel} aria-hidden />
+                        <button
+                          type="button"
+                          className={styles.createListLink}
+                          onClick={() =>
+                            showToast({
+                              message: 'Create New List opened',
+                              variant: 'success',
+                            })
+                          }
+                        >
+                          + Create New List
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                  {option.id === 'username-password' &&
+                  authenticationMethod === 'username-password' ? (
+                    <div className={styles.authNestedFields}>
+                      <div className={styles.authFieldRow}>
+                        <label className={styles.authFieldLabel} htmlFor="auth-username">
+                          Username
+                        </label>
+                        <WuInput
+                          id="auth-username"
+                          variant="outlined"
+                          value={settings.usernamePasswordAuth.username}
+                          onChange={(event) =>
+                            patchUsernamePasswordAuth({ username: event.target.value })
+                          }
+                          placeholder="Username"
+                          aria-label="Username"
+                        />
+                      </div>
+                      <div className={styles.authFieldRow}>
+                        <label
+                          className={styles.authFieldLabel}
+                          htmlFor="auth-username-password"
+                        >
+                          Password
+                        </label>
+                        <WuInput
+                          id="auth-username-password"
+                          type="password"
+                          variant="outlined"
+                          value={settings.usernamePasswordAuth.password}
+                          onChange={(event) =>
+                            patchUsernamePasswordAuth({ password: event.target.value })
+                          }
+                          placeholder="Password"
+                          aria-label="Password"
+                        />
+                      </div>
+                      <div className={styles.authFieldRow}>
+                        <label
+                          className={styles.authFieldLabel}
+                          htmlFor="auth-username-invalid-credentials"
+                        >
+                          Invalid Credentials
+                        </label>
+                        <WuInput
+                          id="auth-username-invalid-credentials"
+                          variant="outlined"
+                          value={settings.usernamePasswordAuth.invalidCredentialsMessage}
+                          onChange={(event) =>
+                            patchUsernamePasswordAuth({
+                              invalidCredentialsMessage: event.target.value,
+                            })
+                          }
+                          aria-label="Invalid credentials message"
+                        />
+                      </div>
+                      <div className={styles.authFieldRow}>
+                        <label
+                          className={styles.authFieldLabel}
+                          htmlFor="auth-username-email-list"
+                        >
+                          Choose an Email List
+                        </label>
+                        <WuSelect
+                          data={MOCK_EMAIL_LISTS}
+                          accessorKey={{ value: 'value', label: 'label' }}
+                          value={selectedUsernameEmailList}
+                          onSelect={(item) => {
+                            const selected = item as { value: string } | null;
+                            patchUsernamePasswordAuth({
+                              emailListId: selected?.value ?? '',
+                            });
+                          }}
+                          placeholder="-- Select --"
+                          variant="outlined"
+                          aria-label="Choose an email list"
+                        />
+                      </div>
+                      <div className={styles.authFieldRow}>
+                        <span className={styles.authFieldLabel} aria-hidden />
+                        <button
+                          type="button"
+                          className={styles.createListLink}
+                          onClick={() =>
+                            showToast({
+                              message: 'Create New List opened',
+                              variant: 'success',
+                            })
+                          }
+                        >
+                          + Create New List
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                  {option.id === 'participant-id' && authenticationMethod === 'participant-id' ? (
+                    <div className={styles.authNestedFields}>
+                      <div className={styles.authFieldRow}>
+                        <label className={styles.authFieldLabel} htmlFor="auth-unique-key">
+                          Unique Key
+                        </label>
+                        <WuInput
+                          id="auth-unique-key"
+                          variant="outlined"
+                          value={settings.participantIdAuth.uniqueKey}
+                          onChange={(event) =>
+                            patchParticipantIdAuth({ uniqueKey: event.target.value })
+                          }
+                          aria-label="Unique key"
+                        />
+                      </div>
+                      <div className={styles.authFieldRow}>
+                        <label className={styles.authFieldLabel} htmlFor="auth-invalid-value">
+                          Invalid Value
+                        </label>
+                        <WuInput
+                          id="auth-invalid-value"
+                          variant="outlined"
+                          value={settings.participantIdAuth.invalidValueMessage}
+                          onChange={(event) =>
+                            patchParticipantIdAuth({
+                              invalidValueMessage: event.target.value,
+                            })
+                          }
+                          aria-label="Invalid value message"
+                        />
+                      </div>
+                      <div className={styles.authFieldRow}>
+                        <label
+                          className={styles.authFieldLabel}
+                          htmlFor="auth-participant-email-list"
+                        >
+                          Choose an Email List
+                        </label>
+                        <WuSelect
+                          data={MOCK_EMAIL_LISTS}
+                          accessorKey={{ value: 'value', label: 'label' }}
+                          value={selectedParticipantEmailList}
+                          onSelect={(item) => {
+                            const selected = item as { value: string } | null;
+                            patchParticipantIdAuth({
+                              emailListId: selected?.value ?? '',
+                            });
+                          }}
+                          placeholder="-- Select --"
+                          variant="outlined"
+                          aria-label="Choose an email list"
+                        />
+                      </div>
+                      <div className={styles.authFieldRow}>
+                        <span className={styles.authFieldLabel} aria-hidden />
+                        <button
+                          type="button"
+                          className={styles.createListLink}
+                          onClick={() =>
+                            showToast({
+                              message: 'Create New List opened',
+                              variant: 'success',
+                            })
+                          }
+                        >
+                          + Create New List
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
               ))}
             </div>
 

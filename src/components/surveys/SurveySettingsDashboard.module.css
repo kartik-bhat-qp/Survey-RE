@@ -118,6 +118,12 @@
   padding: 1.25rem 0;
 }
 
+.authOptionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
 .authOption {
   align-items: center;
   color: #1f2937;
@@ -143,6 +149,49 @@
 
 .authOption:hover {
   color: #111827;
+}
+
+.authPasswordRow,
+.authFieldRow {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem 1rem;
+  grid-template-columns: minmax(9rem, 11rem) minmax(0, 20rem);
+}
+
+.authNestedFields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-left: 1.625rem;
+}
+
+.authPasswordLabel,
+.authFieldLabel {
+  color: #67727e;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.createListLink {
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0;
+  text-align: left;
+  width: fit-content;
+}
+
+.createListLink:hover,
+.createListLink:focus-visible {
+  text-decoration: underline;
+  outline: none;
 }
 
 .settingRow {

@@ -31,7 +31,6 @@ export type SurveyAuthenticationMethod =
   | 'username-password'
   | 'participant-id'
   | 'password-email-detected'
-  | 'facebook-connect'
   | 'des-encrypted'
   | 'communities-invites';
 
@@ -117,7 +116,31 @@ export interface SurveyNotificationSettings {
 export interface SurveySettings {
   security: SurveySecuritySettings;
   authenticationMethod: SurveyAuthenticationMethod;
+  globalPassword: string;
+  emailPasswordAuth: EmailPasswordAuthenticationSettings;
+  usernamePasswordAuth: UsernamePasswordAuthenticationSettings;
+  participantIdAuth: ParticipantIdAuthenticationSettings;
   notifications: SurveyNotificationSettings;
+}
+
+export interface EmailPasswordAuthenticationSettings {
+  emailAddress: string;
+  password: string;
+  invalidCredentialsMessage: string;
+  emailListId: string;
+}
+
+export interface UsernamePasswordAuthenticationSettings {
+  username: string;
+  password: string;
+  invalidCredentialsMessage: string;
+  emailListId: string;
+}
+
+export interface ParticipantIdAuthenticationSettings {
+  uniqueKey: string;
+  invalidValueMessage: string;
+  emailListId: string;
 }
 
 export const SURVEY_STATUS_OPTIONS: { value: SurveySettingsStatus; label: string }[] = [
@@ -137,6 +160,26 @@ export const SURVEY_SETTINGS_TABS: { id: SurveySettingsTab; label: string }[] = 
 export const SURVEY_AUTHENTICATION_HELP =
   'Choose how respondents authenticate before taking this survey.';
 
+export const DEFAULT_EMAIL_PASSWORD_AUTH: EmailPasswordAuthenticationSettings = {
+  emailAddress: '',
+  password: '',
+  invalidCredentialsMessage: 'Invalid email or password. Please try again.',
+  emailListId: '',
+};
+
+export const DEFAULT_USERNAME_PASSWORD_AUTH: UsernamePasswordAuthenticationSettings = {
+  username: '',
+  password: '',
+  invalidCredentialsMessage: '',
+  emailListId: '',
+};
+
+export const DEFAULT_PARTICIPANT_ID_AUTH: ParticipantIdAuthenticationSettings = {
+  uniqueKey: '',
+  invalidValueMessage: '',
+  emailListId: '',
+};
+
 export const SURVEY_AUTHENTICATION_OPTIONS: {
   id: SurveyAuthenticationMethod;
   label: string;
@@ -148,7 +191,6 @@ export const SURVEY_AUTHENTICATION_OPTIONS: {
   { id: 'username-password', label: 'Username/Password' },
   { id: 'participant-id', label: 'Participant ID' },
   { id: 'password-email-detected', label: 'Password (Email detected automatically)' },
-  { id: 'facebook-connect', label: 'Facebook Connect' },
   { id: 'des-encrypted', label: 'DES Encrypted Custom Variables' },
   { id: 'communities-invites', label: 'Communities Invites Only' },
 ];
@@ -367,6 +409,10 @@ export function getDefaultSurveySettings(): SurveySettings {
       },
     },
     authenticationMethod: 'none',
+    globalPassword: '',
+    emailPasswordAuth: { ...DEFAULT_EMAIL_PASSWORD_AUTH },
+    usernamePasswordAuth: { ...DEFAULT_USERNAME_PASSWORD_AUTH },
+    participantIdAuth: { ...DEFAULT_PARTICIPANT_ID_AUTH },
     notifications: { ...DEFAULT_SURVEY_NOTIFICATION_SETTINGS },
   };
 }
@@ -380,6 +426,24 @@ export function surveySettingsStorageKey(surveyId: number): string {
 }
 
 const PERSIST_PREFIX = 'survey-re:';
+
+const SURVEY_AUTHENTICATION_METHODS = new Set<SurveyAuthenticationMethod>(
+  SURVEY_AUTHENTICATION_OPTIONS.map((option) => option.id)
+);
+
+export function normalizeSurveyAuthenticationMethod(
+  method: unknown,
+  fallback: SurveyAuthenticationMethod
+): SurveyAuthenticationMethod {
+  if (method === 'facebook-connect') return 'none';
+  if (
+    typeof method === 'string' &&
+    SURVEY_AUTHENTICATION_METHODS.has(method as SurveyAuthenticationMethod)
+  ) {
+    return method as SurveyAuthenticationMethod;
+  }
+  return fallback;
+}
 
 export function normalizeSurveySettings(parsed: Partial<SurveySettings>): SurveySettings {
   const fallback = getDefaultSurveySettings();
@@ -466,7 +530,47 @@ export function normalizeSurveySettings(parsed: Partial<SurveySettings>): Survey
         parsed.security?.respondentAnonymity ?? fallback.security.respondentAnonymity
       ),
     },
-    authenticationMethod: parsed.authenticationMethod ?? fallback.authenticationMethod,
+    authenticationMethod: normalizeSurveyAuthenticationMethod(
+      parsed.authenticationMethod,
+      fallback.authenticationMethod
+    ),
+    globalPassword:
+      typeof parsed.globalPassword === 'string'
+        ? parsed.globalPassword
+        : fallback.globalPassword,
+    emailPasswordAuth: {
+      ...fallback.emailPasswordAuth,
+      ...parsed.emailPasswordAuth,
+      emailAddress:
+        parsed.emailPasswordAuth?.emailAddress ?? fallback.emailPasswordAuth.emailAddress,
+      password: parsed.emailPasswordAuth?.password ?? fallback.emailPasswordAuth.password,
+      invalidCredentialsMessage:
+        parsed.emailPasswordAuth?.invalidCredentialsMessage ??
+        fallback.emailPasswordAuth.invalidCredentialsMessage,
+      emailListId:
+        parsed.emailPasswordAuth?.emailListId ?? fallback.emailPasswordAuth.emailListId,
+    },
+    usernamePasswordAuth: {
+      ...fallback.usernamePasswordAuth,
+      ...parsed.usernamePasswordAuth,
+      username: parsed.usernamePasswordAuth?.username ?? fallback.usernamePasswordAuth.username,
+      password: parsed.usernamePasswordAuth?.password ?? fallback.usernamePasswordAuth.password,
+      invalidCredentialsMessage:
+        parsed.usernamePasswordAuth?.invalidCredentialsMessage ??
+        fallback.usernamePasswordAuth.invalidCredentialsMessage,
+      emailListId:
+        parsed.usernamePasswordAuth?.emailListId ?? fallback.usernamePasswordAuth.emailListId,
+    },
+    participantIdAuth: {
+      ...fallback.participantIdAuth,
+      ...parsed.participantIdAuth,
+      uniqueKey: parsed.participantIdAuth?.uniqueKey ?? fallback.participantIdAuth.uniqueKey,
+      invalidValueMessage:
+        parsed.participantIdAuth?.invalidValueMessage ??
+        fallback.participantIdAuth.invalidValueMessage,
+      emailListId:
+        parsed.participantIdAuth?.emailListId ?? fallback.participantIdAuth.emailListId,
+    },
     notifications: {
       ...fallback.notifications,
       ...parsed.notifications,
