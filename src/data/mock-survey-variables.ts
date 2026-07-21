@@ -16,6 +16,9 @@ export const SYSTEM_VARIABLE_MAPPING_HELP =
 
 export const SYSTEM_VARIABLE_SELECT_PLACEHOLDER = 'Select';
 
+export const SYSTEM_VARIABLE_DISPLAY_NAME_MAX_LENGTH = 256;
+export const SYSTEM_VARIABLE_CODE_MAX_LENGTH = 128;
+
 /** Custom 1–255 options available for variable mapping. */
 export const SYSTEM_VARIABLE_OPTIONS: SystemVariableOption[] = Array.from(
   { length: 255 },

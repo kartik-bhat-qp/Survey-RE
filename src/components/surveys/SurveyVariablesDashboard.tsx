@@ -4,10 +4,13 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { AddVariableMappingModal } from '@/components/surveys/AddVariableMappingModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import {
   createDefaultSystemVariableMappings,
   createEmptySystemVariableMapping,
   getAvailableSystemVariableOptions,
+  SYSTEM_VARIABLE_CODE_MAX_LENGTH,
+  SYSTEM_VARIABLE_DISPLAY_NAME_MAX_LENGTH,
   SYSTEM_VARIABLE_MAPPING_HELP,
   SYSTEM_VARIABLE_OPTIONS,
   SYSTEM_VARIABLE_SELECT_PLACEHOLDER,
@@ -171,6 +174,8 @@ export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariable
   );
   const [openRowId, setOpenRowId] = useState<string | null>(null);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [savedRowIds, setSavedRowIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [deleteTarget, setDeleteTarget] = useState<SystemVariableMappingRow | null>(null);
 
   function updateRow(
     rowId: string,
@@ -215,12 +220,46 @@ export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariable
     });
   }
 
+  function removeRow(rowId: string): void {
+    setOpenRowId((current) => (current === rowId ? null : current));
+    setSavedRowIds((prev) => {
+      if (!prev.has(rowId)) return prev;
+      const next = new Set(prev);
+      next.delete(rowId);
+      return next;
+    });
+    setRows((prev) => {
+      const next = prev.filter((row) => row.id !== rowId);
+      return next.length > 0 ? next : [createEmptySystemVariableMapping()];
+    });
+    showToast({ message: 'Variable mapping deleted', variant: 'success' });
+  }
+
+  function handleDeleteRow(row: SystemVariableMappingRow): void {
+    if (savedRowIds.has(row.id) && row.variable) {
+      setDeleteTarget(row);
+      return;
+    }
+    removeRow(row.id);
+  }
+
+  function handleConfirmDelete(): void {
+    if (!deleteTarget) return;
+    removeRow(deleteTarget.id);
+    setDeleteTarget(null);
+  }
+
   function handleSaveChanges(): void {
+    setSavedRowIds(
+      new Set(rows.filter((row) => row.variable).map((row) => row.id))
+    );
     showToast({ message: 'Variable mappings saved', variant: 'success' });
   }
 
   function handleResetMapping(): void {
     setOpenRowId(null);
+    setDeleteTarget(null);
+    setSavedRowIds(new Set());
     setRows(createDefaultSystemVariableMappings());
     showToast({ message: 'Variable mappings reset', variant: 'success' });
   }
@@ -283,8 +322,17 @@ export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariable
                       variant="outlined"
                       placeholder="Display Name"
                       value={row.displayName}
+                      maxLength={SYSTEM_VARIABLE_DISPLAY_NAME_MAX_LENGTH}
+                      invalid={
+                        row.displayName.length >= SYSTEM_VARIABLE_DISPLAY_NAME_MAX_LENGTH
+                      }
                       onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                        updateRow(row.id, { displayName: event.target.value })
+                        updateRow(row.id, {
+                          displayName: event.target.value.slice(
+                            0,
+                            SYSTEM_VARIABLE_DISPLAY_NAME_MAX_LENGTH
+                          ),
+                        })
                       }
                       aria-label={`Display name for ${row.variable || 'new mapping'}`}
                     />
@@ -294,14 +342,29 @@ export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariable
                       variant="outlined"
                       placeholder="Code"
                       value={row.code}
+                      maxLength={SYSTEM_VARIABLE_CODE_MAX_LENGTH}
+                      invalid={row.code.length >= SYSTEM_VARIABLE_CODE_MAX_LENGTH}
                       onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                        updateRow(row.id, { code: event.target.value })
+                        updateRow(row.id, {
+                          code: event.target.value.slice(0, SYSTEM_VARIABLE_CODE_MAX_LENGTH),
+                        })
                       }
                       aria-label={`Code for ${row.variable || 'new mapping'}`}
                       className={styles.codeInput}
                     />
                   </div>
-                  <div className={styles.colBulk} aria-hidden />
+                  <div className={styles.colActions}>
+                    <WuTooltip content="Delete mapping" position="top">
+                      <button
+                        type="button"
+                        className={styles.deleteBtn}
+                        aria-label={`Delete ${row.variable || 'variable'} mapping`}
+                        onClick={() => handleDeleteRow(row)}
+                      >
+                        <span className="wm-delete" aria-hidden />
+                      </button>
+                    </WuTooltip>
+                  </div>
                 </div>
               );
             })}
@@ -320,6 +383,24 @@ export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariable
         open={bulkModalOpen}
         onOpenChange={setBulkModalOpen}
         onImported={handleBulkImported}
+      />
+
+      <ConfirmModal
+        open={deleteTarget != null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title="Delete variable mapping"
+        description={
+          deleteTarget
+            ? `Are you sure you want to delete the mapping for ${
+                deleteTarget.displayName || deleteTarget.variable
+              }? This cannot be undone.`
+            : 'Are you sure you want to delete this variable mapping?'
+        }
+        confirmLabel="Delete"
+        variant="critical"
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );

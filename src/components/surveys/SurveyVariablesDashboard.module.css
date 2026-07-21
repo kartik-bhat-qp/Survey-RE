@@ -62,7 +62,7 @@
   align-items: center;
   display: grid;
   gap: 1.25rem;
-  grid-template-columns: minmax(12rem, 16rem) minmax(14rem, 1fr) minmax(12rem, 1fr) auto;
+  grid-template-columns: minmax(12rem, 16rem) minmax(12rem, 18rem) minmax(12rem, 18rem) minmax(0, 1fr);
   padding: 0.875rem 1.25rem;
 }
 
@@ -90,6 +90,47 @@
   border-bottom: none;
 }
 
+.tableRow:hover {
+  background: #fafbfc;
+}
+
+.deleteBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    color 0.15s ease,
+    opacity 0.15s ease;
+  width: 2rem;
+}
+
+.tableRow:hover .deleteBtn,
+.tableRow:focus-within .deleteBtn,
+.deleteBtn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.deleteBtn:hover,
+.deleteBtn:focus-visible {
+  background: #fef2f2;
+  color: #dc2626;
+  outline: none;
+}
+
+.deleteBtn span {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
 .tableRow:has(.variableSelectDropdown) {
   z-index: 5;
 }
@@ -97,7 +138,8 @@
 .colVariable,
 .colDisplayName,
 .colCode,
-.colBulk {
+.colBulk,
+.colActions {
   align-items: center;
   display: flex;
   min-width: 0;
@@ -111,6 +153,11 @@
 
 .colBulk {
   justify-content: flex-end;
+}
+
+.colActions {
+  justify-content: flex-end;
+  min-height: 2rem;
 }
 
 .sortIcon {
@@ -268,8 +315,14 @@
   color: #1b87e6;
 }
 
+.colDisplayName,
+.colCode {
+  width: 100%;
+}
+
 .colDisplayName :global(.wu-input),
 .colCode :global(.wu-input) {
+  max-width: 100%;
   width: 100%;
 }
 
@@ -321,5 +374,10 @@
 
   .colBulk {
     justify-content: flex-start;
+  }
+
+  .deleteBtn {
+    opacity: 1;
+    pointer-events: auto;
   }
 }
