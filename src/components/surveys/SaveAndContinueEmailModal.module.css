@@ -1,0 +1,80 @@
+.modal {
+  border: 1px solid #1b87e6;
+  max-width: min(42rem, calc(100vw - 1.5rem)) !important;
+  width: 100%;
+}
+
+.header {
+  background: #e8f4fd;
+  padding-right: 3rem !important;
+}
+
+.headerTitleRow {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.headerTitle {
+  color: #1b3380;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.helpIcon {
+  align-items: center;
+  color: #1b87e6;
+  cursor: default;
+  display: inline-flex;
+  font-size: 1rem;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem !important;
+}
+
+.fieldRow {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem 1rem;
+  grid-template-columns: 5rem minmax(0, 1fr);
+}
+
+.fieldLabel {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.selectWrap {
+  min-width: 0;
+  width: 100%;
+}
+
+.bodyField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bodyEditor {
+  width: 100%;
+}
+
+.bodyEditor :global(.ProseMirror),
+.bodyEditor :global([contenteditable='true']) {
+  min-height: 10rem;
+}
+
+.footerActions {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}

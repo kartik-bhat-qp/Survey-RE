@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "node scripts/patch-wick-ui-editor.cjs"
   },
   "dependencies": {
     "@amcharts/amcharts5": "^5.17.2",

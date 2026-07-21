@@ -1,0 +1,35 @@
+.modal {
+  max-width: 28rem;
+}
+
+.header {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.field {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.fieldLabel {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.selectWrap {
+  max-width: 14rem;
+  min-width: 10rem;
+  width: 100%;
+}

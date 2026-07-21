@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { AddVariableMappingModal } from '@/components/surveys/AddVariableMappingModal';
@@ -51,11 +51,30 @@ function VariableSelect({
   ariaLabel,
 }: VariableSelectProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const listId = useId();
+  const [search, setSearch] = useState('');
   const label = value || SYSTEM_VARIABLE_SELECT_PLACEHOLDER;
 
+  const filteredOptions = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return options;
+    return options.filter(
+      (option) =>
+        option.label.toLowerCase().includes(term) ||
+        option.value.toLowerCase().includes(term)
+    );
+  }, [options, search]);
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setSearch('');
+      return;
+    }
+
+    const focusTimer = window.setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 0);
 
     function handlePointerDown(event: MouseEvent): void {
       if (!rootRef.current?.contains(event.target as Node)) {
@@ -72,6 +91,7 @@ function VariableSelect({
     document.addEventListener('mousedown', handlePointerDown);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
+      window.clearTimeout(focusTimer);
       document.removeEventListener('mousedown', handlePointerDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
@@ -95,29 +115,50 @@ function VariableSelect({
       </button>
 
       {open ? (
-        <ul id={listId} className={styles.variableSelectMenu} role="listbox" tabIndex={-1}>
-          {options.map((option) => {
-            const selected = option.value === value;
-            return (
-              <li key={option.value} role="none">
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={selected}
-                  className={`${styles.variableSelectOption} ${
-                    selected ? styles.variableSelectOptionSelected : ''
-                  }`}
-                  onClick={() => {
-                    onSelect(option);
-                    onOpenChange(false);
-                  }}
-                >
-                  {option.label}
-                </button>
+        <div className={styles.variableSelectDropdown}>
+          <div className={styles.variableSelectSearch}>
+            <span className={`wm-search ${styles.variableSelectSearchIcon}`} aria-hidden />
+            <input
+              ref={searchInputRef}
+              type="search"
+              className={styles.variableSelectSearchInput}
+              placeholder="Search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              aria-label="Search variables"
+              autoComplete="off"
+            />
+          </div>
+          <ul id={listId} className={styles.variableSelectMenu} role="listbox" tabIndex={-1}>
+            {filteredOptions.length === 0 ? (
+              <li className={styles.variableSelectEmpty} role="presentation">
+                No variables match &ldquo;{search.trim()}&rdquo;.
               </li>
-            );
-          })}
-        </ul>
+            ) : (
+              filteredOptions.map((option) => {
+                const selected = option.value === value;
+                return (
+                  <li key={option.value} role="none">
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      className={`${styles.variableSelectOption} ${
+                        selected ? styles.variableSelectOptionSelected : ''
+                      }`}
+                      onClick={() => {
+                        onSelect(option);
+                        onOpenChange(false);
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </div>
       ) : null}
     </div>
   );

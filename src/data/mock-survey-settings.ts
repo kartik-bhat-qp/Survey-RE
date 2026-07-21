@@ -1,8 +1,27 @@
-export type SurveySettingsTab = 'settings' | 'security' | 'notifications';
+export type SurveySettingsTab = 'settings' | 'security' | 'privacy' | 'notifications';
 
-export type SurveySettingsStatus = 'Active' | 'Inactive' | 'Closed';
+export type SurveySettingsStatus = 'Draft' | 'Published' | 'Inactive' | 'Closed';
+
+const LEGACY_SURVEY_STATUS_MAP: Record<string, SurveySettingsStatus> = {
+  Active: 'Published',
+  'Active - Published': 'Published',
+  'Active - Draft': 'Draft',
+};
+
+export function normalizeSurveySettingsStatus(
+  status: string | undefined,
+  fallback: SurveySettingsStatus
+): SurveySettingsStatus {
+  if (!status) return fallback;
+  if (status === 'Draft' || status === 'Published' || status === 'Inactive' || status === 'Closed') {
+    return status;
+  }
+  return LEGACY_SURVEY_STATUS_MAP[status] ?? fallback;
+}
 
 export type ParticipationLogic = 'allow-multiple' | 'once-only';
+
+export type CustomVariableIdentificationId = 'cv-1' | 'cv-2' | 'cv-3' | 'cv-4' | 'cv-5';
 
 export type SurveyAuthenticationMethod =
   | 'none'
@@ -37,22 +56,56 @@ export interface RespondentAnonymityConfig {
   customVariableIds: string[];
 }
 
+export interface SaveAndContinueEmailSettings {
+  fromSenderId: string;
+  subject: string;
+  body: string;
+}
+
+export type SurveyTimerExpiryAction = 'terminate-survey' | 'auto-submit-response';
+
+export type AgeVerificationFailedAction = 'terminate-survey' | 'automatic-redirect';
+
+export interface AgeVerificationCountryRule {
+  id: string;
+  minimumAge: number;
+  countryCodes: string[];
+}
+
+export interface AgeVerificationSettings {
+  message: string;
+  minimumAge: number;
+  buttonText: string;
+  failedVerificationAction: AgeVerificationFailedAction;
+  failedVerificationRedirectUrl: string;
+  geolocationLogicEnabled: boolean;
+  countryRules: AgeVerificationCountryRule[];
+}
+
 export interface SurveySecuritySettings {
   status: SurveySettingsStatus;
   responseQuotaEnabled: boolean;
   responseQuota: number;
   closeDateTimeEnabled: boolean;
-  closeDateTime: string;
+  closeDate: string;
+  closeTime: string;
+  closedMessage: string;
   participationLogic: ParticipationLogic;
   customVariableIdentification: boolean;
+  customVariableIdentificationVariable: CustomVariableIdentificationId;
   multipleRespondingMessage: string;
   saveAndContinue: boolean;
+  saveAndContinueButtonText: string;
+  saveAndContinueEmail: SaveAndContinueEmailSettings;
   surveyTimer: boolean;
+  surveyTimerDuration: string;
+  surveyTimerExpiryAction: SurveyTimerExpiryAction;
   seo: boolean;
   captureLocationData: boolean;
   respondentAnonymityAssurance: boolean;
   respondentAnonymity: RespondentAnonymityConfig;
   ageVerification: boolean;
+  ageVerificationSettings: AgeVerificationSettings;
 }
 
 export interface SurveyNotificationSettings {
@@ -68,14 +121,16 @@ export interface SurveySettings {
 }
 
 export const SURVEY_STATUS_OPTIONS: { value: SurveySettingsStatus; label: string }[] = [
-  { value: 'Active', label: 'Active' },
+  { value: 'Draft', label: 'Draft' },
+  { value: 'Published', label: 'Published' },
   { value: 'Inactive', label: 'Inactive' },
   { value: 'Closed', label: 'Closed' },
 ];
 
 export const SURVEY_SETTINGS_TABS: { id: SurveySettingsTab; label: string }[] = [
-  { id: 'settings', label: 'Settings' },
+  { id: 'settings', label: 'General' },
   { id: 'security', label: 'Security' },
+  { id: 'privacy', label: 'Privacy and compliance' },
   { id: 'notifications', label: 'Notifications' },
 ];
 
@@ -113,8 +168,127 @@ export const ANONYMITY_CUSTOM_VARIABLES: AnonymityCustomVariable[] = [
   { id: 'cv-5', label: 'Custom Variable 5' },
 ];
 
+export const CUSTOM_VARIABLE_IDENTIFICATION_OPTIONS: {
+  value: CustomVariableIdentificationId;
+  label: string;
+}[] = [
+  { value: 'cv-1', label: 'Custom Variable 1' },
+  { value: 'cv-2', label: 'Custom Variable 2' },
+  { value: 'cv-3', label: 'Custom Variable 3' },
+  { value: 'cv-4', label: 'Custom Variable 4' },
+  { value: 'cv-5', label: 'Custom Variable 5' },
+];
+
 export const DEFAULT_MULTIPLE_RESPONDING_MESSAGE =
   'The owner of this survey has disabled users from taking the survey multiple times. Since we already have a response from you we cannot accept your response at this time.';
+
+export const DEFAULT_SAVE_AND_CONTINUE_BUTTON_TEXT = 'Save & Continue Later';
+
+export const DEFAULT_SAVE_AND_CONTINUE_EMAIL_BODY = `Hello,
+
+We have a partial response saved for you. To start the survey from where you saved, please click on the link below:
+
+<SAVED_SURVEY_LINK>
+
+Thank you.`;
+
+export const SAVE_AND_CONTINUE_EMAIL_HELP =
+  'Customize the email sent when respondents save their progress and continue later.';
+
+export const DEFAULT_SAVE_AND_CONTINUE_EMAIL: SaveAndContinueEmailSettings = {
+  fromSenderId: 'kartik-bhat',
+  subject: 'Your Saved Survey',
+  body: DEFAULT_SAVE_AND_CONTINUE_EMAIL_BODY,
+};
+
+export const DEFAULT_SURVEY_TIMER_DURATION = '00:05';
+
+export const SURVEY_TIMER_EXPIRY_OPTIONS: {
+  value: SurveyTimerExpiryAction;
+  label: string;
+}[] = [
+  { value: 'terminate-survey', label: 'Terminate Survey' },
+  { value: 'auto-submit-response', label: 'Auto Submit Response' },
+];
+
+export const DEFAULT_AGE_VERIFICATION_MESSAGE = `<p style="text-align: center">You must be 18 years of age or older to enter this survey.</p><p style="text-align: center">Please enter your date of birth.</p>`;
+
+export const AGE_VERIFICATION_HELP =
+  'Configure the age gate shown before respondents can enter the survey.';
+
+export const AGE_VERIFICATION_FAILED_OPTIONS: {
+  value: AgeVerificationFailedAction;
+  label: string;
+}[] = [
+  { value: 'terminate-survey', label: 'Terminate Survey' },
+  { value: 'automatic-redirect', label: 'Automatic Redirect' },
+];
+
+export const AGE_VERIFICATION_COUNTRIES: { value: string; label: string }[] = [
+  { value: 'AD', label: 'Andorra' },
+  { value: 'AE', label: 'United Arab Emirates' },
+  { value: 'AF', label: 'Afghanistan' },
+  { value: 'AG', label: 'Antigua and Barbuda' },
+  { value: 'AI', label: 'Anguilla' },
+  { value: 'AL', label: 'Albania' },
+  { value: 'AM', label: 'Armenia' },
+  { value: 'AO', label: 'Angola' },
+  { value: 'AQ', label: 'Antarctica' },
+  { value: 'AR', label: 'Argentina' },
+  { value: 'AT', label: 'Austria' },
+  { value: 'AU', label: 'Australia' },
+  { value: 'BD', label: 'Bangladesh' },
+  { value: 'BE', label: 'Belgium' },
+  { value: 'BR', label: 'Brazil' },
+  { value: 'CA', label: 'Canada' },
+  { value: 'CH', label: 'Switzerland' },
+  { value: 'CN', label: 'China' },
+  { value: 'DE', label: 'Germany' },
+  { value: 'DK', label: 'Denmark' },
+  { value: 'ES', label: 'Spain' },
+  { value: 'FI', label: 'Finland' },
+  { value: 'FR', label: 'France' },
+  { value: 'GB', label: 'United Kingdom' },
+  { value: 'IE', label: 'Ireland' },
+  { value: 'IN', label: 'India' },
+  { value: 'IT', label: 'Italy' },
+  { value: 'JP', label: 'Japan' },
+  { value: 'KR', label: 'South Korea' },
+  { value: 'MX', label: 'Mexico' },
+  { value: 'NL', label: 'Netherlands' },
+  { value: 'NO', label: 'Norway' },
+  { value: 'NZ', label: 'New Zealand' },
+  { value: 'PL', label: 'Poland' },
+  { value: 'PT', label: 'Portugal' },
+  { value: 'SE', label: 'Sweden' },
+  { value: 'SG', label: 'Singapore' },
+  { value: 'US', label: 'United States' },
+  { value: 'ZA', label: 'South Africa' },
+];
+
+export function createAgeVerificationCountryRule(
+  overrides?: Partial<AgeVerificationCountryRule>
+): AgeVerificationCountryRule {
+  return {
+    id: `age-country-rule-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    minimumAge: 18,
+    countryCodes: [],
+    ...overrides,
+  };
+}
+
+export const DEFAULT_AGE_VERIFICATION_SETTINGS: AgeVerificationSettings = {
+  message: DEFAULT_AGE_VERIFICATION_MESSAGE,
+  minimumAge: 18,
+  buttonText: 'Submit',
+  failedVerificationAction: 'terminate-survey',
+  failedVerificationRedirectUrl: '',
+  geolocationLogicEnabled: false,
+  countryRules: [],
+};
+
+export const DEFAULT_CLOSED_MESSAGE =
+  'This Survey has been deactivated by the owner.';
 
 export const ANONYMITY_REQUIRED_STANDARD_FIELD: AnonymityStandardFieldId =
   'respondent-email';
@@ -145,21 +319,29 @@ export function ensureRequiredAnonymityFields(
 }
 
 export const DEFAULT_SURVEY_SECURITY_SETTINGS: SurveySecuritySettings = {
-  status: 'Active',
+  status: 'Published',
   responseQuotaEnabled: false,
   responseQuota: 1000,
   closeDateTimeEnabled: false,
-  closeDateTime: '',
+  closeDate: '',
+  closeTime: '00:00',
+  closedMessage: DEFAULT_CLOSED_MESSAGE,
   participationLogic: 'once-only',
   customVariableIdentification: false,
+  customVariableIdentificationVariable: 'cv-1',
   multipleRespondingMessage: DEFAULT_MULTIPLE_RESPONDING_MESSAGE,
   saveAndContinue: false,
+  saveAndContinueButtonText: DEFAULT_SAVE_AND_CONTINUE_BUTTON_TEXT,
+  saveAndContinueEmail: { ...DEFAULT_SAVE_AND_CONTINUE_EMAIL },
   surveyTimer: false,
+  surveyTimerDuration: DEFAULT_SURVEY_TIMER_DURATION,
+  surveyTimerExpiryAction: 'terminate-survey',
   seo: false,
   captureLocationData: true,
   respondentAnonymityAssurance: false,
   respondentAnonymity: { ...DEFAULT_RESPONDENT_ANONYMITY },
   ageVerification: false,
+  ageVerificationSettings: { ...DEFAULT_AGE_VERIFICATION_SETTINGS },
 };
 
 export const DEFAULT_SURVEY_NOTIFICATION_SETTINGS: SurveyNotificationSettings = {
@@ -172,6 +354,13 @@ export function getDefaultSurveySettings(): SurveySettings {
   return {
     security: {
       ...DEFAULT_SURVEY_SECURITY_SETTINGS,
+      ageVerificationSettings: {
+        ...DEFAULT_AGE_VERIFICATION_SETTINGS,
+        countryRules: DEFAULT_AGE_VERIFICATION_SETTINGS.countryRules.map((rule) => ({
+          ...rule,
+          countryCodes: [...rule.countryCodes],
+        })),
+      },
       respondentAnonymity: {
         standardFields: [...DEFAULT_RESPONDENT_ANONYMITY.standardFields],
         customVariableIds: [...DEFAULT_RESPONDENT_ANONYMITY.customVariableIds],
@@ -192,28 +381,106 @@ export function surveySettingsStorageKey(surveyId: number): string {
 
 const PERSIST_PREFIX = 'survey-re:';
 
+export function normalizeSurveySettings(parsed: Partial<SurveySettings>): SurveySettings {
+  const fallback = getDefaultSurveySettings();
+  const legacyCloseDateTime =
+    typeof (parsed.security as { closeDateTime?: unknown } | undefined)?.closeDateTime ===
+    'string'
+      ? ((parsed.security as unknown as { closeDateTime: string }).closeDateTime)
+      : '';
+  const [legacyDate = '', legacyTime = ''] = legacyCloseDateTime.includes('T')
+    ? legacyCloseDateTime.split('T')
+    : ['', ''];
+
+  return {
+    security: {
+      ...fallback.security,
+      ...parsed.security,
+      status: normalizeSurveySettingsStatus(parsed.security?.status, fallback.security.status),
+      closeDate: parsed.security?.closeDate || legacyDate || fallback.security.closeDate,
+      closeTime:
+        parsed.security?.closeTime ||
+        legacyTime.slice(0, 5) ||
+        fallback.security.closeTime,
+      closedMessage:
+        parsed.security?.closedMessage || fallback.security.closedMessage,
+      customVariableIdentificationVariable:
+        parsed.security?.customVariableIdentificationVariable ||
+        fallback.security.customVariableIdentificationVariable,
+      saveAndContinueButtonText:
+        parsed.security?.saveAndContinueButtonText ||
+        fallback.security.saveAndContinueButtonText,
+      saveAndContinueEmail: {
+        ...fallback.security.saveAndContinueEmail,
+        ...parsed.security?.saveAndContinueEmail,
+        fromSenderId:
+          parsed.security?.saveAndContinueEmail?.fromSenderId ||
+          fallback.security.saveAndContinueEmail.fromSenderId,
+        subject:
+          parsed.security?.saveAndContinueEmail?.subject ||
+          fallback.security.saveAndContinueEmail.subject,
+        body:
+          parsed.security?.saveAndContinueEmail?.body ||
+          fallback.security.saveAndContinueEmail.body,
+      },
+      surveyTimerDuration:
+        parsed.security?.surveyTimerDuration || fallback.security.surveyTimerDuration,
+      surveyTimerExpiryAction:
+        parsed.security?.surveyTimerExpiryAction ||
+        fallback.security.surveyTimerExpiryAction,
+      ageVerificationSettings: {
+        ...fallback.security.ageVerificationSettings,
+        ...parsed.security?.ageVerificationSettings,
+        message:
+          parsed.security?.ageVerificationSettings?.message ||
+          fallback.security.ageVerificationSettings.message,
+        minimumAge:
+          parsed.security?.ageVerificationSettings?.minimumAge ??
+          fallback.security.ageVerificationSettings.minimumAge,
+        buttonText:
+          parsed.security?.ageVerificationSettings?.buttonText ||
+          fallback.security.ageVerificationSettings.buttonText,
+        failedVerificationAction:
+          parsed.security?.ageVerificationSettings?.failedVerificationAction ||
+          fallback.security.ageVerificationSettings.failedVerificationAction,
+        failedVerificationRedirectUrl:
+          parsed.security?.ageVerificationSettings?.failedVerificationRedirectUrl ??
+          fallback.security.ageVerificationSettings.failedVerificationRedirectUrl,
+        geolocationLogicEnabled:
+          parsed.security?.ageVerificationSettings?.geolocationLogicEnabled ??
+          fallback.security.ageVerificationSettings.geolocationLogicEnabled,
+        countryRules: Array.isArray(parsed.security?.ageVerificationSettings?.countryRules)
+          ? parsed.security.ageVerificationSettings.countryRules.map((rule) => ({
+              id: rule.id || createAgeVerificationCountryRule().id,
+              minimumAge:
+                typeof rule.minimumAge === 'number' && Number.isFinite(rule.minimumAge)
+                  ? rule.minimumAge
+                  : fallback.security.ageVerificationSettings.minimumAge,
+              countryCodes: Array.isArray(rule.countryCodes)
+                ? rule.countryCodes.filter((code): code is string => typeof code === 'string')
+                : [],
+            }))
+          : fallback.security.ageVerificationSettings.countryRules,
+      },
+      respondentAnonymity: ensureRequiredAnonymityFields(
+        parsed.security?.respondentAnonymity ?? fallback.security.respondentAnonymity
+      ),
+    },
+    authenticationMethod: parsed.authenticationMethod ?? fallback.authenticationMethod,
+    notifications: {
+      ...fallback.notifications,
+      ...parsed.notifications,
+    },
+  };
+}
+
 export function readSurveySettings(surveyId: number): SurveySettings {
   const fallback = getDefaultSurveySettings();
   if (typeof window === 'undefined') return fallback;
   try {
     const raw = window.localStorage.getItem(PERSIST_PREFIX + surveySettingsStorageKey(surveyId));
     if (raw === null || raw.trim() === '') return fallback;
-    const parsed = JSON.parse(raw) as Partial<SurveySettings>;
-    return {
-      security: {
-        ...fallback.security,
-        ...parsed.security,
-        respondentAnonymity: ensureRequiredAnonymityFields(
-          parsed.security?.respondentAnonymity ?? fallback.security.respondentAnonymity
-        ),
-      },
-      authenticationMethod:
-        parsed.authenticationMethod ?? fallback.authenticationMethod,
-      notifications: {
-        ...fallback.notifications,
-        ...parsed.notifications,
-      },
-    };
+    return normalizeSurveySettings(JSON.parse(raw) as Partial<SurveySettings>);
   } catch {
     return fallback;
   }

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import '@npm-questionpro/wick-ui-icon/dist/wu-icon.css';
 @import '@npm-questionpro/wick-ui-lib/dist/style.css';
+@import '../styles/wick-ui-editor.css';
 
 @theme {
   --font-sans: 'Fira Sans', ui-sans-serif, system-ui, sans-serif;

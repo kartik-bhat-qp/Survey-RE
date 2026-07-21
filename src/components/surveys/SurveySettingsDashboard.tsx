@@ -1,24 +1,32 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { AgeVerificationModal } from '@/components/surveys/AgeVerificationModal';
 import { ConfirmEnableRaaModal } from '@/components/surveys/ConfirmEnableRaaModal';
+import { CustomVariableIdentificationModal } from '@/components/surveys/CustomVariableIdentificationModal';
 import { RespondentAnonymityModal } from '@/components/surveys/RespondentAnonymityModal';
+import { SaveAndContinueEmailModal } from '@/components/surveys/SaveAndContinueEmailModal';
 import { SurveySettingsRichText } from '@/components/surveys/SurveySettingsRichText';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import {
   getDefaultSurveySettings,
   getSurveyDisplayId,
+  normalizeSurveySettings,
   RAA_CANNOT_DISABLE_MESSAGE,
   SURVEY_AUTHENTICATION_HELP,
   SURVEY_AUTHENTICATION_OPTIONS,
   SURVEY_SETTINGS_TABS,
   SURVEY_STATUS_OPTIONS,
+  SURVEY_TIMER_EXPIRY_OPTIONS,
   surveySettingsStorageKey,
+  type AgeVerificationSettings,
   type ParticipationLogic,
   type RespondentAnonymityConfig,
+  type SaveAndContinueEmailSettings,
   type SurveyAuthenticationMethod,
+  type SurveyTimerExpiryAction,
   type SurveyNotificationSettings,
   type SurveySecuritySettings,
   type SurveySettings,
@@ -43,6 +51,14 @@ const WuTooltip = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
+const WuDatePicker = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuDatePicker })),
+  { ssr: false }
+);
+const WuTimePicker = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTimePicker })),
+  { ssr: false }
+);
 
 const SURVEY_ID_TOOLTIP = 'Unique identifier for this survey.';
 const COPY_SURVEY_ID_TOOLTIP = 'Copy Survey ID';
@@ -63,49 +79,160 @@ function parseFormattedNumber(raw: string): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function formatDateInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseCloseDate(value: string): Date | undefined {
+  if (!value) return undefined;
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
+function getTimezoneLabel(): string {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const offset =
+    new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      timeZoneName: 'longOffset',
+    })
+      .formatToParts(new Date())
+      .find((part) => part.type === 'timeZoneName')?.value ?? 'GMT';
+  const longName =
+    new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      timeZoneName: 'long',
+    })
+      .formatToParts(new Date())
+      .find((part) => part.type === 'timeZoneName')?.value ?? timeZone;
+  const city = timeZone.split('/').pop()?.replace(/_/g, ' ') ?? timeZone;
+  return `(${offset}) ${longName} - ${city}`;
+}
+
+/** WuTimePicker keeps selection in local state; sync it out without overriding its onChange. */
+function SyncedWuTimePicker({
+  time,
+  onTimeChange,
+  ariaLabel,
+  className,
+}: {
+  time: string;
+  onTimeChange: (time: string) => void;
+  ariaLabel: string;
+  className?: string;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const timeRef = useRef(time);
+  const onTimeChangeRef = useRef(onTimeChange);
+  timeRef.current = time;
+  onTimeChangeRef.current = onTimeChange;
+
+  useEffect(() => {
+    const root = wrapRef.current;
+    if (!root) return;
+
+    const readTime = (): string => {
+      const input = root.querySelector<HTMLInputElement>('input[type="time"]');
+      return input?.value?.slice(0, 5) || '00:00';
+    };
+
+    const commit = () => {
+      const next = readTime();
+      if (next !== timeRef.current) {
+        onTimeChangeRef.current(next);
+      }
+    };
+
+    const onInteract = () => {
+      window.setTimeout(commit, 0);
+    };
+
+    root.addEventListener('input', commit, true);
+    root.addEventListener('change', commit, true);
+    root.addEventListener('pointerup', onInteract);
+    root.addEventListener('keyup', onInteract);
+
+    return () => {
+      root.removeEventListener('input', commit, true);
+      root.removeEventListener('change', commit, true);
+      root.removeEventListener('pointerup', onInteract);
+      root.removeEventListener('keyup', onInteract);
+    };
+  }, []);
+
+  return (
+    <div ref={wrapRef} className={className ?? styles.closeTimePicker}>
+      <WuTimePicker time={time || '00:00'} aria-label={ariaLabel} />
+    </div>
+  );
+}
+
 export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardProps) {
   const { showToast } = useWuShowToast();
   const [activeTab, setActiveTab] = useState<SurveySettingsTab>('settings');
-  const [settings, setSettings] = usePersistedState<SurveySettings>(
+  const [settingsRaw, setSettings] = usePersistedState<SurveySettings>(
     surveySettingsStorageKey(surveyId),
     getDefaultSurveySettings()
   );
-  const security = settings.security;
-  const notifications = settings.notifications;
-  const authenticationMethod = settings.authenticationMethod ?? 'none';
   const [anonymityModalOpen, setAnonymityModalOpen] = useState(false);
   const [anonymityPendingEnable, setAnonymityPendingEnable] = useState(false);
   const [anonymityConfirmOpen, setAnonymityConfirmOpen] = useState(false);
+  const [customVariableModalOpen, setCustomVariableModalOpen] = useState(false);
+  const [saveAndContinueEmailModalOpen, setSaveAndContinueEmailModalOpen] = useState(false);
+  const [ageVerificationModalOpen, setAgeVerificationModalOpen] = useState(false);
   const [anonymityPendingConfig, setAnonymityPendingConfig] =
     useState<RespondentAnonymityConfig | null>(null);
   const transitioningToConfirmRef = useRef(false);
 
   const displayId = useMemo(() => getSurveyDisplayId(surveyId), [surveyId]);
-  const statusValue =
-    SURVEY_STATUS_OPTIONS.find((option) => option.value === security.status) ??
-    SURVEY_STATUS_OPTIONS[0];
+  const timezoneLabel = useMemo(() => getTimezoneLabel(), []);
+  const settings = useMemo(() => normalizeSurveySettings(settingsRaw), [settingsRaw]);
+  const security = settings.security;
+  const notifications = settings.notifications;
+  const authenticationMethod = settings.authenticationMethod ?? 'none';
+  const statusValue = useMemo(
+    () =>
+      SURVEY_STATUS_OPTIONS.find((option) => option.value === security.status) ??
+      SURVEY_STATUS_OPTIONS[0],
+    [security.status]
+  );
+  const closeDateValue = useMemo(
+    () => parseCloseDate(security.closeDate),
+    [security.closeDate]
+  );
   const raaLocked =
     security.respondentAnonymityAssurance && !anonymityPendingEnable;
 
   function patchSecurity(partial: Partial<SurveySecuritySettings>): void {
-    setSettings((prev) => ({
-      ...prev,
-      security: { ...prev.security, ...partial },
-    }));
+    setSettings((prev) => {
+      const nextSecurity = { ...prev.security, ...partial };
+      const hasChanges = (Object.keys(partial) as (keyof SurveySecuritySettings)[]).some(
+        (key) => !Object.is(prev.security[key], nextSecurity[key])
+      );
+      if (!hasChanges) return prev;
+      return { ...prev, security: nextSecurity };
+    });
   }
 
   function patchNotifications(partial: Partial<SurveyNotificationSettings>): void {
-    setSettings((prev) => ({
-      ...prev,
-      notifications: { ...prev.notifications, ...partial },
-    }));
+    setSettings((prev) => {
+      const nextNotifications = { ...prev.notifications, ...partial };
+      const hasChanges = (Object.keys(partial) as (keyof SurveyNotificationSettings)[]).some(
+        (key) => !Object.is(prev.notifications[key], nextNotifications[key])
+      );
+      if (!hasChanges) return prev;
+      return { ...prev, notifications: nextNotifications };
+    });
   }
 
   function setAuthenticationMethod(method: SurveyAuthenticationMethod): void {
-    setSettings((prev) => ({
-      ...prev,
-      authenticationMethod: method,
-    }));
+    setSettings((prev) => {
+      if (prev.authenticationMethod === method) return prev;
+      return { ...prev, authenticationMethod: method };
+    });
   }
 
   function handleAnonymityToggle(checked: boolean): void {
@@ -281,29 +408,75 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
               </div>
             </div>
 
-            <div className={styles.settingRow}>
-              <span className={styles.settingLabel}>Close Date &amp; Time</span>
+            <div
+              className={
+                security.closeDateTimeEnabled
+                  ? `${styles.settingRow} ${styles.settingRowNoDivider}`
+                  : styles.settingRow
+              }
+            >
+              <span className={styles.settingLabel}>Schedule Close</span>
               <div className={styles.controlStack}>
                 <WuToggle
                   checked={security.closeDateTimeEnabled}
-                  onChange={(checked) => patchSecurity({ closeDateTimeEnabled: checked })}
-                  aria-label="Close Date & Time"
+                  onChange={(checked) => {
+                    if (checked && !security.closeDate) {
+                      patchSecurity({
+                        closeDateTimeEnabled: true,
+                        closeDate: formatDateInputValue(new Date()),
+                        closeTime: security.closeTime || '00:00',
+                      });
+                      return;
+                    }
+                    patchSecurity({ closeDateTimeEnabled: checked });
+                  }}
+                  aria-label="Schedule Close"
                 />
                 {security.closeDateTimeEnabled ? (
-                  <input
-                    type="datetime-local"
-                    className={styles.dateInput}
-                    value={security.closeDateTime}
-                    onChange={(event) =>
-                      patchSecurity({ closeDateTime: event.target.value })
-                    }
-                    aria-label="Close date and time"
-                  />
+                  <div className={styles.closeDateTimeRow}>
+                    <div className={styles.closeDatePicker}>
+                      <WuDatePicker
+                        value={closeDateValue}
+                        onChange={(date) => {
+                          const nextDate = date ? formatDateInputValue(date) : '';
+                          if (nextDate === security.closeDate) return;
+                          patchSecurity({ closeDate: nextDate });
+                        }}
+                        formatString="MM/dd/yyyy"
+                        placeholder="MM/DD/YYYY"
+                        variant="outlined"
+                        aria-label="Close date"
+                      />
+                    </div>
+                    <SyncedWuTimePicker
+                      time={security.closeTime || '00:00'}
+                      onTimeChange={(closeTime) => patchSecurity({ closeTime })}
+                      ariaLabel="Close time"
+                    />
+                    <span className={styles.timezoneLabel}>{timezoneLabel}</span>
+                  </div>
                 ) : null}
               </div>
             </div>
 
-            <div className={styles.settingRow}>
+            {security.closeDateTimeEnabled ? (
+              <div className={`${styles.settingRow} ${styles.settingRowContinue}`}>
+                <span className={styles.settingLabel}>Closed Message</span>
+                <SurveySettingsRichText
+                  value={security.closedMessage}
+                  onChange={(next) => patchSecurity({ closedMessage: next })}
+                  ariaLabel="Closed Message"
+                />
+              </div>
+            ) : null}
+
+            <div
+              className={
+                security.participationLogic === 'once-only'
+                  ? `${styles.settingRow} ${styles.settingRowNoDivider}`
+                  : styles.settingRow
+              }
+            >
               <span className={styles.settingLabel}>Participation Logic</span>
               <div
                 className={styles.radioGroup}
@@ -330,26 +503,32 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
                       patchSecurity({ participationLogic: 'once-only' as ParticipationLogic })
                     }
                   />
-                  <span>
-                    Only allow the survey to be taken once (prevents ballot box stuffing)
+                  <span className={styles.radioOptionRow}>
+                    <span>
+                      Only allow the survey to be taken once (prevents ballot box stuffing)
+                    </span>
+                    <button
+                      type="button"
+                      className={styles.participationSettingsBtn}
+                      aria-label="Custom Variable Identification settings"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        if (security.participationLogic !== 'once-only') {
+                          patchSecurity({ participationLogic: 'once-only' });
+                        }
+                        setCustomVariableModalOpen(true);
+                      }}
+                    >
+                      <span className="wm-settings" aria-hidden />
+                    </button>
                   </span>
                 </label>
               </div>
             </div>
 
-            <div className={styles.settingRow}>
-              <span className={styles.settingLabel}>Custom Variable Identification</span>
-              <WuToggle
-                checked={security.customVariableIdentification}
-                onChange={(checked) =>
-                  patchSecurity({ customVariableIdentification: checked })
-                }
-                aria-label="Custom Variable Identification"
-              />
-            </div>
-
             {security.participationLogic === 'once-only' ? (
-              <div className={styles.settingRow}>
+              <div className={`${styles.settingRow} ${styles.settingRowContinue}`}>
                 <span className={styles.settingLabel}>Multiple Responding Message</span>
                 <SurveySettingsRichText
                   value={security.multipleRespondingMessage}
@@ -362,11 +541,37 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
             <div className={styles.settingRow}>
               <span className={styles.settingLabel}>Save and Continue</span>
               <div className={styles.controlStack}>
-                <WuToggle
-                  checked={security.saveAndContinue}
-                  onChange={(checked) => patchSecurity({ saveAndContinue: checked })}
-                  aria-label="Save and Continue"
-                />
+                <div className={styles.saveAndContinueRow}>
+                  <div className={styles.toggleSlot}>
+                    <WuToggle
+                      checked={security.saveAndContinue}
+                      onChange={(checked) => patchSecurity({ saveAndContinue: checked })}
+                      aria-label="Save and Continue"
+                    />
+                  </div>
+                  {security.saveAndContinue ? (
+                    <>
+                      <span className={styles.saveAndContinueFieldLabel}>Button Text</span>
+                      <input
+                        type="text"
+                        className={styles.saveAndContinueInput}
+                        value={security.saveAndContinueButtonText}
+                        onChange={(event) =>
+                          patchSecurity({ saveAndContinueButtonText: event.target.value })
+                        }
+                        aria-label="Save and Continue button text"
+                      />
+                      <button
+                        type="button"
+                        className={styles.editEmailLink}
+                        onClick={() => setSaveAndContinueEmailModalOpen(true)}
+                      >
+                        <span className="wm-email" aria-hidden />
+                        Edit Email
+                      </button>
+                    </>
+                  ) : null}
+                </div>
                 <div className={styles.warningBanner} role="note">
                   Save and Continue will be disabled during block looping.
                 </div>
@@ -375,13 +580,92 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
 
             <div className={styles.settingRow}>
               <span className={styles.settingLabel}>Survey Timer</span>
-              <WuToggle
-                checked={security.surveyTimer}
-                onChange={(checked) => patchSecurity({ surveyTimer: checked })}
-                aria-label="Survey Timer"
-              />
+              <div className={styles.controlStack}>
+                <div className={styles.surveyTimerRow}>
+                  <div className={styles.toggleSlot}>
+                    <WuToggle
+                      checked={security.surveyTimer}
+                      onChange={(checked) => patchSecurity({ surveyTimer: checked })}
+                      aria-label="Survey Timer"
+                    />
+                  </div>
+                  {security.surveyTimer ? (
+                    <>
+                      <SyncedWuTimePicker
+                        time={security.surveyTimerDuration || '00:05'}
+                        onTimeChange={(surveyTimerDuration) =>
+                          patchSecurity({ surveyTimerDuration })
+                        }
+                        ariaLabel="Survey timer duration"
+                        className={styles.surveyTimerPicker}
+                      />
+                      <div className={styles.surveyTimerExpirySelect}>
+                        <WuSelect
+                          data={SURVEY_TIMER_EXPIRY_OPTIONS}
+                          accessorKey={{ value: 'value', label: 'label' }}
+                          value={
+                            SURVEY_TIMER_EXPIRY_OPTIONS.find(
+                              (option) => option.value === security.surveyTimerExpiryAction
+                            ) ?? SURVEY_TIMER_EXPIRY_OPTIONS[0]
+                          }
+                          onSelect={(item) => {
+                            const selected = item as { value: SurveyTimerExpiryAction } | null;
+                            if (!selected) return;
+                            patchSecurity({ surveyTimerExpiryAction: selected.value });
+                          }}
+                          variant="outlined"
+                          aria-label="When time is up"
+                        />
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              </div>
             </div>
 
+            <div className={styles.actions}>
+              <WuButton onClick={handleSave}>Save Changes</WuButton>
+            </div>
+          </div>
+        ) : activeTab === 'security' ? (
+          <div className={`${styles.panel} ${styles.authPanel}`}>
+            <div className={styles.authHeader}>
+              <h2 className={styles.authTitle}>Survey Authentication</h2>
+              <WuTooltip content={SURVEY_AUTHENTICATION_HELP} position="top">
+                <button
+                  type="button"
+                  className={styles.authHelpBtn}
+                  aria-label={SURVEY_AUTHENTICATION_HELP}
+                >
+                  <span className="wm-help-outline" aria-hidden />
+                </button>
+              </WuTooltip>
+            </div>
+
+            <div
+              className={styles.authOptions}
+              role="radiogroup"
+              aria-label="Survey Authentication"
+            >
+              {SURVEY_AUTHENTICATION_OPTIONS.map((option) => (
+                <label key={option.id} className={styles.authOption}>
+                  <input
+                    type="radio"
+                    name="survey-authentication"
+                    checked={authenticationMethod === option.id}
+                    onChange={() => setAuthenticationMethod(option.id)}
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className={styles.actions}>
+              <WuButton onClick={handleSave}>Save Changes</WuButton>
+            </div>
+          </div>
+        ) : activeTab === 'privacy' ? (
+          <div className={styles.panel}>
             <div className={styles.settingRow}>
               <span className={styles.settingLabel}>SEO</span>
               <WuToggle
@@ -435,48 +719,23 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
 
             <div className={styles.settingRow}>
               <span className={styles.settingLabel}>Age Verification</span>
-              <WuToggle
-                checked={security.ageVerification}
-                onChange={(checked) => patchSecurity({ ageVerification: checked })}
-                aria-label="Age Verification"
-              />
-            </div>
-
-            <div className={styles.actions}>
-              <WuButton onClick={handleSave}>Save Changes</WuButton>
-            </div>
-          </div>
-        ) : activeTab === 'security' ? (
-          <div className={`${styles.panel} ${styles.authPanel}`}>
-            <div className={styles.authHeader}>
-              <h2 className={styles.authTitle}>Survey Authentication</h2>
-              <WuTooltip content={SURVEY_AUTHENTICATION_HELP} position="top">
-                <button
-                  type="button"
-                  className={styles.authHelpBtn}
-                  aria-label={SURVEY_AUTHENTICATION_HELP}
-                >
-                  <span className="wm-help-outline" aria-hidden />
-                </button>
-              </WuTooltip>
-            </div>
-
-            <div
-              className={styles.authOptions}
-              role="radiogroup"
-              aria-label="Survey Authentication"
-            >
-              {SURVEY_AUTHENTICATION_OPTIONS.map((option) => (
-                <label key={option.id} className={styles.authOption}>
-                  <input
-                    type="radio"
-                    name="survey-authentication"
-                    checked={authenticationMethod === option.id}
-                    onChange={() => setAuthenticationMethod(option.id)}
-                  />
-                  <span>{option.label}</span>
-                </label>
-              ))}
+              <div className={styles.ageVerificationControls}>
+                <WuToggle
+                  checked={security.ageVerification}
+                  onChange={(checked) => patchSecurity({ ageVerification: checked })}
+                  aria-label="Age Verification"
+                />
+                {security.ageVerification ? (
+                  <button
+                    type="button"
+                    className={styles.ageVerificationSettingsBtn}
+                    aria-label="Age Verification settings"
+                    onClick={() => setAgeVerificationModalOpen(true)}
+                  >
+                    <span className="wm-settings" aria-hidden />
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <div className={styles.actions}>
@@ -533,6 +792,52 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
         onOpenChange={handleAnonymityConfirmOpenChange}
         onBack={handleAnonymityConfirmBack}
         onConfirm={handleAnonymityConfirmEnable}
+      />
+
+      <CustomVariableIdentificationModal
+        open={customVariableModalOpen}
+        onOpenChange={setCustomVariableModalOpen}
+        enabled={security.customVariableIdentification}
+        variable={security.customVariableIdentificationVariable}
+        onEnabledChange={(checked) => {
+          if (checked && !security.customVariableIdentificationVariable) {
+            patchSecurity({
+              customVariableIdentification: true,
+              customVariableIdentificationVariable: 'cv-1',
+            });
+            return;
+          }
+          patchSecurity({ customVariableIdentification: checked });
+        }}
+        onVariableChange={(variable) =>
+          patchSecurity({ customVariableIdentificationVariable: variable })
+        }
+      />
+
+      <SaveAndContinueEmailModal
+        open={saveAndContinueEmailModalOpen}
+        onOpenChange={setSaveAndContinueEmailModalOpen}
+        value={security.saveAndContinueEmail}
+        onSave={(next: SaveAndContinueEmailSettings) => {
+          patchSecurity({ saveAndContinueEmail: next });
+          showToast({
+            message: 'Save & Continue email saved',
+            variant: 'success',
+          });
+        }}
+      />
+
+      <AgeVerificationModal
+        open={ageVerificationModalOpen}
+        onOpenChange={setAgeVerificationModalOpen}
+        value={security.ageVerificationSettings}
+        onSave={(next: AgeVerificationSettings) => {
+          patchSecurity({ ageVerificationSettings: next });
+          showToast({
+            message: 'Age Verification settings saved',
+            variant: 'success',
+          });
+        }}
       />
     </div>
   );
