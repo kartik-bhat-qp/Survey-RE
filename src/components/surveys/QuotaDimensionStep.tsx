@@ -363,19 +363,11 @@ function QuestionCard({
       }
       align="end"
     >
-      {SCOPE_OPTIONS.map((option) => {
-        const isComingSoon = option.id === 'min-count' || option.id === 'min-pct';
-        return (
-          <WuMenuItem key={option.id} onSelect={() => onScopeChange(option.id)}>
-            <span className={styles.scopeMenuItemRow}>
-              <span>{option.label}</span>
-              {isComingSoon ? (
-                <span className={styles.comingSoonBadge}>Coming soon</span>
-              ) : null}
-            </span>
-          </WuMenuItem>
-        );
-      })}
+      {SCOPE_OPTIONS.map((option) => (
+        <WuMenuItem key={option.id} onSelect={() => onScopeChange(option.id)}>
+          {option.label}
+        </WuMenuItem>
+      ))}
     </WuMenu>
   );
 
