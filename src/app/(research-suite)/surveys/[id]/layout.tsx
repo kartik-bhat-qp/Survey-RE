@@ -41,6 +41,7 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
       pathname.includes('/advance-quotas') ||
       pathname.includes('/settings') ||
       pathname.includes('/languages') ||
+      pathname.includes('/finish-options') ||
       pathname.includes('/variables')
     ) {
       if (activePhase === 'analytics') {

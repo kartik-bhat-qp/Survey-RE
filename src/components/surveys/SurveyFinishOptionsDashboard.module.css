@@ -1,0 +1,100 @@
+.workspace {
+  background: #f5f7fa;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 72rem;
+  padding: 1.5rem 2rem 2.5rem;
+  width: 100%;
+}
+
+.titleRow {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+}
+
+.title {
+  color: #1f2937;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.helpBtn,
+.previewBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 1rem;
+  height: 1.25rem;
+  justify-content: center;
+  padding: 0;
+  width: 1.25rem;
+}
+
+.previewBtn {
+  color: #67727e;
+  font-size: 1.125rem;
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.helpBtn:hover {
+  color: #156fb8;
+}
+
+.previewBtn:hover,
+.previewBtn:focus-visible {
+  background: #f3f4f6;
+  border-radius: 4px;
+  color: #1b87e6;
+  outline: none;
+}
+
+.typeSelect {
+  max-width: 16rem;
+}
+
+.messageSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.messageHeader {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+}
+
+.messageLabel {
+  color: #1f2937;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.messageHeaderSpacer {
+  flex: 1;
+}
+
+.messageEditor :global(.ProseMirror),
+.messageEditor :global([contenteditable='true']) {
+  min-height: 8rem;
+}
