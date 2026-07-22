@@ -8,8 +8,12 @@ import { ConfirmEnableRaaModal } from '@/components/surveys/ConfirmEnableRaaModa
 import { CustomVariableIdentificationModal } from '@/components/surveys/CustomVariableIdentificationModal';
 import { RespondentAnonymityModal } from '@/components/surveys/RespondentAnonymityModal';
 import { SaveAndContinueEmailModal } from '@/components/surveys/SaveAndContinueEmailModal';
+import { SurveyNotificationConfigPanel } from '@/components/surveys/SurveyNotificationConfigPanel';
+import { NotificationCriteriaViewModal } from '@/components/surveys/NotificationCriteriaViewModal';
 import { SurveySettingsRichText } from '@/components/surveys/SurveySettingsRichText';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { usePersistedState } from '@/hooks/usePersistedState';
+import { useSurveyById } from '@/hooks/useSurveyById';
 import { MOCK_EMAIL_LISTS } from '@/data/mock-survey-distribute';
 import {
   getDefaultSurveySettings,
@@ -39,10 +43,11 @@ import {
 } from '@/data/mock-survey-settings';
 import {
   createSurveyNotificationItem,
+  formatNotificationSendToLabel,
+  isSystemSurveyNotification,
+  normalizeSurveyNotificationSettings,
   SURVEY_NOTIFICATION_HELP,
-  SURVEY_NOTIFICATION_LIST_VIEW_OPTIONS,
   type SurveyNotificationItem,
-  type SurveyNotificationListView,
 } from '@/data/mock-survey-notifications';
 import styles from './SurveySettingsDashboard.module.css';
 
@@ -72,14 +77,6 @@ const WuInput = dynamic(
 );
 const WuTimePicker = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTimePicker })),
-  { ssr: false }
-);
-const WuMenu = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
-  { ssr: false }
-);
-const WuMenuItem = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
   { ssr: false }
 );
 
@@ -193,8 +190,84 @@ function SyncedWuTimePicker({
   );
 }
 
+interface NotificationsComposeToolbarProps {
+  onCreate: (name: string) => void;
+}
+
+function NotificationsComposeToolbar({ onCreate }: NotificationsComposeToolbarProps) {
+  const { showToast } = useWuShowToast();
+  const [isAdding, setIsAdding] = useState(false);
+  const [name, setName] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isAdding) return;
+    const frame = window.requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isAdding]);
+
+  function handleCancel(): void {
+    setIsAdding(false);
+    setName('');
+  }
+
+  function handleSubmit(): void {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      showToast({ message: 'Enter a notification name', variant: 'error' });
+      return;
+    }
+    onCreate(trimmed);
+    setIsAdding(false);
+    setName('');
+  }
+
+  return (
+    <div className={styles.notificationsToolbar}>
+      {isAdding ? (
+        <div className={styles.newNotificationComposer}>
+          <input
+            ref={inputRef}
+            type="text"
+            className={styles.newNotificationInput}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                handleSubmit();
+              }
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                handleCancel();
+              }
+            }}
+            placeholder="Enter Notification Name"
+            aria-label="Notification name"
+          />
+          <WuButton onClick={handleSubmit}>Add Notification</WuButton>
+          <button
+            type="button"
+            className={styles.newNotificationCancelBtn}
+            aria-label="Cancel new notification"
+            onClick={handleCancel}
+          >
+            <span className="wm-close" aria-hidden />
+          </button>
+        </div>
+      ) : (
+        <WuButton onClick={() => setIsAdding(true)}>+ New Notification</WuButton>
+      )}
+    </div>
+  );
+}
+
 export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardProps) {
   const { showToast } = useWuShowToast();
+  const { survey } = useSurveyById(surveyId);
+  const surveyName = survey?.name ?? 'Survey';
   const [activeTab, setActiveTab] = useState<SurveySettingsTab>('settings');
   const [settingsRaw, setSettings] = usePersistedState<SurveySettings>(
     surveySettingsStorageKey(surveyId),
@@ -206,6 +279,11 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
   const [customVariableModalOpen, setCustomVariableModalOpen] = useState(false);
   const [saveAndContinueEmailModalOpen, setSaveAndContinueEmailModalOpen] = useState(false);
   const [ageVerificationModalOpen, setAgeVerificationModalOpen] = useState(false);
+  const [editingNotificationId, setEditingNotificationId] = useState<string | null>(null);
+  const [notificationDeleteTarget, setNotificationDeleteTarget] =
+    useState<SurveyNotificationItem | null>(null);
+  const [notificationCriteriaTarget, setNotificationCriteriaTarget] =
+    useState<SurveyNotificationItem | null>(null);
   const [anonymityPendingConfig, setAnonymityPendingConfig] =
     useState<RespondentAnonymityConfig | null>(null);
   const transitioningToConfirmRef = useRef(false);
@@ -215,6 +293,10 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
   const settings = useMemo(() => normalizeSurveySettings(settingsRaw), [settingsRaw]);
   const security = settings.security;
   const notifications = settings.notifications;
+  const editingNotification =
+    editingNotificationId === null
+      ? null
+      : (notifications.items.find((item) => item.id === editingNotificationId) ?? null);
   const authenticationMethod = settings.authenticationMethod ?? 'none';
   const statusValue = useMemo(
     () =>
@@ -242,9 +324,10 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
 
   function patchNotifications(partial: Partial<SurveyNotificationSettings>): void {
     setSettings((prev) => {
-      const nextNotifications = { ...prev.notifications, ...partial };
+      const current = normalizeSurveyNotificationSettings(prev.notifications);
+      const nextNotifications = { ...current, ...partial };
       const hasChanges = (Object.keys(partial) as (keyof SurveyNotificationSettings)[]).some(
-        (key) => !Object.is(prev.notifications[key], nextNotifications[key])
+        (key) => !Object.is(current[key], nextNotifications[key])
       );
       if (!hasChanges) return prev;
       return { ...prev, notifications: nextNotifications };
@@ -255,47 +338,90 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
     notificationId: string,
     patch: Partial<SurveyNotificationItem>
   ): void {
-    setSettings((prev) => ({
-      ...prev,
-      notifications: {
-        ...prev.notifications,
-        items: prev.notifications.items.map((item) =>
-          item.id === notificationId ? { ...item, ...patch } : item
-        ),
-      },
-    }));
+    setSettings((prev) => {
+      const current = normalizeSurveyNotificationSettings(prev.notifications);
+      return {
+        ...prev,
+        notifications: {
+          ...current,
+          items: current.items.map((item) =>
+            item.id === notificationId ? { ...item, ...patch } : item
+          ),
+        },
+      };
+    });
   }
 
-  function handleAddNotification(): void {
+  function handleAddNotification(name: string): void {
     const item = createSurveyNotificationItem({
-      name: `Notification ${notifications.items.length + 1}`,
+      name,
+      surveyName,
       enabled: false,
-      sendTo: 'Survey Administrator',
-      criteria: 'Completed response',
+      emailAdministrator: true,
+      emailRespondent: false,
     });
-    setSettings((prev) => ({
-      ...prev,
-      notifications: {
-        ...prev.notifications,
-        items: [...prev.notifications.items, item],
-      },
-    }));
+    setSettings((prev) => {
+      const current = normalizeSurveyNotificationSettings(prev.notifications);
+      return {
+        ...prev,
+        notifications: {
+          ...current,
+          items: [...current.items, item],
+        },
+      };
+    });
+    setEditingNotificationId(item.id);
     showToast({ message: 'Notification added', variant: 'success' });
   }
 
-  function handleDeleteNotification(notificationId: string): void {
-    setSettings((prev) => ({
-      ...prev,
-      notifications: {
-        ...prev.notifications,
-        items: prev.notifications.items.filter((item) => item.id !== notificationId),
-      },
-    }));
-    showToast({ message: 'Notification deleted', variant: 'success' });
+  function handleSaveNotificationConfig(next: SurveyNotificationItem): void {
+    setSettings((prev) => {
+      const current = normalizeSurveyNotificationSettings(prev.notifications);
+      return {
+        ...prev,
+        notifications: {
+          ...current,
+          items: current.items.map((item) => (item.id === next.id ? next : item)),
+        },
+      };
+    });
+    setEditingNotificationId(null);
+    showToast({ message: 'Notification saved', variant: 'success' });
   }
 
-  function handleNotificationListViewChange(listView: SurveyNotificationListView): void {
-    patchNotifications({ listView });
+  function handleDeleteNotification(notificationId: string): void {
+    let deleted = false;
+    setSettings((prev) => {
+      const current = normalizeSurveyNotificationSettings(prev.notifications);
+      const target = current.items.find((item) => item.id === notificationId);
+      if (target && isSystemSurveyNotification(target)) {
+        return prev;
+      }
+      deleted = true;
+      return {
+        ...prev,
+        notifications: {
+          ...current,
+          items: current.items.filter((item) => item.id !== notificationId),
+        },
+      };
+    });
+    setEditingNotificationId((current) =>
+      current === notificationId ? null : current
+    );
+    setNotificationDeleteTarget(null);
+    if (deleted) {
+      showToast({ message: 'Notification deleted', variant: 'success' });
+    }
+  }
+
+  function handleConfirmDeleteNotification(): void {
+    if (!notificationDeleteTarget) return;
+    if (isSystemSurveyNotification(notificationDeleteTarget)) {
+      setNotificationDeleteTarget(null);
+      return;
+    }
+    handleDeleteNotification(notificationDeleteTarget.id);
   }
 
   function setAuthenticationMethod(method: SurveyAuthenticationMethod): void {
@@ -471,7 +597,10 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
                 activeTab === tab.id ? styles.sidebarItemActive : styles.sidebarItem
               }
               aria-current={activeTab === tab.id ? 'page' : undefined}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setEditingNotificationId(null);
+                setActiveTab(tab.id);
+              }}
             >
               {tab.label}
             </button>
@@ -1157,95 +1286,97 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
           </div>
         ) : (
           <div className={`${styles.panel} ${styles.notificationsPanel}`}>
-            <div className={styles.notificationsToolbar}>
-              <WuButton onClick={handleAddNotification}>+ New Notification</WuButton>
-            </div>
+            {editingNotification ? (
+              <SurveyNotificationConfigPanel
+                key={editingNotification.id}
+                value={editingNotification}
+                surveyId={surveyId}
+                onBack={() => setEditingNotificationId(null)}
+                onSave={handleSaveNotificationConfig}
+              />
+            ) : (
+              <>
+                <NotificationsComposeToolbar onCreate={handleAddNotification} />
 
-            <div
-              className={`${styles.notificationsTable} ${
-                notifications.listView === 'expanded' ? styles.notificationsTableExpanded : ''
-              }`}
-            >
-              <div className={styles.notificationsHeader}>
-                <div className={styles.notificationsColName}>
-                  <span>Notification</span>
-                  <WuTooltip content={SURVEY_NOTIFICATION_HELP} position="top">
-                    <button
-                      type="button"
-                      className={styles.notificationHelpBtn}
-                      aria-label={SURVEY_NOTIFICATION_HELP}
-                    >
-                      <span className="wm-help-outline" aria-hidden />
-                    </button>
-                  </WuTooltip>
-                </div>
-                <div className={styles.notificationsColSendTo}>Send to</div>
-                <div className={styles.notificationsColCriteria}>Criteria</div>
-                <div className={styles.notificationsColView}>
-                  <WuMenu
-                    Trigger={
-                      <button type="button" className={styles.compactViewBtn}>
-                        {SURVEY_NOTIFICATION_LIST_VIEW_OPTIONS.find(
-                          (option) => option.value === notifications.listView
-                        )?.label ?? 'Compact View'}
-                        <span className="wm-arrow-drop-down" aria-hidden />
-                      </button>
-                    }
-                  >
-                    {SURVEY_NOTIFICATION_LIST_VIEW_OPTIONS.map((option) => (
-                      <WuMenuItem
-                        key={option.value}
-                        onSelect={() => handleNotificationListViewChange(option.value)}
-                      >
-                        {option.label}
-                      </WuMenuItem>
-                    ))}
-                  </WuMenu>
-                </div>
-              </div>
-
-              <div className={styles.notificationsBody}>
-                {notifications.items.map((item) => (
-                  <div key={item.id} className={styles.notificationsDataRow}>
+                <div className={styles.notificationsTable}>
+                  <div className={styles.notificationsHeader}>
                     <div className={styles.notificationsColName}>
-                      <button
-                        type="button"
-                        className={styles.notificationNameLink}
-                        onClick={() =>
-                          showToast({
-                            message: `Edit ${item.name}`,
-                            variant: 'info',
-                          })
-                        }
-                      >
-                        {item.name}
-                      </button>
-                      <WuToggle
-                        checked={item.enabled}
-                        onChange={(checked) =>
-                          updateNotificationItem(item.id, { enabled: checked })
-                        }
-                        aria-label={`Enable ${item.name}`}
-                      />
-                    </div>
-                    <div className={styles.notificationsColSendTo}>{item.sendTo}</div>
-                    <div className={styles.notificationsColCriteria}>{item.criteria || '—'}</div>
-                    <div className={styles.notificationsColActions}>
-                      <WuTooltip content="Delete notification" position="top">
+                      <span>Notification</span>
+                      <WuTooltip content={SURVEY_NOTIFICATION_HELP} position="top">
                         <button
                           type="button"
-                          className={styles.notificationDeleteBtn}
-                          aria-label={`Delete ${item.name}`}
-                          onClick={() => handleDeleteNotification(item.id)}
+                          className={styles.notificationHelpBtn}
+                          aria-label={SURVEY_NOTIFICATION_HELP}
                         >
-                          <span className="wm-delete" aria-hidden />
+                          <span className="wm-help-outline" aria-hidden />
                         </button>
                       </WuTooltip>
                     </div>
+                    <div className={styles.notificationsColSendTo}>Send to</div>
+                    <div className={styles.notificationsColCriteria}>Criteria</div>
+                    <div className={styles.notificationsColActions} aria-hidden />
                   </div>
-                ))}
-              </div>
-            </div>
+
+                  <div className={styles.notificationsBody}>
+                    {notifications.items.map((item) => (
+                      <div key={item.id} className={styles.notificationsDataRow}>
+                        <div className={styles.notificationsColName}>
+                          <button
+                            type="button"
+                            className={styles.notificationNameLink}
+                            onClick={() => setEditingNotificationId(item.id)}
+                          >
+                            {item.name}
+                          </button>
+                          <WuToggle
+                            checked={item.enabled}
+                            onChange={(checked) =>
+                              updateNotificationItem(item.id, { enabled: checked })
+                            }
+                            aria-label={`Enable ${item.name}`}
+                          />
+                        </div>
+                        <div
+                          className={styles.notificationsColSendTo}
+                          title={formatNotificationSendToLabel(item)}
+                        >
+                          {formatNotificationSendToLabel(item)}
+                        </div>
+                        <div className={styles.notificationsColCriteria}>
+                          {item.criteria || '—'}
+                        </div>
+                        <div className={styles.notificationsColActions}>
+                          {!isSystemSurveyNotification(item) ? (
+                            <>
+                              <WuTooltip content="View criteria" position="top">
+                                <button
+                                  type="button"
+                                  className={styles.notificationViewBtn}
+                                  aria-label={`View criteria for ${item.name}`}
+                                  onClick={() => setNotificationCriteriaTarget(item)}
+                                >
+                                  <span className="wm-visibility" aria-hidden />
+                                </button>
+                              </WuTooltip>
+                              <WuTooltip content="Delete notification" position="top">
+                                <button
+                                  type="button"
+                                  className={styles.notificationDeleteBtn}
+                                  aria-label={`Delete ${item.name}`}
+                                  onClick={() => setNotificationDeleteTarget(item)}
+                                >
+                                  <span className="wm-delete" aria-hidden />
+                                </button>
+                              </WuTooltip>
+                            </>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -1309,6 +1440,31 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
             variant: 'success',
           });
         }}
+      />
+
+      <ConfirmModal
+        open={notificationDeleteTarget != null}
+        onOpenChange={(open) => {
+          if (!open) setNotificationDeleteTarget(null);
+        }}
+        title="Delete notification"
+        description={
+          notificationDeleteTarget
+            ? `Are you sure you want to delete "${notificationDeleteTarget.name}"? This cannot be undone.`
+            : 'Are you sure you want to delete this notification?'
+        }
+        confirmLabel="Delete"
+        variant="critical"
+        onConfirm={handleConfirmDeleteNotification}
+      />
+
+      <NotificationCriteriaViewModal
+        open={notificationCriteriaTarget != null}
+        onOpenChange={(open) => {
+          if (!open) setNotificationCriteriaTarget(null);
+        }}
+        notification={notificationCriteriaTarget}
+        surveyId={surveyId}
       />
     </div>
   );

@@ -19,19 +19,28 @@ import {
   newCriterion,
   parseSelectedValues,
   promoteExistingToNewIfModified,
-  QUESTION_OPERATORS,
+  questionOperatorNeedsValue,
+  isOpenEndedQuestion,
+  operatorsForQuestion,
+  resolveOperatorForQuestion,
   resolveOperatorForSource,
+  RESPONSE_STATUS_OPERATORS,
+  RESPONSE_STATUS_VALUES,
+  GEO_LOCATION_FIELDS,
   serializeConditions,
   SYSTEM_VARIABLE_NUMERIC_OPERATORS,
   SYSTEM_VARIABLE_TEXT_OPERATORS,
   SYSTEM_VARIABLES,
   templateToCriterionConditions,
   toggleValueSelection,
+  VALUE_SEPARATOR,
   type ConditionConnector,
+  type ConditionSource,
   type CriteriaMode,
   type Criterion,
   type CriterionCondition,
 } from '@/data/mock-criteria-engine';
+import { MultiValueInput } from '@/components/surveys/MultiValueInput';
 import styles from './CriteriaBasedQuotaModal.module.css';
 
 const WuInput = dynamic(
@@ -130,6 +139,10 @@ interface ValueMultiSelectProps {
   triggerClassName: string;
   caretClassName: string;
   labelClassName: string;
+  showSearch?: boolean;
+  showSelectAll?: boolean;
+  /** When set, selecting this option clears all others, and selecting any other clears it. */
+  exclusiveOption?: string;
 }
 
 function ValueMultiSelect({
@@ -139,12 +152,15 @@ function ValueMultiSelect({
   triggerClassName,
   caretClassName,
   labelClassName,
+  showSearch = true,
+  showSelectAll = true,
+  exclusiveOption,
 }: ValueMultiSelectProps) {
   const [search, setSearch] = useState('');
   const selectedValues = parseSelectedValues(value);
-  const filtered = options.filter((opt) =>
-    opt.toLowerCase().includes(search.trim().toLowerCase())
-  );
+  const filtered = showSearch
+    ? options.filter((opt) => opt.toLowerCase().includes(search.trim().toLowerCase()))
+    : options;
   const allFilteredSelected =
     filtered.length > 0 && filtered.every((opt) => selectedValues.includes(opt));
   const triggerLabel =
@@ -157,11 +173,42 @@ function ValueMultiSelect({
   function handleSelectAllToggle(): void {
     if (allFilteredSelected) {
       const remaining = selectedValues.filter((v) => !filtered.includes(v));
-      onChange(remaining.join(', '));
+      onChange(remaining.join(VALUE_SEPARATOR));
     } else {
       const merged = Array.from(new Set([...selectedValues, ...filtered]));
-      onChange(merged.join(', '));
+      onChange(merged.join(VALUE_SEPARATOR));
     }
+  }
+
+  function handleOptionToggle(option: string): void {
+    const isSelected = selectedValues.includes(option);
+
+    if (exclusiveOption) {
+      if (option === exclusiveOption) {
+        onChange(isSelected ? '' : exclusiveOption);
+        return;
+      }
+
+      const withoutExclusive = selectedValues.filter((entry) => entry !== exclusiveOption);
+      if (isSelected) {
+        onChange(withoutExclusive.filter((entry) => entry !== option).join(VALUE_SEPARATOR));
+        return;
+      }
+
+      const nextWithoutExclusive = [...withoutExclusive, option];
+      const otherOptions = options.filter((entry) => entry !== exclusiveOption);
+      const allOthersSelected = otherOptions.every((entry) =>
+        nextWithoutExclusive.includes(entry)
+      );
+
+      // Selecting every concrete option collapses to the exclusive "All" choice.
+      onChange(
+        allOthersSelected ? exclusiveOption : nextWithoutExclusive.join(VALUE_SEPARATOR)
+      );
+      return;
+    }
+
+    onChange(toggleValueSelection(value, option));
   }
 
   return (
@@ -178,29 +225,31 @@ function ValueMultiSelect({
       }
       align="start"
     >
-      <div
-        className={styles.valueSearchRow}
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <input
-          type="text"
-          placeholder="Search options"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          onKeyDown={(event) => event.stopPropagation()}
-          className={styles.valueSearchInput}
-          aria-label="Search options"
-        />
-      </div>
-      {options.length > 0 ? (
+      {showSearch ? (
+        <div
+          className={styles.valueSearchRow}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <input
+            type="text"
+            placeholder="Search options"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            onKeyDown={(event) => event.stopPropagation()}
+            className={styles.valueSearchInput}
+            aria-label="Search options"
+          />
+        </div>
+      ) : null}
+      {showSelectAll && options.length > 0 ? (
         <WuMenuCheckboxItem
           checked={allFilteredSelected}
           onSelect={handleSelectAllToggle}
           preventCloseOnSelect
         >
           <span className={styles.selectAllLabel}>
-            {search.trim() ? 'Select all matching' : 'Select all'}
+            {showSearch && search.trim() ? 'Select all matching' : 'Select all'}
           </span>
         </WuMenuCheckboxItem>
       ) : null}
@@ -211,7 +260,7 @@ function ValueMultiSelect({
           <WuMenuCheckboxItem
             key={opt}
             checked={selectedValues.includes(opt)}
-            onSelect={() => onChange(toggleValueSelection(value, opt))}
+            onSelect={() => handleOptionToggle(opt)}
             preventCloseOnSelect
           >
             {opt}
@@ -236,6 +285,8 @@ export interface CriteriaEngineEditorProps {
   /** Quota flow: numbered criteria blocks, no name/mode fields, OR semantics between blocks. */
   variant?: CriteriaEngineEditorVariant;
   addCriteriaLabel?: string;
+  /** Override available condition sources (defaults to CONDITION_SOURCES). */
+  sources?: readonly ConditionSource[];
 }
 
 export function CriteriaEngineEditor({
@@ -244,13 +295,15 @@ export function CriteriaEngineEditor({
   questions,
   onChange,
   renderCriterionFooter,
-  showAddCriteria = false,
+  showAddCriteria,
   minCriteria = 1,
   variant = 'default',
   addCriteriaLabel = '+ Criteria',
+  sources = CONDITION_SOURCES,
 }: CriteriaEngineEditorProps) {
   const isQuotaVariant = variant === 'quota';
-  const canAddCriteria = showAddCriteria || isQuotaVariant;
+  const canAddCriteria =
+    typeof showAddCriteria === 'boolean' ? showAddCriteria : isQuotaVariant;
   function patch(next: Partial<{ criteria: Criterion[]; collapsedCriterionIds: Set<string> }>) {
     onChange({
       criteria: next.criteria ?? criteria,
@@ -548,8 +601,26 @@ export function CriteriaEngineEditor({
                       const valueOptions =
                         cond.source === 'Question' && selectedQuestion?.options
                           ? selectedQuestion.options
-                          : [];
+                          : cond.source === 'Response Status'
+                            ? [...RESPONSE_STATUS_VALUES]
+                            : [];
                       const isQuestionSource = cond.source === 'Question';
+                      const isResponseStatusSource = cond.source === 'Response Status';
+                      const isGeoLocationSource = cond.source === 'Geo Location';
+                      const isOpenEndedQuestionSource =
+                        isQuestionSource && isOpenEndedQuestion(selectedQuestion);
+                      const usesSelectableOperators =
+                        isQuestionSource && !isOpenEndedQuestionSource;
+                      const questionNeedsValue =
+                        !isQuestionSource ||
+                        questionOperatorNeedsValue(cond.operator, selectedQuestion);
+                      const operatorOptions = isResponseStatusSource
+                        ? RESPONSE_STATUS_OPERATORS
+                        : operatorsForQuestion(selectedQuestion);
+                      const usesSystemVariableStyleOperators =
+                        cond.source === 'System Variable' || isOpenEndedQuestionSource;
+                      const usesSystemVariableStyleValue =
+                        usesSystemVariableStyleOperators;
 
                       return (
                         <div key={cond.id} className={styles.conditionRow}>
@@ -601,7 +672,7 @@ export function CriteriaEngineEditor({
                             }
                             align="start"
                           >
-                            {CONDITION_SOURCES.map((source) => (
+                            {sources.map((source) => (
                               <WuMenuItem
                                 key={source}
                                 onSelect={() =>
@@ -609,7 +680,11 @@ export function CriteriaEngineEditor({
                                     source,
                                     questionId: source === 'Question' ? cond.questionId : null,
                                     systemVariable:
-                                      source === 'System Variable' ? cond.systemVariable : null,
+                                      source === 'System Variable' || source === 'Geo Location'
+                                        ? source === cond.source
+                                          ? cond.systemVariable
+                                          : null
+                                        : null,
                                     operator: resolveOperatorForSource(source, cond.operator),
                                     value: '',
                                     valueEnd: '',
@@ -651,18 +726,49 @@ export function CriteriaEngineEditor({
                                 </WuMenuItem>
                               ))}
                             </WuMenu>
-                          ) : (
+                          ) : isGeoLocationSource ? (
                             <WuMenu
                               Trigger={
                                 <button
                                   type="button"
                                   className={`${styles.menuTrigger} ${styles.conditionQuestion}`}
-                                  disabled={!isQuestionSource}
-                                  aria-disabled={!isQuestionSource}
                                 >
                                   <span className={styles.menuTriggerLabel}>
-                                    {isQuestionSource ? questionLabel : '— n/a —'}
+                                    {cond.systemVariable === 'Country code'
+                                      ? 'Country'
+                                      : (cond.systemVariable ?? '- Select -')}
                                   </span>
+                                  <span
+                                    className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                                    aria-hidden
+                                  />
+                                </button>
+                              }
+                              align="start"
+                            >
+                              {GEO_LOCATION_FIELDS.map((field) => (
+                                <WuMenuItem
+                                  key={field}
+                                  onSelect={() =>
+                                    handleUpdateCondition(criterion.id, cond.id, {
+                                      systemVariable: field,
+                                      operator: 'is',
+                                      value: '',
+                                    })
+                                  }
+                                >
+                                  {field}
+                                </WuMenuItem>
+                              ))}
+                            </WuMenu>
+                          ) : isQuestionSource ? (
+                            <WuMenu
+                              Trigger={
+                                <button
+                                  type="button"
+                                  className={`${styles.menuTrigger} ${styles.conditionQuestion}`}
+                                >
+                                  <span className={styles.menuTriggerLabel}>{questionLabel}</span>
                                   <span
                                     className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
                                     aria-hidden
@@ -677,6 +783,10 @@ export function CriteriaEngineEditor({
                                   onSelect={() =>
                                     handleUpdateCondition(criterion.id, cond.id, {
                                       questionId: question.id,
+                                      operator: resolveOperatorForQuestion(
+                                        question,
+                                        cond.operator
+                                      ),
                                       value: '',
                                     })
                                   }
@@ -685,8 +795,10 @@ export function CriteriaEngineEditor({
                                 </WuMenuItem>
                               ))}
                             </WuMenu>
+                          ) : (
+                            <span className={styles.conditionSubjectPlaceholder} aria-hidden />
                           )}
-                          {cond.source === 'System Variable' ? (
+                          {usesSystemVariableStyleOperators ? (
                             <SystemVariableOperatorMenu
                               operator={cond.operator}
                               triggerClassName={`${styles.menuTrigger} ${styles.conditionOperator}`}
@@ -700,17 +812,21 @@ export function CriteriaEngineEditor({
                                 })
                               }
                             />
+                          ) : isResponseStatusSource || isGeoLocationSource ? (
+                            <span className={styles.conditionOperatorFixed} aria-label="Operator">
+                              is
+                            </span>
                           ) : (
                             <WuMenu
                               Trigger={
                                 <button
                                   type="button"
                                   className={`${styles.menuTrigger} ${styles.conditionOperator}`}
-                                  disabled={!isQuestionSource}
-                                  aria-disabled={!isQuestionSource}
+                                  disabled={!usesSelectableOperators}
+                                  aria-disabled={!usesSelectableOperators}
                                 >
                                   <span className={styles.menuTriggerLabel}>
-                                    {isQuestionSource ? cond.operator : '— n/a —'}
+                                    {usesSelectableOperators ? cond.operator : '— n/a —'}
                                   </span>
                                   <span
                                     className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
@@ -720,11 +836,17 @@ export function CriteriaEngineEditor({
                               }
                               align="start"
                             >
-                              {QUESTION_OPERATORS.map((op) => (
+                              {operatorOptions.map((op) => (
                                 <WuMenuItem
                                   key={op}
                                   onSelect={() =>
-                                    handleUpdateCondition(criterion.id, cond.id, { operator: op })
+                                    handleUpdateCondition(criterion.id, cond.id, {
+                                      operator: op,
+                                      value: questionOperatorNeedsValue(op, selectedQuestion)
+                                        ? cond.value
+                                        : '',
+                                      valueEnd: '',
+                                    })
                                   }
                                 >
                                   {op}
@@ -732,7 +854,7 @@ export function CriteriaEngineEditor({
                               ))}
                             </WuMenu>
                           )}
-                          {cond.source === 'System Variable' ? (
+                          {usesSystemVariableStyleValue ? (
                             systemVariableOperatorNeedsValue(cond.operator) ? (
                               isBetweenOperator(cond.operator) ? (
                                 <div className={styles.betweenInputs}>
@@ -788,6 +910,8 @@ export function CriteriaEngineEditor({
                             ) : (
                               <span className={styles.conditionValueEmpty} aria-hidden />
                             )
+                          ) : !questionNeedsValue ? (
+                            <span className={styles.conditionValueEmpty} aria-hidden />
                           ) : valueOptions.length > 0 ? (
                             <ValueMultiSelect
                               options={valueOptions}
@@ -798,11 +922,29 @@ export function CriteriaEngineEditor({
                               triggerClassName={`${styles.menuTrigger} ${styles.conditionValue}`}
                               caretClassName={`wm-keyboard-arrow-down ${styles.menuCaret}`}
                               labelClassName={styles.menuTriggerLabel}
+                              showSearch={!isResponseStatusSource}
+                              showSelectAll={!isResponseStatusSource}
+                              exclusiveOption={
+                                isResponseStatusSource ? RESPONSE_STATUS_VALUES[0] : undefined
+                              }
                             />
+                          ) : isGeoLocationSource ? (
+                            <div className={styles.conditionValue}>
+                              <MultiValueInput
+                                value={parseSelectedValues(cond.value)}
+                                onChange={(values) =>
+                                  handleUpdateCondition(criterion.id, cond.id, {
+                                    value: values.join(VALUE_SEPARATOR),
+                                  })
+                                }
+                                placeholder="Enter value"
+                                aria-label="Geo location value"
+                              />
+                            </div>
                           ) : (
                             <WuInput
                               variant="outlined"
-                              placeholder="- Select -"
+                              placeholder="Enter value"
                               value={cond.value}
                               onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                                 handleUpdateCondition(criterion.id, cond.id, {

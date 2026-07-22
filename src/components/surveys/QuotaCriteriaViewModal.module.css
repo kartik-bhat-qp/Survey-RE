@@ -61,6 +61,11 @@
   padding-top: 1rem;
 }
 
+.rulesSectionFlush {
+  border-top: none;
+  padding-top: 0;
+}
+
 .rulesHeading {
   color: #1f2937;
   font-family: 'Fira Sans', sans-serif;

@@ -1,7 +1,15 @@
 import type { ExistingCriteriaTemplate } from '@/data/mock-existing-criteria';
 import type { SurveyQuestion } from '@/data/mock-survey-questions';
 
-export const QUESTION_OPERATORS = ['is', 'is not', 'contains', 'does not contain'] as const;
+export const CLOSED_ENDED_QUESTION_OPERATORS = [
+  'is',
+  'is not',
+  'is not displayed',
+  'is not answered',
+] as const;
+
+/** Default question operators (closed-ended). Prefer operatorsForQuestion(). */
+export const QUESTION_OPERATORS = CLOSED_ENDED_QUESTION_OPERATORS;
 
 export const SYSTEM_VARIABLE_TEXT_OPERATORS = [
   'equals',
@@ -33,7 +41,39 @@ export const CONDITION_SOURCES = [
   'Device Type',
 ] as const;
 
-export type ConditionSource = (typeof CONDITION_SOURCES)[number];
+/** Notification criteria include Response Status in addition to the shared sources. */
+export const NOTIFICATION_CONDITION_SOURCES = [
+  ...CONDITION_SOURCES,
+  'Response Status',
+] as const;
+
+export type ConditionSource = (typeof NOTIFICATION_CONDITION_SOURCES)[number];
+
+export const RESPONSE_STATUS_OPERATORS = ['is'] as const;
+
+export const RESPONSE_STATUS_VALUES = [
+  'All',
+  'Completed',
+  'Partial',
+  'Terminated',
+] as const;
+
+export const GEO_LOCATION_FIELDS = [
+  'City',
+  'State / Region',
+  'Country',
+] as const;
+
+export const GEO_LOCATION_OPERATORS = [
+  'is',
+  'is not',
+  'contains',
+  'does not contain',
+] as const;
+
+export function isGeoLocationCountryField(field: string | null | undefined): boolean {
+  return field === 'Country' || field === 'Country code';
+}
 
 export const CONNECTORS = ['AND', 'OR'] as const;
 export type ConditionConnector = (typeof CONNECTORS)[number];
@@ -121,12 +161,56 @@ export function newCondition(): CriterionCondition {
   };
 }
 
+export function isClosedEndedQuestion(question: SurveyQuestion | undefined): boolean {
+  return Boolean(question) && question?.type !== 'Text';
+}
+
+export function isOpenEndedQuestion(question: SurveyQuestion | undefined): boolean {
+  return question?.type === 'Text';
+}
+
+export function operatorsForQuestion(
+  question: SurveyQuestion | undefined
+): readonly string[] {
+  if (isOpenEndedQuestion(question)) {
+    return [...SYSTEM_VARIABLE_TEXT_OPERATORS, ...SYSTEM_VARIABLE_NUMERIC_OPERATORS];
+  }
+  return CLOSED_ENDED_QUESTION_OPERATORS;
+}
+
+export function questionOperatorNeedsValue(
+  operator: string,
+  question?: SurveyQuestion | undefined
+): boolean {
+  if (isOpenEndedQuestion(question) || isSystemVariableOperator(operator)) {
+    return systemVariableOperatorNeedsValue(operator);
+  }
+  return operator !== 'is not displayed' && operator !== 'is not answered';
+}
+
+export function resolveOperatorForQuestion(
+  question: SurveyQuestion | undefined,
+  current: string
+): string {
+  if (isOpenEndedQuestion(question)) {
+    return isSystemVariableOperator(current) ? current : DEFAULT_SYSTEM_VARIABLE_OPERATOR;
+  }
+  const operators = operatorsForQuestion(question);
+  return operators.includes(current) ? current : 'is';
+}
+
 export function resolveOperatorForSource(source: ConditionSource, current: string): string {
   if (source === 'System Variable') {
     return isSystemVariableOperator(current) ? current : DEFAULT_SYSTEM_VARIABLE_OPERATOR;
   }
   if (source === 'Question') {
     return (QUESTION_OPERATORS as readonly string[]).includes(current) ? current : 'is';
+  }
+  if (source === 'Response Status') {
+    return (RESPONSE_STATUS_OPERATORS as readonly string[]).includes(current) ? current : 'is';
+  }
+  if (source === 'Geo Location') {
+    return 'is';
   }
   return current;
 }
@@ -198,7 +282,12 @@ export function promoteExistingToNewIfModified(prev: Criterion, next: Criterion)
 
 export function isConditionComplete(cond: CriterionCondition): boolean {
   if (cond.source === 'Question') {
-    return cond.questionId !== null && cond.value.trim() !== '';
+    if (cond.questionId === null) return false;
+    if (!questionOperatorNeedsValue(cond.operator)) return true;
+    if (isBetweenOperator(cond.operator)) {
+      return cond.value.trim() !== '' && cond.valueEnd.trim() !== '';
+    }
+    return cond.value.trim() !== '';
   }
   if (cond.source === 'System Variable') {
     if (cond.systemVariable === null) return false;
@@ -207,6 +296,12 @@ export function isConditionComplete(cond: CriterionCondition): boolean {
       return cond.value.trim() !== '' && cond.valueEnd.trim() !== '';
     }
     return cond.value.trim() !== '';
+  }
+  if (cond.source === 'Response Status') {
+    return cond.value.trim() !== '';
+  }
+  if (cond.source === 'Geo Location') {
+    return cond.systemVariable !== null && cond.value.trim() !== '';
   }
   return cond.value.trim() !== '';
 }

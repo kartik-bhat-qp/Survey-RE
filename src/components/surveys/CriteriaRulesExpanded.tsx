@@ -61,6 +61,7 @@ interface CriteriaRulesExpandedProps {
   checksSuffix?: string;
   showHeader?: boolean;
   variant?: 'panel' | 'inline';
+  orHint?: string;
 }
 
 export function CriteriaRulesExpanded({
@@ -68,6 +69,7 @@ export function CriteriaRulesExpanded({
   checksSuffix,
   showHeader = false,
   variant = 'panel',
+  orHint = 'Quota matches when any criteria below is met.',
 }: CriteriaRulesExpandedProps) {
   const rows = buildCriteriaRuleRows(blocks);
   const hasMultipleBlocks = blocks.filter((block) => block.conditions.length > 0).length > 1;
@@ -89,7 +91,7 @@ export function CriteriaRulesExpanded({
 
     return (
       <div className={panelClass}>
-        <p className={styles.blockOrHint}>Quota matches when any criteria below is met.</p>
+        <p className={styles.blockOrHint}>{orHint}</p>
         {visibleBlocks.map((block, blockIdx) => {
           const blockRows = block.conditions.map((cond) => {
             questionIndex += 1;
