@@ -10,7 +10,11 @@ import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
 import {
   deriveNotificationCriteriaLabel,
   deriveNotificationSendTo,
+  getFixedNotificationCriteriaLabel,
+  getFixedNotificationHelpText,
   isSystemSurveyNotification,
+  notificationSupportsEmailRespondent,
+  notificationUsesEditableCriteria,
   SURVEY_NOTIFICATION_EXECUTION_OPTIONS,
   SURVEY_NOTIFICATION_FROM_OPTIONS,
   type SurveyNotificationExecutionWhen,
@@ -32,6 +36,10 @@ const WuToggle = dynamic(
 );
 const WuInput = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
+  { ssr: false }
+);
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
 
@@ -103,15 +111,29 @@ export function SurveyNotificationConfigPanel({
     patchDraft({ criteriaBlocks: next.criteria });
   }
 
-  const canSave = draft.criteriaBlocks.some((block) => hasCompleteConditions(block));
   const isSystemNotification = isSystemSurveyNotification(draft);
+  const fixedCriteriaLabel = getFixedNotificationCriteriaLabel(draft);
+  const fixedNotificationHelp = getFixedNotificationHelpText(draft);
+  const usesEditableCriteria = notificationUsesEditableCriteria(draft);
+  const showEmailRespondent = notificationSupportsEmailRespondent(draft);
+  const canSave =
+    !usesEditableCriteria ||
+    draft.criteriaBlocks.some((block) => hasCompleteConditions(block));
 
   function handleSave(): void {
     if (!canSave) return;
     onSave({
       ...draft,
       enabled: true,
-      criteria: deriveNotificationCriteriaLabel(draft.criteriaBlocks, questions),
+      emailRespondent: showEmailRespondent ? draft.emailRespondent : false,
+      sendTo: deriveNotificationSendTo(
+        draft.emailAdministrator,
+        showEmailRespondent ? draft.emailRespondent : false
+      ),
+      criteria: fixedCriteriaLabel
+        ? fixedCriteriaLabel
+        : deriveNotificationCriteriaLabel(draft.criteriaBlocks, questions),
+      criteriaBlocks: usesEditableCriteria ? draft.criteriaBlocks : [],
     });
   }
 
@@ -124,37 +146,56 @@ export function SurveyNotificationConfigPanel({
         <span className={styles.breadcrumbSep} aria-hidden>
           &gt;
         </span>
-        <span className={styles.breadcrumbCurrent}>{draft.name}</span>
+        <span className={styles.breadcrumbCurrentGroup}>
+          <span className={styles.breadcrumbCurrent}>{draft.name}</span>
+          {fixedNotificationHelp ? (
+            <WuTooltip content={fixedNotificationHelp} position="top">
+              <span
+                className={styles.breadcrumbHelpBtn}
+                aria-label={fixedNotificationHelp}
+                title={fixedNotificationHelp}
+              >
+                <span className={styles.breadcrumbInfoMark} aria-hidden>
+                  i
+                </span>
+              </span>
+            </WuTooltip>
+          ) : null}
+        </span>
       </nav>
 
-      <div className={styles.section}>
-        <CriteriaEngineEditor
-          criteria={draft.criteriaBlocks}
-          collapsedCriterionIds={collapsedCriterionIds}
-          questions={questions}
-          variant="quota"
-          sources={NOTIFICATION_CONDITION_SOURCES}
-          showAddCriteria={!isSystemNotification}
-          addCriteriaLabel="Add criteria"
-          onChange={handleCriteriaChange}
-        />
-      </div>
-
-      <div className={styles.executionRow}>
-        <div className={styles.executionSelect}>
-          <WuSelect
-            data={SURVEY_NOTIFICATION_EXECUTION_OPTIONS}
-            accessorKey={{ value: 'value', label: 'label' }}
-            value={selectedExecution}
-            onSelect={(item) => {
-              const selected = item as { value: SurveyNotificationExecutionWhen } | null;
-              if (!selected) return;
-              patchDraft({ executionWhen: selected.value });
-            }}
-            variant="outlined"
-            aria-label="Execution condition"
+      {usesEditableCriteria ? (
+        <div className={styles.section}>
+          <CriteriaEngineEditor
+            criteria={draft.criteriaBlocks}
+            collapsedCriterionIds={collapsedCriterionIds}
+            questions={questions}
+            variant="quota"
+            sources={NOTIFICATION_CONDITION_SOURCES}
+            showAddCriteria={!isSystemNotification}
+            addCriteriaLabel="Add criteria"
+            onChange={handleCriteriaChange}
           />
         </div>
+      ) : null}
+
+      <div className={styles.executionRow}>
+        {usesEditableCriteria ? (
+          <div className={styles.executionSelect}>
+            <WuSelect
+              data={SURVEY_NOTIFICATION_EXECUTION_OPTIONS}
+              accessorKey={{ value: 'value', label: 'label' }}
+              value={selectedExecution}
+              onSelect={(item) => {
+                const selected = item as { value: SurveyNotificationExecutionWhen } | null;
+                if (!selected) return;
+                patchDraft({ executionWhen: selected.value });
+              }}
+              variant="outlined"
+              aria-label="Execution condition"
+            />
+          </div>
+        ) : null}
         <div className={styles.recipientToggles}>
           <WuToggle
             Label="Email Administrator"
@@ -162,67 +203,14 @@ export function SurveyNotificationConfigPanel({
             checked={draft.emailAdministrator}
             onChange={(checked) => patchDraft({ emailAdministrator: checked })}
           />
-          <WuToggle
-            Label="Email Respondent"
-            labelPosition="right"
-            checked={draft.emailRespondent}
-            onChange={(checked) => patchDraft({ emailRespondent: checked })}
-          />
-        </div>
-      </div>
-
-      <div className={styles.attachmentToggles}>
-        <WuToggle
-          Label="Attach response"
-          labelPosition="right"
-          checked={draft.attachResponse}
-          onChange={(checked) => patchDraft({ attachResponse: checked })}
-        />
-        <div className={styles.customAttachmentRow}>
-          <WuToggle
-            Label="Custom attachment"
-            labelPosition="right"
-            checked={draft.customAttachment}
-            onChange={(checked) =>
-              patchDraft({
-                customAttachment: checked,
-                customAttachmentName: checked ? draft.customAttachmentName : '',
-              })
-            }
-          />
-          {draft.customAttachment ? (
-            <div className={styles.customAttachmentPicker}>
-              {draft.customAttachmentName ? (
-                <span className={styles.customAttachmentChip}>
-                  <span className="wm-attach-file" aria-hidden />
-                  <span className={styles.customAttachmentName}>
-                    {draft.customAttachmentName}
-                  </span>
-                  <button
-                    type="button"
-                    className={styles.customAttachmentRemove}
-                    aria-label={`Remove ${draft.customAttachmentName}`}
-                    onClick={() => patchDraft({ customAttachmentName: '' })}
-                  >
-                    <span className="wm-close" aria-hidden />
-                  </button>
-                </span>
-              ) : null}
-              <label className={styles.customAttachmentUpload}>
-                <input
-                  type="file"
-                  className={styles.customAttachmentInput}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (!file) return;
-                    patchDraft({ customAttachmentName: file.name });
-                    event.target.value = '';
-                  }}
-                />
-                {draft.customAttachmentName ? 'Replace file' : 'Choose file'}
-              </label>
-            </div>
-          ) : null}
+          {!showEmailRespondent ? null : (
+            <WuToggle
+              Label="Email Respondent"
+              labelPosition="right"
+              checked={draft.emailRespondent}
+              onChange={(checked) => patchDraft({ emailRespondent: checked })}
+            />
+          )}
         </div>
       </div>
 
@@ -304,6 +292,61 @@ export function SurveyNotificationConfigPanel({
             ariaLabel="Notification email body"
             toolbarPosition="bottom"
           />
+        </div>
+      </div>
+
+      <div className={styles.attachmentToggles}>
+        <WuToggle
+          Label="Attach response"
+          labelPosition="right"
+          checked={draft.attachResponse}
+          onChange={(checked) => patchDraft({ attachResponse: checked })}
+        />
+        <div className={styles.customAttachmentRow}>
+          <WuToggle
+            Label="Custom attachment"
+            labelPosition="right"
+            checked={draft.customAttachment}
+            onChange={(checked) =>
+              patchDraft({
+                customAttachment: checked,
+                customAttachmentName: checked ? draft.customAttachmentName : '',
+              })
+            }
+          />
+          {draft.customAttachment ? (
+            <div className={styles.customAttachmentPicker}>
+              {draft.customAttachmentName ? (
+                <span className={styles.customAttachmentChip}>
+                  <span className="wm-attach-file" aria-hidden />
+                  <span className={styles.customAttachmentName}>
+                    {draft.customAttachmentName}
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.customAttachmentRemove}
+                    aria-label={`Remove ${draft.customAttachmentName}`}
+                    onClick={() => patchDraft({ customAttachmentName: '' })}
+                  >
+                    <span className="wm-close" aria-hidden />
+                  </button>
+                </span>
+              ) : null}
+              <label className={styles.customAttachmentUpload}>
+                <input
+                  type="file"
+                  className={styles.customAttachmentInput}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    patchDraft({ customAttachmentName: file.name });
+                    event.target.value = '';
+                  }}
+                />
+                {draft.customAttachmentName ? 'Replace file' : 'Choose file'}
+              </label>
+            </div>
+          ) : null}
         </div>
       </div>
 

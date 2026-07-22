@@ -71,6 +71,11 @@ export const GEO_LOCATION_OPERATORS = [
   'does not contain',
 ] as const;
 
+export const DEVICE_TYPE_VALUES = [
+  'Desktop / Laptop',
+  'Tablet / Smart phone',
+] as const;
+
 export function isGeoLocationCountryField(field: string | null | undefined): boolean {
   return field === 'Country' || field === 'Country code';
 }
@@ -209,7 +214,7 @@ export function resolveOperatorForSource(source: ConditionSource, current: strin
   if (source === 'Response Status') {
     return (RESPONSE_STATUS_OPERATORS as readonly string[]).includes(current) ? current : 'is';
   }
-  if (source === 'Geo Location') {
+  if (source === 'Geo Location' || source === 'Email List Code' || source === 'Device Type') {
     return 'is';
   }
   return current;
@@ -302,6 +307,12 @@ export function isConditionComplete(cond: CriterionCondition): boolean {
   }
   if (cond.source === 'Geo Location') {
     return cond.systemVariable !== null && cond.value.trim() !== '';
+  }
+  if (cond.source === 'Email List Code') {
+    return cond.value.trim() !== '';
+  }
+  if (cond.source === 'Device Type') {
+    return cond.value.trim() !== '';
   }
   return cond.value.trim() !== '';
 }

@@ -132,7 +132,7 @@ export const MOCK_EXISTING_CRITERIA: ExistingCriteriaTemplate[] = [
   {
     id: 'crit-mobile-users',
     name: 'Mobile respondents',
-    summary: 'Device type is Mobile',
+    summary: 'Device type is Tablet / Smart phone',
     conditions: [
       {
         source: 'Device Type',
@@ -140,7 +140,7 @@ export const MOCK_EXISTING_CRITERIA: ExistingCriteriaTemplate[] = [
         questionText: '',
         subject: 'Device Type',
         operator: 'is',
-        value: 'Mobile',
+        value: 'Tablet / Smart phone',
         connector: 'AND',
       },
     ],
@@ -189,15 +189,15 @@ export const MOCK_EXISTING_CRITERIA: ExistingCriteriaTemplate[] = [
   {
     id: 'crit-panel-invite-a',
     name: 'Panel invite list A',
-    summary: 'Email list code equals PANEL-A-2025',
+    summary: 'Email list code is Customer Experience Panel',
     conditions: [
       {
         source: 'Email List Code',
         questionCode: '',
         questionText: '',
         subject: 'Email List Code',
-        operator: 'equals',
-        value: 'PANEL-A-2025',
+        operator: 'is',
+        value: 'Customer Experience Panel',
         connector: 'AND',
       },
     ],

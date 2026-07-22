@@ -3,6 +3,7 @@ import {
   newCondition,
   newCriterion,
   NOTIFICATION_CONDITION_SOURCES,
+  parseSelectedValues,
   uniqueId,
   type Criterion,
   type CriterionCondition,
@@ -14,36 +15,10 @@ import type {
   AdvanceQuotaRuleCondition,
 } from '@/data/mock-advance-quotas';
 import type { SurveyQuestion } from '@/data/mock-survey-questions';
+import { MOCK_EMAIL_LISTS } from '@/data/mock-survey-distribute';
 
 function nextNotificationId(): string {
   return uniqueId('notification');
-}
-
-function createResponseStatusCondition(
-  value: string,
-  partial?: Partial<CriterionCondition>
-): CriterionCondition {
-  return {
-    ...newCondition(),
-    ...partial,
-    id: partial?.id ?? uniqueId('cond'),
-    source: 'Response Status',
-    operator: 'is',
-    value,
-    valueEnd: '',
-    questionId: null,
-    systemVariable: null,
-    connector: partial?.connector ?? 'AND',
-  };
-}
-
-function createCompletedResponseCriterion(
-  name = 'Completed response'
-): Criterion {
-  return createSurveyNotificationCriterion({
-    name,
-    conditions: [createResponseStatusCondition('Completed')],
-  });
 }
 
 export type SurveyNotificationSendTo = 'Respondent' | 'Survey Administrator' | 'Both' | '';
@@ -92,6 +67,93 @@ export function isSystemSurveyNotification(
     item.name === 'Admin Confirmation' ||
     item.name === 'Quota Notification'
   );
+}
+
+/** Built-in notifications with a fixed trigger — no editable criteria. */
+export function getFixedNotificationCriteriaLabel(
+  item: Pick<SurveyNotificationItem, 'id' | 'name'>
+): string | null {
+  if (
+    item.id === 'notification-thank-you' ||
+    item.id === 'notification-admin-confirmation' ||
+    item.name === 'Respondent acknowledgment' ||
+    item.name === 'Thank You Email' ||
+    item.name === 'Admin Confirmation'
+  ) {
+    return 'Completed response';
+  }
+  if (item.id === 'notification-quota' || item.name === 'Quota Notification') {
+    return 'Quota reached';
+  }
+  return null;
+}
+
+export function notificationUsesEditableCriteria(
+  item: Pick<SurveyNotificationItem, 'id' | 'name'>
+): boolean {
+  return getFixedNotificationCriteriaLabel(item) === null;
+}
+
+export function isCompletedResponseNotification(
+  item: Pick<SurveyNotificationItem, 'id' | 'name'>
+): boolean {
+  return getFixedNotificationCriteriaLabel(item) === 'Completed response';
+}
+
+export function isQuotaNotification(
+  item: Pick<SurveyNotificationItem, 'id' | 'name'>
+): boolean {
+  return getFixedNotificationCriteriaLabel(item) === 'Quota reached';
+}
+
+export function isAdminConfirmationNotification(
+  item: Pick<SurveyNotificationItem, 'id' | 'name'>
+): boolean {
+  return (
+    item.id === 'notification-admin-confirmation' ||
+    item.name === 'Admin Confirmation'
+  );
+}
+
+export function notificationSupportsEmailRespondent(
+  item: Pick<SurveyNotificationItem, 'id' | 'name'>
+): boolean {
+  return !isQuotaNotification(item) && !isAdminConfirmationNotification(item);
+}
+
+export const COMPLETED_RESPONSE_NOTIFICATION_HELP =
+  'Notification will be sent every time a response is completed';
+
+export const QUOTA_NOTIFICATION_HELP =
+  'Notification will be triggered when any question based quota has been reached';
+
+export const RESPONDENT_ACKNOWLEDGMENT_DEFAULT_BODY =
+  '<p>Hi,</p><p>Thank you for your response. I really appreciate you taking the time to get back to me.</p><p>Have a great day!</p><p>Best regards,</p>';
+
+export const QUOTA_NOTIFICATION_DEFAULT_SUBJECT = 'A quota has been met on your survey';
+
+export const QUOTA_NOTIFICATION_DEFAULT_BODY = '<p>A quota has been met in your survey.</p>';
+
+export function isRespondentAcknowledgmentNotification(
+  item: Pick<SurveyNotificationItem, 'id' | 'name'>
+): boolean {
+  return (
+    item.id === 'notification-thank-you' ||
+    item.name === 'Respondent acknowledgment' ||
+    item.name === 'Thank You Email'
+  );
+}
+
+export function getFixedNotificationHelpText(
+  item: Pick<SurveyNotificationItem, 'id' | 'name'>
+): string | null {
+  if (isCompletedResponseNotification(item)) {
+    return COMPLETED_RESPONSE_NOTIFICATION_HELP;
+  }
+  if (isQuotaNotification(item)) {
+    return QUOTA_NOTIFICATION_HELP;
+  }
+  return null;
 }
 
 export interface SurveyNotificationSettings {
@@ -259,6 +321,23 @@ export function deriveNotificationCriteriaLabel(
     return 'Geo Location';
   }
 
+  if (cond.source === 'Email List Code') {
+    const selected = parseSelectedValues(cond.value).map((entry) => {
+      const list = MOCK_EMAIL_LISTS.find(
+        (item) => item.value === entry || item.label === entry
+      );
+      return list?.label ?? entry;
+    });
+    if (selected.length === 1) return selected[0];
+    if (selected.length > 1) return `${selected[0]}…`;
+    return 'Email List Code';
+  }
+
+  if (cond.source === 'Device Type') {
+    if (cond.value.trim()) return cond.value.trim();
+    return 'Device Type';
+  }
+
   if (first.name.trim()) return first.name.trim();
   return cond.source;
 }
@@ -277,6 +356,22 @@ function criterionConditionToDisplayRule(
     subject = question?.text ?? '';
   } else if (cond.source === 'System Variable' || cond.source === 'Geo Location') {
     subject = cond.systemVariable ?? '';
+  } else if (cond.source === 'Email List Code') {
+    subject = 'Email List Code';
+  } else if (cond.source === 'Device Type') {
+    subject = 'Device Type';
+  }
+
+  let value = cond.value;
+  if (cond.source === 'Email List Code') {
+    value = parseSelectedValues(cond.value)
+      .map((entry) => {
+        const list = MOCK_EMAIL_LISTS.find(
+          (item) => item.value === entry || item.label === entry
+        );
+        return list?.label ?? entry;
+      })
+      .join(', ');
   }
 
   return {
@@ -285,7 +380,7 @@ function criterionConditionToDisplayRule(
     questionText: question?.text,
     subject,
     operator: cond.operator,
-    value: cond.value,
+    value,
     valueEnd: cond.valueEnd || undefined,
     connector: cond.connector,
   };
@@ -307,6 +402,25 @@ export function buildDefaultNotificationEmail(
   surveyName: string,
   notificationName: string
 ): { subject: string; body: string } {
+  const isRespondentAcknowledgment =
+    notificationName === 'Respondent acknowledgment' ||
+    notificationName === 'Thank You Email';
+  const isQuota = notificationName === 'Quota Notification';
+
+  if (isRespondentAcknowledgment) {
+    return {
+      subject: `Response received for survey - ${surveyName}`,
+      body: RESPONDENT_ACKNOWLEDGMENT_DEFAULT_BODY,
+    };
+  }
+
+  if (isQuota) {
+    return {
+      subject: QUOTA_NOTIFICATION_DEFAULT_SUBJECT,
+      body: QUOTA_NOTIFICATION_DEFAULT_BODY,
+    };
+  }
+
   return {
     subject: `Response received for survey - ${surveyName}`,
     body: `<p>Respondent has submitted a response for your survey ${surveyName} matching notification ${notificationName}</p>`,
@@ -358,7 +472,7 @@ export function createDefaultSurveyNotificationItems(): SurveyNotificationItem[]
       emailAdministrator: false,
       emailRespondent: true,
       criteria: 'Completed response',
-      criteriaBlocks: [createCompletedResponseCriterion('Completed response')],
+      criteriaBlocks: [],
     }),
     createSurveyNotificationItem({
       id: 'notification-admin-confirmation',
@@ -368,7 +482,7 @@ export function createDefaultSurveyNotificationItems(): SurveyNotificationItem[]
       emailAdministrator: true,
       emailRespondent: false,
       criteria: 'Completed response',
-      criteriaBlocks: [createCompletedResponseCriterion('Completed response')],
+      criteriaBlocks: [],
     }),
     createSurveyNotificationItem({
       id: 'notification-quota',
@@ -378,11 +492,7 @@ export function createDefaultSurveyNotificationItems(): SurveyNotificationItem[]
       emailAdministrator: true,
       emailRespondent: false,
       criteria: 'Quota reached',
-      criteriaBlocks: [
-        createSurveyNotificationCriterion({
-          name: 'Quota reached',
-        }),
-      ],
+      criteriaBlocks: [],
     }),
   ];
 }
@@ -551,66 +661,83 @@ function normalizeNotificationItem(value: unknown): SurveyNotificationItem | nul
         : deriveNotificationCriteriaLabel(blocks),
   });
 
-  return ensureCompletedResponseDefaults(item);
+  return ensureQuotaNotificationDefaults(
+    ensureRespondentAcknowledgmentDefaults(
+      ensureFixedTriggerNotificationDefaults(item)
+    )
+  );
 }
 
-function isThankYouOrAdminConfirmation(item: SurveyNotificationItem): boolean {
+function isLegacyRespondentAcknowledgmentBody(body: string): boolean {
+  const normalized = body.replace(/\s+/g, ' ').trim().toLowerCase();
   return (
-    item.id === 'notification-thank-you' ||
-    item.id === 'notification-admin-confirmation' ||
-    item.name === 'Respondent acknowledgment' ||
-    item.name === 'Thank You Email' ||
-    item.name === 'Admin Confirmation'
+    normalized.includes('respondent has submitted a response for your survey') &&
+    normalized.includes('matching notification') &&
+    normalized.includes('respondent acknowledgment')
   );
 }
 
-function hasCompletedResponseStatus(blocks: Criterion[]): boolean {
-  return blocks.some((block) =>
-    block.conditions.some((cond) => {
-      if (cond.source !== 'Response Status') return false;
-      return cond.value
-        .split(',')
-        .map((part) => part.trim())
-        .includes('Completed');
-    })
-  );
+function isLegacyQuotaNotificationContent(item: SurveyNotificationItem): boolean {
+  const body = item.body.replace(/\s+/g, ' ').trim().toLowerCase();
+  const subject = item.subject.trim().toLowerCase();
+  const legacyBody =
+    body.includes('respondent has submitted a response for your survey') &&
+    body.includes('matching notification') &&
+    body.includes('quota notification');
+  const legacySubject = subject.startsWith('response received for survey');
+  return legacyBody || legacySubject;
 }
 
-function looksLikeUnsetDefaultCriteria(blocks: Criterion[]): boolean {
-  if (blocks.length === 0) return true;
-  return blocks.every((block) =>
-    block.conditions.every((cond) => {
-      if (cond.source === 'Question') {
-        return cond.questionId === null && cond.value.trim() === '';
-      }
-      if (cond.source === 'Response Status') {
-        return cond.value.trim() === '';
-      }
-      return false;
-    })
-  );
-}
-
-/** Ensure Thank You / Admin Confirmation use Response Status → Completed by default. */
-function ensureCompletedResponseDefaults(
+function ensureRespondentAcknowledgmentDefaults(
   item: SurveyNotificationItem
 ): SurveyNotificationItem {
-  if (!isThankYouOrAdminConfirmation(item)) return item;
-  if (hasCompletedResponseStatus(item.criteriaBlocks)) {
-    return {
-      ...item,
-      criteria: deriveNotificationCriteriaLabel(item.criteriaBlocks),
-    };
-  }
-  if (!looksLikeUnsetDefaultCriteria(item.criteriaBlocks)) {
-    return item;
-  }
-  const criteriaBlocks = [createCompletedResponseCriterion('Completed response')];
+  if (!isRespondentAcknowledgmentNotification(item)) return item;
+  if (!isLegacyRespondentAcknowledgmentBody(item.body)) return item;
   return {
     ...item,
-    criteriaBlocks,
-    criteria: 'Completed response',
+    body: RESPONDENT_ACKNOWLEDGMENT_DEFAULT_BODY,
   };
+}
+
+function ensureQuotaNotificationDefaults(
+  item: SurveyNotificationItem
+): SurveyNotificationItem {
+  if (!isQuotaNotification(item)) return item;
+  if (!isLegacyQuotaNotificationContent(item)) return item;
+  return {
+    ...item,
+    subject: QUOTA_NOTIFICATION_DEFAULT_SUBJECT,
+    body: QUOTA_NOTIFICATION_DEFAULT_BODY,
+  };
+}
+
+/** System notifications with a fixed trigger: clear criteria blocks and lock the list label. */
+function ensureFixedTriggerNotificationDefaults(
+  item: SurveyNotificationItem
+): SurveyNotificationItem {
+  const fixedCriteria = getFixedNotificationCriteriaLabel(item);
+  if (!fixedCriteria) return item;
+  const emailRespondent =
+    isQuotaNotification(item) || isAdminConfirmationNotification(item)
+      ? false
+      : item.emailRespondent;
+  return {
+    ...item,
+    criteria: fixedCriteria,
+    criteriaBlocks: [],
+    executionWhen: 'criteria-met',
+    emailRespondent,
+    sendTo: deriveNotificationSendTo(item.emailAdministrator, emailRespondent),
+  };
+}
+
+function isLegacyAdvancedQuotaNotificationRow(
+  item: Pick<SurveyNotificationItem, 'id' | 'name'>
+): boolean {
+  return (
+    item.id === 'notification-advanced-quota' ||
+    item.name === 'Advanced quota notifications'
+  );
 }
 
 function ensureUniqueNotificationIds(
@@ -656,6 +783,7 @@ export function normalizeSurveyNotificationSettings(
       parsed.items
         .map(normalizeNotificationItem)
         .filter((item): item is SurveyNotificationItem => item !== null)
+        .filter((item) => !isLegacyAdvancedQuotaNotificationRow(item))
     );
 
     return {

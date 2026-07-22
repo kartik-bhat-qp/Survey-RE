@@ -12,6 +12,14 @@ export {
 
 export type SurveySettingsTab = 'settings' | 'security' | 'privacy' | 'notifications';
 
+export type SurveySettingsNavItemId = SurveySettingsTab | 'advanced-quota-notifications';
+
+export interface SurveySettingsNavItem {
+  id: SurveySettingsNavItemId;
+  label: string;
+  comingSoon?: boolean;
+}
+
 export type SurveySettingsStatus = 'Draft' | 'Published' | 'Inactive' | 'Closed';
 
 const LEGACY_SURVEY_STATUS_MAP: Record<string, SurveySettingsStatus> = {
@@ -156,11 +164,16 @@ export const SURVEY_STATUS_OPTIONS: { value: SurveySettingsStatus; label: string
   { value: 'Closed', label: 'Closed' },
 ];
 
-export const SURVEY_SETTINGS_TABS: { id: SurveySettingsTab; label: string }[] = [
+export const SURVEY_SETTINGS_TABS: SurveySettingsNavItem[] = [
   { id: 'settings', label: 'General' },
   { id: 'security', label: 'Security' },
   { id: 'privacy', label: 'Privacy and compliance' },
   { id: 'notifications', label: 'Notifications' },
+  {
+    id: 'advanced-quota-notifications',
+    label: 'Advanced quota notifications',
+    comingSoon: true,
+  },
 ];
 
 export const SURVEY_AUTHENTICATION_HELP =

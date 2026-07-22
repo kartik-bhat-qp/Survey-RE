@@ -7,6 +7,7 @@ import {
   MOCK_EXISTING_CRITERIA,
 } from '@/data/mock-existing-criteria';
 import type { SurveyQuestion } from '@/data/mock-survey-questions';
+import { MOCK_EMAIL_LISTS } from '@/data/mock-survey-distribute';
 import {
   CONDITION_SOURCES,
   CONNECTORS,
@@ -27,6 +28,7 @@ import {
   RESPONSE_STATUS_OPERATORS,
   RESPONSE_STATUS_VALUES,
   GEO_LOCATION_FIELDS,
+  DEVICE_TYPE_VALUES,
   serializeConditions,
   SYSTEM_VARIABLE_NUMERIC_OPERATORS,
   SYSTEM_VARIABLE_TEXT_OPERATORS,
@@ -607,6 +609,14 @@ export function CriteriaEngineEditor({
                       const isQuestionSource = cond.source === 'Question';
                       const isResponseStatusSource = cond.source === 'Response Status';
                       const isGeoLocationSource = cond.source === 'Geo Location';
+                      const isEmailListCodeSource = cond.source === 'Email List Code';
+                      const isDeviceTypeSource = cond.source === 'Device Type';
+                      const emailListOptions = MOCK_EMAIL_LISTS.map((list) => list.label);
+                      const selectedDeviceType =
+                        isDeviceTypeSource &&
+                        (DEVICE_TYPE_VALUES as readonly string[]).includes(cond.value)
+                          ? cond.value
+                          : undefined;
                       const isOpenEndedQuestionSource =
                         isQuestionSource && isOpenEndedQuestion(selectedQuestion);
                       const usesSelectableOperators =
@@ -812,7 +822,10 @@ export function CriteriaEngineEditor({
                                 })
                               }
                             />
-                          ) : isResponseStatusSource || isGeoLocationSource ? (
+                          ) : isResponseStatusSource ||
+                            isGeoLocationSource ||
+                            isEmailListCodeSource ||
+                            isDeviceTypeSource ? (
                             <span className={styles.conditionOperatorFixed} aria-label="Operator">
                               is
                             </span>
@@ -941,6 +954,48 @@ export function CriteriaEngineEditor({
                                 aria-label="Geo location value"
                               />
                             </div>
+                          ) : isEmailListCodeSource ? (
+                            <ValueMultiSelect
+                              options={emailListOptions}
+                              value={cond.value}
+                              onChange={(next) =>
+                                handleUpdateCondition(criterion.id, cond.id, { value: next })
+                              }
+                              triggerClassName={`${styles.menuTrigger} ${styles.conditionValue}`}
+                              caretClassName={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                              labelClassName={styles.menuTriggerLabel}
+                            />
+                          ) : isDeviceTypeSource ? (
+                            <WuMenu
+                              Trigger={
+                                <button
+                                  type="button"
+                                  className={`${styles.menuTrigger} ${styles.conditionValue}`}
+                                >
+                                  <span className={styles.menuTriggerLabel}>
+                                    {selectedDeviceType ?? '- Select -'}
+                                  </span>
+                                  <span
+                                    className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                                    aria-hidden
+                                  />
+                                </button>
+                              }
+                              align="start"
+                            >
+                              {DEVICE_TYPE_VALUES.map((deviceType) => (
+                                <WuMenuItem
+                                  key={deviceType}
+                                  onSelect={() =>
+                                    handleUpdateCondition(criterion.id, cond.id, {
+                                      value: deviceType,
+                                    })
+                                  }
+                                >
+                                  {deviceType}
+                                </WuMenuItem>
+                              ))}
+                            </WuMenu>
                           ) : (
                             <WuInput
                               variant="outlined"

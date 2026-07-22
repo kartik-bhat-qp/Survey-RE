@@ -296,7 +296,7 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
   const editingNotification =
     editingNotificationId === null
       ? null
-      : (notifications.items.find((item) => item.id === editingNotificationId) ?? null);
+      : (notifications.items.find((entry) => entry.id === editingNotificationId) ?? null);
   const authenticationMethod = settings.authenticationMethod ?? 'none';
   const statusValue = useMemo(
     () =>
@@ -589,22 +589,33 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
     <div className={styles.workspace}>
       <aside className={styles.sidebar} aria-label="Settings">
         <nav className={styles.sidebarNav}>
-          {SURVEY_SETTINGS_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={
-                activeTab === tab.id ? styles.sidebarItemActive : styles.sidebarItem
-              }
-              aria-current={activeTab === tab.id ? 'page' : undefined}
-              onClick={() => {
-                setEditingNotificationId(null);
-                setActiveTab(tab.id);
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {SURVEY_SETTINGS_TABS.map((tab) =>
+            tab.comingSoon ? (
+              <span
+                key={tab.id}
+                className={styles.sidebarItemComingSoon}
+                aria-disabled="true"
+              >
+                <span className={styles.sidebarItemComingSoonLabel}>{tab.label}</span>
+                <span className={styles.sidebarComingSoonBadge}>Coming soon</span>
+              </span>
+            ) : (
+              <button
+                key={tab.id}
+                type="button"
+                className={
+                  activeTab === tab.id ? styles.sidebarItemActive : styles.sidebarItem
+                }
+                aria-current={activeTab === tab.id ? 'page' : undefined}
+                onClick={() => {
+                  setEditingNotificationId(null);
+                  setActiveTab(tab.id as SurveySettingsTab);
+                }}
+              >
+                {tab.label}
+              </button>
+            )
+          )}
         </nav>
       </aside>
 

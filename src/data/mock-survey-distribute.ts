@@ -61,6 +61,13 @@ export const MOCK_EMAIL_LISTS: EmailListOption[] = [
   { value: 'list-panel', label: 'Customer Experience Panel' },
   { value: 'list-newsletter', label: 'Monthly Newsletter Subscribers' },
   { value: 'list-beta', label: 'Product Beta Testers — West Region' },
+  { value: 'list-nps', label: 'NPS Follow-up Cohort' },
+  { value: 'list-alumni', label: 'Alumni Research Panel' },
+  { value: 'list-enterprise', label: 'Enterprise Account Contacts' },
+  { value: 'list-healthcare', label: 'Healthcare Decision Makers' },
+  { value: 'list-students', label: 'Campus Student Ambassadors' },
+  { value: 'list-vip', label: 'VIP Loyalty Members' },
+  { value: 'list-churn', label: 'Churn Risk Outreach List' },
 ];
 
 export function isValidEmailAddress(email: string): boolean {
