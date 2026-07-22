@@ -37,6 +37,13 @@ import {
   type SurveySettingsStatus,
   type SurveySettingsTab,
 } from '@/data/mock-survey-settings';
+import {
+  createSurveyNotificationItem,
+  SURVEY_NOTIFICATION_HELP,
+  SURVEY_NOTIFICATION_LIST_VIEW_OPTIONS,
+  type SurveyNotificationItem,
+  type SurveyNotificationListView,
+} from '@/data/mock-survey-notifications';
 import styles from './SurveySettingsDashboard.module.css';
 
 const WuToggle = dynamic(
@@ -65,6 +72,14 @@ const WuInput = dynamic(
 );
 const WuTimePicker = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTimePicker })),
+  { ssr: false }
+);
+const WuMenu = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
+  { ssr: false }
+);
+const WuMenuItem = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
   { ssr: false }
 );
 
@@ -234,6 +249,53 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
       if (!hasChanges) return prev;
       return { ...prev, notifications: nextNotifications };
     });
+  }
+
+  function updateNotificationItem(
+    notificationId: string,
+    patch: Partial<SurveyNotificationItem>
+  ): void {
+    setSettings((prev) => ({
+      ...prev,
+      notifications: {
+        ...prev.notifications,
+        items: prev.notifications.items.map((item) =>
+          item.id === notificationId ? { ...item, ...patch } : item
+        ),
+      },
+    }));
+  }
+
+  function handleAddNotification(): void {
+    const item = createSurveyNotificationItem({
+      name: `Notification ${notifications.items.length + 1}`,
+      enabled: false,
+      sendTo: 'Survey Administrator',
+      criteria: 'Completed response',
+    });
+    setSettings((prev) => ({
+      ...prev,
+      notifications: {
+        ...prev.notifications,
+        items: [...prev.notifications.items, item],
+      },
+    }));
+    showToast({ message: 'Notification added', variant: 'success' });
+  }
+
+  function handleDeleteNotification(notificationId: string): void {
+    setSettings((prev) => ({
+      ...prev,
+      notifications: {
+        ...prev.notifications,
+        items: prev.notifications.items.filter((item) => item.id !== notificationId),
+      },
+    }));
+    showToast({ message: 'Notification deleted', variant: 'success' });
+  }
+
+  function handleNotificationListViewChange(listView: SurveyNotificationListView): void {
+    patchNotifications({ listView });
   }
 
   function setAuthenticationMethod(method: SurveyAuthenticationMethod): void {
@@ -1094,37 +1156,95 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
             </div>
           </div>
         ) : (
-          <div className={styles.panel}>
-            <div className={styles.settingRow}>
-              <span className={styles.settingLabel}>Email on survey complete</span>
-              <WuToggle
-                checked={notifications.emailOnComplete}
-                onChange={(checked) => patchNotifications({ emailOnComplete: checked })}
-                aria-label="Email on survey complete"
-              />
+          <div className={`${styles.panel} ${styles.notificationsPanel}`}>
+            <div className={styles.notificationsToolbar}>
+              <WuButton onClick={handleAddNotification}>+ New Notification</WuButton>
             </div>
-            <div className={styles.settingRow}>
-              <span className={styles.settingLabel}>Email when quota is reached</span>
-              <WuToggle
-                checked={notifications.emailOnQuotaReached}
-                onChange={(checked) =>
-                  patchNotifications({ emailOnQuotaReached: checked })
-                }
-                aria-label="Email when quota is reached"
-              />
-            </div>
-            <div className={styles.settingRow}>
-              <span className={styles.settingLabel}>Email on partial response</span>
-              <WuToggle
-                checked={notifications.emailOnPartialResponse}
-                onChange={(checked) =>
-                  patchNotifications({ emailOnPartialResponse: checked })
-                }
-                aria-label="Email on partial response"
-              />
-            </div>
-            <div className={styles.actions}>
-              <WuButton onClick={handleSave}>Save Changes</WuButton>
+
+            <div
+              className={`${styles.notificationsTable} ${
+                notifications.listView === 'expanded' ? styles.notificationsTableExpanded : ''
+              }`}
+            >
+              <div className={styles.notificationsHeader}>
+                <div className={styles.notificationsColName}>
+                  <span>Notification</span>
+                  <WuTooltip content={SURVEY_NOTIFICATION_HELP} position="top">
+                    <button
+                      type="button"
+                      className={styles.notificationHelpBtn}
+                      aria-label={SURVEY_NOTIFICATION_HELP}
+                    >
+                      <span className="wm-help-outline" aria-hidden />
+                    </button>
+                  </WuTooltip>
+                </div>
+                <div className={styles.notificationsColSendTo}>Send to</div>
+                <div className={styles.notificationsColCriteria}>Criteria</div>
+                <div className={styles.notificationsColView}>
+                  <WuMenu
+                    Trigger={
+                      <button type="button" className={styles.compactViewBtn}>
+                        {SURVEY_NOTIFICATION_LIST_VIEW_OPTIONS.find(
+                          (option) => option.value === notifications.listView
+                        )?.label ?? 'Compact View'}
+                        <span className="wm-arrow-drop-down" aria-hidden />
+                      </button>
+                    }
+                  >
+                    {SURVEY_NOTIFICATION_LIST_VIEW_OPTIONS.map((option) => (
+                      <WuMenuItem
+                        key={option.value}
+                        onSelect={() => handleNotificationListViewChange(option.value)}
+                      >
+                        {option.label}
+                      </WuMenuItem>
+                    ))}
+                  </WuMenu>
+                </div>
+              </div>
+
+              <div className={styles.notificationsBody}>
+                {notifications.items.map((item) => (
+                  <div key={item.id} className={styles.notificationsDataRow}>
+                    <div className={styles.notificationsColName}>
+                      <button
+                        type="button"
+                        className={styles.notificationNameLink}
+                        onClick={() =>
+                          showToast({
+                            message: `Edit ${item.name}`,
+                            variant: 'info',
+                          })
+                        }
+                      >
+                        {item.name}
+                      </button>
+                      <WuToggle
+                        checked={item.enabled}
+                        onChange={(checked) =>
+                          updateNotificationItem(item.id, { enabled: checked })
+                        }
+                        aria-label={`Enable ${item.name}`}
+                      />
+                    </div>
+                    <div className={styles.notificationsColSendTo}>{item.sendTo}</div>
+                    <div className={styles.notificationsColCriteria}>{item.criteria || '—'}</div>
+                    <div className={styles.notificationsColActions}>
+                      <WuTooltip content="Delete notification" position="top">
+                        <button
+                          type="button"
+                          className={styles.notificationDeleteBtn}
+                          aria-label={`Delete ${item.name}`}
+                          onClick={() => handleDeleteNotification(item.id)}
+                        >
+                          <span className="wm-delete" aria-hidden />
+                        </button>
+                      </WuTooltip>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

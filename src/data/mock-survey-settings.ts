@@ -1,3 +1,15 @@
+import {
+  DEFAULT_SURVEY_NOTIFICATION_SETTINGS,
+  normalizeSurveyNotificationSettings,
+  type SurveyNotificationSettings,
+} from '@/data/mock-survey-notifications';
+
+export type { SurveyNotificationSettings } from '@/data/mock-survey-notifications';
+export {
+  DEFAULT_SURVEY_NOTIFICATION_SETTINGS,
+  normalizeSurveyNotificationSettings,
+} from '@/data/mock-survey-notifications';
+
 export type SurveySettingsTab = 'settings' | 'security' | 'privacy' | 'notifications';
 
 export type SurveySettingsStatus = 'Draft' | 'Published' | 'Inactive' | 'Closed';
@@ -105,12 +117,6 @@ export interface SurveySecuritySettings {
   respondentAnonymity: RespondentAnonymityConfig;
   ageVerification: boolean;
   ageVerificationSettings: AgeVerificationSettings;
-}
-
-export interface SurveyNotificationSettings {
-  emailOnComplete: boolean;
-  emailOnQuotaReached: boolean;
-  emailOnPartialResponse: boolean;
 }
 
 export interface SurveySettings {
@@ -386,12 +392,6 @@ export const DEFAULT_SURVEY_SECURITY_SETTINGS: SurveySecuritySettings = {
   ageVerificationSettings: { ...DEFAULT_AGE_VERIFICATION_SETTINGS },
 };
 
-export const DEFAULT_SURVEY_NOTIFICATION_SETTINGS: SurveyNotificationSettings = {
-  emailOnComplete: true,
-  emailOnQuotaReached: true,
-  emailOnPartialResponse: false,
-};
-
 export function getDefaultSurveySettings(): SurveySettings {
   return {
     security: {
@@ -413,7 +413,10 @@ export function getDefaultSurveySettings(): SurveySettings {
     emailPasswordAuth: { ...DEFAULT_EMAIL_PASSWORD_AUTH },
     usernamePasswordAuth: { ...DEFAULT_USERNAME_PASSWORD_AUTH },
     participantIdAuth: { ...DEFAULT_PARTICIPANT_ID_AUTH },
-    notifications: { ...DEFAULT_SURVEY_NOTIFICATION_SETTINGS },
+    notifications: {
+      listView: DEFAULT_SURVEY_NOTIFICATION_SETTINGS.listView,
+      items: DEFAULT_SURVEY_NOTIFICATION_SETTINGS.items.map((item) => ({ ...item })),
+    },
   };
 }
 
@@ -571,10 +574,7 @@ export function normalizeSurveySettings(parsed: Partial<SurveySettings>): Survey
       emailListId:
         parsed.participantIdAuth?.emailListId ?? fallback.participantIdAuth.emailListId,
     },
-    notifications: {
-      ...fallback.notifications,
-      ...parsed.notifications,
-    },
+    notifications: normalizeSurveyNotificationSettings(parsed.notifications),
   };
 }
 
