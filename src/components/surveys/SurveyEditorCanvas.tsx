@@ -1956,6 +1956,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   const handleOpenSettings = useCallback((sectionId: string, questionId: string) => {
     const questionKey = `${sectionId}:${questionId}`;
     setSelectedQuestionKey(questionKey);
+    setSurveyAgentOpen(false);
     setSettingsTarget({ sectionId, questionId });
   }, []);
 
@@ -3213,6 +3214,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             questionId: newId,
           };
           setSelectedQuestionKey(questionKey);
+          setSurveyAgentOpen(false);
           setSettingsTarget({ sectionId, questionId: newId });
           setMultiPointSettingsByKey((settings) => ({
             ...settings,
@@ -4585,7 +4587,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           className={styles.surveyAgentFab}
           aria-label="Open research agent"
           title="Open research agent"
-          onClick={() => setSurveyAgentOpen(true)}
+          onClick={() => {
+            setSettingsTarget(null);
+            setSurveyAgentOpen(true);
+          }}
         >
           <span className={`wc-ai ${styles.surveyAgentFabIcon}`} aria-hidden />
         </button>

@@ -1,15 +1,15 @@
 export const SURVEY_AI_EXAMPLE_PROMPTS = [
   {
     id: 'add-nps',
-    text: 'Add an NPS question at the end of the survey',
+    text: 'Add a NPS question about customer satisfaction to the first block',
   },
   {
-    id: 'improve-wording',
-    text: 'Improve the wording of the demographic questions',
+    id: 'skip-logic',
+    text: "Skip to question 5 if the answer to question 2 is 'Yes'",
   },
   {
-    id: 'add-logic',
-    text: 'Add skip logic to hide the cola brand question for non-drinkers',
+    id: 'question-codes',
+    text: 'Update all question codes to QC-$[position] based on their position in the survey.',
   },
 ] as const;
 
@@ -21,20 +21,24 @@ export interface SurveyAiCapabilityPill {
 }
 
 export const SURVEY_AI_CAPABILITY_PILLS: SurveyAiCapabilityPill[] = [
-  { id: 'import-word', label: 'Import from Word', icon: 'wm-description' },
-  { id: 'import-pdf', label: 'Import from PDF', icon: 'wm-picture-as-pdf' },
   { id: 'add-question-types', label: 'Add different types of questions' },
+  {
+    id: 'from-documents',
+    label: 'Add questions directly from uploaded documents',
+  },
   { id: 'compound-logic', label: 'Set up advanced (compound) survey logic' },
-  { id: 'translate', label: 'Translate survey languages' },
-  { id: 'generate-brief', label: 'Generate questions from a brief' },
-  { id: 'add-edit-questions', label: 'Add or edit questions' },
-  { id: 'survey-logic', label: 'Set up survey logic' },
-  { id: 'validation', label: 'Add validation rules' },
-  { id: 'reorganize', label: 'Reorganize blocks' },
+  {
+    id: 'instant-answers',
+    label: 'Get instant answers about your survey & much more',
+  },
 ];
 
-export const SURVEY_AI_GREETING =
-  "Hi! I'm your research agent. I can help you build, edit, and improve this survey. Try asking me to:";
+export const SURVEY_AI_GREETING_TITLE = "Hi! I'm your survey agent";
+
+export const SURVEY_AI_GREETING_SUBTITLE =
+  'I can help you build and configure your survey. Try asking me to:';
+
+export const SURVEY_AI_GREETING = `${SURVEY_AI_GREETING_TITLE} ${SURVEY_AI_GREETING_SUBTITLE}`;
 
 export const DISTRIBUTE_EMAIL_AI_GREETING =
   "Hi! I'm your research agent. I can help you craft and improve your survey invitations. Try asking me to:";

@@ -9,18 +9,16 @@ import {
   createResearchAgentMessageId,
   createResearchAgentPastedImageAttachment,
   createResearchAgentSessionId,
-  estimateResearchAgentContextUsage,
   formatResearchAgentAttachmentSize,
   generateSurveyChangesFromAiPrompt,
   getResearchAgentHistorySeed,
-  RESEARCH_AGENT_CONTEXT_MAX_TOKENS,
-  RESEARCH_AGENT_BASE_CONTEXT_TOKENS,
-  RESEARCH_AGENT_DISTRIBUTE_BASE_CONTEXT_TOKENS,
   RESEARCH_AGENT_FILE_ACCEPT,
   revokeResearchAgentAttachmentPreview,
   SURVEY_AI_CAPABILITY_PILLS,
   SURVEY_AI_EXAMPLE_PROMPTS,
   SURVEY_AI_GREETING,
+  SURVEY_AI_GREETING_SUBTITLE,
+  SURVEY_AI_GREETING_TITLE,
   validateResearchAgentAttachment,
   type ResearchAgentAttachment,
   type ResearchAgentChatMessage,
@@ -29,7 +27,6 @@ import {
   type SurveyAiGenerationResult,
 } from '@/data/mock-survey-ai-agent';
 import { formatRelativeDate, truncate } from '@/data/mock-utils';
-import { ResearchAgentContextUsage } from '@/components/surveys/ResearchAgentContextUsage';
 import { SurveyAgentThinkingOverlay } from '@/components/surveys/SurveyAgentThinkingOverlay';
 import styles from './SurveyAgentSidebar.module.css';
 
@@ -49,10 +46,11 @@ interface SurveyAgentSidebarProps {
   onGenerated?: (result: SurveyAiGenerationResult) => void;
   onSubmit?: (prompt: string) => Promise<SurveyAiGenerationResult>;
   greeting?: string;
+  greetingTitle?: string;
+  greetingSubtitle?: string;
   examplePrompts?: ReadonlyArray<{ id: string; text: string }>;
   capabilityPills?: typeof SURVEY_AI_CAPABILITY_PILLS;
   aboutMessage?: string;
-  baseContextTokens?: number;
 }
 
 function getSidebarShellLayoutClass(
@@ -84,12 +82,16 @@ export function SurveyAgentSidebar({
   onClose,
   onGenerated,
   onSubmit,
-  greeting = SURVEY_AI_GREETING,
+  greeting,
+  greetingTitle = SURVEY_AI_GREETING_TITLE,
+  greetingSubtitle = SURVEY_AI_GREETING_SUBTITLE,
   examplePrompts = SURVEY_AI_EXAMPLE_PROMPTS,
   capabilityPills = SURVEY_AI_CAPABILITY_PILLS,
   aboutMessage = 'Research agent helps you build, edit, and improve your survey with AI',
-  baseContextTokens = RESEARCH_AGENT_BASE_CONTEXT_TOKENS,
 }: SurveyAgentSidebarProps) {
+  const welcomeTitle = greeting ? undefined : greetingTitle;
+  const welcomeSubtitle = greeting ? undefined : greetingSubtitle;
+  const welcomeFallback = greeting ?? SURVEY_AI_GREETING;
   const { showToast } = useWuShowToast();
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -104,11 +106,6 @@ export function SurveyAgentSidebar({
   const bodyRef = useRef<HTMLDivElement>(null);
   const attachmentsRef = useRef<ResearchAgentAttachment[]>(attachments);
   attachmentsRef.current = attachments;
-
-  const contextUsageTokens = useMemo(
-    () => estimateResearchAgentContextUsage(prompt, baseContextTokens, attachments.length),
-    [attachments.length, baseContextTokens, prompt]
-  );
 
   const activeSession = useMemo(
     () => sessions.find((session) => session.id === activeSessionId) ?? null,
@@ -355,6 +352,10 @@ export function SurveyAgentSidebar({
       <SurveyAgentThinkingOverlay open={isGenerating} />
       <div
         className={`${styles.sidebarShell} ${getSidebarShellLayoutClass(layout)} ${
+          layout === 'inline' && agentContext === 'workspace'
+            ? styles.sidebarShellWorkspace
+            : ''
+        } ${
           placement === 'left' ? styles.sidebarShellLeft : styles.sidebarShellRight
         }`}
       >
@@ -402,17 +403,14 @@ export function SurveyAgentSidebar({
                   <span className="wm-history" aria-hidden />
                 </button>
               </WuTooltip>
-              <div className={styles.headerTitleRow}>
-                <h2 className={styles.headerTitle}>Research Agent</h2>
-                <span className={styles.headerAvatar} aria-hidden>
-                  <span className={`wc-ai ${styles.headerAvatarIcon}`} />
-                </span>
-              </div>
+              <span className={`wc-ai ${styles.headerSparkle}`} aria-hidden />
+              <h2 className={styles.headerTitle}>Research Agent</h2>
+              <span className={styles.betaBadge}>BETA</span>
             </div>
             <div className={styles.headerActions}>
               <button
                 type="button"
-                className={`${styles.headerIconBtn} ${styles.headerHelpBtn}`}
+                className={styles.headerIconBtn}
                 aria-label="About research agent"
                 title="About research agent"
                 onClick={() =>
@@ -422,7 +420,7 @@ export function SurveyAgentSidebar({
                   })
                 }
               >
-                <span className={`wm-help-outline ${styles.headerHelpIcon}`} aria-hidden />
+                <span className="wm-help-outline" aria-hidden />
               </button>
               <button
                 type="button"
@@ -445,7 +443,12 @@ export function SurveyAgentSidebar({
             </div>
           </header>
 
-          <div ref={bodyRef} className={styles.body}>
+          <div
+            ref={bodyRef}
+            className={`${styles.body} ${
+              activeMessages.length === 0 ? styles.bodyWelcome : ''
+            }`}
+          >
             {activeMessages.length > 0 ? (
               <div className={styles.messageList}>
                 {activeMessages.map((message) => (
@@ -460,8 +463,15 @@ export function SurveyAgentSidebar({
                 ))}
               </div>
             ) : (
-              <>
-                <p className={styles.greeting}>{greeting}</p>
+              <div className={styles.welcome}>
+                {welcomeTitle ? (
+                  <>
+                    <h3 className={styles.greetingTitle}>{welcomeTitle}</h3>
+                    <p className={styles.greetingSubtitle}>{welcomeSubtitle}</p>
+                  </>
+                ) : (
+                  <p className={styles.greeting}>{welcomeFallback}</p>
+                )}
 
                 <div className={styles.exampleList}>
                   {examplePrompts.map((example) => (
@@ -471,7 +481,11 @@ export function SurveyAgentSidebar({
                       className={styles.exampleCard}
                       onClick={() => applyPrompt(example.text)}
                     >
-                      {example.text}
+                      <span
+                        className={`wm-chat-bubble ${styles.exampleCardIcon}`}
+                        aria-hidden
+                      />
+                      <span className={styles.exampleCardText}>{example.text}</span>
                     </button>
                   ))}
                 </div>
@@ -497,7 +511,7 @@ export function SurveyAgentSidebar({
                     ))}
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
 
@@ -590,10 +604,11 @@ export function SurveyAgentSidebar({
               >
                 <span className="wm-attach-file" aria-hidden />
               </button>
+              <div className={styles.inputDivider} aria-hidden />
               <textarea
                 ref={inputRef}
                 className={styles.input}
-                rows={2}
+                rows={1}
                 value={prompt}
                 placeholder="Describe what you'd like to do..."
                 aria-label="Describe what you'd like to do"
@@ -601,10 +616,7 @@ export function SurveyAgentSidebar({
                 onKeyDown={handlePromptKeyDown}
                 onPaste={handlePromptPaste}
               />
-              <ResearchAgentContextUsage
-                usedTokens={contextUsageTokens}
-                maxTokens={RESEARCH_AGENT_CONTEXT_MAX_TOKENS}
-              />
+              <div className={styles.inputDivider} aria-hidden />
               <button
                 type="button"
                 className={styles.sendBtn}

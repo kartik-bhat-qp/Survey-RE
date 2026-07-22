@@ -31,7 +31,6 @@ import {
   DISTRIBUTE_EMAIL_AI_EXAMPLE_PROMPTS,
   DISTRIBUTE_EMAIL_AI_GREETING,
   generateDistributeEmailFromAiPrompt,
-  RESEARCH_AGENT_DISTRIBUTE_BASE_CONTEXT_TOKENS,
   type SurveyAiGenerationResult,
 } from '@/data/mock-survey-ai-agent';
 import styles from './SurveyDistributeCompose.module.css';
@@ -156,7 +155,6 @@ export function SurveyEmailComposePanel({
         examplePrompts={DISTRIBUTE_EMAIL_AI_EXAMPLE_PROMPTS}
         capabilityPills={DISTRIBUTE_EMAIL_AI_CAPABILITY_PILLS}
         aboutMessage="Research agent helps you craft and improve survey invitations with AI"
-        baseContextTokens={RESEARCH_AGENT_DISTRIBUTE_BASE_CONTEXT_TOKENS}
       />
       <nav className={styles.sidebar} aria-label="Email distribution">
         {EMAIL_SIDEBAR_ITEMS.map((item) => (
