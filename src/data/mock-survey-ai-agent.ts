@@ -1,15 +1,15 @@
 export const SURVEY_AI_EXAMPLE_PROMPTS = [
   {
     id: 'add-nps',
-    text: 'Add a NPS question about customer satisfaction to the first block',
+    text: 'Add questions based on your goal',
   },
   {
-    id: 'skip-logic',
-    text: "Skip to question 5 if the answer to question 2 is 'Yes'",
+    id: 'improve-wording',
+    text: 'Improve the wording of the demographic questions',
   },
   {
-    id: 'question-codes',
-    text: 'Update all question codes to QC-$[position] based on their position in the survey.',
+    id: 'add-logic',
+    text: 'Add skip logic to hide the cola brand question for non-drinkers',
   },
 ] as const;
 
@@ -21,24 +21,14 @@ export interface SurveyAiCapabilityPill {
 }
 
 export const SURVEY_AI_CAPABILITY_PILLS: SurveyAiCapabilityPill[] = [
+  { id: 'import-word', label: 'Create from doc', icon: 'wm-description' },
+  { id: 'import-pdf', label: 'Create from pdf', icon: 'wm-picture-as-pdf' },
   { id: 'add-question-types', label: 'Add different types of questions' },
-  {
-    id: 'from-documents',
-    label: 'Add questions directly from uploaded documents',
-  },
-  { id: 'compound-logic', label: 'Set up advanced (compound) survey logic' },
-  {
-    id: 'instant-answers',
-    label: 'Get instant answers about your survey & much more',
-  },
+  { id: 'compound-logic', label: 'Set up advanced logic' },
 ];
 
-export const SURVEY_AI_GREETING_TITLE = "Hi! I'm your survey agent";
-
-export const SURVEY_AI_GREETING_SUBTITLE =
-  'I can help you build and configure your survey. Try asking me to:';
-
-export const SURVEY_AI_GREETING = `${SURVEY_AI_GREETING_TITLE} ${SURVEY_AI_GREETING_SUBTITLE}`;
+export const SURVEY_AI_GREETING =
+  "Hi! I'm your research agent. I can help you build, edit, and improve this survey. Try asking me to:";
 
 export const DISTRIBUTE_EMAIL_AI_GREETING =
   "Hi! I'm your research agent. I can help you craft and improve your survey invitations. Try asking me to:";
