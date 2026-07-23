@@ -121,11 +121,6 @@
   gap: 0.5rem;
 }
 
-.overrideRow {
-  align-items: center;
-  display: flex;
-}
-
 .importRight {
   display: flex;
   flex-direction: column;

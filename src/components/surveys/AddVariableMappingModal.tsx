@@ -24,10 +24,6 @@ const WuCheckbox = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCheckbox })),
   { ssr: false }
 );
-const WuToggle = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
-  { ssr: false }
-);
 const WuSelect = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
   { ssr: false }
@@ -53,7 +49,6 @@ export function AddVariableMappingModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<AddVariableMappingTabId>('import');
   const [skipHeader, setSkipHeader] = useState(true);
-  const [overrideExisting, setOverrideExisting] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const [sourceSurvey, setSourceSurvey] = useState<
     (typeof VARIABLE_MAPPING_SOURCE_SURVEYS)[number] | null
@@ -65,7 +60,6 @@ export function AddVariableMappingModal({
     if (!open) return;
     setActiveTab('import');
     setSkipHeader(true);
-    setOverrideExisting(false);
     setSelectedFileName(null);
     setSourceSurvey(null);
     setPasteText('');
@@ -109,9 +103,7 @@ export function AddVariableMappingModal({
         return;
       }
       showToast({
-        message: `Imported ${selectedFileName}${skipHeader ? ' (header skipped)' : ''}${
-          overrideExisting ? ' — existing mappings overridden' : ''
-        }`,
+        message: `Imported ${selectedFileName}${skipHeader ? ' (header skipped)' : ''} — existing mappings overridden`,
         variant: 'success',
       });
       onImported?.();
@@ -191,15 +183,6 @@ export function AddVariableMappingModal({
               />
               <span>Skip First Line (Header)</span>
             </label>
-
-            <div className={styles.overrideRow}>
-              <WuToggle
-                Label="Override existing mapping"
-                labelPosition="left"
-                checked={overrideExisting}
-                onChange={setOverrideExisting}
-              />
-            </div>
           </div>
 
           <div className={styles.importRight}>
