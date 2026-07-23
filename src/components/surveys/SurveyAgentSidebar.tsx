@@ -53,6 +53,9 @@ interface SurveyAgentSidebarProps {
   capabilityPills?: typeof SURVEY_AI_CAPABILITY_PILLS;
   aboutMessage?: string;
   baseContextTokens?: number;
+  /** When set while open, fills the composer and submits once. */
+  seedPrompt?: string | null;
+  onSeedPromptConsumed?: () => void;
 }
 
 function getSidebarShellLayoutClass(
@@ -89,6 +92,8 @@ export function SurveyAgentSidebar({
   capabilityPills = SURVEY_AI_CAPABILITY_PILLS,
   aboutMessage = 'Research agent helps you build, edit, and improve your survey with AI',
   baseContextTokens = RESEARCH_AGENT_BASE_CONTEXT_TOKENS,
+  seedPrompt = null,
+  onSeedPromptConsumed,
 }: SurveyAgentSidebarProps) {
   const { showToast } = useWuShowToast();
   const [prompt, setPrompt] = useState('');
@@ -103,6 +108,7 @@ export function SurveyAgentSidebar({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const attachmentsRef = useRef<ResearchAgentAttachment[]>(attachments);
+  const seedPromptHandledRef = useRef<string | null>(null);
   attachmentsRef.current = attachments;
 
   const contextUsageTokens = useMemo(
@@ -222,10 +228,10 @@ export function SurveyAgentSidebar({
     setHistoryOpen(false);
   }
 
-  async function handleSubmit(): Promise<void> {
-    if (isGenerating || (!prompt.trim() && attachments.length === 0)) return;
+  async function handleSubmit(overridePrompt?: string): Promise<void> {
+    const submittedPrompt = (overridePrompt ?? prompt).trim();
+    if (isGenerating || (!submittedPrompt && attachments.length === 0)) return;
 
-    const submittedPrompt = prompt.trim();
     const userContent = buildResearchAgentUserContent(submittedPrompt, attachments);
     setIsGenerating(true);
     try {
@@ -249,6 +255,24 @@ export function SurveyAgentSidebar({
       setIsGenerating(false);
     }
   }
+
+  useEffect(() => {
+    if (!open) {
+      seedPromptHandledRef.current = null;
+      return;
+    }
+    const trimmedSeed = seedPrompt?.trim();
+    if (!trimmedSeed || seedPromptHandledRef.current === trimmedSeed || isGenerating) {
+      return;
+    }
+    seedPromptHandledRef.current = trimmedSeed;
+    setPrompt(trimmedSeed);
+    setActiveSessionId(null);
+    onSeedPromptConsumed?.();
+    void handleSubmit(trimmedSeed);
+    // Intentionally run when the sidebar opens with a new seed prompt.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed handoff is one-shot
+  }, [open, seedPrompt]);
 
   function handleClearAllAttachments(): void {
     if (attachments.length === 0) return;

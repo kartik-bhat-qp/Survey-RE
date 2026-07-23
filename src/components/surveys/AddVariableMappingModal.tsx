@@ -7,8 +7,11 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
   downloadVariableMappingTemplate,
+  COPY_PASTE_VARIABLE_MAPPING_FORMAT,
+  COPY_PASTE_VARIABLE_MAPPING_PLACEHOLDER,
   IMPORT_VARIABLE_MAPPING_STEPS,
   VARIABLE_MAPPING_SOURCE_SURVEYS,
+  validateCopyPasteVariableMapping,
   type AddVariableMappingTabId,
 } from '@/data/mock-survey-variables';
 import styles from './AddVariableMappingModal.module.css';
@@ -56,6 +59,7 @@ export function AddVariableMappingModal({
     (typeof VARIABLE_MAPPING_SOURCE_SURVEYS)[number] | null
   >(null);
   const [pasteText, setPasteText] = useState('');
+  const [copyOverrideAcknowledged, setCopyOverrideAcknowledged] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -65,6 +69,7 @@ export function AddVariableMappingModal({
     setSelectedFileName(null);
     setSourceSurvey(null);
     setPasteText('');
+    setCopyOverrideAcknowledged(false);
   }, [open]);
 
   function handleBrowseClick(): void {
@@ -90,6 +95,14 @@ export function AddVariableMappingModal({
   }
 
   function handlePrimaryAction(): void {
+    if (!copyOverrideAcknowledged) {
+      showToast({
+        message: 'Confirm that copy mapping will override existing mapping',
+        variant: 'info',
+      });
+      return;
+    }
+
     if (activeTab === 'import') {
       if (!selectedFileName) {
         showToast({ message: 'Choose a file to import', variant: 'info' });
@@ -112,7 +125,7 @@ export function AddVariableMappingModal({
         return;
       }
       showToast({
-        message: `Mappings copied from ${sourceSurvey.label}`,
+        message: `Mappings copied from ${sourceSurvey.label} — existing mappings overridden`,
         variant: 'success',
       });
       onImported?.();
@@ -120,8 +133,12 @@ export function AddVariableMappingModal({
       return;
     }
 
-    if (!pasteText.trim()) {
-      showToast({ message: 'Paste mapping data to continue', variant: 'info' });
+    const formatError = validateCopyPasteVariableMapping(pasteText);
+    if (formatError) {
+      showToast({
+        message: formatError,
+        variant: formatError === 'Paste mapping data to continue' ? 'info' : 'error',
+      });
       return;
     }
     showToast({ message: 'Paste mapping imported', variant: 'success' });
@@ -130,7 +147,11 @@ export function AddVariableMappingModal({
   }
 
   const primaryLabel =
-    activeTab === 'import' ? 'Import' : activeTab === 'copy-survey' ? 'Copy' : 'Import';
+    activeTab === 'import' ? 'Import' : activeTab === 'copy-survey' ? 'Copy' : 'Save';
+
+  const primaryDisabled =
+    !copyOverrideAcknowledged ||
+    (activeTab === 'copy-survey' && !sourceSurvey);
 
   const tabs: IWuTabItem[] = [
     {
@@ -228,18 +249,19 @@ export function AddVariableMappingModal({
       Trigger: 'Copy/Paste Mapping',
       Content: (
         <div className={styles.copyPaste}>
-          <p className={styles.copySurveyCopy}>
-            Paste mappings as CSV lines: Custom Variable, Display Name, Code.
-          </p>
           <WuTextarea
             value={pasteText}
             onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
               setPasteText(event.target.value)
             }
-            placeholder={'Custom 1,Name,name\nCustom 2,Profile,profile'}
+            placeholder={COPY_PASTE_VARIABLE_MAPPING_PLACEHOLDER}
             className={styles.pasteArea}
-            rows={8}
+            rows={10}
+            aria-label="Paste variable mapping"
           />
+          <p className={styles.pasteFormat}>
+            Format: {COPY_PASTE_VARIABLE_MAPPING_FORMAT}
+          </p>
         </div>
       ),
     },
@@ -276,8 +298,21 @@ export function AddVariableMappingModal({
 
       <WuModalFooter>
         <div className={styles.footer}>
-          <WuModalClose variant="secondary">Cancel</WuModalClose>
-          <WuButton onClick={handlePrimaryAction}>{primaryLabel}</WuButton>
+          <label className={styles.footerCheckbox}>
+            <WuCheckbox
+              checked={copyOverrideAcknowledged}
+              onChange={(checked) => setCopyOverrideAcknowledged(checked)}
+            />
+            <span>
+              I understand that copy mapping will override the existing mapping.
+            </span>
+          </label>
+          <div className={styles.footerActions}>
+            <WuModalClose variant="secondary">Cancel</WuModalClose>
+            <WuButton onClick={handlePrimaryAction} disabled={primaryDisabled}>
+              {primaryLabel}
+            </WuButton>
+          </div>
         </div>
       </WuModalFooter>
     </WuModal>

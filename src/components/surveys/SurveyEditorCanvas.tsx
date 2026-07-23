@@ -56,6 +56,11 @@ import {
   DEFAULT_CAPTCHA_QUESTION_TEXT,
   RECAPTCHA_V3_SURVEY_ID,
 } from '@/data/mock-survey-detail';
+import {
+  consumeBlankSurveyCreateModalFlag,
+  NEW_BLANK_SURVEY_ID,
+  type BlankSurveyCreateOption,
+} from '@/data/mock-survey-creation-flow';
 import { getQuestionTypePreview } from '@/data/mock-add-question-previews';
 import { SectionBlockOptionsButton } from '@/components/surveys/SectionBlockOptionsButton';
 import { BlockFlowModal } from '@/components/surveys/BlockFlowModal';
@@ -85,6 +90,7 @@ import {
 } from '@/components/surveys/StaticContentQuestionRow';
 import { NpsQuestionRow } from '@/components/surveys/NpsQuestionRow';
 import { SurveyAgentSidebar } from '@/components/surveys/SurveyAgentSidebar';
+import { BlankSurveyCreateModal } from '@/components/surveys/BlankSurveyCreateModal';
 import { VanWestendorpQuestionRow } from '@/components/surveys/VanWestendorpQuestionRow';
 import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
 import { BulkEditLinesModal } from '@/components/surveys/BulkEditLinesModal';
@@ -1278,6 +1284,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   } | null>(null);
   const [lookupTableBulkConversionOpen, setLookupTableBulkConversionOpen] = useState(false);
   const [surveyAgentOpen, setSurveyAgentOpen] = useState(false);
+  const [blankSurveyCreateModalOpen, setBlankSurveyCreateModalOpen] = useState(false);
+  const [agentSeedPrompt, setAgentSeedPrompt] = useState<string | null>(null);
   const [blockFlowOpen, setBlockFlowOpen] = useState(false);
   const [lookupTableBulkConversionConflicts, setLookupTableBulkConversionConflicts] = useState<
     LookupTableConversionLogicConflict[]
@@ -1317,6 +1325,18 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     setDeleteQuestionTarget(null);
     setPageBreakBySlotKey({});
   }, [detail.survey.id]);
+
+  useEffect(() => {
+    if (detail.survey.id !== NEW_BLANK_SURVEY_ID) return;
+    if (!consumeBlankSurveyCreateModalFlag()) return;
+    setBlankSurveyCreateModalOpen(true);
+  }, [detail.survey.id]);
+
+  function openResearchAgentWithPrompt(prompt: string): void {
+    setSettingsTarget(null);
+    setAgentSeedPrompt(prompt);
+    setSurveyAgentOpen(true);
+  }
 
   useEffect(() => {
     setWorkspaceSections(sections);
@@ -3526,7 +3546,21 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         agentContext="workspace"
         placement="left"
         layout="inline"
-        onClose={() => setSurveyAgentOpen(false)}
+        seedPrompt={agentSeedPrompt}
+        onSeedPromptConsumed={() => setAgentSeedPrompt(null)}
+        onClose={() => {
+          setAgentSeedPrompt(null);
+          setSurveyAgentOpen(false);
+        }}
+      />
+
+      <BlankSurveyCreateModal
+        open={blankSurveyCreateModalOpen}
+        onOpenChange={setBlankSurveyCreateModalOpen}
+        onCreateWithPrompt={openResearchAgentWithPrompt}
+        onSelectImport={(option: BlankSurveyCreateOption) => {
+          openResearchAgentWithPrompt(option.prompt);
+        }}
       />
 
       <div className={styles.canvasMain}>

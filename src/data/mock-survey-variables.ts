@@ -80,6 +80,57 @@ export const IMPORT_VARIABLE_MAPPING_STEPS = [
   'Upload your file.',
 ] as const;
 
+/** Format line shown under the Copy/Paste Mapping textarea. */
+export const COPY_PASTE_VARIABLE_MAPPING_FORMAT = 'Variable number,Display name,Code';
+
+/** Example rows shown as the Copy/Paste Mapping textarea placeholder. */
+export const COPY_PASTE_VARIABLE_MAPPING_EXAMPLES = [
+  '1,country,CN',
+  '2,department,dpt',
+] as const;
+
+/** Placeholder text inside the Copy/Paste Mapping textarea. */
+export const COPY_PASTE_VARIABLE_MAPPING_PLACEHOLDER =
+  COPY_PASTE_VARIABLE_MAPPING_EXAMPLES.join('\n');
+
+/**
+ * Validates Copy/Paste Mapping rows: `Variable number,Display name,Code`.
+ * Returns null when valid, otherwise an error message.
+ */
+export function validateCopyPasteVariableMapping(text: string): string | null {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (lines.length === 0) {
+    return 'Paste mapping data to continue';
+  }
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    const parts = line.split(',').map((part) => part.trim());
+
+    if (parts.length !== 3) {
+      return `Line ${index + 1} must use format: ${COPY_PASTE_VARIABLE_MAPPING_FORMAT}`;
+    }
+
+    const [variableNumber, displayName, code] = parts;
+
+    if (!/^\d+$/.test(variableNumber)) {
+      return `Line ${index + 1}: variable number must be a number`;
+    }
+    if (!displayName) {
+      return `Line ${index + 1}: display name is required`;
+    }
+    if (!code) {
+      return `Line ${index + 1}: code is required`;
+    }
+  }
+
+  return null;
+}
+
 /** Sample surveys for the Copy from Survey tab. */
 export const VARIABLE_MAPPING_SOURCE_SURVEYS = [
   { id: 'srv-1001', label: 'Employee Engagement Pulse 2026' },

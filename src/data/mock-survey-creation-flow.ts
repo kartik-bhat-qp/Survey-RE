@@ -120,13 +120,56 @@ const BLANK_SURVEY_DRAFT_STORAGE_KEY = 'qp-blank-survey-draft';
 export interface BlankSurveyDraft {
   name: string;
   createdAt: string;
+  /** Show the create/import modal once when the blank workspace first opens. */
+  showCreateModal?: boolean;
 }
 
-export function saveBlankSurveyDraft(name: string): void {
+export interface BlankSurveyCreateOption {
+  id: string;
+  label: string;
+  icon: string;
+  iconClassName?: string;
+  prompt: string;
+}
+
+export const BLANK_SURVEY_CREATE_IMPORT_OPTIONS: BlankSurveyCreateOption[] = [
+  {
+    id: 'import-word',
+    label: 'Import from Word',
+    icon: 'wm-description',
+    iconClassName: 'word',
+    prompt: 'Create survey questions from an uploaded Word document',
+  },
+  {
+    id: 'import-pdf',
+    label: 'Import from PDF',
+    icon: 'wm-picture-as-pdf',
+    iconClassName: 'pdf',
+    prompt: 'Create survey questions from an uploaded PDF',
+  },
+  {
+    id: 'import-ppt',
+    label: 'Import from PowerPoint',
+    icon: 'wm-slideshow',
+    prompt: 'Create survey questions from an uploaded PowerPoint file',
+  },
+  {
+    id: 'import-excel',
+    label: 'Import from Excel',
+    icon: 'wm-table-chart',
+    prompt: 'Create survey questions from an uploaded Excel file',
+  },
+];
+
+export function saveBlankSurveyDraft(
+  name: string,
+  options?: { showCreateModal?: boolean }
+): void {
   if (typeof window === 'undefined') return;
   const draft: BlankSurveyDraft = {
     name: name.trim(),
     createdAt: new Date().toISOString(),
+    showCreateModal: options?.showCreateModal ?? true,
   };
   sessionStorage.setItem(BLANK_SURVEY_DRAFT_STORAGE_KEY, JSON.stringify(draft));
 }
@@ -138,10 +181,24 @@ export function readBlankSurveyDraft(): BlankSurveyDraft | null {
   try {
     const parsed = JSON.parse(raw) as BlankSurveyDraft;
     if (!parsed.name?.trim()) return null;
-    return { ...parsed, name: parsed.name.trim() };
+    return {
+      ...parsed,
+      name: parsed.name.trim(),
+      showCreateModal: parsed.showCreateModal === true,
+    };
   } catch {
     return null;
   }
+}
+
+/** Returns whether the create modal should open, and clears the one-time flag. */
+export function consumeBlankSurveyCreateModalFlag(): boolean {
+  const draft = readBlankSurveyDraft();
+  if (!draft?.showCreateModal) return false;
+  if (typeof window === 'undefined') return false;
+  const next: BlankSurveyDraft = { ...draft, showCreateModal: false };
+  sessionStorage.setItem(BLANK_SURVEY_DRAFT_STORAGE_KEY, JSON.stringify(next));
+  return true;
 }
 
 export function clearBlankSurveyDraft(): void {
