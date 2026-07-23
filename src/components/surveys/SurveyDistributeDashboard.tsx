@@ -2,6 +2,7 @@
 
 import { NavLink } from '@/components/surveys/NavLink';
 import { SurveyEmailComposePanel } from '@/components/surveys/SurveyDistributeCompose';
+import { SurveyMobileAppPanel } from '@/components/surveys/SurveyMobileAppPanel';
 import { SurveyQrCodePanel } from '@/components/surveys/SurveyQrCodePanel';
 import { useSurveyDistributeView } from '@/components/surveys/SurveyDistributeViewContext';
 import { getDistributeChannelPath } from '@/components/surveys/survey-distribute-navigation';
@@ -27,6 +28,14 @@ export function SurveyDistributeDashboard({ detail }: SurveyDistributeDashboardP
           surveyId={detail.survey.id}
           activeSidebar={activeEmailSidebar}
         />
+      </div>
+    );
+  }
+
+  if (activeChannel === 'mobile-app') {
+    return (
+      <div className={styles.shell}>
+        <SurveyMobileAppPanel />
       </div>
     );
   }
