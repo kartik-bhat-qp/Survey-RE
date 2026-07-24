@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.textSliderCard) {
+.root :global(.textSliderCard) {
   background: transparent;
   border: none;
   border-radius: 0;

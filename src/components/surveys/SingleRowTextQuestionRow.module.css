@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.singleRowTextCard) {
+.root :global(.singleRowTextCard) {
   background: transparent;
   border: none;
   border-radius: 0;

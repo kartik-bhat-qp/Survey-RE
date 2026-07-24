@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.emailAddressCard) {
+.root :global(.emailAddressCard) {
   background: transparent;
   border: none;
   border-radius: 0;

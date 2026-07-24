@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.staticContentCard) {
+.root :global(.staticContentCard) {
   background: transparent;
   border: none;
   border-radius: 0;

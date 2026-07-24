@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.constantSumCard) {
+.root :global(.constantSumCard) {
   background: transparent;
   border: none;
   border-radius: 0;

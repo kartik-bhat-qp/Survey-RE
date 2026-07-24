@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.rankOrderCard) {
+.root :global(.rankOrderCard) {
   background: transparent;
   border: none;
   border-radius: 0;

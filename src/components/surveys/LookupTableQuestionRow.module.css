@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.lookupTableCard) {
+.root :global(.lookupTableCard) {
   background: transparent;
   border: none;
   border-radius: 0;

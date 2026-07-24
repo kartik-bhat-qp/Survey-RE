@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.thumbsUpDownCard) {
+.root :global(.thumbsUpDownCard) {
   background: transparent;
   border: none;
   border-radius: 0;

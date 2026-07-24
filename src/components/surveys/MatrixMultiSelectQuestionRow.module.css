@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.matrixMultiSelectCard) {
+.root :global(.matrixMultiSelectCard) {
   background: transparent;
   border: none;
   min-width: 0;

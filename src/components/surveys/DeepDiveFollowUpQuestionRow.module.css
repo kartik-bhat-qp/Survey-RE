@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.deepDiveCard) {
+.root :global(.deepDiveCard) {
   background: transparent;
   border: none;
   border-radius: 0;

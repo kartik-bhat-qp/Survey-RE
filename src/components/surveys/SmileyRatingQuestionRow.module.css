@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.smileyRatingCard) {
+.root :global(.smileyRatingCard) {
   background: transparent;
   border: none;
   border-radius: 0;

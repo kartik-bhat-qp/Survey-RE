@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.captchaCard) {
+.root :global(.captchaCard) {
   background: transparent;
   border: none;
   border-radius: 0;

@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.starRatingCard) {
+.root :global(.starRatingCard) {
   background: transparent;
   border: none;
   border-radius: 0;

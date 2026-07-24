@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.imageChooserRatingCard) {
+.root :global(.imageChooserRatingCard) {
   background: transparent;
   border: none;
   border-radius: 0;

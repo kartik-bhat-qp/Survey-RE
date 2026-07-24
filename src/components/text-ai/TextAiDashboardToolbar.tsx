@@ -199,7 +199,7 @@ export function TextAiDashboardToolbar({
             </div>
             <div className={styles.inlineFilter}>
               <span className={styles.filterLabel}>Themes</span>
-              <WuSelect
+              <WuSelect<TextAiFilterSelectOption>
                 data={TEXT_AI_THEME_FILTER_OPTIONS}
                 accessorKey={{ value: 'value', label: 'label' }}
                 value={theme}
@@ -215,7 +215,7 @@ export function TextAiDashboardToolbar({
             </div>
             <div className={styles.inlineFilter}>
               <span className={styles.filterLabel}>Sub-themes</span>
-              <WuSelect
+              <WuSelect<TextAiFilterSelectOption>
                 data={TEXT_AI_SUBTHEME_FILTER_OPTIONS}
                 accessorKey={{ value: 'value', label: 'label' }}
                 value={subtheme}

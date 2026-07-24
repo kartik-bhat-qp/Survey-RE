@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.vanWestendorpCard) {
+.root :global(.vanWestendorpCard) {
   background: transparent;
   border: none;
   border-radius: 0;

@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.dragDropCard) {
+.root :global(.dragDropCard) {
   background: transparent;
   border: none;
   border-radius: 0;

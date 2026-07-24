@@ -17,6 +17,14 @@ const target = path.join(
   'es',
   'index.js'
 );
+const packageJsonTarget = path.join(
+  __dirname,
+  '..',
+  'node_modules',
+  '@npm-questionpro',
+  'wick-ui-editor',
+  'package.json'
+);
 
 if (!fs.existsSync(target)) {
   console.warn('[patch-wick-ui-editor] skip — package not installed');
@@ -105,4 +113,30 @@ if (source !== before) {
   console.log('[patch-wick-ui-editor] applied');
 } else {
   console.log('[patch-wick-ui-editor] already up to date');
+}
+
+if (fs.existsSync(packageJsonTarget)) {
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonTarget, 'utf8'));
+  const exportDefaults = {
+    '.': './dist/wick-ui-editor/es/index.js',
+    './html': './dist/wick-ui-editor/es/html.js',
+  };
+  let packageJsonChanged = false;
+
+  for (const [exportPath, defaultTarget] of Object.entries(exportDefaults)) {
+    const exportDefinition = packageJson.exports?.[exportPath];
+    if (
+      exportDefinition &&
+      typeof exportDefinition === 'object' &&
+      !exportDefinition.default
+    ) {
+      exportDefinition.default = defaultTarget;
+      packageJsonChanged = true;
+    }
+  }
+
+  if (packageJsonChanged) {
+    fs.writeFileSync(packageJsonTarget, `${JSON.stringify(packageJson, null, 2)}\n`);
+    console.log('[patch-wick-ui-editor] added Next.js-compatible default exports');
+  }
 }

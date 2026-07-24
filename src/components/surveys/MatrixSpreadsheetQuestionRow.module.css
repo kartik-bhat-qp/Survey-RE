@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-:global(.matrixSpreadsheetCard) {
+.root :global(.matrixSpreadsheetCard) {
   background: transparent;
   border: none;
   min-width: 0;
