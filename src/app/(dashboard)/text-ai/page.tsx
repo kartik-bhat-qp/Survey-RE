@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -36,47 +36,12 @@ const WuTooltip = dynamic(
   { ssr: false }
 );
 
-type TextAiDashboardRow = TextAiDashboard & {
-  /** When set, this row represents a question listed under the parent dashboard. */
-  parentDashboardId?: number;
-  questionText?: string;
-};
-
-function hasExpandableQuestions(dashboard: TextAiDashboard): boolean {
-  return Array.isArray(dashboard.questions) && dashboard.questions.length > 0;
-}
-
-function flattenDashboardsForTable(
-  dashboards: TextAiDashboard[],
-  expandedIds: ReadonlySet<number>
-): TextAiDashboardRow[] {
-  const rows: TextAiDashboardRow[] = [];
-  for (const dashboard of dashboards) {
-    rows.push(dashboard);
-    if (!expandedIds.has(dashboard.id)) continue;
-    const questions = dashboard.questions ?? [];
-    questions.forEach((question, index) => {
-      rows.push({
-        ...dashboard,
-        id: dashboard.id * 100000 + index + 1,
-        parentDashboardId: dashboard.id,
-        questionText: question.text,
-        commentCount: question.creditsUsed,
-      });
-    });
-  }
-  return rows;
-}
-
 export default function TextAiPage() {
   const router = useRouter();
   const { showToast } = useWuShowToast();
   const [dashboards, setDashboards] = useState<TextAiDashboard[]>(MOCK_TEXT_AI_DASHBOARDS);
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
-  const [expandedDashboardIds, setExpandedDashboardIds] = useState<Set<number>>(
-    () => new Set()
-  );
 
   const filteredDashboards = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -84,107 +49,26 @@ export default function TextAiPage() {
     return dashboards.filter((d) => d.name.toLowerCase().includes(term));
   }, [dashboards, search]);
 
-  const tableRows = useMemo(
-    () => flattenDashboardsForTable(filteredDashboards, expandedDashboardIds),
-    [filteredDashboards, expandedDashboardIds]
-  );
-
-  const toggleExpand = useCallback((dashboardId: number) => {
-    setExpandedDashboardIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(dashboardId)) {
-        next.delete(dashboardId);
-      } else {
-        next.add(dashboardId);
-      }
-      return next;
-    });
-  }, []);
-
-  const columns: IWuTableColumnDef<TextAiDashboardRow>[] = useMemo(
+  const columns: IWuTableColumnDef<TextAiDashboard>[] = useMemo(
     () => [
       {
         accessorKey: 'name',
         header: 'Dashboards',
         enableSorting: true,
-        cell: ({ row }) => {
-          const item = row.original;
-          const isQuestionRow = item.parentDashboardId !== undefined;
-
-          if (isQuestionRow) {
-            return (
-              <span className={`${styles.nameCell} ${styles.nameCellSub}`}>
-                <span className={styles.expandSpacer} aria-hidden />
-                <Link
-                  href={`/text-ai/${item.parentDashboardId}`}
-                  className={`${styles.questionLink} ${styles.questionLinkWide}`}
-                >
-                  {item.questionText}
-                </Link>
-              </span>
-            );
-          }
-
-          const isExpandable = hasExpandableQuestions(item);
-          const isExpanded = expandedDashboardIds.has(item.id);
-
-          return (
-            <span className={styles.nameCell}>
-              {isExpandable ? (
-                <button
-                  type="button"
-                  className={styles.expandButton}
-                  aria-expanded={isExpanded}
-                  aria-label={
-                    isExpanded ? 'Collapse dashboard questions' : 'Expand dashboard questions'
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleExpand(item.id);
-                  }}
-                >
-                  <span
-                    className={`wm-chevron-right ${styles.expandIcon} ${
-                      isExpanded ? styles.expandIconOpen : ''
-                    }`}
-                    aria-hidden
-                  />
-                </button>
-              ) : (
-                <span className={styles.expandSpacer} aria-hidden />
-              )}
-              {isExpandable ? (
-                <button
-                  type="button"
-                  className={styles.dashboardNameButton}
-                  aria-expanded={isExpanded}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleExpand(item.id);
-                  }}
-                >
-                  {item.name}
-                </button>
-              ) : (
-                <Link
-                  href={`/text-ai/${item.id}`}
-                  className="font-medium text-[#1B87E6] hover:underline"
-                >
-                  {item.name}
-                </Link>
-              )}
-            </span>
-          );
-        },
+        cell: ({ row }) => (
+          <Link
+            href={`/text-ai/${row.original.id}`}
+            className={styles.dashboardNameLink}
+          >
+            {row.original.name}
+          </Link>
+        ),
       },
       {
         accessorKey: 'creationDate',
         header: 'Created on',
         enableSorting: true,
-        cell: ({ row }) =>
-          row.original.parentDashboardId !== undefined
-            ? null
-            : formatSmartDate(row.original.creationDate),
+        cell: ({ row }) => formatSmartDate(row.original.creationDate),
       },
       {
         accessorKey: 'commentCount',
@@ -201,8 +85,7 @@ export default function TextAiPage() {
       {
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ row }) =>
-          row.original.parentDashboardId !== undefined ? null : row.original.status,
+        cell: ({ row }) => row.original.status,
       },
       {
         accessorKey: 'actions',
@@ -210,7 +93,6 @@ export default function TextAiPage() {
         enableSorting: false,
         cell: ({ row }) => {
           const item = row.original;
-          if (item.parentDashboardId !== undefined) return null;
 
           return (
             <div className={styles.rowActions} aria-label={`Actions for ${item.name}`}>
@@ -261,7 +143,7 @@ export default function TextAiPage() {
         },
       },
     ],
-    [expandedDashboardIds, router, showToast, toggleExpand]
+    [router, showToast]
   );
 
   function handleCreate({
@@ -369,7 +251,7 @@ export default function TextAiPage() {
 
       <div className={styles.tableWrap}>
         <WuTable
-          data={tableRows as unknown[]}
+          data={filteredDashboards as unknown[]}
           columns={columns as unknown as IWuTableColumnDef<unknown>[]}
           variant="striped"
           sort={{ enabled: true }}

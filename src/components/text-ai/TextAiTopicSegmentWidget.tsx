@@ -35,6 +35,11 @@ interface TextAiTopicSegmentWidgetProps {
   widget: TextAiTopicSegmentWidget;
 }
 
+const TEXT_AI_STAT_TEST_SEGMENTS: TextAiSegmentKey[] = [
+  'overall',
+  ...TEXT_AI_GENDER_KEYS,
+];
+
 function SegmentCell({
   cell,
   barClassName,
@@ -112,7 +117,7 @@ function TopicSegmentRow({
   isSubtopic = false,
   isExpandable = false,
   showChiSquare = false,
-  activeGenderSegments,
+  activeSegments,
   onCountClick,
 }: {
   row: TextAiTopicSegmentRow;
@@ -122,7 +127,7 @@ function TopicSegmentRow({
   isSubtopic?: boolean;
   isExpandable?: boolean;
   showChiSquare?: boolean;
-  activeGenderSegments: ReadonlySet<TextAiGenderKey>;
+  activeSegments: ReadonlySet<TextAiSegmentKey>;
   parentTopicLabel?: string | null;
   onCountClick?: (segment: TextAiSegmentKey, cell: TextAiTopicSegmentCell) => void;
 }) {
@@ -168,18 +173,18 @@ function TopicSegmentRow({
           cell={row.overall}
           barClassName={styles.barOverall}
           maxPercentage={maxPercentage}
+          dimmed={showChiSquare && !activeSegments.has('overall')}
           onCountClick={
             onCountClick ? () => handleCountClick('overall', row.overall) : undefined
           }
         />
       </td>
       {TEXT_AI_GENDER_KEYS.map((genderKey) => {
-        const enabled = activeGenderSegments.has(genderKey);
+        const enabled = activeSegments.has(genderKey);
         const comparisons = enabled
           ? chi.pairwiseComparisons.filter(
               (pair) =>
-                activeGenderSegments.has(pair.groupA) &&
-                activeGenderSegments.has(pair.groupB)
+                activeSegments.has(pair.groupA) && activeSegments.has(pair.groupB)
             )
           : [];
         const markers = enabled
@@ -217,7 +222,7 @@ function TopicSegmentGroup({
   expandedRowIds,
   onToggle,
   showChiSquare,
-  activeGenderSegments,
+  activeSegments,
   onCountClick,
 }: {
   row: TextAiTopicSegmentRow;
@@ -225,7 +230,7 @@ function TopicSegmentGroup({
   expandedRowIds: Set<string>;
   onToggle: (rowId: string) => void;
   showChiSquare: boolean;
-  activeGenderSegments: ReadonlySet<TextAiGenderKey>;
+  activeSegments: ReadonlySet<TextAiSegmentKey>;
   onCountClick: (
     row: TextAiTopicSegmentRow,
     parentTopicLabel: string | null,
@@ -243,7 +248,7 @@ function TopicSegmentGroup({
         isExpanded={isExpanded}
         isExpandable
         showChiSquare={showChiSquare}
-        activeGenderSegments={activeGenderSegments}
+        activeSegments={activeSegments}
         onToggle={() => onToggle(row.id)}
         onCountClick={(segment, cell) => onCountClick(row, null, segment, cell)}
       />
@@ -256,7 +261,7 @@ function TopicSegmentGroup({
             isSubtopic
             parentTopicLabel={row.topic}
             showChiSquare={showChiSquare}
-            activeGenderSegments={activeGenderSegments}
+            activeSegments={activeSegments}
             onCountClick={(segment, cell) => onCountClick(subtopic, row.topic, segment, cell)}
           />
         ))}
@@ -278,8 +283,8 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
   const { showToast } = useWuShowToast();
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
   const [statTestingApplied, setStatTestingApplied] = useState(false);
-  const [activeGenderSegments, setActiveGenderSegments] = useState<Set<TextAiGenderKey>>(
-    () => new Set(TEXT_AI_GENDER_KEYS)
+  const [activeSegments, setActiveSegments] = useState<Set<TextAiSegmentKey>>(
+    () => new Set(TEXT_AI_STAT_TEST_SEGMENTS)
   );
   const [verbatimModalOpen, setVerbatimModalOpen] = useState(false);
   const [verbatimContext, setVerbatimContext] = useState<TextAiVerbatimModalContext | null>(
@@ -332,7 +337,7 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
     setStatTestingApplied((isApplied) => {
       const nextApplied = !isApplied;
       if (nextApplied) {
-        setActiveGenderSegments(new Set(TEXT_AI_GENDER_KEYS));
+        setActiveSegments(new Set(TEXT_AI_STAT_TEST_SEGMENTS));
         showToast({ message: 'Stat testing applied', variant: 'success' });
       } else {
         showToast({ message: 'Stat testing disabled', variant: 'success' });
@@ -341,8 +346,8 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
     });
   }
 
-  function toggleGenderSegment(key: TextAiGenderKey, checked: boolean): void {
-    setActiveGenderSegments((prev) => {
+  function toggleSegment(key: TextAiSegmentKey, checked: boolean): void {
+    setActiveSegments((prev) => {
       const next = new Set(prev);
       if (checked) next.add(key);
       else next.delete(key);
@@ -380,11 +385,28 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
           <thead>
             <tr>
               <th>Topic</th>
-              <th>
-                <span>Overall</span>
+              <th
+                className={
+                  showChiSquare && !activeSegments.has('overall')
+                    ? styles.columnHeaderDisabled
+                    : undefined
+                }
+              >
+                <span className={styles.headerWithToggle}>
+                  {showChiSquare ? (
+                    <input
+                      type="checkbox"
+                      className={styles.headerCheckbox}
+                      checked={activeSegments.has('overall')}
+                      onChange={(e) => toggleSegment('overall', e.target.checked)}
+                      aria-label="Include Overall in stat testing"
+                    />
+                  ) : null}
+                  <span>Overall</span>
+                </span>
               </th>
               {TEXT_AI_GENDER_KEYS.map((genderKey) => {
-                const enabled = activeGenderSegments.has(genderKey);
+                const enabled = activeSegments.has(genderKey);
                 return (
                   <th
                     key={genderKey}
@@ -396,7 +418,7 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
                           type="checkbox"
                           className={styles.headerCheckbox}
                           checked={enabled}
-                          onChange={(e) => toggleGenderSegment(genderKey, e.target.checked)}
+                          onChange={(e) => toggleSegment(genderKey, e.target.checked)}
                           aria-label={`Include ${GENDER_COLUMN_LABELS[genderKey]} in stat testing`}
                         />
                       ) : null}
@@ -418,7 +440,7 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
                 expandedRowIds={expandedRowIds}
                 onToggle={toggleRow}
                 showChiSquare={showChiSquare}
-                activeGenderSegments={activeGenderSegments}
+                activeSegments={activeSegments}
                 onCountClick={openVerbatimModal}
               />
             ))}
@@ -436,7 +458,7 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
             significantly lower value.
           </p>
           <p className={styles.chiLegendText}>
-            Uncheck a gender column to exclude it from stat testing. Excluded columns are
+            Uncheck a column to exclude it from stat testing. Excluded columns are
             dimmed and their pairwise significance markers are hidden until the column is
             selected again.
           </p>

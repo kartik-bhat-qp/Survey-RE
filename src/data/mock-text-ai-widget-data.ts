@@ -1,3 +1,5 @@
+import type { IWuSelectOption } from '@npm-questionpro/wick-ui-lib';
+
 export type TextAiSubtopicTone = 'neutral' | 'positive';
 
 export interface TextAiAnalysisRow {
@@ -23,8 +25,13 @@ export interface TextAiFilterOption {
   label: string;
 }
 
-export const TEXT_AI_TOPIC_FILTER_OPTIONS: TextAiFilterOption[] = [
-  { value: '', label: 'Select topic' },
+export type TextAiFilterSelectOption = IWuSelectOption<TextAiFilterOption>;
+
+export const TEXT_AI_THEME_FILTER_OPTIONS: TextAiFilterSelectOption[] = [
+  { value: 'top-3-themes', label: 'Top 3 themes' },
+  { value: 'top-5-themes', label: 'Top 5 themes' },
+  { value: 'top-10-themes', label: 'Top 10 themes' },
+  { type: 'divider' },
   { value: 'leadership', label: 'Health System Leadership Communication' },
   { value: 'outlier', label: 'Outlier Parent Topic' },
   { value: 'collaboration', label: 'Cross-Department Collaboration' },
@@ -32,8 +39,11 @@ export const TEXT_AI_TOPIC_FILTER_OPTIONS: TextAiFilterOption[] = [
   { value: 'growth', label: 'Career Growth & Development' },
 ];
 
-export const TEXT_AI_SUBTOPIC_FILTER_OPTIONS: TextAiFilterOption[] = [
-  { value: '', label: 'Select sub topic' },
+export const TEXT_AI_SUBTHEME_FILTER_OPTIONS: TextAiFilterSelectOption[] = [
+  { value: 'top-3-sub-themes', label: 'Top 3 sub-themes' },
+  { value: 'top-5-sub-themes', label: 'Top 5 sub-themes' },
+  { value: 'top-10-sub-themes', label: 'Top 10 sub-themes' },
+  { type: 'divider' },
   { value: 'transparency', label: 'Health System Leadership Transparency' },
   { value: 'coordination', label: 'Clinical Department Coordination' },
   { value: 'na', label: 'N/A' },

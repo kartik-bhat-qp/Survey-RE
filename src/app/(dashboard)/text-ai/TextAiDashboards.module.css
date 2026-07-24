@@ -75,94 +75,15 @@
   text-align: right;
 }
 
-.nameCell {
-  align-items: center;
-  display: inline-flex;
-  gap: 6px;
-  min-width: 0;
-}
-
-.nameCellSub {
-  align-items: center;
-  display: flex;
-  gap: 6px;
-  min-height: 3rem;
-  padding-left: 8px;
-  position: relative;
-  width: 100%;
-}
-
-.questionLinkWide {
-  align-items: center;
-  bottom: 0;
-  display: flex;
-  left: 36px;
-  overflow-wrap: break-word;
-  padding-right: 12px;
-  position: absolute;
-  right: -7rem;
-  top: 0;
-  white-space: normal;
-  z-index: 1;
-}
-
-.expandButton {
-  align-items: center;
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: inline-flex;
-  flex-shrink: 0;
-  justify-content: center;
-  padding: 2px;
-}
-
-.expandIcon {
-  color: #9b9b9b;
-  display: inline-block;
-  font-size: 14px;
-  transition: transform 0.15s ease;
-}
-
-.expandIconOpen {
-  transform: rotate(90deg);
-}
-
-.expandSpacer {
-  display: inline-block;
-  flex-shrink: 0;
-  width: 22px;
-}
-
-.questionLink {
-  background: none;
-  border: none;
-  color: #1b87e6;
-  cursor: pointer;
-  font: inherit;
-  padding: 0;
-  text-align: left;
+.dashboardNameLink {
+  color: #1b3380;
+  font-weight: 400;
   text-decoration: none;
-  word-break: break-word;
 }
 
-.questionLink:hover {
-  text-decoration: underline;
-}
-
-.dashboardNameButton {
-  background: none;
-  border: none;
-  color: #1b87e6;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 500;
-  padding: 0;
-  text-align: left;
-  word-break: break-word;
-}
-
-.dashboardNameButton:hover {
+.dashboardNameLink:hover,
+.dashboardNameLink:focus-visible {
+  color: #1b3380;
   text-decoration: underline;
 }
 
@@ -172,6 +93,7 @@
   gap: 0.125rem;
   justify-content: flex-end;
   opacity: 0;
+  padding-right: calc(0.5rem + 20px);
   pointer-events: none;
   transition: opacity 0.15s ease;
   visibility: hidden;

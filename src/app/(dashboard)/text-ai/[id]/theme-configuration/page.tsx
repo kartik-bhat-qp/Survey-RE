@@ -10,8 +10,8 @@ import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
 import { MOCK_TEXT_AI_ANALYSIS_QUESTIONS } from '@/data/mock-text-ai-questions';
 import styles from './ThemeConfiguration.module.css';
 
-const WuSelect = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
+const WuCombobox = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCombobox })),
   { ssr: false }
 );
 
@@ -355,7 +355,7 @@ export default function TextAiThemeConfigurationPage({
         <div className={styles.utilityControls}>
           <div className={styles.questionFilter}>
             <span className={styles.filterLabel}>Question</span>
-            <WuSelect
+            <WuCombobox
               data={questions}
               accessorKey={{ value: 'id', label: 'text' }}
               value={selectedQuestion}
@@ -365,6 +365,10 @@ export default function TextAiThemeConfigurationPage({
                 setSearch('');
               }}
               variant="outlined"
+              enableSearch
+              isEllipse
+              maxHeight={320}
+              noDataContent="No questions found"
               className={styles.questionSelect}
               aria-label="Question"
             />

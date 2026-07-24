@@ -11,9 +11,10 @@ import {
 } from '@/data/mock-text-ai-segment-filters';
 import {
   TEXT_AI_PENDING_NEW_COMMENTS,
-  TEXT_AI_SUBTOPIC_FILTER_OPTIONS,
-  TEXT_AI_TOPIC_FILTER_OPTIONS,
+  TEXT_AI_SUBTHEME_FILTER_OPTIONS,
+  TEXT_AI_THEME_FILTER_OPTIONS,
   type TextAiFilterOption,
+  type TextAiFilterSelectOption,
 } from '@/data/mock-text-ai-widget-data';
 import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
 import modalStyles from '@/components/dashboards/CreateDashboardModal.module.css';
@@ -46,10 +47,8 @@ export function TextAiDashboardToolbar({
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
   const [nameState, setNameState] = useState(name);
-  const [topic, setTopic] = useState<TextAiFilterOption>(TEXT_AI_TOPIC_FILTER_OPTIONS[0]);
-  const [subtopic, setSubtopic] = useState<TextAiFilterOption>(
-    TEXT_AI_SUBTOPIC_FILTER_OPTIONS[0]
-  );
+  const [theme, setTheme] = useState<TextAiFilterOption | null>(null);
+  const [subtheme, setSubtheme] = useState<TextAiFilterOption | null>(null);
   const [newCommentsCount, setNewCommentsCount] = useState(TEXT_AI_PENDING_NEW_COMMENTS);
   const [isSyncing, setIsSyncing] = useState(false);
   const [processModalOpen, setProcessModalOpen] = useState(false);
@@ -86,6 +85,12 @@ export function TextAiDashboardToolbar({
     setIsSyncing(true);
   }
 
+  function isFilterOption(
+    option: TextAiFilterSelectOption | TextAiFilterSelectOption[]
+  ): option is TextAiFilterOption {
+    return !Array.isArray(option) && 'value' in option;
+  }
+
   if (!wick) {
     return (
       <header className={styles.header}>
@@ -94,8 +99,16 @@ export function TextAiDashboardToolbar({
     );
   }
 
-  const { WuButton, WuModal, WuModalHeader, WuModalContent, WuModalFooter, WuSelect, WuTooltip } =
-    wick;
+  const {
+    WuButton,
+    WuCombobox,
+    WuModal,
+    WuModalHeader,
+    WuModalContent,
+    WuModalFooter,
+    WuSelect,
+    WuTooltip,
+  } = wick;
 
   return (
     <>
@@ -165,47 +178,55 @@ export function TextAiDashboardToolbar({
           <div className={styles.filters}>
             <div className={styles.inlineFilter}>
               <span className={styles.filterLabel}>Question</span>
-              <WuSelect
+              <WuCombobox
                 data={questions}
                 accessorKey={{ value: 'id', label: 'text' }}
                 value={selectedQuestion}
                 onSelect={(option) => {
                   if (!option || Array.isArray(option)) return;
                   onQuestionChange(option as TextAiDashboardQuestion);
-                  setTopic(TEXT_AI_TOPIC_FILTER_OPTIONS[0]);
-                  setSubtopic(TEXT_AI_SUBTOPIC_FILTER_OPTIONS[0]);
+                  setTheme(null);
+                  setSubtheme(null);
                 }}
                 variant="outlined"
+                enableSearch
+                isEllipse
+                maxHeight={320}
+                noDataContent="No questions found"
                 className={`${styles.filterSelect} ${styles.questionSelect}`}
                 aria-label="Question"
               />
             </div>
             <div className={styles.inlineFilter}>
-              <span className={styles.filterLabel}>Topic</span>
+              <span className={styles.filterLabel}>Themes</span>
               <WuSelect
-                data={TEXT_AI_TOPIC_FILTER_OPTIONS}
+                data={TEXT_AI_THEME_FILTER_OPTIONS}
                 accessorKey={{ value: 'value', label: 'label' }}
-                value={topic}
+                value={theme}
+                placeholder="Select themes"
                 onSelect={(option) => {
-                  if (!option) return;
-                  setTopic(option as TextAiFilterOption);
+                  if (!isFilterOption(option)) return;
+                  setTheme(option);
                 }}
                 variant="outlined"
                 className={styles.filterSelect}
+                aria-label="Themes"
               />
             </div>
             <div className={styles.inlineFilter}>
-              <span className={styles.filterLabel}>Sub topic</span>
+              <span className={styles.filterLabel}>Sub-themes</span>
               <WuSelect
-                data={TEXT_AI_SUBTOPIC_FILTER_OPTIONS}
+                data={TEXT_AI_SUBTHEME_FILTER_OPTIONS}
                 accessorKey={{ value: 'value', label: 'label' }}
-                value={subtopic}
+                value={subtheme}
+                placeholder="Select sub-themes"
                 onSelect={(option) => {
-                  if (!option) return;
-                  setSubtopic(option as TextAiFilterOption);
+                  if (!isFilterOption(option)) return;
+                  setSubtheme(option);
                 }}
                 variant="outlined"
                 className={styles.filterSelect}
+                aria-label="Sub-themes"
               />
             </div>
           </div>
