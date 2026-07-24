@@ -6,3 +6,20 @@
 .tableWrap :global(table) {
   min-width: 32rem;
 }
+
+.reportNameButton {
+  background: transparent;
+  border: 0;
+  color: #1b3380;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 400;
+  padding: 0;
+  text-align: left;
+}
+
+.reportNameButton:hover,
+.reportNameButton:focus-visible {
+  color: #1b3380;
+  text-decoration: underline;
+}

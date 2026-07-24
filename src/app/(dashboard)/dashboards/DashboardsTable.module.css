@@ -7,31 +7,63 @@
   min-width: 32rem;
 }
 
+.dashboardNameLink {
+  color: #1b3380;
+  font-weight: 400;
+  text-decoration: none;
+}
+
+.dashboardNameLink:hover,
+.dashboardNameLink:focus-visible {
+  color: #1b3380;
+  text-decoration: underline;
+}
+
 .tableWrap :global(tbody tr:hover) .rowActions,
 .tableWrap :global(tbody tr:focus-within) .rowActions {
   opacity: 1;
   pointer-events: auto;
+  visibility: visible;
 }
 
 .rowActions {
-  display: flex;
   align-items: center;
+  display: flex;
+  gap: 0.125rem;
   justify-content: flex-end;
-  gap: 0;
-  width: 100%;
   opacity: 0;
+  padding-right: calc(0.5rem + 20px);
   pointer-events: none;
   transition: opacity 0.15s ease;
+  visibility: hidden;
+  width: 100%;
 }
 
-.rowActions :global(button) {
+.rowActionButton {
+  background: transparent;
+  border: none;
+  color: #545e6b;
+  height: 1.75rem;
+  min-height: 1.75rem;
   min-width: 0;
-  padding-inline: 0.25rem;
+  padding: 0;
+  width: 1.75rem;
+}
+
+.rowActionButton:hover,
+.rowActionButton:focus-visible {
+  background-color: #eef3f8;
+}
+
+.rowActionButton :global([class^='wm-']),
+.rowActionButton :global([class*=' wm-']) {
+  font-size: 16px;
 }
 
 @media (max-width: 767px) {
   .tableWrap :global(tbody tr) .rowActions {
     opacity: 1;
     pointer-events: auto;
+    visibility: visible;
   }
 }

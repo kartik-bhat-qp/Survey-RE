@@ -84,7 +84,7 @@ export default function SurveyStacksPage() {
       cell: ({ row }) => (
         <Link
           href={`${surveyStacksPath}/${row.original.id}`}
-          className="font-medium text-[#0a2d8c] hover:underline"
+          className="font-normal text-[#1b3380] no-underline hover:text-[#1b3380] hover:underline focus-visible:text-[#1b3380] focus-visible:underline"
         >
           {row.original.name}
         </Link>

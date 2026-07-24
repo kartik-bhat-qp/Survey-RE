@@ -57,7 +57,7 @@ export default function ReportsPage() {
       cell: ({ row }) => (
         <button
           type="button"
-          className="text-left text-gray-900 hover:underline"
+          className={styles.reportNameButton}
           onClick={() =>
             showToast({
               message: `Opening report "${row.original.name}"`,

@@ -67,28 +67,32 @@ function DashboardRowActions({
     <div className={styles.rowActions}>
       <WuButton
         size="sm"
-        variant="secondary"
+        variant="iconOnly"
+        className={styles.rowActionButton}
         Icon={<span className="wm-history" />}
         onClick={() => onActivityLogs(dashboard)}
         aria-label="Activity logs"
       />
       <WuButton
         size="sm"
-        variant="secondary"
+        variant="iconOnly"
+        className={styles.rowActionButton}
         Icon={<span className="wm-edit" />}
         onClick={() => onRename(dashboard)}
         aria-label="Rename"
       />
       <WuButton
         size="sm"
-        variant="secondary"
+        variant="iconOnly"
+        className={styles.rowActionButton}
         Icon={<span className="wm-content-copy" />}
         onClick={() => onCopy(dashboard)}
         aria-label="Copy"
       />
       <WuButton
         size="sm"
-        variant="secondary"
+        variant="iconOnly"
+        className={styles.rowActionButton}
         Icon={<span className="wm-delete" />}
         onClick={() => onDelete(dashboard)}
         aria-label="Delete"
@@ -148,7 +152,7 @@ export default function DashboardsPage() {
       cell: ({ row }) => (
         <Link
           href={biLitePath(`/dashboards/${row.original.id}`)}
-          className="font-medium text-[#1B87E6] hover:underline"
+          className={styles.dashboardNameLink}
         >
           {row.original.name}
         </Link>
