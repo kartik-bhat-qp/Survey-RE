@@ -660,9 +660,6 @@ export default function TextAiThemeConfigurationPage({
   const appliedGranularityOption =
     GRANULARITY_OPTIONS.find((option) => option.level === appliedGranularity) ??
     GRANULARITY_OPTIONS[1];
-  const draftGranularityOption =
-    GRANULARITY_OPTIONS.find((option) => option.level === draftGranularity) ??
-    GRANULARITY_OPTIONS[1];
   const visibleThemeCount = Math.round(
     questionVariant.themeCount * appliedGranularityOption.themeCountFactor
   );
@@ -880,8 +877,6 @@ export default function TextAiThemeConfigurationPage({
           >
             <span className="wm-tune" aria-hidden />
             <span>Granularity</span>
-            <strong>{appliedGranularityOption.label}</strong>
-            <span className="wm-arrow-drop-down" aria-hidden />
           </button>
         </div>
       </div>
@@ -1144,14 +1139,6 @@ export default function TextAiThemeConfigurationPage({
                 </label>
               ))}
             </div>
-            <div className={styles.granularityPreview} aria-live="polite">
-              <span className="wm-info-outline" aria-hidden />
-              <span>
-                Applying <strong>{draftGranularityOption.label}</strong> will classify
-                responses across <strong>{draftGranularityOption.range}</strong> per
-                theme.
-              </span>
-            </div>
           </div>
         </WuModalContent>
         <WuModalFooter>
@@ -1171,7 +1158,7 @@ export default function TextAiThemeConfigurationPage({
               setGranularityModalOpen(false);
             }}
           >
-            Apply granularity
+            Apply
           </WuButton>
         </WuModalFooter>
       </WuModal>
