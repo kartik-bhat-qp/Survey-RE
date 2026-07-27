@@ -3,6 +3,7 @@
 import { use, useMemo, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { Title as DialogTitle } from '@radix-ui/react-dialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { getTextAiDashboardById } from '@/data/get-text-ai-dashboard-by-id';
@@ -36,12 +37,25 @@ const WuModalHeader = dynamic(
 );
 
 type ThemeTone = 'blue' | 'green' | 'red';
+type GranularityLevel = 'high' | 'medium' | 'low';
 
 interface SubTheme {
+  description?: string;
   id: string;
   emerging?: boolean;
   name: string;
   percentage: string;
+}
+
+interface SubThemeEdit {
+  description: string;
+  name: string;
+  originalName: string;
+}
+
+interface EditSubThemeTarget {
+  editKey: string;
+  originalName: string;
 }
 
 interface ThemeGroup {
@@ -69,8 +83,6 @@ type RejectTarget =
 interface RawResponse {
   id: number;
   text: string;
-  tag?: string;
-  tone?: Exclude<ThemeTone, 'red'>;
 }
 
 interface QuestionThemeVariant {
@@ -81,6 +93,47 @@ interface QuestionThemeVariant {
   subThemeFactor: number;
   themeCount: number;
 }
+
+interface GranularityOption {
+  description: string;
+  label: string;
+  level: GranularityLevel;
+  range: string;
+  subThemeCounts: number[];
+  themeCountFactor: number;
+}
+
+interface ResponseClassification {
+  tag: string;
+  tone: Exclude<ThemeTone, 'red'>;
+}
+
+const GRANULARITY_OPTIONS: GranularityOption[] = [
+  {
+    level: 'high',
+    label: 'High',
+    range: '10–15 sub-themes',
+    description: 'Creates more specific classifications for detailed analysis.',
+    subThemeCounts: [12, 10, 15],
+    themeCountFactor: 1.28,
+  },
+  {
+    level: 'medium',
+    label: 'Medium',
+    range: '5–10 sub-themes',
+    description: 'Balances useful detail with a concise, manageable code frame.',
+    subThemeCounts: [7, 6, 9],
+    themeCountFactor: 1,
+  },
+  {
+    level: 'low',
+    label: 'Low',
+    range: '1–5 sub-themes',
+    description: 'Groups responses into broader classifications for a simpler overview.',
+    subThemeCounts: [3, 2, 4],
+    themeCountFactor: 0.62,
+  },
+];
 
 const THEME_GROUPS: ThemeGroup[] = [
   {
@@ -121,6 +174,37 @@ const THEME_GROUPS: ThemeGroup[] = [
         name: 'Customer Experience Differentiation',
         percentage: '1.67%',
       },
+      {
+        id: 'customer-feedback-resolution',
+        name: 'Customer Feedback Resolution and Follow-up',
+        percentage: '1.43%',
+      },
+      {
+        id: 'customer-expectation-alignment',
+        name: 'Customer Expectation Alignment',
+        percentage: '1.27%',
+      },
+      {
+        id: 'customer-loyalty-signals',
+        emerging: true,
+        name: 'Customer Loyalty and Advocacy Signals',
+        percentage: '1.13%',
+      },
+      {
+        id: 'customer-communication-quality',
+        name: 'Customer Communication Quality',
+        percentage: '0.93%',
+      },
+      {
+        id: 'customer-journey-friction',
+        name: 'Customer Journey Friction Points',
+        percentage: '0.73%',
+      },
+      {
+        id: 'customer-value-perception',
+        name: 'Customer Value Perception',
+        percentage: '0.6%',
+      },
     ],
   },
   {
@@ -147,6 +231,42 @@ const THEME_GROUPS: ThemeGroup[] = [
         emerging: true,
         name: 'Staff Service Attitude Analysis',
         percentage: '3%',
+      },
+      {
+        id: 'staff-response-time',
+        name: 'Staff Response Time and Availability',
+        percentage: '2.73%',
+      },
+      {
+        id: 'staff-knowledge',
+        name: 'Staff Knowledge and Confidence',
+        percentage: '2.27%',
+      },
+      {
+        id: 'staff-problem-solving',
+        name: 'Staff Problem-solving Effectiveness',
+        percentage: '1.93%',
+      },
+      {
+        id: 'staff-attentiveness',
+        emerging: true,
+        name: 'Staff Attentiveness to Customer Needs',
+        percentage: '1.53%',
+      },
+      {
+        id: 'staff-communication',
+        name: 'Staff Communication Clarity',
+        percentage: '1.2%',
+      },
+      {
+        id: 'staff-ownership',
+        name: 'Staff Ownership and Follow-through',
+        percentage: '0.93%',
+      },
+      {
+        id: 'staff-consistency',
+        name: 'Staff Service Consistency',
+        percentage: '0.67%',
       },
     ],
   },
@@ -218,43 +338,64 @@ const THEME_GROUPS: ThemeGroup[] = [
         name: 'Customer Service Interactions',
         percentage: '0.27%',
       },
+      {
+        id: 'order-accuracy',
+        name: 'Order Accuracy and Completeness',
+        percentage: '1.47%',
+      },
+      {
+        id: 'visit-convenience',
+        emerging: true,
+        name: 'Visit Convenience and Accessibility',
+        percentage: '1.13%',
+      },
+      {
+        id: 'experience-value',
+        name: 'Overall Experience Value',
+        percentage: '0.93%',
+      },
     ],
   },
 ];
 
 const RAW_RESPONSES: RawResponse[] = [
   { id: 1, text: 'Some one there was smelly' },
-  {
-    id: 2,
-    text: "It's good for an emergency.",
-    tag: 'Customer Experience Differentiation',
-    tone: 'blue',
-  },
-  {
-    id: 3,
-    text: '"Ran out of straws"? Suspect',
-    tag: 'Customer Experience and Condiment Misrepresentation',
-    tone: 'green',
-  },
-  {
-    id: 4,
-    text: 'The place has character',
-    tag: 'Customer Experience Differentiation',
-    tone: 'blue',
-  },
-  {
-    id: 5,
-    text: '1.09 soda any size!',
-    tag: 'Pricing Concerns and Customer Feedback',
-    tone: 'green',
-  },
-  {
-    id: 6,
-    text: 'Very fast service',
-    tag: 'Service Speed and Efficiency',
-    tone: 'green',
-  },
+  { id: 2, text: "It's good for an emergency." },
+  { id: 3, text: '"Ran out of straws"? Suspect' },
+  { id: 4, text: 'The place has character' },
+  { id: 5, text: '1.09 soda any size!' },
+  { id: 6, text: 'Very fast service' },
 ];
+
+const RESPONSE_CLASSIFICATIONS: Record<
+  GranularityLevel,
+  Array<ResponseClassification | null>
+> = {
+  high: [
+    { tag: 'Staff Hygiene and Presentation Concerns', tone: 'green' },
+    { tag: 'Emergency Visit Convenience and Practical Value', tone: 'blue' },
+    { tag: 'Condiment Stock Availability and Communication', tone: 'green' },
+    { tag: 'Distinctive Location Atmosphere and Character', tone: 'blue' },
+    { tag: 'Any-size Beverage Promotion Value', tone: 'green' },
+    { tag: 'Rapid Order Fulfilment and Service Speed', tone: 'green' },
+  ],
+  medium: [
+    null,
+    { tag: 'Customer Experience Differentiation', tone: 'blue' },
+    { tag: 'Customer Experience and Condiment Misrepresentation', tone: 'green' },
+    { tag: 'Customer Experience Differentiation', tone: 'blue' },
+    { tag: 'Pricing Concerns and Customer Feedback', tone: 'green' },
+    { tag: 'Service Speed and Efficiency', tone: 'green' },
+  ],
+  low: [
+    { tag: 'Staff Service', tone: 'green' },
+    { tag: 'Overall Experience', tone: 'blue' },
+    { tag: 'Overall Experience', tone: 'green' },
+    { tag: 'Customer Experience', tone: 'blue' },
+    { tag: 'Customer Experience', tone: 'green' },
+    { tag: 'Staff Service', tone: 'green' },
+  ],
+};
 
 const COVERAGE_CATEGORIES = [
   { label: 'Untagged', color: '#ed5b5b' },
@@ -264,6 +405,13 @@ const COVERAGE_CATEGORIES = [
   { label: '4 sub-themes', color: '#8bc6ee' },
   { label: '5 sub-themes', color: '#49a94f' },
 ];
+
+const GRANULARITY_COVERAGE_WEIGHTS: Partial<
+  Record<GranularityLevel, number[]>
+> = {
+  high: [0.04, 0.36, 0.3, 0.16, 0.09, 0.05],
+  low: [0.08, 0.72, 0.17, 0.03, 0, 0],
+};
 
 const QUESTION_VARIANTS: QuestionThemeVariant[] = [
   {
@@ -348,6 +496,28 @@ function formatPercentage(value: number): string {
   return `${Number(value.toFixed(2))}%`;
 }
 
+function getSubThemeEditKey(
+  questionId: string,
+  themeId: string,
+  subThemeId: string
+): string {
+  return `${questionId}:${themeId}:${subThemeId}`;
+}
+
+function getDefaultSubThemeDescription(name: string): string {
+  return `Responses that relate to ${name.toLowerCase()} within this theme.`;
+}
+
+function getCoverageCounts(
+  responseCount: number,
+  weights: number[]
+): number[] {
+  const counts = weights.map((weight) => Math.round(responseCount * weight));
+  const difference = responseCount - counts.reduce((total, count) => total + count, 0);
+  counts[counts.length - 1] += difference;
+  return counts;
+}
+
 function EmergingBadge() {
   return (
     <span className={styles.emergingBadge}>
@@ -360,12 +530,14 @@ function EmergingBadge() {
 function ThemeGroupCard({
   group,
   collapsed,
+  onEditSubTheme,
   onRejectSubTheme,
   onRejectTheme,
   onToggle,
 }: {
   group: ThemeGroup;
   collapsed: boolean;
+  onEditSubTheme: (subTheme: SubTheme) => void;
   onRejectSubTheme: (subTheme: SubTheme) => void;
   onRejectTheme: () => void;
   onToggle: () => void;
@@ -389,6 +561,9 @@ function ThemeGroupCard({
           {group.emerging && <EmergingBadge />}
         </button>
         <div className={styles.themeGroupMeta}>
+          <span className={styles.subThemeCount}>
+            {group.subThemes.length} sub-theme{group.subThemes.length === 1 ? '' : 's'}
+          </span>
           <span className={styles.themeGroupPercentage}>{group.percentage}</span>
           {group.emerging && (
             <button
@@ -408,11 +583,20 @@ function ThemeGroupCard({
           {group.subThemes.map((subTheme) => (
             <div className={styles.subTheme} key={subTheme.id}>
               <div className={styles.subThemeMain}>
-                <span>{subTheme.name}</span>
+                <span title={subTheme.description}>{subTheme.name}</span>
                 {subTheme.emerging && <EmergingBadge />}
               </div>
               <div className={styles.subThemeMeta}>
                 <span className={styles.subThemePercentage}>{subTheme.percentage}</span>
+                <button
+                  type="button"
+                  className={styles.editSubThemeButton}
+                  onClick={() => onEditSubTheme(subTheme)}
+                  aria-label={`Edit sub-theme ${subTheme.name}`}
+                  title="Edit sub-theme"
+                >
+                  <span className="wm-edit" aria-hidden />
+                </button>
                 {subTheme.emerging && (
                   <button
                     type="button"
@@ -454,6 +638,18 @@ export default function TextAiThemeConfigurationPage({
     () => new Set()
   );
   const [rejectTarget, setRejectTarget] = useState<RejectTarget | null>(null);
+  const [granularityModalOpen, setGranularityModalOpen] = useState(false);
+  const [appliedGranularity, setAppliedGranularity] =
+    useState<GranularityLevel>('medium');
+  const [draftGranularity, setDraftGranularity] =
+    useState<GranularityLevel>('medium');
+  const [subThemeEdits, setSubThemeEdits] = useState<Record<string, SubThemeEdit>>(
+    () => ({})
+  );
+  const [editSubThemeTarget, setEditSubThemeTarget] =
+    useState<EditSubThemeTarget | null>(null);
+  const [draftSubThemeName, setDraftSubThemeName] = useState('');
+  const [draftSubThemeDescription, setDraftSubThemeDescription] = useState('');
 
   const selectedQuestionIndex = Math.max(
     0,
@@ -461,24 +657,54 @@ export default function TextAiThemeConfigurationPage({
   );
   const selectedQuestion = questions[selectedQuestionIndex] ?? null;
   const questionVariant = QUESTION_VARIANTS[selectedQuestionIndex % QUESTION_VARIANTS.length];
+  const appliedGranularityOption =
+    GRANULARITY_OPTIONS.find((option) => option.level === appliedGranularity) ??
+    GRANULARITY_OPTIONS[1];
+  const draftGranularityOption =
+    GRANULARITY_OPTIONS.find((option) => option.level === draftGranularity) ??
+    GRANULARITY_OPTIONS[1];
+  const visibleThemeCount = Math.round(
+    questionVariant.themeCount * appliedGranularityOption.themeCountFactor
+  );
 
   const themeGroups = useMemo(
     () =>
       THEME_GROUPS.map((group, groupIndex) => ({
         ...group,
         percentage: formatPercentage(questionVariant.groupPercentages[groupIndex]),
-        subThemes: group.subThemes.map((subTheme, subThemeIndex) => {
-          const basePercentage = Number.parseFloat(subTheme.percentage);
-          const indexAdjustment = ((subThemeIndex % 3) - 1) * selectedQuestionIndex * 0.04;
-          return {
-            ...subTheme,
-            percentage: formatPercentage(
-              Math.max(0, basePercentage * questionVariant.subThemeFactor + indexAdjustment)
-            ),
-          };
-        }),
+        subThemes: group.subThemes
+          .slice(0, appliedGranularityOption.subThemeCounts[groupIndex])
+          .map((subTheme, subThemeIndex) => {
+            const basePercentage = Number.parseFloat(subTheme.percentage);
+            const indexAdjustment =
+              ((subThemeIndex % 3) - 1) * selectedQuestionIndex * 0.04;
+            const edit =
+              subThemeEdits[
+                getSubThemeEditKey(selectedQuestionId, group.id, subTheme.id)
+              ];
+            return {
+              ...subTheme,
+              description:
+                edit?.description ??
+                subTheme.description ??
+                getDefaultSubThemeDescription(subTheme.name),
+              name: edit?.name ?? subTheme.name,
+              percentage: formatPercentage(
+                Math.max(
+                  0,
+                  basePercentage * questionVariant.subThemeFactor + indexAdjustment
+                )
+              ),
+            };
+          }),
       })),
-    [questionVariant, selectedQuestionIndex]
+    [
+      appliedGranularityOption,
+      questionVariant,
+      selectedQuestionId,
+      selectedQuestionIndex,
+      subThemeEdits,
+    ]
   );
 
   const visibleThemeGroups = useMemo(
@@ -495,25 +721,41 @@ export default function TextAiThemeConfigurationPage({
   );
 
   const coverageItems = useMemo(
-    () =>
-      COVERAGE_CATEGORIES.map((category, index) => {
-        const count = questionVariant.coverageCounts[index];
+    () => {
+      const weights = GRANULARITY_COVERAGE_WEIGHTS[appliedGranularity];
+      const counts = weights
+        ? getCoverageCounts(questionVariant.responseCount, weights)
+        : questionVariant.coverageCounts;
+
+      return COVERAGE_CATEGORIES.map((category, index) => {
+        const count = counts[index];
         return {
           ...category,
           count: `${count}/${questionVariant.responseCount}`,
           percentage: formatPercentage((count / questionVariant.responseCount) * 100),
         };
-      }),
-    [questionVariant]
+      });
+    },
+    [appliedGranularity, questionVariant]
   );
 
   const questionResponses = useMemo(
     () =>
-      RAW_RESPONSES.map((response, index) => ({
-        ...response,
-        text: questionVariant.responseTexts[index] ?? response.text,
-      })),
-    [questionVariant]
+      RAW_RESPONSES.map((response, index) => {
+        const classification = RESPONSE_CLASSIFICATIONS[appliedGranularity][index];
+        const renamedClassification = Object.entries(subThemeEdits).find(
+          ([editKey, edit]) =>
+            editKey.startsWith(`${selectedQuestionId}:`) &&
+            edit.originalName === classification?.tag
+        )?.[1];
+        return {
+          ...response,
+          text: questionVariant.responseTexts[index] ?? response.text,
+          tag: renamedClassification?.name ?? classification?.tag,
+          tone: classification?.tone,
+        };
+      }),
+    [appliedGranularity, questionVariant, selectedQuestionId, subThemeEdits]
   );
 
   const visibleResponses = useMemo(() => {
@@ -561,6 +803,23 @@ export default function TextAiThemeConfigurationPage({
     setRejectTarget(null);
   }
 
+  function saveSubThemeEdit(): void {
+    if (!editSubThemeTarget) return;
+
+    const name = draftSubThemeName.trim();
+    if (!name) return;
+
+    setSubThemeEdits((current) => ({
+      ...current,
+      [editSubThemeTarget.editKey]: {
+        description: draftSubThemeDescription.trim(),
+        name,
+        originalName: editSubThemeTarget.originalName,
+      },
+    }));
+    setEditSubThemeTarget(null);
+  }
+
   return (
     <PageContainer className={styles.page}>
       <div className={styles.utilityBar}>
@@ -578,6 +837,7 @@ export default function TextAiThemeConfigurationPage({
                 setRejectedThemeIds(new Set());
                 setRejectedSubThemeKeys(new Set());
                 setRejectTarget(null);
+                setEditSubThemeTarget(null);
               }}
               variant="outlined"
               enableSearch
@@ -598,15 +858,31 @@ export default function TextAiThemeConfigurationPage({
             />
           </label>
         </div>
-        <div className={styles.recodeAction}>
-          <Link
-            href={`/text-ai/${dashboard.id}`}
-            className={styles.dashboardLink}
-            aria-label={`Back to ${dashboard.name} dashboard`}
+        <div className={styles.utilityActions}>
+          <div className={styles.recodeAction}>
+            <Link
+              href={`/text-ai/${dashboard.id}`}
+              className={styles.dashboardLink}
+              aria-label={`Back to ${dashboard.name} dashboard`}
+            >
+              <span className="wc-report" aria-hidden />
+            </Link>
+            <span>Recode</span>
+          </div>
+          <button
+            type="button"
+            className={styles.granularityAction}
+            onClick={() => {
+              setDraftGranularity(appliedGranularity);
+              setGranularityModalOpen(true);
+            }}
+            aria-haspopup="dialog"
           >
-            <span className="wc-report" aria-hidden />
-          </Link>
-          <span>Recode</span>
+            <span className="wm-tune" aria-hidden />
+            <span>Granularity</span>
+            <strong>{appliedGranularityOption.label}</strong>
+            <span className="wm-arrow-drop-down" aria-hidden />
+          </button>
         </div>
       </div>
 
@@ -615,7 +891,10 @@ export default function TextAiThemeConfigurationPage({
           <header className={styles.codeFrameHeader}>
             <div className={styles.codeFrameTitle}>
               <strong>My code frame</strong>
-              <span className={styles.headerCount}>{questionVariant.themeCount}</span>
+              <span className={styles.headerCount}>{visibleThemeCount}</span>
+              <span className={styles.appliedGranularity}>
+                {appliedGranularityOption.label} · {appliedGranularityOption.range}
+              </span>
             </div>
             <div className={styles.codeFrameActions}>
               <span className={styles.headerCount}>{questionVariant.responseCount}</span>
@@ -629,6 +908,28 @@ export default function TextAiThemeConfigurationPage({
                 key={group.id}
                 group={group}
                 collapsed={collapsedGroups.has(group.id)}
+                onEditSubTheme={(subTheme) => {
+                  setEditSubThemeTarget({
+                    editKey: getSubThemeEditKey(
+                      selectedQuestionId,
+                      group.id,
+                      subTheme.id
+                    ),
+                    originalName:
+                      subThemeEdits[
+                        getSubThemeEditKey(
+                          selectedQuestionId,
+                          group.id,
+                          subTheme.id
+                        )
+                      ]?.originalName ?? subTheme.name,
+                  });
+                  setDraftSubThemeName(subTheme.name);
+                  setDraftSubThemeDescription(
+                    subTheme.description ??
+                      getDefaultSubThemeDescription(subTheme.name)
+                  );
+                }}
                 onRejectSubTheme={(subTheme) =>
                   setRejectTarget({
                     kind: 'sub-theme',
@@ -732,6 +1033,150 @@ export default function TextAiThemeConfigurationPage({
       </div>
 
       <WuModal
+        open={editSubThemeTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditSubThemeTarget(null);
+        }}
+        size="md"
+        variant="action"
+      >
+        <DialogTitle className={styles.srOnly}>Edit sub-theme</DialogTitle>
+        <WuModalHeader>Edit sub-theme</WuModalHeader>
+        <WuModalContent>
+          <div className={styles.editSubThemeModalContent}>
+            <p>
+              Update the label and description used to classify matching responses.
+            </p>
+            <label className={styles.editSubThemeField}>
+              <span>
+                Sub-theme name <strong aria-hidden>*</strong>
+              </span>
+              <input
+                value={draftSubThemeName}
+                onChange={(event) => setDraftSubThemeName(event.target.value)}
+                maxLength={100}
+                placeholder="Enter a sub-theme name"
+                autoFocus
+                required
+              />
+              <small>{draftSubThemeName.length}/100 characters</small>
+            </label>
+            <label className={styles.editSubThemeField}>
+              <span>Description</span>
+              <textarea
+                value={draftSubThemeDescription}
+                onChange={(event) =>
+                  setDraftSubThemeDescription(event.target.value)
+                }
+                maxLength={300}
+                placeholder="Describe the responses that belong in this sub-theme"
+                rows={4}
+              />
+              <small>{draftSubThemeDescription.length}/300 characters</small>
+            </label>
+          </div>
+        </WuModalContent>
+        <WuModalFooter>
+          <WuButton
+            type="button"
+            variant="secondary"
+            onClick={() => setEditSubThemeTarget(null)}
+          >
+            Cancel
+          </WuButton>
+          <WuButton
+            type="button"
+            disabled={!draftSubThemeName.trim()}
+            onClick={saveSubThemeEdit}
+          >
+            Save changes
+          </WuButton>
+        </WuModalFooter>
+      </WuModal>
+
+      <WuModal
+        open={granularityModalOpen}
+        onOpenChange={(open) => {
+          setGranularityModalOpen(open);
+          if (!open) setDraftGranularity(appliedGranularity);
+        }}
+        size="md"
+        variant="action"
+      >
+        <DialogTitle className={styles.srOnly}>Response tagging granularity</DialogTitle>
+        <WuModalHeader>Response tagging granularity</WuModalHeader>
+        <WuModalContent>
+          <div className={styles.granularityModalContent}>
+            <p className={styles.granularityIntroduction}>
+              Choose how specific TextAI should be when classifying responses into
+              sub-themes.
+            </p>
+            <div
+              className={styles.granularityOptions}
+              role="radiogroup"
+              aria-label="Response tagging granularity"
+            >
+              {GRANULARITY_OPTIONS.map((option) => (
+                <label
+                  className={`${styles.granularityOption} ${
+                    draftGranularity === option.level
+                      ? styles.granularityOptionSelected
+                      : ''
+                  }`}
+                  key={option.level}
+                >
+                  <input
+                    type="radio"
+                    name="granularity"
+                    value={option.level}
+                    checked={draftGranularity === option.level}
+                    onChange={() => setDraftGranularity(option.level)}
+                  />
+                  <span className={styles.granularityOptionText}>
+                    <span className={styles.granularityOptionHeading}>
+                      <strong>{option.label}</strong>
+                      <span>{option.range}</span>
+                    </span>
+                    <span className={styles.granularityDescription}>
+                      {option.description}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            <div className={styles.granularityPreview} aria-live="polite">
+              <span className="wm-info-outline" aria-hidden />
+              <span>
+                Applying <strong>{draftGranularityOption.label}</strong> will classify
+                responses across <strong>{draftGranularityOption.range}</strong> per
+                theme.
+              </span>
+            </div>
+          </div>
+        </WuModalContent>
+        <WuModalFooter>
+          <WuButton
+            type="button"
+            variant="secondary"
+            onClick={() => setGranularityModalOpen(false)}
+          >
+            Cancel
+          </WuButton>
+          <WuButton
+            type="button"
+            onClick={() => {
+              setAppliedGranularity(draftGranularity);
+              setRejectedThemeIds(new Set());
+              setRejectedSubThemeKeys(new Set());
+              setGranularityModalOpen(false);
+            }}
+          >
+            Apply granularity
+          </WuButton>
+        </WuModalFooter>
+      </WuModal>
+
+      <WuModal
         open={rejectTarget !== null}
         onOpenChange={(open) => {
           if (!open) setRejectTarget(null);
@@ -739,6 +1184,9 @@ export default function TextAiThemeConfigurationPage({
         size="sm"
         variant="critical"
       >
+        <DialogTitle className={styles.srOnly}>
+          Reject emerging {rejectTarget?.kind === 'theme' ? 'theme' : 'sub-theme'}
+        </DialogTitle>
         <WuModalHeader>
           Reject emerging {rejectTarget?.kind === 'theme' ? 'theme' : 'sub-theme'}?
         </WuModalHeader>

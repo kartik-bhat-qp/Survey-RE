@@ -72,14 +72,56 @@
   color: #b5bac0;
 }
 
-.recodeAction {
+.utilityActions {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+}
+
+.recodeAction,
+.granularityAction {
   align-items: center;
   color: #626c76;
   display: inline-flex;
   flex-shrink: 0;
   gap: 0.5rem;
   min-height: 2rem;
-  padding: 0 1rem;
+}
+
+.recodeAction {
+  padding: 0 0.75rem;
+}
+
+.granularityAction {
+  background: #ffffff;
+  border: 1px solid #cbd2d9;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  font: inherit;
+  padding: 0 0.6rem;
+}
+
+.granularityAction:hover,
+.granularityAction:focus-visible {
+  background: #f5f9fc;
+  border-color: #8aa9c4;
+  color: #39434d;
+}
+
+.granularityAction strong {
+  color: #1674c5;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.granularityAction :global(.wm-tune) {
+  color: #1686e4;
+}
+
+.granularityAction :global(.wm-arrow-drop-down) {
+  color: #7b848d;
+  font-size: 1rem;
 }
 
 .dashboardLink {
@@ -139,6 +181,12 @@
   align-items: center;
   display: flex;
   gap: 0.65rem;
+}
+
+.appliedGranularity {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.68rem;
+  font-weight: 500;
 }
 
 .headerCount {
@@ -261,6 +309,15 @@
   font-size: 0.75rem;
 }
 
+.subThemeCount {
+  background: rgba(255, 255, 255, 0.68);
+  border-radius: 999px;
+  color: #68727d;
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 0.25rem 0.45rem;
+}
+
 .themeGroupgreen .themeGroupPercentage {
   color: #218535;
 }
@@ -293,6 +350,12 @@
   padding: 0.45rem 0.75rem;
 }
 
+.subTheme:hover,
+.subTheme:focus-within {
+  background: #fafcfe;
+  border-color: #c5d7e6;
+}
+
 .subThemeMain {
   align-items: center;
   display: flex;
@@ -304,6 +367,41 @@
   color: #979da4;
   flex-shrink: 0;
   font-weight: 400;
+}
+
+.editSubThemeButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0.25rem;
+  color: #687581;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 1.75rem;
+  justify-content: center;
+  opacity: 0;
+  padding: 0;
+  transition: background-color 120ms ease, color 120ms ease, opacity 120ms ease;
+  width: 1.75rem;
+}
+
+.subTheme:hover .editSubThemeButton,
+.subTheme:focus-within .editSubThemeButton {
+  background: #edf6fd;
+  color: #1674c5;
+  opacity: 1;
+}
+
+.editSubThemeButton:hover,
+.editSubThemeButton:focus-visible {
+  background: #ddecf8;
+  color: #0e65ae;
+  opacity: 1;
+}
+
+.editSubThemeButton :global(.wm-edit) {
+  font-size: 0.85rem;
 }
 
 .emergingBadge {
@@ -378,6 +476,159 @@
 
 .rejectModalContent strong {
   color: #252b33;
+}
+
+.editSubThemeModalContent {
+  color: #505965;
+  display: grid;
+  gap: 1rem;
+}
+
+.editSubThemeModalContent > p {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.editSubThemeField {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.editSubThemeField > span {
+  color: #303740;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.editSubThemeField > span strong {
+  color: #c62f46;
+}
+
+.editSubThemeField input,
+.editSubThemeField textarea {
+  background: #ffffff;
+  border: 1px solid #b8c0c8;
+  border-radius: 0.35rem;
+  color: #303740;
+  font: inherit;
+  font-size: 0.84rem;
+  outline: 0;
+  padding: 0.65rem 0.75rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.editSubThemeField input:focus,
+.editSubThemeField textarea:focus {
+  border-color: #1686e4;
+  box-shadow: 0 0 0 2px rgba(22, 134, 228, 0.13);
+}
+
+.editSubThemeField small {
+  color: #8a939d;
+  font-size: 0.68rem;
+  justify-self: end;
+}
+
+.granularityModalContent {
+  color: #4f5964;
+  display: grid;
+  gap: 1rem;
+}
+
+.granularityIntroduction {
+  font-size: 0.875rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.granularityOptions {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.granularityOption {
+  align-items: flex-start;
+  background: #ffffff;
+  border: 1px solid #d6dce2;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  transition: background-color 120ms ease, border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.granularityOption:hover {
+  background: #f8fbfe;
+  border-color: #9cbad3;
+}
+
+.granularityOptionSelected {
+  background: #f2f8fe;
+  border-color: #1686e4;
+  box-shadow: 0 0 0 1px rgba(22, 134, 228, 0.12);
+}
+
+.granularityOption input {
+  accent-color: #1686e4;
+  flex-shrink: 0;
+  height: 1rem;
+  margin: 0.15rem 0 0;
+  width: 1rem;
+}
+
+.granularityOptionText {
+  display: grid;
+  flex: 1;
+  gap: 0.25rem;
+}
+
+.granularityOptionHeading {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+  justify-content: space-between;
+}
+
+.granularityOptionHeading strong {
+  color: #252b33;
+  font-size: 0.9rem;
+}
+
+.granularityOptionHeading > span {
+  background: #e8f3fc;
+  border-radius: 999px;
+  color: #1674c5;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+}
+
+.granularityDescription {
+  color: #707a84;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.granularityPreview {
+  align-items: flex-start;
+  background: #f5f8fb;
+  border-radius: 0.4rem;
+  color: #596572;
+  display: flex;
+  font-size: 0.78rem;
+  gap: 0.55rem;
+  line-height: 1.45;
+  padding: 0.75rem;
+}
+
+.granularityPreview :global(.wm-info-outline) {
+  color: #1686e4;
+  flex-shrink: 0;
+  margin-top: 0.08rem;
 }
 
 .rawDataPanel {
@@ -632,8 +883,13 @@
     flex-direction: column;
   }
 
-  .recodeAction {
+  .utilityActions {
+    flex-wrap: wrap;
     justify-content: flex-end;
+  }
+
+  .appliedGranularity {
+    display: none;
   }
 
   .utilityControls,
@@ -655,6 +911,10 @@
 
   .subThemeGrid {
     grid-template-columns: 1fr;
+  }
+
+  .editSubThemeButton {
+    opacity: 1;
   }
 
   .themeGroupHeader {
