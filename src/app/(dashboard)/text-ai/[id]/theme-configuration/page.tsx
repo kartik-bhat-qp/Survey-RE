@@ -37,6 +37,10 @@ const WuModalHeader = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuModalHeader })),
   { ssr: false }
 );
+const WuToggle = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
+  { ssr: false }
+);
 
 type ThemeTone = 'blue' | 'green' | 'red';
 type GranularityLevel = 'high' | 'medium' | 'low';
@@ -497,6 +501,10 @@ function formatPercentage(value: number): string {
   return `${Number(value.toFixed(2))}%`;
 }
 
+function hasResponses(percentage: string): boolean {
+  return Number.parseFloat(percentage) > 0;
+}
+
 function getSubThemeEditKey(
   questionId: string,
   themeId: string,
@@ -651,6 +659,7 @@ export default function TextAiThemeConfigurationPage({
     useState<EditSubThemeTarget | null>(null);
   const [draftSubThemeName, setDraftSubThemeName] = useState('');
   const [draftSubThemeDescription, setDraftSubThemeDescription] = useState('');
+  const [showItemsWithoutResponses, setShowItemsWithoutResponses] = useState(true);
 
   const selectedQuestionIndex = Math.max(
     0,
@@ -716,13 +725,25 @@ export default function TextAiThemeConfigurationPage({
     () =>
       themeGroups
         .filter((group) => !rejectedThemeIds.has(group.id))
-        .map((group) => ({
-          ...group,
-          subThemes: group.subThemes.filter(
-            (subTheme) => !rejectedSubThemeKeys.has(`${group.id}:${subTheme.id}`)
-          ),
-        })),
-    [rejectedSubThemeKeys, rejectedThemeIds, themeGroups]
+        .flatMap((group) => {
+          if (!showItemsWithoutResponses && !hasResponses(group.percentage)) {
+            return [];
+          }
+
+          const subThemes = group.subThemes.filter(
+            (subTheme) =>
+              !rejectedSubThemeKeys.has(`${group.id}:${subTheme.id}`) &&
+              (showItemsWithoutResponses || hasResponses(subTheme.percentage))
+          );
+
+          return [{ ...group, subThemes }];
+        }),
+    [
+      rejectedSubThemeKeys,
+      rejectedThemeIds,
+      showItemsWithoutResponses,
+      themeGroups,
+    ]
   );
 
   const coverageItems = useMemo(
@@ -913,15 +934,25 @@ export default function TextAiThemeConfigurationPage({
               aria-label="Question"
             />
           </div>
-          <label className={styles.searchBox}>
-            <span className="wm-search" aria-hidden />
-            <span className={styles.srOnly}>Search themes or responses</span>
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search themes or responses..."
-            />
-          </label>
+          <div className={styles.themeVisibilityControls}>
+            <label className={styles.searchBox}>
+              <span className="wm-search" aria-hidden />
+              <span className={styles.srOnly}>Search themes or responses</span>
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search themes or responses..."
+              />
+            </label>
+            <div className={styles.emptyItemsToggle}>
+              <WuToggle
+                checked={showItemsWithoutResponses}
+                onChange={setShowItemsWithoutResponses}
+                aria-label="Show themes with no responses"
+              />
+              <span>Show themes with no responses</span>
+            </div>
+          </div>
         </div>
         <div className={styles.utilityActions}>
           <div className={styles.recodeAction}>
