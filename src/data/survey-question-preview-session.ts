@@ -106,7 +106,46 @@ export type SurveyQuestionPreviewKind =
   | 'multi-point'
   | 'select-many'
   | 'select-one'
-  | 'captcha';
+  | 'captcha'
+  | 'open-ended';
+
+/** The concrete open-ended question type inside a preview session. */
+export type OpenEndedQuestionType = 'comment-box' | 'single-row' | 'email' | 'contact';
+
+export interface OpenEndedQuestionPreviewSession {
+  surveyId: number;
+  surveyTitle: string;
+  questionCode: string;
+  questionText: string;
+  required?: boolean;
+  questionType: OpenEndedQuestionType;
+  /** Field labels for contact information questions (id + label pairs). */
+  contactFields?: { id: string; label: string }[];
+}
+
+export function openEndedPreviewStorageKey(surveyId: number): string {
+  return `survey-open-ended-preview-${surveyId}`;
+}
+
+export function writeOpenEndedQuestionPreviewSession(
+  payload: OpenEndedQuestionPreviewSession
+): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(openEndedPreviewStorageKey(payload.surveyId), JSON.stringify(payload));
+}
+
+export function readOpenEndedQuestionPreviewSession(
+  surveyId: number
+): OpenEndedQuestionPreviewSession | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem(openEndedPreviewStorageKey(surveyId));
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as OpenEndedQuestionPreviewSession;
+  } catch {
+    return null;
+  }
+}
 
 export function multiPointPreviewStorageKey(surveyId: number): string {
   return `survey-multipoint-preview-${surveyId}`;

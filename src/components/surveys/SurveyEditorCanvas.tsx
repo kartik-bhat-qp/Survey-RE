@@ -155,6 +155,7 @@ import {
   updateDeepDiveFollowUpConfigQuestion,
 } from '@/data/mock-deepdive-follow-up-question';
 import { isDeepDiveFollowUpSettingsQuestion } from '@/data/mock-deepdive-v2-survey';
+import { AUDIO_INPUT_SURVEY_ID } from '@/data/mock-audio-input-survey';
 import {
   DEFAULT_MULTI_POINT_SETTINGS,
   DEFAULT_NEW_MULTI_POINT_QUESTION_SETTINGS,
@@ -171,8 +172,10 @@ import {
   syncDeepDiveSettingsToPreviewSessions,
   writeCaptchaQuestionPreviewSession,
   writeMultiPointQuestionPreviewSession,
+  writeOpenEndedQuestionPreviewSession,
   writeSelectManyQuestionPreviewSession,
   writeSelectOneQuestionPreviewSession,
+  type OpenEndedQuestionType,
 } from '@/data/survey-question-preview-session';
 import { toShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
 import { QuotaControlOptionTag } from '@/components/surveys/QuotaControlOptionTag';
@@ -2470,6 +2473,39 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             return;
           }
 
+          {
+            const openEndedTypeMap: Record<string, OpenEndedQuestionType> = {
+              'comment-box': 'comment-box',
+              'single-row': 'single-row',
+              email: 'email',
+              contact: 'contact',
+            };
+            const openEndedType =
+              question.addQuestionTypeId != null
+                ? openEndedTypeMap[question.addQuestionTypeId]
+                : undefined;
+
+            if (openEndedType) {
+              writeOpenEndedQuestionPreviewSession({
+                surveyId: detail.survey.id,
+                surveyTitle: detail.editorTitle,
+                questionCode: question.code,
+                questionText: question.text,
+                required: question.required,
+                questionType: openEndedType,
+                contactFields:
+                  openEndedType === 'contact'
+                    ? question.options.map((opt) => ({ id: opt.id, label: opt.label }))
+                    : undefined,
+              });
+              openQuestionPreviewTab(
+                `${previewSignature}:open-ended`,
+                `${previewBaseUrl}?kind=open-ended`
+              );
+              return;
+            }
+          }
+
           showToast({
             message: `Preview is not available for ${questionLabel}`,
             variant: 'info',
@@ -3624,12 +3660,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                   ) : null}
                   <h2 className={styles.sectionTitle}>{section.title}</h2>
                 </div>
-                <SectionBlockOptionsButton
-                  sectionTitle={section.title}
-                  showBlockFlowHint={sectionIndex === 0}
-                  onBlockFlowSelect={() => setBlockFlowOpen(true)}
-                  onLearnMore={() => setBlockFlowOpen(true)}
-                />
+                {detail.survey.id !== AUDIO_INPUT_SURVEY_ID ? (
+                  <SectionBlockOptionsButton
+                    sectionTitle={section.title}
+                    showBlockFlowHint={sectionIndex === 0}
+                    onBlockFlowSelect={() => setBlockFlowOpen(true)}
+                    onLearnMore={() => setBlockFlowOpen(true)}
+                  />
+                ) : null}
               </header>
 
               <div className={styles.sectionQuestionCanvas}>

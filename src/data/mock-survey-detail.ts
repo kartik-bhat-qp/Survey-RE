@@ -15,6 +15,10 @@ import {
   DEEPDIVE_V2_SURVEY_ID,
   createDeepDiveV2Sections,
 } from '@/data/mock-deepdive-v2-survey';
+import {
+  AUDIO_INPUT_SURVEY_ID,
+  createAudioInputSections,
+} from '@/data/mock-audio-input-survey';
 
 export type SurveyQuestionInputKind = 'radio' | 'checkbox';
 
@@ -667,6 +671,14 @@ export function getSurveyDetail(survey: Survey): SurveyDetail {
       survey,
       editorTitle: getSurveyEditorTitle(survey),
       sections: createRecaptchaV3Sections(),
+    };
+  }
+
+  if (survey.id === AUDIO_INPUT_SURVEY_ID) {
+    return {
+      survey,
+      editorTitle: getSurveyEditorTitle(survey),
+      sections: createAudioInputSections(),
     };
   }
 

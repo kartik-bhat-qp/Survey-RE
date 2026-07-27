@@ -14,6 +14,9 @@ export function SingleRowTextQuestionPreview({
       <div className={styles.inputRow}>
         <span className={styles.placeholder}>{placeholder}</span>
         <span className={styles.dottedLine} />
+        <span className={styles.staticMic} aria-hidden>
+          <span className="wm-mic" />
+        </span>
       </div>
     </div>
   );

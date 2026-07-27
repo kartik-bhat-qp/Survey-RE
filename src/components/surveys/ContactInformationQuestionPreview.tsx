@@ -18,7 +18,12 @@ export function ContactInformationQuestionPreview({
             <span className={styles.required}>*</span>
             <span className={styles.fieldLabel}>{plainTextFromRichValue(field.label)}</span>
           </div>
-          <div className={styles.fieldLine} />
+          <div className={styles.fieldInputRow}>
+            <div className={styles.fieldLine} />
+            <span className={styles.staticMic} aria-hidden>
+              <span className="wm-mic" />
+            </span>
+          </div>
         </li>
       ))}
     </ul>

@@ -17,6 +17,11 @@ export function CommentBoxQuestionPreview({
         <div className={styles.ruledLine} />
         <div className={styles.ruledLine} />
       </div>
+      <div className={styles.footer}>
+        <span className={styles.staticMic} aria-hidden>
+          <span className="wm-mic" />
+        </span>
+      </div>
     </div>
   );
 }

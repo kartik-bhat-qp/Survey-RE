@@ -7,6 +7,7 @@ import {
   type EmailToolbarAction,
 } from '@/data/mock-survey-distribute';
 import { ComposeHelpMeWriteTrigger } from '@/components/surveys/ComposeHelpMeWrite';
+import { AudioInputButton } from '@/components/ui/AudioInputButton';
 import styles from './ComposeEmailToolbar.module.css';
 
 const WuTooltip = dynamic(
@@ -19,6 +20,8 @@ interface ComposeEmailToolbarProps {
   helpMeWriteDisabled?: boolean;
   onHelpMeWriteToggle: () => void;
   onAction: (label: string) => void;
+  onMicTranscript?: (text: string) => void;
+  micDisabled?: boolean;
 }
 
 function ToolbarActionButton({
@@ -80,6 +83,8 @@ export function ComposeEmailToolbar({
   helpMeWriteDisabled = false,
   onHelpMeWriteToggle,
   onAction,
+  onMicTranscript,
+  micDisabled = false,
 }: ComposeEmailToolbarProps) {
   return (
     <div className={styles.toolbar} role="toolbar" aria-label="Email formatting">
@@ -90,6 +95,12 @@ export function ComposeEmailToolbar({
           onClick={onHelpMeWriteToggle}
         />
       </WuTooltip>
+
+      {onMicTranscript ? (
+        <WuTooltip content="Dictate email body" position="top">
+          <AudioInputButton size="sm" onTranscript={onMicTranscript} disabled={micDisabled} />
+        </WuTooltip>
+      ) : null}
 
       <span className={styles.toolbarDivider} aria-hidden />
 

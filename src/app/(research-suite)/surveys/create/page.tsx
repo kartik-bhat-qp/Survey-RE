@@ -8,6 +8,7 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { SurveyCreationAiThinkingOverlay } from '@/components/surveys/SurveyCreationAiThinkingOverlay';
 import { SurveyCreationTemplatePicker } from '@/components/surveys/SurveyCreationTemplatePicker';
 import { SurveyCreationTracerTitle } from '@/components/surveys/SurveyCreationTracerTitle';
+import { AudioInputButton } from '@/components/ui/AudioInputButton';
 import { NEW_AI_SURVEY_ID } from '@/data/ai-survey-draft';
 import { runAiSurveyCreationFlow } from '@/lib/request-ai-survey-generation';
 import {
@@ -351,6 +352,12 @@ export default function NewSurveyCreationFlowPage() {
                       ))}
                     </WuMenu>
                   </div>
+                  <AudioInputButton
+                    disabled={isAiDrafting}
+                    onTranscript={(text) =>
+                      setPrompt((prev) => (prev ? `${prev} ${text}` : text))
+                    }
+                  />
                   <button
                     type="button"
                     className={styles.submitBtn}

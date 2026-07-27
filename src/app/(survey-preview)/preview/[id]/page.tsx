@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { CaptchaSurveyQuestionPreview } from '@/components/surveys/CaptchaSurveyQuestionPreview';
 import { MultiPointCardsCarouselPreview } from '@/components/surveys/MultiPointCardsCarouselPreview';
+import { OpenEndedQuestionPreview } from '@/components/surveys/OpenEndedQuestionPreview';
 import { SelectManyQuestionPreview } from '@/components/surveys/SelectManyQuestionPreview';
 import { SelectOneQuestionPreview } from '@/components/surveys/SelectOneQuestionPreview';
 import { SurveyPreviewAnswerProvider } from '@/components/surveys/SurveyPreviewAnswerContext';
@@ -13,14 +14,17 @@ import { DEFAULT_MULTI_POINT_SETTINGS } from '@/data/mock-multi-point-settings';
 import {
   captchaPreviewStorageKey,
   multiPointPreviewStorageKey,
+  openEndedPreviewStorageKey,
   readCaptchaQuestionPreviewSession,
   readMultiPointQuestionPreviewSession,
+  readOpenEndedQuestionPreviewSession,
   readSelectManyQuestionPreviewSession,
   readSelectOneQuestionPreviewSession,
   selectManyPreviewStorageKey,
   selectOnePreviewStorageKey,
   type CaptchaQuestionPreviewSession,
   type MultiPointQuestionPreviewSession,
+  type OpenEndedQuestionPreviewSession,
   type SelectManyQuestionPreviewSession,
   type SelectOneQuestionPreviewSession,
   type SurveyQuestionPreviewKind,
@@ -40,6 +44,8 @@ export default function SurveyQuestionPreviewPage() {
     useState<SelectOneQuestionPreviewSession | null>(null);
   const [captchaPayload, setCaptchaPayload] =
     useState<CaptchaQuestionPreviewSession | null>(null);
+  const [openEndedPayload, setOpenEndedPayload] =
+    useState<OpenEndedQuestionPreviewSession | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -54,21 +60,31 @@ export default function SurveyQuestionPreviewPage() {
         setSelectOnePayload(null);
         setMultiPointPayload(null);
         setCaptchaPayload(null);
+        setOpenEndedPayload(null);
       } else if (previewKind === 'select-one') {
         setSelectOnePayload(readSelectOneQuestionPreviewSession(surveyId));
         setSelectManyPayload(null);
         setMultiPointPayload(null);
         setCaptchaPayload(null);
+        setOpenEndedPayload(null);
       } else if (previewKind === 'captcha') {
         setCaptchaPayload(readCaptchaQuestionPreviewSession(surveyId));
         setSelectManyPayload(null);
         setSelectOnePayload(null);
         setMultiPointPayload(null);
+        setOpenEndedPayload(null);
+      } else if (previewKind === 'open-ended') {
+        setOpenEndedPayload(readOpenEndedQuestionPreviewSession(surveyId));
+        setSelectManyPayload(null);
+        setSelectOnePayload(null);
+        setMultiPointPayload(null);
+        setCaptchaPayload(null);
       } else {
         setMultiPointPayload(readMultiPointQuestionPreviewSession(surveyId));
         setSelectManyPayload(null);
         setSelectOnePayload(null);
         setCaptchaPayload(null);
+        setOpenEndedPayload(null);
       }
       setReady(true);
     }
@@ -83,7 +99,9 @@ export default function SurveyQuestionPreviewPage() {
             ? selectOnePreviewStorageKey(surveyId)
             : previewKind === 'captcha'
               ? captchaPreviewStorageKey(surveyId)
-              : multiPointPreviewStorageKey(surveyId);
+              : previewKind === 'open-ended'
+                ? openEndedPreviewStorageKey(surveyId)
+                : multiPointPreviewStorageKey(surveyId);
       if (
         event.key === key ||
         event.key?.startsWith(`survey-deepdive-live-${surveyId}-`)
@@ -212,6 +230,29 @@ export default function SurveyQuestionPreviewPage() {
             onClose={() => window.close()}
           />
         </SurveyPreviewAnswerProvider>
+      </SurveyQuestionPreviewChrome>
+    );
+  }
+
+  if (previewKind === 'open-ended') {
+    if (!openEndedPayload) {
+      return (
+        <div className={styles.emptyWrap}>
+          <EmptyState
+            icon="wm-mic"
+            title="No preview available"
+            description="Open preview from the question menu in the survey editor."
+          />
+        </div>
+      );
+    }
+
+    return (
+      <SurveyQuestionPreviewChrome onClose={() => window.close()}>
+        <OpenEndedQuestionPreview
+          session={openEndedPayload}
+          onClose={() => window.close()}
+        />
       </SurveyQuestionPreviewChrome>
     );
   }

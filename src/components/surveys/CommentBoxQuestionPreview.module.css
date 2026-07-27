@@ -28,3 +28,23 @@
 .ruledLine:last-child {
   border-bottom: none;
 }
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+.staticMic {
+  align-items: center;
+  color: #cbd5e1;
+  cursor: default;
+  display: inline-flex;
+  padding: 0.25rem;
+  pointer-events: none;
+}
+
+.staticMic :global(.wm-mic) {
+  font-size: 1rem;
+  line-height: 1;
+}

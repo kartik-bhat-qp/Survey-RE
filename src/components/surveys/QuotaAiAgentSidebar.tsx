@@ -10,6 +10,7 @@ import {
   type QuotaAiGenerationResult,
 } from '@/data/mock-quota-ai-agent';
 import { QuotaAiThinkingOverlay } from '@/components/surveys/QuotaAiThinkingOverlay';
+import { AudioInputButton } from '@/components/ui/AudioInputButton';
 import styles from './QuotaAiAgentSidebar.module.css';
 
 interface QuotaAiAgentSidebarProps {
@@ -177,6 +178,13 @@ export function QuotaAiAgentSidebar({
             >
               <span className="wm-attach-file" aria-hidden />
             </button>
+            <AudioInputButton
+              size="sm"
+              disabled={isGenerating}
+              onTranscript={(text) =>
+                setPrompt((prev) => (prev ? `${prev} ${text}` : text))
+              }
+            />
             <textarea
               ref={inputRef}
               className={styles.input}

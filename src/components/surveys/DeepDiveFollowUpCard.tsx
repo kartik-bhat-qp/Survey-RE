@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { formatDeepDiveProgressStep } from '@/data/mock-deepdive-follow-ups';
 import type { DeepDiveFollowUpReply } from '@/data/mock-deepdive-follow-ups';
+import { AudioInputButton } from '@/components/ui/AudioInputButton';
 import styles from './DeepDiveFollowUpCard.module.css';
 
 interface DeepDiveFollowUpCardActiveProps {
@@ -83,16 +84,23 @@ export function DeepDiveFollowUpCardActive({
         {questionText}
       </p>
 
-      <form className={styles.formRow} onSubmit={handleSubmit}>
+      <div className={styles.textareaWrap}>
         <textarea
           ref={inputRef}
           className={styles.textInput}
           rows={2}
           value={draft}
-          placeholder="Type your answer"
+          placeholder="Type your answer or use the mic"
           aria-label="Follow-up answer"
           onChange={(event) => setDraft(event.target.value)}
         />
+        <AudioInputButton
+          size="sm"
+          onTranscript={(text) => setDraft((prev) => (prev ? `${prev} ${text}` : text))}
+          className={styles.inlineAudioBtn}
+        />
+      </div>
+      <form className={styles.formRow} onSubmit={handleSubmit}>
         <button type="submit" className={styles.submitBtn} disabled={!draft.trim()}>
           {submitLabel}
         </button>

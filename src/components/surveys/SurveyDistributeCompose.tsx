@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { WuLoaderWrapper } from '@/components/ui/WuLoaderWrapper';
+import { AudioInputButton } from '@/components/ui/AudioInputButton';
 import { useParams } from 'next/navigation';
 import { ComposeEmailToolbar } from '@/components/surveys/ComposeEmailToolbar';
 import { ComposeHelpMeWrite } from '@/components/surveys/ComposeHelpMeWrite';
@@ -298,8 +299,12 @@ export function SurveyEmailComposePanel({
                     <ComposeEmailToolbar
                       helpMeWriteOpen={helpMeWriteOpen}
                       helpMeWriteDisabled={isWritingWithAi}
+                      micDisabled={isWritingWithAi}
                       onHelpMeWriteToggle={() => setHelpMeWriteOpen((open) => !open)}
                       onAction={handleToolbarAction}
+                      onMicTranscript={(text) =>
+                        setBody((prev) => (prev ? `${prev}\n\n${text}` : text))
+                      }
                     />
                   </div>
                 </>
@@ -367,6 +372,14 @@ export function SurveyEmailComposePanel({
                           </button>
                         </WuTooltip>
                       ))}
+                      <WuTooltip content="Dictate SMS message" position="top">
+                        <AudioInputButton
+                          size="sm"
+                          onTranscript={(text) =>
+                            setSmsBody((prev) => (prev ? `${prev} ${text}` : text))
+                          }
+                        />
+                      </WuTooltip>
                     </div>
                     <div
                       id="sms-segment-counter"

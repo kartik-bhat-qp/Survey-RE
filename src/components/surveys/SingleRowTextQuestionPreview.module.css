@@ -5,7 +5,7 @@
 }
 
 .inputRow {
-  align-items: baseline;
+  align-items: center;
   display: flex;
   gap: 0.5rem;
   width: 100%;
@@ -24,4 +24,19 @@
   flex: 1;
   min-height: 1.25rem;
   min-width: 0;
+}
+
+.staticMic {
+  align-items: center;
+  color: #cbd5e1;
+  cursor: default;
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 0.25rem;
+  pointer-events: none;
+}
+
+.staticMic :global(.wm-mic) {
+  font-size: 1rem;
+  line-height: 1;
 }

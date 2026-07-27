@@ -12,7 +12,12 @@ export function EmailAddressQuestionPreview({
   return (
     <div className={styles.root} aria-hidden>
       <p className={styles.fieldLabel}>{fieldLabel}</p>
-      <div className={styles.dottedLine} />
+      <div className={styles.inputRow}>
+        <div className={styles.dottedLine} />
+        <span className={styles.staticMic} aria-hidden>
+          <span className="wm-mic" />
+        </span>
+      </div>
     </div>
   );
 }

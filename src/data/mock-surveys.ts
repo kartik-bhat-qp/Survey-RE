@@ -190,8 +190,18 @@ export const MOCK_SURVEYS: Survey[] = [
     status: 'Active - Draft',
     responses: 0,
   },
+  {
+    id: 18,
+    name: 'Audio Input',
+    folderId: 'all',
+    createdAt: '2026-07-24T08:00:00Z',
+    modifiedAt: '2026-07-24T08:00:00Z',
+    status: 'Active - Draft',
+    responses: 0,
+  },
 ];
 
 export const SURVEYS_PAGE_SIZE = 100;
 
 export const BI_LITE_DEMO_SURVEY_ID = 17;
+export const AUDIO_INPUT_SURVEY_ID_REF = 18;

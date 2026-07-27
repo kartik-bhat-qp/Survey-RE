@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { SurveyCreationAiThinkingOverlay } from '@/components/surveys/SurveyCreationAiThinkingOverlay';
 import { SurveyCreationTemplatePicker } from '@/components/surveys/SurveyCreationTemplatePicker';
+import { AudioInputButton } from '@/components/ui/AudioInputButton';
 import { NEW_AI_SURVEY_ID } from '@/data/ai-survey-draft';
 import {
   createSurveyBriefFile,
@@ -299,6 +300,14 @@ export function SurveysAiFirstHero() {
                   >
                     <span className="wm-attach-file" aria-hidden />
                   </button>
+                  <AudioInputButton
+                    size="sm"
+                    disabled={isAiDrafting}
+                    onTranscript={(text) =>
+                      setPrompt((prev) => (prev ? `${prev} ${text}` : text))
+                    }
+                    className={styles.attachBtn}
+                  />
                   <button
                     type="submit"
                     className={styles.submitBtn}
