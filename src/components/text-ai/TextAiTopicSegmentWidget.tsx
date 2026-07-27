@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { StandardLoader } from '@/components/ui/StandardLoader';
+import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import { TextAiSentimentResponsesModal } from '@/components/text-ai/TextAiSentimentResponsesModal';
 import {
@@ -158,13 +159,19 @@ function TopicSegmentRow({
                   aria-hidden
                 />
               </span>
-              <span className={styles.topicLabel}>{row.topic}</span>
+              <span className={styles.topicLabel}>
+                <span>{row.topic}</span>
+                {row.emerging ? <TextAiEmergingBadge /> : null}
+              </span>
             </span>
           </button>
         ) : (
           <span className={styles.topicRowInner}>
             <span className={styles.topicLeading} aria-hidden />
-            <span className={isSubtopic ? styles.subtopicLabel : styles.topicLabel}>{row.topic}</span>
+            <span className={isSubtopic ? styles.subtopicLabel : styles.topicLabel}>
+              <span>{row.topic}</span>
+              {row.emerging ? <TextAiEmergingBadge /> : null}
+            </span>
           </span>
         )}
       </td>
@@ -359,7 +366,7 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
 
   return (
     <article className={styles.card}>
-      <header className={styles.cardHeader}>
+      <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
         <div className={styles.cardHeaderMain}>
           <h2 className={styles.cardTitle}>{widget.question}</h2>
           <button

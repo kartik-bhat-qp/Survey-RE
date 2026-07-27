@@ -9,6 +9,7 @@
   font-size: 14px;
   font-weight: 400;
   line-height: 24px;
+  overflow: hidden;
   min-width: 0;
 }
 
@@ -71,7 +72,9 @@
 
 .tableWrap {
   -webkit-overflow-scrolling: touch;
-  overflow-x: auto;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .table {
@@ -177,10 +180,14 @@
 }
 
 .topicLabel {
+  align-items: center;
   color: #545e6b;
+  display: flex;
   flex: 1;
+  flex-wrap: wrap;
   font-size: 14px;
   font-weight: 500;
+  gap: 0.4rem;
   line-height: 24px;
   min-width: 0;
 }
@@ -308,10 +315,14 @@
 }
 
 .subtopicLabel {
+  align-items: center;
   color: #545e6b;
+  display: flex;
   flex: 1;
+  flex-wrap: wrap;
   font-size: 14px;
   font-weight: 400;
+  gap: 0.4rem;
   line-height: 24px;
   min-width: 0;
 }

@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { Title as DialogTitle } from '@radix-ui/react-dialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
+import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
 import { getTextAiDashboardById } from '@/data/get-text-ai-dashboard-by-id';
 import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
 import { MOCK_TEXT_AI_ANALYSIS_QUESTIONS } from '@/data/mock-text-ai-questions';
@@ -518,15 +519,6 @@ function getCoverageCounts(
   return counts;
 }
 
-function EmergingBadge() {
-  return (
-    <span className={styles.emergingBadge}>
-      <span className={styles.emergingDot} aria-hidden />
-      Emerging
-    </span>
-  );
-}
-
 function ThemeGroupCard({
   group,
   collapsed,
@@ -558,7 +550,7 @@ function ThemeGroupCard({
             aria-hidden
           />
           <span className={styles.themeGroupName}>{group.name}</span>
-          {group.emerging && <EmergingBadge />}
+          {group.emerging && <TextAiEmergingBadge />}
         </button>
         <div className={styles.themeGroupMeta}>
           <span className={styles.subThemeCount}>
@@ -584,7 +576,7 @@ function ThemeGroupCard({
             <div className={styles.subTheme} key={subTheme.id}>
               <div className={styles.subThemeMain}>
                 <span title={subTheme.description}>{subTheme.name}</span>
-                {subTheme.emerging && <EmergingBadge />}
+                {subTheme.emerging && <TextAiEmergingBadge />}
               </div>
               <div className={styles.subThemeMeta}>
                 <span className={styles.subThemePercentage}>{subTheme.percentage}</span>
@@ -696,6 +688,7 @@ export default function TextAiThemeConfigurationPage({
               ];
             return {
               ...subTheme,
+              emerging: Boolean(group.emerging || subTheme.emerging),
               description:
                 edit?.description ??
                 subTheme.description ??

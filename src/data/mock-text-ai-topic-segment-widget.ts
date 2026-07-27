@@ -38,6 +38,7 @@ export const GENDER_COLUMN_LABELS: Record<TextAiGenderKey, string> = {
 export const TEXT_AI_SIGNIFICANCE_MIN_COUNT = 30;
 
 export interface TextAiTopicSegmentRow {
+  emerging?: boolean;
   id: string;
   topic: string;
   overall: TextAiTopicSegmentCell;
@@ -182,19 +183,26 @@ export function deriveOtherGenderCell(female: TextAiTopicSegmentCell): TextAiTop
   return { count, percentage };
 }
 
-function enrichTopicSegmentRow(row: TextAiTopicSegmentRowInput): TextAiTopicSegmentRow {
+function enrichTopicSegmentRow(
+  row: TextAiTopicSegmentRowInput,
+  parentEmerging = false
+): TextAiTopicSegmentRow {
   const otherGender = row.otherGender ?? deriveOtherGenderCell(row.female);
+  const emerging = Boolean(parentEmerging || row.emerging);
   return {
     ...row,
+    emerging,
     otherGender,
     genderChiSquare:
       row.genderChiSquare ?? deriveGenderChiSquare({ ...row, otherGender }),
-    subtopics: row.subtopics?.map(enrichTopicSegmentRow),
+    subtopics: row.subtopics?.map((subtopic) =>
+      enrichTopicSegmentRow(subtopic, emerging)
+    ),
   };
 }
 
 function enrichTopicSegmentRows(rows: TextAiTopicSegmentRowInput[]): TextAiTopicSegmentRow[] {
-  return rows.map(enrichTopicSegmentRow);
+  return rows.map((row) => enrichTopicSegmentRow(row));
 }
 
 export interface TextAiTopicSegmentWidget {
@@ -272,6 +280,7 @@ export const FIGHT_NIGHT_AUDIENCE_SUBTOPICS: TextAiTopicSegmentRowInput[] = [
 export const FIGHT_NIGHT_TICKET_DEMAND_SUBTOPICS: TextAiTopicSegmentRowInput[] = [
   {
     id: 'early-bird-demand',
+    emerging: true,
     topic: 'Early Bird Ticket Interest',
     overall: { count: 112, percentage: 3.3 },
     male: { count: 78, percentage: 3.5 },
@@ -468,6 +477,7 @@ export const ATTENDANCE_LEGITIMACY_SUBTOPICS: TextAiTopicSegmentRowInput[] = [
 
 export const COMBAT_SPORTS_TOPIC_SEGMENT_ROWS: TextAiTopicSegmentRowInput[] = [
   {
+    emerging: true,
     id: 'fight-audience',
     topic: 'Fight Night Audience Segmentation',
     overall: { count: 445, percentage: 13.1 },

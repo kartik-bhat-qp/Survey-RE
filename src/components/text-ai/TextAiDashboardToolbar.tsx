@@ -13,9 +13,11 @@ import {
 import {
   TEXT_AI_PENDING_NEW_COMMENTS,
   TEXT_AI_SUBTHEME_FILTER_OPTIONS,
+  TEXT_AI_THEME_STATUS_FILTER_OPTIONS,
   TEXT_AI_THEME_FILTER_OPTIONS,
   type TextAiFilterOption,
   type TextAiFilterSelectOption,
+  type TextAiThemeStatusFilter,
 } from '@/data/mock-text-ai-widget-data';
 import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
 import modalStyles from '@/components/dashboards/CreateDashboardModal.module.css';
@@ -40,6 +42,8 @@ interface TextAiDashboardToolbarProps {
   questions: TextAiDashboardQuestion[];
   selectedQuestion: TextAiDashboardQuestion;
   onQuestionChange: (question: TextAiDashboardQuestion) => void;
+  themeStatus: TextAiThemeStatusFilter;
+  onThemeStatusChange: (status: TextAiThemeStatusFilter) => void;
   segmentFilters?: TextAiSegmentFilterState;
   onSegmentFiltersChange?: (filters: TextAiSegmentFilterState) => void;
 }
@@ -53,6 +57,8 @@ export function TextAiDashboardToolbar({
   questions,
   selectedQuestion,
   onQuestionChange,
+  themeStatus,
+  onThemeStatusChange,
   segmentFilters,
   onSegmentFiltersChange,
 }: TextAiDashboardToolbarProps) {
@@ -68,6 +74,10 @@ export function TextAiDashboardToolbar({
   const [draftSegmentFilters, setDraftSegmentFilters] = useState<TextAiSegmentFilterState>(
     () => segmentFilters ?? createDefaultSegmentFilterState()
   );
+  const selectedThemeStatus =
+    TEXT_AI_THEME_STATUS_FILTER_OPTIONS.find(
+      (option) => option.value === themeStatus
+    ) ?? TEXT_AI_THEME_STATUS_FILTER_OPTIONS[0];
 
   function handleNameBlur(): void {
     const trimmed = nameState.trim();
@@ -271,6 +281,21 @@ export function TextAiDashboardToolbar({
                 variant="outlined"
                 className={styles.filterSelect}
                 aria-label="Sub-themes"
+              />
+            </div>
+            <div className={styles.inlineFilter}>
+              <span className={styles.filterLabel}>Theme status</span>
+              <WuSelect<TextAiFilterOption>
+                data={TEXT_AI_THEME_STATUS_FILTER_OPTIONS}
+                accessorKey={{ value: 'value', label: 'label' }}
+                value={selectedThemeStatus}
+                onSelect={(option) => {
+                  if (!option || Array.isArray(option)) return;
+                  onThemeStatusChange(option.value as TextAiThemeStatusFilter);
+                }}
+                variant="outlined"
+                className={`${styles.filterSelect} ${styles.statusSelect}`}
+                aria-label="Theme status"
               />
             </div>
           </div>

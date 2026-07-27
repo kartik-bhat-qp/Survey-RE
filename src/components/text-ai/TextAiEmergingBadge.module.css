@@ -1,0 +1,23 @@
+.badge {
+  align-items: center;
+  background: #f4f0ff;
+  border: 1px solid #ded4ff;
+  border-radius: 999px;
+  color: #6941c6;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.625rem;
+  font-weight: 600;
+  gap: 0.3rem;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  padding: 0.25rem 0.45rem;
+}
+
+.dot {
+  background: #7c5ce7;
+  border-radius: 50%;
+  height: 0.32rem;
+  width: 0.32rem;
+}

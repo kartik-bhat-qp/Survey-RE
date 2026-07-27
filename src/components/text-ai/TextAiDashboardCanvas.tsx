@@ -1,9 +1,19 @@
 'use client';
 
+import { useCallback, useState } from 'react';
+import type { ReactNode } from 'react';
+import ReactGridLayout, {
+  WidthProvider,
+  type Layout,
+  type ResizeHandleAxis,
+} from 'react-grid-layout/legacy';
 import { TextAiAnalysisWidgetCard } from '@/components/text-ai/TextAiAnalysisWidget';
+import { TextAiSubthemeStackbarWidget } from '@/components/text-ai/TextAiSubthemeStackbarWidget';
 import { TextAiSummaryWidgetCard } from '@/components/text-ai/TextAiSummaryWidget';
+import { TextAiThemeStackbarWidget } from '@/components/text-ai/TextAiThemeStackbarWidget';
 import { TextAiTopicSegmentWidgetCard } from '@/components/text-ai/TextAiTopicSegmentWidget';
 import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import {
   getTextAiSummaryWidgets,
   type TextAiSummarySection,
@@ -19,13 +29,87 @@ import {
 import {
   getTextAiDashboardWidgets,
   type TextAiAnalysisWidget,
+  type TextAiThemeStatusFilter,
 } from '@/data/mock-text-ai-widget-data';
 import styles from './TextAiDashboardCanvas.module.css';
+
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+
+const GridLayoutWithWidth = WidthProvider(ReactGridLayout);
+
+const TEXT_AI_GRID_COLS = 12;
+const TEXT_AI_GRID_ROW_HEIGHT = 40;
+const TEXT_AI_GRID_MARGIN: [number, number] = [12, 12];
+const TEXT_AI_GRID_GUIDE_CELL_COUNT = TEXT_AI_GRID_COLS * 60;
+const TEXT_AI_WIDGET_DRAG_HANDLE_CLASS = 'text-ai-widget-drag-handle';
+
+type TextAiCanvasWidgetKind =
+  | 'topic-segment'
+  | 'subtheme-stackbar'
+  | 'theme-stackbar'
+  | 'analysis'
+  | 'summary';
+
+interface TextAiCanvasWidget {
+  id: string;
+  kind: TextAiCanvasWidgetKind;
+  content: ReactNode;
+}
 
 interface TextAiDashboardCanvasProps {
   dashboardId: number;
   selectedQuestion: TextAiDashboardQuestion;
   questionIndex: number;
+  themeStatus: TextAiThemeStatusFilter;
+}
+
+const INITIAL_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
+  'topic-segment': 9,
+  'subtheme-stackbar': 8,
+  'theme-stackbar': 11,
+  analysis: 25,
+  summary: 10,
+};
+
+const MIN_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
+  'topic-segment': 5,
+  'subtheme-stackbar': 6,
+  'theme-stackbar': 6,
+  analysis: 6,
+  summary: 6,
+};
+
+function createInitialLayout(widgets: TextAiCanvasWidget[]): Layout {
+  let y = 0;
+
+  return widgets.map((widget) => {
+    const height = INITIAL_WIDGET_HEIGHTS[widget.kind];
+    const item = {
+      i: widget.id,
+      x: 0,
+      y,
+      w: TEXT_AI_GRID_COLS,
+      h: height,
+      minW: 3,
+      minH: MIN_WIDGET_HEIGHTS[widget.kind],
+    };
+    y += height;
+    return item;
+  });
+}
+
+function renderResizeHandle(
+  _axis: ResizeHandleAxis,
+  ref: React.Ref<HTMLSpanElement>
+): React.ReactElement {
+  return (
+    <span
+      ref={ref}
+      className={`react-resizable-handle react-resizable-handle-se ${styles.resizeHandle}`}
+      aria-label="Resize widget"
+    />
+  );
 }
 
 function getQuestionFactor(questionIndex: number): number {
@@ -163,11 +247,53 @@ function adaptAnalysisWidgets(
   ];
 }
 
+function filterTopicRowsByStatus(
+  rows: TextAiTopicSegmentRow[],
+  status: TextAiThemeStatusFilter
+): TextAiTopicSegmentRow[] {
+  if (status === 'all') return rows;
+
+  return rows.flatMap((row) => {
+    const subtopics = row.subtopics
+      ? filterTopicRowsByStatus(row.subtopics, status)
+      : undefined;
+    const rowMatches =
+      status === 'emerging' ? Boolean(row.emerging) : !row.emerging;
+
+    if (!rowMatches && !subtopics?.length) return [];
+
+    return [
+      {
+        ...row,
+        subtopics,
+      },
+    ];
+  });
+}
+
+function filterAnalysisWidgetsByStatus(
+  widgets: TextAiAnalysisWidget[],
+  status: TextAiThemeStatusFilter
+): TextAiAnalysisWidget[] {
+  if (status === 'all') return widgets;
+
+  return widgets.map((widget) => ({
+    ...widget,
+    rows: widget.rows.filter((row) => {
+      const emerging = Boolean(row.topicEmerging || row.subtopicEmerging);
+      return status === 'emerging' ? emerging : !emerging;
+    }),
+  }));
+}
+
 export function TextAiDashboardCanvas({
   dashboardId,
   selectedQuestion,
   questionIndex,
+  themeStatus,
 }: TextAiDashboardCanvasProps) {
+  const isMobile = useIsMobile();
+  const [isPositioning, setIsPositioning] = useState(false);
   const questionFactor = getQuestionFactor(questionIndex);
   const summaryWidgets = adaptSummaryWidgets(
     getTextAiSummaryWidgets(dashboardId),
@@ -185,24 +311,145 @@ export function TextAiDashboardCanvas({
     selectedQuestion,
     questionIndex
   );
-
-  return (
-    <div className={styles.canvas}>
-      {topicSegmentWidgets.map((widget) => (
+  const visibleTopicSegmentWidgets = topicSegmentWidgets.map((widget) => ({
+    ...widget,
+    rows: filterTopicRowsByStatus(widget.rows, themeStatus),
+  }));
+  const visibleAnalysisWidgets = filterAnalysisWidgetsByStatus(
+    analysisWidgets,
+    themeStatus
+  );
+  const canvasWidgets: TextAiCanvasWidget[] = [
+    ...visibleTopicSegmentWidgets.map((widget) => ({
+      id: `topic-segment-${widget.id}`,
+      kind: 'topic-segment' as const,
+      content: (
         <TextAiTopicSegmentWidgetCard
           key={`${widget.id}-${selectedQuestion.id}`}
           widget={widget}
         />
-      ))}
-      {analysisWidgets.map((widget) => (
-        <TextAiAnalysisWidgetCard key={widget.id} widget={widget} />
-      ))}
-      {summaryWidgets.map((widget) => (
+      ),
+    })),
+    {
+      id: 'subtheme-stackbar',
+      kind: 'subtheme-stackbar',
+      content: (
+        <TextAiSubthemeStackbarWidget
+          question={selectedQuestion.text}
+          themeStatus={themeStatus}
+        />
+      ),
+    },
+    {
+      id: 'theme-stackbar',
+      kind: 'theme-stackbar',
+      content: (
+        <TextAiThemeStackbarWidget
+          question={selectedQuestion.text}
+          themeStatus={themeStatus}
+        />
+      ),
+    },
+    ...visibleAnalysisWidgets.map((widget, index) => ({
+      id: `analysis-${index}`,
+      kind: 'analysis' as const,
+      content: <TextAiAnalysisWidgetCard key={widget.id} widget={widget} />,
+    })),
+    ...summaryWidgets.map((widget) => ({
+      id: `summary-${widget.id}`,
+      kind: 'summary' as const,
+      content: (
         <TextAiSummaryWidgetCard
           key={`${widget.id}-${selectedQuestion.id}`}
           widget={widget}
         />
-      ))}
+      ),
+    })),
+  ];
+  const [desktopLayout, setDesktopLayout] = useState<Layout>(() =>
+    createInitialLayout(canvasWidgets)
+  );
+  const widgetById = new Map(canvasWidgets.map((widget) => [widget.id, widget]));
+
+  const notifyWidgetResize = useCallback(() => {
+    window.dispatchEvent(new Event('resize'));
+  }, []);
+
+  const handleLayoutChange = useCallback((nextLayout: Layout) => {
+    setDesktopLayout(nextLayout.map((item) => ({ ...item })));
+  }, []);
+
+  function startPositioning(): void {
+    setIsPositioning(true);
+  }
+
+  function stopPositioning(): void {
+    setIsPositioning(false);
+    notifyWidgetResize();
+  }
+
+  if (isMobile) {
+    return (
+      <div className={styles.canvas}>
+        <div className={styles.mobileWidgetStack}>
+          {canvasWidgets.map((widget) => (
+            <div className={styles.mobileWidget} key={widget.id}>
+              {widget.content}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`${styles.canvas} ${isPositioning ? styles.canvasPositioning : ''}`}
+    >
+      <div className={styles.layoutStage}>
+        <div className={styles.gridGuide} aria-hidden>
+          {Array.from({ length: TEXT_AI_GRID_GUIDE_CELL_COUNT }, (_, index) => (
+            <span key={index} />
+          ))}
+        </div>
+        <GridLayoutWithWidth
+          className={styles.gridLayout}
+          layout={desktopLayout}
+          cols={TEXT_AI_GRID_COLS}
+          rowHeight={TEXT_AI_GRID_ROW_HEIGHT}
+          margin={TEXT_AI_GRID_MARGIN}
+          containerPadding={[0, 0]}
+          compactType="vertical"
+          isBounded
+          isDraggable
+          isResizable
+          resizeHandles={['se']}
+          resizeHandle={renderResizeHandle}
+          draggableHandle={`.${TEXT_AI_WIDGET_DRAG_HANDLE_CLASS}`}
+          draggableCancel="button, input, textarea, select, [role='button'], [role='combobox']"
+          onDragStart={startPositioning}
+          onDragStop={stopPositioning}
+          onResizeStart={startPositioning}
+          onResize={notifyWidgetResize}
+          onResizeStop={stopPositioning}
+          onLayoutChange={handleLayoutChange}
+        >
+          {desktopLayout.map((item) => {
+            const widget = widgetById.get(item.i);
+            if (!widget) return null;
+
+            return (
+              <div
+                key={widget.id}
+                className={styles.gridItem}
+                data-text-ai-widget={widget.id}
+              >
+                <div className={styles.widgetSurface}>{widget.content}</div>
+              </div>
+            );
+          })}
+        </GridLayoutWithWidth>
+      </div>
     </div>
   );
 }

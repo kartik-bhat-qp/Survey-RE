@@ -42,7 +42,7 @@ export function TextAiSummaryWidgetCard({ widget }: TextAiSummaryWidgetCardProps
 
   return (
     <article className={styles.card}>
-      <header className={styles.cardHeader}>
+      <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
         <div className={styles.cardHeaderMain}>
           <h2 className={styles.cardTitle}>{widget.question}</h2>
           <div className={styles.summaryTypeControl}>

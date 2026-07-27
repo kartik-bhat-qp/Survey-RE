@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { StandardLoader } from '@/components/ui/StandardLoader';
+import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import type { TextAiAnalysisRow, TextAiAnalysisWidget } from '@/data/mock-text-ai-widget-data';
 import styles from './TextAiAnalysisWidget.module.css';
@@ -85,7 +86,12 @@ export function TextAiAnalysisWidgetCard({ widget }: TextAiAnalysisWidgetProps) 
       accessorKey: 'topic',
       header: 'Topics',
       enableSorting: true,
-      cell: ({ row }) => <span className={styles.topicCell}>{row.original.topic}</span>,
+      cell: ({ row }) => (
+        <span className={styles.topicCell}>
+          <span>{row.original.topic}</span>
+          {row.original.topicEmerging ? <TextAiEmergingBadge /> : null}
+        </span>
+      ),
     },
     {
       accessorKey: 'subtopic',
@@ -94,6 +100,7 @@ export function TextAiAnalysisWidgetCard({ widget }: TextAiAnalysisWidgetProps) 
       cell: ({ row }) => (
         <div className={styles.subtopicCell}>
           <SubtopicPill label={row.original.subtopic} tone={row.original.subtopicTone} />
+          {row.original.subtopicEmerging ? <TextAiEmergingBadge /> : null}
         </div>
       ),
     },
@@ -123,7 +130,7 @@ export function TextAiAnalysisWidgetCard({ widget }: TextAiAnalysisWidgetProps) 
 
   return (
     <article className={styles.card}>
-      <header className={styles.cardHeader}>
+      <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
         <h2 className={styles.cardTitle}>{widget.question}</h2>
         <WuButton
           variant="iconOnly"

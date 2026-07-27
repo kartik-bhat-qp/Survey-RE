@@ -19,6 +19,7 @@ import {
 } from '@/data/mock-text-ai-segment-filters';
 import { MOCK_TEXT_AI_ANALYSIS_QUESTIONS } from '@/data/mock-text-ai-questions';
 import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
+import type { TextAiThemeStatusFilter } from '@/data/mock-text-ai-widget-data';
 
 function resolveDashboardQuestions(
   dashboardId: number,
@@ -48,6 +49,8 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     () => dashboard?.segmentFilters ?? createDefaultSegmentFilterState()
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [themeStatus, setThemeStatus] =
+    useState<TextAiThemeStatusFilter>('all');
 
   if (!dashboard) {
     if (!wick) {
@@ -101,6 +104,8 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         questions={availableQuestions}
         selectedQuestion={selectedQuestion}
         onQuestionChange={setSelectedQuestion}
+        themeStatus={themeStatus}
+        onThemeStatusChange={setThemeStatus}
         segmentFilters={segmentFilters}
         onSegmentFiltersChange={handleSegmentFiltersChange}
       />
@@ -110,6 +115,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         questionIndex={availableQuestions.findIndex(
           (question) => question.id === selectedQuestion.id
         )}
+        themeStatus={themeStatus}
       />
       <TextAiDashboardSettingsModal
         dashboard={currentDashboard}

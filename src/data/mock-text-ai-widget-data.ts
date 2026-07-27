@@ -6,7 +6,9 @@ export interface TextAiAnalysisRow {
   id: number;
   value: string;
   topic: string;
+  topicEmerging?: boolean;
   subtopic: string;
+  subtopicEmerging?: boolean;
   subtopicTone: TextAiSubtopicTone;
   insight: string;
   tags: string[];
@@ -25,7 +27,15 @@ export interface TextAiFilterOption {
   label: string;
 }
 
+export type TextAiThemeStatusFilter = 'all' | 'established' | 'emerging';
+
 export type TextAiFilterSelectOption = IWuSelectOption<TextAiFilterOption>;
+
+export const TEXT_AI_THEME_STATUS_FILTER_OPTIONS: TextAiFilterOption[] = [
+  { value: 'all', label: 'All themes & sub-themes' },
+  { value: 'established', label: 'Established themes & sub-themes' },
+  { value: 'emerging', label: 'Emerging themes & sub-themes' },
+];
 
 export const TEXT_AI_THEME_FILTER_OPTIONS: TextAiFilterSelectOption[] = [
   { value: 'top-3-themes', label: 'Top 3 themes' },
@@ -243,20 +253,46 @@ const SARTORIS_APPRECIATE_ROWS: TextAiAnalysisRow[] = [
   },
 ];
 
+const EMERGING_ANALYSIS_TOPICS = new Set([
+  'Health System Leadership Communication',
+]);
+
+const EMERGING_ANALYSIS_SUBTOPICS = new Set([
+  'Employee Recognition Programs',
+]);
+
+function enrichAnalysisRows(rows: TextAiAnalysisRow[]): TextAiAnalysisRow[] {
+  return rows.map((row) => {
+    const topicEmerging = Boolean(
+      row.topicEmerging || EMERGING_ANALYSIS_TOPICS.has(row.topic)
+    );
+    return {
+      ...row,
+      topicEmerging,
+      subtopicEmerging: Boolean(
+        topicEmerging ||
+          row.subtopicEmerging ||
+          EMERGING_ANALYSIS_SUBTOPICS.has(row.subtopic)
+      ),
+    };
+  });
+}
+
 const DEFAULT_WIDGETS: TextAiAnalysisWidget[] = [
   {
     id: 'w-improve',
     question: 'What can we do to improve your opinion about Sartorius as a workplace?',
-    rows: SARTORIS_IMPROVEMENT_ROWS,
+    rows: enrichAnalysisRows(SARTORIS_IMPROVEMENT_ROWS),
   },
   {
     id: 'w-appreciate',
     question: 'What do you appreciate most about working for Sartorius?',
-    rows: SARTORIS_APPRECIATE_ROWS,
+    rows: enrichAnalysisRows(SARTORIS_APPRECIATE_ROWS),
   },
 ];
 
 /** Widgets shown on a TextAI dashboard detail view. */
-export function getTextAiDashboardWidgets(_dashboardId: number): TextAiAnalysisWidget[] {
+export function getTextAiDashboardWidgets(dashboardId: number): TextAiAnalysisWidget[] {
+  void dashboardId;
   return DEFAULT_WIDGETS;
 }

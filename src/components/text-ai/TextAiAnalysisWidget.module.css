@@ -10,6 +10,7 @@
   font-weight: 400;
   line-height: 24px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .cardHeader {
@@ -66,7 +67,9 @@
 
 .tableWrap {
   -webkit-overflow-scrolling: touch;
-  overflow-x: auto;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
   padding: 0 1rem 1rem;
 }
 
@@ -134,6 +137,13 @@
   line-height: 24px;
 }
 
+.topicCell {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
 .insightCell {
   display: block;
   max-width: 100%;
@@ -146,6 +156,10 @@
 }
 
 .subtopicCell {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
