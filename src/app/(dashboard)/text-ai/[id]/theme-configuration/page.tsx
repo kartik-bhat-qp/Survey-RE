@@ -9,6 +9,7 @@ import { PageContainer } from '@/components/ui/PageContainer';
 import { getTextAiDashboardById } from '@/data/get-text-ai-dashboard-by-id';
 import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
 import { MOCK_TEXT_AI_ANALYSIS_QUESTIONS } from '@/data/mock-text-ai-questions';
+import { appendTextAiRecodeLog } from '@/data/text-ai-activity-logs';
 import styles from './ThemeConfiguration.module.css';
 
 const WuCombobox = dynamic(
@@ -38,6 +39,7 @@ const WuModalHeader = dynamic(
 
 type ThemeTone = 'blue' | 'green' | 'red';
 type GranularityLevel = 'high' | 'medium' | 'low';
+type RecodeScope = 'new-sub-themes' | 'all-sub-themes' | 'custom';
 
 interface SubTheme {
   description?: string;
@@ -56,6 +58,8 @@ interface SubThemeEdit {
 interface EditSubThemeTarget {
   editKey: string;
   originalName: string;
+  previousDescription: string;
+  previousName: string;
 }
 
 interface ThemeGroup {
@@ -91,16 +95,14 @@ interface QuestionThemeVariant {
   responseCount: number;
   responseTexts: string[];
   subThemeFactor: number;
-  themeCount: number;
 }
 
 interface GranularityOption {
+  classificationCount: number;
   description: string;
   label: string;
   level: GranularityLevel;
-  range: string;
   subThemeCounts: number[];
-  themeCountFactor: number;
 }
 
 interface ResponseClassification {
@@ -110,30 +112,33 @@ interface ResponseClassification {
 
 const GRANULARITY_OPTIONS: GranularityOption[] = [
   {
+    classificationCount: 40,
     level: 'high',
-    label: 'High',
-    range: '10–15 sub-themes',
-    description: 'Creates more specific classifications for detailed analysis.',
+    label: 'Detailed',
+    description:
+      'Classifies responses into up to 40 sub-themes for the most specific view.',
     subThemeCounts: [12, 10, 15],
-    themeCountFactor: 1.28,
   },
   {
+    classificationCount: 20,
     level: 'medium',
-    label: 'Medium',
-    range: '5–10 sub-themes',
-    description: 'Balances useful detail with a concise, manageable code frame.',
-    subThemeCounts: [7, 6, 9],
-    themeCountFactor: 1,
+    label: 'Balanced',
+    description:
+      'Classifies responses into up to 20 sub-themes for a balanced level of detail.',
+    subThemeCounts: [6, 5, 6],
   },
   {
+    classificationCount: 10,
     level: 'low',
-    label: 'Low',
-    range: '1–5 sub-themes',
-    description: 'Groups responses into broader classifications for a simpler overview.',
-    subThemeCounts: [3, 2, 4],
-    themeCountFactor: 0.62,
+    label: 'Compressed',
+    description:
+      'Classifies responses into up to 10 sub-themes for a concise overview.',
+    subThemeCounts: [3, 2, 2],
   },
 ];
+
+const GRANULARITY_CHANGE_LIMIT = 2;
+const RECODE_RUN_LIMIT = 2;
 
 const THEME_GROUPS: ThemeGroup[] = [
   {
@@ -415,7 +420,6 @@ const GRANULARITY_COVERAGE_WEIGHTS: Partial<
 
 const QUESTION_VARIANTS: QuestionThemeVariant[] = [
   {
-    themeCount: 81,
     responseCount: 1500,
     groupPercentages: [17.93, 17.13, 14.53],
     subThemeFactor: 1,
@@ -423,7 +427,6 @@ const QUESTION_VARIANTS: QuestionThemeVariant[] = [
     responseTexts: RAW_RESPONSES.map((response) => response.text),
   },
   {
-    themeCount: 74,
     responseCount: 1420,
     groupPercentages: [19.14, 16.28, 15.01],
     subThemeFactor: 0.94,
@@ -438,7 +441,6 @@ const QUESTION_VARIANTS: QuestionThemeVariant[] = [
     ],
   },
   {
-    themeCount: 86,
     responseCount: 1612,
     groupPercentages: [16.82, 18.04, 13.91],
     subThemeFactor: 1.08,
@@ -453,7 +455,6 @@ const QUESTION_VARIANTS: QuestionThemeVariant[] = [
     ],
   },
   {
-    themeCount: 69,
     responseCount: 1376,
     groupPercentages: [18.45, 15.96, 14.12],
     subThemeFactor: 0.89,
@@ -468,7 +469,6 @@ const QUESTION_VARIANTS: QuestionThemeVariant[] = [
     ],
   },
   {
-    themeCount: 78,
     responseCount: 1548,
     groupPercentages: [17.36, 17.88, 15.27],
     subThemeFactor: 1.03,
@@ -626,7 +626,8 @@ export default function TextAiThemeConfigurationPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const dashboard = getTextAiDashboardById(Number(id));
+  const numericDashboardId = Number(id);
+  const dashboard = getTextAiDashboardById(numericDashboardId);
   const questions = dashboard?.questions?.length ? dashboard.questions : FALLBACK_QUESTIONS;
   const [selectedQuestionId, setSelectedQuestionId] = useState<string>(
     () => questions[0]?.id ?? ''
@@ -643,6 +644,14 @@ export default function TextAiThemeConfigurationPage({
     useState<GranularityLevel>('medium');
   const [draftGranularity, setDraftGranularity] =
     useState<GranularityLevel>('medium');
+  const [granularityChangesUsed, setGranularityChangesUsed] = useState(0);
+  const [recodeModalOpen, setRecodeModalOpen] = useState(false);
+  const [recodeScope, setRecodeScope] =
+    useState<RecodeScope>('new-sub-themes');
+  const [recodesUsed, setRecodesUsed] = useState(0);
+  const [customRecodeSubThemeIds, setCustomRecodeSubThemeIds] = useState<string[]>(
+    []
+  );
   const [subThemeEdits, setSubThemeEdits] = useState<Record<string, SubThemeEdit>>(
     () => ({})
   );
@@ -660,9 +669,15 @@ export default function TextAiThemeConfigurationPage({
   const appliedGranularityOption =
     GRANULARITY_OPTIONS.find((option) => option.level === appliedGranularity) ??
     GRANULARITY_OPTIONS[1];
-  const visibleThemeCount = Math.round(
-    questionVariant.themeCount * appliedGranularityOption.themeCountFactor
+  const visibleThemeCount = appliedGranularityOption.classificationCount;
+  const granularityChangeLimitReached =
+    granularityChangesUsed >= GRANULARITY_CHANGE_LIMIT;
+  const granularityChangesRemaining = Math.max(
+    0,
+    GRANULARITY_CHANGE_LIMIT - granularityChangesUsed
   );
+  const granularitySelectionChanged = draftGranularity !== appliedGranularity;
+  const recodesRemaining = Math.max(0, RECODE_RUN_LIMIT - recodesUsed);
 
   const themeGroups = useMemo(
     () =>
@@ -792,9 +807,23 @@ export default function TextAiThemeConfigurationPage({
 
     if (rejectTarget.kind === 'theme') {
       setRejectedThemeIds((current) => new Set(current).add(rejectTarget.themeId));
+      appendTextAiRecodeLog({
+        action: 'theme-rejected',
+        dashboardId: numericDashboardId,
+        details: `Removed the emerging theme “${rejectTarget.name}” and its sub-themes from the code frame.`,
+        question: selectedQuestion?.text ?? 'Selected question',
+        title: 'Emerging theme rejected',
+      });
     } else {
       const subThemeKey = `${rejectTarget.themeId}:${rejectTarget.subThemeId}`;
       setRejectedSubThemeKeys((current) => new Set(current).add(subThemeKey));
+      appendTextAiRecodeLog({
+        action: 'sub-theme-rejected',
+        dashboardId: numericDashboardId,
+        details: `Removed the emerging sub-theme “${rejectTarget.name}” from the code frame.`,
+        question: selectedQuestion?.text ?? 'Selected question',
+        title: 'Emerging sub-theme rejected',
+      });
     }
 
     setRejectTarget(null);
@@ -805,16 +834,62 @@ export default function TextAiThemeConfigurationPage({
 
     const name = draftSubThemeName.trim();
     if (!name) return;
+    const description = draftSubThemeDescription.trim();
+    const nameChanged = name !== editSubThemeTarget.previousName;
+    const descriptionChanged =
+      description !== editSubThemeTarget.previousDescription;
 
     setSubThemeEdits((current) => ({
       ...current,
       [editSubThemeTarget.editKey]: {
-        description: draftSubThemeDescription.trim(),
+        description,
         name,
         originalName: editSubThemeTarget.originalName,
       },
     }));
+    if (nameChanged) {
+      appendTextAiRecodeLog({
+        action: 'sub-theme-renamed',
+        dashboardId: numericDashboardId,
+        details: `Renamed “${editSubThemeTarget.previousName}” to “${name}”.`,
+        question: selectedQuestion?.text ?? 'Selected question',
+        title: 'Sub-theme renamed',
+      });
+    }
+    if (descriptionChanged) {
+      appendTextAiRecodeLog({
+        action: 'sub-theme-description-updated',
+        dashboardId: numericDashboardId,
+        details: `Updated the description for “${name}”.`,
+        question: selectedQuestion?.text ?? 'Selected question',
+        title: 'Sub-theme description updated',
+      });
+    }
     setEditSubThemeTarget(null);
+  }
+
+  function handleRecode(): void {
+    if (recodesRemaining === 0) return;
+    if (recodeScope === 'custom' && customRecodeSubThemeIds.length === 0) return;
+
+    const details =
+      recodeScope === 'new-sub-themes'
+        ? 'Reprocessed responses to discover and tag new sub-themes while preserving existing manual tags.'
+        : recodeScope === 'all-sub-themes'
+          ? 'Reprocessed all responses across every sub-theme. Existing manual response tags may have been overwritten.'
+          : `Reprocessed responses for ${customRecodeSubThemeIds.length} selected sub-theme${
+              customRecodeSubThemeIds.length === 1 ? '' : 's'
+            }.`;
+
+    appendTextAiRecodeLog({
+      action: 'recode-run',
+      dashboardId: numericDashboardId,
+      details,
+      question: selectedQuestion?.text ?? 'Selected question',
+      title: 'Responses recoded',
+    });
+    setRecodesUsed((current) => Math.min(current + 1, RECODE_RUN_LIMIT));
+    setRecodeModalOpen(false);
   }
 
   return (
@@ -864,7 +939,18 @@ export default function TextAiThemeConfigurationPage({
             >
               <span className="wc-report" aria-hidden />
             </Link>
-            <span>Recode</span>
+            <button
+              type="button"
+              className={styles.recodeTrigger}
+              onClick={() => {
+                setRecodeScope('new-sub-themes');
+                setCustomRecodeSubThemeIds([]);
+                setRecodeModalOpen(true);
+              }}
+              aria-haspopup="dialog"
+            >
+              Recode
+            </button>
           </div>
           <button
             type="button"
@@ -888,7 +974,7 @@ export default function TextAiThemeConfigurationPage({
               <strong>My code frame</strong>
               <span className={styles.headerCount}>{visibleThemeCount}</span>
               <span className={styles.appliedGranularity}>
-                {appliedGranularityOption.label} · {appliedGranularityOption.range}
+                {`${appliedGranularityOption.label} · Up to ${appliedGranularityOption.classificationCount} sub-themes`}
               </span>
             </div>
             <div className={styles.codeFrameActions}>
@@ -918,6 +1004,10 @@ export default function TextAiThemeConfigurationPage({
                           subTheme.id
                         )
                       ]?.originalName ?? subTheme.name,
+                    previousDescription:
+                      subTheme.description ??
+                      getDefaultSubThemeDescription(subTheme.name),
+                    previousName: subTheme.name,
                   });
                   setDraftSubThemeName(subTheme.name);
                   setDraftSubThemeDescription(
@@ -1028,6 +1118,128 @@ export default function TextAiThemeConfigurationPage({
       </div>
 
       <WuModal
+        open={recodeModalOpen}
+        onOpenChange={setRecodeModalOpen}
+        className={styles.recodeModal}
+        size="md"
+        variant="action"
+      >
+        <DialogTitle className={styles.srOnly}>Recode</DialogTitle>
+        <WuModalHeader>Recode</WuModalHeader>
+        <WuModalContent>
+          <div className={styles.recodeModalContent}>
+            <p className={styles.recodeIntroduction}>
+              Recode to update tagging of responses to sub-themes.
+            </p>
+            <fieldset className={styles.recodeFieldset}>
+              <legend>Choose what to update</legend>
+              <div className={styles.recodeChoices}>
+                <label>
+                  <input
+                    type="radio"
+                    name="recode-scope"
+                    value="new-sub-themes"
+                    checked={recodeScope === 'new-sub-themes'}
+                    onChange={() => setRecodeScope('new-sub-themes')}
+                  />
+                  <span>
+                    <strong>New sub-themes:</strong> code new sub-themes with no
+                    responses currently tagged to them.
+                  </span>
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="recode-scope"
+                    value="all-sub-themes"
+                    checked={recodeScope === 'all-sub-themes'}
+                    onChange={() => setRecodeScope('all-sub-themes')}
+                  />
+                  <span>
+                    <strong>All sub-themes:</strong> recode the entire data,
+                    overwriting any manual retags you have done.
+                  </span>
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="recode-scope"
+                    value="custom"
+                    checked={recodeScope === 'custom'}
+                    onChange={() => setRecodeScope('custom')}
+                  />
+                  <span>
+                    <strong>Custom selection:</strong> select sub-themes to update
+                    (best if you tagged a few responses to new sub-themes or made
+                    changes to existing sub-themes).
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+
+            {recodeScope === 'custom' ? (
+              <div className={styles.customRecodeSelection}>
+                <strong>Select sub-themes</strong>
+                <div>
+                  {visibleThemeGroups.flatMap((group) =>
+                    group.subThemes.map((subTheme) => {
+                      const key = `${group.id}:${subTheme.id}`;
+                      return (
+                        <label key={key}>
+                          <input
+                            type="checkbox"
+                            checked={customRecodeSubThemeIds.includes(key)}
+                            onChange={(event) =>
+                              setCustomRecodeSubThemeIds((current) =>
+                                event.target.checked
+                                  ? [...current, key]
+                                  : current.filter((item) => item !== key)
+                              )
+                            }
+                          />
+                          <span>{subTheme.name}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            ) : null}
+
+            <p className={styles.recodeNote}>
+              QuestionPro always reprocesses all responses to ensure accuracy, but
+              only revises tagging based on your selection above. Note that if you
+              recode &quot;All Sub-themes&quot;, any manual changes you have made to
+              tagging may be overwritten and lost.
+            </p>
+            <strong className={styles.recodesRemaining}>
+              Recodes remaining: {recodesRemaining}
+            </strong>
+          </div>
+        </WuModalContent>
+        <WuModalFooter>
+          <WuButton
+            type="button"
+            variant="secondary"
+            onClick={() => setRecodeModalOpen(false)}
+          >
+            Cancel
+          </WuButton>
+          <WuButton
+            type="button"
+            disabled={
+              recodesRemaining === 0 ||
+              (recodeScope === 'custom' &&
+                customRecodeSubThemeIds.length === 0)
+            }
+            onClick={handleRecode}
+          >
+            Recode selected sub-themes
+          </WuButton>
+        </WuModalFooter>
+      </WuModal>
+
+      <WuModal
         open={editSubThemeTarget !== null}
         onOpenChange={(open) => {
           if (!open) setEditSubThemeTarget(null);
@@ -1103,9 +1315,13 @@ export default function TextAiThemeConfigurationPage({
         <WuModalContent>
           <div className={styles.granularityModalContent}>
             <p className={styles.granularityIntroduction}>
-              Choose how specific TextAI should be when classifying responses into
-              sub-themes.
+              Choose how many sub-themes TextAI should use to classify responses.
             </p>
+            {granularityChangeLimitReached && (
+              <p className={styles.granularityLimitMessage}>
+                Change limit reached. The current granularity can no longer be changed.
+              </p>
+            )}
             <div
               className={styles.granularityOptions}
               role="radiogroup"
@@ -1117,6 +1333,10 @@ export default function TextAiThemeConfigurationPage({
                     draftGranularity === option.level
                       ? styles.granularityOptionSelected
                       : ''
+                  } ${
+                    granularityChangeLimitReached
+                      ? styles.granularityOptionDisabled
+                      : ''
                   }`}
                   key={option.level}
                 >
@@ -1126,11 +1346,14 @@ export default function TextAiThemeConfigurationPage({
                     value={option.level}
                     checked={draftGranularity === option.level}
                     onChange={() => setDraftGranularity(option.level)}
+                    disabled={granularityChangeLimitReached}
                   />
                   <span className={styles.granularityOptionText}>
                     <span className={styles.granularityOptionHeading}>
                       <strong>{option.label}</strong>
-                      <span>{option.range}</span>
+                      <span>
+                        {`Up to ${option.classificationCount} sub-themes`}
+                      </span>
                     </span>
                     <span className={styles.granularityDescription}>
                       {option.description}
@@ -1139,6 +1362,16 @@ export default function TextAiThemeConfigurationPage({
                 </label>
               ))}
             </div>
+            <strong
+              className={`${styles.granularityChangesRemaining} ${
+                granularityChangeLimitReached
+                  ? styles.granularityChangesRemainingLimit
+                  : ''
+              }`}
+              aria-live="polite"
+            >
+              Granularity changes remaining: {granularityChangesRemaining}
+            </strong>
           </div>
         </WuModalContent>
         <WuModalFooter>
@@ -1151,8 +1384,31 @@ export default function TextAiThemeConfigurationPage({
           </WuButton>
           <WuButton
             type="button"
+            disabled={
+              granularityChangeLimitReached || !granularitySelectionChanged
+            }
             onClick={() => {
+              if (
+                granularityChangeLimitReached ||
+                draftGranularity === appliedGranularity
+              ) {
+                return;
+              }
               setAppliedGranularity(draftGranularity);
+              const nextGranularityOption =
+                GRANULARITY_OPTIONS.find(
+                  (option) => option.level === draftGranularity
+                ) ?? GRANULARITY_OPTIONS[1];
+              appendTextAiRecodeLog({
+                action: 'granularity-changed',
+                dashboardId: numericDashboardId,
+                details: `Changed response tagging from ${appliedGranularityOption.label} (up to ${appliedGranularityOption.classificationCount} sub-themes) to ${nextGranularityOption.label} (up to ${nextGranularityOption.classificationCount} sub-themes).`,
+                question: selectedQuestion?.text ?? 'Selected question',
+                title: 'Granularity changed',
+              });
+              setGranularityChangesUsed((current) =>
+                Math.min(current + 1, GRANULARITY_CHANGE_LIMIT)
+              );
               setRejectedThemeIds(new Set());
               setRejectedSubThemeKeys(new Set());
               setGranularityModalOpen(false);

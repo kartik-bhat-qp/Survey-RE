@@ -93,6 +93,23 @@
   padding: 0 0.75rem;
 }
 
+.recodeTrigger {
+  background: transparent;
+  border: 0;
+  border-radius: 0.25rem;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.45rem 0.2rem;
+}
+
+.recodeTrigger:hover,
+.recodeTrigger:focus-visible {
+  color: #1686e4;
+  text-decoration: underline;
+  text-underline-offset: 0.18rem;
+}
+
 .granularityAction {
   background: transparent;
   border: 0;
@@ -519,6 +536,111 @@
   justify-self: end;
 }
 
+.recodeModal {
+  max-width: 38rem !important;
+  width: min(38rem, calc(100vw - 1.5rem)) !important;
+}
+
+.recodeModalContent {
+  color: #40506a;
+  display: grid;
+  gap: 1.25rem;
+  padding: 0.15rem 0.25rem 0.35rem;
+}
+
+.recodeIntroduction {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.recodeFieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.recodeFieldset legend {
+  color: #172744;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.recodeChoices {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.recodeChoices label {
+  align-items: flex-start;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.77rem;
+  gap: 0.65rem;
+  line-height: 1.5;
+}
+
+.recodeChoices input {
+  accent-color: #1686e4;
+  flex-shrink: 0;
+  height: 0.9rem;
+  margin: 0.15rem 0 0;
+  width: 0.9rem;
+}
+
+.recodeChoices strong {
+  color: #26364f;
+  font-weight: 600;
+}
+
+.customRecodeSelection {
+  background: #f7f9fc;
+  border: 1px solid #dde5ee;
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+}
+
+.customRecodeSelection > strong {
+  color: #26364f;
+  font-size: 0.75rem;
+}
+
+.customRecodeSelection > div {
+  display: grid;
+  gap: 0.45rem;
+  max-height: 9rem;
+  overflow-y: auto;
+}
+
+.customRecodeSelection label {
+  align-items: center;
+  color: #526078;
+  display: flex;
+  font-size: 0.72rem;
+  gap: 0.55rem;
+}
+
+.customRecodeSelection input {
+  accent-color: #1686e4;
+  height: 0.9rem;
+  margin: 0;
+  width: 0.9rem;
+}
+
+.recodeNote {
+  color: #7383a2;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.recodesRemaining {
+  color: #192b49;
+  font-size: 0.78rem;
+}
+
 .granularityModalContent {
   color: #4f5964;
   display: grid;
@@ -529,6 +651,22 @@
   font-size: 0.875rem;
   line-height: 1.45;
   margin: 0;
+}
+
+.granularityLimitMessage {
+  color: #a52b40;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: -0.35rem 0 0;
+}
+
+.granularityChangesRemaining {
+  color: #192b49;
+  font-size: 0.78rem;
+}
+
+.granularityChangesRemainingLimit {
+  color: #a52b40;
 }
 
 .granularityOptions {
@@ -558,6 +696,22 @@
   background: #f2f8fe;
   border-color: #1686e4;
   box-shadow: 0 0 0 1px rgba(22, 134, 228, 0.12);
+}
+
+.granularityOptionDisabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.granularityOptionDisabled:hover {
+  background: #ffffff;
+  border-color: #d6dce2;
+}
+
+.granularityOptionDisabled.granularityOptionSelected,
+.granularityOptionDisabled.granularityOptionSelected:hover {
+  background: #f2f8fe;
+  border-color: #1686e4;
 }
 
 .granularityOption input {
@@ -592,6 +746,7 @@
   color: #1674c5;
   font-size: 0.7rem;
   font-weight: 600;
+  text-align: center;
   padding: 0.25rem 0.5rem;
 }
 

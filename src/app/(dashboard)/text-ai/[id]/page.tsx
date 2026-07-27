@@ -2,8 +2,10 @@
 
 import { use, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { TextAiDashboardCanvas } from '@/components/text-ai/TextAiDashboardCanvas';
+import { TextAiDashboardSettingsModal } from '@/components/text-ai/TextAiDashboardSettingsModal';
 import { TextAiDashboardToolbar } from '@/components/text-ai/TextAiDashboardToolbar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
@@ -32,6 +34,7 @@ function resolveDashboardQuestions(
 }
 
 function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
+  const router = useRouter();
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
   const dashboard = getTextAiDashboardById(numericId);
@@ -44,6 +47,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const [segmentFilters, setSegmentFilters] = useState<TextAiSegmentFilterState>(
     () => dashboard?.segmentFilters ?? createDefaultSegmentFilterState()
   );
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   if (!dashboard) {
     if (!wick) {
@@ -90,7 +94,10 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         name={name}
         onNameChange={setName}
         onAddWidget={() => showToast({ message: 'Add widget', variant: 'success' })}
-        onOpenSettings={() => showToast({ message: 'Dashboard settings', variant: 'success' })}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenThemeConfiguration={() =>
+          router.push(`/text-ai/${numericId}/theme-configuration`)
+        }
         questions={availableQuestions}
         selectedQuestion={selectedQuestion}
         onQuestionChange={setSelectedQuestion}
@@ -103,6 +110,11 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         questionIndex={availableQuestions.findIndex(
           (question) => question.id === selectedQuestion.id
         )}
+      />
+      <TextAiDashboardSettingsModal
+        dashboard={currentDashboard}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
       />
     </div>
   );

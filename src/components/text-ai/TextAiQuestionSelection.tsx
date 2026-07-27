@@ -34,6 +34,8 @@ const WuTable = dynamic(
 const PAGE_SIZE = 5;
 
 interface TextAiQuestionSelectionProps {
+  contextByQuestionId: Record<number, string>;
+  onContextChange: (questionId: number, value: string) => void;
   selectedQuestionIds: number[];
   onSelectionChange: (ids: number[]) => void;
   separateDashboardPerQuestion: boolean;
@@ -41,6 +43,8 @@ interface TextAiQuestionSelectionProps {
 }
 
 export function TextAiQuestionSelection({
+  contextByQuestionId,
+  onContextChange,
   selectedQuestionIds,
   onSelectionChange,
   separateDashboardPerQuestion,
@@ -48,7 +52,6 @@ export function TextAiQuestionSelection({
 }: TextAiQuestionSelectionProps) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [contextByQuestionId, setContextByQuestionId] = useState<Record<number, string>>({});
 
   const filteredQuestions = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -101,7 +104,7 @@ export function TextAiQuestionSelection({
   }
 
   function updateContext(questionId: number, value: string): void {
-    setContextByQuestionId((prev) => ({ ...prev, [questionId]: value }));
+    onContextChange(questionId, value);
   }
 
   const allPageSelected =

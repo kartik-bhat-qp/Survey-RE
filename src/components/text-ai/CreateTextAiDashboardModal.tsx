@@ -62,6 +62,7 @@ export function CreateTextAiDashboardModal({
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<number[]>(() =>
     getDefaultSelectedTextAiQuestionIds()
   );
+  const [questionContexts, setQuestionContexts] = useState<Record<number, string>>({});
   const [separateDashboardPerQuestion, setSeparateDashboardPerQuestion] = useState(false);
   const [segmentFilters, setSegmentFilters] = useState<TextAiSegmentFilterState>(() =>
     createDefaultSegmentFilterState()
@@ -73,6 +74,7 @@ export function CreateTextAiDashboardModal({
     setModelSetup(createDefaultModelSetupValues(defaultName));
     setNameError(false);
     setSelectedQuestionIds(getDefaultSelectedTextAiQuestionIds());
+    setQuestionContexts({});
     setSeparateDashboardPerQuestion(false);
     setSegmentFilters(createDefaultSegmentFilterState());
   }, [defaultName]);
@@ -110,9 +112,14 @@ export function CreateTextAiDashboardModal({
       return;
     }
     onCreate({
+      codebookSource: modelSetup.codebookSource,
       name: getTrimmedName(),
+      modelingGoal: modelSetup.modelingGoal,
+      outputLanguage: modelSetup.outputLanguage,
+      questionContexts,
       survey: selectedSurvey,
       questionIds: selectedQuestionIds,
+      reportCodebook: modelSetup.reportCodebook,
       separateDashboardPerQuestion:
         separateDashboardPerQuestion && selectedQuestionIds.length > 1,
       expertReviewRequested: modelSetup.expertReviewRequested,
@@ -209,6 +216,13 @@ export function CreateTextAiDashboardModal({
       {step === 'select-questions' && (
         <WuModalContent className={styles.questionSelectionContent}>
           <TextAiQuestionSelection
+            contextByQuestionId={questionContexts}
+            onContextChange={(questionId, value) =>
+              setQuestionContexts((current) => ({
+                ...current,
+                [questionId]: value,
+              }))
+            }
             selectedQuestionIds={selectedQuestionIds}
             onSelectionChange={setSelectedQuestionIds}
             separateDashboardPerQuestion={separateDashboardPerQuestion}

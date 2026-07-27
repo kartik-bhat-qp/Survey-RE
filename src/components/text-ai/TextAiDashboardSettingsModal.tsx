@@ -1,0 +1,442 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import type { TextAiDashboard } from '@/data/mock-text-ai-dashboards';
+import {
+  getTextAiDashboardCreationPreferences,
+  getTextAiRecodeLogs,
+  type TextAiRecodeLogEntry,
+} from '@/data/text-ai-activity-logs';
+import styles from './TextAiDashboardSettingsModal.module.css';
+
+type SettingsTab = 'data-slicers' | 'filters' | 'logs';
+type LogCategory = 'dashboard' | 'recode';
+
+interface TextAiDataSlicer {
+  id: number;
+  name: string;
+  description: string;
+  applyToDashboard: boolean;
+}
+
+interface TextAiDashboardSettingsModalProps {
+  dashboard: TextAiDashboard;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const INITIAL_DATA_SLICERS: TextAiDataSlicer[] = [
+  {
+    id: 1,
+    name: 'Test slicer 1',
+    description: 'Includes responses matching the first test audience segment.',
+    applyToDashboard: true,
+  },
+  {
+    id: 2,
+    name: 'Test slicer 2',
+    description: 'Includes responses matching the second test audience segment.',
+    applyToDashboard: true,
+  },
+];
+
+export function TextAiDashboardSettingsModal({
+  dashboard,
+  open,
+  onOpenChange,
+}: TextAiDashboardSettingsModalProps) {
+  const { showToast } = useWuShowToast();
+  const [activeTab, setActiveTab] = useState<SettingsTab>('data-slicers');
+  const [search, setSearch] = useState('');
+  const [expandedSlicerId, setExpandedSlicerId] = useState<number | null>(null);
+  const [slicers, setSlicers] = useState<TextAiDataSlicer[]>(INITIAL_DATA_SLICERS);
+  const [logCategory, setLogCategory] = useState<LogCategory>('dashboard');
+  const creationPreferences = useMemo(
+    () => getTextAiDashboardCreationPreferences(dashboard),
+    [dashboard]
+  );
+  const recodeLogs: TextAiRecodeLogEntry[] = open
+    ? getTextAiRecodeLogs(dashboard.id)
+    : [];
+
+  useEffect(() => {
+    if (!open) return;
+
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === 'Escape') onOpenChange(false);
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [dashboard.id, onOpenChange, open]);
+
+  const filteredSlicers = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return slicers;
+    return slicers.filter((slicer) => slicer.name.toLowerCase().includes(term));
+  }, [search, slicers]);
+
+  if (!open) return null;
+
+  const visibleCount = filteredSlicers.length;
+
+  return (
+    <div
+      className={styles.backdrop}
+      onMouseDown={(event) => {
+        if (event.currentTarget === event.target) onOpenChange(false);
+      }}
+    >
+      <section
+        className={styles.modal}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="text-ai-settings-title"
+      >
+        <header className={styles.header}>
+          <h2 id="text-ai-settings-title">Settings</h2>
+          <button
+            type="button"
+            className={styles.closeButton}
+            aria-label="Close settings"
+            onClick={() => onOpenChange(false)}
+          >
+            <span className="wm-close" aria-hidden />
+          </button>
+        </header>
+
+        <div className={styles.body}>
+          <div className={styles.tabs} role="tablist" aria-label="TextAI settings">
+            <button
+              type="button"
+              id="data-slicers-tab"
+              role="tab"
+              aria-selected={activeTab === 'data-slicers'}
+              aria-controls="data-slicers-panel"
+              className={activeTab === 'data-slicers' ? styles.activeTab : undefined}
+              onClick={() => setActiveTab('data-slicers')}
+            >
+              Data Slicers
+            </button>
+            <button
+              type="button"
+              id="filters-tab"
+              role="tab"
+              aria-selected={activeTab === 'filters'}
+              aria-controls="filters-panel"
+              className={activeTab === 'filters' ? styles.activeTab : undefined}
+              onClick={() => setActiveTab('filters')}
+            >
+              Filters
+            </button>
+            <button
+              type="button"
+              id="logs-tab"
+              role="tab"
+              aria-selected={activeTab === 'logs'}
+              aria-controls="logs-panel"
+              className={activeTab === 'logs' ? styles.activeTab : undefined}
+              onClick={() => setActiveTab('logs')}
+            >
+              Logs
+            </button>
+          </div>
+
+          {activeTab === 'data-slicers' ? (
+            <div
+              id="data-slicers-panel"
+              role="tabpanel"
+              aria-labelledby="data-slicers-tab"
+              className={styles.tabPanel}
+            >
+              <div className={styles.searchRow}>
+                <label className={styles.searchField}>
+                  <span className="wm-search" aria-hidden />
+                  <span className={styles.srOnly}>Search by data slicer name</span>
+                  <input
+                    type="search"
+                    value={search}
+                    placeholder="Search by data slicer name"
+                    onChange={(event) => setSearch(event.target.value)}
+                  />
+                </label>
+                <span className={styles.resultCount}>
+                  {visibleCount > 0 ? `1 - ${visibleCount}` : '0'} of {visibleCount}
+                  <span className="wm-arrow-drop-down" aria-hidden />
+                </span>
+              </div>
+
+              <div className={styles.actionRow}>
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={() => {
+                    const nextNumber = slicers.length + 1;
+                    setSlicers((current) => [
+                      ...current,
+                      {
+                        id: Date.now(),
+                        name: `Test slicer ${nextNumber}`,
+                        description: `Includes responses matching test audience segment ${nextNumber}.`,
+                        applyToDashboard: false,
+                      },
+                    ]);
+                    showToast({
+                      message: `Test slicer ${nextNumber} created`,
+                      variant: 'success',
+                    });
+                  }}
+                >
+                  Create data slicer
+                </button>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() =>
+                    showToast({ message: 'Manage data slicer', variant: 'success' })
+                  }
+                >
+                  Manage data slicer
+                </button>
+              </div>
+
+              <div className={styles.tableWrap}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Slicer name</th>
+                      <th>Details</th>
+                      <th>Apply to dashboard</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredSlicers.map((slicer) => {
+                      const isExpanded = expandedSlicerId === slicer.id;
+                      return (
+                        <tr key={slicer.id}>
+                          <td>{slicer.name}</td>
+                          <td>
+                            <button
+                              type="button"
+                              className={styles.detailsButton}
+                              aria-expanded={isExpanded}
+                              onClick={() =>
+                                setExpandedSlicerId((current) =>
+                                  current === slicer.id ? null : slicer.id
+                                )
+                              }
+                            >
+                              Show details
+                              <span
+                                className={
+                                  isExpanded ? 'wm-arrow-drop-up' : 'wm-arrow-drop-down'
+                                }
+                                aria-hidden
+                              />
+                            </button>
+                            {isExpanded ? (
+                              <p className={styles.detailsText}>{slicer.description}</p>
+                            ) : null}
+                          </td>
+                          <td>
+                            <label className={styles.checkboxLabel}>
+                              <input
+                                type="checkbox"
+                                checked={slicer.applyToDashboard}
+                                aria-label={`Apply ${slicer.name} to dashboard`}
+                                onChange={(event) => {
+                                  const checked = event.target.checked;
+                                  setSlicers((current) =>
+                                    current.map((item) =>
+                                      item.id === slicer.id
+                                        ? { ...item, applyToDashboard: checked }
+                                        : item
+                                    )
+                                  );
+                                }}
+                              />
+                            </label>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {filteredSlicers.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className={styles.noResults}>
+                          No data slicers match your search.
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : activeTab === 'filters' ? (
+            <div
+              id="filters-panel"
+              role="tabpanel"
+              aria-labelledby="filters-tab"
+              className={`${styles.tabPanel} ${styles.filtersPanel}`}
+            >
+              <span className={`wm-filter-list ${styles.emptyIcon}`} aria-hidden />
+              <h3>No dashboard filters configured</h3>
+              <p>Filters applied to this TextAI dashboard will appear here.</p>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={() =>
+                  showToast({ message: 'Create dashboard filter', variant: 'success' })
+                }
+              >
+                Create filter
+              </button>
+            </div>
+          ) : (
+            <div
+              id="logs-panel"
+              role="tabpanel"
+              aria-labelledby="logs-tab"
+              className={`${styles.tabPanel} ${styles.logsPanel}`}
+            >
+              <div
+                className={styles.logCategoryTabs}
+                role="tablist"
+                aria-label="Log category"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={logCategory === 'dashboard'}
+                  className={
+                    logCategory === 'dashboard' ? styles.activeLogCategory : undefined
+                  }
+                  onClick={() => setLogCategory('dashboard')}
+                >
+                  <span className="wm-dashboard" aria-hidden />
+                  Dashboard
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={logCategory === 'recode'}
+                  className={
+                    logCategory === 'recode' ? styles.activeLogCategory : undefined
+                  }
+                  onClick={() => setLogCategory('recode')}
+                >
+                  <span className="wm-table-edit" aria-hidden />
+                  Themes
+                  <span className={styles.logCount}>{recodeLogs.length}</span>
+                </button>
+              </div>
+
+              <div className={styles.logContent}>
+                {logCategory === 'dashboard' ? (
+                  <article className={styles.creationLog}>
+                    <header className={styles.logHeader}>
+                      <span className={`wm-dashboard ${styles.logHeaderIcon}`} aria-hidden />
+                      <span>
+                        <strong>Dashboard created</strong>
+                        <small>
+                          {new Intl.DateTimeFormat('en', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                          }).format(new Date(dashboard.creationDate))}
+                          {' · '}Kartik Bhat
+                        </small>
+                      </span>
+                    </header>
+
+                    <dl className={styles.preferenceGrid}>
+                      <div>
+                        <dt>Data source</dt>
+                        <dd>
+                          <strong>{creationPreferences.dataSourceType}</strong>
+                          <span>{creationPreferences.dataSourceName}</span>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Output language</dt>
+                        <dd>
+                          <strong>{creationPreferences.outputLanguage}</strong>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Codebook preference</dt>
+                        <dd>
+                          <strong>{creationPreferences.codebookPreference}</strong>
+                        </dd>
+                      </div>
+                      <div className={styles.promptPreference}>
+                        <dt>Theme modeling prompt</dt>
+                        <dd>{creationPreferences.themeModelingPrompt}</dd>
+                      </div>
+                    </dl>
+
+                    <section className={styles.questionLogSection}>
+                      <header>
+                        <h3>Questions selected</h3>
+                        <span>{creationPreferences.questions.length}</span>
+                      </header>
+                      <div className={styles.questionLogList}>
+                        {creationPreferences.questions.map((question) => (
+                          <article
+                            className={styles.questionLogItem}
+                            key={`${question.code}-${question.text}`}
+                          >
+                            <span className={styles.questionCode}>{question.code}</span>
+                            <span className={styles.questionDetails}>
+                              <strong>{question.text}</strong>
+                              <span>
+                                <b>Context:</b>{' '}
+                                {question.context || 'Not provided'}
+                              </span>
+                            </span>
+                          </article>
+                        ))}
+                      </div>
+                    </section>
+                  </article>
+                ) : recodeLogs.length > 0 ? (
+                  <ol className={styles.recodeTimeline}>
+                    {recodeLogs.map((entry) => (
+                      <li key={entry.id}>
+                        <span className={styles.timelineMarker} aria-hidden />
+                        <article className={styles.recodeLogCard}>
+                          <header>
+                            <span>
+                              <strong>{entry.title}</strong>
+                              <small>{entry.question}</small>
+                            </span>
+                            <time dateTime={entry.occurredAt}>
+                              {new Intl.DateTimeFormat('en', {
+                                dateStyle: 'medium',
+                                timeStyle: 'short',
+                              }).format(new Date(entry.occurredAt))}
+                            </time>
+                          </header>
+                          <p>{entry.details}</p>
+                          <footer>Kartik Bhat</footer>
+                        </article>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <div className={styles.emptyLogs}>
+                    <span className="wm-history" aria-hidden />
+                    <h3>No theme changes yet</h3>
+                    <p>
+                      Granularity changes, sub-theme edits, and rejected emerging themes
+                      will be recorded here.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}

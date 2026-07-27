@@ -9,6 +9,21 @@ export interface TextAiDashboardQuestion {
   creditsUsed: number;
 }
 
+export interface TextAiDashboardCreationQuestion {
+  code: string;
+  context: string;
+  text: string;
+}
+
+export interface TextAiDashboardCreationPreferences {
+  codebookPreference: string;
+  dataSourceName: string;
+  dataSourceType: string;
+  outputLanguage: string;
+  questions: TextAiDashboardCreationQuestion[];
+  themeModelingPrompt: string;
+}
+
 export interface TextAiDashboard {
   id: number;
   name: string;
@@ -19,6 +34,8 @@ export interface TextAiDashboard {
   questions?: TextAiDashboardQuestion[];
   /** Current response filters used for TextAI processing. */
   segmentFilters?: TextAiSegmentFilterState;
+  /** Preferences captured when the dashboard was created. */
+  creationPreferences?: TextAiDashboardCreationPreferences;
 }
 
 export const MOCK_TEXT_AI_DASHBOARDS: TextAiDashboard[] = [

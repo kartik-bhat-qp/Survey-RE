@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { StandardLoader } from '@/components/ui/StandardLoader';
 import { useWickUILib } from '@/components/ui/useWickUILib';
@@ -21,11 +22,21 @@ import modalStyles from '@/components/dashboards/CreateDashboardModal.module.css
 import createModalStyles from './CreateTextAiDashboardModal.module.css';
 import styles from './TextAiDashboardToolbar.module.css';
 
+const WuMenu = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
+  { ssr: false }
+);
+const WuMenuItem = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
+  { ssr: false }
+);
+
 interface TextAiDashboardToolbarProps {
   name: string;
   onNameChange: (name: string) => void;
   onAddWidget?: () => void;
   onOpenSettings?: () => void;
+  onOpenThemeConfiguration?: () => void;
   questions: TextAiDashboardQuestion[];
   selectedQuestion: TextAiDashboardQuestion;
   onQuestionChange: (question: TextAiDashboardQuestion) => void;
@@ -38,6 +49,7 @@ export function TextAiDashboardToolbar({
   onNameChange,
   onAddWidget,
   onOpenSettings,
+  onOpenThemeConfiguration,
   questions,
   selectedQuestion,
   onQuestionChange,
@@ -52,6 +64,7 @@ export function TextAiDashboardToolbar({
   const [newCommentsCount, setNewCommentsCount] = useState(TEXT_AI_PENDING_NEW_COMMENTS);
   const [isSyncing, setIsSyncing] = useState(false);
   const [processModalOpen, setProcessModalOpen] = useState(false);
+  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
   const [draftSegmentFilters, setDraftSegmentFilters] = useState<TextAiSegmentFilterState>(
     () => segmentFilters ?? createDefaultSegmentFilterState()
   );
@@ -155,15 +168,46 @@ export function TextAiDashboardToolbar({
               onClick={() => showToast({ message: 'Share dashboard', variant: 'success' })}
               Icon={<span className="wm-share" />}
             />
-            <WuTooltip content="Dashboard settings" position="bottom">
-              <WuButton
-                variant="iconOnly"
-                size="sm"
-                aria-label="Dashboard settings"
-                onClick={() => onOpenSettings?.()}
-                Icon={<span className="wm-settings" />}
-              />
-            </WuTooltip>
+            <WuMenu
+              open={settingsMenuOpen}
+              onOpenChange={setSettingsMenuOpen}
+              align="end"
+              side="bottom"
+              sideOffset={6}
+              className={styles.settingsMenu}
+              Trigger={
+                <WuTooltip content="Dashboard settings" position="bottom">
+                  <WuButton
+                    variant="iconOnly"
+                    size="sm"
+                    aria-label="Dashboard settings menu"
+                    aria-expanded={settingsMenuOpen}
+                    Icon={<span className="wm-settings" />}
+                  />
+                </WuTooltip>
+              }
+            >
+              <WuMenuItem
+                className={styles.settingsMenuItem}
+                Icon={<span className="wm-settings" aria-hidden />}
+                onSelect={() => {
+                  setSettingsMenuOpen(false);
+                  onOpenSettings?.();
+                }}
+              >
+                Settings
+              </WuMenuItem>
+              <WuMenuItem
+                className={styles.settingsMenuItem}
+                Icon={<span className="wm-table-edit" aria-hidden />}
+                onSelect={() => {
+                  setSettingsMenuOpen(false);
+                  onOpenThemeConfiguration?.();
+                }}
+              >
+                Theme configuration
+              </WuMenuItem>
+            </WuMenu>
             <WuButton
               className={styles.addWidgetBtn}
               onClick={onAddWidget}
