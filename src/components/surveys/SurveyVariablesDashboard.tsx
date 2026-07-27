@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { AddVariableMappingModal } from '@/components/surveys/AddVariableMappingModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -18,6 +19,21 @@ import {
   type SystemVariableOption,
 } from '@/data/mock-survey-variables';
 import styles from './SurveyVariablesDashboard.module.css';
+
+function serializeMappings(rows: SystemVariableMappingRow[]): string {
+  return JSON.stringify(
+    rows.map((row) => ({
+      id: row.id,
+      variable: row.variable,
+      displayName: row.displayName,
+      code: row.code,
+    }))
+  );
+}
+
+const UNSAVED_CHANGES_TITLE = 'Unsaved changes';
+const UNSAVED_CHANGES_DESCRIPTION =
+  'You have unsaved variable mapping changes. Leave this page without saving?';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
@@ -169,18 +185,96 @@ function VariableSelect({
 
 export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariablesDashboardProps) {
   const { showToast } = useWuShowToast();
-  const [rows, setRows] = useState<SystemVariableMappingRow[]>(() =>
-    createDefaultSystemVariableMappings()
+  const router = useRouter();
+  const initialRowsRef = useRef<SystemVariableMappingRow[] | null>(null);
+  if (initialRowsRef.current === null) {
+    initialRowsRef.current = createDefaultSystemVariableMappings();
+  }
+  const [rows, setRows] = useState<SystemVariableMappingRow[]>(
+    () => initialRowsRef.current as SystemVariableMappingRow[]
+  );
+  const [savedSnapshot, setSavedSnapshot] = useState(() =>
+    serializeMappings(initialRowsRef.current as SystemVariableMappingRow[])
   );
   const [openRowId, setOpenRowId] = useState<string | null>(null);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [savedRowIds, setSavedRowIds] = useState<ReadonlySet<string>>(() => new Set());
   const [deleteTarget, setDeleteTarget] = useState<SystemVariableMappingRow | null>(null);
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [missingDisplayNameIds, setMissingDisplayNameIds] = useState<ReadonlySet<string>>(
+    () => new Set()
+  );
+  const allowNavigationRef = useRef(false);
+
+  const isDirty = serializeMappings(rows) !== savedSnapshot;
+
+  useEffect(() => {
+    if (!isDirty) return;
+
+    function handleBeforeUnload(event: BeforeUnloadEvent): void {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  useEffect(() => {
+    if (!isDirty) return;
+
+    function handleDocumentClick(event: MouseEvent): void {
+      if (allowNavigationRef.current) return;
+      if (event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+
+      const anchor = target.closest('a[href]') as HTMLAnchorElement | null;
+      if (!anchor || anchor.target === '_blank') return;
+
+      const rawHref = anchor.getAttribute('href');
+      if (!rawHref || rawHref === '#' || rawHref.startsWith('javascript:')) return;
+
+      let nextUrl: URL;
+      try {
+        nextUrl = new URL(rawHref, window.location.href);
+      } catch {
+        return;
+      }
+
+      if (nextUrl.origin !== window.location.origin) return;
+      if (
+        nextUrl.pathname === window.location.pathname &&
+        nextUrl.search === window.location.search
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      setPendingHref(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+      setLeaveConfirmOpen(true);
+    }
+
+    document.addEventListener('click', handleDocumentClick, true);
+    return () => document.removeEventListener('click', handleDocumentClick, true);
+  }, [isDirty]);
 
   function updateRow(
     rowId: string,
     patch: Partial<Pick<SystemVariableMappingRow, 'variable' | 'displayName' | 'code'>>
   ): void {
+    if (patch.displayName !== undefined && patch.displayName.trim() !== '') {
+      setMissingDisplayNameIds((prev) => {
+        if (!prev.has(rowId)) return prev;
+        const next = new Set(prev);
+        next.delete(rowId);
+        return next;
+      });
+    }
     setRows((prev) =>
       prev.map((row) => (row.id === rowId ? { ...row, ...patch } : row))
     );
@@ -228,6 +322,12 @@ export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariable
       next.delete(rowId);
       return next;
     });
+    setMissingDisplayNameIds((prev) => {
+      if (!prev.has(rowId)) return prev;
+      const next = new Set(prev);
+      next.delete(rowId);
+      return next;
+    });
     setRows((prev) => {
       const next = prev.filter((row) => row.id !== rowId);
       return next.length > 0 ? next : [createEmptySystemVariableMapping()];
@@ -250,18 +350,48 @@ export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariable
   }
 
   function handleSaveChanges(): void {
+    const missingNameIds = rows
+      .filter((row) => row.variable && row.displayName.trim() === '')
+      .map((row) => row.id);
+
+    if (missingNameIds.length > 0) {
+      setMissingDisplayNameIds(new Set(missingNameIds));
+      showToast({
+        message:
+          missingNameIds.length === 1
+            ? 'Enter a display name for the selected variable'
+            : 'Enter a display name for each selected variable',
+        variant: 'error',
+      });
+      return;
+    }
+
+    setMissingDisplayNameIds(new Set());
     setSavedRowIds(
       new Set(rows.filter((row) => row.variable).map((row) => row.id))
     );
+    setSavedSnapshot(serializeMappings(rows));
     showToast({ message: 'Variable mappings saved', variant: 'success' });
   }
 
   function handleResetMapping(): void {
     setOpenRowId(null);
     setDeleteTarget(null);
+    setMissingDisplayNameIds(new Set());
     setSavedRowIds(new Set());
-    setRows(createDefaultSystemVariableMappings());
+    const nextRows = createDefaultSystemVariableMappings();
+    setRows(nextRows);
+    setSavedSnapshot(serializeMappings(nextRows));
     showToast({ message: 'Variable mappings reset', variant: 'success' });
+  }
+
+  function handleConfirmLeave(): void {
+    if (!pendingHref) return;
+    allowNavigationRef.current = true;
+    const href = pendingHref;
+    setPendingHref(null);
+    setLeaveConfirmOpen(false);
+    router.push(href);
   }
 
   return (
@@ -324,6 +454,7 @@ export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariable
                       value={row.displayName}
                       maxLength={SYSTEM_VARIABLE_DISPLAY_NAME_MAX_LENGTH}
                       invalid={
+                        missingDisplayNameIds.has(row.id) ||
                         row.displayName.length >= SYSTEM_VARIABLE_DISPLAY_NAME_MAX_LENGTH
                       }
                       onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -335,7 +466,13 @@ export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariable
                         })
                       }
                       aria-label={`Display name for ${row.variable || 'new mapping'}`}
+                      aria-invalid={missingDisplayNameIds.has(row.id)}
                     />
+                    {missingDisplayNameIds.has(row.id) ? (
+                      <p className={styles.fieldError} role="alert">
+                        Display name is required
+                      </p>
+                    ) : null}
                   </div>
                   <div className={styles.colCode}>
                     <WuInput
@@ -401,6 +538,21 @@ export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariable
         confirmLabel="Delete"
         variant="critical"
         onConfirm={handleConfirmDelete}
+      />
+
+      <ConfirmModal
+        open={leaveConfirmOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setLeaveConfirmOpen(false);
+            setPendingHref(null);
+          }
+        }}
+        title={UNSAVED_CHANGES_TITLE}
+        description={UNSAVED_CHANGES_DESCRIPTION}
+        confirmLabel="Leave"
+        variant="critical"
+        onConfirm={handleConfirmLeave}
       />
     </div>
   );

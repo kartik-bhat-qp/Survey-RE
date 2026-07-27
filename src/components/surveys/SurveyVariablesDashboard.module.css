@@ -320,10 +320,24 @@
   width: 100%;
 }
 
+.colDisplayName {
+  align-items: stretch;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .colDisplayName :global(.wu-input),
 .colCode :global(.wu-input) {
   max-width: 100%;
   width: 100%;
+}
+
+.fieldError {
+  color: #dc2626;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  margin: 0;
 }
 
 .codeInput :global(input),

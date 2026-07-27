@@ -85,11 +85,13 @@
   flex: 0 0 auto;
   max-width: 4rem;
   min-width: 3rem;
+  text-align: right;
   width: 4rem !important;
 }
 
 .minimumAgeInput :global(input) {
   max-width: 100%;
+  text-align: right;
   width: 100%;
 }
 

@@ -7,6 +7,7 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
   downloadVariableMappingTemplate,
+  ADD_VARIABLE_MAPPING_HELP,
   COPY_PASTE_VARIABLE_MAPPING_FORMAT,
   COPY_PASTE_VARIABLE_MAPPING_PLACEHOLDER,
   IMPORT_VARIABLE_MAPPING_STEPS,
@@ -30,6 +31,10 @@ const WuSelect = dynamic(
 );
 const WuTextarea = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTextarea })),
+  { ssr: false }
+);
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
 
@@ -143,6 +148,7 @@ export function AddVariableMappingModal({
 
   const primaryDisabled =
     !copyOverrideAcknowledged ||
+    (activeTab === 'import' && !selectedFileName) ||
     (activeTab === 'copy-survey' && !sourceSurvey);
 
   const tabs: IWuTabItem[] = [
@@ -266,7 +272,14 @@ export function AddVariableMappingModal({
       className={styles.modal}
     >
       <WuModalHeader className={styles.header}>
-        <span className={styles.headerTitle}>Add Variable Mapping</span>
+        <span className={styles.headerTitleRow}>
+          <span className={styles.headerTitle}>Add Variable Mapping</span>
+          <WuTooltip content={ADD_VARIABLE_MAPPING_HELP} position="bottom">
+            <span className={styles.helpIcon} aria-label={ADD_VARIABLE_MAPPING_HELP}>
+              <span className="wm-help" aria-hidden />
+            </span>
+          </WuTooltip>
+        </span>
       </WuModalHeader>
 
       <WuModalContent className={styles.content}>
