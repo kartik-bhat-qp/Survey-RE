@@ -23,6 +23,10 @@ const WuInput = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
   { ssr: false }
 );
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
 
 interface NotificationGroupsModalProps {
   open: boolean;
@@ -31,7 +35,7 @@ interface NotificationGroupsModalProps {
   onChange: (groups: SurveyNotificationGroup[]) => void;
 }
 
-type EditorMode = 'list' | 'create' | 'edit';
+type EditorMode = 'list' | 'create' | 'edit' | 'view';
 
 function memberCountLabel(count: number): string {
   return `${count} member${count === 1 ? '' : 's'}`;
@@ -51,6 +55,7 @@ export function NotificationGroupsModal({
   const { showToast } = useWuShowToast();
   const [mode, setMode] = useState<EditorMode>('list');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [viewingGroup, setViewingGroup] = useState<SurveyNotificationGroup | null>(null);
   const [groupName, setGroupName] = useState('');
   const [members, setMembers] = useState<SurveyNotificationGroupMember[]>([emptyMemberDraft()]);
   const [deleteTarget, setDeleteTarget] = useState<SurveyNotificationGroup | null>(null);
@@ -59,6 +64,7 @@ export function NotificationGroupsModal({
     if (!open) return;
     setMode('list');
     setEditingId(null);
+    setViewingGroup(null);
     setGroupName('');
     setMembers([emptyMemberDraft()]);
     setDeleteTarget(null);
@@ -73,6 +79,7 @@ export function NotificationGroupsModal({
   function resetEditor(): void {
     setMode('list');
     setEditingId(null);
+    setViewingGroup(null);
     setGroupName('');
     setMembers([emptyMemberDraft()]);
   }
@@ -80,6 +87,7 @@ export function NotificationGroupsModal({
   function startCreate(): void {
     setMode('create');
     setEditingId(null);
+    setViewingGroup(null);
     setGroupName('');
     setMembers([emptyMemberDraft()]);
   }
@@ -87,12 +95,19 @@ export function NotificationGroupsModal({
   function startEdit(group: SurveyNotificationGroup): void {
     setMode('edit');
     setEditingId(group.id);
+    setViewingGroup(null);
     setGroupName(group.name);
     setMembers(
       group.members.length > 0
         ? group.members.map((member) => ({ ...member }))
         : [emptyMemberDraft()]
     );
+  }
+
+  function startView(group: SurveyNotificationGroup): void {
+    setMode('view');
+    setEditingId(null);
+    setViewingGroup(group);
   }
 
   function updateMember(
@@ -186,7 +201,9 @@ export function NotificationGroupsModal({
       ? 'New Notification Group'
       : mode === 'edit'
         ? 'Edit Notification Group'
-        : 'Notification Groups';
+        : mode === 'view'
+          ? (viewingGroup?.name ?? 'Notification Group')
+          : 'Notification Groups';
 
   return (
     <>
@@ -222,28 +239,76 @@ export function NotificationGroupsModal({
                         </span>
                       </div>
                       <div className={styles.groupActions}>
-                        <button
-                          type="button"
-                          className={styles.iconBtn}
-                          aria-label={`Edit ${group.name}`}
-                          onClick={() => startEdit(group)}
-                        >
-                          <span className="wm-edit" aria-hidden />
-                        </button>
-                        <button
-                          type="button"
-                          className={`${styles.iconBtn} ${styles.deleteBtn}`}
-                          aria-label={`Delete ${group.name}`}
-                          onClick={() => setDeleteTarget(group)}
-                        >
-                          <span className="wm-delete" aria-hidden />
-                        </button>
+                        <WuTooltip content="View emails" position="top">
+                          <button
+                            type="button"
+                            className={styles.iconBtn}
+                            aria-label={`View emails in ${group.name}`}
+                            onClick={() => startView(group)}
+                          >
+                            <span className="wm-visibility" aria-hidden />
+                          </button>
+                        </WuTooltip>
+                        <WuTooltip content="Edit group" position="top">
+                          <button
+                            type="button"
+                            className={styles.iconBtn}
+                            aria-label={`Edit ${group.name}`}
+                            onClick={() => startEdit(group)}
+                          >
+                            <span className="wm-edit" aria-hidden />
+                          </button>
+                        </WuTooltip>
+                        <WuTooltip content="Delete group" position="top">
+                          <button
+                            type="button"
+                            className={`${styles.iconBtn} ${styles.deleteBtn}`}
+                            aria-label={`Delete ${group.name}`}
+                            onClick={() => setDeleteTarget(group)}
+                          >
+                            <span className="wm-delete" aria-hidden />
+                          </button>
+                        </WuTooltip>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </>
+          ) : mode === 'view' && viewingGroup ? (
+            <div className={styles.viewPanel}>
+              <p className={styles.viewMeta}>
+                {memberCountLabel(viewingGroup.members.length)}
+              </p>
+              {viewingGroup.members.length === 0 ? (
+                <EmptyState
+                  icon="wm-mail"
+                  title="No emails in this group"
+                  description="Add members to include email addresses in this notification group."
+                />
+              ) : (
+                <div className={styles.viewTableWrap}>
+                  <table className={styles.viewTable}>
+                    <thead>
+                      <tr>
+                        <th scope="col">Email</th>
+                        <th scope="col">First name</th>
+                        <th scope="col">Last name</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {viewingGroup.members.map((member) => (
+                        <tr key={member.id}>
+                          <td title={member.email}>{member.email || '—'}</td>
+                          <td>{member.firstName || '—'}</td>
+                          <td>{member.lastName || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           ) : (
             <div className={styles.editor}>
               <label className={styles.field}>
@@ -316,6 +381,15 @@ export function NotificationGroupsModal({
         <WuModalFooter>
           {mode === 'list' ? (
             <WuModalClose variant="secondary">Close</WuModalClose>
+          ) : mode === 'view' ? (
+            <div className={styles.footerActions}>
+              <WuButton variant="secondary" onClick={resetEditor}>
+                Back
+              </WuButton>
+              {viewingGroup ? (
+                <WuButton onClick={() => startEdit(viewingGroup)}>Edit Group</WuButton>
+              ) : null}
+            </div>
           ) : (
             <div className={styles.footerActions}>
               <WuButton variant="secondary" onClick={resetEditor}>

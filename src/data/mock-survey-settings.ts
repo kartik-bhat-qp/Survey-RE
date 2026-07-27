@@ -88,7 +88,8 @@ export type AgeVerificationFailedAction = 'terminate-survey' | 'automatic-redire
 export interface AgeVerificationCountryRule {
   id: string;
   minimumAge: number;
-  countryCodes: string[];
+  /** One country per rule line. */
+  countryCode: string;
 }
 
 export interface AgeVerificationSettings {
@@ -333,9 +334,54 @@ export function createAgeVerificationCountryRule(
   return {
     id: `age-country-rule-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     minimumAge: 18,
-    countryCodes: [],
+    countryCode: '',
     ...overrides,
   };
+}
+
+/** Expand legacy multi-country rows into one rule per country. */
+export function normalizeAgeVerificationCountryRules(
+  rules: Array<{
+    id?: string;
+    minimumAge?: number;
+    countryCode?: string;
+    countryCodes?: string[];
+  }>,
+  fallbackMinimumAge: number
+): AgeVerificationCountryRule[] {
+  const normalized: AgeVerificationCountryRule[] = [];
+
+  for (const rule of rules) {
+    const minimumAge =
+      typeof rule.minimumAge === 'number' && Number.isFinite(rule.minimumAge)
+        ? rule.minimumAge
+        : fallbackMinimumAge;
+
+    const legacyCodes = Array.isArray(rule.countryCodes)
+      ? rule.countryCodes.filter((code): code is string => typeof code === 'string' && code.trim() !== '')
+      : [];
+    const singleCode =
+      typeof rule.countryCode === 'string' && rule.countryCode.trim() !== ''
+        ? rule.countryCode.trim()
+        : '';
+
+    const codes = legacyCodes.length > 0 ? legacyCodes : singleCode ? [singleCode] : [''];
+
+    codes.forEach((code, index) => {
+      normalized.push(
+        createAgeVerificationCountryRule({
+          id:
+            index === 0 && rule.id
+              ? rule.id
+              : createAgeVerificationCountryRule().id,
+          minimumAge,
+          countryCode: code,
+        })
+      );
+    });
+  }
+
+  return normalized;
 }
 
 export const DEFAULT_AGE_VERIFICATION_SETTINGS: AgeVerificationSettings = {
@@ -413,7 +459,6 @@ export function getDefaultSurveySettings(): SurveySettings {
         ...DEFAULT_AGE_VERIFICATION_SETTINGS,
         countryRules: DEFAULT_AGE_VERIFICATION_SETTINGS.countryRules.map((rule) => ({
           ...rule,
-          countryCodes: [...rule.countryCodes],
         })),
       },
       respondentAnonymity: {
@@ -530,16 +575,16 @@ export function normalizeSurveySettings(parsed: Partial<SurveySettings>): Survey
           parsed.security?.ageVerificationSettings?.geolocationLogicEnabled ??
           fallback.security.ageVerificationSettings.geolocationLogicEnabled,
         countryRules: Array.isArray(parsed.security?.ageVerificationSettings?.countryRules)
-          ? parsed.security.ageVerificationSettings.countryRules.map((rule) => ({
-              id: rule.id || createAgeVerificationCountryRule().id,
-              minimumAge:
-                typeof rule.minimumAge === 'number' && Number.isFinite(rule.minimumAge)
-                  ? rule.minimumAge
-                  : fallback.security.ageVerificationSettings.minimumAge,
-              countryCodes: Array.isArray(rule.countryCodes)
-                ? rule.countryCodes.filter((code): code is string => typeof code === 'string')
-                : [],
-            }))
+          ? normalizeAgeVerificationCountryRules(
+              parsed.security.ageVerificationSettings.countryRules as Array<{
+                id?: string;
+                minimumAge?: number;
+                countryCode?: string;
+                countryCodes?: string[];
+              }>,
+              parsed.security?.ageVerificationSettings?.minimumAge ??
+                fallback.security.ageVerificationSettings.minimumAge
+            )
           : fallback.security.ageVerificationSettings.countryRules,
       },
       respondentAnonymity: ensureRequiredAnonymityFields(

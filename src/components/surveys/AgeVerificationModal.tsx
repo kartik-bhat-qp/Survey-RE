@@ -1,16 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWickUILib } from '@/components/ui/useWickUILib';
-import { OptionMultiSelect } from '@/components/surveys/OptionMultiSelect';
 import { SurveySettingsRichText } from '@/components/surveys/SurveySettingsRichText';
-import { VALUE_SEPARATOR } from '@/data/mock-criteria-engine';
 import {
   AGE_VERIFICATION_COUNTRIES,
   AGE_VERIFICATION_FAILED_OPTIONS,
   AGE_VERIFICATION_HELP,
   createAgeVerificationCountryRule,
+  normalizeAgeVerificationCountryRules,
   type AgeVerificationCountryRule,
   type AgeVerificationFailedAction,
   type AgeVerificationSettings,
@@ -44,17 +43,6 @@ function parseMinimumAge(raw: string): number {
   return parsed;
 }
 
-function countryCodesToValue(codes: string[]): string {
-  return codes.join(VALUE_SEPARATOR);
-}
-
-function valueToCountryCodes(raw: string): string[] {
-  return raw
-    .split(VALUE_SEPARATOR)
-    .map((code) => code.trim())
-    .filter(Boolean);
-}
-
 export function AgeVerificationModal({
   open,
   onOpenChange,
@@ -67,9 +55,20 @@ export function AgeVerificationModal({
 
   useEffect(() => {
     if (!open) return;
-    setDraft(value);
+    setDraft({
+      ...value,
+      countryRules: normalizeAgeVerificationCountryRules(
+        value.countryRules,
+        value.minimumAge
+      ),
+    });
     setEditorKey((key) => key + 1);
   }, [open, value]);
+
+  const selectedCountryCodes = useMemo(
+    () => new Set(draft.countryRules.map((rule) => rule.countryCode).filter(Boolean)),
+    [draft.countryRules]
+  );
 
   if (!open || !wick) {
     return null;
@@ -134,6 +133,13 @@ export function AgeVerificationModal({
     });
   }
 
+  function countryOptionsForRule(rule: AgeVerificationCountryRule) {
+    return AGE_VERIFICATION_COUNTRIES.filter(
+      (country) =>
+        country.value === rule.countryCode || !selectedCountryCodes.has(country.value)
+    );
+  }
+
   return (
     <WuModal
       open
@@ -167,18 +173,20 @@ export function AgeVerificationModal({
             {geolocationEnabled ? 'Default Minimum Age' : 'Minimum Age'}
           </span>
           <div className={styles.minimumAgeRow}>
-            <WuInput
-              className={styles.minimumAgeInput}
-              value={String(draft.minimumAge)}
-              onChange={(event) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  minimumAge: parseMinimumAge(event.target.value),
-                }))
-              }
-              aria-label={geolocationEnabled ? 'Default minimum age' : 'Minimum age'}
-            />
-            <span className={styles.yearsSuffix}>years</span>
+            <div className={styles.minimumAgeControl}>
+              <WuInput
+                className={styles.minimumAgeInput}
+                value={String(draft.minimumAge)}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    minimumAge: parseMinimumAge(event.target.value),
+                  }))
+                }
+                aria-label={geolocationEnabled ? 'Default minimum age' : 'Minimum age'}
+              />
+              <span className={styles.yearsSuffix}>years</span>
+            </div>
             {!geolocationEnabled ? (
               <button
                 type="button"
@@ -194,33 +202,42 @@ export function AgeVerificationModal({
         {geolocationEnabled
           ? draft.countryRules.map((rule, index) => {
               const isLast = index === draft.countryRules.length - 1;
+              const countryOptions = countryOptionsForRule(rule);
+              const selectedCountry =
+                countryOptions.find((country) => country.value === rule.countryCode) ?? null;
+
               return (
                 <div key={rule.id} className={styles.countryRuleRow}>
                   <span className={styles.fieldLabel}>Minimum Age</span>
                   <div className={styles.countryRuleControls}>
-                    <WuInput
-                      className={styles.minimumAgeInput}
-                      value={String(rule.minimumAge)}
-                      onChange={(event) =>
-                        updateCountryRule(rule.id, {
-                          minimumAge: parseMinimumAge(event.target.value),
-                        })
-                      }
-                      aria-label={`Minimum age for country rule ${index + 1}`}
-                    />
-                    <span className={styles.yearsSuffix}>Years</span>
-                    <span className={styles.ifCountryLabel}>if Country is</span>
-                    <div className={styles.countrySelectWrap}>
-                      <OptionMultiSelect
-                        options={AGE_VERIFICATION_COUNTRIES}
-                        value={countryCodesToValue(rule.countryCodes)}
-                        onChange={(next) =>
+                    <div className={styles.minimumAgeControl}>
+                      <WuInput
+                        className={styles.minimumAgeInput}
+                        value={String(rule.minimumAge)}
+                        onChange={(event) =>
                           updateCountryRule(rule.id, {
-                            countryCodes: valueToCountryCodes(next),
+                            minimumAge: parseMinimumAge(event.target.value),
                           })
                         }
-                        placeholder="Nothing selected"
-                        triggerClassName={styles.countryMenuTrigger}
+                        aria-label={`Minimum age for country rule ${index + 1}`}
+                      />
+                      <span className={styles.yearsSuffix}>Years</span>
+                    </div>
+                    <span className={styles.ifCountryLabel}>if Country is</span>
+                    <div className={styles.countrySelectWrap}>
+                      <WuSelect
+                        data={countryOptions}
+                        accessorKey={{ value: 'value', label: 'label' }}
+                        value={selectedCountry}
+                        onSelect={(item) => {
+                          const selected = item as { value: string } | null;
+                          updateCountryRule(rule.id, {
+                            countryCode: selected?.value ?? '',
+                          });
+                        }}
+                        placeholder="Select country"
+                        variant="outlined"
+                        aria-label={`Country for rule ${index + 1}`}
                       />
                     </div>
                     <div className={styles.ruleActions}>

@@ -339,6 +339,21 @@ export function deriveNotificationCriteriaLabel(
     return 'Device Type';
   }
 
+  if (cond.source === 'Language') {
+    const languages = parseSelectedValues(cond.value);
+    if (languages.length === 1) return `Language is ${languages[0]}`;
+    if (languages.length > 1) return `Language is ${languages[0]}…`;
+    return 'Language';
+  }
+
+  if (cond.source === 'Data Quality') {
+    const qualities = parseSelectedValues(cond.value);
+    const operator = cond.operator === 'is not' ? 'is not' : 'is';
+    if (qualities.length === 1) return `Data Quality ${operator} ${qualities[0]}`;
+    if (qualities.length > 1) return `Data Quality ${operator} ${qualities[0]}…`;
+    return 'Data Quality';
+  }
+
   if (first.name.trim()) return first.name.trim();
   return cond.source;
 }
@@ -361,6 +376,10 @@ function criterionConditionToDisplayRule(
     subject = 'Email List Code';
   } else if (cond.source === 'Device Type') {
     subject = 'Device Type';
+  } else if (cond.source === 'Language') {
+    subject = 'Language';
+  } else if (cond.source === 'Data Quality') {
+    subject = 'Data Quality';
   }
 
   let value = cond.value;
@@ -833,93 +852,141 @@ export function normalizeSurveyNotificationSettings(
   return { items, listView };
 }
 
-/** Email notification delivery history shown from the Notifications footer. */
+/** Notification email delivery history shown from the Notifications footer. */
 export type SurveyNotificationEmailSendStatus =
+  | 'Delivered'
   | 'Sent'
   | 'Queued'
   | 'Failed'
-  | 'Bounced';
+  | 'Bounced'
+  | 'Deferred';
 
 export interface SurveyNotificationEmailSendLog {
   id: string;
-  sentAt: string;
-  notificationName: string;
-  recipient: string;
-  status: SurveyNotificationEmailSendStatus;
+  responseId: string;
+  emailType: string;
+  toEmail: string;
+  fromEmail: string;
+  sentOn: string;
+  smtpStatus: SurveyNotificationEmailSendStatus;
+  logs: string;
 }
 
 export const MOCK_SURVEY_NOTIFICATION_EMAIL_SEND_LOGS: SurveyNotificationEmailSendLog[] = [
   {
     id: 'nlog-1',
-    sentAt: '2026-07-24T09:12:00.000Z',
-    notificationName: 'Thank You Email',
-    recipient: 'alex.morgan@northstar-bank.com',
-    status: 'Sent',
+    responseId: '12894021',
+    emailType: 'Thank You Email',
+    toEmail: 'alex.morgan@northstar-bank.com',
+    fromEmail: 'survey@qp-mail.com',
+    sentOn: '2026-07-24T09:12:00.000Z',
+    smtpStatus: 'Delivered',
+    logs: '250 2.0.0 OK message accepted',
   },
   {
     id: 'nlog-2',
-    sentAt: '2026-07-24T08:47:00.000Z',
-    notificationName: 'Admin Confirmation',
-    recipient: 'kartik.bhat@questionpro.com',
-    status: 'Sent',
+    responseId: '12893988',
+    emailType: 'Admin Confirmation',
+    toEmail: 'kartik.bhat@questionpro.com',
+    fromEmail: 'survey@qp-mail.com',
+    sentOn: '2026-07-24T08:47:00.000Z',
+    smtpStatus: 'Delivered',
+    logs: '250 2.0.0 OK message accepted',
   },
   {
     id: 'nlog-3',
-    sentAt: '2026-07-23T16:22:00.000Z',
-    notificationName: 'Quota Notification',
-    recipient: 'ops-alerts@questionpro.com',
-    status: 'Sent',
+    responseId: '12893102',
+    emailType: 'Quota Notification',
+    toEmail: 'ops-alerts@questionpro.com',
+    fromEmail: 'survey@qp-mail.com',
+    sentOn: '2026-07-23T16:22:00.000Z',
+    smtpStatus: 'Sent',
+    logs: 'Queued for delivery',
   },
   {
     id: 'nlog-4',
-    sentAt: '2026-07-23T14:05:00.000Z',
-    notificationName: 'Thank You Email',
-    recipient: 'jordan.lee@example.com',
-    status: 'Bounced',
+    responseId: '12892855',
+    emailType: 'Thank You Email',
+    toEmail: 'jordan.lee@example.com',
+    fromEmail: 'survey@qp-mail.com',
+    sentOn: '2026-07-23T14:05:00.000Z',
+    smtpStatus: 'Bounced',
+    logs: '550 5.1.1 User unknown',
   },
   {
     id: 'nlog-5',
-    sentAt: '2026-07-22T19:41:00.000Z',
-    notificationName: 'Admin Confirmation',
-    recipient: 'research.team@questionpro.com',
-    status: 'Sent',
+    responseId: '12892014',
+    emailType: 'Admin Confirmation',
+    toEmail: 'research.team@questionpro.com',
+    fromEmail: 'survey@qp-mail.com',
+    sentOn: '2026-07-22T19:41:00.000Z',
+    smtpStatus: 'Delivered',
+    logs: '250 2.0.0 OK message accepted',
   },
   {
     id: 'nlog-6',
-    sentAt: '2026-07-22T11:18:00.000Z',
-    notificationName: 'Thank You Email',
-    recipient: 'priya.shah@fintech.io',
-    status: 'Queued',
+    responseId: '12891567',
+    emailType: 'Thank You Email',
+    toEmail: 'priya.shah@fintech.io',
+    fromEmail: 'survey@qp-mail.com',
+    sentOn: '2026-07-22T11:18:00.000Z',
+    smtpStatus: 'Queued',
+    logs: 'Waiting in outbound queue',
   },
   {
     id: 'nlog-7',
-    sentAt: '2026-07-21T21:03:00.000Z',
-    notificationName: 'New test notification',
-    recipient: 'qa.automation@questionpro.com',
-    status: 'Failed',
+    responseId: '12890112',
+    emailType: 'New test notification',
+    toEmail: 'qa.automation@questionpro.com',
+    fromEmail: 'survey@qp-mail.com',
+    sentOn: '2026-07-21T21:03:00.000Z',
+    smtpStatus: 'Failed',
+    logs: '421 4.7.0 Temporary system problem',
   },
   {
     id: 'nlog-8',
-    sentAt: '2026-07-21T10:55:00.000Z',
-    notificationName: 'Thank You Email',
-    recipient: 'casey.nguyen@retailco.com',
-    status: 'Sent',
+    responseId: '12889440',
+    emailType: 'Thank You Email',
+    toEmail: 'casey.nguyen@retailco.com',
+    fromEmail: 'survey@qp-mail.com',
+    sentOn: '2026-07-21T10:55:00.000Z',
+    smtpStatus: 'Delivered',
+    logs: '250 2.0.0 OK message accepted',
   },
   {
     id: 'nlog-9',
-    sentAt: '2026-07-20T15:30:00.000Z',
-    notificationName: 'Admin Confirmation',
-    recipient: 'kartik.bhat@questionpro.com',
-    status: 'Sent',
+    responseId: '12888003',
+    emailType: 'Admin Confirmation',
+    toEmail: 'kartik.bhat@questionpro.com',
+    fromEmail: 'survey@qp-mail.com',
+    sentOn: '2026-07-20T15:30:00.000Z',
+    smtpStatus: 'Deferred',
+    logs: '451 4.4.1 Connection timed out',
   },
   {
     id: 'nlog-10',
-    sentAt: '2026-07-19T08:14:00.000Z',
-    notificationName: 'Quota Notification',
-    recipient: 'quota-watch@questionpro.com',
-    status: 'Sent',
+    responseId: '12887291',
+    emailType: 'Quota Notification',
+    toEmail: 'quota-watch@questionpro.com',
+    fromEmail: 'survey@qp-mail.com',
+    sentOn: '2026-07-19T08:14:00.000Z',
+    smtpStatus: 'Delivered',
+    logs: '250 2.0.0 OK message accepted',
   },
 ];
+
+export function filterNotificationEmailSendLogs(
+  logs: SurveyNotificationEmailSendLog[],
+  query: string
+): SurveyNotificationEmailSendLog[] {
+  const trimmed = query.trim().toLowerCase();
+  if (!trimmed) return logs;
+  return logs.filter(
+    (log) =>
+      log.responseId.toLowerCase().includes(trimmed) ||
+      log.toEmail.toLowerCase().includes(trimmed)
+  );
+}
 
 export interface SurveyNotificationGroupMember {
   id: string;

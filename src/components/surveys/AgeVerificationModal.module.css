@@ -69,19 +69,36 @@
 .minimumAgeRow {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.minimumAgeControl {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
   gap: 0.5rem;
 }
 
 .minimumAgeInput {
+  flex: 0 0 auto;
   max-width: 4rem;
   min-width: 3rem;
+  width: 4rem !important;
+}
+
+.minimumAgeInput :global(input) {
+  max-width: 100%;
+  width: 100%;
 }
 
 .yearsSuffix {
   color: #64748b;
   font-family: 'Fira Sans', sans-serif;
   font-size: 0.875rem;
+  flex-shrink: 0;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -130,32 +147,6 @@
   flex: 1 1 12rem;
   max-width: 16rem;
   min-width: 10rem;
-}
-
-.countryMenuTrigger {
-  align-items: center;
-  background: #ffffff;
-  border: 1px solid #d0d5dd;
-  border-radius: 4px;
-  color: #1f2937;
-  cursor: pointer;
-  display: inline-flex;
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 400;
-  gap: 0.5rem;
-  height: 2.25rem;
-  justify-content: space-between;
-  min-width: 0;
-  padding: 0 0.75rem;
-  text-align: left;
-  width: 100%;
-}
-
-.countryMenuTrigger:hover,
-.countryMenuTrigger:focus-visible {
-  border-color: #1b87e6;
-  outline: none;
 }
 
 .ruleActions {

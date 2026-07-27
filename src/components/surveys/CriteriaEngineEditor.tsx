@@ -27,6 +27,9 @@ import {
   resolveOperatorForSource,
   RESPONSE_STATUS_OPERATORS,
   RESPONSE_STATUS_VALUES,
+  LANGUAGE_CONDITION_VALUES,
+  DATA_QUALITY_CONDITION_VALUES,
+  DATA_QUALITY_OPERATORS,
   GEO_LOCATION_FIELDS,
   DEVICE_TYPE_VALUES,
   serializeConditions,
@@ -605,9 +608,14 @@ export function CriteriaEngineEditor({
                           ? selectedQuestion.options
                           : cond.source === 'Response Status'
                             ? [...RESPONSE_STATUS_VALUES]
-                            : [];
+                            : cond.source === 'Language'
+                              ? [...LANGUAGE_CONDITION_VALUES]
+                              : cond.source === 'Data Quality'
+                                ? [...DATA_QUALITY_CONDITION_VALUES]
+                                : [];
                       const isQuestionSource = cond.source === 'Question';
                       const isResponseStatusSource = cond.source === 'Response Status';
+                      const isDataQualitySource = cond.source === 'Data Quality';
                       const isGeoLocationSource = cond.source === 'Geo Location';
                       const isEmailListCodeSource = cond.source === 'Email List Code';
                       const isDeviceTypeSource = cond.source === 'Device Type';
@@ -620,13 +628,15 @@ export function CriteriaEngineEditor({
                       const isOpenEndedQuestionSource =
                         isQuestionSource && isOpenEndedQuestion(selectedQuestion);
                       const usesSelectableOperators =
-                        isQuestionSource && !isOpenEndedQuestionSource;
+                        (isQuestionSource && !isOpenEndedQuestionSource) || isDataQualitySource;
                       const questionNeedsValue =
                         !isQuestionSource ||
                         questionOperatorNeedsValue(cond.operator, selectedQuestion);
-                      const operatorOptions = isResponseStatusSource
-                        ? RESPONSE_STATUS_OPERATORS
-                        : operatorsForQuestion(selectedQuestion);
+                      const operatorOptions = isDataQualitySource
+                        ? DATA_QUALITY_OPERATORS
+                        : isResponseStatusSource
+                          ? RESPONSE_STATUS_OPERATORS
+                          : operatorsForQuestion(selectedQuestion);
                       const usesSystemVariableStyleOperators =
                         cond.source === 'System Variable' || isOpenEndedQuestionSource;
                       const usesSystemVariableStyleValue =
@@ -825,7 +835,8 @@ export function CriteriaEngineEditor({
                           ) : isResponseStatusSource ||
                             isGeoLocationSource ||
                             isEmailListCodeSource ||
-                            isDeviceTypeSource ? (
+                            isDeviceTypeSource ||
+                            cond.source === 'Language' ? (
                             <span className={styles.conditionOperatorFixed} aria-label="Operator">
                               is
                             </span>
@@ -855,9 +866,11 @@ export function CriteriaEngineEditor({
                                   onSelect={() =>
                                     handleUpdateCondition(criterion.id, cond.id, {
                                       operator: op,
-                                      value: questionOperatorNeedsValue(op, selectedQuestion)
-                                        ? cond.value
-                                        : '',
+                                      value:
+                                        isDataQualitySource ||
+                                        questionOperatorNeedsValue(op, selectedQuestion)
+                                          ? cond.value
+                                          : '',
                                       valueEnd: '',
                                     })
                                   }
@@ -935,7 +948,7 @@ export function CriteriaEngineEditor({
                               triggerClassName={`${styles.menuTrigger} ${styles.conditionValue}`}
                               caretClassName={`wm-keyboard-arrow-down ${styles.menuCaret}`}
                               labelClassName={styles.menuTriggerLabel}
-                              showSearch={!isResponseStatusSource}
+                              showSearch={!isResponseStatusSource && !isDataQualitySource}
                               showSelectAll={!isResponseStatusSource}
                               exclusiveOption={
                                 isResponseStatusSource ? RESPONSE_STATUS_VALUES[0] : undefined

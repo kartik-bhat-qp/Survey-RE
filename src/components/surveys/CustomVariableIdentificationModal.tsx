@@ -78,7 +78,9 @@ export function CustomVariableIdentificationModal({
         ) : null}
       </WuModalContent>
       <WuModalFooter>
-        <WuButton onClick={() => onOpenChange(false)}>Done</WuButton>
+        <div className={styles.footerActions}>
+          <WuButton onClick={() => onOpenChange(false)}>Done</WuButton>
+        </div>
       </WuModalFooter>
     </WuModal>
   );

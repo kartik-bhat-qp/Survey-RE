@@ -793,21 +793,23 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
                     <span>
                       Only allow the survey to be taken once (prevents ballot box stuffing)
                     </span>
-                    <button
-                      type="button"
-                      className={styles.participationSettingsBtn}
-                      aria-label="Custom Variable Identification settings"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        if (security.participationLogic !== 'once-only') {
-                          patchSecurity({ participationLogic: 'once-only' });
-                        }
-                        setCustomVariableModalOpen(true);
-                      }}
-                    >
-                      <span className="wm-settings" aria-hidden />
-                    </button>
+                    <WuTooltip content="Custom variable identification" position="top">
+                      <button
+                        type="button"
+                        className={styles.participationSettingsBtn}
+                        aria-label="Custom variable identification"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          if (security.participationLogic !== 'once-only') {
+                            patchSecurity({ participationLogic: 'once-only' });
+                          }
+                          setCustomVariableModalOpen(true);
+                        }}
+                      >
+                        <span className="wm-settings" aria-hidden />
+                      </button>
+                    </WuTooltip>
                   </span>
                 </label>
               </div>
@@ -1400,11 +1402,11 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
                 </div>
 
                 <div className={styles.notificationsFooter}>
-                  <WuTooltip content="Email send logs" position="top">
+                  <WuTooltip content="Notifications log" position="top">
                     <button
                       type="button"
                       className={styles.notificationsFooterBtn}
-                      aria-label="Email send logs"
+                      aria-label="Notifications log"
                       onClick={() => setEmailSendLogsOpen(true)}
                     >
                       <span className="wm-description" aria-hidden />

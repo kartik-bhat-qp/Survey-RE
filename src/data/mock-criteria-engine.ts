@@ -41,10 +41,12 @@ export const CONDITION_SOURCES = [
   'Device Type',
 ] as const;
 
-/** Notification criteria include Response Status in addition to the shared sources. */
+/** Notification criteria include Response Status, Language, and Data Quality. */
 export const NOTIFICATION_CONDITION_SOURCES = [
   ...CONDITION_SOURCES,
   'Response Status',
+  'Language',
+  'Data Quality',
 ] as const;
 
 export type ConditionSource = (typeof NOTIFICATION_CONDITION_SOURCES)[number];
@@ -56,6 +58,30 @@ export const RESPONSE_STATUS_VALUES = [
   'Completed',
   'Partial',
   'Terminated',
+] as const;
+
+export const LANGUAGE_CONDITION_VALUES = [
+  'English',
+  'Spanish',
+  'French',
+  'German',
+  'Portuguese',
+  'Chinese - Simplified',
+  'Chinese - Traditional',
+  'Arabic',
+  'Dutch',
+  'Japanese',
+] as const;
+
+export const DATA_QUALITY_OPERATORS = ['is', 'is not'] as const;
+
+export const DATA_QUALITY_CONDITION_VALUES = [
+  'Speeder',
+  'Straight-liner',
+  'Duplicate IP',
+  'Gibberish text',
+  'All checkboxes selected',
+  'Patterned responses',
 ] as const;
 
 export const GEO_LOCATION_FIELDS = [
@@ -214,7 +240,15 @@ export function resolveOperatorForSource(source: ConditionSource, current: strin
   if (source === 'Response Status') {
     return (RESPONSE_STATUS_OPERATORS as readonly string[]).includes(current) ? current : 'is';
   }
-  if (source === 'Geo Location' || source === 'Email List Code' || source === 'Device Type') {
+  if (source === 'Data Quality') {
+    return (DATA_QUALITY_OPERATORS as readonly string[]).includes(current) ? current : 'is';
+  }
+  if (
+    source === 'Geo Location' ||
+    source === 'Email List Code' ||
+    source === 'Device Type' ||
+    source === 'Language'
+  ) {
     return 'is';
   }
   return current;
@@ -312,6 +346,9 @@ export function isConditionComplete(cond: CriterionCondition): boolean {
     return cond.value.trim() !== '';
   }
   if (cond.source === 'Device Type') {
+    return cond.value.trim() !== '';
+  }
+  if (cond.source === 'Language' || cond.source === 'Data Quality') {
     return cond.value.trim() !== '';
   }
   return cond.value.trim() !== '';
