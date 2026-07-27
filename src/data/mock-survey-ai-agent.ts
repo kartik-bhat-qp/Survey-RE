@@ -350,6 +350,21 @@ export function buildResearchAgentUserContent(
   return `${trimmedPrompt}\n\n${attachmentLine}`;
 }
 
+/** Strip attachment markers and return a prompt suitable for survey generation. */
+export function normalizeResearchAgentSurveyPrompt(prompt: string): string {
+  const trimmed = prompt.trim();
+  if (!trimmed) return '';
+
+  const withoutAttachment = trimmed
+    .replace(/\s*\[attached:[^\]]+\]\s*/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (withoutAttachment) return withoutAttachment;
+  if (/\[attached:/i.test(trimmed)) return RESEARCH_AGENT_IMPORT_FROM_ATTACHED_PROMPT;
+  return trimmed;
+}
+
 const SURVEY_AI_GENERATION_DELAY_MS = 2200;
 
 /** Prototype context window for the research agent sidebar. */

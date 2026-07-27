@@ -59,11 +59,19 @@ import {
 } from '@/data/mock-survey-detail';
 import {
   consumeBlankSurveyCreateModalFlag,
+  DEFAULT_SURVEY_CREATION_LANGUAGE,
+  getSurveyCreationLanguageLabel,
   NEW_BLANK_SURVEY_ID,
   readBlankSurveyDraft,
   type BlankSurveyCreateOption,
 } from '@/data/mock-survey-creation-flow';
 import { isClientOnlySurveyId } from '@/lib/client-only-survey-ids';
+import { generatedSurveyToSections } from '@/lib/ai-survey-generation';
+import { requestAiSurveyGeneration } from '@/lib/request-ai-survey-generation';
+import {
+  normalizeResearchAgentSurveyPrompt,
+  type SurveyAiGenerationResult,
+} from '@/data/mock-survey-ai-agent';
 import { getQuestionTypePreview } from '@/data/mock-add-question-previews';
 import { SectionBlockOptionsButton } from '@/components/surveys/SectionBlockOptionsButton';
 import { BlockFlowModal } from '@/components/surveys/BlockFlowModal';
@@ -1363,6 +1371,56 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     setAgentSeedPrompt(prompt);
     setSurveyAgentOpen(true);
   }
+
+  const handleBlankResearchAgentSubmit = useCallback(
+    async (prompt: string): Promise<SurveyAiGenerationResult> => {
+      const generationPrompt = normalizeResearchAgentSurveyPrompt(prompt);
+      if (!generationPrompt) {
+        throw new Error('Enter a prompt to continue');
+      }
+
+      const languageLabel = getSurveyCreationLanguageLabel(DEFAULT_SURVEY_CREATION_LANGUAGE);
+      const result = await requestAiSurveyGeneration(generationPrompt, languageLabel);
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+
+      const nextSections = normalizeSurveyEditorSections(
+        cloneSections(generatedSurveyToSections(result.survey))
+      );
+      const questionCount = nextSections.reduce(
+        (count, section) => count + section.questions.length,
+        0
+      );
+
+      setSections(nextSections);
+      setQuestionSettingsByKey({});
+      setLogicByQuestionKey({});
+      setValidationByQuestionKey({});
+      setMultiPointSettingsByKey({});
+      setCaptchaSettingsByKey({});
+      setDeepDiveFollowUpSettingsByKey({});
+      setCheckedQuestionKeys({});
+      setSelectAll(false);
+
+      return {
+        summary:
+          questionCount === 1
+            ? 'Your survey is ready to edit with 1 question.'
+            : `Your survey is ready to edit with ${questionCount} questions.`,
+      };
+    },
+    [
+      setCaptchaSettingsByKey,
+      setDeepDiveFollowUpSettingsByKey,
+      setLogicByQuestionKey,
+      setMultiPointSettingsByKey,
+      setQuestionSettingsByKey,
+      setSections,
+      setSelectAll,
+      setValidationByQuestionKey,
+    ]
+  );
 
   useEffect(() => {
     setWorkspaceSections(sections);
@@ -3608,6 +3666,11 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         layout="inline"
         seedPrompt={agentSeedPrompt}
         onSeedPromptConsumed={() => setAgentSeedPrompt(null)}
+        onSubmit={
+          detail.survey.id === NEW_BLANK_SURVEY_ID
+            ? handleBlankResearchAgentSubmit
+            : undefined
+        }
         onClose={() => {
           setAgentSeedPrompt(null);
           setSurveyAgentOpen(false);
