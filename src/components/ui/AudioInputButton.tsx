@@ -89,7 +89,7 @@ export function AudioInputButton({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
 
   // Per-bar state for smoothing
   const prevHeightsRef = useRef<Float32Array>(new Float32Array(BAR_COUNT).fill(MIN_BAR_RATIO));
@@ -118,7 +118,7 @@ export function AudioInputButton({
     ctx.clearRect(0, 0, W, H);
 
     // Fetch fresh frequency data once per frame
-    let freqData: Uint8Array | null = null;
+    let freqData: Uint8Array<ArrayBuffer> | null = null;
     if (!simulatedRef.current && analyserRef.current && dataArrayRef.current) {
       analyserRef.current.getByteFrequencyData(dataArrayRef.current);
       freqData = dataArrayRef.current;
@@ -235,7 +235,7 @@ export function AudioInputButton({
       streamRef.current = stream;
       audioCtxRef.current = audioCtx;
       analyserRef.current = analyser;
-      dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
+      dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount) as Uint8Array<ArrayBuffer>;
     } catch {
       // Permission denied or API unavailable — animate without real data
       simulatedRef.current = true;
