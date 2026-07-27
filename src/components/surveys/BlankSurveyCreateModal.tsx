@@ -70,7 +70,12 @@ export function BlankSurveyCreateModal({
 
   return (
     <WuModal open onOpenChange={handleModalOpenChange} variant="action" size="md">
-      <WuModalHeader>What would you like to create?</WuModalHeader>
+      <WuModalHeader>
+        <span className={styles.headerTitleRow}>
+          What would you like to create?
+          <span className={`wc-ai ${styles.headerAiStar}`} aria-hidden />
+        </span>
+      </WuModalHeader>
       <WuModalContent>
         <div className={styles.content}>
           <label className={styles.label} htmlFor="blank-survey-create-prompt">

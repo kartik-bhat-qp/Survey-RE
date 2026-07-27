@@ -1,0 +1,219 @@
+.modal {
+  border: 1px solid #1b87e6;
+  max-width: min(48rem, calc(100vw - 1.5rem)) !important;
+  width: 100%;
+}
+
+.header {
+  background: #e8f4fd;
+  color: #1b3380;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 500;
+  padding-right: 3rem !important;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: min(32rem, 65vh);
+  overflow: auto;
+  padding: 1.25rem 1.5rem !important;
+}
+
+.listToolbar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.groupList {
+  border: 1px solid #e8edf2;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.groupRow {
+  align-items: center;
+  border-bottom: 1px solid #f0f2f5;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.875rem 1rem;
+}
+
+.groupRow:last-child {
+  border-bottom: none;
+}
+
+.groupRow:hover {
+  background: #fafbfc;
+}
+
+.groupInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.groupNameLink {
+  background: transparent;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  padding: 0;
+  text-align: left;
+}
+
+.groupNameLink:hover {
+  text-decoration: underline;
+}
+
+.groupMeta {
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+}
+
+.groupActions {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.25rem;
+}
+
+.iconBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.iconBtn:hover:not(:disabled),
+.iconBtn:focus-visible:not(:disabled) {
+  background: #eff6ff;
+  color: #1b87e6;
+  outline: none;
+}
+
+.iconBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.deleteBtn:hover:not(:disabled),
+.deleteBtn:focus-visible:not(:disabled) {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.fieldLabel {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.membersSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.membersHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.addMemberBtn {
+  background: transparent;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0;
+}
+
+.addMemberBtn:hover {
+  text-decoration: underline;
+}
+
+.membersTable {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.membersTableHeader,
+.membersTableRow {
+  align-items: center;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) 2rem;
+}
+
+.membersTableHeader {
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0 0.15rem;
+}
+
+.footerActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .membersTableHeader {
+    display: none;
+  }
+
+  .membersTableRow {
+    border: 1px solid #e8edf2;
+    border-radius: 6px;
+    gap: 0.5rem;
+    grid-template-columns: 1fr auto;
+    padding: 0.75rem;
+  }
+
+  .membersTableRow > :nth-child(1),
+  .membersTableRow > :nth-child(2),
+  .membersTableRow > :nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .membersTableRow > :nth-child(4) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

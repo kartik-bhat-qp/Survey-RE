@@ -5,7 +5,7 @@ import {
   COKE_RESEARCH_SURVEY_TITLE,
   createCokeResearchSurveySections,
 } from '@/data/mock-coke-research-survey';
-import { NEW_BLANK_SURVEY_ID } from '@/data/mock-survey-creation-flow';
+import { NEW_BLANK_SURVEY_ID, readBlankSurveyDraft } from '@/data/mock-survey-creation-flow';
 import {
   SURVEY_MENU_SURVEY_ID,
   createSurveyMenuSections,
@@ -632,10 +632,17 @@ export function getSurveyDetail(survey: Survey): SurveyDetail {
   }
 
   if (survey.id === NEW_BLANK_SURVEY_ID) {
+    const draft = readBlankSurveyDraft();
     return {
       survey,
-      editorTitle: COKE_RESEARCH_SURVEY_TITLE,
-      sections: COKE_RESEARCH_SECTIONS,
+      editorTitle: draft?.name?.trim() || survey.name,
+      sections: [
+        {
+          id: 'section-blank-1',
+          title: 'Block 1',
+          questions: [],
+        },
+      ],
     };
   }
 

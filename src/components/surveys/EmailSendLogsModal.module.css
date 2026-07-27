@@ -1,0 +1,141 @@
+.modal {
+  border: 1px solid #1b87e6;
+  max-width: min(52rem, calc(100vw - 1.5rem)) !important;
+  width: 100%;
+}
+
+.header {
+  background: #e8f4fd;
+  color: #1b3380;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 500;
+  padding-right: 3rem !important;
+}
+
+.content {
+  max-height: min(28rem, 60vh);
+  overflow: auto;
+  padding: 0 !important;
+}
+
+.table {
+  width: 100%;
+}
+
+.tableHeader,
+.tableRow {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 9.5rem minmax(8rem, 1.1fr) minmax(10rem, 1.4fr) 5.5rem;
+  padding: 0.75rem 1.5rem;
+}
+
+.tableHeader {
+  border-bottom: 1px solid #e8edf2;
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+.tableBody {
+  display: flex;
+  flex-direction: column;
+}
+
+.tableRow {
+  border-bottom: 1px solid #f0f2f5;
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+}
+
+.tableRow:last-child {
+  border-bottom: none;
+}
+
+.tableRow:hover {
+  background: #fafbfc;
+}
+
+.colTimestamp,
+.colNotification,
+.colRecipient,
+.colStatus {
+  min-width: 0;
+}
+
+.colNotification,
+.colRecipient {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statusBadge {
+  border-radius: 999px;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0.3rem 0.55rem;
+}
+
+.statusSent {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.statusQueued {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.statusFailed {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.statusBounced {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+@media (max-width: 640px) {
+  .tableHeader,
+  .tableRow {
+    gap: 0.35rem 0.5rem;
+    grid-template-columns: 1fr auto;
+  }
+
+  .colNotification,
+  .colRecipient {
+    grid-column: 1 / -1;
+  }
+
+  .colTimestamp {
+    order: 1;
+  }
+
+  .colStatus {
+    order: 2;
+    justify-self: end;
+  }
+
+  .colNotification {
+    order: 3;
+  }
+
+  .colRecipient {
+    order: 4;
+    color: #64748b;
+    font-size: 0.8125rem;
+  }
+}

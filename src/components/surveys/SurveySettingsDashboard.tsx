@@ -6,6 +6,8 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { AgeVerificationModal } from '@/components/surveys/AgeVerificationModal';
 import { ConfirmEnableRaaModal } from '@/components/surveys/ConfirmEnableRaaModal';
 import { CustomVariableIdentificationModal } from '@/components/surveys/CustomVariableIdentificationModal';
+import { EmailSendLogsModal } from '@/components/surveys/EmailSendLogsModal';
+import { NotificationGroupsModal } from '@/components/surveys/NotificationGroupsModal';
 import { RespondentAnonymityModal } from '@/components/surveys/RespondentAnonymityModal';
 import { SaveAndContinueEmailModal } from '@/components/surveys/SaveAndContinueEmailModal';
 import { SurveyNotificationConfigPanel } from '@/components/surveys/SurveyNotificationConfigPanel';
@@ -43,10 +45,13 @@ import {
 } from '@/data/mock-survey-settings';
 import {
   createSurveyNotificationItem,
+  DEFAULT_SURVEY_NOTIFICATION_GROUPS,
   formatNotificationSendToLabel,
   isSystemSurveyNotification,
   normalizeSurveyNotificationSettings,
+  NOTIFICATION_GROUPS_STORAGE_KEY,
   SURVEY_NOTIFICATION_HELP,
+  type SurveyNotificationGroup,
   type SurveyNotificationItem,
 } from '@/data/mock-survey-notifications';
 import styles from './SurveySettingsDashboard.module.css';
@@ -284,6 +289,11 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
     useState<SurveyNotificationItem | null>(null);
   const [notificationCriteriaTarget, setNotificationCriteriaTarget] =
     useState<SurveyNotificationItem | null>(null);
+  const [emailSendLogsOpen, setEmailSendLogsOpen] = useState(false);
+  const [notificationGroupsOpen, setNotificationGroupsOpen] = useState(false);
+  const [notificationGroups, setNotificationGroups] = usePersistedState<
+    SurveyNotificationGroup[]
+  >(NOTIFICATION_GROUPS_STORAGE_KEY, DEFAULT_SURVEY_NOTIFICATION_GROUPS);
   const [anonymityPendingConfig, setAnonymityPendingConfig] =
     useState<RespondentAnonymityConfig | null>(null);
   const transitioningToConfirmRef = useRef(false);
@@ -1307,84 +1317,109 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
               />
             ) : (
               <>
-                <NotificationsComposeToolbar onCreate={handleAddNotification} />
+                <div className={styles.notificationsMain}>
+                  <NotificationsComposeToolbar onCreate={handleAddNotification} />
 
-                <div className={styles.notificationsTable}>
-                  <div className={styles.notificationsHeader}>
-                    <div className={styles.notificationsColName}>
-                      <span>Notification</span>
-                      <WuTooltip content={SURVEY_NOTIFICATION_HELP} position="top">
-                        <button
-                          type="button"
-                          className={styles.notificationHelpBtn}
-                          aria-label={SURVEY_NOTIFICATION_HELP}
-                        >
-                          <span className="wm-help-outline" aria-hidden />
-                        </button>
-                      </WuTooltip>
-                    </div>
-                    <div className={styles.notificationsColSendTo}>Send to</div>
-                    <div className={styles.notificationsColCriteria}>Criteria</div>
-                    <div className={styles.notificationsColActions} aria-hidden />
-                  </div>
-
-                  <div className={styles.notificationsBody}>
-                    {notifications.items.map((item) => (
-                      <div key={item.id} className={styles.notificationsDataRow}>
-                        <div className={styles.notificationsColName}>
+                  <div className={styles.notificationsTable}>
+                    <div className={styles.notificationsHeader}>
+                      <div className={styles.notificationsColName}>
+                        <span>Notification</span>
+                        <WuTooltip content={SURVEY_NOTIFICATION_HELP} position="top">
                           <button
                             type="button"
-                            className={styles.notificationNameLink}
-                            onClick={() => setEditingNotificationId(item.id)}
+                            className={styles.notificationHelpBtn}
+                            aria-label={SURVEY_NOTIFICATION_HELP}
                           >
-                            {item.name}
+                            <span className="wm-help-outline" aria-hidden />
                           </button>
-                          <WuToggle
-                            checked={item.enabled}
-                            onChange={(checked) =>
-                              updateNotificationItem(item.id, { enabled: checked })
-                            }
-                            aria-label={`Enable ${item.name}`}
-                          />
-                        </div>
-                        <div
-                          className={styles.notificationsColSendTo}
-                          title={formatNotificationSendToLabel(item)}
-                        >
-                          {formatNotificationSendToLabel(item)}
-                        </div>
-                        <div className={styles.notificationsColCriteria}>
-                          {item.criteria || '—'}
-                        </div>
-                        <div className={styles.notificationsColActions}>
-                          {!isSystemSurveyNotification(item) ? (
-                            <>
-                              <WuTooltip content="View criteria" position="top">
-                                <button
-                                  type="button"
-                                  className={styles.notificationViewBtn}
-                                  aria-label={`View criteria for ${item.name}`}
-                                  onClick={() => setNotificationCriteriaTarget(item)}
-                                >
-                                  <span className="wm-visibility" aria-hidden />
-                                </button>
-                              </WuTooltip>
-                              <WuTooltip content="Delete notification" position="top">
-                                <button
-                                  type="button"
-                                  className={styles.notificationDeleteBtn}
-                                  aria-label={`Delete ${item.name}`}
-                                  onClick={() => setNotificationDeleteTarget(item)}
-                                >
-                                  <span className="wm-delete" aria-hidden />
-                                </button>
-                              </WuTooltip>
-                            </>
-                          ) : null}
-                        </div>
+                        </WuTooltip>
                       </div>
-                    ))}
+                      <div className={styles.notificationsColSendTo}>Send to</div>
+                      <div className={styles.notificationsColCriteria}>Criteria</div>
+                      <div className={styles.notificationsColActions} aria-hidden />
+                    </div>
+
+                    <div className={styles.notificationsBody}>
+                      {notifications.items.map((item) => (
+                        <div key={item.id} className={styles.notificationsDataRow}>
+                          <div className={styles.notificationsColName}>
+                            <button
+                              type="button"
+                              className={styles.notificationNameLink}
+                              onClick={() => setEditingNotificationId(item.id)}
+                            >
+                              {item.name}
+                            </button>
+                            <WuToggle
+                              checked={item.enabled}
+                              onChange={(checked) =>
+                                updateNotificationItem(item.id, { enabled: checked })
+                              }
+                              aria-label={`Enable ${item.name}`}
+                            />
+                          </div>
+                          <div
+                            className={styles.notificationsColSendTo}
+                            title={formatNotificationSendToLabel(item)}
+                          >
+                            {formatNotificationSendToLabel(item)}
+                          </div>
+                          <div className={styles.notificationsColCriteria}>
+                            {item.criteria || '—'}
+                          </div>
+                          <div className={styles.notificationsColActions}>
+                            {!isSystemSurveyNotification(item) ? (
+                              <>
+                                <WuTooltip content="View criteria" position="top">
+                                  <button
+                                    type="button"
+                                    className={styles.notificationViewBtn}
+                                    aria-label={`View criteria for ${item.name}`}
+                                    onClick={() => setNotificationCriteriaTarget(item)}
+                                  >
+                                    <span className="wm-visibility" aria-hidden />
+                                  </button>
+                                </WuTooltip>
+                                <WuTooltip content="Delete notification" position="top">
+                                  <button
+                                    type="button"
+                                    className={styles.notificationDeleteBtn}
+                                    aria-label={`Delete ${item.name}`}
+                                    onClick={() => setNotificationDeleteTarget(item)}
+                                  >
+                                    <span className="wm-delete" aria-hidden />
+                                  </button>
+                                </WuTooltip>
+                              </>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                </div>
+
+                <div className={styles.notificationsFooter}>
+                  <WuTooltip content="Email send logs" position="top">
+                    <button
+                      type="button"
+                      className={styles.notificationsFooterBtn}
+                      aria-label="Email send logs"
+                      onClick={() => setEmailSendLogsOpen(true)}
+                    >
+                      <span className="wm-description" aria-hidden />
+                    </button>
+                  </WuTooltip>
+                  <WuTooltip content="Notification groups" position="top">
+                    <button
+                      type="button"
+                      className={styles.notificationsFooterBtn}
+                      aria-label="Notification groups"
+                      onClick={() => setNotificationGroupsOpen(true)}
+                    >
+                      <span className="wm-notifications" aria-hidden />
+                    </button>
+                  </WuTooltip>
                 </div>
               </>
             )}
@@ -1476,6 +1511,15 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
         }}
         notification={notificationCriteriaTarget}
         surveyId={surveyId}
+      />
+
+      <EmailSendLogsModal open={emailSendLogsOpen} onOpenChange={setEmailSendLogsOpen} />
+
+      <NotificationGroupsModal
+        open={notificationGroupsOpen}
+        onOpenChange={setNotificationGroupsOpen}
+        groups={notificationGroups}
+        onChange={setNotificationGroups}
       />
     </div>
   );

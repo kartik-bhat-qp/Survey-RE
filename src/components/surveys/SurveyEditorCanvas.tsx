@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
+import { flushSync } from 'react-dom';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type {
   SurveyDetail,
@@ -59,8 +60,10 @@ import {
 import {
   consumeBlankSurveyCreateModalFlag,
   NEW_BLANK_SURVEY_ID,
+  readBlankSurveyDraft,
   type BlankSurveyCreateOption,
 } from '@/data/mock-survey-creation-flow';
+import { isClientOnlySurveyId } from '@/lib/client-only-survey-ids';
 import { getQuestionTypePreview } from '@/data/mock-add-question-previews';
 import { SectionBlockOptionsButton } from '@/components/surveys/SectionBlockOptionsButton';
 import { BlockFlowModal } from '@/components/surveys/BlockFlowModal';
@@ -89,7 +92,10 @@ import {
   resolveStaticContentVariant,
 } from '@/components/surveys/StaticContentQuestionRow';
 import { NpsQuestionRow } from '@/components/surveys/NpsQuestionRow';
-import { SurveyAgentSidebar } from '@/components/surveys/SurveyAgentSidebar';
+import {
+  SurveyAgentSidebar,
+  type SurveyAgentSidebarHandle,
+} from '@/components/surveys/SurveyAgentSidebar';
 import { BlankSurveyCreateModal } from '@/components/surveys/BlankSurveyCreateModal';
 import { VanWestendorpQuestionRow } from '@/components/surveys/VanWestendorpQuestionRow';
 import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
@@ -205,6 +211,7 @@ import {
 } from '@/components/surveys/SurveyWorkspaceSectionsContext';
 import { useSurveyEditorBulkEdit } from '@/components/surveys/SurveyEditorBulkEditContext';
 import {
+  clearPersistedSurveyEditorSections,
   getLegacySurveyEditorSectionsStorageKey,
   getSurveyEditorSectionsMigrationFlag,
   getSurveyEditorSectionsStorageKey,
@@ -1196,10 +1203,17 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     registerClearShowHideLogic,
     registerUpdateQuestionCodes,
   } = useSurveyWorkspaceSections();
-  const sectionsStorageKey = useMemo(
-    () => getSurveyEditorSectionsStorageKey(detail.survey.id),
-    [detail.survey.id]
+  const [blankSurveyDraftEpoch, setBlankSurveyDraftEpoch] = useState(() =>
+    detail.survey.id === NEW_BLANK_SURVEY_ID ? (readBlankSurveyDraft()?.createdAt ?? '') : ''
   );
+  // Scope blank-survey storage by draft timestamp so each "from scratch" create starts empty.
+  const sectionsStorageKey = useMemo(() => {
+    const base = getSurveyEditorSectionsStorageKey(detail.survey.id);
+    if (detail.survey.id === NEW_BLANK_SURVEY_ID && blankSurveyDraftEpoch) {
+      return `${base}:${blankSurveyDraftEpoch}`;
+    }
+    return base;
+  }, [detail.survey.id, blankSurveyDraftEpoch]);
   const deepDiveFollowUpStorageKey = useMemo(
     () => getDeepDiveFollowUpWorkspaceStorageKey(detail.survey.id),
     [detail.survey.id]
@@ -1211,6 +1225,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   const sectionsMigratedRef = useRef(false);
 
   useEffect(() => {
+    if (detail.survey.id === NEW_BLANK_SURVEY_ID) return;
     if (sectionsMigratedRef.current) return;
     sectionsMigratedRef.current = true;
 
@@ -1283,7 +1298,9 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     questionId: string;
   } | null>(null);
   const [lookupTableBulkConversionOpen, setLookupTableBulkConversionOpen] = useState(false);
-  const [surveyAgentOpen, setSurveyAgentOpen] = useState(false);
+  const [surveyAgentOpen, setSurveyAgentOpen] = useState(() =>
+    isClientOnlySurveyId(detail.survey.id)
+  );
   const [blankSurveyCreateModalOpen, setBlankSurveyCreateModalOpen] = useState(false);
   const [agentSeedPrompt, setAgentSeedPrompt] = useState<string | null>(null);
   const [blockFlowOpen, setBlockFlowOpen] = useState(false);
@@ -1304,6 +1321,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     null
   );
   const previewLaunchGuardRef = useRef<{ signature: string; at: number } | null>(null);
+  const researchAgentRef = useRef<SurveyAgentSidebarHandle>(null);
   const toast = useCallback(
     (message: string) => {
       showToast({ message, variant: 'success' });
@@ -1329,8 +1347,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   useEffect(() => {
     if (detail.survey.id !== NEW_BLANK_SURVEY_ID) return;
     if (!consumeBlankSurveyCreateModalFlag()) return;
+    clearPersistedSurveyEditorSections(NEW_BLANK_SURVEY_ID);
+    const epoch = readBlankSurveyDraft()?.createdAt ?? String(Date.now());
+    setBlankSurveyDraftEpoch(epoch);
+    setSections(normalizeSurveyEditorSections(cloneSections(detail.sections)));
     setBlankSurveyCreateModalOpen(true);
-  }, [detail.survey.id]);
+    setSurveyAgentOpen(true);
+  }, [detail.survey.id, detail.sections, setSections]);
 
   function openResearchAgentWithPrompt(prompt: string): void {
     setSettingsTarget(null);
@@ -3541,6 +3564,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       }`}
     >
       <SurveyAgentSidebar
+        ref={researchAgentRef}
         open={surveyAgentOpen}
         surveyId={detail.survey.id}
         agentContext="workspace"
@@ -3559,7 +3583,12 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         onOpenChange={setBlankSurveyCreateModalOpen}
         onCreateWithPrompt={openResearchAgentWithPrompt}
         onSelectImport={(option: BlankSurveyCreateOption) => {
-          openResearchAgentWithPrompt(option.prompt);
+          setSettingsTarget(null);
+          flushSync(() => {
+            setBlankSurveyCreateModalOpen(false);
+            setSurveyAgentOpen(true);
+          });
+          researchAgentRef.current?.prepareImportFromAttachment(option.attachKind ?? 'any');
         }}
       />
 

@@ -41,6 +41,7 @@ export interface SurveyNotificationItem {
   emailAdministrator: boolean;
   emailRespondent: boolean;
   attachResponse: boolean;
+  includeSystemVariables: boolean;
   customAttachment: boolean;
   customAttachmentName: string;
   toEmails: string[];
@@ -446,6 +447,7 @@ export function createSurveyNotificationItem(
     emailAdministrator,
     emailRespondent,
     attachResponse: partial?.attachResponse ?? false,
+    includeSystemVariables: partial?.includeSystemVariables ?? true,
     customAttachment: partial?.customAttachment ?? false,
     customAttachmentName: partial?.customAttachmentName ?? '',
     sendTo:
@@ -637,6 +639,10 @@ function normalizeNotificationItem(value: unknown): SurveyNotificationItem | nul
     emailAdministrator,
     emailRespondent,
     attachResponse: Boolean(parsed.attachResponse),
+    includeSystemVariables:
+      typeof parsed.includeSystemVariables === 'boolean'
+        ? parsed.includeSystemVariables
+        : true,
     customAttachment: Boolean(parsed.customAttachment),
     customAttachmentName:
       typeof parsed.customAttachmentName === 'string' ? parsed.customAttachmentName : '',
@@ -825,4 +831,195 @@ export function normalizeSurveyNotificationSettings(
   }
 
   return { items, listView };
+}
+
+/** Email notification delivery history shown from the Notifications footer. */
+export type SurveyNotificationEmailSendStatus =
+  | 'Sent'
+  | 'Queued'
+  | 'Failed'
+  | 'Bounced';
+
+export interface SurveyNotificationEmailSendLog {
+  id: string;
+  sentAt: string;
+  notificationName: string;
+  recipient: string;
+  status: SurveyNotificationEmailSendStatus;
+}
+
+export const MOCK_SURVEY_NOTIFICATION_EMAIL_SEND_LOGS: SurveyNotificationEmailSendLog[] = [
+  {
+    id: 'nlog-1',
+    sentAt: '2026-07-24T09:12:00.000Z',
+    notificationName: 'Thank You Email',
+    recipient: 'alex.morgan@northstar-bank.com',
+    status: 'Sent',
+  },
+  {
+    id: 'nlog-2',
+    sentAt: '2026-07-24T08:47:00.000Z',
+    notificationName: 'Admin Confirmation',
+    recipient: 'kartik.bhat@questionpro.com',
+    status: 'Sent',
+  },
+  {
+    id: 'nlog-3',
+    sentAt: '2026-07-23T16:22:00.000Z',
+    notificationName: 'Quota Notification',
+    recipient: 'ops-alerts@questionpro.com',
+    status: 'Sent',
+  },
+  {
+    id: 'nlog-4',
+    sentAt: '2026-07-23T14:05:00.000Z',
+    notificationName: 'Thank You Email',
+    recipient: 'jordan.lee@example.com',
+    status: 'Bounced',
+  },
+  {
+    id: 'nlog-5',
+    sentAt: '2026-07-22T19:41:00.000Z',
+    notificationName: 'Admin Confirmation',
+    recipient: 'research.team@questionpro.com',
+    status: 'Sent',
+  },
+  {
+    id: 'nlog-6',
+    sentAt: '2026-07-22T11:18:00.000Z',
+    notificationName: 'Thank You Email',
+    recipient: 'priya.shah@fintech.io',
+    status: 'Queued',
+  },
+  {
+    id: 'nlog-7',
+    sentAt: '2026-07-21T21:03:00.000Z',
+    notificationName: 'New test notification',
+    recipient: 'qa.automation@questionpro.com',
+    status: 'Failed',
+  },
+  {
+    id: 'nlog-8',
+    sentAt: '2026-07-21T10:55:00.000Z',
+    notificationName: 'Thank You Email',
+    recipient: 'casey.nguyen@retailco.com',
+    status: 'Sent',
+  },
+  {
+    id: 'nlog-9',
+    sentAt: '2026-07-20T15:30:00.000Z',
+    notificationName: 'Admin Confirmation',
+    recipient: 'kartik.bhat@questionpro.com',
+    status: 'Sent',
+  },
+  {
+    id: 'nlog-10',
+    sentAt: '2026-07-19T08:14:00.000Z',
+    notificationName: 'Quota Notification',
+    recipient: 'quota-watch@questionpro.com',
+    status: 'Sent',
+  },
+];
+
+export interface SurveyNotificationGroupMember {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface SurveyNotificationGroup {
+  id: string;
+  name: string;
+  members: SurveyNotificationGroupMember[];
+}
+
+export const NOTIFICATION_GROUPS_STORAGE_KEY = 'survey-notification-groups';
+
+export function createNotificationGroupMember(
+  partial?: Partial<SurveyNotificationGroupMember>
+): SurveyNotificationGroupMember {
+  return {
+    id: partial?.id ?? uniqueId('ng-member'),
+    email: partial?.email ?? '',
+    firstName: partial?.firstName ?? '',
+    lastName: partial?.lastName ?? '',
+  };
+}
+
+export function createNotificationGroup(
+  partial?: Partial<SurveyNotificationGroup>
+): SurveyNotificationGroup {
+  return {
+    id: partial?.id ?? uniqueId('ng'),
+    name: partial?.name ?? '',
+    members: partial?.members ?? [createNotificationGroupMember()],
+  };
+}
+
+export const DEFAULT_SURVEY_NOTIFICATION_GROUPS: SurveyNotificationGroup[] = [
+  {
+    id: 'ng-research-ops',
+    name: 'Research Operations',
+    members: [
+      createNotificationGroupMember({
+        id: 'ngm-1',
+        email: 'kartik.bhat@questionpro.com',
+        firstName: 'Kartik',
+        lastName: 'Bhat',
+      }),
+      createNotificationGroupMember({
+        id: 'ngm-2',
+        email: 'research.team@questionpro.com',
+        firstName: 'Research',
+        lastName: 'Team',
+      }),
+      createNotificationGroupMember({
+        id: 'ngm-3',
+        email: 'ops-alerts@questionpro.com',
+        firstName: 'Ops',
+        lastName: 'Alerts',
+      }),
+    ],
+  },
+  {
+    id: 'ng-branch-managers',
+    name: 'Branch Managers',
+    members: [
+      createNotificationGroupMember({
+        id: 'ngm-4',
+        email: 'alex.morgan@northstar-bank.com',
+        firstName: 'Alex',
+        lastName: 'Morgan',
+      }),
+      createNotificationGroupMember({
+        id: 'ngm-5',
+        email: 'sam.rivera@northstar-bank.com',
+        firstName: 'Sam',
+        lastName: 'Rivera',
+      }),
+    ],
+  },
+  {
+    id: 'ng-qa-reviewers',
+    name: 'QA Reviewers',
+    members: [
+      createNotificationGroupMember({
+        id: 'ngm-6',
+        email: 'qa.automation@questionpro.com',
+        firstName: 'QA',
+        lastName: 'Automation',
+      }),
+    ],
+  },
+];
+
+export function formatNotificationEmailSendTimestamp(value: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(value));
 }

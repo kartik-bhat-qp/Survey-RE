@@ -1,6 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
@@ -17,6 +25,9 @@ import {
   RESEARCH_AGENT_BASE_CONTEXT_TOKENS,
   RESEARCH_AGENT_DISTRIBUTE_BASE_CONTEXT_TOKENS,
   RESEARCH_AGENT_FILE_ACCEPT,
+  RESEARCH_AGENT_IMPORT_FROM_ATTACHED_PROMPT,
+  RESEARCH_AGENT_PDF_ACCEPT,
+  RESEARCH_AGENT_WORD_ACCEPT,
   revokeResearchAgentAttachmentPreview,
   SURVEY_AI_CAPABILITY_PILLS,
   SURVEY_AI_EXAMPLE_PROMPTS,
@@ -37,6 +48,13 @@ const WuTooltip = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
+
+export type ResearchAgentAttachKind = 'word' | 'pdf' | 'any';
+
+export type SurveyAgentSidebarHandle = {
+  /** Fills the composer for import-from-attachment and opens the file picker (must run in a user gesture). */
+  prepareImportFromAttachment: (kind?: ResearchAgentAttachKind) => void;
+};
 
 interface SurveyAgentSidebarProps {
   open: boolean;
@@ -78,23 +96,33 @@ function cloneHistorySessions(sessions: ResearchAgentChatSession[]): ResearchAge
   }));
 }
 
-export function SurveyAgentSidebar({
-  open,
-  surveyId = 0,
-  agentContext = 'workspace',
-  placement = 'right',
-  layout = 'viewport',
-  onClose,
-  onGenerated,
-  onSubmit,
-  greeting = SURVEY_AI_GREETING,
-  examplePrompts = SURVEY_AI_EXAMPLE_PROMPTS,
-  capabilityPills = SURVEY_AI_CAPABILITY_PILLS,
-  aboutMessage = 'Research agent helps you build, edit, and improve your survey with AI',
-  baseContextTokens = RESEARCH_AGENT_BASE_CONTEXT_TOKENS,
-  seedPrompt = null,
-  onSeedPromptConsumed,
-}: SurveyAgentSidebarProps) {
+function acceptForAttachKind(kind: ResearchAgentAttachKind): string {
+  if (kind === 'word') return RESEARCH_AGENT_WORD_ACCEPT;
+  if (kind === 'pdf') return RESEARCH_AGENT_PDF_ACCEPT;
+  return RESEARCH_AGENT_FILE_ACCEPT;
+}
+
+export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAgentSidebarProps>(
+  function SurveyAgentSidebar(
+    {
+      open,
+      surveyId = 0,
+      agentContext = 'workspace',
+      placement = 'right',
+      layout = 'viewport',
+      onClose,
+      onGenerated,
+      onSubmit,
+      greeting = SURVEY_AI_GREETING,
+      examplePrompts = SURVEY_AI_EXAMPLE_PROMPTS,
+      capabilityPills = SURVEY_AI_CAPABILITY_PILLS,
+      aboutMessage = 'Research agent helps you build, edit, and improve your survey with AI',
+      baseContextTokens = RESEARCH_AGENT_BASE_CONTEXT_TOKENS,
+      seedPrompt = null,
+      onSeedPromptConsumed,
+    },
+    ref
+  ) {
   const { showToast } = useWuShowToast();
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -104,12 +132,36 @@ export function SurveyAgentSidebar({
   );
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<ResearchAgentAttachment[]>([]);
+  const [fileAccept, setFileAccept] = useState(RESEARCH_AGENT_FILE_ACCEPT);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const attachmentsRef = useRef<ResearchAgentAttachment[]>(attachments);
   const seedPromptHandledRef = useRef<string | null>(null);
   attachmentsRef.current = attachments;
+
+  const openImportFromAttachment = useCallback((kind: ResearchAgentAttachKind = 'any') => {
+    setPrompt(RESEARCH_AGENT_IMPORT_FROM_ATTACHED_PROMPT);
+    setActiveSessionId(null);
+    const accept = acceptForAttachKind(kind);
+    setFileAccept(accept);
+    const input = fileInputRef.current;
+    if (input) {
+      input.accept = accept;
+      input.click();
+    }
+    queueMicrotask(() => {
+      inputRef.current?.focus();
+    });
+  }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      prepareImportFromAttachment: openImportFromAttachment,
+    }),
+    [openImportFromAttachment]
+  );
 
   const contextUsageTokens = useMemo(
     () => estimateResearchAgentContextUsage(prompt, baseContextTokens, attachments.length),
@@ -281,12 +333,20 @@ export function SurveyAgentSidebar({
   }
 
   function handleAttachClick(): void {
-    fileInputRef.current?.click();
+    const input = fileInputRef.current;
+    if (!input) return;
+    input.accept = RESEARCH_AGENT_FILE_ACCEPT;
+    setFileAccept(RESEARCH_AGENT_FILE_ACCEPT);
+    input.click();
   }
 
   function handleFilesSelected(event: React.ChangeEvent<HTMLInputElement>): void {
     const selectedFiles = Array.from(event.target.files ?? []);
     event.target.value = '';
+    setFileAccept(RESEARCH_AGENT_FILE_ACCEPT);
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = RESEARCH_AGENT_FILE_ACCEPT;
+    }
     if (selectedFiles.length === 0) return;
 
     const nextAttachments: ResearchAgentAttachment[] = [];
@@ -512,7 +572,17 @@ export function SurveyAgentSidebar({
                         key={pill.id}
                         type="button"
                         className={styles.capabilityPill}
-                        onClick={() => applyPrompt(pill.prompt ?? pill.label)}
+                        onClick={() => {
+                          if (pill.id === 'import-word') {
+                            openImportFromAttachment('word');
+                            return;
+                          }
+                          if (pill.id === 'import-pdf') {
+                            openImportFromAttachment('pdf');
+                            return;
+                          }
+                          applyPrompt(pill.prompt ?? pill.label);
+                        }}
                       >
                         {pill.icon ? (
                           <span
@@ -606,7 +676,7 @@ export function SurveyAgentSidebar({
             <input
               ref={fileInputRef}
               type="file"
-              accept={RESEARCH_AGENT_FILE_ACCEPT}
+              accept={fileAccept}
               className={styles.hiddenFileInput}
               aria-hidden
               tabIndex={-1}
@@ -655,4 +725,5 @@ export function SurveyAgentSidebar({
       </div>
     </>
   );
-}
+  }
+);

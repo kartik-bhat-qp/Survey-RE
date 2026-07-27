@@ -13,10 +13,14 @@ export interface CriteriaRuleDisplayRow {
 
 function formatConditionRow(
   cond: AdvanceQuotaRuleCondition,
-  questionIndex: number
+  questionIndex: number,
+  isFirstInBlock: boolean
 ): CriteriaRuleDisplayRow {
-  const connector: 'IF' | 'And' | 'Or' =
-    questionIndex === 1 ? 'IF' : cond.connector === 'OR' ? 'Or' : 'And';
+  const connector: 'IF' | 'And' | 'Or' = isFirstInBlock
+    ? 'IF'
+    : cond.connector === 'OR'
+      ? 'Or'
+      : 'And';
 
   const typeLabel = cond.source === 'Question' ? 'Question' : cond.source;
 
@@ -47,10 +51,10 @@ export function buildCriteriaRuleRows(
   let questionIndex = 0;
 
   for (const block of blocks) {
-    for (const cond of block.conditions) {
+    block.conditions.forEach((cond, conditionIdx) => {
       questionIndex += 1;
-      rows.push(formatConditionRow(cond, questionIndex));
-    }
+      rows.push(formatConditionRow(cond, questionIndex, conditionIdx === 0));
+    });
   }
 
   return rows;
@@ -93,9 +97,9 @@ export function CriteriaRulesExpanded({
       <div className={panelClass}>
         <p className={styles.blockOrHint}>{orHint}</p>
         {visibleBlocks.map((block, blockIdx) => {
-          const blockRows = block.conditions.map((cond) => {
+          const blockRows = block.conditions.map((cond, conditionIdx) => {
             questionIndex += 1;
-            return formatConditionRow(cond, questionIndex);
+            return formatConditionRow(cond, questionIndex, conditionIdx === 0);
           });
 
           return (

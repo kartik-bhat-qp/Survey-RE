@@ -34,3 +34,21 @@ export function getLegacySurveyEditorSectionsStorageKey(surveyId: number): strin
 export function getSurveyEditorSectionsMigrationFlag(surveyId: number): string {
   return `survey-editor-sections-migrated-v${SURVEY_EDITOR_SECTIONS_STORAGE_VERSION}:${surveyId}`;
 }
+
+/** Clears persisted editor sections so a new blank survey starts empty. */
+export function clearPersistedSurveyEditorSections(surveyId: number): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(
+      `${STORAGE_PREFIX}${getSurveyEditorSectionsStorageKey(surveyId)}`
+    );
+    window.localStorage.removeItem(
+      `${STORAGE_PREFIX}${getLegacySurveyEditorSectionsStorageKey(surveyId)}`
+    );
+    window.localStorage.removeItem(
+      `${STORAGE_PREFIX}${getSurveyEditorSectionsMigrationFlag(surveyId)}`
+    );
+  } catch {
+    /* localStorage may be unavailable; ignore. */
+  }
+}

@@ -1,3 +1,5 @@
+import { clearPersistedSurveyEditorSections } from '@/data/survey-editor-persistence';
+
 /** Templates shown per page in the create-survey template picker. */
 export const SURVEY_CREATION_TEMPLATES_PER_PAGE = 6;
 
@@ -129,7 +131,10 @@ export interface BlankSurveyCreateOption {
   label: string;
   icon: string;
   iconClassName?: string;
-  prompt: string;
+  /** Optional seed prompt when import should auto-submit (unused for Word/PDF attach flow). */
+  prompt?: string;
+  /** Opens the Research Agent attach picker filtered to this kind. */
+  attachKind?: 'word' | 'pdf';
 }
 
 export const BLANK_SURVEY_CREATE_IMPORT_OPTIONS: BlankSurveyCreateOption[] = [
@@ -138,26 +143,14 @@ export const BLANK_SURVEY_CREATE_IMPORT_OPTIONS: BlankSurveyCreateOption[] = [
     label: 'Import from Word',
     icon: 'wm-description',
     iconClassName: 'word',
-    prompt: 'Create survey questions from an uploaded Word document',
+    attachKind: 'word',
   },
   {
     id: 'import-pdf',
     label: 'Import from PDF',
     icon: 'wm-picture-as-pdf',
     iconClassName: 'pdf',
-    prompt: 'Create survey questions from an uploaded PDF',
-  },
-  {
-    id: 'import-ppt',
-    label: 'Import from PowerPoint',
-    icon: 'wm-slideshow',
-    prompt: 'Create survey questions from an uploaded PowerPoint file',
-  },
-  {
-    id: 'import-excel',
-    label: 'Import from Excel',
-    icon: 'wm-table-chart',
-    prompt: 'Create survey questions from an uploaded Excel file',
+    attachKind: 'pdf',
   },
 ];
 
@@ -166,6 +159,7 @@ export function saveBlankSurveyDraft(
   options?: { showCreateModal?: boolean }
 ): void {
   if (typeof window === 'undefined') return;
+  clearPersistedSurveyEditorSections(NEW_BLANK_SURVEY_ID);
   const draft: BlankSurveyDraft = {
     name: name.trim(),
     createdAt: new Date().toISOString(),

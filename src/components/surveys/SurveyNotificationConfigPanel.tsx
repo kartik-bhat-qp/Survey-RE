@@ -302,6 +302,14 @@ export function SurveyNotificationConfigPanel({
           checked={draft.attachResponse}
           onChange={(checked) => patchDraft({ attachResponse: checked })}
         />
+        {draft.attachResponse ? (
+          <WuToggle
+            Label="Include system variables"
+            labelPosition="right"
+            checked={draft.includeSystemVariables}
+            onChange={(checked) => patchDraft({ includeSystemVariables: checked })}
+          />
+        ) : null}
         <div className={styles.customAttachmentRow}>
           <WuToggle
             Label="Custom attachment"

@@ -1,3 +1,16 @@
+.headerTitleRow {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.headerAiStar {
+  color: #1b87e6;
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
 .content {
   display: flex;
   flex-direction: column;

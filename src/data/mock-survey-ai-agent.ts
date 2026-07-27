@@ -241,6 +241,14 @@ export interface ResearchAgentAttachment {
 export const RESEARCH_AGENT_FILE_ACCEPT =
   '.pdf,.doc,.docx,.ppt,.pptx,.pps,.ppsx,.xls,.xlsx,.txt,.rtf,.png,.jpg,.jpeg,.gif,.webp,.bmp,image/*';
 
+/** Composer prompt used when importing a survey from an attached Word/PDF file. */
+export const RESEARCH_AGENT_IMPORT_FROM_ATTACHED_PROMPT = 'create survey from attached';
+
+export const RESEARCH_AGENT_WORD_ACCEPT =
+  '.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+export const RESEARCH_AGENT_PDF_ACCEPT = '.pdf,application/pdf';
+
 const RESEARCH_AGENT_ALLOWED_EXTENSIONS = new Set([
   'pdf',
   'doc',
