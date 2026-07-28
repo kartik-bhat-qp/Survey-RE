@@ -11,7 +11,8 @@ export type AdvancedWidgetTypeId =
   | 'segment-trend'
   | 'segment-bar'
   | 'funnel-chart'
-  | 'response-viewer';
+  | 'response-viewer'
+  | 'driver-analysis';
 
 export interface AdvancedWidgetType {
   id: AdvancedWidgetTypeId;
@@ -87,6 +88,11 @@ export const ADVANCED_WIDGET_TYPES: AdvancedWidgetType[] = [
     name: 'Response viewer',
     imageSrc: IMG.responseViewer,
     showBetaBadge: true,
+  },
+  {
+    id: 'driver-analysis',
+    name: 'Driver analysis',
+    imageSrc: IMG.driverAnalysis,
   },
 ];
 

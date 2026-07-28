@@ -13,6 +13,7 @@ import {
 } from '@/components/dashboards/DashboardDesignSettingsTab';
 import { AiWidgetRenderer } from '@/components/dashboards/widgets/AiWidgetRenderer';
 import type { AmChartTypography } from '@/components/charts/amcharts/theme';
+import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
 import styles from './DashboardFocusedPreview.module.css';
 
 const WuButton = dynamic(
@@ -48,6 +49,7 @@ export function DashboardFocusedPreview({
   onOpenChange,
   designTypography = DEFAULT_DESIGN_TYPOGRAPHY,
 }: DashboardFocusedPreviewProps) {
+  const showLicenseRestrictions = useBiLicenseRestrictions();
   const [activeIndex, setActiveIndex] = useState(0);
   const activeWidget = AI_DASHBOARD_WIDGETS[activeIndex];
 
@@ -129,7 +131,7 @@ export function DashboardFocusedPreview({
           </div>
           <div className={styles.headerActions}>
             <span className="wm-lightbulb text-[22px] text-[#536277]" aria-hidden="true" />
-            {shouldShowDiamond(activeWidget) && (
+            {showLicenseRestrictions && shouldShowDiamond(activeWidget) && (
               <span className="wm-diamond text-[20px] text-[#1b87e6]" aria-hidden="true" />
             )}
             <WuButton

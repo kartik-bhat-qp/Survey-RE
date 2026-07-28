@@ -11,6 +11,7 @@ import {
   SINGLE_SELECT_CHART_TYPES,
   type SingleSelectChartTypeId,
 } from '@/data/mock-single-select-chart-types';
+import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
 import chartStyles from './AdvancedWidgetChartSelect.module.css';
 import styles from './QuestionBasedChartSelect.module.css';
 
@@ -49,6 +50,7 @@ export function QuestionBasedChartSelect({
   onWidgetNameChange,
   onSelectChartType,
 }: QuestionBasedChartSelectProps) {
+  const showLicenseRestrictions = useBiLicenseRestrictions();
   const [hoveredTypeId, setHoveredTypeId] = useState<SingleSelectChartTypeId | null>(
     null
   );
@@ -100,7 +102,7 @@ export function QuestionBasedChartSelect({
                 onMouseEnter={() => setHoveredTypeId(chart.id)}
               >
                 {chart.showBetaBadge ? <AdvancedWidgetBetaBadge /> : null}
-                {chart.showDiamond ? (
+                {chart.showDiamond && showLicenseRestrictions ? (
                   <span
                     className={chartStyles.diamondWrap}
                     onClick={(e) => e.stopPropagation()}

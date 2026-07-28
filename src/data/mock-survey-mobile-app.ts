@@ -36,6 +36,8 @@ export interface MobileDeviceSettings {
   auditSurveyIds: string[];
   recordAudio: boolean;
   recordAudioCapturePoints: string;
+  /** How long to record audio at each capture point, in seconds (max 60 minutes). */
+  recordAudioDurationSeconds: number;
   capturePicture: boolean;
   capturePictureCapturePoints: string;
   captureLocation: boolean;
@@ -109,6 +111,11 @@ export const MOBILE_DEVICE_CAPTURE_POINTS_OPTIONS: MobileDeviceAuditOption[] = [
   { value: 'end-only', label: 'End of the survey' },
 ];
 
+/** Capture points available for Record Audio (excludes start-and-end / end-only). */
+export const RECORD_AUDIO_CAPTURE_POINTS_OPTIONS: MobileDeviceAuditOption[] = [
+  { value: 'start-only', label: 'Start of the survey' },
+];
+
 export const MOBILE_DEVICE_AUDIT_QUESTIONS_BY_SURVEY: Record<
   string,
   MobileDeviceAuditOption[]
@@ -161,6 +168,31 @@ export function getMobileDeviceAuditQuestionsForSurveys(
 
 export type RecordAudioCapturePointOption = MobileDeviceAuditOption;
 
+/** Maximum Record Audio duration: 60 minutes. */
+export const RECORD_AUDIO_MAX_DURATION_SECONDS = 60 * 60;
+
+export function clampRecordAudioDurationSeconds(totalSeconds: number): number {
+  if (Number.isNaN(totalSeconds)) return 0;
+  return Math.min(RECORD_AUDIO_MAX_DURATION_SECONDS, Math.max(0, Math.floor(totalSeconds)));
+}
+
+export function recordAudioDurationParts(totalSeconds: number): {
+  minutes: number;
+  seconds: number;
+} {
+  const clamped = clampRecordAudioDurationSeconds(totalSeconds);
+  return {
+    minutes: Math.floor(clamped / 60),
+    seconds: clamped % 60,
+  };
+}
+
+export function recordAudioDurationFromParts(minutes: number, seconds: number): number {
+  const safeMinutes = Number.isNaN(minutes) ? 0 : Math.max(0, Math.floor(minutes));
+  const safeSeconds = Number.isNaN(seconds) ? 0 : Math.max(0, Math.floor(seconds));
+  return clampRecordAudioDurationSeconds(safeMinutes * 60 + safeSeconds);
+}
+
 export function getRecordAudioCapturePointOptions(
   surveyIds: string[]
 ): RecordAudioCapturePointOption[] {
@@ -172,7 +204,7 @@ export function getRecordAudioCapturePointOptions(
     title: questionsDisabled ? MOBILE_DEVICE_MULTI_SURVEY_QUESTION_TOOLTIP : undefined,
   }));
 
-  return [...MOBILE_DEVICE_CAPTURE_POINTS_OPTIONS, ...questions];
+  return [...RECORD_AUDIO_CAPTURE_POINTS_OPTIONS, ...questions];
 }
 
 const DEFAULT_DEVICE_SETTINGS: MobileDeviceSettings = {
@@ -187,7 +219,8 @@ const DEFAULT_DEVICE_SETTINGS: MobileDeviceSettings = {
   auditMode: false,
   auditSurveyIds: ['testing-approval'],
   recordAudio: false,
-  recordAudioCapturePoints: 'start-and-end',
+  recordAudioCapturePoints: 'start-only',
+  recordAudioDurationSeconds: 30,
   capturePicture: false,
   capturePictureCapturePoints: 'start-and-end',
   captureLocation: true,

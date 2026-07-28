@@ -7,6 +7,7 @@ import {
   matrixChartToAmChartType,
 } from '@/data/mock-matrix-preview';
 import type { MatrixChartTypeId } from '@/data/mock-matrix-chart-types';
+import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
 import styles from './AdvancedWidgetPreview.module.css';
 
 interface MatrixChartPreviewProps {
@@ -15,6 +16,7 @@ interface MatrixChartPreviewProps {
 }
 
 export function MatrixChartPreview({ widgetName, chartTypeId }: MatrixChartPreviewProps) {
+  const showLicenseRestrictions = useBiLicenseRestrictions();
   const headerLabel = widgetName.trim() || 'Name';
   const amChartType = matrixChartToAmChartType(chartTypeId);
   const data = useMemo(() => buildMatrixPreviewPayload(chartTypeId), [chartTypeId]);
@@ -24,7 +26,9 @@ export function MatrixChartPreview({ widgetName, chartTypeId }: MatrixChartPrevi
       <header className={styles.header}>
         <div className={styles.title}>{headerLabel}</div>
         <div className={styles.headerActions}>
-          <span className="wm-diamond" aria-hidden />
+          {showLicenseRestrictions ? (
+            <span className="wm-diamond" aria-hidden />
+          ) : null}
         </div>
       </header>
       <div className={styles.divider} />

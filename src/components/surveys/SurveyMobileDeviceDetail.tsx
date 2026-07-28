@@ -14,6 +14,9 @@ import {
   MOBILE_DEVICE_LANGUAGE_OPTIONS,
   MOBILE_DEVICE_MULTI_SURVEY_QUESTION_TOOLTIP,
   MOBILE_DEVICE_TABS,
+  RECORD_AUDIO_CAPTURE_POINTS_OPTIONS,
+  recordAudioDurationFromParts,
+  recordAudioDurationParts,
   type MobileDevice,
   type MobileDeviceAuditOption,
   type MobileDeviceSettings,
@@ -90,6 +93,10 @@ function ToggleRow({
   );
 }
 
+const RECORD_AUDIO_SECONDS_DISABLED_TOOLTIP =
+  'Seconds cannot be edited when duration is at the 60-minute maximum.';
+const RECORD_AUDIO_MINUTES_MAX_ERROR = 'Maximum duration is 60 minutes';
+
 function CaptureOptionRow({
   label,
   checked,
@@ -97,6 +104,8 @@ function CaptureOptionRow({
   capturePoints,
   onCapturePointsChange,
   capturePointOptions,
+  durationSeconds,
+  onDurationSecondsChange,
 }: {
   label: string;
   checked: boolean;
@@ -104,7 +113,10 @@ function CaptureOptionRow({
   capturePoints: string;
   onCapturePointsChange: (value: string) => void;
   capturePointOptions?: RecordAudioCapturePointOption[];
+  durationSeconds?: number;
+  onDurationSecondsChange?: (value: number) => void;
 }) {
+  const [minutesInvalid, setMinutesInvalid] = useState(false);
   const options = useMemo(() => {
     const source = capturePointOptions ?? MOBILE_DEVICE_CAPTURE_POINTS_OPTIONS;
     return source.map((option) => {
@@ -141,6 +153,53 @@ function CaptureOptionRow({
     options.find((o) => !o.disabled && !o.title) ??
     null;
 
+  const showDuration =
+    checked &&
+    Boolean(capturePointsValue) &&
+    durationSeconds !== undefined &&
+    onDurationSecondsChange !== undefined;
+
+  const { minutes, seconds } = recordAudioDurationParts(durationSeconds ?? 0);
+  const secondsDisabled = minutes >= 60;
+
+  function handleMinutesChange(raw: string): void {
+    if (!onDurationSecondsChange) return;
+    const nextMinutes = Number.parseInt(raw, 10);
+    if (raw.trim() === '' || Number.isNaN(nextMinutes)) {
+      setMinutesInvalid(false);
+      onDurationSecondsChange(recordAudioDurationFromParts(0, seconds));
+      return;
+    }
+    if (nextMinutes > 60) {
+      setMinutesInvalid(true);
+      onDurationSecondsChange(recordAudioDurationFromParts(60, 0));
+      return;
+    }
+    setMinutesInvalid(false);
+    onDurationSecondsChange(recordAudioDurationFromParts(nextMinutes, seconds));
+  }
+
+  function handleSecondsChange(raw: string): void {
+    if (!onDurationSecondsChange) return;
+    const nextSeconds = Number.parseInt(raw, 10);
+    onDurationSecondsChange(
+      recordAudioDurationFromParts(minutes, Number.isNaN(nextSeconds) ? 0 : nextSeconds)
+    );
+  }
+
+  const secondsInput = (
+    <WuInput
+      variant="outlined"
+      type="number"
+      min={0}
+      max={59}
+      value={String(seconds)}
+      onChange={(e) => handleSecondsChange(e.target.value)}
+      aria-label="Audio recording duration seconds"
+      disabled={secondsDisabled}
+    />
+  );
+
   return (
     <div className={styles.captureOptionRow}>
       <ToggleRow label={label} checked={checked} onChange={onCheckedChange} />
@@ -161,6 +220,45 @@ function CaptureOptionRow({
               }}
               variant="outlined"
             />
+          </div>
+        </div>
+      ) : null}
+      {showDuration ? (
+        <div className={styles.durationField}>
+          <span className={styles.fieldLabel}>Duration</span>
+          <div className={styles.durationInputs}>
+            <div className={styles.durationControl}>
+              <WuInput
+                variant="outlined"
+                type="number"
+                min={0}
+                max={60}
+                value={String(minutes)}
+                onChange={(e) => handleMinutesChange(e.target.value)}
+                aria-label="Audio recording duration minutes"
+                aria-invalid={minutesInvalid}
+                invalid={minutesInvalid}
+              />
+              <span className={styles.durationUnit}>min</span>
+              {secondsDisabled ? (
+                <WuTooltip content={RECORD_AUDIO_SECONDS_DISABLED_TOOLTIP} position="top">
+                  <span
+                    className={styles.durationSecondsWrap}
+                    aria-label={RECORD_AUDIO_SECONDS_DISABLED_TOOLTIP}
+                  >
+                    {secondsInput}
+                  </span>
+                </WuTooltip>
+              ) : (
+                secondsInput
+              )}
+              <span className={styles.durationUnit}>sec</span>
+            </div>
+            {minutesInvalid ? (
+              <p className={styles.durationError} role="alert">
+                {RECORD_AUDIO_MINUTES_MAX_ERROR}
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -231,7 +329,7 @@ export function SurveyMobileDeviceDetail({
           auditSurveyIds: nextIds,
           recordAudioCapturePoints: stillValid
             ? prev.recordAudioCapturePoints
-            : (MOBILE_DEVICE_CAPTURE_POINTS_OPTIONS[0]?.value ?? 'start-and-end'),
+            : (RECORD_AUDIO_CAPTURE_POINTS_OPTIONS[0]?.value ?? 'start-only'),
         };
       });
     });
@@ -401,6 +499,10 @@ export function SurveyMobileDeviceDetail({
                 patchSettings({ recordAudioCapturePoints: value })
               }
               capturePointOptions={recordAudioCapturePointOptions}
+              durationSeconds={settings.recordAudioDurationSeconds}
+              onDurationSecondsChange={(value) =>
+                patchSettings({ recordAudioDurationSeconds: value })
+              }
             />
 
             <CaptureOptionRow

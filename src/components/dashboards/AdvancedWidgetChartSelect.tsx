@@ -12,6 +12,7 @@ import {
   type AdvancedWidgetType,
   type AdvancedWidgetTypeId,
 } from '@/data/mock-advanced-widget-types';
+import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
 import styles from './AdvancedWidgetChartSelect.module.css';
 
 const WuFormGroup = dynamic(
@@ -44,6 +45,7 @@ export function AdvancedWidgetChartSelect({
   onWidgetNameChange,
   onSelectType,
 }: AdvancedWidgetChartSelectProps) {
+  const showLicenseRestrictions = useBiLicenseRestrictions();
   const [hoveredTypeId, setHoveredTypeId] = useState<AdvancedWidgetTypeId | null>(null);
 
   const selectedType = useMemo(
@@ -100,7 +102,7 @@ export function AdvancedWidgetChartSelect({
                 onMouseEnter={() => setHoveredTypeId(chart.id)}
               >
                 {chart.showBetaBadge && <AdvancedWidgetBetaBadge />}
-                {chart.showDiamond && (
+                {chart.showDiamond && showLicenseRestrictions && (
                   <span
                     className={styles.diamondWrap}
                     onClick={(e) => e.stopPropagation()}

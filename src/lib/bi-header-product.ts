@@ -12,3 +12,16 @@ export function getBiHeaderProductName(pathname: string): string {
   }
   return BI_STATS_PRODUCT_NAME;
 }
+
+/**
+ * License diamonds / locks apply only on BI package and BI lite —
+ * not on BI Stats.
+ */
+export function isBiLicenseRestrictedProduct(pathname: string): boolean {
+  return (
+    pathname === '/bi-lite' ||
+    pathname.startsWith('/bi-lite/') ||
+    pathname === '/bi-package' ||
+    pathname.startsWith('/bi-package/')
+  );
+}

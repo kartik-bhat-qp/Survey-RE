@@ -44,7 +44,7 @@ const TOPICS = [
   'Insights Hub',
   'Response Trends',
   'Segment Analysis',
-  'Driver Analysis',
+  'Driver analysis',
   'Loyalty Metrics',
   'Retention Study',
   'Voice of Customer',

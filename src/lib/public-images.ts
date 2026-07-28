@@ -55,5 +55,6 @@ export const PUBLIC_IMAGES = {
     barChart: publicImage('advanced-widgets', 'bar_chart.svg'),
     funnel: publicImage('advanced-widgets', 'funnel.svg'),
     responseViewer: publicImage('advanced-widgets', 'response_viewer.svg'),
+    driverAnalysis: publicImage('advanced-widgets', 'driver_analysis.svg'),
   },
 } as const;

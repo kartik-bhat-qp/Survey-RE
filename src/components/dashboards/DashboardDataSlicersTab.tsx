@@ -11,6 +11,7 @@ import {
   MOCK_DATA_SLICERS,
   type DataSlicer,
 } from '@/data/mock-data-slicers';
+import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
 import styles from './DashboardDataSlicersTab.module.css';
 
 const WuTable = dynamic(
@@ -56,11 +57,13 @@ function CreateDataSlicerButton({ disabled }: { disabled: boolean }) {
 
 export function DashboardDataSlicersTab() {
   const { showToast } = useWuShowToast();
+  const showLicenseRestrictions = useBiLicenseRestrictions();
   const [slicers, setSlicers] = useState<DataSlicer[]>(MOCK_DATA_SLICERS);
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  const atSlicerLimit = slicers.length >= DATA_SLICER_LICENSE_LIMIT;
+  const atSlicerLimit =
+    showLicenseRestrictions && slicers.length >= DATA_SLICER_LICENSE_LIMIT;
 
   const filteredSlicers = useMemo(() => {
     const term = search.trim().toLowerCase();

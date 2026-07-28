@@ -24,6 +24,7 @@ import {
 } from '@/components/dashboards/DashboardDesignSettingsTab';
 import type { AmChartTypography } from '@/components/charts/amcharts/theme';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
 import { stackLayoutSingleColumn } from '@/lib/ai-dashboard-layout';
 import { DashboardWidgetCard } from '@/components/dashboards/widgets/DashboardWidgetCard';
 import { AiWidgetRenderer } from '@/components/dashboards/widgets/AiWidgetRenderer';
@@ -65,6 +66,7 @@ export function AiDashboardCanvas({
   designTypography = DEFAULT_DESIGN_TYPOGRAPHY,
 }: AiDashboardCanvasProps) {
   const isMobile = useIsMobile();
+  const showLicenseRestrictions = useBiLicenseRestrictions();
   const [desktopLayout, setDesktopLayout] = useState<Layout>(AI_DASHBOARD_LAYOUT);
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -158,10 +160,11 @@ export function AiDashboardCanvas({
                 title={widget.title}
                 dragHandleClassName={isMobile ? undefined : styles.dragHandle}
                 showDiamond={
-                  widget.id === 'w-nps-benchmark' ||
-                  widget.id === 'w-mean' ||
-                  widget.id === 'w-comparative-bar' ||
-                  widget.id === 'w-segment-trend'
+                  showLicenseRestrictions &&
+                  (widget.id === 'w-nps-benchmark' ||
+                    widget.id === 'w-mean' ||
+                    widget.id === 'w-comparative-bar' ||
+                    widget.id === 'w-segment-trend')
                 }
               >
                 <AiWidgetRenderer

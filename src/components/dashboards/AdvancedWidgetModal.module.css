@@ -3,6 +3,11 @@
   width: 100%;
 }
 
+.modalWide {
+  max-width: min(1200px, calc(100vw - 1.5rem)) !important;
+  width: 100%;
+}
+
 .modalTitle :global(h2) {
   color: #1b3380;
   font-size: 16px;

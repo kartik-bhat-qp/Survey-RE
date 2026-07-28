@@ -13,6 +13,7 @@ import {
   type SharedUrlLink,
 } from '@/data/mock-shared-urls';
 import { formatShortDate, truncate } from '@/data/mock-utils';
+import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
 import styles from './DashboardSharedUrlTab.module.css';
 
 const WuTable = dynamic(
@@ -36,11 +37,13 @@ const URL_DISPLAY_MAX = 36;
 
 export function DashboardSharedUrlTab() {
   const { showToast } = useWuShowToast();
+  const showLicenseRestrictions = useBiLicenseRestrictions();
   const [links, setLinks] = useState<SharedUrlLink[]>(MOCK_SHARED_URLS);
   const [search, setSearch] = useState('');
   const [upsellOpen, setUpsellOpen] = useState(false);
 
-  const atLinkLimit = links.length >= SHARED_URL_LICENSE_LIMIT;
+  const atLinkLimit =
+    showLicenseRestrictions && links.length >= SHARED_URL_LICENSE_LIMIT;
 
   const filteredLinks = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -49,8 +52,11 @@ export function DashboardSharedUrlTab() {
   }, [links, search]);
 
   const visibleLinks = useMemo(
-    () => filteredLinks.slice(0, SHARED_URL_LICENSE_LIMIT),
-    [filteredLinks]
+    () =>
+      showLicenseRestrictions
+        ? filteredLinks.slice(0, SHARED_URL_LICENSE_LIMIT)
+        : filteredLinks,
+    [filteredLinks, showLicenseRestrictions]
   );
 
   const handleCreate = useCallback(() => {

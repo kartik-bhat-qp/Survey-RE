@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { LICENSE_DIAMOND_TOOLTIP } from '@/data/mock-advanced-widget-types';
+import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
 import { PUBLIC_IMAGES } from '@/lib/public-images';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import styles from './SelectWidgetModal.module.css';
@@ -50,6 +51,7 @@ export function SelectWidgetModal({
 }: SelectWidgetModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
+  const showLicenseRestrictions = useBiLicenseRestrictions();
   const [hovered, setHovered] = useState<HoverCard>(undefined);
   const [surveyFooterHover, setSurveyFooterHover] = useState(false);
 
@@ -138,18 +140,20 @@ export function SelectWidgetModal({
             <div className={styles.cardText}>
               <div className={styles.cardTitle}>
                 <span className={styles.cardTitleText}>Question based</span>
-                <span
-                  className={styles.diamondWrap}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  role="presentation"
-                >
-                  <WuTooltip content={LICENSE_DIAMOND_TOOLTIP} position="bottom">
-                    <span className={styles.diamondIcon} aria-label={LICENSE_DIAMOND_TOOLTIP}>
-                      <span className="wm-diamond" />
-                    </span>
-                  </WuTooltip>
-                </span>
+                {showLicenseRestrictions ? (
+                  <span
+                    className={styles.diamondWrap}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    role="presentation"
+                  >
+                    <WuTooltip content={LICENSE_DIAMOND_TOOLTIP} position="bottom">
+                      <span className={styles.diamondIcon} aria-label={LICENSE_DIAMOND_TOOLTIP}>
+                        <span className="wm-diamond" />
+                      </span>
+                    </WuTooltip>
+                  </span>
+                ) : null}
               </div>
               <p className={styles.cardDescription}>Widgets based on survey question</p>
             </div>

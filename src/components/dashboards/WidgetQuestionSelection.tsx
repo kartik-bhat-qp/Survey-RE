@@ -12,6 +12,10 @@ import {
 } from '@/data/mock-survey-questions';
 import styles from './WidgetQuestionSelection.module.css';
 
+const WuCheckbox = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCheckbox })),
+  { ssr: false }
+);
 const WuInput = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
   { ssr: false }
@@ -23,19 +27,35 @@ const WuTable = dynamic(
 
 interface WidgetQuestionSelectionProps {
   surveyId: number;
-  selectedQuestionId: number | null;
-  onSelectQuestion: (question: SurveyQuestion) => void;
+  selectedQuestionId?: number | null;
+  /** When set with multiSelect, rows can be toggled independently. */
+  selectedQuestionIds?: number[];
+  multiSelect?: boolean;
+  onSelectQuestion?: (question: SurveyQuestion) => void;
+  onToggleQuestion?: (question: SurveyQuestion, selected: boolean) => void;
+  /** Question ids hidden from the picker (e.g. already chosen as primary). */
+  excludeQuestionIds?: number[];
 }
 
 export function WidgetQuestionSelection({
   surveyId,
-  selectedQuestionId,
+  selectedQuestionId = null,
+  selectedQuestionIds = [],
+  multiSelect = false,
   onSelectQuestion,
+  onToggleQuestion,
+  excludeQuestionIds = [],
 }: WidgetQuestionSelectionProps) {
   const [search, setSearch] = useState('');
   const [expandedParentIds, setExpandedParentIds] = useState<Set<number>>(() => new Set());
 
-  const questions = useMemo(() => getQuestionsBySurvey(surveyId), [surveyId]);
+  const excludedIds = useMemo(() => new Set(excludeQuestionIds), [excludeQuestionIds]);
+  const selectedIds = useMemo(() => new Set(selectedQuestionIds), [selectedQuestionIds]);
+
+  const questions = useMemo(
+    () => getQuestionsBySurvey(surveyId).filter((q) => !excludedIds.has(q.id)),
+    [surveyId, excludedIds]
+  );
 
   const displayQuestions = useMemo(
     () => flattenQuestionsForPicker(questions, expandedParentIds),
@@ -54,8 +74,29 @@ export function WidgetQuestionSelection({
     });
   }, []);
 
-  const columns: IWuTableColumnDef<SurveyQuestion>[] = useMemo(
-    () => [
+  const allVisibleSelected =
+    multiSelect &&
+    displayQuestions.length > 0 &&
+    displayQuestions.every((q) => selectedIds.has(q.parentQuestionId ?? q.id));
+
+  const toggleAllVisible = useCallback(
+    (checked: boolean): void => {
+      if (!onToggleQuestion) return;
+      const seen = new Set<number>();
+      for (const question of displayQuestions) {
+        const key = question.parentQuestionId ?? question.id;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const isSelected = selectedIds.has(key);
+        if (checked && !isSelected) onToggleQuestion(question, true);
+        if (!checked && isSelected) onToggleQuestion(question, false);
+      }
+    },
+    [displayQuestions, onToggleQuestion, selectedIds]
+  );
+
+  const columns: IWuTableColumnDef<SurveyQuestion>[] = useMemo(() => {
+    const questionColumns: IWuTableColumnDef<SurveyQuestion>[] = [
       {
         accessorKey: 'code',
         header: 'Code',
@@ -72,7 +113,10 @@ export function WidgetQuestionSelection({
           const isSubRow = question.parentQuestionId !== undefined;
           const isExpandable = questionHasExpandableRows(question);
           const isExpanded = expandedParentIds.has(question.id);
-          const isSelected = selectedQuestionId === question.id;
+          const selectionKey = question.parentQuestionId ?? question.id;
+          const isSelected = multiSelect
+            ? selectedIds.has(selectionKey)
+            : selectedQuestionId === question.id;
 
           return (
             <span
@@ -101,7 +145,13 @@ export function WidgetQuestionSelection({
                 type="button"
                 className={styles.questionLink}
                 style={isSelected ? { fontWeight: 600 } : undefined}
-                onClick={() => onSelectQuestion(question)}
+                onClick={() => {
+                  if (multiSelect) {
+                    onToggleQuestion?.(question, !selectedIds.has(selectionKey));
+                    return;
+                  }
+                  onSelectQuestion?.(question);
+                }}
               >
                 {question.text}
               </button>
@@ -115,9 +165,54 @@ export function WidgetQuestionSelection({
         enableSorting: true,
         size: 140,
       },
-    ],
-    [expandedParentIds, selectedQuestionId, onSelectQuestion, toggleExpand]
-  );
+    ];
+
+    if (!multiSelect) {
+      return questionColumns;
+    }
+
+    return [
+      {
+        id: 'select',
+        accessorKey: 'id',
+        header: () => (
+          <div className={styles.checkboxHeader}>
+            <WuCheckbox
+              checked={allVisibleSelected}
+              onChange={toggleAllVisible}
+              aria-label="Select all questions"
+            />
+          </div>
+        ),
+        cell: ({ row }) => {
+          const question = row.original;
+          const selectionKey = question.parentQuestionId ?? question.id;
+          const checked = selectedIds.has(selectionKey);
+          return (
+            <div className={styles.checkboxCell}>
+              <WuCheckbox
+                checked={checked}
+                onChange={(nextChecked) => onToggleQuestion?.(question, nextChecked)}
+                aria-label={`Select ${question.code}`}
+              />
+            </div>
+          );
+        },
+        size: 48,
+      },
+      ...questionColumns,
+    ];
+  }, [
+    allVisibleSelected,
+    expandedParentIds,
+    multiSelect,
+    onSelectQuestion,
+    onToggleQuestion,
+    selectedIds,
+    selectedQuestionId,
+    toggleAllVisible,
+    toggleExpand,
+  ]);
 
   return (
     <div className={styles.root}>

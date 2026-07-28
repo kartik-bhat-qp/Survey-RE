@@ -84,6 +84,13 @@
   color: #545e6b;
 }
 
+.checkboxHeader,
+.checkboxCell {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
 @media (max-width: 639px) {
   .root {
     min-height: 0;

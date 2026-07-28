@@ -134,6 +134,10 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
       <AdvancedWidgetModal
         open={advancedWidgetOpen}
         onOpenChange={setAdvancedWidgetOpen}
+        surveyId={
+          resolveDashboardSurvey(dashboard.surveyId, dashboard.surveyName ?? 'QuestionPro - RE')
+            .id
+        }
         onWidgetAdded={() => setHasAddedWidget(true)}
       />
 
