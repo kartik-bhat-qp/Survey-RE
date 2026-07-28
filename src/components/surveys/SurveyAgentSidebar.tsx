@@ -12,6 +12,7 @@ import {
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
+  buildResearchAgentCreateSurveyProgressSteps,
   buildResearchAgentUserContent,
   createResearchAgentFileAttachment,
   createResearchAgentMessageId,
@@ -19,6 +20,7 @@ import {
   createResearchAgentSessionId,
   estimateResearchAgentContextUsage,
   formatResearchAgentAttachmentSize,
+  formatResearchAgentMessageTime,
   generateSurveyChangesFromAiPrompt,
   getResearchAgentHistorySeed,
   RESEARCH_AGENT_CONTEXT_MAX_TOKENS,
@@ -29,6 +31,7 @@ import {
   RESEARCH_AGENT_PDF_ACCEPT,
   RESEARCH_AGENT_WORD_ACCEPT,
   revokeResearchAgentAttachmentPreview,
+  runResearchAgentCreateSurveyProgress,
   SURVEY_AI_CAPABILITY_PILLS,
   SURVEY_AI_EXAMPLE_PROMPTS,
   SURVEY_AI_GREETING,
@@ -37,6 +40,7 @@ import {
   type ResearchAgentChatMessage,
   type ResearchAgentChatSession,
   type ResearchAgentContext,
+  type ResearchAgentProgressStep,
   type SurveyAiGenerationResult,
 } from '@/data/mock-survey-ai-agent';
 import { formatRelativeDate, truncate } from '@/data/mock-utils';
@@ -126,6 +130,8 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
   const { showToast } = useWuShowToast();
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [progressSteps, setProgressSteps] = useState<ResearchAgentProgressStep[]>([]);
+  const [useInChatProgress, setUseInChatProgress] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [sessions, setSessions] = useState<ResearchAgentChatSession[]>(() =>
     cloneHistorySessions(getResearchAgentHistorySeed(agentContext))
@@ -138,7 +144,9 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
   const bodyRef = useRef<HTMLDivElement>(null);
   const attachmentsRef = useRef<ResearchAgentAttachment[]>(attachments);
   const seedPromptHandledRef = useRef<string | null>(null);
+  const activeSessionIdRef = useRef<string | null>(activeSessionId);
   attachmentsRef.current = attachments;
+  activeSessionIdRef.current = activeSessionId;
 
   const openImportFromAttachment = useCallback((kind: ResearchAgentAttachKind = 'any') => {
     setPrompt(RESEARCH_AGENT_IMPORT_FROM_ATTACHED_PROMPT);
@@ -204,57 +212,83 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
     };
   }, []);
 
-  const appendMessagesToHistory = useCallback(
-    (userContent: string, assistantContent: string): void => {
+  const beginUserTurn = useCallback((userContent: string): string => {
+    const createdAt = new Date().toISOString();
+    const userMessage: ResearchAgentChatMessage = {
+      id: createResearchAgentMessageId(),
+      role: 'user',
+      content: userContent,
+      createdAt,
+    };
+
+    const currentSessionId = activeSessionIdRef.current;
+    if (currentSessionId) {
+      setSessions((current) =>
+        current.map((session) =>
+          session.id === currentSessionId
+            ? {
+                ...session,
+                title: session.title || truncate(userContent, 52),
+                preview: userContent,
+                updatedAt: createdAt,
+                messages: [...session.messages, userMessage],
+              }
+            : session
+        )
+      );
+      return currentSessionId;
+    }
+
+    const newSessionId = createResearchAgentSessionId();
+    const newSession: ResearchAgentChatSession = {
+      id: newSessionId,
+      title: truncate(userContent, 52),
+      preview: userContent,
+      updatedAt: createdAt,
+      messages: [userMessage],
+    };
+    setSessions((current) => [newSession, ...current]);
+    setActiveSessionId(newSessionId);
+    activeSessionIdRef.current = newSessionId;
+    return newSessionId;
+  }, []);
+
+  const appendAssistantMessage = useCallback(
+    (sessionId: string, assistantContent: string): void => {
       const createdAt = new Date().toISOString();
-      const userMessage: ResearchAgentChatMessage = {
-        id: createResearchAgentMessageId(),
-        role: 'user',
-        content: userContent,
-        createdAt,
-      };
       const assistantMessage: ResearchAgentChatMessage = {
         id: createResearchAgentMessageId(),
         role: 'assistant',
         content: assistantContent,
         createdAt,
       };
-
-      if (activeSessionId) {
-        setSessions((current) =>
-          current.map((session) =>
-            session.id === activeSessionId
-              ? {
-                  ...session,
-                  title: session.title || truncate(userContent, 52),
-                  preview: userContent,
-                  updatedAt: assistantMessage.createdAt,
-                  messages: [...session.messages, userMessage, assistantMessage],
-                }
-              : session
-          )
-        );
-        return;
-      }
-
-      const newSession: ResearchAgentChatSession = {
-        id: createResearchAgentSessionId(),
-        title: truncate(userContent, 52),
-        preview: userContent,
-        updatedAt: assistantMessage.createdAt,
-        messages: [userMessage, assistantMessage],
-      };
-
-      setSessions((current) => [newSession, ...current]);
-      setActiveSessionId(newSession.id);
+      setSessions((current) =>
+        current.map((session) =>
+          session.id === sessionId
+            ? {
+                ...session,
+                updatedAt: createdAt,
+                messages: [...session.messages, assistantMessage],
+              }
+            : session
+        )
+      );
     },
-    [activeSessionId]
+    []
   );
+
+  function scrollBodyToBottom(): void {
+    window.requestAnimationFrame(() => {
+      bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: 'smooth' });
+    });
+  }
 
   function handleClose(): void {
     if (isGenerating) return;
     resetPrompt();
     clearAttachments();
+    setProgressSteps([]);
+    setUseInChatProgress(false);
     setHistoryOpen(false);
     onClose();
   }
@@ -262,8 +296,11 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
   function handleNewChat(): void {
     if (isGenerating) return;
     setActiveSessionId(null);
+    activeSessionIdRef.current = null;
     resetPrompt();
     clearAttachments();
+    setProgressSteps([]);
+    setUseInChatProgress(false);
     setHistoryOpen(false);
     showToast({ message: 'Started a new research agent chat', variant: 'info' });
   }
@@ -276,7 +313,10 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
   function handleSelectSession(sessionId: string): void {
     if (isGenerating) return;
     setActiveSessionId(sessionId);
+    activeSessionIdRef.current = sessionId;
     resetPrompt();
+    setProgressSteps([]);
+    setUseInChatProgress(false);
     setHistoryOpen(false);
   }
 
@@ -285,20 +325,47 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
     if (isGenerating || (!submittedPrompt && attachments.length === 0)) return;
 
     const userContent = buildResearchAgentUserContent(submittedPrompt, attachments);
+    const showCreateProgress = Boolean(onSubmit);
+    const sessionId = beginUserTurn(userContent);
+    resetPrompt();
+    clearAttachments();
     setIsGenerating(true);
+    setUseInChatProgress(showCreateProgress);
+    if (showCreateProgress) {
+      setProgressSteps(
+        buildResearchAgentCreateSurveyProgressSteps(1, 1, 'working')
+      );
+    } else {
+      setProgressSteps([]);
+    }
+    scrollBodyToBottom();
+
     try {
       const result = onSubmit
         ? await onSubmit(submittedPrompt || userContent)
         : await generateSurveyChangesFromAiPrompt(submittedPrompt || userContent, surveyId);
+
+      if (result.createSurveyProgress) {
+        setUseInChatProgress(true);
+        await runResearchAgentCreateSurveyProgress(
+          result.createSurveyProgress.blockCount,
+          result.createSurveyProgress.questionCount,
+          (steps) => {
+            setProgressSteps(steps);
+            scrollBodyToBottom();
+          }
+        );
+      }
+
       onGenerated?.(result);
-      appendMessagesToHistory(userContent, result.summary);
+      appendAssistantMessage(sessionId, result.summary);
+      setProgressSteps([]);
+      setUseInChatProgress(false);
       showToast({ message: result.summary, variant: 'success' });
-      resetPrompt();
-      clearAttachments();
-      window.requestAnimationFrame(() => {
-        bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: 'smooth' });
-      });
+      scrollBodyToBottom();
     } catch (error) {
+      setProgressSteps([]);
+      setUseInChatProgress(false);
       showToast({
         message: error instanceof Error ? error.message : 'Unable to update survey',
         variant: 'error',
@@ -320,6 +387,7 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
     seedPromptHandledRef.current = trimmedSeed;
     setPrompt(trimmedSeed);
     setActiveSessionId(null);
+    activeSessionIdRef.current = null;
     onSeedPromptConsumed?.();
     void handleSubmit(trimmedSeed);
     // Intentionally run when the sidebar opens with a new seed prompt.
@@ -436,7 +504,7 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
 
   return (
     <>
-      <SurveyAgentThinkingOverlay open={isGenerating} />
+      <SurveyAgentThinkingOverlay open={isGenerating && !useInChatProgress} />
       <div
         className={`${styles.sidebarShell} ${getSidebarShellLayoutClass(layout)} ${
           layout === 'inline' && agentContext === 'workspace'
@@ -534,18 +602,49 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
           </header>
 
           <div ref={bodyRef} className={styles.body}>
-            {activeMessages.length > 0 ? (
+            {activeMessages.length > 0 || progressSteps.length > 0 ? (
               <div className={styles.messageList}>
-                {activeMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={
-                      message.role === 'user' ? styles.userMessage : styles.assistantMessage
-                    }
-                  >
-                    <p className={styles.messageText}>{message.content}</p>
-                  </div>
-                ))}
+                {activeMessages.map((message) =>
+                  message.role === 'user' ? (
+                    <div key={message.id} className={styles.userMessageRow}>
+                      <div className={styles.userMessage}>
+                        <p className={styles.userMessageText}>{message.content}</p>
+                        <span className={styles.userMessageTime}>
+                          {formatResearchAgentMessageTime(message.createdAt)}
+                        </span>
+                      </div>
+                      <span className={styles.userAvatar} aria-hidden>
+                        KB
+                      </span>
+                    </div>
+                  ) : (
+                    <div key={message.id} className={styles.assistantMessage}>
+                      <p className={styles.messageText}>{message.content}</p>
+                    </div>
+                  )
+                )}
+                {progressSteps.length > 0 ? (
+                  <ul className={styles.progressList} aria-live="polite" aria-busy={isGenerating}>
+                    {progressSteps.map((step) => (
+                      <li
+                        key={step.id}
+                        className={`${styles.progressItem} ${
+                          step.status === 'active' ? styles.progressItemActive : ''
+                        }`}
+                      >
+                        <span
+                          className={`${styles.progressIcon} ${
+                            step.status === 'active'
+                              ? 'wm-autorenew'
+                              : 'wm-check-circle'
+                          }`}
+                          aria-hidden
+                        />
+                        <span className={styles.progressLabel}>{step.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </div>
             ) : (
               <>

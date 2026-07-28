@@ -140,14 +140,14 @@ export interface BlankSurveyCreateOption {
 export const BLANK_SURVEY_CREATE_IMPORT_OPTIONS: BlankSurveyCreateOption[] = [
   {
     id: 'import-word',
-    label: 'Import from Word',
+    label: 'Doc',
     icon: 'wm-description',
     iconClassName: 'word',
     attachKind: 'word',
   },
   {
     id: 'import-pdf',
-    label: 'Import from PDF',
+    label: 'PDF',
     icon: 'wm-picture-as-pdf',
     iconClassName: 'pdf',
     attachKind: 'pdf',

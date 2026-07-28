@@ -391,6 +391,106 @@ export interface SurveyAiGenerationResult {
   subject?: string;
   body?: string;
   smsBody?: string;
+  /** When set, Research Agent shows create-survey progress steps in chat. */
+  createSurveyProgress?: {
+    blockCount: number;
+    questionCount: number;
+  };
+}
+
+export type ResearchAgentProgressStepStatus = 'done' | 'active';
+
+export interface ResearchAgentProgressStep {
+  id: string;
+  label: string;
+  status: ResearchAgentProgressStepStatus;
+}
+
+export function formatResearchAgentMessageTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+/** Build progressive create-survey status lines shown while the agent works. */
+export function buildResearchAgentCreateSurveyProgressSteps(
+  blockCount: number,
+  questionCount: number,
+  phase: 'working' | 'blocks' | 'blocks-done' | 'questions' | 'questions-done' | 'complete'
+): ResearchAgentProgressStep[] {
+  const blocksLabel =
+    blockCount === 1 ? 'Creating 1 block...' : `Creating ${blockCount} block(s)...`;
+  const questionsLabel =
+    questionCount === 1
+      ? 'Generating 1 question...'
+      : `Generating ${questionCount} question(s)...`;
+
+  if (phase === 'working') {
+    return [{ id: 'working', label: 'Working...', status: 'active' }];
+  }
+
+  if (phase === 'blocks') {
+    return [{ id: 'blocks', label: blocksLabel, status: 'active' }];
+  }
+
+  if (phase === 'blocks-done') {
+    return [
+      { id: 'blocks', label: blocksLabel, status: 'done' },
+      { id: 'blocks-ok', label: 'Blocks created successfully.', status: 'done' },
+      { id: 'working-2', label: 'Working', status: 'done' },
+    ];
+  }
+
+  if (phase === 'questions') {
+    return [
+      { id: 'blocks', label: blocksLabel, status: 'done' },
+      { id: 'blocks-ok', label: 'Blocks created successfully.', status: 'done' },
+      { id: 'working-2', label: 'Working', status: 'done' },
+      { id: 'questions', label: questionsLabel, status: 'active' },
+    ];
+  }
+
+  if (phase === 'questions-done') {
+    return [
+      { id: 'blocks', label: blocksLabel, status: 'done' },
+      { id: 'blocks-ok', label: 'Blocks created successfully.', status: 'done' },
+      { id: 'working-2', label: 'Working', status: 'done' },
+      { id: 'questions', label: questionsLabel, status: 'done' },
+      { id: 'questions-ok', label: 'Questions created successfully.', status: 'done' },
+    ];
+  }
+
+  return [
+    { id: 'blocks', label: blocksLabel, status: 'done' },
+    { id: 'blocks-ok', label: 'Blocks created successfully.', status: 'done' },
+    { id: 'working-2', label: 'Working', status: 'done' },
+    { id: 'questions', label: questionsLabel, status: 'done' },
+    { id: 'questions-ok', label: 'Questions created successfully.', status: 'done' },
+  ];
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+export async function runResearchAgentCreateSurveyProgress(
+  blockCount: number,
+  questionCount: number,
+  onPhase: (
+    steps: ResearchAgentProgressStep[]
+  ) => void
+): Promise<void> {
+  const phases: Array<
+    'blocks' | 'blocks-done' | 'questions' | 'questions-done' | 'complete'
+  > = ['blocks', 'blocks-done', 'questions', 'questions-done', 'complete'];
+
+  for (const phase of phases) {
+    onPhase(buildResearchAgentCreateSurveyProgressSteps(blockCount, questionCount, phase));
+    if (phase === 'complete') break;
+    await delay(550);
+  }
 }
 
 export async function generateSurveyChangesFromAiPrompt(

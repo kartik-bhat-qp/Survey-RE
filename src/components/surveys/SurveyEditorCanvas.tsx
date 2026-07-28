@@ -1314,6 +1314,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   );
   const [blankSurveyCreateModalOpen, setBlankSurveyCreateModalOpen] = useState(false);
   const [agentSeedPrompt, setAgentSeedPrompt] = useState<string | null>(null);
+  const pendingAiSectionsRef = useRef<SurveySection[] | null>(null);
   const [blockFlowOpen, setBlockFlowOpen] = useState(false);
   const [lookupTableBulkConversionConflicts, setLookupTableBulkConversionConflicts] = useState<
     LookupTableConversionLogicConflict[]
@@ -1382,16 +1383,40 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       const languageLabel = getSurveyCreationLanguageLabel(DEFAULT_SURVEY_CREATION_LANGUAGE);
       const result = await requestAiSurveyGeneration(generationPrompt, languageLabel);
       if (!result.ok) {
+        pendingAiSectionsRef.current = null;
         throw new Error(result.error);
       }
 
       const nextSections = normalizeSurveyEditorSections(
         cloneSections(generatedSurveyToSections(result.survey))
       );
+      const blockCount = nextSections.length;
       const questionCount = nextSections.reduce(
         (count, section) => count + section.questions.length,
         0
       );
+
+      pendingAiSectionsRef.current = nextSections;
+
+      return {
+        summary:
+          questionCount === 1
+            ? 'Your survey is ready to edit with 1 question.'
+            : `Your survey is ready to edit with ${questionCount} questions.`,
+        createSurveyProgress: {
+          blockCount: Math.max(1, blockCount),
+          questionCount: Math.max(1, questionCount),
+        },
+      };
+    },
+    []
+  );
+
+  const handleBlankResearchAgentGenerated = useCallback(
+    (_result: SurveyAiGenerationResult) => {
+      const nextSections = pendingAiSectionsRef.current;
+      if (!nextSections) return;
+      pendingAiSectionsRef.current = null;
 
       setSections(nextSections);
       setQuestionSettingsByKey({});
@@ -1402,13 +1427,6 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       setDeepDiveFollowUpSettingsByKey({});
       setCheckedQuestionKeys({});
       setSelectAll(false);
-
-      return {
-        summary:
-          questionCount === 1
-            ? 'Your survey is ready to edit with 1 question.'
-            : `Your survey is ready to edit with ${questionCount} questions.`,
-      };
     },
     [
       setCaptchaSettingsByKey,
@@ -3669,6 +3687,11 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         onSubmit={
           detail.survey.id === NEW_BLANK_SURVEY_ID
             ? handleBlankResearchAgentSubmit
+            : undefined
+        }
+        onGenerated={
+          detail.survey.id === NEW_BLANK_SURVEY_ID
+            ? handleBlankResearchAgentGenerated
             : undefined
         }
         onClose={() => {

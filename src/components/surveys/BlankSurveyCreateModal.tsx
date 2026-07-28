@@ -44,7 +44,8 @@ export function BlankSurveyCreateModal({
   function handleCreate() {
     const trimmed = prompt.trim();
     if (!trimmed) return;
-    onCreateWithPrompt(trimmed);
+    const seededPrompt = /^create\b/i.test(trimmed) ? trimmed : `Create a ${trimmed}`;
+    onCreateWithPrompt(seededPrompt);
     handleModalOpenChange(false);
   }
 
@@ -92,7 +93,7 @@ export function BlankSurveyCreateModal({
             onKeyDown={handleKeyDown}
           />
 
-          <p className={styles.importLabel}>Import from</p>
+          <p className={styles.importLabel}>Create from</p>
           <div className={styles.importOptions}>
             {BLANK_SURVEY_CREATE_IMPORT_OPTIONS.map((option) => (
               <button
