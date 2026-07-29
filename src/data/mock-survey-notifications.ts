@@ -339,6 +339,14 @@ export function deriveNotificationCriteriaLabel(
     return 'Device Type';
   }
 
+  if (cond.source === 'Quota') {
+    if (cond.systemVariable && cond.value.trim()) {
+      return `Quota ${cond.systemVariable} ${cond.operator} ${cond.value}`;
+    }
+    if (cond.systemVariable) return `Quota ${cond.systemVariable}`;
+    return 'Quota';
+  }
+
   if (cond.source === 'Language') {
     const languages = parseSelectedValues(cond.value);
     if (languages.length === 1) return `Language is ${languages[0]}`;
@@ -370,7 +378,7 @@ function criterionConditionToDisplayRule(
   let subject: string = cond.source;
   if (cond.source === 'Question') {
     subject = question?.text ?? '';
-  } else if (cond.source === 'System Variable' || cond.source === 'Geo Location') {
+  } else if (cond.source === 'System Variable' || cond.source === 'Geo Location' || cond.source === 'Quota') {
     subject = cond.systemVariable ?? '';
   } else if (cond.source === 'Email List Code') {
     subject = 'Email List Code';

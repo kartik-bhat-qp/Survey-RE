@@ -119,7 +119,7 @@ export function ShowHideOptionsLogicPanel({
             SHOW_HIDE_CRITERIA_ACTION_OPTIONS[0];
 
           return (
-            <div className={`${quotaStyles.conditionRow} ${styles.actionRow}`}>
+            <div className={styles.actionRow}>
               <div className={styles.actionSelect}>
                 <WuSelect
                   data={SHOW_HIDE_CRITERIA_ACTION_OPTIONS}

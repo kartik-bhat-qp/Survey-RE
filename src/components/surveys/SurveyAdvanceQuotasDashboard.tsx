@@ -124,6 +124,9 @@ function buildCriteriaQuota(
           } else {
             head = `[${label}] ${cond.operator} "${cond.value}"`;
           }
+        } else if (cond.source === 'Quota') {
+          const label = cond.subject || 'Quota';
+          head = `Quota [${label}] ${cond.operator} "${cond.value}"`;
         } else {
           const label = cond.subject || cond.source;
           head = `${label} ${cond.operator} "${cond.value}"`;

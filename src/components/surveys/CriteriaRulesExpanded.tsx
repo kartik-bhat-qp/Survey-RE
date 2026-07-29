@@ -24,8 +24,12 @@ function formatConditionRow(
 
   const typeLabel = cond.source === 'Question' ? 'Question' : cond.source;
 
-  const questionText = (cond.questionText || cond.subject || '').trim();
-  const codePrefix = cond.questionCode ? `[${cond.questionCode}] ` : '';
+  const questionText =
+    cond.source === 'Quota'
+      ? (cond.subject || '').trim() || 'Quota'
+      : (cond.questionText || cond.subject || '').trim();
+  const codePrefix =
+    cond.source === 'Quota' ? '' : cond.questionCode ? `[${cond.questionCode}] ` : '';
   const questionLabel = `${questionIndex}. ${codePrefix}${questionText}`;
 
   let operator = cond.operator;

@@ -20,9 +20,11 @@ import {
   buildInitialCrossVariableMatrix,
   buildPrimaryDimensions,
   CROSS_VARIABLE_MATRIX_INSTRUCTIONS,
-  CROSS_VARIABLE_PRIMARY_VARIABLES_INSTRUCTIONS,
+  CROSS_VARIABLE_PRIMARY_VARIABLES_INSTRUCTIONS_REST,
+  CROSS_VARIABLE_PRIMARY_VARIABLES_LEAD,
   CROSS_VARIABLE_QUOTA_TYPE_INSTRUCTIONS,
-  CROSS_VARIABLE_SECONDARY_VARIABLES_INSTRUCTIONS,
+  CROSS_VARIABLE_SECONDARY_VARIABLES_INSTRUCTIONS_REST,
+  CROSS_VARIABLE_SECONDARY_VARIABLES_LEAD,
   formatCrossVariableQuotaScope,
   getSelectedQuestionsByIds,
   type CrossVariableMatrixState,
@@ -356,11 +358,7 @@ export function CrossVariableQuotaModal({
   const instructions =
     step === 'quota-type'
       ? CROSS_VARIABLE_QUOTA_TYPE_INSTRUCTIONS
-      : step === 'primary-variables'
-      ? CROSS_VARIABLE_PRIMARY_VARIABLES_INSTRUCTIONS
-      : step === 'secondary-variables'
-        ? CROSS_VARIABLE_SECONDARY_VARIABLES_INSTRUCTIONS
-        : CROSS_VARIABLE_MATRIX_INSTRUCTIONS;
+      : CROSS_VARIABLE_MATRIX_INSTRUCTIONS;
   const selectionLabel =
     step === 'primary-variables' ? 'Primary variables' : 'Secondary variables';
   const canProceed =
@@ -372,6 +370,21 @@ export function CrossVariableQuotaModal({
         ? secondarySelectedIds.size > 0 && matrixColumns.length > 0
         : combinationRows.length > 0 && matrixColumns.length > 0;
   const breadcrumbStep: QuotaStep = step;
+
+  const instructionsContent =
+    step === 'primary-variables' ? (
+      <p className={styles.instructions}>
+        <span className={styles.instructionsLead}>{CROSS_VARIABLE_PRIMARY_VARIABLES_LEAD}</span>{' '}
+        {CROSS_VARIABLE_PRIMARY_VARIABLES_INSTRUCTIONS_REST}
+      </p>
+    ) : step === 'secondary-variables' ? (
+      <p className={styles.instructions}>
+        <span className={styles.instructionsLead}>{CROSS_VARIABLE_SECONDARY_VARIABLES_LEAD}</span>{' '}
+        {CROSS_VARIABLE_SECONDARY_VARIABLES_INSTRUCTIONS_REST}
+      </p>
+    ) : (
+      <p className={styles.instructions}>{instructions}</p>
+    );
 
   return (
     <WuModal
@@ -386,7 +399,7 @@ export function CrossVariableQuotaModal({
       <WuModalContent className={styles.content}>
         {step === 'quota-type' ? (
           <div className={styles.body}>
-            <p className={styles.instructions}>{instructions}</p>
+            {instructionsContent}
             <CrossVariableQuotaTypeStep value={quotaScope} onChange={setQuotaScope} />
           </div>
         ) : step === 'dimension' ? (
@@ -396,7 +409,7 @@ export function CrossVariableQuotaModal({
               onChange={setQuotaScope}
               variant="inline"
             />
-            <p className={styles.instructions}>{instructions}</p>
+            {instructionsContent}
             <p className={styles.matrixSummary}>
               <strong>{formatCrossVariableQuotaScope(quotaScope)}</strong> ·{' '}
               <strong>{combinationRows.length}</strong> primary combinations ·{' '}
@@ -413,7 +426,7 @@ export function CrossVariableQuotaModal({
           </div>
         ) : (
           <div className={styles.body}>
-            <p className={styles.instructions}>{instructions}</p>
+            {instructionsContent}
             <div className={styles.searchRow}>
               <WuInput
                 variant="outlined"

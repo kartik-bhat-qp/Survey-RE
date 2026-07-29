@@ -598,6 +598,11 @@ export function formatAdvanceQuotaCondition(
     return `${connectorPrefix}[${label}] ${cond.operator} "${cond.value}"`;
   }
 
+  if (cond.source === 'Quota') {
+    const label = cond.subject || 'Quota';
+    return `${connectorPrefix}Quota [${label}] ${cond.operator} "${cond.value}"`;
+  }
+
   const label = cond.subject || cond.source;
   return `${connectorPrefix}${label} ${cond.operator} "${cond.value}"`;
 }

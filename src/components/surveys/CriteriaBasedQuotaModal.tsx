@@ -158,7 +158,10 @@ function quotaBlockFromAdvanceQuota(quota: AdvanceQuota, questions: SurveyQuesti
           questionId: cond.questionCode
             ? (questions.find((q) => q.code === cond.questionCode)?.id ?? null)
             : null,
-          systemVariable: cond.source === 'System Variable' ? cond.subject : null,
+          systemVariable:
+            cond.source === 'System Variable' || cond.source === 'Quota'
+              ? cond.subject
+              : null,
           operator: cond.operator,
           value: cond.value,
           valueEnd: cond.valueEnd ?? '',
@@ -268,6 +271,9 @@ function validateBlock(
             }
             return cond.value.trim() !== '';
           }
+          if (cond.source === 'Quota') {
+            return cond.systemVariable !== null && cond.value.trim() !== '';
+          }
           return cond.value.trim() !== '';
         })
         .map((cond) => {
@@ -278,7 +284,7 @@ function validateBlock(
           const subject =
             cond.source === 'Question'
               ? question?.text ?? ''
-              : cond.source === 'System Variable'
+              : cond.source === 'System Variable' || cond.source === 'Quota'
                 ? cond.systemVariable ?? ''
                 : cond.source;
           return {

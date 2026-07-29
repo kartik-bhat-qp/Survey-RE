@@ -34,6 +34,11 @@
   padding: 1rem 1.5rem 0;
 }
 
+.instructionsLead {
+  color: #1b87e6;
+  font-weight: 700;
+}
+
 .matrixSummary {
   color: #67727e;
   font-size: 0.8125rem;

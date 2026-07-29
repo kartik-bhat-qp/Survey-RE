@@ -39,6 +39,7 @@ export const CONDITION_SOURCES = [
   'Geo Location',
   'Email List Code',
   'Device Type',
+  'Quota',
 ] as const;
 
 /** Notification criteria include Response Status, Language, and Data Quality. */
@@ -100,6 +101,20 @@ export const GEO_LOCATION_OPERATORS = [
 export const DEVICE_TYPE_VALUES = [
   'Desktop / Laptop',
   'Tablet / Smart phone',
+] as const;
+
+export const QUOTA_CONDITION_OPERATORS = ['is', 'is not'] as const;
+
+export const QUOTA_CONDITION_VALUES = ['Full', 'Not Full'] as const;
+
+/** Quota names available when building a Quota condition. */
+export const QUOTA_CONDITION_OPTIONS = [
+  '[Q1] Gender - Female',
+  'Male who drink',
+  'NPS Promoters',
+  'Age 25-34',
+  'Store Exit - Satisfied',
+  'Campus Pulse - Safety',
 ] as const;
 
 export function isGeoLocationCountryField(field: string | null | undefined): boolean {
@@ -243,6 +258,9 @@ export function resolveOperatorForSource(source: ConditionSource, current: strin
   if (source === 'Data Quality') {
     return (DATA_QUALITY_OPERATORS as readonly string[]).includes(current) ? current : 'is';
   }
+  if (source === 'Quota') {
+    return (QUOTA_CONDITION_OPERATORS as readonly string[]).includes(current) ? current : 'is';
+  }
   if (
     source === 'Geo Location' ||
     source === 'Email List Code' ||
@@ -293,7 +311,8 @@ export function templateToCriterionConditions(
       id: uniqueId('cond'),
       source: cond.source as ConditionSource,
       questionId: question?.id ?? null,
-      systemVariable: cond.source === 'System Variable' ? cond.subject : null,
+      systemVariable:
+        cond.source === 'System Variable' || cond.source === 'Quota' ? cond.subject : null,
       operator: cond.operator,
       value: cond.value,
       valueEnd: cond.valueEnd ?? '',
@@ -347,6 +366,9 @@ export function isConditionComplete(cond: CriterionCondition): boolean {
   }
   if (cond.source === 'Device Type') {
     return cond.value.trim() !== '';
+  }
+  if (cond.source === 'Quota') {
+    return cond.systemVariable !== null && cond.value.trim() !== '';
   }
   if (cond.source === 'Language' || cond.source === 'Data Quality') {
     return cond.value.trim() !== '';

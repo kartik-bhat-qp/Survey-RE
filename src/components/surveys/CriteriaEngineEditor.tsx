@@ -32,6 +32,9 @@ import {
   DATA_QUALITY_OPERATORS,
   GEO_LOCATION_FIELDS,
   DEVICE_TYPE_VALUES,
+  QUOTA_CONDITION_OPERATORS,
+  QUOTA_CONDITION_OPTIONS,
+  QUOTA_CONDITION_VALUES,
   serializeConditions,
   SYSTEM_VARIABLE_NUMERIC_OPERATORS,
   SYSTEM_VARIABLE_TEXT_OPERATORS,
@@ -290,7 +293,7 @@ export interface CriteriaEngineEditorProps {
   /** Quota flow: numbered criteria blocks, no name/mode fields, OR semantics between blocks. */
   variant?: CriteriaEngineEditorVariant;
   addCriteriaLabel?: string;
-  /** Override available condition sources (defaults to CONDITION_SOURCES). */
+  /** Override available condition sources. Defaults to CONDITION_SOURCES; Quota is excluded for the quota variant. */
   sources?: readonly ConditionSource[];
 }
 
@@ -303,10 +306,15 @@ export function CriteriaEngineEditor({
   showAddCriteria,
   minCriteria = 1,
   variant = 'default',
-  addCriteriaLabel = '+ Criteria',
-  sources = CONDITION_SOURCES,
+  addCriteriaLabel = 'Criteria',
+  sources,
 }: CriteriaEngineEditorProps) {
   const isQuotaVariant = variant === 'quota';
+  const availableSources =
+    sources ??
+    (isQuotaVariant
+      ? CONDITION_SOURCES.filter((source) => source !== 'Quota')
+      : CONDITION_SOURCES);
   const canAddCriteria =
     typeof showAddCriteria === 'boolean' ? showAddCriteria : isQuotaVariant;
   function patch(next: Partial<{ criteria: Criterion[]; collapsedCriterionIds: Set<string> }>) {
@@ -619,24 +627,34 @@ export function CriteriaEngineEditor({
                       const isGeoLocationSource = cond.source === 'Geo Location';
                       const isEmailListCodeSource = cond.source === 'Email List Code';
                       const isDeviceTypeSource = cond.source === 'Device Type';
+                      const isQuotaSource = cond.source === 'Quota';
                       const emailListOptions = MOCK_EMAIL_LISTS.map((list) => list.label);
                       const selectedDeviceType =
                         isDeviceTypeSource &&
                         (DEVICE_TYPE_VALUES as readonly string[]).includes(cond.value)
                           ? cond.value
                           : undefined;
+                      const selectedQuotaValue =
+                        isQuotaSource &&
+                        (QUOTA_CONDITION_VALUES as readonly string[]).includes(cond.value)
+                          ? cond.value
+                          : undefined;
                       const isOpenEndedQuestionSource =
                         isQuestionSource && isOpenEndedQuestion(selectedQuestion);
                       const usesSelectableOperators =
-                        (isQuestionSource && !isOpenEndedQuestionSource) || isDataQualitySource;
+                        (isQuestionSource && !isOpenEndedQuestionSource) ||
+                        isDataQualitySource ||
+                        isQuotaSource;
                       const questionNeedsValue =
                         !isQuestionSource ||
                         questionOperatorNeedsValue(cond.operator, selectedQuestion);
                       const operatorOptions = isDataQualitySource
                         ? DATA_QUALITY_OPERATORS
-                        : isResponseStatusSource
-                          ? RESPONSE_STATUS_OPERATORS
-                          : operatorsForQuestion(selectedQuestion);
+                        : isQuotaSource
+                          ? QUOTA_CONDITION_OPERATORS
+                          : isResponseStatusSource
+                            ? RESPONSE_STATUS_OPERATORS
+                            : operatorsForQuestion(selectedQuestion);
                       const usesSystemVariableStyleOperators =
                         cond.source === 'System Variable' || isOpenEndedQuestionSource;
                       const usesSystemVariableStyleValue =
@@ -692,7 +710,7 @@ export function CriteriaEngineEditor({
                             }
                             align="start"
                           >
-                            {sources.map((source) => (
+                            {availableSources.map((source) => (
                               <WuMenuItem
                                 key={source}
                                 onSelect={() =>
@@ -700,7 +718,9 @@ export function CriteriaEngineEditor({
                                     source,
                                     questionId: source === 'Question' ? cond.questionId : null,
                                     systemVariable:
-                                      source === 'System Variable' || source === 'Geo Location'
+                                      source === 'System Variable' ||
+                                      source === 'Geo Location' ||
+                                      source === 'Quota'
                                         ? source === cond.source
                                           ? cond.systemVariable
                                           : null
@@ -743,6 +763,37 @@ export function CriteriaEngineEditor({
                                   }
                                 >
                                   {sv}
+                                </WuMenuItem>
+                              ))}
+                            </WuMenu>
+                          ) : isQuotaSource ? (
+                            <WuMenu
+                              Trigger={
+                                <button
+                                  type="button"
+                                  className={`${styles.menuTrigger} ${styles.conditionQuestion}`}
+                                >
+                                  <span className={styles.menuTriggerLabel}>
+                                    {cond.systemVariable ?? '- Select -'}
+                                  </span>
+                                  <span
+                                    className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                                    aria-hidden
+                                  />
+                                </button>
+                              }
+                              align="start"
+                            >
+                              {QUOTA_CONDITION_OPTIONS.map((quotaName) => (
+                                <WuMenuItem
+                                  key={quotaName}
+                                  onSelect={() =>
+                                    handleUpdateCondition(criterion.id, cond.id, {
+                                      systemVariable: quotaName,
+                                    })
+                                  }
+                                >
+                                  {quotaName}
                                 </WuMenuItem>
                               ))}
                             </WuMenu>
@@ -1009,6 +1060,37 @@ export function CriteriaEngineEditor({
                                 </WuMenuItem>
                               ))}
                             </WuMenu>
+                          ) : isQuotaSource ? (
+                            <WuMenu
+                              Trigger={
+                                <button
+                                  type="button"
+                                  className={`${styles.menuTrigger} ${styles.conditionValue}`}
+                                >
+                                  <span className={styles.menuTriggerLabel}>
+                                    {selectedQuotaValue ?? '- Select -'}
+                                  </span>
+                                  <span
+                                    className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                                    aria-hidden
+                                  />
+                                </button>
+                              }
+                              align="start"
+                            >
+                              {QUOTA_CONDITION_VALUES.map((quotaValue) => (
+                                <WuMenuItem
+                                  key={quotaValue}
+                                  onSelect={() =>
+                                    handleUpdateCondition(criterion.id, cond.id, {
+                                      value: quotaValue,
+                                    })
+                                  }
+                                >
+                                  {quotaValue}
+                                </WuMenuItem>
+                              ))}
+                            </WuMenu>
                           ) : (
                             <WuInput
                               variant="outlined"
@@ -1066,7 +1148,7 @@ export function CriteriaEngineEditor({
       {canAddCriteria ? (
         <button type="button" className={styles.addCriteriaBtn} onClick={handleAddCriteria}>
           <span className="wm-add" aria-hidden />
-          <span>{addCriteriaLabel}</span>
+          <span className={styles.addCriteriaBtnLabel}>{addCriteriaLabel}</span>
         </button>
       ) : null}
     </div>

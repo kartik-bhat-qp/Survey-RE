@@ -5,11 +5,21 @@ import {
   type SurveyQuestion,
 } from '@/data/mock-survey-questions';
 
+export const CROSS_VARIABLE_PRIMARY_VARIABLES_LEAD = 'Select the primary variables';
+
 export const CROSS_VARIABLE_PRIMARY_VARIABLES_INSTRUCTIONS =
   'Select the primary variables for quota creation. All possible combinations of the selected options will be used to generate the main quotas. You can add secondary variables in the next step to further refine your quota structure.';
 
+export const CROSS_VARIABLE_PRIMARY_VARIABLES_INSTRUCTIONS_REST =
+  'for quota creation. All possible combinations of the selected options will be used to generate the main quotas. You can add secondary variables in the next step to further refine your quota structure.';
+
+export const CROSS_VARIABLE_SECONDARY_VARIABLES_LEAD = 'Select the secondary variables';
+
 export const CROSS_VARIABLE_SECONDARY_VARIABLES_INSTRUCTIONS =
   'Select the secondary variables to add as columns in the quota matrix (for example, which car you drive).';
+
+export const CROSS_VARIABLE_SECONDARY_VARIABLES_INSTRUCTIONS_REST =
+  'to add as columns in the quota matrix (for example, which car you drive).';
 
 export const CROSS_VARIABLE_MATRIX_INSTRUCTIONS =
   'Set an overall quota for each primary combination, then allocate targets across secondary variable options. Column values must sum to the overall for that row.';

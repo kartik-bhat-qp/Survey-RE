@@ -5,7 +5,8 @@ export type ExistingCriteriaConditionSource =
   | 'System Variable'
   | 'Geo Location'
   | 'Email List Code'
-  | 'Device Type';
+  | 'Device Type'
+  | 'Quota';
 
 export type ExistingCriteriaConnector = 'AND' | 'OR';
 
