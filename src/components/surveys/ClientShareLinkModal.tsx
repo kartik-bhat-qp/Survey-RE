@@ -83,7 +83,7 @@ export function ClientShareLinkModal({
     onOpenChange(false);
   }
 
-  async function handleCopyLink(): Promise<void> {
+  function persistVisibleIdsBeforeCopy(): void {
     if (draftIds.size === 0) {
       showToast({
         message: 'Select at least one quota before copying the link',
@@ -93,20 +93,21 @@ export function ClientShareLinkModal({
     }
     const next = toClientShareVisibleStorage(quotas, [...draftIds]);
     onSaveVisibleIds(next);
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      showToast({ message: 'Client share link copied to clipboard', variant: 'success' });
-    } catch {
-      showToast({ message: 'Could not copy link', variant: 'error' });
-    }
   }
 
   if (!open || !wick) {
     return null;
   }
 
-  const { WuModal, WuModalHeader, WuModalContent, WuModalFooter, WuModalClose, WuButton } =
-    wick;
+  const {
+    WuModal,
+    WuModalHeader,
+    WuModalContent,
+    WuModalFooter,
+    WuModalClose,
+    WuButton,
+    WuCopyToClipboard,
+  } = wick;
 
   return (
     <WuModal open onOpenChange={onOpenChange} size="md">
@@ -171,14 +172,17 @@ export function ClientShareLinkModal({
               readOnly
               aria-label="Client share URL"
             />
-            <WuButton
-              size="sm"
-              variant="secondary"
-              onClick={() => void handleCopyLink()}
-              disabled={quotas.length === 0}
+            <span
+              className={styles.copyToClipboardWrap}
+              onClickCapture={persistVisibleIdsBeforeCopy}
             >
-              Copy link
-            </WuButton>
+              <WuCopyToClipboard
+                textToCopy={draftIds.size === 0 ? undefined : shareUrl}
+                disabled={quotas.length === 0}
+                notificationText="Client share link copied to clipboard"
+                className={styles.copyToClipboardBtn}
+              />
+            </span>
           </div>
         </div>
         {allSelected && quotas.length > 0 ? (

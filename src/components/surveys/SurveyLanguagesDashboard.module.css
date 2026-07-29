@@ -342,6 +342,15 @@
 }
 
 .autoTranslateBtn:hover {
+  text-decoration: none;
+}
+
+.autoTranslateLabel {
+  text-decoration: none;
+}
+
+.autoTranslateBtn:hover .autoTranslateLabel,
+.autoTranslateBtn:focus-visible .autoTranslateLabel {
   text-decoration: underline;
 }
 

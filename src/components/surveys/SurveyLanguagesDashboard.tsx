@@ -313,7 +313,9 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
                               onClick={() => handleAutoTranslate(language)}
                             >
                               <span className="wm-translate" aria-hidden />
-                              Auto Translate
+                              <span className={styles.autoTranslateLabel}>
+                                Auto Translate
+                              </span>
                             </button>
                           </div>
                         )}

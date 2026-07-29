@@ -139,6 +139,18 @@
   gap: 0.5rem;
 }
 
+.copyToClipboardWrap {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.copyToClipboardBtn {
+  color: #1b87e6;
+  display: inline-flex;
+  padding: 0;
+}
+
 .shareUrlInput {
   background: #f5f7fa;
   border: 1px solid #e5e9ef;

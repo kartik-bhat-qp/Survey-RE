@@ -167,7 +167,7 @@
 }
 
 .headerActions {
-  align-items: center;
+  align-items: baseline;
   display: flex;
   flex-shrink: 0;
   gap: 0.5rem;

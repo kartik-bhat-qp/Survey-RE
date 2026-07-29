@@ -1461,13 +1461,13 @@ export function SurveyAdvanceQuotasDashboard({
               </WuButton>
             ) : null}
             <WuButton
-              size="sm"
-              variant="secondary"
+              size="md"
+              variant="link"
               onClick={() => setClientShareModalOpen(true)}
               title={clientShareSelectionLabel}
+              aria-label="Client link"
             >
               <span className="wm-share" aria-hidden />
-              Client link
             </WuButton>
             <WuButton
               size="md"

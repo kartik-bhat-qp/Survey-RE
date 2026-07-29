@@ -24,10 +24,10 @@
 }
 
 .title {
-  color: #7A8591;
+  color: #67727E;
   font-family: 'Fira Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 0.9375rem;
+  font-weight: 500;
   margin: 0;
 }
 
@@ -70,7 +70,7 @@
   border-bottom: 1px solid #e5e7eb;
   color: #67727e;
   font-family: 'Fira Sans', sans-serif;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 

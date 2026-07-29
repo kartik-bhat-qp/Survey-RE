@@ -419,13 +419,9 @@ export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariable
             <div className={styles.colDisplayName}>Display Name</div>
             <div className={styles.colCode}>Code</div>
             <div className={styles.colBulk}>
-              <button
-                type="button"
-                className={styles.bulkLink}
-                onClick={handleAddMappingInBulk}
-              >
+              <WuButton variant="outline" onClick={handleAddMappingInBulk} size="sm">
                 + Add Mapping in Bulk
-              </button>
+              </WuButton>
             </div>
           </div>
 
