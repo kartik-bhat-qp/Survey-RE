@@ -1,5 +1,5 @@
 .workspace {
-  background: #f5f7fa;
+  background: #ffffff;
   display: flex;
   flex: 1;
   min-height: 0;
@@ -24,9 +24,9 @@
 }
 
 .title {
-  color: #1f2937;
+  color: #7A8591;
   font-family: 'Fira Sans', sans-serif;
-  font-size: 1.125rem;
+  font-size: 15px;
   font-weight: 600;
   margin: 0;
 }

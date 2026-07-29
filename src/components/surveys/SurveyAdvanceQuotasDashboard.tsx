@@ -1470,7 +1470,7 @@ export function SurveyAdvanceQuotasDashboard({
               Client link
             </WuButton>
             <WuButton
-              size="sm"
+              size="md"
               variant="primary"
               onClick={() => setAddQuotaOpen(true)}
             >
