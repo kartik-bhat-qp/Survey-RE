@@ -2,33 +2,39 @@ export interface TextAiAnalysisQuestion {
   id: number;
   code: string;
   text: string;
+  type: 'Text';
 }
 
 export const MOCK_TEXT_AI_ANALYSIS_QUESTIONS: TextAiAnalysisQuestion[] = [
   {
     id: 1,
     code: 'Q2',
-    text: 'What can we do to improve your opinion about our company as a place to work?',
+    text: 'What can we do to improve your opinion about Sartorius as a workplace?',
+    type: 'Text',
   },
   {
     id: 2,
     code: 'Q3',
-    text: 'What do you appreciate most about working at our organization?',
+    text: 'What do you appreciate most about working for Sartorius?',
+    type: 'Text',
   },
   {
     id: 3,
     code: 'Q4',
     text: 'What challenges or frustrations do you face in your day-to-day role?',
+    type: 'Text',
   },
   {
     id: 4,
     code: 'Q5',
     text: 'How would you describe our team culture in your own words?',
+    type: 'Text',
   },
   {
     id: 5,
     code: 'Q6',
-    text: 'What suggestions do you have for improving collaboration across departments?',
+    text: 'Is there anything else that Sartorius as your employer can do to improve your current working experience?',
+    type: 'Text',
   },
 ];
 

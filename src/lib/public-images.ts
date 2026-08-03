@@ -45,10 +45,13 @@ export const PUBLIC_IMAGES = {
   },
   advancedWidgets: {
     textBox: publicImage('advanced-widgets', 'text_box.svg'),
+    textSummary: publicImage('advanced-widgets', 'text_summary.svg'),
     mapChart: publicImage('advanced-widgets', 'map_chart.svg'),
     responseTimeline: publicImage('advanced-widgets', 'response_timeline.svg'),
     responseInfo: publicImage('advanced-widgets', 'response_info.svg'),
     comparativeBar: publicImage('advanced-widgets', 'comparative_bar.svg'),
+    comparativeChart: publicImage('advanced-widgets', 'comparative_chart.svg'),
+    bubbleChart: publicImage('advanced-widgets', 'bubble_chart.svg'),
     heatMap: publicImage('advanced-widgets', 'heat_map.svg'),
     crossTab: publicImage('advanced-widgets', 'cross_tab.svg'),
     segmentTrendLine: publicImage('advanced-widgets', 'segment_trend_line.svg'),

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import ReactGridLayout, {
   WidthProvider,
@@ -62,6 +62,8 @@ interface TextAiDashboardCanvasProps {
   selectedQuestion: TextAiDashboardQuestion;
   questionIndex: number;
   themeStatus: TextAiThemeStatusFilter;
+  /** Widgets added via Add widget (e.g. comparative chart). Shown above default widgets. */
+  addedTopicSegmentWidgets?: TextAiTopicSegmentWidget[];
 }
 
 const INITIAL_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
@@ -291,6 +293,7 @@ export function TextAiDashboardCanvas({
   selectedQuestion,
   questionIndex,
   themeStatus,
+  addedTopicSegmentWidgets = [],
 }: TextAiDashboardCanvasProps) {
   const isMobile = useIsMobile();
   const [isPositioning, setIsPositioning] = useState(false);
@@ -311,6 +314,10 @@ export function TextAiDashboardCanvas({
     selectedQuestion,
     questionIndex
   );
+  const visibleAddedTopicSegmentWidgets = addedTopicSegmentWidgets.map((widget) => ({
+    ...widget,
+    rows: filterTopicRowsByStatus(widget.rows, themeStatus),
+  }));
   const visibleTopicSegmentWidgets = topicSegmentWidgets.map((widget) => ({
     ...widget,
     rows: filterTopicRowsByStatus(widget.rows, themeStatus),
@@ -320,6 +327,11 @@ export function TextAiDashboardCanvas({
     themeStatus
   );
   const canvasWidgets: TextAiCanvasWidget[] = [
+    ...visibleAddedTopicSegmentWidgets.map((widget) => ({
+      id: `topic-segment-${widget.id}`,
+      kind: 'topic-segment' as const,
+      content: <TextAiTopicSegmentWidgetCard key={widget.id} widget={widget} />,
+    })),
     ...visibleTopicSegmentWidgets.map((widget) => ({
       id: `topic-segment-${widget.id}`,
       kind: 'topic-segment' as const,
@@ -366,9 +378,42 @@ export function TextAiDashboardCanvas({
       ),
     })),
   ];
+  const canvasWidgetIds = canvasWidgets.map((widget) => widget.id).join('|');
   const [desktopLayout, setDesktopLayout] = useState<Layout>(() =>
     createInitialLayout(canvasWidgets)
   );
+
+  useEffect(() => {
+    setDesktopLayout((prev) => {
+      const existingIds = new Set(prev.map((item) => item.i));
+      const missing = canvasWidgets.filter((widget) => !existingIds.has(widget.id));
+      if (missing.length === 0) return prev;
+
+      let yOffset = 0;
+      const inserted = missing.map((widget) => {
+        const height = INITIAL_WIDGET_HEIGHTS[widget.kind];
+        const item = {
+          i: widget.id,
+          x: 0,
+          y: yOffset,
+          w: TEXT_AI_GRID_COLS,
+          h: height,
+          minW: 3,
+          minH: MIN_WIDGET_HEIGHTS[widget.kind],
+        };
+        yOffset += height;
+        return item;
+      });
+
+      return [
+        ...inserted,
+        ...prev.map((item) => ({ ...item, y: item.y + yOffset })),
+      ];
+    });
+    // Sync layout when widgets are added (e.g. comparative chart)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvasWidgetIds]);
+
   const widgetById = new Map(canvasWidgets.map((widget) => [widget.id, widget]));
 
   const notifyWidgetResize = useCallback(() => {

@@ -1,0 +1,53 @@
+.nav {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 14px;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.segment {
+  align-items: center;
+  display: inline-flex;
+}
+
+.separator {
+  color: #d1d5db;
+  font-size: 12px;
+  margin: 0 2px;
+}
+
+.stepButton {
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: default;
+  display: inline-flex;
+  font: inherit;
+  gap: 6px;
+  padding: 2px 4px;
+}
+
+.stepActive {
+  color: #1b87e6;
+  cursor: default;
+  font-weight: 600;
+}
+
+.stepComplete {
+  color: #1b87e6;
+  cursor: pointer;
+}
+
+.stepComplete:hover {
+  text-decoration: underline;
+}
+
+.stepUpcoming {
+  color: #9ca3af;
+}
+
+.stepLabel {
+  white-space: nowrap;
+}

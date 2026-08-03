@@ -84,6 +84,17 @@
   width: 100%;
 }
 
+.table thead th:first-child {
+  width: 36%;
+}
+
+/* Absorbs leftover width so Topic stays at the standard 36% when fewer segment columns are shown. */
+.spacerCol {
+  border-bottom: none !important;
+  padding: 0 !important;
+  width: auto;
+}
+
 .table thead th {
   background: #fafafa;
   border-bottom: 1px solid #e5e7eb;
@@ -96,7 +107,7 @@
   white-space: nowrap;
 }
 
-.table thead th:not(:first-child) {
+.table thead th:not(:first-child):not(.spacerCol) {
   text-align: center;
   width: 13%;
 }

@@ -3,10 +3,12 @@
 import { use, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { TextAiAddWidgetModal } from '@/components/text-ai/TextAiAddWidgetModal';
 import { TextAiDashboardCanvas } from '@/components/text-ai/TextAiDashboardCanvas';
 import { TextAiDashboardSettingsModal } from '@/components/text-ai/TextAiDashboardSettingsModal';
 import { TextAiDashboardToolbar } from '@/components/text-ai/TextAiDashboardToolbar';
+import type { TextAiAnalysisQuestion } from '@/data/mock-text-ai-questions';
+import type { TextAiWidgetChartTypeId } from '@/data/mock-text-ai-widget-chart-types';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { StandardLoader } from '@/components/ui/StandardLoader';
@@ -19,6 +21,10 @@ import {
 } from '@/data/mock-text-ai-segment-filters';
 import { MOCK_TEXT_AI_ANALYSIS_QUESTIONS } from '@/data/mock-text-ai-questions';
 import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
+import {
+  createTextAiComparativeChartWidget,
+  type TextAiTopicSegmentWidget,
+} from '@/data/mock-text-ai-topic-segment-widget';
 import type { TextAiThemeStatusFilter } from '@/data/mock-text-ai-widget-data';
 
 function resolveDashboardQuestions(
@@ -37,11 +43,11 @@ function resolveDashboardQuestions(
 function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const router = useRouter();
   const wick = useWickUILib();
-  const { showToast } = useWuShowToast();
   const dashboard = getTextAiDashboardById(numericId);
   const initialQuestions = resolveDashboardQuestions(numericId, dashboard?.questions);
   const [name, setName] = useState(dashboard?.name ?? 'Untitled');
-  const [availableQuestions] = useState<TextAiDashboardQuestion[]>(initialQuestions);
+  const [availableQuestions, setAvailableQuestions] =
+    useState<TextAiDashboardQuestion[]>(initialQuestions);
   const [selectedQuestion, setSelectedQuestion] = useState<TextAiDashboardQuestion>(
     initialQuestions[0]
   );
@@ -49,8 +55,12 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     () => dashboard?.segmentFilters ?? createDefaultSegmentFilterState()
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [addWidgetOpen, setAddWidgetOpen] = useState(false);
   const [themeStatus, setThemeStatus] =
     useState<TextAiThemeStatusFilter>('all');
+  const [addedTopicSegmentWidgets, setAddedTopicSegmentWidgets] = useState<
+    TextAiTopicSegmentWidget[]
+  >([]);
 
   if (!dashboard) {
     if (!wick) {
@@ -90,13 +100,36 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     });
   }
 
+  function handleAddWidget(
+    question: TextAiAnalysisQuestion,
+    chartTypeId: TextAiWidgetChartTypeId
+  ): void {
+    const dashboardQuestion: TextAiDashboardQuestion = {
+      id: `dashboard-${numericId}-${question.code}-${Date.now()}`,
+      text: question.text,
+      creditsUsed: 880,
+    };
+    setAvailableQuestions((prev) => {
+      const exists = prev.some((entry) => entry.text === question.text);
+      return exists ? prev : [...prev, dashboardQuestion];
+    });
+    setSelectedQuestion(dashboardQuestion);
+
+    if (chartTypeId === 'comparative-chart') {
+      setAddedTopicSegmentWidgets((prev) => [
+        createTextAiComparativeChartWidget(question.text),
+        ...prev,
+      ]);
+    }
+  }
+
   return (
     <div className="flex flex-col h-full min-h-0">
       <TextAiDashboardToolbar
         key={numericId}
         name={name}
         onNameChange={setName}
-        onAddWidget={() => showToast({ message: 'Add widget', variant: 'success' })}
+        onAddWidget={() => setAddWidgetOpen(true)}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenThemeConfiguration={() =>
           router.push(`/text-ai/${numericId}/theme-configuration`)
@@ -116,11 +149,17 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
           (question) => question.id === selectedQuestion.id
         )}
         themeStatus={themeStatus}
+        addedTopicSegmentWidgets={addedTopicSegmentWidgets}
       />
       <TextAiDashboardSettingsModal
         dashboard={currentDashboard}
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
+      />
+      <TextAiAddWidgetModal
+        open={addWidgetOpen}
+        onOpenChange={setAddWidgetOpen}
+        onAddWidget={handleAddWidget}
       />
     </div>
   );

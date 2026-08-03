@@ -205,10 +205,19 @@ function enrichTopicSegmentRows(rows: TextAiTopicSegmentRowInput[]): TextAiTopic
   return rows.map((row) => enrichTopicSegmentRow(row));
 }
 
+export type TextAiTopicSegmentKey = 'overall' | TextAiGenderKey;
+
+export const TEXT_AI_TOPIC_SEGMENT_KEYS: TextAiTopicSegmentKey[] = [
+  'overall',
+  ...TEXT_AI_GENDER_KEYS,
+];
+
 export interface TextAiTopicSegmentWidget {
   id: string;
   question: string;
   rows: TextAiTopicSegmentRow[];
+  /** Segment columns shown by default. Omitting shows all columns. */
+  visibleSegmentKeys?: TextAiTopicSegmentKey[];
 }
 
 export const COMBAT_SPORTS_TOPIC_SEGMENT_QUESTION =
@@ -539,26 +548,41 @@ export function getTextAiTopicSegmentWidgets(dashboardId: number): TextAiTopicSe
   return [DEFAULT_TOPIC_SEGMENT_WIDGET];
 }
 
-function collectMaxPercentage(rows: TextAiTopicSegmentRow[]): number {
+/** Comparative chart created from Add widget — Overall column only by default. */
+export function createTextAiComparativeChartWidget(
+  question: string,
+  idSuffix?: string
+): TextAiTopicSegmentWidget {
+  return {
+    id: `w-comparative-chart-${idSuffix ?? Date.now()}`,
+    question,
+    rows: enrichTopicSegmentRows(COMBAT_SPORTS_TOPIC_SEGMENT_ROWS),
+    visibleSegmentKeys: ['overall'],
+  };
+}
+
+function collectMaxPercentage(
+  rows: TextAiTopicSegmentRow[],
+  segmentKeys: readonly TextAiTopicSegmentKey[] = TEXT_AI_TOPIC_SEGMENT_KEYS
+): number {
   let max = 0;
   for (const row of rows) {
-    max = Math.max(
-      max,
-      row.overall.percentage,
-      row.male.percentage,
-      row.female.percentage,
-      row.otherGender.percentage
-    );
+    for (const key of segmentKeys) {
+      max = Math.max(max, row[key].percentage);
+    }
     if (row.subtopics?.length) {
-      max = Math.max(max, collectMaxPercentage(row.subtopics));
+      max = Math.max(max, collectMaxPercentage(row.subtopics, segmentKeys));
     }
   }
   return max;
 }
 
-/** Max percentage across all segment cells — used to scale progress bars. */
-export function getTopicSegmentMaxPercentage(rows: TextAiTopicSegmentRow[]): number {
-  return collectMaxPercentage(rows) || 1;
+/** Max percentage across segment cells — used to scale progress bars. */
+export function getTopicSegmentMaxPercentage(
+  rows: TextAiTopicSegmentRow[],
+  segmentKeys?: readonly TextAiTopicSegmentKey[]
+): number {
+  return collectMaxPercentage(rows, segmentKeys) || 1;
 }
 
 export function formatTopicSegmentPercentage(value: number): string {
