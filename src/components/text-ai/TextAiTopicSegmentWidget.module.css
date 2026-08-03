@@ -88,11 +88,39 @@
   width: 36%;
 }
 
-/* Absorbs leftover width so Topic stays at the standard 36% when fewer segment columns are shown. */
-.spacerCol {
-  border-bottom: none !important;
-  padding: 0 !important;
+/* Overall-only comparative chart: Theme stays compact, Overall fills remaining width. */
+.tableOverallOnly {
+  min-width: 0;
+}
+
+.tableOverallOnly thead th:first-child,
+.tableOverallOnly .topicCell,
+.tableOverallOnly .subtopicCell {
+  width: 28%;
+}
+
+.tableOverallOnly thead th:not(:first-child),
+.tableOverallOnly tbody td:not(:first-child) {
+  text-align: center;
   width: auto;
+}
+
+.tableOverallOnly .segmentCell {
+  text-align: center;
+}
+
+.tableOverallOnly .metricRow {
+  justify-content: center;
+}
+
+.tableOverallOnly .headerWithToggle {
+  justify-content: center;
+}
+
+.tableOverallOnly .barTrack {
+  margin: 0;
+  max-width: none;
+  width: 100%;
 }
 
 .table thead th {
@@ -107,7 +135,7 @@
   white-space: nowrap;
 }
 
-.table thead th:not(:first-child):not(.spacerCol) {
+.table:not(.tableOverallOnly) thead th:not(:first-child) {
   text-align: center;
   width: 13%;
 }

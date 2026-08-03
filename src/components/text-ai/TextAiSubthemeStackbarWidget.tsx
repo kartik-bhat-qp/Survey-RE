@@ -1,9 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { StandardLoader } from '@/components/ui/StandardLoader';
 import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
+import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
   TEXT_AI_SUBTHEME_STACKBAR_ROWS,
@@ -29,6 +29,7 @@ const SENTIMENT_BUCKETS: {
 interface TextAiSubthemeStackbarWidgetProps {
   question: string;
   themeStatus: TextAiThemeStatusFilter;
+  onDelete?: () => void;
 }
 
 function SentimentStackbar({
@@ -100,9 +101,9 @@ function SentimentStackbar({
 export function TextAiSubthemeStackbarWidget({
   question,
   themeStatus,
+  onDelete,
 }: TextAiSubthemeStackbarWidgetProps) {
   const wick = useWickUILib();
-  const { showToast } = useWuShowToast();
   const [expandedThemeIds, setExpandedThemeIds] = useState<Set<string>>(
     () => new Set()
   );
@@ -190,18 +191,7 @@ export function TextAiSubthemeStackbarWidget({
           >
             {allThemesExpanded ? 'Collapse all' : 'Expand all'}
           </WuButton>
-          <WuButton
-            variant="iconOnly"
-            size="sm"
-            aria-label="Widget menu"
-            onClick={() =>
-              showToast({
-                message: 'Sub-theme sentiment widget menu',
-                variant: 'success',
-              })
-            }
-            Icon={<span className="wm-more-vert" />}
-          />
+          <TextAiWidgetMenu widgetTitle={question} onDelete={onDelete} />
         </div>
       </header>
 

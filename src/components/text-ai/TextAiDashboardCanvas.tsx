@@ -297,6 +297,7 @@ export function TextAiDashboardCanvas({
 }: TextAiDashboardCanvasProps) {
   const isMobile = useIsMobile();
   const [isPositioning, setIsPositioning] = useState(false);
+  const [removedWidgetIds, setRemovedWidgetIds] = useState<Set<string>>(() => new Set());
   const questionFactor = getQuestionFactor(questionIndex);
   const summaryWidgets = adaptSummaryWidgets(
     getTextAiSummaryWidgets(dashboardId),
@@ -326,58 +327,98 @@ export function TextAiDashboardCanvas({
     analysisWidgets,
     themeStatus
   );
-  const canvasWidgets: TextAiCanvasWidget[] = [
-    ...visibleAddedTopicSegmentWidgets.map((widget) => ({
-      id: `topic-segment-${widget.id}`,
-      kind: 'topic-segment' as const,
-      content: <TextAiTopicSegmentWidgetCard key={widget.id} widget={widget} />,
-    })),
-    ...visibleTopicSegmentWidgets.map((widget) => ({
-      id: `topic-segment-${widget.id}`,
-      kind: 'topic-segment' as const,
-      content: (
-        <TextAiTopicSegmentWidgetCard
-          key={`${widget.id}-${selectedQuestion.id}`}
-          widget={widget}
-        />
-      ),
-    })),
+
+  function removeWidget(widgetId: string): void {
+    setRemovedWidgetIds((prev) => {
+      const next = new Set(prev);
+      next.add(widgetId);
+      return next;
+    });
+  }
+
+  const allCanvasWidgets: TextAiCanvasWidget[] = [
+    ...visibleAddedTopicSegmentWidgets.map((widget) => {
+      const id = `topic-segment-${widget.id}`;
+      return {
+        id,
+        kind: 'topic-segment' as const,
+        content: (
+          <TextAiTopicSegmentWidgetCard
+            key={widget.id}
+            widget={widget}
+            onDelete={() => removeWidget(id)}
+          />
+        ),
+      };
+    }),
+    ...visibleTopicSegmentWidgets.map((widget) => {
+      const id = `topic-segment-${widget.id}`;
+      return {
+        id,
+        kind: 'topic-segment' as const,
+        content: (
+          <TextAiTopicSegmentWidgetCard
+            key={`${widget.id}-${selectedQuestion.id}`}
+            widget={widget}
+            onDelete={() => removeWidget(id)}
+          />
+        ),
+      };
+    }),
     {
       id: 'subtheme-stackbar',
-      kind: 'subtheme-stackbar',
+      kind: 'subtheme-stackbar' as const,
       content: (
         <TextAiSubthemeStackbarWidget
           question={selectedQuestion.text}
           themeStatus={themeStatus}
+          onDelete={() => removeWidget('subtheme-stackbar')}
         />
       ),
     },
     {
       id: 'theme-stackbar',
-      kind: 'theme-stackbar',
+      kind: 'theme-stackbar' as const,
       content: (
         <TextAiThemeStackbarWidget
           question={selectedQuestion.text}
           themeStatus={themeStatus}
+          onDelete={() => removeWidget('theme-stackbar')}
         />
       ),
     },
-    ...visibleAnalysisWidgets.map((widget, index) => ({
-      id: `analysis-${index}`,
-      kind: 'analysis' as const,
-      content: <TextAiAnalysisWidgetCard key={widget.id} widget={widget} />,
-    })),
-    ...summaryWidgets.map((widget) => ({
-      id: `summary-${widget.id}`,
-      kind: 'summary' as const,
-      content: (
-        <TextAiSummaryWidgetCard
-          key={`${widget.id}-${selectedQuestion.id}`}
-          widget={widget}
-        />
-      ),
-    })),
+    ...visibleAnalysisWidgets.map((widget, index) => {
+      const id = `analysis-${index}`;
+      return {
+        id,
+        kind: 'analysis' as const,
+        content: (
+          <TextAiAnalysisWidgetCard
+            key={widget.id}
+            widget={widget}
+            onDelete={() => removeWidget(id)}
+          />
+        ),
+      };
+    }),
+    ...summaryWidgets.map((widget) => {
+      const id = `summary-${widget.id}`;
+      return {
+        id,
+        kind: 'summary' as const,
+        content: (
+          <TextAiSummaryWidgetCard
+            key={`${widget.id}-${selectedQuestion.id}`}
+            widget={widget}
+            onDelete={() => removeWidget(id)}
+          />
+        ),
+      };
+    }),
   ];
+  const canvasWidgets = allCanvasWidgets.filter(
+    (widget) => !removedWidgetIds.has(widget.id)
+  );
   const canvasWidgetIds = canvasWidgets.map((widget) => widget.id).join('|');
   const [desktopLayout, setDesktopLayout] = useState<Layout>(() =>
     createInitialLayout(canvasWidgets)
@@ -385,9 +426,14 @@ export function TextAiDashboardCanvas({
 
   useEffect(() => {
     setDesktopLayout((prev) => {
-      const existingIds = new Set(prev.map((item) => item.i));
+      const visibleIds = new Set(canvasWidgets.map((widget) => widget.id));
+      const kept = prev.filter((item) => visibleIds.has(item.i));
+      const existingIds = new Set(kept.map((item) => item.i));
       const missing = canvasWidgets.filter((widget) => !existingIds.has(widget.id));
-      if (missing.length === 0) return prev;
+
+      if (missing.length === 0) {
+        return kept.length === prev.length ? prev : kept;
+      }
 
       let yOffset = 0;
       const inserted = missing.map((widget) => {
@@ -407,10 +453,10 @@ export function TextAiDashboardCanvas({
 
       return [
         ...inserted,
-        ...prev.map((item) => ({ ...item, y: item.y + yOffset })),
+        ...kept.map((item) => ({ ...item, y: item.y + yOffset })),
       ];
     });
-    // Sync layout when widgets are added (e.g. comparative chart)
+    // Sync layout when widgets are added or deleted
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasWidgetIds]);
 

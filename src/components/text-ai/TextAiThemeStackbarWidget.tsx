@@ -1,9 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { StandardLoader } from '@/components/ui/StandardLoader';
 import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
+import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
   TEXT_AI_SUBTHEME_STACKBAR_ROWS,
@@ -29,6 +29,7 @@ const SENTIMENT_BUCKETS: {
 interface TextAiThemeStackbarWidgetProps {
   question: string;
   themeStatus: TextAiThemeStatusFilter;
+  onDelete?: () => void;
 }
 
 function formatThemeLabel(label: string): string {
@@ -100,9 +101,9 @@ function SentimentStackbar({
 export function TextAiThemeStackbarWidget({
   question,
   themeStatus,
+  onDelete,
 }: TextAiThemeStackbarWidgetProps) {
   const wick = useWickUILib();
-  const { showToast } = useWuShowToast();
   const [activeSentimentBuckets, setActiveSentimentBuckets] = useState<
     Set<TextAiSentimentBucket>
   >(() => new Set(SENTIMENT_BUCKETS.map((bucket) => bucket.key)));
@@ -130,21 +131,11 @@ export function TextAiThemeStackbarWidget({
     );
   }
 
-  const { WuButton } = wick;
-
   return (
     <article className={styles.card}>
       <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
         <h2 className={styles.cardTitle}>{question}</h2>
-        <WuButton
-          variant="iconOnly"
-          size="sm"
-          aria-label="Widget menu"
-          onClick={() =>
-            showToast({ message: 'Theme sentiment widget menu', variant: 'success' })
-          }
-          Icon={<span className="wm-more-vert" />}
-        />
+        <TextAiWidgetMenu widgetTitle={question} onDelete={onDelete} />
       </header>
 
       <div className={styles.rows}>

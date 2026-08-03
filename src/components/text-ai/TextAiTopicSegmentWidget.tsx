@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { StandardLoader } from '@/components/ui/StandardLoader';
 import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
+import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import { TextAiSentimentResponsesModal } from '@/components/text-ai/TextAiSentimentResponsesModal';
 import {
@@ -29,13 +29,9 @@ import {
 } from '@/data/mock-text-ai-topic-segment-widget';
 import styles from './TextAiTopicSegmentWidget.module.css';
 
-const WuButton = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
-  { ssr: false }
-);
-
 interface TextAiTopicSegmentWidgetProps {
   widget: TextAiTopicSegmentWidget;
+  onDelete?: () => void;
 }
 
 const TEXT_AI_STAT_TEST_SEGMENTS: TextAiSegmentKey[] = [...TEXT_AI_TOPIC_SEGMENT_KEYS];
@@ -129,7 +125,6 @@ function TopicSegmentRow({
   showChiSquare = false,
   activeSegments,
   visibleSegmentKeys,
-  showWidthSpacer = false,
   onCountClick,
 }: {
   row: TextAiTopicSegmentRow;
@@ -141,7 +136,6 @@ function TopicSegmentRow({
   showChiSquare?: boolean;
   activeSegments: ReadonlySet<TextAiSegmentKey>;
   visibleSegmentKeys: readonly TextAiTopicSegmentKey[];
-  showWidthSpacer?: boolean;
   parentTopicLabel?: string | null;
   onCountClick?: (segment: TextAiSegmentKey, cell: TextAiTopicSegmentCell) => void;
 }) {
@@ -238,7 +232,6 @@ function TopicSegmentRow({
           </td>
         );
       })}
-      {showWidthSpacer ? <td className={styles.spacerCol} aria-hidden /> : null}
     </tr>
   );
 }
@@ -251,7 +244,6 @@ function TopicSegmentGroup({
   showChiSquare,
   activeSegments,
   visibleSegmentKeys,
-  showWidthSpacer,
   onCountClick,
 }: {
   row: TextAiTopicSegmentRow;
@@ -261,7 +253,6 @@ function TopicSegmentGroup({
   showChiSquare: boolean;
   activeSegments: ReadonlySet<TextAiSegmentKey>;
   visibleSegmentKeys: readonly TextAiTopicSegmentKey[];
-  showWidthSpacer: boolean;
   onCountClick: (
     row: TextAiTopicSegmentRow,
     parentTopicLabel: string | null,
@@ -281,7 +272,6 @@ function TopicSegmentGroup({
         showChiSquare={showChiSquare}
         activeSegments={activeSegments}
         visibleSegmentKeys={visibleSegmentKeys}
-        showWidthSpacer={showWidthSpacer}
         onToggle={() => onToggle(row.id)}
         onCountClick={(segment, cell) => onCountClick(row, null, segment, cell)}
       />
@@ -296,7 +286,6 @@ function TopicSegmentGroup({
             showChiSquare={showChiSquare}
             activeSegments={activeSegments}
             visibleSegmentKeys={visibleSegmentKeys}
-            showWidthSpacer={showWidthSpacer}
             onCountClick={(segment, cell) => onCountClick(subtopic, row.topic, segment, cell)}
           />
         ))}
@@ -313,7 +302,10 @@ function GenderColumnHeader({ genderKey }: { genderKey: TextAiGenderKey }) {
   );
 }
 
-export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidgetProps) {
+export function TextAiTopicSegmentWidgetCard({
+  widget,
+  onDelete,
+}: TextAiTopicSegmentWidgetProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
@@ -349,8 +341,8 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
     visibleSegmentKeys.includes(key)
   );
   const showOverall = visibleSegmentKeys.includes('overall');
-  /** Keep Topic at the standard 36% width when segment columns are fewer than the full set. */
-  const showWidthSpacer = visibleSegmentKeys.length < TEXT_AI_TOPIC_SEGMENT_KEYS.length;
+  const overallOnly =
+    visibleSegmentKeys.length === 1 && visibleSegmentKeys[0] === 'overall';
 
   const maxPercentage = useMemo(
     () => getTopicSegmentMaxPercentage(widget.rows, visibleSegmentKeys),
@@ -415,17 +407,13 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
             {statTestingApplied ? 'Disable Stat Testing' : 'Stat testing'}
           </button>
         </div>
-        <WuButton
-          variant="iconOnly"
-          size="sm"
-          aria-label="Widget menu"
-          onClick={() => showToast({ message: 'Widget menu', variant: 'success' })}
-          Icon={<span className="wm-more-vert" />}
-        />
+        <TextAiWidgetMenu widgetTitle={widget.question} onDelete={onDelete} />
       </header>
 
       <div className={styles.tableWrap}>
-        <table className={styles.table}>
+        <table
+          className={`${styles.table} ${overallOnly ? styles.tableOverallOnly : ''}`}
+        >
           <thead>
             <tr>
               <th>Topic</th>
@@ -477,7 +465,6 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
                   </th>
                 );
               })}
-              {showWidthSpacer ? <th className={styles.spacerCol} aria-hidden /> : null}
             </tr>
           </thead>
           <tbody>
@@ -491,7 +478,6 @@ export function TextAiTopicSegmentWidgetCard({ widget }: TextAiTopicSegmentWidge
                 showChiSquare={showChiSquare}
                 activeSegments={activeSegments}
                 visibleSegmentKeys={visibleSegmentKeys}
-                showWidthSpacer={showWidthSpacer}
                 onCountClick={openVerbatimModal}
               />
             ))}

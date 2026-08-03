@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
-import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { StandardLoader } from '@/components/ui/StandardLoader';
 import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
+import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import type { TextAiAnalysisRow, TextAiAnalysisWidget } from '@/data/mock-text-ai-widget-data';
 import styles from './TextAiAnalysisWidget.module.css';
@@ -17,6 +17,7 @@ const PAGE_SIZE_OPTIONS = [
 
 interface TextAiAnalysisWidgetProps {
   widget: TextAiAnalysisWidget;
+  onDelete?: () => void;
 }
 
 function SubtopicPill({
@@ -43,9 +44,11 @@ function SubtopicPill({
   );
 }
 
-export function TextAiAnalysisWidgetCard({ widget }: TextAiAnalysisWidgetProps) {
+export function TextAiAnalysisWidgetCard({
+  widget,
+  onDelete,
+}: TextAiAnalysisWidgetProps) {
   const wick = useWickUILib();
-  const { showToast } = useWuShowToast();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[1]);
@@ -132,13 +135,7 @@ export function TextAiAnalysisWidgetCard({ widget }: TextAiAnalysisWidgetProps) 
     <article className={styles.card}>
       <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
         <h2 className={styles.cardTitle}>{widget.question}</h2>
-        <WuButton
-          variant="iconOnly"
-          size="sm"
-          aria-label="Widget menu"
-          onClick={() => showToast({ message: 'Widget menu', variant: 'success' })}
-          Icon={<span className="wm-more-vert" />}
-        />
+        <TextAiWidgetMenu widgetTitle={widget.question} onDelete={onDelete} />
       </header>
 
       <div className={styles.toolbar}>

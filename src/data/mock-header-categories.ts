@@ -1,6 +1,7 @@
 import type { IWuAppHeaderMenuItem } from '@npm-questionpro/wick-ui-lib';
+import { publicImage } from '@/lib/public-images';
 
-const APP_NAV = 'https://qa-priority.questionpro.com/images/appnavigation';
+const APP_NAV = publicImage('appnavigation');
 
 export const MOCK_HEADER_CATEGORIES: IWuAppHeaderMenuItem[] = [
   {

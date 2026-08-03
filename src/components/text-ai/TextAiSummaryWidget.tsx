@@ -2,18 +2,13 @@
 
 import { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type {
   TextAiSummaryType,
   TextAiSummaryVariant,
   TextAiSummaryWidget,
 } from '@/data/mock-text-ai-summary-widget';
+import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
 import styles from './TextAiSummaryWidget.module.css';
-
-const WuButton = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((module) => ({ default: module.WuButton })),
-  { ssr: false }
-);
 
 const WuSelect = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((module) => ({ default: module.WuSelect })),
@@ -22,10 +17,13 @@ const WuSelect = dynamic(
 
 interface TextAiSummaryWidgetCardProps {
   widget: TextAiSummaryWidget;
+  onDelete?: () => void;
 }
 
-export function TextAiSummaryWidgetCard({ widget }: TextAiSummaryWidgetCardProps) {
-  const { showToast } = useWuShowToast();
+export function TextAiSummaryWidgetCard({
+  widget,
+  onDelete,
+}: TextAiSummaryWidgetCardProps) {
   const reportBodyRef = useRef<HTMLDivElement>(null);
   const defaultSummaryType =
     widget.summaryTypes.find((summaryType) => summaryType.isDefault) ?? widget.summaryTypes[0];
@@ -60,13 +58,7 @@ export function TextAiSummaryWidgetCard({ widget }: TextAiSummaryWidgetCardProps
             />
           </div>
         </div>
-        <WuButton
-          variant="iconOnly"
-          size="sm"
-          aria-label="Widget menu"
-          onClick={() => showToast({ message: 'Widget menu', variant: 'success' })}
-          Icon={<span className="wm-more-vert" />}
-        />
+        <TextAiWidgetMenu widgetTitle={widget.question} onDelete={onDelete} />
       </header>
 
       <div
