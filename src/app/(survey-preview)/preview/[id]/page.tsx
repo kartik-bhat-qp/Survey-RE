@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { CaptchaSurveyQuestionPreview } from '@/components/surveys/CaptchaSurveyQuestionPreview';
 import { MultiPointCardsCarouselPreview } from '@/components/surveys/MultiPointCardsCarouselPreview';
+import { DeepDiveQuestionPreview } from '@/components/surveys/DeepDiveQuestionPreview';
 import { OpenEndedQuestionPreview } from '@/components/surveys/OpenEndedQuestionPreview';
 import { SelectManyQuestionPreview } from '@/components/surveys/SelectManyQuestionPreview';
 import { SelectOneQuestionPreview } from '@/components/surveys/SelectOneQuestionPreview';
@@ -13,9 +14,11 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { DEFAULT_MULTI_POINT_SETTINGS } from '@/data/mock-multi-point-settings';
 import {
   captchaPreviewStorageKey,
+  deepDivePreviewStorageKey,
   multiPointPreviewStorageKey,
   openEndedPreviewStorageKey,
   readCaptchaQuestionPreviewSession,
+  readDeepDiveQuestionPreviewSession,
   readMultiPointQuestionPreviewSession,
   readOpenEndedQuestionPreviewSession,
   readSelectManyQuestionPreviewSession,
@@ -23,6 +26,7 @@ import {
   selectManyPreviewStorageKey,
   selectOnePreviewStorageKey,
   type CaptchaQuestionPreviewSession,
+  type DeepDiveQuestionPreviewSession,
   type MultiPointQuestionPreviewSession,
   type OpenEndedQuestionPreviewSession,
   type SelectManyQuestionPreviewSession,
@@ -46,6 +50,8 @@ export default function SurveyQuestionPreviewPage() {
     useState<CaptchaQuestionPreviewSession | null>(null);
   const [openEndedPayload, setOpenEndedPayload] =
     useState<OpenEndedQuestionPreviewSession | null>(null);
+  const [deepDivePayload, setDeepDivePayload] =
+    useState<DeepDiveQuestionPreviewSession | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -79,12 +85,21 @@ export default function SurveyQuestionPreviewPage() {
         setSelectOnePayload(null);
         setMultiPointPayload(null);
         setCaptchaPayload(null);
+        setDeepDivePayload(null);
+      } else if (previewKind === 'deepdive') {
+        setDeepDivePayload(readDeepDiveQuestionPreviewSession(surveyId));
+        setOpenEndedPayload(null);
+        setSelectManyPayload(null);
+        setSelectOnePayload(null);
+        setMultiPointPayload(null);
+        setCaptchaPayload(null);
       } else {
         setMultiPointPayload(readMultiPointQuestionPreviewSession(surveyId));
         setSelectManyPayload(null);
         setSelectOnePayload(null);
         setCaptchaPayload(null);
         setOpenEndedPayload(null);
+        setDeepDivePayload(null);
       }
       setReady(true);
     }
@@ -101,7 +116,9 @@ export default function SurveyQuestionPreviewPage() {
               ? captchaPreviewStorageKey(surveyId)
               : previewKind === 'open-ended'
                 ? openEndedPreviewStorageKey(surveyId)
-                : multiPointPreviewStorageKey(surveyId);
+                : previewKind === 'deepdive'
+                  ? deepDivePreviewStorageKey(surveyId)
+                  : multiPointPreviewStorageKey(surveyId);
       if (
         event.key === key ||
         event.key?.startsWith(`survey-deepdive-live-${surveyId}-`)
@@ -254,6 +271,27 @@ export default function SurveyQuestionPreviewPage() {
           onClose={() => window.close()}
         />
       </SurveyQuestionPreviewChrome>
+    );
+  }
+
+  if (previewKind === 'deepdive') {
+    if (!deepDivePayload) {
+      return (
+        <div className={styles.emptyWrap}>
+          <EmptyState
+            icon="wm-psychology"
+            title="No DeepDive preview available"
+            description="Open preview from the DeepDive question menu in the survey editor."
+          />
+        </div>
+      );
+    }
+
+    return (
+      <DeepDiveQuestionPreview
+        session={deepDivePayload}
+        onClose={() => window.close()}
+      />
     );
   }
 

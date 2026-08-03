@@ -96,17 +96,4 @@ export function createDeepDiveV2Sections(): SurveySection[] {
     },
   ];
 }
-export function isDeepDiveFollowUpSettingsQuestion(
-  surveyId: number,
-  question: SurveyQuestion,
-  surveyName?: string
-): boolean {
-  const isDeepDiveSurvey =
-    surveyId === DEEPDIVE_V2_SURVEY_ID || surveyName?.trim() === 'DeepDive V2';
-  const normalizedCode = question.code.trim().toUpperCase();
-  const isQuestion17 =
-    question.number === DEEPDIVE_FOLLOW_UP_QUESTION_NUMBER || normalizedCode === 'Q17';
-
-  return isDeepDiveSurvey && isQuestion17;
-}
 

@@ -1,11 +1,9 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useMemo, type SyntheticEvent } from 'react';
 import type { SurveyQuestion, SurveySection } from '@/data/mock-survey-detail';
 import type { DeepDiveFollowUpQuestionConfig } from '@/data/mock-deepdive-question-settings';
 import {
-  DEEPDIVE_TARGET_QUESTION_DEFAULT_OPTION,
   DEEPDIVE_TARGET_QUESTION_PLACEHOLDER,
   DEEPDIVE_TARGET_QUESTION_UNSET_VALUE,
   isDeepDiveTargetSelected,
@@ -16,11 +14,6 @@ import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspace
 import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
 import styles from './DeepDiveFollowUpQuestionRow.module.css';
-
-const WuSelect = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
-  { ssr: false }
-);
 
 function stopQuestionEvent(event: SyntheticEvent): void {
   event.stopPropagation();
@@ -54,19 +47,17 @@ export function DeepDiveFollowUpQuestionRow({
   onConfigChange,
 }: DeepDiveFollowUpQuestionRowProps) {
   const targetOptions = useMemo(
-    () => [
-      DEEPDIVE_TARGET_QUESTION_DEFAULT_OPTION,
-      ...listDeepDiveTargetQuestionOptions(sections),
-    ],
+    () => listDeepDiveTargetQuestionOptions(sections),
     [sections]
   );
-  const targetValue = isDeepDiveTargetSelected(config)
+
+  const selectedValue = isDeepDiveTargetSelected(config)
     ? targetOptions.find(
-        (option) =>
-          option.sectionId === config.targetSectionId &&
-          option.questionId === config.targetQuestionId
-      ) ?? DEEPDIVE_TARGET_QUESTION_DEFAULT_OPTION
-    : DEEPDIVE_TARGET_QUESTION_DEFAULT_OPTION;
+        (o) =>
+          o.sectionId === config.targetSectionId &&
+          o.questionId === config.targetQuestionId
+      )?.value ?? DEEPDIVE_TARGET_QUESTION_UNSET_VALUE
+    : DEEPDIVE_TARGET_QUESTION_UNSET_VALUE;
 
   function patchTarget(sectionIdValue: string, questionIdValue: string): void {
     onConfigChange({
@@ -112,21 +103,29 @@ export function DeepDiveFollowUpQuestionRow({
           >
             <span className={styles.fieldLabel}>Target Question</span>
             <div className={styles.selectWrap}>
-              <WuSelect
-                data={targetOptions}
-                accessorKey={{ value: 'value', label: 'label' }}
-                value={targetValue}
-                onSelect={(item) => {
-                  const selected = item as { sectionId: string; questionId: string; value: string };
-                  if (selected.value === DEEPDIVE_TARGET_QUESTION_UNSET_VALUE) {
+              <select
+                className={styles.nativeSelect}
+                value={selectedValue}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === DEEPDIVE_TARGET_QUESTION_UNSET_VALUE) {
                     patchTarget('', '');
                     return;
                   }
-                  patchTarget(selected.sectionId, selected.questionId);
+                  const opt = targetOptions.find((o) => o.value === val);
+                  if (opt) patchTarget(opt.sectionId, opt.questionId);
                 }}
-                variant="outlined"
-                placeholder={DEEPDIVE_TARGET_QUESTION_PLACEHOLDER}
-              />
+                aria-label="Target question"
+              >
+                <option value={DEEPDIVE_TARGET_QUESTION_UNSET_VALUE}>
+                  {DEEPDIVE_TARGET_QUESTION_PLACEHOLDER}
+                </option>
+                {targetOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

@@ -1,8 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { SurveyPreviewFollowUpQuestion } from '@/components/surveys/SurveyPreviewFollowUpQuestion';
 import { useSurveyPreviewPagination } from '@/components/surveys/useSurveyPreviewPagination';
+import { useSurveyPreviewAnswers } from '@/components/surveys/SurveyPreviewAnswerContext';
+import { DeepDiveConversationScreen } from '@/components/surveys/DeepDiveConversationScreen';
 import {
   DEFAULT_QUESTION_SETTINGS,
   type AnswerDisplayOrder,
@@ -50,6 +52,11 @@ export function SelectManyQuestionPreview({
   onDone,
   onClose,
 }: SelectManyQuestionPreviewProps) {
+  // When deepDive fires, switch to the conversation screen
+  const [deepDiveLabel, setDeepDiveLabel] = useState<string | null>(null);
+
+  const { answersByCode } = useSurveyPreviewAnswers();
+
   const pages = useMemo(() => {
     const anchorPage: SurveyQuestionPreviewFollowUp = {
       code: questionCode,
@@ -62,7 +69,7 @@ export function SelectManyQuestionPreview({
       randomizeAnswerCount,
       alternateFlipReversed,
       showHideOptions,
-      deepDiveFollowUpSettings,
+      deepDiveFollowUpSettings: null, // inline DeepDive removed; handled separately
     };
 
     return [[anchorPage, ...samePageFollowUps], ...nextPages];
@@ -77,7 +84,6 @@ export function SelectManyQuestionPreview({
     required,
     samePageFollowUps,
     showHideOptions,
-    deepDiveFollowUpSettings,
   ]);
 
   const { pageIndex, getFooterLabel, handleFooterAction } = useSurveyPreviewPagination(
@@ -86,6 +92,55 @@ export function SelectManyQuestionPreview({
   );
 
   const currentPageQuestions = pages[pageIndex] ?? [];
+
+  // ── If DeepDive conversation is active, show the full-screen conversation ──
+  if (deepDiveLabel !== null && deepDiveFollowUpSettings?.enabled) {
+    return (
+      <div className={shellStyles.shell}>
+        <header className={shellStyles.previewHeader}>
+          <span className={shellStyles.previewHeaderTitle}>{surveyTitle}</span>
+          <button
+            type="button"
+            className={shellStyles.previewCloseBtn}
+            aria-label="Close preview"
+            onClick={onClose}
+          >
+            <span className="wm-logout" aria-hidden />
+          </button>
+        </header>
+
+        <div className={shellStyles.previewCanvas}>
+          <div className={shellStyles.questionContainer}>
+            <DeepDiveConversationScreen
+              settings={deepDiveFollowUpSettings}
+              selectedAnswerLabel={deepDiveLabel}
+              onDone={() => {
+                // Return to question flow and advance to next page (or close if last)
+                setDeepDiveLabel(null);
+                handleFooterAction(onDone);
+              }}
+            />
+          </div>
+        </div>
+
+        <SurveyPreviewRespondentFooter surveyId={surveyId} />
+      </div>
+    );
+  }
+
+  // ── Normal question view ───────────────────────────────────────────────────
+  function handleNext(): void {
+    // On the first page, check whether DeepDive should fire
+    if (pageIndex === 0 && deepDiveFollowUpSettings?.enabled) {
+      const answer = answersByCode[questionCode];
+      const selectedLabels = answer?.selectedLabels ?? [];
+      if (selectedLabels.length > 0) {
+        setDeepDiveLabel(selectedLabels[0]);
+        return;
+      }
+    }
+    handleFooterAction(onDone);
+  }
 
   return (
     <div className={shellStyles.shell}>
@@ -118,7 +173,7 @@ export function SelectManyQuestionPreview({
             <button
               type="button"
               className={shellStyles.doneBtn}
-              onClick={() => handleFooterAction(onDone)}
+              onClick={handleNext}
             >
               {getFooterLabel(false)}
             </button>

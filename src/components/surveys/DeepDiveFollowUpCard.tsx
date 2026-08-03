@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { formatDeepDiveProgressStep } from '@/data/mock-deepdive-follow-ups';
 import type { DeepDiveFollowUpReply } from '@/data/mock-deepdive-follow-ups';
-import { AudioInputButton } from '@/components/ui/AudioInputButton';
+import { VoiceAnswerField } from '@/components/ui/VoiceAnswerField';
+import {
+  emptyVoiceAnswer,
+  type VoiceAnswerValue,
+} from '@/data/mock-voice-answer';
 import styles from './DeepDiveFollowUpCard.module.css';
 
 interface DeepDiveFollowUpCardActiveProps {
@@ -15,6 +19,13 @@ interface DeepDiveFollowUpCardActiveProps {
   onSkip: () => void;
 }
 
+function replyTextFromVoice(value: VoiceAnswerValue): string {
+  if (value.captionText?.trim()) return value.captionText.trim();
+  if (value.textResponse?.trim()) return value.textResponse.trim();
+  if (value.audioUrl) return 'Voice response';
+  return '';
+}
+
 export function DeepDiveFollowUpCardActive({
   progressCurrent,
   progressTotal,
@@ -23,27 +34,23 @@ export function DeepDiveFollowUpCardActive({
   onSubmit,
   onSkip,
 }: DeepDiveFollowUpCardActiveProps) {
-  const [draft, setDraft] = useState('');
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [answer, setAnswer] = useState<VoiceAnswerValue>(emptyVoiceAnswer());
+  const [fieldKey, setFieldKey] = useState(0);
   const questionId = useId();
   const liveRegionId = useId();
-  const isLastFollowUp = progressCurrent >= progressTotal;
-  const submitLabel = isLastFollowUp ? 'Submit' : 'Next';
   const progressPercent =
     progressTotal > 0 ? Math.round((progressCurrent / progressTotal) * 100) : 0;
   const progressStepLabel = formatDeepDiveProgressStep(progressCurrent, progressTotal);
 
   useEffect(() => {
-    setDraft('');
-    inputRef.current?.focus();
+    setAnswer(emptyVoiceAnswer());
+    setFieldKey((k) => k + 1);
   }, [questionText]);
 
-  function handleSubmit(event: React.FormEvent): void {
-    event.preventDefault();
-    const trimmed = draft.trim();
-    if (!trimmed) return;
-    onSubmit(trimmed);
-    setDraft('');
+  function handleSubmit(value: VoiceAnswerValue): void {
+    const text = replyTextFromVoice(value);
+    if (!text) return;
+    onSubmit(text);
   }
 
   return (
@@ -84,27 +91,24 @@ export function DeepDiveFollowUpCardActive({
         {questionText}
       </p>
 
-      <div className={styles.textareaWrap}>
-        <textarea
-          ref={inputRef}
-          className={styles.textInput}
-          rows={2}
-          value={draft}
-          placeholder="Type your answer or use the mic"
-          aria-label="Follow-up answer"
-          onChange={(event) => setDraft(event.target.value)}
-        />
-        <AudioInputButton
-          size="sm"
-          onTranscript={(text) => setDraft((prev) => (prev ? `${prev} ${text}` : text))}
-          className={styles.inlineAudioBtn}
-        />
-      </div>
-      <form className={styles.formRow} onSubmit={handleSubmit}>
-        <button type="submit" className={styles.submitBtn} disabled={!draft.trim()}>
-          {submitLabel}
+      <VoiceAnswerField
+        key={fieldKey}
+        value={answer}
+        onChange={setAnswer}
+        onSubmit={handleSubmit}
+        placeholder="Type your answer or use the mic"
+        captionPlaceholder="Add a note, or tap send"
+      />
+
+      <div className={styles.nextRow}>
+        <button
+          type="button"
+          className={styles.nextBtn}
+          onClick={() => handleSubmit(answer)}
+        >
+          Next
         </button>
-      </form>
+      </div>
     </div>
   );
 }

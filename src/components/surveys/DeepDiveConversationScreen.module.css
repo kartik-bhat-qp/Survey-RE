@@ -1,0 +1,144 @@
+/* Fills the entire preview shell, replicating the screenshot layout */
+.screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: #ffffff;
+  font-family: inherit;
+}
+
+/* ── Progress bar ─────────────────────────────────────────────────────────── */
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 28px 0;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 6px;
+  background: #c7ddf8;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: #1b6ef3;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.progressLabel {
+  font-size: 13px;
+  color: #6b7280;
+  min-width: 34px;
+  text-align: right;
+  font-weight: 500;
+}
+
+/* ── Body ─────────────────────────────────────────────────────────────────── */
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 36px 28px 24px;
+  gap: 24px;
+}
+
+/* ── Chat bubble ──────────────────────────────────────────────────────────── */
+.bubbleWrap {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.bubble {
+  background: #e8ecf1;
+  border-radius: 18px 18px 18px 4px;
+  padding: 14px 18px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #1e293b;
+  max-width: 76%;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* ── Answer input card ────────────────────────────────────────────────────── */
+.inputCard {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.voiceField {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.inputCard:focus-within {
+  border-color: #1b87e6;
+  box-shadow: 0 0 0 3px rgb(27 135 230 / 12%);
+}
+
+.inputActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 12px;
+}
+
+.skipBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: #9ca3af;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.skipBtn:hover {
+  color: #6b7280;
+}
+
+.nextBtn {
+  background: #1b6ef3;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 20px;
+  transition: background 0.15s;
+}
+
+.nextBtn:hover {
+  background: #1558c9;
+}
+
+.nextBtn:focus-visible {
+  outline: 2px solid #1b6ef3;
+  outline-offset: 2px;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.footer {
+  padding: 16px 24px;
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.brand {
+  color: #1b6ef3;
+  font-weight: 600;
+}

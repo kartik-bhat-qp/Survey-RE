@@ -162,7 +162,6 @@ import {
   readDeepDiveFollowUpQuestionConfig,
   updateDeepDiveFollowUpConfigQuestion,
 } from '@/data/mock-deepdive-follow-up-question';
-import { isDeepDiveFollowUpSettingsQuestion } from '@/data/mock-deepdive-v2-survey';
 import { AUDIO_INPUT_SURVEY_ID } from '@/data/mock-audio-input-survey';
 import {
   DEFAULT_MULTI_POINT_SETTINGS,
@@ -2250,32 +2249,9 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         }
       }
 
-      const question = sections
-        .find((section) => section.id === sectionId)
-        ?.questions.find((item) => item.id === questionId);
-      if (
-        question &&
-        isDeepDiveFollowUpSettingsQuestion(
-          detail.survey.id,
-          question,
-          detail.survey.name
-        )
-      ) {
-        return resolveDeepDiveFollowUpSettings({ enabled: true });
-      }
-
       return { ...DEFAULT_DEEPDIVE_FOLLOW_UP_SETTINGS };
     },
-    [deepDiveFollowUpSettingsByKey, detail.survey.id, detail.survey.name, sections]
-  );
-
-  const handleDeepDiveFollowUpSettingsChange = useCallback(
-    (questionKey: string, settings: DeepDiveFollowUpSettings, questionCode: string) => {
-      const resolved = resolveDeepDiveFollowUpSettings(settings);
-      setDeepDiveFollowUpSettingsByKey((prev) => ({ ...prev, [questionKey]: resolved }));
-      syncDeepDiveSettingsToPreviewSessions(detail.survey.id, questionCode, resolved);
-    },
-    [detail.survey.id, setDeepDiveFollowUpSettingsByKey]
+    [deepDiveFollowUpSettingsByKey, sections]
   );
 
   const handleDeepDiveConfigChange = useCallback(
@@ -4812,32 +4788,6 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
               handleSettingsChange(settingsQuestionKey, next, settingsQuestion)
             }
             onClose={() => setSettingsTarget(null)}
-            sections={sections}
-            settingsSectionId={settingsTarget.sectionId}
-            showDeepDiveFollowUpSettings={isDeepDiveFollowUpSettingsQuestion(
-              detail.survey.id,
-              settingsQuestion,
-              detail.survey.name
-            )}
-            deepDiveFollowUpSettings={
-              isDeepDiveFollowUpSettingsQuestion(
-                detail.survey.id,
-                settingsQuestion,
-                detail.survey.name
-              )
-                ? getDeepDiveFollowUpSettings(
-                    settingsTarget.sectionId,
-                    settingsTarget.questionId
-                  )
-                : undefined
-            }
-            onDeepDiveFollowUpSettingsChange={(next) =>
-              handleDeepDiveFollowUpSettingsChange(
-                settingsQuestionKey,
-                next,
-                settingsQuestion.code
-              )
-            }
           />
         )
       ) : null}

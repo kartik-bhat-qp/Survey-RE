@@ -1,0 +1,315 @@
+/* ── Shell ────────────────────────────────────────────────────────────────── */
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f7f8fc;
+  font-family: inherit;
+}
+
+/* ── Progress bar ─────────────────────────────────────────────────────────── */
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 32px 0;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 6px;
+  background: #c7ddf8;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: #1b6ef3;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.progressLabel {
+  font-size: 13px;
+  color: #6b7280;
+  min-width: 34px;
+  text-align: right;
+  font-weight: 500;
+}
+
+/* ── Body ─────────────────────────────────────────────────────────────────── */
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 36px 32px 24px;
+  gap: 28px;
+}
+
+.bodyCenter {
+  justify-content: center;
+  align-items: center;
+}
+
+/* ── Phase 1: target question ─────────────────────────────────────────────── */
+.questionSection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.questionText {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.optionList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.optionLabel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+
+.optionLabel:hover {
+  border-color: #93c5fd;
+  background: #f0f7ff;
+}
+
+.optionLabelSelected {
+  border-color: #1b6ef3;
+  background: #eff6ff;
+}
+
+.radioInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.radioCircle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s;
+}
+
+.optionLabelSelected .radioCircle {
+  border-color: #1b6ef3;
+  background: #1b6ef3;
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+.optionText {
+  font-size: 15px;
+  color: #334155;
+}
+
+.nextRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.nextBtn {
+  padding: 10px 32px;
+  background: #1b6ef3;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.nextBtn:hover {
+  background: #1558c9;
+}
+
+.nextBtn:disabled {
+  background: #bfdbfe;
+  cursor: not-allowed;
+}
+
+/* ── Phase 2: chat bubble ─────────────────────────────────────────────────── */
+.bubbleWrap {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.bubble {
+  background: #e8ecf1;
+  border-radius: 18px 18px 18px 4px;
+  padding: 14px 18px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #1e293b;
+  max-width: 75%;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* ── Answer input card ────────────────────────────────────────────────────── */
+.inputCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.textarea {
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: vertical;
+  padding: 14px 16px;
+  font-size: 15px;
+  color: #1e293b;
+  font-family: inherit;
+  background: transparent;
+  min-height: 80px;
+  box-sizing: border-box;
+}
+
+.textarea::placeholder {
+  color: #9ca3af;
+}
+
+.inputActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.skipLink {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: #9ca3af;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.skipLink:hover {
+  color: #6b7280;
+}
+
+.actionBtns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sendBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #1b6ef3;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.15s;
+}
+
+.sendBtn:hover {
+  background: #1558c9;
+}
+
+.sendBtn:disabled {
+  background: #bfdbfe;
+  cursor: not-allowed;
+}
+
+/* ── Phase 3: done ────────────────────────────────────────────────────────── */
+.doneWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 40px 0;
+}
+
+.doneIcon {
+  font-size: 52px;
+  color: #22c55e;
+}
+
+.doneHeading {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.doneText {
+  margin: 0;
+  font-size: 15px;
+  color: #64748b;
+  max-width: 360px;
+  line-height: 1.6;
+}
+
+.doneBtn {
+  margin-top: 8px;
+  padding: 10px 28px;
+  background: #1b6ef3;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.doneBtn:hover {
+  background: #1558c9;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.footer {
+  padding: 16px 24px;
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.footerBrand {
+  color: #1b6ef3;
+  font-weight: 600;
+}

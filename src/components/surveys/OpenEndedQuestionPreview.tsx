@@ -1,7 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { AudioInputButton } from '@/components/ui/AudioInputButton';
+import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { VoiceAnswerField } from '@/components/ui/VoiceAnswerField';
+import {
+  emptyVoiceAnswer,
+  isVoiceAnswerSubmittable,
+  type VoiceAnswerValue,
+} from '@/data/mock-voice-answer';
 import type { OpenEndedQuestionPreviewSession } from '@/data/survey-question-preview-session';
 import styles from './OpenEndedQuestionPreview.module.css';
 
@@ -34,40 +40,22 @@ function QuestionHeader({
   );
 }
 
-function MicField({
-  value,
-  onTranscript,
-  children,
-}: {
-  value: string;
-  onTranscript: (text: string) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={styles.micFieldWrap}>
-      {children}
-      <div className={styles.micHint}>
-        <AudioInputButton
-          size="sm"
-          onTranscript={onTranscript}
-          className={styles.micBtn}
-        />
-        <span className={styles.micLabel}>or use mic</span>
-      </div>
-    </div>
-  );
+function voiceAnswerSummary(value: VoiceAnswerValue): string {
+  if (value.inputType === 'audio_with_caption') {
+    return value.captionText?.trim() || 'Voice response';
+  }
+  if (value.inputType === 'audio') return 'Voice response';
+  return value.textResponse?.trim() || '';
 }
 
 export function OpenEndedQuestionPreview({ session, onClose }: OpenEndedQuestionPreviewProps) {
+  const { showToast } = useWuShowToast();
   const { surveyTitle, questionCode, questionText, required, questionType, contactFields } =
     session;
 
-  const [textValue, setTextValue] = useState('');
-  const [contactValues, setContactValues] = useState<Record<string, string>>({});
-
-  function handleContactTranscript(fieldId: string, text: string): void {
-    setContactValues((prev) => ({ ...prev, [fieldId]: text }));
-  }
+  const [answer, setAnswer] = useState<VoiceAnswerValue>(emptyVoiceAnswer());
+  const [contactAnswers, setContactAnswers] = useState<Record<string, VoiceAnswerValue>>({});
+  const [navOpen, setNavOpen] = useState(false);
 
   const fields = contactFields ?? [
     { id: 'field-firstname', label: 'First Name' },
@@ -76,7 +64,6 @@ export function OpenEndedQuestionPreview({ session, onClose }: OpenEndedQuestion
     { id: 'field-email', label: 'Email Address' },
   ];
 
-  /** Returns a realistic placeholder example for a contact field. */
   function contactPlaceholder(label: string): string {
     const lc = label.toLowerCase();
     if (lc.includes('first')) return 'e.g., Sarah';
@@ -95,6 +82,33 @@ export function OpenEndedQuestionPreview({ session, onClose }: OpenEndedQuestion
     return `Enter ${label}`;
   }
 
+  function handleNext(): void {
+    if (questionType === 'contact') {
+      const filled = fields.filter((f) => {
+        const v = contactAnswers[f.id];
+        return v && voiceAnswerSummary(v);
+      });
+      if (filled.length === 0) {
+        showToast({ message: 'Add at least one contact field', variant: 'error' });
+        return;
+      }
+      showToast({ message: 'Contact details saved', variant: 'success' });
+      onClose();
+      return;
+    }
+
+    if (!isVoiceAnswerSubmittable(answer) && !answer.audioUrl && !voiceAnswerSummary(answer)) {
+      showToast({ message: 'Enter an answer or record a voice response', variant: 'error' });
+      return;
+    }
+
+    showToast({
+      message: answer.audioUrl ? 'Voice answer submitted' : 'Answer submitted',
+      variant: 'success',
+    });
+    onClose();
+  }
+
   return (
     <div className={styles.root}>
       <QuestionHeader
@@ -111,51 +125,29 @@ export function OpenEndedQuestionPreview({ session, onClose }: OpenEndedQuestion
         />
 
         {questionType === 'comment-box' && (
-          <MicField
-            value={textValue}
-            onTranscript={(text) => setTextValue((prev) => (prev ? `${prev} ${text}` : text))}
-          >
-            <textarea
-              className={styles.textarea}
-              value={textValue}
-              onChange={(event) => setTextValue(event.target.value)}
-              placeholder="Type your answer here…"
-              rows={6}
-              aria-label="Your answer"
-            />
-          </MicField>
+          <VoiceAnswerField
+            value={answer}
+            onChange={setAnswer}
+            placeholder="Type your answer here…"
+          />
         )}
 
         {questionType === 'single-row' && (
-          <MicField
-            value={textValue}
-            onTranscript={(text) => setTextValue(text)}
-          >
-            <input
-              type="text"
-              className={styles.textInput}
-              value={textValue}
-              onChange={(event) => setTextValue(event.target.value)}
-              placeholder="Your answer…"
-              aria-label="Your answer"
-            />
-          </MicField>
+          <VoiceAnswerField
+            value={answer}
+            onChange={setAnswer}
+            placeholder="Your answer…"
+            compact
+          />
         )}
 
         {questionType === 'email' && (
-          <MicField
-            value={textValue}
-            onTranscript={(text) => setTextValue(text)}
-          >
-            <input
-              type="email"
-              className={styles.textInput}
-              value={textValue}
-              onChange={(event) => setTextValue(event.target.value)}
-              placeholder="your@email.com"
-              aria-label="Email address"
-            />
-          </MicField>
+          <VoiceAnswerField
+            value={answer}
+            onChange={setAnswer}
+            placeholder="your@email.com"
+            compact
+          />
         )}
 
         {questionType === 'contact' && (
@@ -165,37 +157,61 @@ export function OpenEndedQuestionPreview({ session, onClose }: OpenEndedQuestion
                 <label className={styles.contactLabel} htmlFor={field.id}>
                   {field.label}
                 </label>
-                <div className={styles.contactInputRow}>
-                  <input
-                    id={field.id}
-                    type="text"
-                    className={styles.textInput}
-                    value={contactValues[field.id] ?? ''}
-                    onChange={(event) =>
-                      setContactValues((prev) => ({
-                        ...prev,
-                        [field.id]: event.target.value,
-                      }))
-                    }
-                    placeholder={contactPlaceholder(field.label)}
-                    aria-label={field.label}
-                  />
-                  <AudioInputButton
-                    size="sm"
-                    onTranscript={(text) => handleContactTranscript(field.id, text)}
-                    className={styles.micBtn}
-                  />
-                </div>
+                <VoiceAnswerField
+                  value={contactAnswers[field.id] ?? emptyVoiceAnswer()}
+                  onChange={(next) =>
+                    setContactAnswers((prev) => ({ ...prev, [field.id]: next }))
+                  }
+                  placeholder={contactPlaceholder(field.label)}
+                  compact
+                />
               </li>
             ))}
           </ul>
         )}
-      </div>
 
-      <div className={styles.footer}>
-        <button type="button" className={styles.nextBtn} onClick={onClose}>
-          Done
-        </button>
+        <div className={styles.nextRow}>
+          <button type="button" className={styles.nextBtn} onClick={handleNext}>
+            Next
+          </button>
+          <div className={styles.nextMenuWrap}>
+            <button
+              type="button"
+              className={styles.nextChevronBtn}
+              aria-label="More navigation options"
+              aria-expanded={navOpen}
+              onClick={() => setNavOpen((open) => !open)}
+            >
+              <span className={`wm-chevron-down ${styles.nextChevronIcon}`} aria-hidden />
+            </button>
+            {navOpen ? (
+              <div className={styles.nextMenu} role="menu">
+                <button
+                  type="button"
+                  className={styles.nextMenuItem}
+                  role="menuitem"
+                  onClick={() => {
+                    setNavOpen(false);
+                    showToast({ message: 'Already on the first question', variant: 'info' });
+                  }}
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  className={styles.nextMenuItem}
+                  role="menuitem"
+                  onClick={() => {
+                    setNavOpen(false);
+                    handleNext();
+                  }}
+                >
+                  Next
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import type { SurveyQuestion, SurveySection } from '@/data/mock-survey-detail';
+import type { SurveyQuestion } from '@/data/mock-survey-detail';
 import {
   ANSWER_DISPLAY_ORDER_OPTIONS,
   buildRandomizeAnswerCountOptions,
@@ -19,12 +19,6 @@ import {
   type RandomizeAnswerCount,
   type VideoOption,
 } from '@/data/mock-question-settings';
-import {
-  resolveDeepDiveFollowUpSettings,
-  type DeepDiveFollowUpSettings,
-} from '@/data/mock-deepdive-question-settings';
-import { DeepDiveSettingsForm } from '@/components/surveys/DeepDiveSettingsForm';
-import deepDiveStyles from './DeepDiveQuestionSettingsPanel.module.css';
 import styles from './QuestionSettingsPanel.module.css';
 import { QuestionCommunitiesTab } from '@/components/surveys/QuestionCommunitiesTab';
 import {
@@ -102,11 +96,6 @@ export interface QuestionSettingsPanelProps {
   settings: QuestionSettings;
   onChange: (settings: QuestionSettings) => void;
   onClose: () => void;
-  sections?: SurveySection[];
-  settingsSectionId?: string;
-  deepDiveFollowUpSettings?: DeepDiveFollowUpSettings;
-  onDeepDiveFollowUpSettingsChange?: (settings: DeepDiveFollowUpSettings) => void;
-  showDeepDiveFollowUpSettings?: boolean;
 }
 
 export function QuestionSettingsPanel({
@@ -114,18 +103,9 @@ export function QuestionSettingsPanel({
   settings,
   onChange,
   onClose,
-  sections = [],
-  settingsSectionId = '',
-  deepDiveFollowUpSettings,
-  onDeepDiveFollowUpSettingsChange,
-  showDeepDiveFollowUpSettings = false,
 }: QuestionSettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('metadata');
   const panelTitle = getQuestionTypeLabel(question.inputKind);
-  const resolvedDeepDiveSettings = deepDiveFollowUpSettings
-    ? resolveDeepDiveFollowUpSettings(deepDiveFollowUpSettings)
-    : null;
-  const deepDiveActive = Boolean(showDeepDiveFollowUpSettings && resolvedDeepDiveSettings?.enabled);
 
   function patch(partial: Partial<QuestionSettings>): void {
     onChange({ ...settings, ...partial });
@@ -190,64 +170,16 @@ export function QuestionSettingsPanel({
     });
   }
 
-  function patchDeepDiveFollowUp(partial: Partial<DeepDiveFollowUpSettings>): void {
-    if (!resolvedDeepDiveSettings || !onDeepDiveFollowUpSettingsChange) return;
-    onDeepDiveFollowUpSettingsChange({ ...resolvedDeepDiveSettings, ...partial });
-  }
-
   return (
-    <aside
-      className={`${styles.panel} ${deepDiveActive ? styles.panelDeepDiveActive : ''}`}
-      aria-label="Question settings"
-    >
-      {deepDiveActive ? null : (
-        <header className={styles.header}>
-          <h2 className={styles.title}>{panelTitle}</h2>
-          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Close">
-            <span className="wm-close" aria-hidden />
-          </button>
-        </header>
-      )}
+    <aside className={styles.panel} aria-label="Question settings">
+      <header className={styles.header}>
+        <h2 className={styles.title}>{panelTitle}</h2>
+        <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Close">
+          <span className="wm-close" aria-hidden />
+        </button>
+      </header>
 
-      <div className={deepDiveActive ? deepDiveStyles.formRoot : styles.body}>
-        {showDeepDiveFollowUpSettings && resolvedDeepDiveSettings ? (
-          <>
-            <div className={styles.deepDiveToggleSection}>
-              <div className={styles.field}>
-                <div className={styles.deepDiveToggleRow}>
-                  <span className={styles.deepDiveToggleLabel}>DeepDive</span>
-                  <WuToggle
-                    labelPosition="right"
-                    checked={resolvedDeepDiveSettings.enabled}
-                    onChange={(enabled) => patchDeepDiveFollowUp({ enabled })}
-                  />
-                  <span className={styles.newBadge} aria-label="New feature">
-                    New
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {deepDiveActive ? (
-              <DeepDiveSettingsForm
-                settings={resolvedDeepDiveSettings}
-                sections={sections}
-                probeTargetSectionId={settingsSectionId}
-                probeTargetQuestionId={question.id}
-                onChange={patchDeepDiveFollowUp}
-                showHeader
-                onClose={onClose}
-              />
-            ) : null}
-          </>
-        ) : null}
-
-        {deepDiveActive ? null : (
-          <>
-        {showDeepDiveFollowUpSettings && resolvedDeepDiveSettings ? (
-          <hr className={styles.sectionDivider} aria-hidden />
-        ) : null}
-
+      <div className={styles.body}>
         <ToggleButtonGroup
           label="Answer Type"
           options={ANSWER_TYPE_OPTIONS}
@@ -500,8 +432,6 @@ export function QuestionSettingsPanel({
             />
           )}
         </div>
-          </>
-        )}
       </div>
     </aside>
   );

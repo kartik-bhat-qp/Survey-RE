@@ -107,7 +107,8 @@ export type SurveyQuestionPreviewKind =
   | 'select-many'
   | 'select-one'
   | 'captcha'
-  | 'open-ended';
+  | 'open-ended'
+  | 'deepdive';
 
 /** The concrete open-ended question type inside a preview session. */
 export type OpenEndedQuestionType = 'comment-box' | 'single-row' | 'email' | 'contact';
@@ -125,6 +126,48 @@ export interface OpenEndedQuestionPreviewSession {
 
 export function openEndedPreviewStorageKey(surveyId: number): string {
   return `survey-open-ended-preview-${surveyId}`;
+}
+
+// ─── DeepDive preview ────────────────────────────────────────────────────────
+
+export interface DeepDiveQuestionPreviewSession {
+  surveyId: number;
+  surveyTitle: string;
+  /** Text of the target question (e.g. Q17) — shown as context in the preview. */
+  targetQuestionText: string;
+  /** Options belonging to the target question. */
+  targetOptions: { id: string; label: string }[];
+  /**
+   * The label of the simulated answer the preview uses to kick off the
+   * follow-up thread without showing the target question first.
+   * Defaults to the first eligible option's label.
+   */
+  simulatedAnswerLabel: string;
+  settings: DeepDiveFollowUpSettings;
+}
+
+export function deepDivePreviewStorageKey(surveyId: number): string {
+  return `survey-deepdive-preview-${surveyId}`;
+}
+
+export function writeDeepDiveQuestionPreviewSession(
+  payload: DeepDiveQuestionPreviewSession
+): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(deepDivePreviewStorageKey(payload.surveyId), JSON.stringify(payload));
+}
+
+export function readDeepDiveQuestionPreviewSession(
+  surveyId: number
+): DeepDiveQuestionPreviewSession | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem(deepDivePreviewStorageKey(surveyId));
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as DeepDiveQuestionPreviewSession;
+  } catch {
+    return null;
+  }
 }
 
 export function writeOpenEndedQuestionPreviewSession(
