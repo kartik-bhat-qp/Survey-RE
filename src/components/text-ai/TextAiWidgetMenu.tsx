@@ -4,6 +4,12 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { TextAiWidgetSettingsModal } from '@/components/text-ai/TextAiWidgetSettingsModal';
+import {
+  DEFAULT_TEXT_AI_WIDGET_TOP_N,
+  formatTextAiWidgetTopNToast,
+  type TextAiWidgetTopN,
+} from '@/data/mock-text-ai-widget-settings';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
@@ -20,7 +26,8 @@ const WuMenuItem = dynamic(
 
 interface TextAiWidgetMenuProps {
   widgetTitle?: string;
-  onSettings?: () => void;
+  topN?: TextAiWidgetTopN;
+  onTopNChange?: (topN: TextAiWidgetTopN) => void;
   onDelete?: () => void;
 }
 
@@ -29,20 +36,23 @@ const MENU_ITEM_CLASS =
 
 export function TextAiWidgetMenu({
   widgetTitle = 'this widget',
-  onSettings,
+  topN = DEFAULT_TEXT_AI_WIDGET_TOP_N,
+  onTopNChange,
   onDelete,
 }: TextAiWidgetMenuProps) {
   const { showToast } = useWuShowToast();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   function handleSettings(): void {
     setMenuOpen(false);
-    if (onSettings) {
-      onSettings();
-      return;
-    }
-    showToast({ message: 'Widget settings', variant: 'success' });
+    setSettingsOpen(true);
+  }
+
+  function handleSaveSettings(nextTopN: TextAiWidgetTopN): void {
+    onTopNChange?.(nextTopN);
+    showToast({ message: formatTextAiWidgetTopNToast(nextTopN), variant: 'success' });
   }
 
   function handleDeleteRequest(): void {
@@ -88,6 +98,13 @@ export function TextAiWidgetMenu({
           Delete
         </WuMenuItem>
       </WuMenu>
+
+      <TextAiWidgetSettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        topN={topN}
+        onSave={handleSaveSettings}
+      />
 
       <ConfirmModal
         open={deleteConfirmOpen}

@@ -1,0 +1,28 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.description {
+  color: #545e6b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  max-width: 14rem;
+}
+
+.label {
+  color: #545e6b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin: 0;
+}

@@ -27,6 +27,11 @@ import {
   type TextAiTopicSegmentWidget,
   type TextAiGenderKey,
 } from '@/data/mock-text-ai-topic-segment-widget';
+import {
+  DEFAULT_TEXT_AI_WIDGET_TOP_N,
+  limitTextAiWidgetItems,
+  type TextAiWidgetTopN,
+} from '@/data/mock-text-ai-widget-settings';
 import styles from './TextAiTopicSegmentWidget.module.css';
 
 interface TextAiTopicSegmentWidgetProps {
@@ -308,6 +313,7 @@ export function TextAiTopicSegmentWidgetCard({
 }: TextAiTopicSegmentWidgetProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
+  const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
   const [statTestingApplied, setStatTestingApplied] = useState(false);
   const [activeSegments, setActiveSegments] = useState<Set<TextAiSegmentKey>>(
@@ -344,11 +350,16 @@ export function TextAiTopicSegmentWidgetCard({
   const overallOnly =
     visibleSegmentKeys.length === 1 && visibleSegmentKeys[0] === 'overall';
 
+  const visibleRows = useMemo(
+    () => limitTextAiWidgetItems(widget.rows, topN),
+    [widget.rows, topN]
+  );
+
   const maxPercentage = useMemo(
-    () => getTopicSegmentMaxPercentage(widget.rows, visibleSegmentKeys),
+    () => getTopicSegmentMaxPercentage(visibleRows, visibleSegmentKeys),
     // visibleSegmentKeys is derived from widget.visibleSegmentKeys + showChiSquare
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [widget.rows, widget.visibleSegmentKeys, showChiSquare]
+    [visibleRows, widget.visibleSegmentKeys, showChiSquare]
   );
 
   function toggleRow(rowId: string) {
@@ -407,7 +418,12 @@ export function TextAiTopicSegmentWidgetCard({
             {statTestingApplied ? 'Disable Stat Testing' : 'Stat testing'}
           </button>
         </div>
-        <TextAiWidgetMenu widgetTitle={widget.question} onDelete={onDelete} />
+        <TextAiWidgetMenu
+          widgetTitle={widget.question}
+          topN={topN}
+          onTopNChange={setTopN}
+          onDelete={onDelete}
+        />
       </header>
 
       <div className={styles.tableWrap}>
@@ -468,7 +484,7 @@ export function TextAiTopicSegmentWidgetCard({
             </tr>
           </thead>
           <tbody>
-            {widget.rows.map((row) => (
+            {visibleRows.map((row) => (
               <TopicSegmentGroup
                 key={row.id}
                 row={row}

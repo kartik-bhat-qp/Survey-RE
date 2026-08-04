@@ -7,6 +7,10 @@ import type {
   TextAiSummaryVariant,
   TextAiSummaryWidget,
 } from '@/data/mock-text-ai-summary-widget';
+import {
+  DEFAULT_TEXT_AI_WIDGET_TOP_N,
+  type TextAiWidgetTopN,
+} from '@/data/mock-text-ai-widget-settings';
 import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
 import styles from './TextAiSummaryWidget.module.css';
 
@@ -25,6 +29,7 @@ export function TextAiSummaryWidgetCard({
   onDelete,
 }: TextAiSummaryWidgetCardProps) {
   const reportBodyRef = useRef<HTMLDivElement>(null);
+  const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
   const defaultSummaryType =
     widget.summaryTypes.find((summaryType) => summaryType.isDefault) ?? widget.summaryTypes[0];
   const [selectedSummaryType, setSelectedSummaryType] = useState<TextAiSummaryType>(
@@ -58,7 +63,12 @@ export function TextAiSummaryWidgetCard({
             />
           </div>
         </div>
-        <TextAiWidgetMenu widgetTitle={widget.question} onDelete={onDelete} />
+        <TextAiWidgetMenu
+          widgetTitle={widget.question}
+          topN={topN}
+          onTopNChange={setTopN}
+          onDelete={onDelete}
+        />
       </header>
 
       <div

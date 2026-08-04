@@ -11,7 +11,13 @@ import {
   type TextAiSentimentDistribution,
 } from '@/data/mock-text-ai-subtheme-stackbar';
 import type { TextAiThemeStatusFilter } from '@/data/mock-text-ai-widget-data';
+import {
+  DEFAULT_TEXT_AI_WIDGET_TOP_N,
+  limitTextAiWidgetItems,
+  type TextAiWidgetTopN,
+} from '@/data/mock-text-ai-widget-settings';
 import styles from './TextAiThemeStackbarWidget.module.css';
+
 
 const SENTIMENT_BUCKETS: {
   key: TextAiSentimentBucket;
@@ -104,15 +110,19 @@ export function TextAiThemeStackbarWidget({
   onDelete,
 }: TextAiThemeStackbarWidgetProps) {
   const wick = useWickUILib();
+  const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
   const [activeSentimentBuckets, setActiveSentimentBuckets] = useState<
     Set<TextAiSentimentBucket>
   >(() => new Set(SENTIMENT_BUCKETS.map((bucket) => bucket.key)));
   const visibleThemes = useMemo(() => {
-    if (themeStatus === 'all') return TEXT_AI_SUBTHEME_STACKBAR_ROWS;
-    return TEXT_AI_SUBTHEME_STACKBAR_ROWS.filter((theme) =>
-      themeStatus === 'emerging' ? theme.emerging : !theme.emerging
-    );
-  }, [themeStatus]);
+    const filtered =
+      themeStatus === 'all'
+        ? TEXT_AI_SUBTHEME_STACKBAR_ROWS
+        : TEXT_AI_SUBTHEME_STACKBAR_ROWS.filter((theme) =>
+            themeStatus === 'emerging' ? theme.emerging : !theme.emerging
+          );
+    return limitTextAiWidgetItems(filtered, topN);
+  }, [themeStatus, topN]);
 
   function toggleSentiment(bucket: TextAiSentimentBucket): void {
     setActiveSentimentBuckets((current) => {
@@ -135,7 +145,12 @@ export function TextAiThemeStackbarWidget({
     <article className={styles.card}>
       <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
         <h2 className={styles.cardTitle}>{question}</h2>
-        <TextAiWidgetMenu widgetTitle={question} onDelete={onDelete} />
+        <TextAiWidgetMenu
+          widgetTitle={question}
+          topN={topN}
+          onTopNChange={setTopN}
+          onDelete={onDelete}
+        />
       </header>
 
       <div className={styles.rows}>

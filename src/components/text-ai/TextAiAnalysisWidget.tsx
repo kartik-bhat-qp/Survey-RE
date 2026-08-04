@@ -7,6 +7,11 @@ import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
 import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import type { TextAiAnalysisRow, TextAiAnalysisWidget } from '@/data/mock-text-ai-widget-data';
+import {
+  DEFAULT_TEXT_AI_WIDGET_TOP_N,
+  limitTextAiWidgetItems,
+  type TextAiWidgetTopN,
+} from '@/data/mock-text-ai-widget-settings';
 import styles from './TextAiAnalysisWidget.module.css';
 
 const PAGE_SIZE_OPTIONS = [
@@ -49,6 +54,7 @@ export function TextAiAnalysisWidgetCard({
   onDelete,
 }: TextAiAnalysisWidgetProps) {
   const wick = useWickUILib();
+  const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[1]);
@@ -57,8 +63,9 @@ export function TextAiAnalysisWidgetCard({
 
   const filteredRows = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return widget.rows;
-    return widget.rows.filter(
+    const sourceRows = limitTextAiWidgetItems(widget.rows, topN);
+    if (!term) return sourceRows;
+    return sourceRows.filter(
       (row) =>
         row.value.toLowerCase().includes(term) ||
         row.topic.toLowerCase().includes(term) ||
@@ -66,7 +73,7 @@ export function TextAiAnalysisWidgetCard({
         row.insight.toLowerCase().includes(term) ||
         row.tags.some((tag) => tag.toLowerCase().includes(term))
     );
-  }, [search, widget.rows]);
+  }, [search, topN, widget.rows]);
 
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSizeNum));
   const safePage = Math.min(page, pageCount - 1);
@@ -135,7 +142,15 @@ export function TextAiAnalysisWidgetCard({
     <article className={styles.card}>
       <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
         <h2 className={styles.cardTitle}>{widget.question}</h2>
-        <TextAiWidgetMenu widgetTitle={widget.question} onDelete={onDelete} />
+        <TextAiWidgetMenu
+          widgetTitle={widget.question}
+          topN={topN}
+          onTopNChange={(nextTopN) => {
+            setTopN(nextTopN);
+            setPage(0);
+          }}
+          onDelete={onDelete}
+        />
       </header>
 
       <div className={styles.toolbar}>

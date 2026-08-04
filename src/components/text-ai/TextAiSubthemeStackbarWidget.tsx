@@ -11,6 +11,11 @@ import {
   type TextAiSentimentDistribution,
 } from '@/data/mock-text-ai-subtheme-stackbar';
 import type { TextAiThemeStatusFilter } from '@/data/mock-text-ai-widget-data';
+import {
+  DEFAULT_TEXT_AI_WIDGET_TOP_N,
+  limitTextAiWidgetItems,
+  type TextAiWidgetTopN,
+} from '@/data/mock-text-ai-widget-settings';
 import styles from './TextAiSubthemeStackbarWidget.module.css';
 
 const SENTIMENT_BUCKETS: {
@@ -104,6 +109,7 @@ export function TextAiSubthemeStackbarWidget({
   onDelete,
 }: TextAiSubthemeStackbarWidgetProps) {
   const wick = useWickUILib();
+  const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
   const [expandedThemeIds, setExpandedThemeIds] = useState<Set<string>>(
     () => new Set()
   );
@@ -111,28 +117,31 @@ export function TextAiSubthemeStackbarWidget({
     Set<TextAiSentimentBucket>
   >(() => new Set(SENTIMENT_BUCKETS.map((bucket) => bucket.key)));
   const visibleThemes = useMemo(() => {
-    if (themeStatus === 'all') return TEXT_AI_SUBTHEME_STACKBAR_ROWS;
+    const filtered =
+      themeStatus === 'all'
+        ? TEXT_AI_SUBTHEME_STACKBAR_ROWS
+        : TEXT_AI_SUBTHEME_STACKBAR_ROWS.flatMap((theme) => {
+            const themeEmerging = Boolean(theme.emerging);
 
-    return TEXT_AI_SUBTHEME_STACKBAR_ROWS.flatMap((theme) => {
-      const themeEmerging = Boolean(theme.emerging);
+            if (themeStatus === 'emerging') {
+              const subthemes = theme.subthemes.filter(
+                (subtheme) => themeEmerging || subtheme.emerging
+              );
+              if (!themeEmerging && subthemes.length === 0) return [];
+              return [{ ...theme, subthemes }];
+            }
 
-      if (themeStatus === 'emerging') {
-        const subthemes = theme.subthemes.filter(
-          (subtheme) => themeEmerging || subtheme.emerging
-        );
-        if (!themeEmerging && subthemes.length === 0) return [];
-        return [{ ...theme, subthemes }];
-      }
+            if (themeEmerging) return [];
+            return [
+              {
+                ...theme,
+                subthemes: theme.subthemes.filter((subtheme) => !subtheme.emerging),
+              },
+            ];
+          });
 
-      if (themeEmerging) return [];
-      return [
-        {
-          ...theme,
-          subthemes: theme.subthemes.filter((subtheme) => !subtheme.emerging),
-        },
-      ];
-    });
-  }, [themeStatus]);
+    return limitTextAiWidgetItems(filtered, topN);
+  }, [themeStatus, topN]);
 
   function toggleTheme(themeId: string): void {
     setExpandedThemeIds((current) => {
@@ -191,7 +200,12 @@ export function TextAiSubthemeStackbarWidget({
           >
             {allThemesExpanded ? 'Collapse all' : 'Expand all'}
           </WuButton>
-          <TextAiWidgetMenu widgetTitle={question} onDelete={onDelete} />
+          <TextAiWidgetMenu
+            widgetTitle={question}
+            topN={topN}
+            onTopNChange={setTopN}
+            onDelete={onDelete}
+          />
         </div>
       </header>
 
