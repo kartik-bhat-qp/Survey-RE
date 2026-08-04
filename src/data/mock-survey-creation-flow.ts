@@ -122,48 +122,14 @@ const BLANK_SURVEY_DRAFT_STORAGE_KEY = 'qp-blank-survey-draft';
 export interface BlankSurveyDraft {
   name: string;
   createdAt: string;
-  /** Show the create/import modal once when the blank workspace first opens. */
-  showCreateModal?: boolean;
 }
 
-export interface BlankSurveyCreateOption {
-  id: string;
-  label: string;
-  icon: string;
-  iconClassName?: string;
-  /** Optional seed prompt when import should auto-submit (unused for Word/PDF attach flow). */
-  prompt?: string;
-  /** Opens the Research Agent attach picker filtered to this kind. */
-  attachKind?: 'word' | 'pdf';
-}
-
-export const BLANK_SURVEY_CREATE_IMPORT_OPTIONS: BlankSurveyCreateOption[] = [
-  {
-    id: 'import-word',
-    label: 'Doc',
-    icon: 'wm-description',
-    iconClassName: 'word',
-    attachKind: 'word',
-  },
-  {
-    id: 'import-pdf',
-    label: 'PDF',
-    icon: 'wm-picture-as-pdf',
-    iconClassName: 'pdf',
-    attachKind: 'pdf',
-  },
-];
-
-export function saveBlankSurveyDraft(
-  name: string,
-  options?: { showCreateModal?: boolean }
-): void {
+export function saveBlankSurveyDraft(name: string): void {
   if (typeof window === 'undefined') return;
   clearPersistedSurveyEditorSections(NEW_BLANK_SURVEY_ID);
   const draft: BlankSurveyDraft = {
     name: name.trim(),
     createdAt: new Date().toISOString(),
-    showCreateModal: options?.showCreateModal ?? true,
   };
   sessionStorage.setItem(BLANK_SURVEY_DRAFT_STORAGE_KEY, JSON.stringify(draft));
 }
@@ -178,21 +144,10 @@ export function readBlankSurveyDraft(): BlankSurveyDraft | null {
     return {
       ...parsed,
       name: parsed.name.trim(),
-      showCreateModal: parsed.showCreateModal === true,
     };
   } catch {
     return null;
   }
-}
-
-/** Returns whether the create modal should open, and clears the one-time flag. */
-export function consumeBlankSurveyCreateModalFlag(): boolean {
-  const draft = readBlankSurveyDraft();
-  if (!draft?.showCreateModal) return false;
-  if (typeof window === 'undefined') return false;
-  const next: BlankSurveyDraft = { ...draft, showCreateModal: false };
-  sessionStorage.setItem(BLANK_SURVEY_DRAFT_STORAGE_KEY, JSON.stringify(next));
-  return true;
 }
 
 export function clearBlankSurveyDraft(): void {
