@@ -917,3 +917,25 @@
   font-weight: 600;
   margin: 0 0 0.25rem;
 }
+
+.sourceOptionLabel {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.comingSoonBadge {
+  background: #fef3c7;
+  border-radius: 999px;
+  color: #b45309;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  padding: 0.15rem 0.35rem;
+  text-transform: uppercase;
+}

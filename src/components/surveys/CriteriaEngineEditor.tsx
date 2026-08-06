@@ -710,30 +710,42 @@ export function CriteriaEngineEditor({
                             }
                             align="start"
                           >
-                            {availableSources.map((source) => (
-                              <WuMenuItem
-                                key={source}
-                                onSelect={() =>
-                                  handleUpdateCondition(criterion.id, cond.id, {
-                                    source,
-                                    questionId: source === 'Question' ? cond.questionId : null,
-                                    systemVariable:
-                                      source === 'System Variable' ||
-                                      source === 'Geo Location' ||
-                                      source === 'Quota'
-                                        ? source === cond.source
-                                          ? cond.systemVariable
-                                          : null
-                                        : null,
-                                    operator: resolveOperatorForSource(source, cond.operator),
-                                    value: '',
-                                    valueEnd: '',
-                                  })
-                                }
-                              >
-                                {source}
-                              </WuMenuItem>
-                            ))}
+                            {availableSources.map((source) => {
+                              const isQuotaComingSoon = source === 'Quota';
+                              return (
+                                <WuMenuItem
+                                  key={source}
+                                  disabled={isQuotaComingSoon}
+                                  onSelect={() => {
+                                    if (isQuotaComingSoon) return;
+                                    handleUpdateCondition(criterion.id, cond.id, {
+                                      source,
+                                      questionId: source === 'Question' ? cond.questionId : null,
+                                      systemVariable:
+                                        source === 'System Variable' ||
+                                        source === 'Geo Location' ||
+                                        source === 'Quota'
+                                          ? source === cond.source
+                                            ? cond.systemVariable
+                                            : null
+                                          : null,
+                                      operator: resolveOperatorForSource(source, cond.operator),
+                                      value: '',
+                                      valueEnd: '',
+                                    });
+                                  }}
+                                >
+                                  {isQuotaComingSoon ? (
+                                    <span className={styles.sourceOptionLabel}>
+                                      {source}
+                                      <span className={styles.comingSoonBadge}>Coming soon</span>
+                                    </span>
+                                  ) : (
+                                    source
+                                  )}
+                                </WuMenuItem>
+                              );
+                            })}
                           </WuMenu>
                           {cond.source === 'System Variable' ? (
                             <WuMenu

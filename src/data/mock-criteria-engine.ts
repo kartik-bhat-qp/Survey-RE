@@ -57,7 +57,6 @@ export const RESPONSE_STATUS_OPERATORS = ['is'] as const;
 export const RESPONSE_STATUS_VALUES = [
   'All',
   'Completed',
-  'Partial',
   'Terminated',
 ] as const;
 

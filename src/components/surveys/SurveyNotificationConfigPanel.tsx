@@ -12,7 +12,9 @@ import {
   deriveNotificationSendTo,
   getFixedNotificationCriteriaLabel,
   getFixedNotificationHelpText,
+  isQuotaNotification,
   isSystemSurveyNotification,
+  notificationSupportsEmailAdministrator,
   notificationSupportsEmailRespondent,
   notificationUsesEditableCriteria,
   SURVEY_NOTIFICATION_EXECUTION_OPTIONS,
@@ -112,24 +114,31 @@ export function SurveyNotificationConfigPanel({
   }
 
   const isSystemNotification = isSystemSurveyNotification(draft);
+  const isQuota = isQuotaNotification(draft);
+  const customAttachmentComingSoon = !isSystemNotification;
   const fixedCriteriaLabel = getFixedNotificationCriteriaLabel(draft);
   const fixedNotificationHelp = getFixedNotificationHelpText(draft);
   const usesEditableCriteria = notificationUsesEditableCriteria(draft);
   const showEmailRespondent = notificationSupportsEmailRespondent(draft);
+  const showEmailAdministrator = notificationSupportsEmailAdministrator(draft);
   const canSave =
     !usesEditableCriteria ||
     draft.criteriaBlocks.some((block) => hasCompleteConditions(block));
 
   function handleSave(): void {
     if (!canSave) return;
+    const emailAdministrator = showEmailAdministrator ? draft.emailAdministrator : false;
+    const emailRespondent = showEmailRespondent ? draft.emailRespondent : false;
     onSave({
       ...draft,
       enabled: true,
-      emailRespondent: showEmailRespondent ? draft.emailRespondent : false,
-      sendTo: deriveNotificationSendTo(
-        draft.emailAdministrator,
-        showEmailRespondent ? draft.emailRespondent : false
-      ),
+      emailAdministrator,
+      emailRespondent,
+      customAttachment: customAttachmentComingSoon ? false : draft.customAttachment,
+      customAttachmentName: customAttachmentComingSoon
+        ? ''
+        : draft.customAttachmentName,
+      sendTo: deriveNotificationSendTo(emailAdministrator, emailRespondent),
       criteria: fixedCriteriaLabel
         ? fixedCriteriaLabel
         : deriveNotificationCriteriaLabel(draft.criteriaBlocks, questions),
@@ -197,12 +206,14 @@ export function SurveyNotificationConfigPanel({
           </div>
         ) : null}
         <div className={styles.recipientToggles}>
-          <WuToggle
-            Label="Email Administrator"
-            labelPosition="right"
-            checked={draft.emailAdministrator}
-            onChange={(checked) => patchDraft({ emailAdministrator: checked })}
-          />
+          {!showEmailAdministrator ? null : (
+            <WuToggle
+              Label="Email Administrator"
+              labelPosition="right"
+              checked={draft.emailAdministrator}
+              onChange={(checked) => patchDraft({ emailAdministrator: checked })}
+            />
+          )}
           {!showEmailRespondent ? null : (
             <WuToggle
               Label="Email Respondent"
@@ -276,87 +287,104 @@ export function SurveyNotificationConfigPanel({
             )}
           </div>
         </div>
-        <div className={styles.emailFieldRow}>
-          <span className={styles.fieldLabel}>Subject:</span>
-          <WuInput
-            value={draft.subject}
-            onChange={(event) => patchDraft({ subject: event.target.value })}
-            aria-label="Subject"
-          />
-        </div>
-        <div className={styles.bodyEditor}>
-          <SurveySettingsRichText
-            key={editorKey}
-            value={draft.body}
-            onChange={(body) => patchDraft({ body })}
-            ariaLabel="Notification email body"
-            toolbarPosition="bottom"
-          />
-        </div>
+        {isQuota ? null : (
+          <>
+            <div className={styles.emailFieldRow}>
+              <span className={styles.fieldLabel}>Subject:</span>
+              <WuInput
+                value={draft.subject}
+                onChange={(event) => patchDraft({ subject: event.target.value })}
+                aria-label="Subject"
+              />
+            </div>
+            <div className={styles.bodyEditor}>
+              <SurveySettingsRichText
+                key={editorKey}
+                value={draft.body}
+                onChange={(body) => patchDraft({ body })}
+                ariaLabel="Notification email body"
+                toolbarPosition="bottom"
+              />
+            </div>
+          </>
+        )}
       </div>
 
-      <div className={styles.attachmentToggles}>
-        <WuToggle
-          Label="Attach response"
-          labelPosition="right"
-          checked={draft.attachResponse}
-          onChange={(checked) => patchDraft({ attachResponse: checked })}
-        />
-        {draft.attachResponse ? (
+      {isQuota ? null : (
+        <div className={styles.attachmentToggles}>
           <WuToggle
-            Label="Include system variables"
+            Label="Attach response"
             labelPosition="right"
-            checked={draft.includeSystemVariables}
-            onChange={(checked) => patchDraft({ includeSystemVariables: checked })}
+            checked={draft.attachResponse}
+            onChange={(checked) => patchDraft({ attachResponse: checked })}
           />
-        ) : null}
-        <div className={styles.customAttachmentRow}>
-          <WuToggle
-            Label="Custom attachment"
-            labelPosition="right"
-            checked={draft.customAttachment}
-            onChange={(checked) =>
-              patchDraft({
-                customAttachment: checked,
-                customAttachmentName: checked ? draft.customAttachmentName : '',
-              })
-            }
-          />
-          {draft.customAttachment ? (
-            <div className={styles.customAttachmentPicker}>
-              {draft.customAttachmentName ? (
-                <span className={styles.customAttachmentChip}>
-                  <span className="wm-attach-file" aria-hidden />
-                  <span className={styles.customAttachmentName}>
-                    {draft.customAttachmentName}
-                  </span>
-                  <button
-                    type="button"
-                    className={styles.customAttachmentRemove}
-                    aria-label={`Remove ${draft.customAttachmentName}`}
-                    onClick={() => patchDraft({ customAttachmentName: '' })}
-                  >
-                    <span className="wm-close" aria-hidden />
-                  </button>
-                </span>
-              ) : null}
-              <label className={styles.customAttachmentUpload}>
-                <input
-                  type="file"
-                  className={styles.customAttachmentInput}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    if (!file) return;
-                    patchDraft({ customAttachmentName: file.name });
-                    event.target.value = '';
-                  }}
-                />
-                {draft.customAttachmentName ? 'Replace file' : 'Choose file'}
-              </label>
-            </div>
+          {draft.attachResponse ? (
+            <WuToggle
+              Label="Include system variables"
+              labelPosition="right"
+              checked={draft.includeSystemVariables}
+              onChange={(checked) => patchDraft({ includeSystemVariables: checked })}
+            />
           ) : null}
+          <div className={styles.customAttachmentRow}>
+            <WuToggle
+              Label={
+                customAttachmentComingSoon ? (
+                  <span className={styles.customAttachmentLabel}>
+                    Custom attachment
+                    <span className={styles.comingSoonBadge}>Coming soon</span>
+                  </span>
+                ) : (
+                  'Custom attachment'
+                )
+              }
+              labelPosition="right"
+              checked={customAttachmentComingSoon ? false : draft.customAttachment}
+              disabled={customAttachmentComingSoon}
+              onChange={(checked) => {
+                if (customAttachmentComingSoon) return;
+                patchDraft({
+                  customAttachment: checked,
+                  customAttachmentName: checked ? draft.customAttachmentName : '',
+                });
+              }}
+            />
+            {!customAttachmentComingSoon && draft.customAttachment ? (
+              <div className={styles.customAttachmentPicker}>
+                {draft.customAttachmentName ? (
+                  <span className={styles.customAttachmentChip}>
+                    <span className="wm-attach-file" aria-hidden />
+                    <span className={styles.customAttachmentName}>
+                      {draft.customAttachmentName}
+                    </span>
+                    <button
+                      type="button"
+                      className={styles.customAttachmentRemove}
+                      aria-label={`Remove ${draft.customAttachmentName}`}
+                      onClick={() => patchDraft({ customAttachmentName: '' })}
+                    >
+                      <span className="wm-close" aria-hidden />
+                    </button>
+                  </span>
+                ) : null}
+                <label className={styles.customAttachmentUpload}>
+                  <input
+                    type="file"
+                    className={styles.customAttachmentInput}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      patchDraft({ customAttachmentName: file.name });
+                      event.target.value = '';
+                    }}
+                  />
+                  {draft.customAttachmentName ? 'Replace file' : 'Choose file'}
+                </label>
+              </div>
+            ) : null}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className={styles.actions}>
         <WuButton onClick={handleSave} disabled={!canSave}>

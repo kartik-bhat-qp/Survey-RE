@@ -122,11 +122,17 @@ export function notificationSupportsEmailRespondent(
   return !isQuotaNotification(item) && !isAdminConfirmationNotification(item);
 }
 
+export function notificationSupportsEmailAdministrator(
+  item: Pick<SurveyNotificationItem, 'id' | 'name'>
+): boolean {
+  return !isRespondentAcknowledgmentNotification(item);
+}
+
 export const COMPLETED_RESPONSE_NOTIFICATION_HELP =
   'Notification will be sent every time a response is completed';
 
 export const QUOTA_NOTIFICATION_HELP =
-  'Notification will be triggered when any question based quota has been reached';
+  'An email notification will be sent when the survey quota is reached.';
 
 export const RESPONDENT_ACKNOWLEDGMENT_DEFAULT_BODY =
   '<p>Hi,</p><p>Thank you for your response. I really appreciate you taking the time to get back to me.</p><p>Have a great day!</p><p>Best regards,</p>';
