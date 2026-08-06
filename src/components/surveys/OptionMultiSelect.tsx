@@ -110,7 +110,13 @@ export function OptionMultiSelect({
           preventCloseOnSelect
         >
           <span className={styles.selectAllLabel}>
-            {search.trim() ? 'Select all matching' : 'Select all'}
+            {search.trim()
+              ? allFilteredSelected
+                ? 'Deselect all matching'
+                : 'Select all matching'
+              : allFilteredSelected
+                ? 'Deselect all'
+                : 'Select all'}
           </span>
         </WuMenuCheckboxItem>
       ) : null}

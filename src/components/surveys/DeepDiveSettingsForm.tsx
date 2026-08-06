@@ -11,6 +11,8 @@ import {
   type DeepDiveTone,
 } from '@/data/mock-deepdive-question-settings';
 import { buildDeepDiveProbeWhenOptions } from '@/data/mock-deepdive-follow-up-question';
+import { OptionMultiSelect } from '@/components/surveys/OptionMultiSelect';
+import { VALUE_SEPARATOR } from '@/data/mock-criteria-engine';
 import panelStyles from './QuestionSettingsPanel.module.css';
 import styles from './DeepDiveQuestionSettingsPanel.module.css';
 
@@ -53,23 +55,40 @@ export function DeepDiveSettingsForm({
     DEEPDIVE_TONE_OPTIONS.find((option) => option.value === settings.tone) ??
     DEEPDIVE_TONE_OPTIONS[0] ??
     null;
-  const probeWhenValue =
-    probeWhenOptions.find((option) => {
-      if (settings.probeWhen === 'specific-option' && settings.probeWhenOptionId) {
-        return option.optionId === settings.probeWhenOptionId;
-      }
-      return option.probeWhen === 'any-answer';
-    }) ?? probeWhenOptions[0] ?? null;
+
+  const selectedProbeValues = (settings.probeWhenOptionIds ?? []).join(VALUE_SEPARATOR);
+
+  function handleProbeWhenChange(next: string): void {
+    const optionIds = next
+      .split(VALUE_SEPARATOR)
+      .map((id) => id.trim())
+      .filter(Boolean);
+
+    if (optionIds.length === 0) {
+      onChange({
+        probeWhen: 'any-answer',
+        probeWhenOptionIds: [],
+        probeWhenOptionId: undefined,
+      });
+      return;
+    }
+
+    onChange({
+      probeWhen: 'specific-option',
+      probeWhenOptionIds: optionIds,
+      probeWhenOptionId: undefined,
+    });
+  }
 
   return (
     <div className={styles.formRoot}>
       {showHeader ? (
         <header className={styles.header}>
           <div className={styles.headerStart}>
-            <span className={styles.ddIcon} aria-hidden>
-              DD
-            </span>
             <h3 className={styles.headerTitle}>DeepDive</h3>
+            <span className={styles.betaBadge} aria-label="Beta">
+              <span className="wm-experiment" aria-hidden />
+            </span>
           </div>
           <div className={styles.headerEnd}>
             {onClose ? (
@@ -90,36 +109,32 @@ export function DeepDiveSettingsForm({
         <div className={panelStyles.field}>
           <span className={panelStyles.fieldLabel}>Only probe when</span>
           <div className={panelStyles.selectWrap}>
-            <WuSelect
-              data={probeWhenOptions}
-              accessorKey={{ value: 'value', label: 'label' }}
-              value={probeWhenValue}
-              onSelect={(item) => {
-                const selected = item as {
-                  probeWhen: DeepDiveFollowUpSettings['probeWhen'];
-                  optionId?: string;
-                };
-                onChange({
-                  probeWhen: selected.probeWhen,
-                  probeWhenOptionId:
-                    selected.probeWhen === 'specific-option' ? selected.optionId : undefined,
-                });
-              }}
-              variant="outlined"
+            <OptionMultiSelect
+              options={probeWhenOptions.map((option) => ({
+                value: option.value,
+                label: option.label,
+              }))}
+              value={selectedProbeValues}
+              onChange={handleProbeWhenChange}
+              triggerClassName={styles.probeMenuTrigger}
               placeholder="Any answer"
             />
           </div>
-          <p className={styles.fieldHelper}>Skip the follow-up entirely for routine answers.</p>
+          <p className={styles.fieldHelper}>
+            {probeWhenOptions.length === 0
+              ? 'Select a target question to choose answer triggers.'
+              : 'Skip the follow-up entirely for routine answers. Leave empty for any answer.'}
+          </p>
         </div>
 
         <div className={styles.twoColumnRow}>
           <div className={panelStyles.field}>
-            <span className={panelStyles.fieldLabel}>Max follow-ups</span>
+            <span className={panelStyles.fieldLabel}>Follow Ups</span>
             <div className={styles.stepper}>
               <button
                 type="button"
                 className={styles.stepperBtn}
-                aria-label="Decrease max follow-ups"
+                aria-label="Decrease follow-ups"
                 disabled={settings.maxFollowUp <= 1}
                 onClick={() =>
                   onChange({
@@ -133,7 +148,7 @@ export function DeepDiveSettingsForm({
               <button
                 type="button"
                 className={styles.stepperBtn}
-                aria-label="Increase max follow-ups"
+                aria-label="Increase follow-ups"
                 disabled={settings.maxFollowUp >= DEEPDIVE_MAX_FOLLOW_UP_LIMIT}
                 onClick={() =>
                   onChange({
@@ -144,6 +159,11 @@ export function DeepDiveSettingsForm({
                 +
               </button>
             </div>
+            {settings.maxFollowUp >= DEEPDIVE_MAX_FOLLOW_UP_LIMIT ? (
+              <p className={styles.fieldHelper}>
+                Maximum {DEEPDIVE_MAX_FOLLOW_UP_LIMIT} follow-ups are allowed
+              </p>
+            ) : null}
           </div>
 
           <div className={panelStyles.field}>
@@ -169,6 +189,23 @@ export function DeepDiveSettingsForm({
             onChange={(event) => onChange({ guardrails: event.target.value })}
           />
           <p className={styles.fieldHelper}>Topics or phrasing the AI should avoid.</p>
+        </div>
+
+        <div className={panelStyles.field}>
+          <span className={panelStyles.fieldLabel}>
+            Intent (optional)
+            <span className={styles.comingSoonBadge}>Coming Soon</span>
+          </span>
+          <WuInput
+            variant="outlined"
+            placeholder="e.g. understand why respondents prefer a brand, uncover unmet needs"
+            value={settings.intent}
+            disabled
+            onChange={(event) => onChange({ intent: event.target.value })}
+          />
+          <p className={styles.fieldHelper}>
+            Goals that guide the AI to ask better follow-up questions.
+          </p>
         </div>
       </div>
     </div>

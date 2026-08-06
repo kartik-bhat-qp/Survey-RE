@@ -1,6 +1,5 @@
 import type { SurveyQuestion, SurveySection } from '@/data/mock-survey-detail';
 import {
-  DEEPDIVE_FOLLOW_UP_QUESTION_NUMBER,
   DEFAULT_DEEPDIVE_FOLLOW_UP_SETTINGS,
   DEFAULT_DEEPDIVE_PROBE_WHEN,
   DEEPDIVE_TONE_OPTIONS,
@@ -12,11 +11,10 @@ import {
   type DeepDiveTone,
 } from '@/data/mock-deepdive-question-settings';
 
-const DEEPDIVE_V2_SECTION_ID = 'section-deepdive-v2';
-const DEEPDIVE_V2_TARGET_QUESTION_ID = 'q-deepdive-17';
-
 export const DEEPDIVE_ADD_QUESTION_TYPE_ID = 'deepdive';
 export const DEFAULT_DEEPDIVE_CONFIG_QUESTION_TEXT = 'DeepDive';
+const DEEPDIVE_V2_TARGET_QUESTION_ID = 'q-deepdive-17';
+const DEEPDIVE_V2_TARGET_QUESTION_CODE = 'Q17';
 
 export interface DeepDiveTargetQuestionOption {
   value: string;
@@ -36,17 +34,23 @@ export function isDeepDiveFollowUpConfigQuestion(question: SurveyQuestion): bool
   );
 }
 
+/**
+ * DeepDive can only attach to Single Select questions (not Multi Select / other types).
+ */
 export function isDeepDiveEligibleTargetQuestion(question: SurveyQuestion): boolean {
   if (isDeepDiveFollowUpConfigQuestion(question)) return false;
   if (question.editorHidden) return false;
   if (question.options.length === 0) return false;
 
-  return (
-    question.inputKind === 'radio' ||
-    question.inputKind === 'checkbox' ||
-    question.addQuestionTypeId === 'select-one' ||
-    question.addQuestionTypeId === 'select-many'
-  );
+  if (question.addQuestionTypeId === 'select-one') return true;
+
+  if (question.inputKind !== 'radio') return false;
+  if (question.kind && question.kind !== 'standard') return false;
+  if (question.addQuestionTypeId && question.addQuestionTypeId !== 'select-one') {
+    return false;
+  }
+
+  return true;
 }
 
 export interface DeepDiveProbeWhenOption {
@@ -62,6 +66,10 @@ function stripRichText(value: string): string {
 
 export const DEEPDIVE_TARGET_QUESTION_PLACEHOLDER = 'Select Question';
 export const DEEPDIVE_TARGET_QUESTION_UNSET_VALUE = '__deepdive-target-unset__';
+export const DEEPDIVE_TARGET_MUST_BE_ABOVE_HELPER =
+  'Only Single Select questions above this DeepDive block can be selected.';
+export const DEEPDIVE_PLACE_BELOW_TARGET_TOAST =
+  'Place DeepDive below a Single Select question';
 
 export const DEEPDIVE_TARGET_QUESTION_DEFAULT_OPTION: DeepDiveTargetQuestionOption = {
   value: DEEPDIVE_TARGET_QUESTION_UNSET_VALUE,
@@ -70,24 +78,164 @@ export const DEEPDIVE_TARGET_QUESTION_DEFAULT_OPTION: DeepDiveTargetQuestionOpti
   questionId: '',
 };
 
-export function listDeepDiveTargetQuestionOptions(
-  sections: SurveySection[]
-): DeepDiveTargetQuestionOption[] {
-  const options: DeepDiveTargetQuestionOption[] = [];
+export interface SurveyQuestionRef {
+  sectionId: string;
+  question: SurveyQuestion;
+}
 
+/** Flatten survey questions in display order (section order, then question order). */
+export function flattenSurveyQuestionRefs(sections: SurveySection[]): SurveyQuestionRef[] {
+  const refs: SurveyQuestionRef[] = [];
   for (const section of sections) {
     for (const question of section.questions) {
-      if (!isDeepDiveEligibleTargetQuestion(question)) continue;
-      options.push({
-        value: encodeDeepDiveTargetKey(section.id, question.id),
-        label: `${question.code} — ${stripRichText(question.text)}`,
-        sectionId: section.id,
-        questionId: question.id,
-      });
+      refs.push({ sectionId: section.id, question });
     }
+  }
+  return refs;
+}
+
+export function findSurveyQuestionGlobalIndex(
+  sections: SurveySection[],
+  sectionId: string,
+  questionId: string
+): number {
+  return flattenSurveyQuestionRefs(sections).findIndex(
+    (item) => item.sectionId === sectionId && item.question.id === questionId
+  );
+}
+
+/** Global index where a new question would land at `insertIndex` within `sectionId`. */
+export function getSurveyInsertGlobalIndex(
+  sections: SurveySection[],
+  sectionId: string,
+  insertIndex: number
+): number {
+  let index = 0;
+  for (const section of sections) {
+    if (section.id === sectionId) {
+      return index + Math.max(0, Math.min(insertIndex, section.questions.length));
+    }
+    index += section.questions.length;
+  }
+  return index;
+}
+
+function toDeepDiveTargetOption(
+  sectionId: string,
+  question: SurveyQuestion
+): DeepDiveTargetQuestionOption {
+  return {
+    value: encodeDeepDiveTargetKey(sectionId, question.id),
+    label: `${question.code} — ${stripRichText(question.text)}`,
+    sectionId,
+    questionId: question.id,
+  };
+}
+
+/**
+ * Eligible Single Select targets that appear strictly before a survey position.
+ * DeepDive must always sit below its target question.
+ */
+export function listDeepDiveTargetQuestionOptionsBeforeIndex(
+  sections: SurveySection[],
+  beforeGlobalIndex: number
+): DeepDiveTargetQuestionOption[] {
+  const options: DeepDiveTargetQuestionOption[] = [];
+  const refs = flattenSurveyQuestionRefs(sections);
+
+  for (let i = 0; i < refs.length; i++) {
+    if (i >= beforeGlobalIndex) break;
+    const { sectionId, question } = refs[i];
+    if (!isDeepDiveEligibleTargetQuestion(question)) continue;
+    options.push(toDeepDiveTargetOption(sectionId, question));
   }
 
   return options;
+}
+
+/**
+ * Target options for an existing DeepDive block: only questions above it.
+ * If DeepDive position is unknown, falls back to all eligible Single Select questions.
+ */
+export function listDeepDiveTargetQuestionOptions(
+  sections: SurveySection[],
+  deepDiveSectionId?: string,
+  deepDiveQuestionId?: string
+): DeepDiveTargetQuestionOption[] {
+  if (deepDiveSectionId && deepDiveQuestionId) {
+    const deepDiveIndex = findSurveyQuestionGlobalIndex(
+      sections,
+      deepDiveSectionId,
+      deepDiveQuestionId
+    );
+    if (deepDiveIndex >= 0) {
+      return listDeepDiveTargetQuestionOptionsBeforeIndex(sections, deepDiveIndex);
+    }
+  }
+
+  return listDeepDiveTargetQuestionOptionsBeforeIndex(
+    sections,
+    flattenSurveyQuestionRefs(sections).length
+  );
+}
+
+/** True when the survey has at least one Single Select question DeepDive can target. */
+export function surveyHasDeepDiveEligibleTarget(sections: SurveySection[]): boolean {
+  return listDeepDiveTargetQuestionOptions(sections).length > 0;
+}
+
+/** True when DeepDive can be inserted at this slot (at least one eligible target above it). */
+export function canAddDeepDiveAt(
+  sections: SurveySection[],
+  sectionId: string,
+  insertIndex: number
+): boolean {
+  if (findDeepDiveFollowUpConfigQuestion(sections)) return false;
+  const insertGlobalIndex = getSurveyInsertGlobalIndex(sections, sectionId, insertIndex);
+  return listDeepDiveTargetQuestionOptionsBeforeIndex(sections, insertGlobalIndex).length > 0;
+}
+
+/**
+ * Moves the DeepDive block to sit immediately after the selected target question.
+ * Keeps DeepDive below its target in survey order.
+ */
+export function placeDeepDiveImmediatelyAfterTarget(
+  sections: SurveySection[],
+  targetSectionId: string,
+  targetQuestionId: string
+): SurveySection[] {
+  const configEntry = findDeepDiveFollowUpConfigQuestion(sections);
+  if (!configEntry) return sections;
+
+  const targetSection = sections.find((section) => section.id === targetSectionId);
+  const targetIndex = targetSection?.questions.findIndex((q) => q.id === targetQuestionId) ?? -1;
+  if (!targetSection || targetIndex < 0) return sections;
+
+  const deepDiveQuestion = configEntry.question;
+  const deepDiveSectionId = configEntry.sectionId;
+
+  const alreadyImmediateAfter =
+    deepDiveSectionId === targetSectionId &&
+    targetSection.questions[targetIndex + 1]?.id === deepDiveQuestion.id;
+  if (alreadyImmediateAfter) return sections;
+
+  const withoutDeepDive = sections.map((section) => {
+    if (section.id !== deepDiveSectionId) return section;
+    return {
+      ...section,
+      questions: section.questions.filter((question) => question.id !== deepDiveQuestion.id),
+    };
+  });
+
+  return withoutDeepDive.map((section) => {
+    if (section.id !== targetSectionId) return section;
+    const insertAt =
+      section.questions.findIndex((question) => question.id === targetQuestionId) + 1;
+    if (insertAt <= 0) return section;
+    const nextQuestions = [...section.questions];
+    nextQuestions.splice(insertAt, 0, deepDiveQuestion);
+    return { ...section, questions: nextQuestions };
+  });
 }
 
 export function findDeepDiveFollowUpConfigQuestion(
@@ -120,12 +268,13 @@ export function getDeepDiveTargetQuestionLabel(
   sections: SurveySection[],
   config: DeepDiveFollowUpQuestionConfig
 ): string {
-  const match = listDeepDiveTargetQuestionOptions(sections).find(
-    (option) =>
-      option.sectionId === config.targetSectionId &&
-      option.questionId === config.targetQuestionId
+  const target = findSurveyQuestionById(
+    sections,
+    config.targetSectionId,
+    config.targetQuestionId
   );
-  return match?.label ?? 'Select a question';
+  if (!target) return 'Select a question';
+  return `${target.code} — ${stripRichText(target.text)}`;
 }
 
 export function getDeepDiveTargetQuestionCode(
@@ -159,37 +308,33 @@ export function buildDeepDiveProbeWhenOptions(
   targetQuestionId: string
 ): DeepDiveProbeWhenOption[] {
   const target = findSurveyQuestionById(sections, targetSectionId, targetQuestionId);
-  const options: DeepDiveProbeWhenOption[] = [
-    { value: 'any-answer', label: 'Any answer', probeWhen: 'any-answer' },
-  ];
+  if (!target) return [];
 
-  if (!target) return options;
-
-  for (const option of target.options) {
+  return target.options.map((option) => {
     const label = stripRichText(option.label) || 'Option';
-    options.push({
-      value: `option:${option.id}`,
+    return {
+      value: option.id,
       label: `Respondent selects "${label}"`,
-      probeWhen: 'specific-option',
+      probeWhen: 'specific-option' as const,
       optionId: option.id,
-    });
-  }
-
-  return options;
+    };
+  });
 }
 
 export function resolveDeepDiveProbeWhenSelection(
   config: DeepDiveFollowUpQuestionConfig
-): DeepDiveProbeWhenOption | null {
-  if (config.probeWhen === 'specific-option' && config.probeWhenOptionId) {
-    return {
-      value: `option:${config.probeWhenOptionId}`,
-      label: '',
-      probeWhen: 'specific-option',
-      optionId: config.probeWhenOptionId,
-    };
+): DeepDiveProbeWhenOption[] {
+  const optionIds = config.probeWhenOptionIds ?? [];
+  if (config.probeWhen !== 'specific-option' || optionIds.length === 0) {
+    return [];
   }
-  return { value: 'any-answer', label: 'Any answer', probeWhen: 'any-answer' };
+
+  return optionIds.map((optionId) => ({
+    value: optionId,
+    label: '',
+    probeWhen: 'specific-option' as const,
+    optionId,
+  }));
 }
 
 export function isDeepDiveTargetSelected(
@@ -201,15 +346,8 @@ export function isDeepDiveTargetSelected(
 export function hasDeepDiveAttachedToQuestion(
   sections: SurveySection[],
   sectionId: string,
-  questionId: string,
-  perQuestionSettingsByKey: Record<string, Partial<DeepDiveFollowUpSettings>> = {}
+  questionId: string
 ): boolean {
-  const questionKey = encodeDeepDiveTargetKey(sectionId, questionId);
-
-  if (perQuestionSettingsByKey[questionKey] !== undefined) {
-    return resolveDeepDiveFollowUpSettings(perQuestionSettingsByKey[questionKey]).enabled;
-  }
-
   const configEntry = findDeepDiveFollowUpConfigQuestion(sections);
   if (!configEntry) return false;
 
@@ -255,8 +393,9 @@ export function createDeepDiveFollowUpConfigQuestion(
       maxFollowUp: resolved.maxFollowUp,
       tone: resolved.tone,
       probeWhen: partial?.probeWhen ?? resolved.probeWhen ?? DEFAULT_DEEPDIVE_PROBE_WHEN,
-      probeWhenOptionId: partial?.probeWhenOptionId,
+      probeWhenOptionIds: partial?.probeWhenOptionIds ?? resolved.probeWhenOptionIds ?? [],
       guardrails: partial?.guardrails ?? resolved.guardrails ?? '',
+      intent: partial?.intent ?? resolved.intent ?? '',
     },
   };
 }
@@ -266,21 +405,11 @@ export function pickDefaultDeepDiveTarget(
   sectionId: string,
   insertIndex: number
 ): { sectionId: string; questionId: string } | null {
-  const section = sections.find((item) => item.id === sectionId);
-  if (section) {
-    const before = section.questions
-      .slice(0, insertIndex)
-      .filter(isDeepDiveEligibleTargetQuestion);
-    const after = section.questions.slice(insertIndex).filter(isDeepDiveEligibleTargetQuestion);
-    const preferred = before[before.length - 1] ?? after[0];
-    if (preferred) {
-      return { sectionId: section.id, questionId: preferred.id };
-    }
-  }
-
-  const first = listDeepDiveTargetQuestionOptions(sections)[0];
-  if (!first) return null;
-  return { sectionId: first.sectionId, questionId: first.questionId };
+  const insertGlobalIndex = getSurveyInsertGlobalIndex(sections, sectionId, insertIndex);
+  const before = listDeepDiveTargetQuestionOptionsBeforeIndex(sections, insertGlobalIndex);
+  const preferred = before[before.length - 1];
+  if (!preferred) return null;
+  return { sectionId: preferred.sectionId, questionId: preferred.questionId };
 }
 
 export function getDeepDiveFollowUpSettingsForTarget(
@@ -321,8 +450,9 @@ export function updateDeepDiveFollowUpConfigQuestion(
     targetSectionId: nextConfig.targetSectionId,
     targetQuestionId: nextConfig.targetQuestionId,
     probeWhen: nextConfig.probeWhen ?? DEFAULT_DEEPDIVE_PROBE_WHEN,
-    probeWhenOptionId: nextConfig.probeWhenOptionId,
+    probeWhenOptionIds: nextConfig.probeWhenOptionIds ?? [],
     guardrails: nextConfig.guardrails ?? '',
+    intent: nextConfig.intent ?? '',
   };
 
   return sections.map((section) => ({
@@ -363,13 +493,18 @@ function normalizeDeepDiveConfigQuestion(question: SurveyQuestion): SurveyQuesti
   const nextConfig: DeepDiveFollowUpQuestionConfig = {
     ...config,
     probeWhen: config.probeWhen ?? DEFAULT_DEEPDIVE_PROBE_WHEN,
+    probeWhenOptionIds: config.probeWhenOptionIds ?? [],
     guardrails: config.guardrails ?? '',
+    intent: config.intent ?? '',
   };
 
   const textChanged = nextText !== question.text;
   const configChanged =
     nextConfig.probeWhen !== question.deepDiveFollowUpConfig.probeWhen ||
-    (question.deepDiveFollowUpConfig.guardrails ?? '') !== nextConfig.guardrails;
+    JSON.stringify(question.deepDiveFollowUpConfig.probeWhenOptionIds ?? []) !==
+      JSON.stringify(nextConfig.probeWhenOptionIds) ||
+    (question.deepDiveFollowUpConfig.guardrails ?? '') !== nextConfig.guardrails ||
+    (question.deepDiveFollowUpConfig.intent ?? '') !== nextConfig.intent;
 
   if (!textChanged && !configChanged) return question;
 
@@ -380,61 +515,62 @@ function normalizeDeepDiveConfigQuestion(question: SurveyQuestion): SurveyQuesti
   };
 }
 
-function isDeepDiveV2TargetQuestion(question: SurveyQuestion): boolean {
-  return (
+function normalizeDeepDiveV2TargetQuestion(question: SurveyQuestion): SurveyQuestion {
+  const isDeepDiveV2Target =
     question.id === DEEPDIVE_V2_TARGET_QUESTION_ID ||
-    question.code.trim().toUpperCase() === `Q${DEEPDIVE_FOLLOW_UP_QUESTION_NUMBER}`
-  );
-}
+    question.code.trim().toUpperCase() === DEEPDIVE_V2_TARGET_QUESTION_CODE;
+  if (!isDeepDiveV2Target) return question;
 
-/** Keeps Q18 (config) and Q17 (target) at the top of the DeepDive V2 workspace block. */
-function reorderDeepDiveV2QuestionsAtTop(section: SurveySection): SurveySection {
-  if (section.id !== DEEPDIVE_V2_SECTION_ID) return section;
+  const nextQuestion: SurveyQuestion = {
+    ...question,
+    inputKind: 'radio',
+    addQuestionTypeId: 'select-one',
+  };
 
-  const configQuestion = section.questions.find(isDeepDiveFollowUpConfigQuestion);
-  const targetQuestion = section.questions.find(isDeepDiveV2TargetQuestion);
+  if (
+    nextQuestion.inputKind === question.inputKind &&
+    nextQuestion.addQuestionTypeId === question.addQuestionTypeId
+  ) {
+    return question;
+  }
 
-  if (!configQuestion && !targetQuestion) return section;
-
-  const rest = section.questions.filter(
-    (question) => question !== configQuestion && question !== targetQuestion
-  );
-  const ordered: SurveyQuestion[] = [];
-  if (configQuestion) ordered.push(configQuestion);
-  if (targetQuestion) ordered.push(targetQuestion);
-
-  const nextQuestions = [...ordered, ...rest];
-  const sameOrder = nextQuestions.every(
-    (question, index) => question === section.questions[index]
-  );
-
-  return sameOrder ? section : { ...section, questions: nextQuestions };
+  return nextQuestion;
 }
 
 /** Applies DeepDive copy and config defaults to persisted workspace sections. */
 export function normalizeSurveyEditorSections(sections: SurveySection[]): SurveySection[] {
   let changed = false;
-  const nextSections = sections.map((section) => {
+  let nextSections = sections.map((section) => {
     const nextQuestions = section.questions.map((question) => {
-      const nextQuestion = normalizeDeepDiveConfigQuestion(question);
+      let nextQuestion = normalizeDeepDiveConfigQuestion(question);
+      nextQuestion = normalizeDeepDiveV2TargetQuestion(nextQuestion);
       if (nextQuestion !== question) changed = true;
       return nextQuestion;
     });
 
-    let nextSection = nextQuestions.some(
-      (question, index) => question !== section.questions[index]
-    )
-      ? { ...section, questions: nextQuestions }
-      : section;
-
-    const reordered = reorderDeepDiveV2QuestionsAtTop(nextSection);
-    if (reordered !== nextSection) {
+    if (nextQuestions.some((question, index) => question !== section.questions[index])) {
       changed = true;
-      nextSection = reordered;
+      return { ...section, questions: nextQuestions };
     }
 
-    return nextSection;
+    return section;
   });
+
+  const configEntry = findDeepDiveFollowUpConfigQuestion(nextSections);
+  if (configEntry) {
+    const config = readDeepDiveFollowUpQuestionConfig(configEntry.question);
+    if (config && isDeepDiveTargetSelected(config)) {
+      const reordered = placeDeepDiveImmediatelyAfterTarget(
+        nextSections,
+        config.targetSectionId,
+        config.targetQuestionId
+      );
+      if (reordered !== nextSections) {
+        changed = true;
+        nextSections = reordered;
+      }
+    }
+  }
 
   return changed ? nextSections : sections;
 }
@@ -458,7 +594,9 @@ export function migrateLegacyDeepDiveSurveySections(sections: SurveySection[]): 
             targetQuestionId: '',
             probeWhen:
               question.deepDiveFollowUpConfig.probeWhen ?? DEFAULT_DEEPDIVE_PROBE_WHEN,
+            probeWhenOptionIds: question.deepDiveFollowUpConfig.probeWhenOptionIds ?? [],
             guardrails: question.deepDiveFollowUpConfig.guardrails ?? '',
+            intent: question.deepDiveFollowUpConfig.intent ?? '',
           },
         });
       }),

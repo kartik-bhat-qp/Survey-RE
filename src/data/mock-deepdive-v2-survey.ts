@@ -75,8 +75,8 @@ export function createDeepDiveV2Sections(): SurveySection[] {
     number: DEEPDIVE_FOLLOW_UP_QUESTION_NUMBER,
     text: 'Which fast-food chain you like the most?',
     required: true,
-    inputKind: 'checkbox',
-    addQuestionTypeId: 'select-many',
+    inputKind: 'radio',
+    addQuestionTypeId: 'select-one',
     options: makeOptions(targetQuestionId, ['Taco Bell', 'KFC', 'McD', 'Burger King']),
   };
 
@@ -92,7 +92,7 @@ export function createDeepDiveV2Sections(): SurveySection[] {
     {
       id: sectionId,
       title: 'Block 1',
-      questions: [deepDiveConfigQuestion, targetQuestion, ...screeningQuestions],
+      questions: [...screeningQuestions, targetQuestion, deepDiveConfigQuestion],
     },
   ];
 }

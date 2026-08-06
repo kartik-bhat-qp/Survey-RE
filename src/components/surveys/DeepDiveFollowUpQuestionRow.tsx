@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, type SyntheticEvent } from 'react';
+import { useEffect, useMemo, type SyntheticEvent } from 'react';
 import type { SurveyQuestion, SurveySection } from '@/data/mock-survey-detail';
 import type { DeepDiveFollowUpQuestionConfig } from '@/data/mock-deepdive-question-settings';
 import {
@@ -47,9 +47,27 @@ export function DeepDiveFollowUpQuestionRow({
   onConfigChange,
 }: DeepDiveFollowUpQuestionRowProps) {
   const targetOptions = useMemo(
-    () => listDeepDiveTargetQuestionOptions(sections),
-    [sections]
+    () => listDeepDiveTargetQuestionOptions(sections, sectionId, question.id),
+    [sections, sectionId, question.id]
   );
+
+  useEffect(() => {
+    if (!isDeepDiveTargetSelected(config)) return;
+    const stillValid = targetOptions.some(
+      (option) =>
+        option.sectionId === config.targetSectionId &&
+        option.questionId === config.targetQuestionId
+    );
+    if (stillValid) return;
+    onConfigChange({
+      ...config,
+      targetSectionId: '',
+      targetQuestionId: '',
+      probeWhen: 'any-answer',
+      probeWhenOptionIds: [],
+      probeWhenOptionId: undefined,
+    });
+  }, [config, onConfigChange, targetOptions]);
 
   const selectedValue = isDeepDiveTargetSelected(config)
     ? targetOptions.find(
@@ -65,6 +83,7 @@ export function DeepDiveFollowUpQuestionRow({
       targetSectionId: sectionIdValue,
       targetQuestionId: questionIdValue,
       probeWhen: 'any-answer',
+      probeWhenOptionIds: [],
       probeWhenOptionId: undefined,
     });
   }

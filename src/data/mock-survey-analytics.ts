@@ -38,6 +38,7 @@ export const ANALYTICS_TAB_CONFIG: Record<
     label: 'Analysis',
     icon: 'wm-bar-chart',
     items: [
+      { id: 'deepdive-analysis', label: 'DeepDive Analysis' },
       { id: 'crosstab', label: 'Crosstab' },
       { id: 'comparison-report', label: 'Comparison Report' },
       { id: 'segmentation', label: 'Segmentation' },

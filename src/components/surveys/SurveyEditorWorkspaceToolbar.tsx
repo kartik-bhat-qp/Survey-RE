@@ -21,6 +21,7 @@ import {
   SURVEY_WORKSPACE_TOOLS,
   type SurveyWorkspaceTool,
 } from '@/components/surveys/survey-workspace-tools';
+import { surveyHasDesignTab } from '@/data/mock-survey-design';
 import styles from './SurveyEditorWorkspaceToolbar.module.css';
 
 const WuSecondaryNavbar = dynamic(
@@ -39,6 +40,7 @@ type PublishMode = 'draft' | 'publish';
 
 function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null {
   if (tool === 'workspace') return `/surveys/${surveyId}`;
+  if (tool === 'design' && surveyHasDesignTab(surveyId)) return `/surveys/${surveyId}/design`;
   if (tool === 'languages') return `/surveys/${surveyId}/languages`;
   if (tool === 'finish-options') return `/surveys/${surveyId}/finish-options`;
   if (tool === 'advance-quotas') return `/surveys/${surveyId}/advance-quotas`;
@@ -48,6 +50,7 @@ function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null
 }
 
 function getActiveTool(pathname: string, surveyId: number): SurveyWorkspaceTool {
+  if (pathname === `/surveys/${surveyId}/design`) return 'design';
   if (pathname === `/surveys/${surveyId}/languages`) return 'languages';
   if (pathname === `/surveys/${surveyId}/finish-options`) return 'finish-options';
   if (pathname === `/surveys/${surveyId}/advance-quotas`) return 'advance-quotas';
@@ -214,7 +217,8 @@ export function SurveyEditorWorkspaceToolbar({
     activeTool !== 'settings' &&
     activeTool !== 'languages' &&
     activeTool !== 'finish-options' &&
-    activeTool !== 'variables';
+    activeTool !== 'variables' &&
+    activeTool !== 'design';
 
   return (
     <>

@@ -113,13 +113,21 @@ export function buildDeepDiveSettingsPreview(
 
   if (
     config.probeWhen === 'specific-option' &&
-    config.probeWhenOptionId &&
+    (config.probeWhenOptionIds?.length ?? 0) > 0 &&
     target
   ) {
-    const option = target.options.find((item) => item.id === config.probeWhenOptionId);
-    const optionLabel = option ? stripRichText(option.label) : 'Other';
-    triggerContext = `If respondent selects '${optionLabel}'`;
-    sampleLabel = optionLabel;
+    const labels = (config.probeWhenOptionIds ?? [])
+      .map((optionId) => {
+        const option = target.options.find((item) => item.id === optionId);
+        return option ? stripRichText(option.label) : null;
+      })
+      .filter((label): label is string => Boolean(label));
+    const optionLabel = labels.length > 0 ? labels.join(', ') : 'Other';
+    triggerContext =
+      labels.length > 1
+        ? `If respondent selects one of: ${optionLabel}`
+        : `If respondent selects '${optionLabel}'`;
+    sampleLabel = labels[0] ?? 'this option';
   } else if (target?.options[0]) {
     sampleLabel = stripRichText(target.options[0].label) || 'this option';
   }

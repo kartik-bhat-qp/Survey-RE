@@ -12,6 +12,7 @@ import {
   QuestionOptionsMenu,
   type QuestionMenuAction,
 } from '@/components/surveys/QuestionOptionsMenu';
+import { DeepDiveAttachedBadge } from '@/components/surveys/DeepDiveAttachedBadge';
 import styles from './QuestionWorkspaceActions.module.css';
 
 export interface QuestionWorkspaceActionsProps {
@@ -22,6 +23,7 @@ export interface QuestionWorkspaceActionsProps {
   onOpenValidation?: () => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   showValidation?: boolean;
+  showDeepDiveAttached?: boolean;
   className?: string;
   menuBtnClassName?: string;
 }
@@ -34,6 +36,7 @@ export function QuestionWorkspaceActions({
   onOpenValidation,
   onMenuAction,
   showValidation = true,
+  showDeepDiveAttached = false,
   className,
   menuBtnClassName,
 }: QuestionWorkspaceActionsProps) {
@@ -60,6 +63,7 @@ export function QuestionWorkspaceActions({
             />
           </span>
         ) : null}
+        {showDeepDiveAttached ? <DeepDiveAttachedBadge /> : null}
         {showValidation ? (
           <button
             type="button"

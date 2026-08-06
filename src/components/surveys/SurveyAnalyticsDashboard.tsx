@@ -6,6 +6,7 @@ import { SurveyAnalyticsPieChart } from '@/components/surveys/analytics/SurveyAn
 import { SurveyAnalyticsWorldMap } from '@/components/surveys/analytics/SurveyAnalyticsWorldMap';
 import { useSurveyAnalyticsView } from '@/components/surveys/SurveyAnalyticsViewContext';
 import { VideoAiAnalysis } from '@/components/surveys/VideoAiAnalysis';
+import { SurveyDeepDiveAnalysis } from '@/components/surveys/SurveyDeepDiveAnalysis';
 import { consumeVideoAiRestoreState } from '@/components/video-ai/videoAiNavigation';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SurveyAnalyticsResponses } from '@/components/surveys/SurveyAnalyticsResponses';
@@ -123,6 +124,7 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
   const activeViewLabel = getAnalyticsViewLabel(activeTab, activeSubView);
   const showDashboardContent = activeTab === 'dashboard' && activeSubView === 'dashboard';
   const showResponsesContent = activeTab === 'dashboard' && activeSubView === 'responses';
+  const showDeepDiveAnalysis = activeTab === 'analysis' && activeSubView === 'deepdive-analysis';
   const showVideoAiAnalysis = activeTab === 'analysis' && activeSubView === 'video-ai-analysis';
 
   useEffect(() => {
@@ -149,6 +151,10 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
     return (
       <VideoAiAnalysis surveyId={detail.survey.id} embeddedInSurvey />
     );
+  }
+
+  if (showDeepDiveAnalysis) {
+    return <SurveyDeepDiveAnalysis detail={detail} />;
   }
 
   if (showResponsesContent) {

@@ -42,7 +42,8 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
       pathname.includes('/settings') ||
       pathname.includes('/languages') ||
       pathname.includes('/finish-options') ||
-      pathname.includes('/variables')
+      pathname.includes('/variables') ||
+      pathname.includes('/design')
     ) {
       if (activePhase === 'analytics') {
         router.replace(getSurveyEditorPhasePath(survey.id, 'analytics'));
