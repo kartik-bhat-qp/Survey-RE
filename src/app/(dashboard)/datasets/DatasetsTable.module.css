@@ -1,0 +1,85 @@
+.tableWrap {
+  margin-top: 1rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableWrap :global(table) {
+  min-width: 40rem;
+}
+
+.datasetNameLink {
+  color: #1b3380;
+  display: block;
+  font-weight: 400;
+  max-width: 28rem;
+  overflow: hidden;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.datasetNameLink:hover,
+.datasetNameLink:focus-visible {
+  color: #1b3380;
+  text-decoration: underline;
+}
+
+.tableWrap :global(tbody tr:hover) .rowActions,
+.tableWrap :global(tbody tr:focus-within) .rowActions {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.rowActions {
+  align-items: center;
+  display: flex;
+  gap: 0.125rem;
+  justify-content: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  visibility: hidden;
+  width: 100%;
+}
+
+.rowActionButton {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: #67727e;
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.75rem;
+  justify-content: center;
+  padding: 0;
+  width: 1.75rem;
+}
+
+.rowActionButton:hover,
+.rowActionButton:focus-visible {
+  background-color: #eef3f8;
+  color: #1b87e6;
+  outline: none;
+}
+
+.rowActionButtonDelete:hover,
+.rowActionButtonDelete:focus-visible {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.rowActionButton :global([class^='wm-']),
+.rowActionButton :global([class*=' wm-']) {
+  font-size: 16px;
+}
+
+@media (max-width: 767px) {
+  .tableWrap :global(tbody tr) .rowActions {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+  }
+}
