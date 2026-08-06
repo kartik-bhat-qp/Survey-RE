@@ -1,6 +1,8 @@
 .modal {
   font-family: 'Fira Sans', sans-serif;
   max-width: min(1280px, calc(100vw - 1.5rem)) !important;
+  min-height: 0;
+  overflow: hidden;
   width: 100%;
 }
 
@@ -21,29 +23,37 @@
 .header {
   background-color: #eef3fb;
   border-bottom: 1px solid #d4e3f7;
+  flex-shrink: 0;
 }
 
 .content {
-  display: flex;
-  flex-direction: column;
-  max-height: min(70dvh, calc(100dvh - 10rem));
-  overflow: hidden;
+  display: block !important;
+  flex: 1 1 auto !important;
+  max-height: min(72dvh, calc(100dvh - 8rem));
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
   padding: 0 !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 
 .tabRoot {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  flex: 1;
+  display: block;
+  min-width: 0;
+  width: 100%;
 }
 
 .tabRoot :global([role='tablist']) {
+  background: #fff;
   border-bottom: 1px solid #e5e7eb;
-  flex-shrink: 0;
   gap: 0;
   overflow-x: auto;
   padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -67,14 +77,24 @@
 }
 
 .tabRoot :global([role='tabpanel']) {
-  flex: 1;
   min-height: 280px;
-  overflow-y: auto;
+  overflow: visible;
   padding: 24px;
 }
 
 .tabRoot :global([role='tabpanel']:has(.dashboard-settings-data-slicers-panel)) {
-  overflow-y: auto;
+  overflow: visible;
+}
+
+.tabRoot :global([role='tabpanel']:has(.dashboard-settings-shared-url-panel)) {
+  display: block;
+  overflow: visible;
+}
+
+.tabRoot :global([role='tabpanel'] .dashboard-settings-shared-url-panel) {
+  display: block;
+  min-width: 0;
+  width: 100%;
 }
 
 @media (min-width: 640px) {
@@ -202,6 +222,7 @@
 .globalFooter {
   border-top: 1px solid #e5e7eb;
   display: flex;
+  flex-shrink: 0;
   justify-content: flex-end;
   padding: 16px 24px !important;
 }

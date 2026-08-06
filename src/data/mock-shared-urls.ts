@@ -6,6 +6,52 @@ export interface SharedUrlLink {
   status: boolean;
 }
 
+export type SharedLinkTitleAlignment = 'left' | 'center' | 'right';
+
+export interface SharedLinkCreateDraft {
+  name: string;
+  viewSettingsEnabled: boolean;
+  shareTitle: string;
+  titleAlignment: SharedLinkTitleAlignment;
+  showInsights: boolean;
+  allowComments: boolean;
+  enablePassword: boolean;
+  baseFilter: boolean;
+  dynamicFilters: boolean;
+  language: string;
+  textAiSettingsEnabled: boolean;
+  showThemes: boolean;
+  showTopics: boolean;
+  showSentiment: boolean;
+  showEmergingThemes: boolean;
+}
+
+export const SHARED_LINK_LANGUAGE_OPTIONS = [
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Spanish' },
+  { value: 'fr', label: 'French' },
+  { value: 'de', label: 'German' },
+  { value: 'pt', label: 'Portuguese' },
+] as const;
+
+export const DEFAULT_SHARED_LINK_CREATE_DRAFT: SharedLinkCreateDraft = {
+  name: '',
+  viewSettingsEnabled: false,
+  shareTitle: '',
+  titleAlignment: 'left',
+  showInsights: false,
+  allowComments: false,
+  enablePassword: false,
+  baseFilter: false,
+  dynamicFilters: false,
+  language: 'en',
+  textAiSettingsEnabled: false,
+  showThemes: true,
+  showTopics: true,
+  showSentiment: true,
+  showEmergingThemes: false,
+};
+
 /** Maximum shared links allowed on the current license. */
 export const SHARED_URL_LICENSE_LIMIT = 5;
 

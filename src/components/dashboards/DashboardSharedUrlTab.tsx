@@ -5,11 +5,13 @@ import dynamic from 'next/dynamic';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { CreateSharedLinkForm } from '@/components/dashboards/CreateSharedLinkForm';
 import { SharedUrlLicenseUpsellModal } from '@/components/dashboards/SharedUrlLicenseUpsellModal';
 import {
   MOCK_SHARED_URLS,
   SHARED_URL_LICENSE_LIMIT,
   SHARED_URL_UPSELL,
+  type SharedLinkCreateDraft,
   type SharedUrlLink,
 } from '@/data/mock-shared-urls';
 import { formatShortDate, truncate } from '@/data/mock-utils';
@@ -35,12 +37,19 @@ const WuToggle = dynamic(
 
 const URL_DISPLAY_MAX = 36;
 
-export function DashboardSharedUrlTab() {
+interface DashboardSharedUrlTabProps {
+  dashboardName?: string;
+}
+
+export function DashboardSharedUrlTab({
+  dashboardName = 'Untitled',
+}: DashboardSharedUrlTabProps) {
   const { showToast } = useWuShowToast();
   const showLicenseRestrictions = useBiLicenseRestrictions();
   const [links, setLinks] = useState<SharedUrlLink[]>(MOCK_SHARED_URLS);
   const [search, setSearch] = useState('');
   const [upsellOpen, setUpsellOpen] = useState(false);
+  const [view, setView] = useState<'list' | 'create'>('list');
 
   const atLinkLimit =
     showLicenseRestrictions && links.length >= SHARED_URL_LICENSE_LIMIT;
@@ -59,24 +68,31 @@ export function DashboardSharedUrlTab() {
     [filteredLinks, showLicenseRestrictions]
   );
 
-  const handleCreate = useCallback(() => {
+  const handleOpenCreate = useCallback(() => {
     if (atLinkLimit) {
       setUpsellOpen(true);
       return;
     }
+    setView('create');
+  }, [atLinkLimit]);
 
-    const nextId = links.reduce((max, link) => Math.max(max, link.id), 0) + 1;
-    const newLink: SharedUrlLink = {
-      id: nextId,
-      name: `Shared link ${nextId}`,
-      url: `https://bi.questionpro.com/sd/${crypto.randomUUID()}`,
-      createdAt: new Date().toISOString().slice(0, 10),
-      status: true,
-    };
+  const handleCreateLink = useCallback(
+    (draft: SharedLinkCreateDraft) => {
+      const nextId = links.reduce((max, link) => Math.max(max, link.id), 0) + 1;
+      const newLink: SharedUrlLink = {
+        id: nextId,
+        name: draft.name,
+        url: `https://bi.questionpro.com/sd/${crypto.randomUUID()}`,
+        createdAt: new Date().toISOString().slice(0, 10),
+        status: true,
+      };
 
-    setLinks((prev) => [...prev, newLink]);
-    showToast({ message: 'Shared link created', variant: 'success' });
-  }, [atLinkLimit, links, showToast]);
+      setLinks((prev) => [...prev, newLink]);
+      setView('list');
+      showToast({ message: `Shared link '${draft.name}' created`, variant: 'success' });
+    },
+    [links, showToast]
+  );
 
   const handleExploreBi = useCallback(() => {
     setUpsellOpen(false);
@@ -203,67 +219,77 @@ export function DashboardSharedUrlTab() {
 
   return (
     <div className={`${styles.panel} dashboard-settings-shared-url-panel`}>
-      <div className={styles.toolbarRow}>
-        <WuButton Icon={<span className="wm-add" />} onClick={handleCreate}>
-          Create
-        </WuButton>
-        <div className={styles.searchWrap}>
-          <WuInput
-            variant="outlined"
-            placeholder="Search by link name..."
-            Icon={<span className="wm-search" />}
-            iconPosition="left"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {atLinkLimit ? (
-        <div className={styles.upsellBanner}>
-          <div className={styles.upsellCopy}>
-            <span className={`wm-diamond ${styles.upsellIcon}`} aria-hidden />
-            <div>
-              <p className={styles.upsellTitle}>{SHARED_URL_UPSELL.title}</p>
-              <p className={styles.upsellText}>
-                You&apos;re using all {SHARED_URL_LICENSE_LIMIT} shared links on your current plan.
-                Upgrade to BI for unlimited external sharing.
-              </p>
+      {view === 'create' ? (
+        <CreateSharedLinkForm
+          dashboardName={dashboardName}
+          onCancel={() => setView('list')}
+          onCreate={handleCreateLink}
+        />
+      ) : (
+        <>
+          <div className={styles.toolbarRow}>
+            <WuButton Icon={<span className="wm-add" />} onClick={handleOpenCreate}>
+              Create
+            </WuButton>
+            <div className={styles.searchWrap}>
+              <WuInput
+                variant="outlined"
+                placeholder="Search by link name..."
+                Icon={<span className="wm-search" />}
+                iconPosition="left"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
           </div>
-          <WuButton variant="secondary" size="sm" onClick={() => setUpsellOpen(true)}>
-            {SHARED_URL_UPSELL.primaryCta}
-          </WuButton>
-        </div>
-      ) : null}
 
-      <div className={styles.tableWrap}>
-        <WuTable
-          data={visibleLinks as unknown[]}
-          columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-          variant="striped"
-          sort={{ enabled: true }}
-          filterText=""
-          NoDataContent={
-            <EmptyState
-              icon="wm-search-off"
-              title="No shared links found"
-              description={
-                search.trim()
-                  ? 'Try adjusting your search'
-                  : 'Create a link to share this dashboard externally'
-              }
-              action={
-                !search.trim() ? (
-                  <WuButton Icon={<span className="wm-add" />} onClick={handleCreate}>
-                    Create
-                  </WuButton>
-                ) : undefined
+          {atLinkLimit ? (
+            <div className={styles.upsellBanner}>
+              <div className={styles.upsellCopy}>
+                <span className={`wm-diamond ${styles.upsellIcon}`} aria-hidden />
+                <div>
+                  <p className={styles.upsellTitle}>{SHARED_URL_UPSELL.title}</p>
+                  <p className={styles.upsellText}>
+                    You&apos;re using all {SHARED_URL_LICENSE_LIMIT} shared links on your
+                    current plan. Upgrade to BI for unlimited external sharing.
+                  </p>
+                </div>
+              </div>
+              <WuButton variant="secondary" size="sm" onClick={() => setUpsellOpen(true)}>
+                {SHARED_URL_UPSELL.primaryCta}
+              </WuButton>
+            </div>
+          ) : null}
+
+          <div className={styles.tableWrap}>
+            <WuTable
+              data={visibleLinks as unknown[]}
+              columns={columns as unknown as IWuTableColumnDef<unknown>[]}
+              variant="striped"
+              sort={{ enabled: true }}
+              filterText=""
+              NoDataContent={
+                <EmptyState
+                  icon="wm-search-off"
+                  title="No shared links found"
+                  description={
+                    search.trim()
+                      ? 'Try adjusting your search'
+                      : 'Create a link to share this dashboard externally'
+                  }
+                  action={
+                    !search.trim() ? (
+                      <WuButton Icon={<span className="wm-add" />} onClick={handleOpenCreate}>
+                        Create
+                      </WuButton>
+                    ) : undefined
+                  }
+                />
               }
             />
-          }
-        />
-      </div>
+          </div>
+        </>
+      )}
 
       <SharedUrlLicenseUpsellModal
         open={upsellOpen}

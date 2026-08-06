@@ -362,7 +362,7 @@ export function DashboardSettingsModal({
       {
         value: 'shared-url',
         Trigger: 'Shared URL',
-        Content: <DashboardSharedUrlTab />,
+        Content: <DashboardSharedUrlTab dashboardName={dashboardName} />,
       },
     ],
     [
@@ -394,6 +394,7 @@ export function DashboardSettingsModal({
           onOpenChange={handleOpenChange}
           className={styles.modal}
           variant="action"
+          maxHeight="min(90dvh, calc(100dvh - 2rem))"
         >
           <WuModalHeader className={`${styles.header} ${styles.modalTitle}`}>
             Dashboard settings

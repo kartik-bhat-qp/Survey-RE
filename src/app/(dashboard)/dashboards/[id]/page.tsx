@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
-import { AiDashboardCanvas } from '@/components/dashboards/AiDashboardCanvas';
+import { DashboardDetailTabBar } from '@/components/dashboards/DashboardDetailTabBar';
 import { DashboardDetailToolbar } from '@/components/dashboards/DashboardDetailToolbar';
 import { DashboardFocusedPreview } from '@/components/dashboards/DashboardFocusedPreview';
 import { DashboardPowerPointExportModal } from '@/components/dashboards/DashboardPowerPointExportModal';
@@ -25,7 +25,6 @@ import {
   resolveDashboardSurvey,
   type SurveyListItem,
 } from '@/data/mock-survey-folders';
-import tabStyles from './DashboardDetailTabs.module.css';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
@@ -152,24 +151,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         onAddWidget={() => setHasAddedWidget(true)}
       />
 
-      <AiDashboardCanvas designTypography={designTypography} />
-
-      <div className={tabStyles.tabBar}>
-        <button
-          type="button"
-          className="shrink-0 rounded border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium shadow-sm"
-        >
-          Tab-1
-        </button>
-        <WuButton
-          size="sm"
-          variant="secondary"
-          className="shrink-0"
-          Icon={<span className="wm-add" />}
-          onClick={() => setAddWidgetOpen(true)}
-          aria-label="Add tab"
-        />
-      </div>
+      <DashboardDetailTabBar designTypography={designTypography} />
     </div>
   );
 }
