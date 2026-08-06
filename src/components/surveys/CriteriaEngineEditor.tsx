@@ -717,14 +717,12 @@ export function CriteriaEngineEditor({
                                   key={source}
                                   disabled={isQuotaComingSoon}
                                   onSelect={() => {
-                                    if (isQuotaComingSoon) return;
+                                    if (source === 'Quota') return;
                                     handleUpdateCondition(criterion.id, cond.id, {
                                       source,
                                       questionId: source === 'Question' ? cond.questionId : null,
                                       systemVariable:
-                                        source === 'System Variable' ||
-                                        source === 'Geo Location' ||
-                                        source === 'Quota'
+                                        source === 'System Variable' || source === 'Geo Location'
                                           ? source === cond.source
                                             ? cond.systemVariable
                                             : null
