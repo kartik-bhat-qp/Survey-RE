@@ -5,8 +5,10 @@ import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { CreateReportModal } from '@/components/reports/CreateReportModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
+import { getDefaultCreateReportName } from '@/data/mock-create-report';
 import { MOCK_REPORTS, REPORTS_PER_PAGE, type Report } from '@/data/mock-reports';
 import { formatSmartDate } from '@/data/mock-utils';
 import { getSectionBasePath } from '@/lib/section-base-path';
@@ -33,9 +35,10 @@ export default function ReportsPage() {
   const pathname = usePathname();
   const basePath = getSectionBasePath(pathname);
   const { showToast } = useWuShowToast();
-  const [reports] = useState<Report[]>(MOCK_REPORTS);
+  const [reports, setReports] = useState<Report[]>(MOCK_REPORTS);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const filteredReports = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -47,6 +50,8 @@ export default function ReportsPage() {
     const start = (currentPage - 1) * REPORTS_PER_PAGE;
     return filteredReports.slice(start, start + REPORTS_PER_PAGE);
   }, [filteredReports, currentPage]);
+
+  const defaultReportName = getDefaultCreateReportName(reports.length);
 
   const columns: IWuTableColumnDef<Report>[] = [
     {
@@ -83,9 +88,7 @@ export default function ReportsPage() {
         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl">Reports</h1>
           <WuButton
-            onClick={() =>
-              showToast({ message: 'Create report', variant: 'success' })
-            }
+            onClick={() => setIsCreateOpen(true)}
             Icon={<span className="wm-add-2" />}
             className="w-full sm:w-auto"
           >
@@ -133,6 +136,28 @@ export default function ReportsPage() {
           }
         />
       </div>
+
+      <CreateReportModal
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        defaultName={defaultReportName}
+        onCreate={({ name, typeId, survey }) => {
+          const nextId = Math.max(0, ...reports.map((report) => report.id)) + 1;
+          setReports((prev) => [
+            {
+              id: nextId,
+              name,
+              creationDate: new Date().toISOString().slice(0, 10),
+            },
+            ...prev,
+          ]);
+          setCurrentPage(1);
+          showToast({
+            message: `"${name}" (${typeId}) created from "${survey.name}"`,
+            variant: 'success',
+          });
+        }}
+      />
     </PageContainer>
   );
 }

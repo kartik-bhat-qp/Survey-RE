@@ -26,6 +26,35 @@
   height: 32px !important;
 }
 
+.headerActions {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+}
+
+.syncAllBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #67727e;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 6px;
+  line-height: 1;
+  padding: 0;
+}
+
+.syncAllBtn:hover {
+  color: #1b87e6;
+}
+
+.createVariableBtn {
+  height: 32px !important;
+}
+
 .metaRow {
   align-items: center;
   display: flex;

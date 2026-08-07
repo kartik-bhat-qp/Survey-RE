@@ -11,8 +11,8 @@ const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false }
 );
-const WuSelect = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
+const WuCombobox = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCombobox })),
   { ssr: false }
 );
 const WuTooltip = dynamic(
@@ -299,13 +299,19 @@ export function UploadDataModal({ open, onOpenChange, datasetName }: UploadDataM
                 Choose a TextAI dashboard to import the themes and sub themes for this
                 dataset.
               </p>
-              <WuSelect
+              <WuCombobox
                 data={TEXT_AI_OPTIONS}
                 accessorKey={{ value: 'value', label: 'label' }}
                 value={textAiOption}
-                onSelect={(item) => setTextAiOption(item as TextAiOption)}
+                onSelect={(item) => {
+                  if (!item || Array.isArray(item)) return;
+                  setTextAiOption(item as TextAiOption);
+                }}
                 placeholder="Select TextAI dashboard"
                 variant="outlined"
+                enableSearch
+                maxHeight={280}
+                noDataContent="No TextAI dashboards found"
                 aria-label="Select TextAI dashboard"
               />
             </div>

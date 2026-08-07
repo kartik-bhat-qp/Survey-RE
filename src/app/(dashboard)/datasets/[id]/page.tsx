@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import type { IWuTableColumnDef, IWuTableRowSelection } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { CreateVariableModal } from '@/components/datasets/CreateVariableModal';
 import { UploadDataModal } from '@/components/datasets/UploadDataModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -77,6 +78,7 @@ export default function DatasetDetailPage() {
   });
   const [deleteTarget, setDeleteTarget] = useState<DatasetVariable | null>(null);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isCreateVariableOpen, setIsCreateVariableOpen] = useState(false);
 
   useEffect(() => {
     const nextDetail = getDatasetDetailData(datasetId);
@@ -95,6 +97,7 @@ export default function DatasetDetailPage() {
     );
     setDeleteTarget(null);
     setIsUploadOpen(false);
+    setIsCreateVariableOpen(false);
   }, [datasetId]);
 
   const selectedVariables = selectedRows;
@@ -117,6 +120,31 @@ export default function DatasetDetailPage() {
 
   function handleUpload(): void {
     setIsUploadOpen(true);
+  }
+
+  function handleSyncAll(): void {
+    showToast({
+      message: `Syncing all data for "${dataset?.name ?? 'dataset'}"…`,
+      variant: 'success',
+    });
+  }
+
+  function handleCreateVariable(): void {
+    setIsCreateVariableOpen(true);
+  }
+
+  function handleVariableCreated(variableName: string): void {
+    const newVariable: DatasetVariable = {
+      id: `custom-${Date.now()}`,
+      name: variableName,
+      kind: 'category',
+      responses: 0,
+    };
+    setVariables((prev) => [...prev, newVariable]);
+    showToast({
+      message: `"${variableName}" created`,
+      variant: 'success',
+    });
   }
 
   function handleEditVariable(variable: DatasetVariable): void {
@@ -219,6 +247,8 @@ export default function DatasetDetailPage() {
     return record;
   });
 
+  const isComposite = dataset?.dataType === 'Survey (Composite)';
+
   if (!dataset || !detail) {
     return (
       <div className={styles.page}>
@@ -242,13 +272,29 @@ export default function DatasetDetailPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <h1 className={styles.title}>{dataset.name}</h1>
-        <WuButton
-          className={styles.uploadBtn}
-          Icon={<span className="wm-cloud-upload" aria-hidden />}
-          onClick={handleUpload}
-        >
-          Upload data
-        </WuButton>
+        {isComposite ? (
+          <div className={styles.headerActions}>
+            <button type="button" className={styles.syncAllBtn} onClick={handleSyncAll}>
+              <span className="wm-sync" aria-hidden />
+              Sync all
+            </button>
+            <WuButton
+              className={styles.createVariableBtn}
+              Icon={<span className="wm-add" aria-hidden />}
+              onClick={handleCreateVariable}
+            >
+              Create variable
+            </WuButton>
+          </div>
+        ) : (
+          <WuButton
+            className={styles.uploadBtn}
+            Icon={<span className="wm-cloud-upload" aria-hidden />}
+            onClick={handleUpload}
+          >
+            Upload data
+          </WuButton>
+        )}
       </header>
 
       <div className={styles.metaRow}>
@@ -338,6 +384,12 @@ export default function DatasetDetailPage() {
           </div>
         </section>
       </div>
+
+      <CreateVariableModal
+        open={isCreateVariableOpen}
+        onOpenChange={setIsCreateVariableOpen}
+        onCreate={handleVariableCreated}
+      />
 
       <UploadDataModal
         open={isUploadOpen}

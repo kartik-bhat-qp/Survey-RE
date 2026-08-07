@@ -204,3 +204,19 @@
   scrollbar-gutter: stable;
   scrollbar-width: thin;
 }
+
+/*
+ * WuSelect already scrolls its own option list, so the surrounding panel must
+ * not scroll as well — otherwise the dropdown shows two scrollbars.
+ */
+[data-radix-popper-content-wrapper] .wu-select-content {
+  overflow: hidden !important;
+}
+
+[data-radix-popper-content-wrapper] .wu-select-list {
+  max-height: calc(min(var(--radix-popper-available-height, 18rem), 18rem) - 0.5rem) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
