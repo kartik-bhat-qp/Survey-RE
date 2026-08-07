@@ -95,21 +95,29 @@
 /* Variable name — keep short so Responses starts right after */
 .variablesTable :global(th:nth-child(2)),
 .variablesTable :global(td:nth-child(2)) {
-  width: 148px !important;
-  max-width: 148px !important;
+  width: 160px !important;
+  max-width: 160px !important;
 }
 
-/* Responses — narrow column immediately after Variable name */
+/* Responses + inline edit/delete */
 .variablesTable :global(th:nth-child(3)),
 .variablesTable :global(td:nth-child(3)) {
-  width: 96px !important;
-  max-width: 96px !important;
+  width: 140px !important;
+  max-width: 140px !important;
 }
 
-/* actions / remaining space */
-.variablesTable :global(th:nth-child(4)),
-.variablesTable :global(td:nth-child(4)) {
-  width: auto;
+.responsesCell {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  justify-content: space-between;
+  min-width: 0;
+  width: 100%;
+}
+
+.responsesValue {
+  flex-shrink: 0;
+  min-width: 2ch;
 }
 
 .previewTable :global(th:first-child),
@@ -198,13 +206,13 @@
 .rowActions {
   align-items: center;
   display: flex;
+  flex-shrink: 0;
   gap: 2px;
   justify-content: flex-end;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
   visibility: hidden;
-  width: 100%;
 }
 
 .rowActionButton {

@@ -157,38 +157,32 @@ export default function DatasetDetailPage() {
       headerAlign: 'left',
       cellAlign: 'left',
       enableSorting: false,
-      size: 96,
-      cell: ({ row }) => row.original.responses,
-    },
-    {
-      accessorKey: 'id',
-      header: '',
-      headerAlign: 'right',
-      cellAlign: 'right',
-      enableSorting: false,
-      size: 999,
+      size: 120,
       cell: ({ row }) => (
-        <div className={styles.rowActions}>
-          <WuTooltip content="Edit" position="top">
-            <button
-              type="button"
-              className={styles.rowActionButton}
-              aria-label={`Edit ${row.original.name}`}
-              onClick={() => handleEditVariable(row.original)}
-            >
-              <span className="wm-edit" aria-hidden />
-            </button>
-          </WuTooltip>
-          <WuTooltip content="Delete" position="top">
-            <button
-              type="button"
-              className={`${styles.rowActionButton} ${styles.rowActionButtonDelete}`}
-              aria-label={`Delete ${row.original.name}`}
-              onClick={() => setDeleteTarget(row.original)}
-            >
-              <span className="wm-delete" aria-hidden />
-            </button>
-          </WuTooltip>
+        <div className={styles.responsesCell}>
+          <span className={styles.responsesValue}>{row.original.responses}</span>
+          <div className={styles.rowActions}>
+            <WuTooltip content="Edit" position="top">
+              <button
+                type="button"
+                className={styles.rowActionButton}
+                aria-label={`Edit ${row.original.name}`}
+                onClick={() => handleEditVariable(row.original)}
+              >
+                <span className="wm-edit" aria-hidden />
+              </button>
+            </WuTooltip>
+            <WuTooltip content="Delete" position="top">
+              <button
+                type="button"
+                className={`${styles.rowActionButton} ${styles.rowActionButtonDelete}`}
+                aria-label={`Delete ${row.original.name}`}
+                onClick={() => setDeleteTarget(row.original)}
+              >
+                <span className="wm-delete" aria-hidden />
+              </button>
+            </WuTooltip>
+          </div>
         </div>
       ),
     },
