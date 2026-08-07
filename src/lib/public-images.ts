@@ -20,6 +20,11 @@ export const PUBLIC_IMAGES = {
     blank: publicImage('create-dashboard', 'blank-dashboard.svg'),
     qxbot: publicImage('create-dashboard', 'qxbot-dashboard.svg'),
   },
+  createDataset: {
+    freshData: publicImage('create-dataset', 'fresh-data.svg'),
+    mapToSurvey: publicImage('create-dataset', 'map-to-survey.svg'),
+  },
+
   singleSelectWidgets: {
     bar: publicImage('single-select-widgets', 'bar.svg'),
     pie: publicImage('single-select-widgets', 'pie.svg'),

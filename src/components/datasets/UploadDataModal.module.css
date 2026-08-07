@@ -1,0 +1,273 @@
+.modalTitle :global(h2) {
+  color: #1b3380;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.25;
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .modalTitle :global(h2) {
+    font-size: 18px;
+  }
+}
+
+.modal {
+  font-family: 'Fira Sans', sans-serif;
+  max-width: min(640px, calc(100vw - 1.5rem)) !important;
+  width: 100%;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 4px;
+}
+
+.sourceGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+  width: 100%;
+}
+
+@media (min-width: 520px) {
+  .sourceGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.sourceCard {
+  align-items: center;
+  appearance: none;
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  min-height: 72px;
+  padding: 14px 16px;
+  text-align: left;
+  transition: border-color 0.2s ease-in-out;
+  width: 100%;
+}
+
+.sourceCard:hover {
+  border-color: #bdbdbd;
+}
+
+.sourceCard:focus-visible {
+  outline: 2px solid #1b87e6;
+  outline-offset: 2px;
+}
+
+.sourceCardSelected {
+  border-color: #1b87e6;
+}
+
+.sourceCardSelected:hover {
+  border-color: #1b87e6;
+}
+
+.sourceIcon {
+  color: #1b87e6;
+  flex-shrink: 0;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.sourceText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sourceTitle {
+  color: #545e6b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.sourceDescription {
+  color: #9b9b9b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.textAiPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.textAiDescription {
+  color: #545e6b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.stepRow {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 28px;
+}
+
+.stepText {
+  align-items: center;
+  color: #545e6b;
+  display: flex;
+  flex-wrap: wrap;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 13px;
+  gap: 4px;
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.stepLabel {
+  color: #253449;
+  font-weight: 600;
+}
+
+.stepInstruction {
+  color: #545e6b;
+  font-weight: 400;
+}
+
+.infoButton {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #9aa3af;
+  cursor: help;
+  display: inline-flex;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.infoButton:hover {
+  color: #1b87e6;
+}
+
+.modeToggle {
+  align-items: center;
+  background: #e8edf2;
+  border-radius: 9999px;
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 2px;
+  width: fit-content;
+}
+
+.modeToggleActive,
+.modeToggleInactive {
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 12px;
+  line-height: 1.25;
+  padding: 5px 14px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.modeToggleActive {
+  background: #1b87e6;
+  color: #fff;
+  font-weight: 500;
+}
+
+.modeToggleInactive {
+  background: transparent;
+  color: #64748b;
+  font-weight: 400;
+}
+
+.modeToggleInactive:hover {
+  color: #334155;
+}
+
+.downloadButton {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #545e6b;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px;
+}
+
+.downloadButton:hover {
+  color: #1b87e6;
+}
+
+.dropzone {
+  align-items: center;
+  background: #fff;
+  border: 1px dashed #c5ccd6;
+  border-radius: 4px;
+  color: #545e6b;
+  cursor: pointer;
+  display: flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 13px;
+  gap: 8px;
+  justify-content: center;
+  min-height: 56px;
+  padding: 16px;
+  text-align: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  width: 100%;
+}
+
+.dropzone:hover {
+  border-color: #1b87e6;
+  color: #1b87e6;
+}
+
+.dropzoneHasFile {
+  border-color: #1b87e6;
+  border-style: solid;
+  color: #253449;
+}
+
+.dropzoneIcon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.fileName {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supportedFiles {
+  color: #9aa3af;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+  margin: -6px 0 0;
+}
+
+.hiddenInput {
+  display: none;
+}

@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { CreateDatasetsModal } from '@/components/datasets/CreateDatasetsModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { MOCK_DATASETS, type Dataset } from '@/data/mock-datasets';
@@ -79,14 +80,8 @@ export default function DatasetsPage() {
   const datasetsPath = withBiProductBasePath(basePath, '/datasets');
   const [datasets, setDatasets] = useState<Dataset[]>(MOCK_DATASETS);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Dataset | null>(null);
-
-  function handleCreate(): void {
-    showToast({
-      message: 'New Dataset flow will be available in a future update.',
-      variant: 'info',
-    });
-  }
 
   function handleEdit(dataset: Dataset): void {
     showToast({
@@ -173,7 +168,7 @@ export default function DatasetsPage() {
         <WuButton
           className="inline-flex h-8 items-center gap-2 rounded-[4px] bg-[#1e88e5] px-3 text-[13px] font-medium text-white shadow-sm transition hover:bg-[#1976d2]"
           Icon={<span className="wm-add text-[16px]" aria-hidden />}
-          onClick={handleCreate}
+          onClick={() => setIsCreateOpen(true)}
         >
           New Dataset
         </WuButton>
@@ -212,7 +207,7 @@ export default function DatasetsPage() {
                 }
                 action={
                   searchTerm.trim() ? undefined : (
-                    <WuButton onClick={handleCreate}>New Dataset</WuButton>
+                    <WuButton onClick={() => setIsCreateOpen(true)}>New Dataset</WuButton>
                   )
                 }
               />
@@ -220,6 +215,8 @@ export default function DatasetsPage() {
           />
         </div>
       </section>
+
+      <CreateDatasetsModal open={isCreateOpen} onOpenChange={setIsCreateOpen} />
 
       <ConfirmModal
         open={Boolean(deleteTarget)}

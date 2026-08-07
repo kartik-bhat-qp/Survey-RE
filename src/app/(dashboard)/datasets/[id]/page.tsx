@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import type { IWuTableColumnDef, IWuTableRowSelection } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { UploadDataModal } from '@/components/datasets/UploadDataModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
@@ -75,6 +76,7 @@ export default function DatasetDetailPage() {
     );
   });
   const [deleteTarget, setDeleteTarget] = useState<DatasetVariable | null>(null);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   useEffect(() => {
     const nextDetail = getDatasetDetailData(datasetId);
@@ -92,6 +94,7 @@ export default function DatasetDetailPage() {
       )
     );
     setDeleteTarget(null);
+    setIsUploadOpen(false);
   }, [datasetId]);
 
   const selectedVariables = selectedRows;
@@ -113,10 +116,7 @@ export default function DatasetDetailPage() {
   };
 
   function handleUpload(): void {
-    showToast({
-      message: 'Upload data will be available in a future update.',
-      variant: 'info',
-    });
+    setIsUploadOpen(true);
   }
 
   function handleEditVariable(variable: DatasetVariable): void {
@@ -338,6 +338,12 @@ export default function DatasetDetailPage() {
           </div>
         </section>
       </div>
+
+      <UploadDataModal
+        open={isUploadOpen}
+        onOpenChange={setIsUploadOpen}
+        datasetName={dataset.name}
+      />
 
       <ConfirmModal
         open={Boolean(deleteTarget)}

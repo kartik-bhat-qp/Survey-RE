@@ -1,0 +1,117 @@
+.modalTitle :global(h2) {
+  color: #1b3380;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.25;
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .modalTitle :global(h2) {
+    font-size: 18px;
+  }
+}
+
+.modal {
+  font-family: 'Fira Sans', sans-serif;
+  max-width: min(700px, calc(100vw - 1.5rem)) !important;
+  width: 100%;
+}
+
+.typeGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .typeGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+}
+
+.card {
+  align-items: center;
+  appearance: none;
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  font-family: 'Fira Sans', sans-serif;
+  gap: 12px;
+  height: 100px;
+  margin: 0;
+  min-width: 0;
+  padding: 20px;
+  text-align: left;
+  transition: border-color 0.2s ease-in-out;
+  width: 100%;
+}
+
+.card:hover {
+  border-color: #bdbdbd;
+}
+
+.card:focus-visible {
+  outline: 2px solid #1b87e6;
+  outline-offset: 2px;
+}
+
+.cardSelected {
+  border-color: #1b87e6;
+}
+
+.cardSelected:hover {
+  border-color: #1b87e6;
+}
+
+.icon {
+  flex-shrink: 0;
+  height: 64px;
+  width: 64px;
+}
+
+.textContainer {
+  min-width: 0;
+  flex: 1;
+  padding: 10px 0;
+}
+
+.title {
+  color: #545e6b;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 21px;
+}
+
+.description {
+  color: #9b9b9b;
+  font-size: 12px;
+  line-height: 16px;
+  margin: 0;
+  word-break: break-word;
+}
+
+@media (max-width: 639px) {
+  .card {
+    height: auto;
+    min-height: 88px;
+    padding: 16px;
+  }
+
+  .icon {
+    height: 48px;
+    width: 48px;
+  }
+
+  .textContainer {
+    padding: 4px 0;
+  }
+}
