@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AudioInputButton } from '@/components/ui/AudioInputButton';
 import { useDeepDiveFollowUpThread } from '@/components/surveys/useDeepDiveFollowUpThread';
 import { plainTextFromRichValue } from '@/components/surveys/QuestionRichTextField';
+import { shouldTriggerDeepDiveForSelection } from '@/data/mock-deepdive-question-settings';
 import type { DeepDiveQuestionPreviewSession } from '@/data/survey-question-preview-session';
 import styles from './DeepDiveQuestionPreview.module.css';
 
@@ -28,27 +29,36 @@ export function DeepDiveQuestionPreview({
   const [draft, setDraft] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Always pass settings so startThread is enabled when the respondent submits
+  // (gating on phase left settings null in the same click handler).
   const { state, startThread, submitReply, skipThread } =
-    useDeepDiveFollowUpThread(phase === 'deepdive' ? settings : null);
+    useDeepDiveFollowUpThread(settings?.enabled ? settings : null);
+  const hasBeenActive = useRef(false);
 
   // Automatically kick off the AI conversation after the respondent submits
   function handleTargetSubmit(): void {
     if (!selectedId) return;
     const selected = targetOptions.find((o) => o.id === selectedId);
-    setPhase('deepdive');
+    if (!shouldTriggerDeepDiveForSelection(settings, [selectedId])) {
+      setPhase('done');
+      return;
+    }
     startThread(selectedId, selected?.label ?? 'my response');
+    setPhase('deepdive');
   }
 
   // Refocus textarea on each new AI question
   useEffect(() => {
     if (phase === 'deepdive' && state.phase === 'active') {
+      hasBeenActive.current = true;
       setDraft('');
       textareaRef.current?.focus();
     }
   }, [state.currentQuestion, state.phase, phase]);
 
-  // Transition to done when thread finishes
+  // Transition to done when thread finishes (ignore initial idle before start)
   useEffect(() => {
+    if (!hasBeenActive.current) return;
     if (
       phase === 'deepdive' &&
       (state.phase === 'collapsed' || state.phase === 'idle')

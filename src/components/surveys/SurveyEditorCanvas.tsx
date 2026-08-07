@@ -2226,6 +2226,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
 
   const handleDeepDiveConfigChange = useCallback(
     (nextConfig: DeepDiveFollowUpQuestionConfig) => {
+      let nextSections: SurveySection[] | null = null;
       setSections((prev) => {
         let next = updateDeepDiveFollowUpConfigQuestion(prev, nextConfig);
         if (isDeepDiveTargetSelected(nextConfig)) {
@@ -2243,8 +2244,26 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         if (target) {
           syncDeepDiveSettingsToPreviewSessions(detail.survey.id, target.code, nextConfig);
         }
+        nextSections = next;
         return next;
       });
+
+      // DeepDive may move to the target's section — keep an open settings panel pointed at it.
+      if (nextSections) {
+        const configEntry = findDeepDiveFollowUpConfigQuestion(nextSections);
+        if (configEntry) {
+          setSettingsTarget((prevTarget) => {
+            if (!prevTarget || prevTarget.questionId !== configEntry.question.id) {
+              return prevTarget;
+            }
+            if (prevTarget.sectionId === configEntry.sectionId) return prevTarget;
+            return {
+              sectionId: configEntry.sectionId,
+              questionId: configEntry.question.id,
+            };
+          });
+        }
+      }
     },
     [detail.survey.id]
   );
@@ -2502,6 +2521,117 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             return;
           }
 
+          if (isDeepDiveConfigQuestion(question)) {
+            const deepDiveConfig = readDeepDiveFollowUpQuestionConfig(question);
+            if (!deepDiveConfig || !isDeepDiveTargetSelected(deepDiveConfig)) {
+              showToast({
+                message: 'Select a target question before previewing DeepDive',
+                variant: 'info',
+              });
+              return;
+            }
+            const targetQuestion = findSurveyQuestionById(
+              sections,
+              deepDiveConfig.targetSectionId,
+              deepDiveConfig.targetQuestionId
+            );
+            if (!targetQuestion) {
+              showToast({
+                message: 'Select a target question before previewing DeepDive',
+                variant: 'info',
+              });
+              return;
+            }
+            const previewSettings = toPreviewDeepDiveSettings(deepDiveConfig);
+            if (!previewSettings) {
+              showToast({
+                message: 'Enable DeepDive before previewing',
+                variant: 'info',
+              });
+              return;
+            }
+
+            // Preview DeepDive through the standard QuestionPro target-question
+            // shell (same UX as previewing the attached target).
+            const targetKey = `${deepDiveConfig.targetSectionId}:${deepDiveConfig.targetQuestionId}`;
+            const targetSettings = getQuestionSettings(targetQuestion, targetKey);
+            const targetLogic = getQuestionLogic(targetKey, targetQuestion);
+            const targetOptionIds = targetQuestion.options.map((option) => option.id);
+            const targetShowHide = toShowHideOptionsPreviewConfig(
+              targetLogic,
+              targetOptionIds
+            );
+            const targetPages = collectPreviewPagesAfterQuestion(
+              sections,
+              deepDiveConfig.targetSectionId,
+              deepDiveConfig.targetQuestionId,
+              pageBreakBySlotKey,
+              buildPreviewFollowUp
+            );
+            const targetOptions = targetQuestion.options.map((option) => ({
+              id: option.id,
+              label: option.label,
+            }));
+
+            if (isSelectManyPreviewQuestion(targetQuestion, targetSettings)) {
+              writeSelectManyQuestionPreviewSession({
+                surveyId: detail.survey.id,
+                surveyTitle: detail.editorTitle,
+                questionCode: targetQuestion.code,
+                questionText: targetQuestion.text,
+                required: targetQuestion.required,
+                options: targetOptions,
+                answerDisplayOrder: targetSettings.answerDisplayOrder,
+                randomizeAnswerCount: targetSettings.randomizeAnswerCount,
+                alternateFlipReversed:
+                  targetSettings.answerDisplayOrder === 'alternate-flip'
+                    ? getAndAdvanceAlternateFlipState(
+                        detail.survey.id,
+                        targetQuestion.code
+                      )
+                    : undefined,
+                showHideOptions: targetShowHide,
+                deepDiveFollowUpSettings: previewSettings,
+                samePageFollowUps: targetPages.samePageFollowUps,
+                nextPages: targetPages.nextPages,
+              });
+              openQuestionPreviewTab(
+                `${previewSignature}:select-many`,
+                `${previewBaseUrl}?kind=select-many`
+              );
+              return;
+            }
+
+            writeSelectOneQuestionPreviewSession({
+              surveyId: detail.survey.id,
+              surveyTitle: detail.editorTitle,
+              questionCode: targetQuestion.code,
+              questionText: targetQuestion.text,
+              required: targetQuestion.required,
+              options: targetOptions,
+              answerDisplayOrder: targetSettings.answerDisplayOrder,
+              randomizeAnswerCount: targetSettings.randomizeAnswerCount,
+              alternateFlipReversed:
+                targetSettings.answerDisplayOrder === 'alternate-flip'
+                  ? getAndAdvanceAlternateFlipState(detail.survey.id, targetQuestion.code)
+                  : undefined,
+              showHideOptions: targetShowHide,
+              deepDiveFollowUpSettings: previewSettings,
+              isFirstQuestion: isFirstSurveyQuestion(
+                sections,
+                deepDiveConfig.targetSectionId,
+                deepDiveConfig.targetQuestionId
+              ),
+              samePageFollowUps: targetPages.samePageFollowUps,
+              nextPages: targetPages.nextPages,
+            });
+            openQuestionPreviewTab(
+              `${previewSignature}:select-one`,
+              `${previewBaseUrl}?kind=select-one`
+            );
+            return;
+          }
+
           {
             const openEndedTypeMap: Record<string, OpenEndedQuestionType> = {
               'comment-box': 'comment-box',
@@ -2597,6 +2727,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       getQuestionLogic,
       buildPreviewFollowUp,
       openQuestionPreviewTab,
+      getDeepDiveFollowUpSettings,
       getCaptchaSettings,
     ]
   );

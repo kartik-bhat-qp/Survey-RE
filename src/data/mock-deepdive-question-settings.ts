@@ -116,3 +116,21 @@ export function toPreviewDeepDiveSettings(
   const resolved = resolveDeepDiveFollowUpSettings(settings);
   return resolved.enabled ? resolved : null;
 }
+
+/**
+ * Whether DeepDive should fire for the respondent's selected option(s),
+ * honoring "Only probe when" (empty selection = any answer).
+ */
+export function shouldTriggerDeepDiveForSelection(
+  settings: DeepDiveFollowUpSettings | null | undefined,
+  selectedOptionIds: string[]
+): boolean {
+  if (!settings?.enabled || selectedOptionIds.length === 0) return false;
+  const resolved = resolveDeepDiveFollowUpSettings(settings);
+  if (!resolved.enabled) return false;
+  if (resolved.probeWhen !== 'specific-option') return true;
+  const allowed = resolved.probeWhenOptionIds ?? [];
+  if (allowed.length === 0) return true;
+  const allowedSet = new Set(allowed);
+  return selectedOptionIds.some((id) => allowedSet.has(id));
+}

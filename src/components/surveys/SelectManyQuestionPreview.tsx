@@ -10,7 +10,10 @@ import {
   type AnswerDisplayOrder,
   type RandomizeAnswerCount,
 } from '@/data/mock-question-settings';
-import type { DeepDiveFollowUpSettings } from '@/data/mock-deepdive-question-settings';
+import {
+  shouldTriggerDeepDiveForSelection,
+  type DeepDiveFollowUpSettings,
+} from '@/data/mock-deepdive-question-settings';
 import type { SurveyQuestionPreviewFollowUp } from '@/data/survey-question-preview-session';
 import type { ShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
 import shellStyles from './MultiPointCardsCarouselPreview.module.css';
@@ -133,8 +136,12 @@ export function SelectManyQuestionPreview({
     // On the first page, check whether DeepDive should fire
     if (pageIndex === 0 && deepDiveFollowUpSettings?.enabled) {
       const answer = answersByCode[questionCode];
+      const selectedOptionIds = answer?.selectedOptionIds ?? [];
       const selectedLabels = answer?.selectedLabels ?? [];
-      if (selectedLabels.length > 0) {
+      if (
+        selectedLabels.length > 0 &&
+        shouldTriggerDeepDiveForSelection(deepDiveFollowUpSettings, selectedOptionIds)
+      ) {
         setDeepDiveLabel(selectedLabels[0]);
         return;
       }

@@ -278,6 +278,14 @@ export function syncDeepDiveSettingsToPreviewSessions(
       deepDiveFollowUpSettings: previewSettings,
     });
   }
+
+  const deepDiveSession = readDeepDiveQuestionPreviewSession(surveyId);
+  if (deepDiveSession && previewSettings) {
+    writeDeepDiveQuestionPreviewSession({
+      ...deepDiveSession,
+      settings: previewSettings,
+    });
+  }
 }
 
 /** localStorage so data is available when preview opens in a new browser tab. */
@@ -341,13 +349,21 @@ function mergeOptionQuestionPreviewSettings(
   };
 }
 
+function normalizePayloadDeepDiveSettings(
+  settings: DeepDiveFollowUpSettings | null | undefined
+): DeepDiveFollowUpSettings | null {
+  if (!settings) return null;
+  const resolved = resolveDeepDiveFollowUpSettings(settings);
+  return resolved.enabled ? resolved : null;
+}
+
 export function writeSelectManyQuestionPreviewSession(
   payload: SelectManyQuestionPreviewSession
 ): void {
   if (typeof window === 'undefined') return;
-  const deepDiveFollowUpSettings = resolveSessionDeepDiveSettings(
-    payload.surveyId,
-    payload.questionCode,
+  // Prefer the explicit payload from the editor so a stale live key cannot
+  // mask fresh DeepDive settings when opening preview of the target question.
+  const deepDiveFollowUpSettings = normalizePayloadDeepDiveSettings(
     payload.deepDiveFollowUpSettings
   );
   if (payload.questionCode) {
@@ -405,9 +421,9 @@ export function writeSelectOneQuestionPreviewSession(
   payload: SelectOneQuestionPreviewSession
 ): void {
   if (typeof window === 'undefined') return;
-  const deepDiveFollowUpSettings = resolveSessionDeepDiveSettings(
-    payload.surveyId,
-    payload.questionCode,
+  // Prefer the explicit payload from the editor so a stale live key cannot
+  // mask fresh DeepDive settings when opening preview of the target question.
+  const deepDiveFollowUpSettings = normalizePayloadDeepDiveSettings(
     payload.deepDiveFollowUpSettings
   );
   if (payload.questionCode) {
