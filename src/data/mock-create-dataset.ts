@@ -1,12 +1,8 @@
 import { PUBLIC_IMAGES } from '@/lib/public-images';
 
-export type CreateDatasetWizardStep =
-  | 'type'
-  | 'datasource'
-  | 'subtype'
-  | 'upload';
+export type CreateDatasetWizardStep = 'type' | 'datasource' | 'subtype';
 
-export type DatasetSubTypeId = 'import' | 'composite' | 'textai';
+export type DatasetSubTypeId = 'import' | 'composite';
 
 export interface DatasetSubTypeOption {
   id: DatasetSubTypeId;
@@ -15,16 +11,21 @@ export interface DatasetSubTypeOption {
   iconSrc: string;
 }
 
-export const CREATE_DATASET_WIZARD_STEPS: {
+export interface CreateDatasetWizardStepItem {
   id: CreateDatasetWizardStep;
   label: string;
   icon: string;
-}[] = [
+}
+
+export const CREATE_DATASET_WIZARD_STEPS: CreateDatasetWizardStepItem[] = [
   { id: 'type', label: 'Type', icon: 'wm-dashboard' },
   { id: 'datasource', label: 'Datasource', icon: 'wm-verified-user' },
   { id: 'subtype', label: 'Datasource sub type', icon: 'wm-view-list' },
-  { id: 'upload', label: 'File upload', icon: 'wm-description' },
 ];
+
+export function getCreateDatasetWizardSteps(): CreateDatasetWizardStepItem[] {
+  return CREATE_DATASET_WIZARD_STEPS;
+}
 
 export const DATASET_SUBTYPE_OPTIONS: DatasetSubTypeOption[] = [
   {
@@ -40,10 +41,10 @@ export const DATASET_SUBTYPE_OPTIONS: DatasetSubTypeOption[] = [
       'Create additional variables by applying predefined rules or calculations.',
     iconSrc: PUBLIC_IMAGES.createDataset.composite,
   },
-  {
-    id: 'textai',
-    title: 'TextAI',
-    description: 'Import the themes and sub themes for this dataset.',
-    iconSrc: PUBLIC_IMAGES.createDataset.textAi,
-  },
 ];
+
+export interface CreateDatasetPayload {
+  name: string;
+  subType: DatasetSubTypeId;
+  surveyName: string;
+}

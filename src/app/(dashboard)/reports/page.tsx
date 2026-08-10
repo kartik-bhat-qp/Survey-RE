@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
@@ -8,9 +9,13 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { CreateReportModal } from '@/components/reports/CreateReportModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
-import { getDefaultCreateReportName } from '@/data/mock-create-report';
 import { MOCK_CONJOINT_REPORT } from '@/data/mock-conjoint-report';
-import { MOCK_REPORTS, REPORTS_PER_PAGE, type Report } from '@/data/mock-reports';
+import {
+  CREATE_REPORT_TYPE_OPTIONS,
+  getCreateReportTypeOption,
+  getDefaultCreateReportName,
+} from '@/data/mock-create-report';
+import { MOCK_REPORTS, type Report } from '@/data/mock-reports';
 import { formatSmartDate } from '@/data/mock-utils';
 import { getSectionBasePath, withSectionBasePath } from '@/lib/section-base-path';
 import styles from './ReportsTable.module.css';
@@ -27,10 +32,6 @@ const WuInput = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
   { ssr: false }
 );
-const WuPagination = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuPagination })),
-  { ssr: false }
-);
 
 export default function ReportsPage() {
   const pathname = usePathname();
@@ -40,20 +41,46 @@ export default function ReportsPage() {
   const { showToast } = useWuShowToast();
   const [reports, setReports] = useState<Report[]>(MOCK_REPORTS);
   const [search, setSearch] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [typeFilter, setTypeFilter] = useState<string>('all');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const filteredReports = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return reports;
-    return reports.filter((report) => report.name.toLowerCase().includes(term));
-  }, [reports, search]);
+    return reports.filter((report) => {
+      if (typeFilter !== 'all' && report.typeId !== typeFilter) return false;
+      if (!term) return true;
+      return (
+        report.name.toLowerCase().includes(term) ||
+        (report.surveyName ?? '').toLowerCase().includes(term)
+      );
+    });
+  }, [reports, search, typeFilter]);
 
-  const paginatedReports = useMemo(() => {
-    const start = (currentPage - 1) * REPORTS_PER_PAGE;
-    return filteredReports.slice(start, start + REPORTS_PER_PAGE);
-  }, [filteredReports, currentPage]);
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const report of reports) {
+      if (!report.typeId) continue;
+      counts[report.typeId] = (counts[report.typeId] ?? 0) + 1;
+    }
+    return counts;
+  }, [reports]);
 
+  const chips = useMemo(
+    () => [
+      { id: 'all', label: 'All reports', count: reports.length },
+      ...CREATE_REPORT_TYPE_OPTIONS.filter((option) => typeCounts[option.id]).map(
+        (option) => ({
+          id: option.id,
+          label: option.title,
+          count: typeCounts[option.id],
+        })
+      ),
+    ],
+    [reports.length, typeCounts]
+  );
+
+  const typeCount = new Set(reports.map((report) => report.typeId)).size;
+  const subhead = `${reports.length} reports across ${typeCount} report types`;
   const defaultReportName = getDefaultCreateReportName(reports.length);
 
   function openReport(report: Report): void {
@@ -70,7 +97,7 @@ export default function ReportsPage() {
   const columns: IWuTableColumnDef<Report>[] = [
     {
       accessorKey: 'name',
-      header: 'Reports',
+      header: 'Report',
       filterable: true,
       enableSorting: true,
       cell: ({ row }) => (
@@ -84,18 +111,53 @@ export default function ReportsPage() {
       ),
     },
     {
+      accessorKey: 'typeId',
+      header: 'Type',
+      enableSorting: false,
+      cell: ({ row }) => {
+        const option = getCreateReportTypeOption(row.original.typeId);
+        return (
+          <span className={styles.typeCell}>
+            <Image
+              src={option.iconSrc}
+              alt=""
+              width={20}
+              height={20}
+              className={styles.typeIcon}
+            />
+            <span className={styles.typeLabel}>{option.title}</span>
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: 'surveyName',
+      header: 'Survey',
+      enableSorting: false,
+      cell: ({ row }) => (
+        <span className={styles.mutedCell}>{row.original.surveyName ?? '—'}</span>
+      ),
+    },
+    {
       accessorKey: 'creationDate',
       header: 'Created on',
       enableSorting: true,
-      cell: ({ row }) => formatSmartDate(row.original.creationDate),
+      cell: ({ row }) => (
+        <span className={styles.mutedCell}>
+          {formatSmartDate(row.original.creationDate)}
+        </span>
+      ),
     },
   ];
 
   return (
-    <PageContainer>
-      <section className="mb-6">
+    <PageContainer className={styles.page}>
+      <section className="mb-5">
         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-xl font-semibold text-gray-900 sm:text-2xl">Reports</h1>
+          <div>
+            <h1 className={styles.title}>Reports</h1>
+            <p className={styles.subhead}>{subhead}</p>
+          </div>
           <WuButton
             onClick={() => setIsCreateOpen(true)}
             Icon={<span className="wm-add-2" />}
@@ -104,47 +166,67 @@ export default function ReportsPage() {
             Create report
           </WuButton>
         </div>
-        <div className="flex min-h-8 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+
+        <div className="mb-3.5">
           <WuInput
             variant="outlined"
-            placeholder="Search"
+            placeholder="Search reports"
             Icon={<span className="wm-search" />}
             iconPosition="left"
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full sm:max-w-xs"
+            onChange={(event) => setSearch(event.target.value)}
+            className="w-full sm:max-w-[280px]"
           />
-          {filteredReports.length > REPORTS_PER_PAGE && (
-            <WuPagination
-              key={`${currentPage}-${filteredReports.length}-${basePath}`}
-              totalRows={filteredReports.length}
-              initialPage={currentPage - 1}
-              initialPageSize={REPORTS_PER_PAGE}
-              onPageChange={(page) => setCurrentPage(page + 1)}
-            />
-          )}
+        </div>
+
+        <div className={styles.chipRow} role="group" aria-label="Filter by report type">
+          {chips.map((chip) => (
+            <button
+              key={chip.id}
+              type="button"
+              aria-pressed={typeFilter === chip.id}
+              className={`${styles.chip} ${
+                typeFilter === chip.id ? styles.chipActive : ''
+              }`}
+              onClick={() => setTypeFilter(chip.id)}
+            >
+              {chip.label}
+              <span className={styles.chipCount}>{chip.count}</span>
+            </button>
+          ))}
         </div>
       </section>
 
-      <div className={styles.tableWrap}>
-        <WuTable
-          data={paginatedReports as unknown[]}
-          columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-          variant="striped"
-          sort={{ enabled: true }}
-          filterText=""
-          NoDataContent={
-            <EmptyState
-              icon="wm-search-off"
-              title="No reports found"
-              description="Try adjusting your search"
-            />
+      {filteredReports.length === 0 ? (
+        <EmptyState
+          icon="wm-search-off"
+          title="No reports found"
+          description="Try a different search or clear the type filter."
+          action={
+            typeFilter !== 'all' || search.trim() ? (
+              <WuButton
+                variant="secondary"
+                onClick={() => {
+                  setSearch('');
+                  setTypeFilter('all');
+                }}
+              >
+                Clear filters
+              </WuButton>
+            ) : undefined
           }
         />
-      </div>
+      ) : (
+        <div className={styles.tableWrap}>
+          <WuTable
+            data={filteredReports as unknown[]}
+            columns={columns as unknown as IWuTableColumnDef<unknown>[]}
+            variant="striped"
+            sort={{ enabled: true }}
+            filterText=""
+          />
+        </div>
+      )}
 
       <CreateReportModal
         open={isCreateOpen}
@@ -159,13 +241,11 @@ export default function ReportsPage() {
             typeId,
             surveyName: survey.name,
             questionLabel:
-              typeId === 'conjoint'
-                ? MOCK_CONJOINT_REPORT.questionLabel
-                : undefined,
+              typeId === 'conjoint' ? MOCK_CONJOINT_REPORT.questionLabel : undefined,
           };
           setReports((prev) => [nextReport, ...prev]);
           MOCK_REPORTS.unshift(nextReport);
-          setCurrentPage(1);
+          setTypeFilter('all');
           showToast({
             message: `"${name}" created from "${survey.name}"`,
             variant: 'success',

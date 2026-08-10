@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin:0; padding:0; height:100%; font-family:'Fira Sans', sans-serif; font-weight:300; background:#fff; }
+  * { box-sizing:border-box; }
+  a { color:#1b3380; text-decoration:none; }
+  a:hover { color:#1b87e6; text-decoration:underline; }
+  input { font-family:'Fira Sans', sans-serif; }
+  button { font-family:'Fira Sans', sans-serif; }
+  ::-webkit-scrollbar { width:10px; height:10px; }
+  ::-webkit-scrollbar-thumb { background:#c9ced6; border-radius:6px; border:3px solid #fff; }
+  @keyframes wuFade { from { opacity:0 } to { opacity:1 } }
+  @keyframes wuPop { from { opacity:0; transform:translateY(8px) scale(.99) } to { opacity:1; transform:none } }
+</style>
+</helmet>
+
+<div style="display:flex; flex-direction:column; height:100vh; overflow:hidden; background:#fff; color:#253449;">
+
+  <div style="display:flex; align-items:stretch; height:48px; background:#0b1d3d; flex-shrink:0;">
+    <div style="width:220px; display:flex; align-items:center; gap:8px; padding:0 14px; background:#1b87e6; color:#fff;">
+      <div style="width:20px; height:20px; border-radius:3px; background:rgba(255,255,255,.25); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600;">P</div>
+      <span style="font-size:15px; font-weight:500; letter-spacing:.01em;">BI Stats</span>
+      <svg width="10" height="10" viewBox="0 0 10 10" style="margin-left:auto; opacity:.9;"><path d="M1 3l4 4 4-4" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div style="flex:1; display:flex; align-items:center; gap:10px; padding:0 20px; color:#cbd6e6; font-size:14px;">
+      <a href="#" style="color:#cbd6e6;">Workspaces</a>
+      <span style="color:#7c93b5;">›</span>
+      <a href="#" style="color:#cbd6e6;">Kartik Bhat</a>
+      <span style="color:#7c93b5;">›</span>
+      <span style="color:#fff; font-weight:500;">Reports</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:14px; padding:0 20px;">
+      <div style="width:24px; height:24px; border-radius:50%; border:1.5px solid #7c93b5; color:#cbd6e6; font-size:13px; display:flex; align-items:center; justify-content:center;">?</div>
+      <div style="width:28px; height:28px; border-radius:50%; background:#3f6ea8; color:#fff; font-size:12px; font-weight:500; display:flex; align-items:center; justify-content:center;">KB</div>
+    </div>
+  </div>
+
+  <div style="display:flex; flex:1; min-height:0;">
+
+    <nav style="width:220px; flex-shrink:0; border-right:1px solid #e5e9ef; display:flex; flex-direction:column; padding:14px 0 10px; background:#fff;">
+      <div style="padding:0 16px 6px; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#9aa3af;">Analytics</div>
+      <a href="#" style="display:flex; align-items:center; gap:10px; padding:9px 16px; font-size:14px; color:#545e6b;"><svg width="15" height="15" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1" fill="#1b3380"/><rect x="9" y="1" width="6" height="6" rx="1" fill="#1b3380"/><rect x="1" y="9" width="6" height="6" rx="1" fill="#1b3380"/><rect x="9" y="9" width="6" height="6" rx="1" fill="#1b3380"/></svg>Dashboards</a>
+      <a href="#" style="display:flex; align-items:center; gap:10px; padding:9px 16px; font-size:14px; color:#545e6b;"><svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1l1.8 4.2L14 7l-4.2 1.8L8 13l-1.8-4.2L2 7l4.2-1.8z" fill="#1b3380"/></svg>TextAI</a>
+      <a href="#" style="display:flex; align-items:center; gap:10px; padding:9px 16px; font-size:14px; color:#1b87e6; font-weight:500; background:#eaf3fb; border-right:2px solid #1b87e6;"><svg width="15" height="15" viewBox="0 0 16 16"><rect x="2" y="1" width="12" height="14" rx="1.5" fill="#1b87e6"/><rect x="4.5" y="8" width="2" height="4" fill="#fff"/><rect x="7.5" y="5.5" width="2" height="6.5" fill="#fff"/><rect x="10.5" y="7" width="2" height="5" fill="#fff"/></svg>Reports</a>
+      <div style="padding:16px 16px 6px; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#9aa3af;">Data</div>
+      <a href="#" style="display:flex; align-items:center; gap:10px; padding:9px 16px; font-size:14px; color:#545e6b;"><svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1l7 3.5L8 8 1 4.5z" fill="#1b3380"/><path d="M2.5 8.2L8 11l5.5-2.8" stroke="#1b3380" stroke-width="1.4" fill="none"/></svg>Survey stacks</a>
+      <a href="#" style="display:flex; align-items:center; gap:10px; padding:9px 16px; font-size:14px; color:#545e6b;"><svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 2v12M3 5h10M3 5L1 10h4zM13 5l-2 5h4z" stroke="#1b3380" stroke-width="1.3" fill="none"/></svg>Weightings</a>
+      <a href="#" style="display:flex; align-items:center; gap:10px; padding:9px 16px; font-size:14px; color:#545e6b;"><svg width="15" height="15" viewBox="0 0 16 16"><rect x="1.5" y="2" width="13" height="12" rx="1.5" stroke="#1b3380" stroke-width="1.4" fill="none"/><path d="M1.5 6h13M6 6v8" stroke="#1b3380" stroke-width="1.4"/></svg>Datasets</a>
+      <a href="#" style="display:flex; align-items:center; gap:10px; padding:9px 16px; font-size:14px; color:#545e6b;"><svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1v9m0 0L4.5 6.5M8 10l3.5-3.5M2 13.5h12" stroke="#1b3380" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>Exports</a>
+      <div style="margin-top:auto; padding-top:12px; border-top:1px solid #eef1f5;">
+        <a href="#" style="display:flex; align-items:center; gap:10px; padding:9px 16px; font-size:14px; color:#545e6b;"><svg width="15" height="15" viewBox="0 0 16 16"><path d="M8 1.5l5.5 2.2V8c0 3.4-2.3 5.6-5.5 6.5C4.8 13.6 2.5 11.4 2.5 8V3.7z" stroke="#1b3380" stroke-width="1.3" fill="none"/></svg>Admin</a>
+        <a href="#" style="display:flex; align-items:center; gap:10px; padding:9px 16px; font-size:14px; color:#545e6b;"><svg width="15" height="15" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.6" stroke="#1b3380" stroke-width="1.4" fill="none"/><circle cx="8" cy="8" r="6" stroke="#1b3380" stroke-width="1.4" fill="none" stroke-dasharray="2.2 2.4"/></svg>Settings</a>
+      </div>
+    </nav>
+
+    <main style="flex:1; min-width:0; overflow-y:auto; background:#fff;">
+      <div style="max-width:1240px; padding:24px 32px 48px;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px;">
+          <div>
+            <h1 style="margin:0; font-size:24px; font-weight:500; color:#253449;">Reports</h1>
+            <p style="margin:4px 0 0; font-size:13px; color:#9aa3af;">{{ subhead }}</p>
+          </div>
+          <button onClick="{{ openModal }}" style="display:flex; align-items:center; gap:7px; background:#1b87e6; color:#fff; border:0; border-radius:4px; padding:9px 16px; font-size:14px; font-weight:500; cursor:pointer;" style-hover="background:#1272c9">
+            <svg width="13" height="13" viewBox="0 0 14 14"><path d="M7 1.5v11M1.5 7h11" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Create report
+          </button>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+          <div style="position:relative; width:280px;">
+            <svg width="14" height="14" viewBox="0 0 16 16" style="position:absolute; left:10px; top:9px;"><circle cx="7" cy="7" r="4.6" stroke="#9aa3af" stroke-width="1.5" fill="none"/><path d="M10.6 10.6L14 14" stroke="#9aa3af" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input placeholder="Search reports" value="{{ search }}" onInput="{{ onSearch }}" style="width:100%; height:32px; border:1px solid #d8d8d8; border-radius:4px; padding:0 10px 0 30px; font-size:13px; color:#253449; outline:none;">
+          </div>
+          <div style="margin-left:auto; display:flex; border:1px solid #d8d8d8; border-radius:4px; overflow:hidden;">
+            <sc-for list="{{ viewOptions }}" as="v" hint-placeholder-count="3">
+              <button onClick="{{ v.onClick }}" style="{{ v.style }}">{{ v.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px; padding-bottom:18px; border-bottom:1px solid #eef1f5;">
+          <sc-for list="{{ chips }}" as="c" hint-placeholder-count="8">
+            <button onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}<span style="{{ c.countStyle }}">{{ c.count }}</span></button>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ isTable }}" hint-placeholder-val="{{ true }}">
+          <div style="border:1px solid #e5e9ef; border-radius:4px; overflow:hidden;">
+            <div style="display:grid; grid-template-columns:minmax(0,2.4fr) 150px minmax(0,1.3fr) 110px; gap:16px; padding:11px 16px; background:#f4f6f9; font-size:12px; font-weight:600; color:#545e6b; border-bottom:1px solid #e5e9ef;">
+              <div onClick="{{ onSortReport }}" style="{{ reportHeaderStyle }}">{{ reportHeaderLabel }}</div><div>Type</div><div>Survey</div><div onClick="{{ onSortCreated }}" style="{{ createdHeaderStyle }}">{{ createdHeaderLabel }}</div>
+            </div>
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+              <div style="{{ r.rowStyle }}">
+                <a href="#" style="font-size:14px; color:#1b3380; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</a>
+                <div style="display:flex; align-items:center; gap:7px; min-width:0;">
+                  <div style="{{ r.iconSm }}"></div>
+                  <span style="font-size:12px; color:#545e6b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.typeTitle }}</span>
+                </div>
+                <div style="font-size:13px; color:#67727e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.survey }}</div>
+                <div style="font-size:13px; color:#67727e;">{{ r.created }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isGrouped }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
+              <div style="border:1px solid #e5e9ef; border-radius:4px; overflow:hidden;">
+                <button onClick="{{ g.onToggle }}" style="width:100%; display:flex; align-items:center; gap:10px; padding:11px 16px; background:#f4f6f9; border:0; cursor:pointer; text-align:left;">
+                  <span style="{{ g.chevronStyle }}">›</span>
+                  <div style="{{ g.iconStyle }}"></div>
+                  <span style="font-size:13px; font-weight:600; color:#253449;">{{ g.title }}</span>
+                  <span style="font-size:11px; color:#67727e; background:#e3e8ef; border-radius:999px; padding:2px 8px;">{{ g.count }}</span>
+                </button>
+                <sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
+                  <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
+                    <div style="{{ r.groupRowStyle }}">
+                      <a href="#" style="font-size:14px; color:#1b3380; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</a>
+                      <div style="font-size:13px; color:#67727e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.survey }}</div>
+                      <div style="font-size:13px; color:#67727e;">{{ r.created }}</div>
+                    </div>
+                  </sc-for>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isCards }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px;">
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+              <div style="border:1px solid #e5e9ef; border-radius:4px; padding:16px; display:flex; flex-direction:column; gap:12px; cursor:pointer; background:#fff;" style-hover="border-color:#1b87e6">
+                <div style="display:flex; align-items:flex-start; gap:11px;">
+                  <div style="{{ r.iconLg }}"></div>
+                  <div style="min-width:0; flex:1;">
+                    <div style="font-size:14px; font-weight:500; color:#1b3380; line-height:1.3;">{{ r.name }}</div>
+                    <div style="display:inline-block; margin-top:6px; font-size:10px; font-weight:600; color:#1b87e6; background:#e8f4fd; border-radius:999px; padding:3px 8px;">{{ r.typeTitle }}</div>
+                  </div>
+                </div>
+                <div style="font-size:12px; color:#9aa3af; line-height:1.5; border-top:1px solid #eef1f5; padding-top:10px;">
+                  {{ r.survey }}<br>Created {{ r.created }}
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px dashed #d8d8d8; border-radius:4px; padding:56px 24px; text-align:center;">
+            <div style="font-size:15px; font-weight:500; color:#545e6b;">No reports found</div>
+            <div style="font-size:13px; color:#9aa3af; margin-top:5px;">Try a different search or clear the type filter.</div>
+          </div>
+        </sc-if>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed; inset:0; background:rgba(11,29,61,.45); z-index:100; display:flex; align-items:center; justify-content:center; padding:24px; animation:wuFade .15s ease-out;">
+    <div style="width:min(1000px,100%); max-height:calc(100vh - 48px); background:#fff; border-radius:6px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 64px rgba(11,29,61,.28); animation:wuPop .18s ease-out;">
+
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 24px; background:#eef4fb; border-bottom:1px solid #dde6f2;">
+        <h2 style="margin:0; font-size:18px; font-weight:500; color:#1b3380;">Create report</h2>
+        <button onClick="{{ closeModal }}" style="background:none; border:0; cursor:pointer; padding:4px; line-height:0;" style-hover="opacity:.6">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path d="M3 3l12 12M15 3L3 15" stroke="#1b3380" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div style="padding:20px 24px 0;">
+        <label style="display:block; font-size:13px; color:#545e6b; margin-bottom:6px;">Report Name</label>
+        <input value="{{ name }}" onInput="{{ onName }}" style="width:100%; height:38px; border:1px solid #1b87e6; border-radius:4px; padding:0 12px; font-size:14px; color:#253449; background:#f7f8fa; outline:none;">
+      </div>
+
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:0; flex:1; min-height:0; padding:18px 24px 0;">
+
+        <div style="display:flex; flex-direction:column; min-height:0; border:1px solid #e5e9ef; border-radius:4px 0 0 4px; border-right:0;">
+          <div style="padding:10px 12px; border-bottom:1px solid #eef1f5; position:relative;">
+            <svg width="14" height="14" viewBox="0 0 16 16" style="position:absolute; left:22px; top:19px;"><circle cx="7" cy="7" r="4.6" stroke="#9aa3af" stroke-width="1.5" fill="none"/><path d="M10.6 10.6L14 14" stroke="#9aa3af" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input placeholder="Search report types" value="{{ typeSearch }}" onInput="{{ onTypeSearch }}" style="width:100%; height:30px; border:1px solid #d8d8d8; border-radius:4px; padding:0 10px 0 28px; font-size:13px; outline:none;">
+          </div>
+          <div style="overflow-y:auto; max-height:44vh; padding-bottom:6px;">
+            <sc-for list="{{ typeGroups }}" as="cat" hint-placeholder-count="4">
+              <div>
+                <div style="padding:10px 14px 5px; font-size:10px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:#9aa3af;">{{ cat.title }}</div>
+                <sc-for list="{{ cat.items }}" as="t" hint-placeholder-count="3">
+                  <button onClick="{{ t.onClick }}" style="{{ t.rowStyle }}">
+                    <div style="{{ t.iconStyle }}"></div>
+                    <span style="{{ t.titleStyle }}">{{ t.title }}</span>
+                    <span style="{{ t.badgeStyle }}">Coming Soon</span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="border:1px solid #e5e9ef; border-radius:0 4px 4px 0; background:#fafbfd; padding:20px; overflow-y:auto; max-height:calc(44vh + 52px);">
+          <div style="{{ sel.iconStyle }}"></div>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:12px;">
+            <h3 style="margin:0; font-size:16px; font-weight:600; color:#253449;">{{ sel.title }}</h3>
+            <span style="{{ sel.badgeStyle }}">Coming Soon</span>
+          </div>
+          <div style="font-size:11px; color:#9aa3af; margin-top:4px; letter-spacing:.04em; text-transform:uppercase; font-weight:600;">{{ sel.category }}</div>
+          <p style="font-size:13px; line-height:1.55; color:#67727e; margin:12px 0 0;">{{ sel.description }}</p>
+          <div style="margin-top:18px; padding-top:14px; border-top:1px solid #e7eaf0;">
+            <div style="font-size:12px; font-weight:600; color:#545e6b; margin-bottom:8px;">What you'll need</div>
+            <sc-for list="{{ sel.needs }}" as="n" hint-placeholder-count="3">
+              <div style="display:flex; gap:8px; align-items:flex-start; font-size:12px; color:#67727e; line-height:1.5; margin-bottom:6px;">
+                <span style="width:5px; height:5px; border-radius:50%; background:#1b87e6; margin-top:6px; flex-shrink:0;"></span>{{ n }}
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:12px; padding:16px 24px; margin-top:18px; border-top:1px solid #dde6f2;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="display:flex; align-items:center; gap:6px; font-size:14px; font-weight:500; color:#1b87e6;">
+            <svg width="14" height="16" viewBox="0 0 14 16"><path d="M2 1h6l4 4v10H2z" stroke="#1b87e6" stroke-width="1.4" fill="none"/><path d="M8 1v4h4" stroke="#1b87e6" stroke-width="1.4" fill="none"/></svg>Report
+          </span>
+          <span style="color:#c9ced6; font-size:13px;">›</span>
+          <span style="display:flex; align-items:center; gap:6px; font-size:14px; color:#9aa3af;">
+            <svg width="14" height="16" viewBox="0 0 14 16"><path d="M2 1h6l4 4v10H2z" stroke="#9aa3af" stroke-width="1.4" fill="none"/><path d="M8 1v4h4" stroke="#9aa3af" stroke-width="1.4" fill="none"/></svg>Survey
+          </span>
+          <span style="color:#c9ced6; font-size:13px;">›</span>
+          <span style="display:flex; align-items:center; gap:6px; font-size:14px; color:#9aa3af;">
+            <svg width="15" height="15" viewBox="0 0 16 16"><rect x="1.5" y="8" width="3" height="6" fill="#9aa3af"/><rect x="6.5" y="4" width="3" height="10" fill="#9aa3af"/><rect x="11.5" y="6" width="3" height="8" fill="#9aa3af"/></svg>Confirmation
+          </span>
+        </div>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:10px;">
+          <button onClick="{{ closeModal }}" style="background:none; border:0; color:#1b87e6; font-size:14px; font-weight:500; padding:9px 14px; cursor:pointer; border-radius:4px;" style-hover="background:#eef4fb">Cancel</button>
+          <button onClick="{{ onContinue }}" style="{{ continueStyle }}">Continue</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;table&quot;,&quot;grouped&quot;,&quot;cards&quot;],&quot;default&quot;:&quot;table&quot;,&quot;tsType&quot;:&quot;'table'|'grouped'|'cards'&quot;,&quot;section&quot;:&quot;Reports home&quot;},&quot;comingSoonMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dimmed&quot;,&quot;hidden&quot;],&quot;default&quot;:&quot;dimmed&quot;,&quot;tsType&quot;:&quot;'dimmed'|'hidden'&quot;,&quot;section&quot;:&quot;Create report&quot;}}">
+const TYPES = [
+  { id:'crosstab', title:'Crosstab', category:'Tabulation', icon:'icons/crosstab.svg',
+    description:'A Crosstab report displays the relationship between two or more variables by summarizing data in a matrix format using rows and columns.',
+    needs:['One or more banner (column) variables','At least one stub (row) question','Optional weighting scheme for the dataset'] },
+  { id:'weighted-tabulation', title:'Weighted Tabulation', category:'Tabulation', icon:'icons/weighted-tabulation.svg',
+    description:'Applies a saved weighting scheme to any tabulation so results reflect the target population rather than the raw sample.',
+    needs:['A published weighting scheme','A dataset with the weighting variables','Base definition for each table'] },
+  { id:'heatmaps', title:'Heatmaps', category:'Tabulation', icon:'icons/heatmaps.svg', comingSoon:true,
+    description:'A Heatmaps report visualizes response intensity across questions or segments so patterns and hotspots are easy to spot.',
+    needs:['A matrix or grid question','A segment variable for columns','A colour scale threshold'] },
+  { id:'gabor-granger', title:'Gabor Granger', category:'Pricing', icon:'icons/gabor-granger.svg', comingSoon:true,
+    description:'A Gabor Granger report estimates price sensitivity by asking respondents how likely they are to purchase at different price points.',
+    needs:['A price ladder question block','Purchase intent scale','Currency and price range'] },
+  { id:'van-westendorp', title:'Van Westendorp', category:'Pricing', icon:'icons/van-westendorp.svg', comingSoon:true,
+    description:'A Van Westendorp report maps acceptable price ranges by capturing perceptions of cheap, expensive, and too expensive pricing.',
+    needs:['Four price perception questions','Numeric open-ended responses','Currency formatting'] },
+  { id:'conjoint', title:'Conjoint', category:'Preference & trade-off', icon:'icons/conjoint.svg', comingSoon:true,
+    description:'A Conjoint report analyzes customer preferences by measuring how they value different features of a product or service through trade-off evaluations.',
+    needs:['A conjoint design with attributes and levels','Completed choice tasks','Utility estimation settings'] },
+  { id:'maxdiff', title:'MaxDiff', category:'Preference & trade-off', icon:'icons/maxdiff.svg', comingSoon:true,
+    description:'A MaxDiff report identifies the most and least preferred items by forcing respondents to make trade-offs across a set of options.',
+    needs:['A MaxDiff exercise with item list','Best and worst selections per set','Minimum of 300 completes recommended'] },
+  { id:'turf', title:'TURF', category:'Preference & trade-off', icon:'icons/turf.svg', comingSoon:true,
+    description:'A TURF report finds the combination of items that reaches the largest unduplicated audience, so you can size a portfolio or shortlist.',
+    needs:['A multi-select or MaxDiff item list','Reach definition (top box, any selection)','Maximum combination size'] },
+  { id:'ranking', title:'Ranking', category:'Preference & trade-off', icon:'icons/ranking.svg',
+    description:'A Ranking report summarizes ordered preferences, showing mean rank and top-position share across every item in the list.',
+    needs:['A rank-order question','Consistent item list across waves','Optional segment breaks'] },
+  { id:'regression', title:'Regression', category:'Statistical', icon:'icons/regression.svg', comingSoon:true,
+    description:'A Regression report models how strongly each independent variable predicts an outcome, with coefficients and significance tests.',
+    needs:['One numeric dependent variable','Two or more predictor variables','Clean, complete cases'] },
+  { id:'key-driver', title:'Key Driver', category:'Statistical', icon:'icons/key-driver.svg', comingSoon:true,
+    description:'A Key Driver report ranks which attributes move an outcome metric the most, pairing derived importance with stated performance.',
+    needs:['An outcome metric such as NPS or satisfaction','A battery of attribute ratings','A performance threshold'] },
+  { id:'segmentation', title:'Segmentation', category:'Statistical', icon:'icons/segmentation.svg', comingSoon:true,
+    description:'A Segmentation report clusters respondents into groups with similar attitudes or behaviours and profiles each group against the rest.',
+    needs:['A basis set of attitudinal variables','Preferred cluster count or auto-solve','Profiling variables for the tables'] },
+  { id:'nps', title:'NPS', category:'Experience', icon:'icons/nps.svg',
+    description:'An NPS report tracks promoters, passives, and detractors over time and breaks the score down by any segment in the dataset.',
+    needs:['An 0–10 likelihood-to-recommend question','A date variable for trending','Optional segment breaks'] },
+  { id:'text-analytics', title:'Text Analytics', category:'Experience', icon:'icons/text-analytics.svg', comingSoon:true,
+    description:'A Text Analytics report extracts themes and sentiment from open-ended responses and links each theme back to the verbatims.',
+    needs:['At least one open-ended question','200+ verbatims for reliable themes','A language selection'] },
+];
+
+const CATEGORIES = ['Tabulation','Pricing','Preference & trade-off','Statistical','Experience'];
+
+const REPORTS = [
+  { id:1, name:'Variable cross tab', type:'crosstab', survey:'Ice cream survey', created:'Sep 11 2025', createdTs: Date.parse('2025-09-11') },
+  { id:2, name:'Fighting 2026', type:'crosstab', survey:'Voter tracker W4', created:'Mar 04 2026', createdTs: Date.parse('2026-03-04') },
+  { id:3, name:'Brand ladder pricing', type:'ranking', survey:'Coke research', created:'Apr 18 2026', createdTs: Date.parse('2026-04-18') },
+  { id:4, name:'PRabal test', type:'crosstab', survey:'Internal QA set', created:'Feb 22 2026', createdTs: Date.parse('2026-02-22') },
+  { id:5, name:'Q1 promoter split', type:'nps', survey:'Support CSAT 2026', created:'Jan 15 2026', createdTs: Date.parse('2026-01-15') },
+  { id:6, name:'Weighted region tabs', type:'weighted-tabulation', survey:'Voter tracker W4', created:'Dec 08 2025', createdTs: Date.parse('2025-12-08') },
+  { id:7, name:'Ranking', type:'ranking', survey:'Snack concept test', created:'May 02 2026', createdTs: Date.parse('2026-05-02') },
+  { id:8, name:'NPS', type:'nps', survey:'Support CSAT 2026', created:'Apr 30 2026', createdTs: Date.parse('2026-04-30') },
+  { id:9, name:'Flavour shortlist reach', type:'ranking', survey:'Ice cream survey', created:'May 14 2026', createdTs: Date.parse('2026-05-14') },
+  { id:10, name:'Ice cream survey with derived variables', type:'crosstab', survey:'Ice cream survey', created:'Mar 28 2026', createdTs: Date.parse('2026-03-28') },
+  { id:11, name:'Detractor themes — Q2', type:'nps', survey:'Support CSAT 2026', created:'Feb 10 2026', createdTs: Date.parse('2026-02-10') },
+  { id:12, name:'Bolt', type:'weighted-tabulation', survey:'Mobility omnibus', created:'Jan 27 2026', createdTs: Date.parse('2026-01-27') },
+  { id:13, name:'New cross-tab 1025', type:'crosstab', survey:'Mobility omnibus', created:'May 26 2026', createdTs: Date.parse('2026-05-26') },
+  { id:14, name:'West Bengal voter sentiment — longitudinal crosstab', type:'weighted-tabulation', survey:'Voter tracker W4', created:'Nov 19 2025', createdTs: Date.parse('2025-11-19') },
+];
+
+const CHIP_BASE = 'display:flex; align-items:center; gap:6px; border-radius:999px; padding:5px 12px; font-size:12.5px; cursor:pointer; transition:all .15s;';
+const VIEW_BASE = 'border:0; padding:6px 14px; font-size:12.5px; cursor:pointer; transition:all .15s;';
+
+class Component extends DCLogic {
+  state = {
+    view: this.props.defaultView || 'table',
+    search: '',
+    typeFilter: 'all',
+    open: {},
+    modalOpen: false,
+    sortBy: 'created',
+    sortDir: 'desc',
+    name: 'Report 15',
+    typeSearch: '',
+    selected: 'crosstab',
+    reports: REPORTS,
+  };
+
+  typeById(id) { return TYPES.find((t) => t.id === id) || TYPES[0]; }
+
+  ico(path, size) {
+    return 'flex-shrink:0; width:' + size + 'px; height:' + size + 'px; background:url(' + path + ') center/contain no-repeat;';
+  }
+
+  visibleTypes() {
+    const hide = (this.props.comingSoonMode || 'dimmed') === 'hidden';
+    return hide ? TYPES.filter((t) => !t.comingSoon) : TYPES;
+  }
+
+  filtered() {
+    const term = this.state.search.trim().toLowerCase();
+    const list = this.state.reports.filter((r) => {
+      if (this.state.typeFilter !== 'all' && r.type !== this.state.typeFilter) return false;
+      if (!term) return true;
+      return r.name.toLowerCase().includes(term) || r.survey.toLowerCase().includes(term);
+    });
+    const { sortBy, sortDir } = this.state;
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return list.slice().sort((a, b) => {
+      if (sortBy === 'name') return a.name.localeCompare(b.name) * dir;
+      return (a.createdTs - b.createdTs) * dir;
+    });
+  }
+
+  toggleSort(key) {
+    this.setState((p) => ({
+      sortBy: key,
+      sortDir: p.sortBy === key && p.sortDir === 'desc' ? 'asc' : 'desc',
+    }));
+  }
+
+  renderVals() {
+    const s = this.state;
+    const rowsRaw = this.filtered();
+    const rows = rowsRaw.map((r, i) => {
+      const t = this.typeById(r.type);
+      const bg = i % 2 ? '#fafbfd' : '#fff';
+      return {
+        ...r, typeTitle: t.title,
+        iconSm: this.ico(t.icon, 20), iconLg: this.ico(t.icon, 38),
+        rowStyle: 'display:grid; grid-template-columns:minmax(0,2.4fr) 150px minmax(0,1.3fr) 110px; gap:16px; align-items:center; padding:12px 16px; border-bottom:1px solid #eef1f5; background:' + bg + ';',
+        groupRowStyle: 'display:grid; grid-template-columns:minmax(0,2.4fr) minmax(0,1.3fr) 110px; gap:16px; align-items:center; padding:11px 16px; border-top:1px solid #eef1f5; background:' + bg + ';',
+      };
+    });
+
+    const counts = {};
+    this.state.reports.forEach((r) => { counts[r.type] = (counts[r.type] || 0) + 1; });
+
+    const chipDefs = [{ id:'all', label:'All reports', count:this.state.reports.length }]
+      .concat(this.visibleTypes().filter((t) => counts[t.id]).map((t) => ({ id:t.id, label:t.title, count:counts[t.id] })));
+
+    const chips = chipDefs.map((c) => {
+      const on = s.typeFilter === c.id;
+      return {
+        label: c.label, count: c.count,
+        style: CHIP_BASE + (on
+          ? 'background:#1b87e6; color:#fff; border:1px solid #1b87e6; font-weight:500;'
+          : 'background:#fff; color:#545e6b; border:1px solid #d8d8d8;'),
+        countStyle: 'font-size:11px; padding:0 5px; border-radius:999px;' + (on ? 'background:rgba(255,255,255,.24); color:#fff;' : 'background:#f0f2f6; color:#9aa3af;'),
+        onClick: () => this.setState({ typeFilter: c.id }),
+      };
+    });
+
+    const viewOptions = [['table','Table'],['grouped','Grouped'],['cards','Cards']].map(([id, label]) => ({
+      label,
+      style: VIEW_BASE + (s.view === id ? 'background:#1b87e6; color:#fff; font-weight:500;' : 'background:#fff; color:#67727e;'),
+      onClick: () => this.setState({ view: id }),
+    }));
+
+    const byType = {};
+    rows.forEach((r) => { (byType[r.type] = byType[r.type] || []).push(r); });
+    const groups = Object.keys(byType).map((id) => {
+      const t = this.typeById(id);
+      const open = s.open[id] !== false;
+      return {
+        title: t.title, iconStyle: this.ico(t.icon, 22), count: byType[id].length, open, rows: byType[id],
+        chevronStyle: 'color:#9aa3af; font-size:15px; display:inline-block; transition:transform .15s; transform:rotate(' + (open ? '90' : '0') + 'deg);',
+        onToggle: () => this.setState((p) => ({ open: { ...p.open, [id]: !open } })),
+      };
+    });
+
+    const term = s.typeSearch.trim().toLowerCase();
+    const pool = this.visibleTypes().filter((t) => !term || t.title.toLowerCase().includes(term));
+    const typeGroups = CATEGORIES.map((cat) => ({
+      title: cat,
+      items: pool.filter((t) => t.category === cat).map((t) => {
+        const on = s.selected === t.id;
+        return {
+          title: t.title, iconStyle: this.ico(t.icon, 26),
+          rowStyle: 'width:100%; display:flex; align-items:center; gap:11px; padding:10px 14px; border:0; border-left:3px solid ' + (on ? '#1b87e6' : 'transparent') + '; background:' + (on ? '#eef4fb' : 'transparent') + '; text-align:left; cursor:' + (t.comingSoon ? 'default' : 'pointer') + '; opacity:' + (t.comingSoon ? '.55' : '1') + ';',
+          titleStyle: 'font-size:13.5px; font-weight:' + (on ? '600' : '400') + '; color:' + (on ? '#1b3380' : '#545e6b') + ';',
+          badgeStyle: t.comingSoon
+            ? 'margin-left:auto; background:#e8f4fd; border-radius:999px; color:#1b87e6; font-size:10px; font-weight:600; padding:3px 7px; white-space:nowrap;'
+            : 'display:none;',
+          onClick: t.comingSoon ? () => {} : () => this.setState({ selected: t.id }),
+        };
+      }),
+    })).filter((g) => g.items.length);
+
+    const sel = this.typeById(s.selected);
+    const blocked = Boolean(sel.comingSoon);
+
+    return {
+      subhead: this.state.reports.length + ' reports across ' + new Set(this.state.reports.map((r) => r.type)).size + ' report types',
+      reportHeaderStyle: 'display:flex; align-items:center; gap:4px; cursor:pointer; user-select:none; color:' + (s.sortBy === 'name' ? '#1b3380' : '#545e6b') + ';',
+      reportHeaderLabel: 'Report' + (s.sortBy === 'name' ? (s.sortDir === 'asc' ? ' ▲' : ' ▼') : ''),
+      onSortReport: () => this.toggleSort('name'),
+      createdHeaderStyle: 'display:flex; align-items:center; gap:4px; cursor:pointer; user-select:none; color:' + (s.sortBy === 'created' ? '#1b3380' : '#545e6b') + ';',
+      createdHeaderLabel: 'Created on' + (s.sortBy === 'created' ? (s.sortDir === 'asc' ? ' ▲' : ' ▼') : ''),
+      onSortCreated: () => this.toggleSort('created'),
+      search: s.search,
+      onSearch: (e) => this.setState({ search: e.target.value }),
+      chips, viewOptions, rows, groups,
+      isTable: s.view === 'table' && rows.length > 0,
+      isGrouped: s.view === 'grouped' && rows.length > 0,
+      isCards: s.view === 'cards' && rows.length > 0,
+      isEmpty: rows.length === 0,
+
+      modalOpen: s.modalOpen,
+      openModal: () => this.setState({ modalOpen: true, name: 'Report ' + (this.state.reports.length + 1), selected: 'crosstab', typeSearch: '' }),
+      closeModal: () => this.setState({ modalOpen: false }),
+      name: s.name,
+      onName: (e) => this.setState({ name: e.target.value }),
+      typeSearch: s.typeSearch,
+      onTypeSearch: (e) => this.setState({ typeSearch: e.target.value }),
+      typeGroups,
+      sel: {
+        title: sel.title, description: sel.description, iconStyle: this.ico(sel.icon, 56),
+        category: sel.category, needs: sel.needs,
+        badgeStyle: blocked
+          ? 'background:#e8f4fd; border-radius:999px; color:#1b87e6; font-size:10px; font-weight:600; padding:3px 8px;'
+          : 'display:none;',
+      },
+      continueStyle: 'border:0; border-radius:4px; padding:9px 22px; font-size:14px; font-weight:500; color:#fff; background:' + (blocked ? '#b9c3d1' : '#1b87e6') + '; cursor:' + (blocked ? 'not-allowed' : 'pointer') + ';',
+      onContinue: () => {
+        if (blocked) return;
+        const t = this.typeById(s.selected);
+        this.setState((p) => ({
+          modalOpen: false,
+          typeFilter: 'all',
+          reports: [{ id: Date.now(), name: (p.name || '').trim() || 'Untitled report', type: t.id, survey: 'Ice cream survey', created: 'Aug 07 2026', lastRun: 'Just now' }].concat(p.reports),
+        }));
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import type { IWuTableColumnDef, IWuTableRowSelection } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { CreateVariableModal } from '@/components/datasets/CreateVariableModal';
@@ -73,6 +73,8 @@ function VariableTypeIcon({ kind }: { kind: DatasetVariableKind }) {
 
 export default function DatasetDetailPage() {
   const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useWuShowToast();
   const basePath = useBiProductBasePath();
   const datasetsPath = withBiProductBasePath(basePath, '/datasets');
@@ -81,6 +83,7 @@ export default function DatasetDetailPage() {
   const detail = useMemo(() => getDatasetDetailData(datasetId), [datasetId]);
   const textAiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const responseRowsRef = useRef<DatasetResponseRow[]>(detail?.rows ?? []);
+  const textAiImportStartedRef = useRef(false);
 
   const [variableSearch, setVariableSearch] = useState('');
   const [responseSearch, setResponseSearch] = useState('');
@@ -110,6 +113,7 @@ export default function DatasetDetailPage() {
   useEffect(() => {
     const nextDetail = getDatasetDetailData(datasetId);
     clearTextAiTimer();
+    textAiImportStartedRef.current = false;
     if (!nextDetail) {
       setVariables([]);
       setResponseRows([]);
@@ -219,11 +223,29 @@ export default function DatasetDetailPage() {
     }, TEXT_AI_PROCESS_MS);
   }
 
+  useEffect(() => {
+    const report = searchParams.get('textAiReport');
+    if (!report || !detail || textAiImportStartedRef.current) return;
+    textAiImportStartedRef.current = true;
+    startTextAiImport(report);
+    router.replace(`${datasetsPath}/${datasetId}`);
+  }, [datasetId, datasetsPath, detail, router, searchParams]);
+
   function handleUpload(): void {
     setIsUploadOpen(true);
   }
 
   function handleSyncAll(): void {
+    const isExternalWithTextAi =
+      dataset?.dataType === 'External' &&
+      variables.some(
+        (variable) =>
+          variable.id === TEXT_AI_THEME_ID || variable.id === TEXT_AI_SUBTHEME_ID
+      );
+    if (isExternalWithTextAi) {
+      startTextAiImport('TextAI');
+      return;
+    }
     showToast({
       message: `Syncing all data for "${dataset?.name ?? 'dataset'}"…`,
       variant: 'success',
@@ -383,6 +405,10 @@ export default function DatasetDetailPage() {
   });
 
   const isComposite = dataset?.dataType === 'Survey (Composite)';
+  const hasTextAiData = variables.some(
+    (variable) =>
+      variable.id === TEXT_AI_THEME_ID || variable.id === TEXT_AI_SUBTHEME_ID
+  );
 
   if (!dataset || !detail) {
     return (
@@ -422,13 +448,21 @@ export default function DatasetDetailPage() {
             </WuButton>
           </div>
         ) : (
-          <WuButton
-            className={styles.uploadBtn}
-            Icon={<span className="wm-cloud-upload" aria-hidden />}
-            onClick={handleUpload}
-          >
-            Upload data
-          </WuButton>
+          <div className={styles.headerActions}>
+            {hasTextAiData ? (
+              <button type="button" className={styles.syncAllBtn} onClick={handleSyncAll}>
+                <span className="wm-sync" aria-hidden />
+                Sync all
+              </button>
+            ) : null}
+            <WuButton
+              className={styles.uploadBtn}
+              Icon={<span className="wm-cloud-upload" aria-hidden />}
+              onClick={handleUpload}
+            >
+              Upload data
+            </WuButton>
+          </div>
         )}
       </header>
 

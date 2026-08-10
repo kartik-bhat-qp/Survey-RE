@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { CreateDatasetsModal } from '@/components/datasets/CreateDatasetsModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
+import type { CreateDatasetPayload } from '@/data/mock-create-dataset';
 import { MOCK_DATASETS, type Dataset } from '@/data/mock-datasets';
 import { useBiProductBasePath, withBiProductBasePath } from '@/hooks/useBiProductBasePath';
 import styles from './DatasetsTable.module.css';
@@ -75,6 +77,7 @@ function RowActions({
 }
 
 export default function DatasetsPage() {
+  const router = useRouter();
   const { showToast } = useWuShowToast();
   const basePath = useBiProductBasePath();
   const datasetsPath = withBiProductBasePath(basePath, '/datasets');
@@ -82,6 +85,26 @@ export default function DatasetsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Dataset | null>(null);
+
+  function handleCreateDataset(payload: CreateDatasetPayload): void {
+    const nextId =
+      Math.max(
+        0,
+        ...datasets.map((dataset) => dataset.id),
+        ...MOCK_DATASETS.map((dataset) => dataset.id)
+      ) + 1;
+    const nextDataset: Dataset = {
+      id: nextId,
+      name: payload.name,
+      variableCount: 0,
+      rowCount: 0,
+      dataType: payload.subType === 'import' ? 'External' : 'Survey (Composite)',
+      createdOn: new Date().toISOString().slice(0, 10),
+    };
+    setDatasets((prev) => [nextDataset, ...prev]);
+    MOCK_DATASETS.unshift(nextDataset);
+    router.push(`${datasetsPath}/${nextId}`);
+  }
 
   function handleEdit(dataset: Dataset): void {
     showToast({
@@ -216,7 +239,11 @@ export default function DatasetsPage() {
         </div>
       </section>
 
-      <CreateDatasetsModal open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+      <CreateDatasetsModal
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        onCreate={handleCreateDataset}
+      />
 
       <ConfirmModal
         open={Boolean(deleteTarget)}

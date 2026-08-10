@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
@@ -11,9 +11,10 @@ import {
 } from '@/components/reports/CreateReportStepBreadcrumb';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
+  CREATE_REPORT_CATEGORIES,
   CREATE_REPORT_TYPE_OPTIONS,
+  getCreateReportTypeOption,
   type CreateReportTypeId,
-  type CreateReportTypeOption,
 } from '@/data/mock-create-report';
 import type { SurveyListItem } from '@/data/mock-survey-folders';
 import styles from './CreateReportModal.module.css';
@@ -50,60 +51,6 @@ interface CreateReportModalProps {
   }) => void;
 }
 
-interface ReportTypeCardProps {
-  option: CreateReportTypeOption;
-  selected: boolean;
-  onSelect: () => void;
-  onHelp?: () => void;
-}
-
-function ReportTypeCard({ option, selected, onSelect, onHelp }: ReportTypeCardProps) {
-  const isDisabled = Boolean(option.comingSoon);
-
-  return (
-    <button
-      type="button"
-      disabled={isDisabled}
-      onClick={onSelect}
-      className={`${styles.card} ${selected ? styles.cardSelected : ''} ${
-        isDisabled ? styles.cardDisabled : ''
-      }`}
-      aria-pressed={selected}
-    >
-      <Image
-        src={option.iconSrc}
-        alt=""
-        width={56}
-        height={56}
-        className={styles.icon}
-      />
-      <span className={styles.textContainer}>
-        <span className={styles.titleRow}>
-          {option.title}
-          {option.showHelp ? (
-            <span
-              className={styles.helpWrap}
-              onClick={(event) => event.stopPropagation()}
-              onKeyDown={(event) => event.stopPropagation()}
-              role="presentation"
-            >
-              <WuHelpButton
-                idOrSlugOrUrl="crosstab-report"
-                variant="primary"
-                onClick={() => onHelp?.()}
-              />
-            </span>
-          ) : null}
-          {option.comingSoon ? (
-            <span className={styles.comingSoonBadge}>Coming Soon</span>
-          ) : null}
-        </span>
-        <span className={styles.description}>{option.description}</span>
-      </span>
-    </button>
-  );
-}
-
 export function CreateReportModal({
   open,
   onOpenChange,
@@ -115,6 +62,7 @@ export function CreateReportModal({
   const [step, setStep] = useState<CreateReportWizardStep>('report');
   const [name, setName] = useState(defaultName);
   const [nameError, setNameError] = useState(false);
+  const [typeSearch, setTypeSearch] = useState('');
   const [reportType, setReportType] = useState<CreateReportTypeId>('crosstab');
   const [selectedSurvey, setSelectedSurvey] = useState<SurveyListItem | null>(null);
 
@@ -123,17 +71,30 @@ export function CreateReportModal({
       setStep('report');
       setName(defaultName);
       setNameError(false);
+      setTypeSearch('');
       setReportType('crosstab');
       setSelectedSurvey(null);
     }
   }, [open, defaultName]);
+
+  const typeGroups = useMemo(() => {
+    const term = typeSearch.trim().toLowerCase();
+    const pool = CREATE_REPORT_TYPE_OPTIONS.filter(
+      (option) => !term || option.title.toLowerCase().includes(term)
+    );
+    return CREATE_REPORT_CATEGORIES.map((category) => ({
+      category,
+      items: pool.filter((option) => option.category === category),
+    })).filter((group) => group.items.length > 0);
+  }, [typeSearch]);
 
   if (!open || !wick) {
     return null;
   }
 
   const { WuModal, WuModalHeader, WuModalContent, WuModalFooter } = wick;
-  const modalClassName = step === 'survey' ? styles.modalWide : styles.modal;
+  const selectedOption = getCreateReportTypeOption(reportType);
+  const isSelectionBlocked = Boolean(selectedOption.comingSoon);
 
   function handleClose(): void {
     onOpenChange(false);
@@ -145,10 +106,9 @@ export function CreateReportModal({
       setNameError(true);
       return;
     }
-    const option = CREATE_REPORT_TYPE_OPTIONS.find((item) => item.id === reportType);
-    if (!option || option.comingSoon) {
+    if (isSelectionBlocked) {
       showToast({
-        message: `${option?.title ?? 'This report type'} will be available in a future update.`,
+        message: `${selectedOption.title} will be available in a future update.`,
         variant: 'info',
       });
       return;
@@ -178,7 +138,7 @@ export function CreateReportModal({
   }
 
   return (
-    <WuModal open onOpenChange={onOpenChange} className={modalClassName} variant="action">
+    <WuModal open onOpenChange={onOpenChange} className={styles.modal} variant="action">
       <WuModalHeader className={styles.modalTitle}>Create report</WuModalHeader>
 
       {step === 'report' ? (
@@ -202,21 +162,110 @@ export function CreateReportModal({
               }
             />
 
-            <div className={styles.typeGrid} role="group" aria-label="Report type">
-              {CREATE_REPORT_TYPE_OPTIONS.map((option) => (
-                <ReportTypeCard
-                  key={option.id}
-                  option={option}
-                  selected={reportType === option.id}
-                  onSelect={() => setReportType(option.id)}
-                  onHelp={() =>
-                    showToast({
-                      message: option.helpMessage ?? option.description,
-                      variant: 'success',
-                    })
-                  }
+            <div className={styles.typePicker}>
+              <div className={styles.typeList}>
+                <div className={styles.typeSearch}>
+                  <WuInput
+                    variant="outlined"
+                    placeholder="Search report types"
+                    Icon={<span className="wm-search" />}
+                    iconPosition="left"
+                    value={typeSearch}
+                    onChange={(event) => setTypeSearch(event.target.value)}
+                  />
+                </div>
+                <div
+                  className={styles.typeScroll}
+                  role="listbox"
+                  aria-label="Report type"
+                >
+                  {typeGroups.length === 0 ? (
+                    <p className={styles.typeEmpty}>No report types match your search.</p>
+                  ) : null}
+                  {typeGroups.map((group) => (
+                    <div key={group.category}>
+                      <div className={styles.categoryLabel}>{group.category}</div>
+                      {group.items.map((option) => {
+                        const isSelected = option.id === reportType;
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            role="option"
+                            aria-selected={isSelected}
+                            className={`${styles.typeRow} ${
+                              isSelected ? styles.typeRowSelected : ''
+                            } ${option.comingSoon ? styles.typeRowDisabled : ''}`}
+                            onClick={() => setReportType(option.id)}
+                          >
+                            <Image
+                              src={option.iconSrc}
+                              alt=""
+                              width={26}
+                              height={26}
+                              className={styles.typeRowIcon}
+                            />
+                            <span
+                              className={`${styles.typeRowTitle} ${
+                                isSelected ? styles.typeRowTitleSelected : ''
+                              }`}
+                            >
+                              {option.title}
+                            </span>
+                            {option.comingSoon ? (
+                              <span className={`${styles.comingSoonBadge} ml-auto`}>
+                                Coming Soon
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <aside className={styles.preview} aria-label="Report type details">
+                <Image
+                  src={selectedOption.iconSrc}
+                  alt=""
+                  width={56}
+                  height={56}
+                  className={styles.previewIcon}
                 />
-              ))}
+                <div className={styles.previewTitleRow}>
+                  <h3 className={styles.previewTitle}>{selectedOption.title}</h3>
+                  {selectedOption.comingSoon ? (
+                    <span className={styles.comingSoonBadge}>Coming Soon</span>
+                  ) : null}
+                  {selectedOption.showHelp ? (
+                    <span className={styles.helpWrap}>
+                      <WuHelpButton
+                        idOrSlugOrUrl="crosstab-report"
+                        variant="primary"
+                        onClick={() =>
+                          showToast({
+                            message:
+                              selectedOption.helpMessage ?? selectedOption.description,
+                            variant: 'success',
+                          })
+                        }
+                      />
+                    </span>
+                  ) : null}
+                </div>
+                <div className={styles.previewCategory}>{selectedOption.category}</div>
+                <p className={styles.previewDescription}>{selectedOption.description}</p>
+                <div className={styles.needsBlock}>
+                  <div className={styles.needsTitle}>What you&apos;ll need</div>
+                  {selectedOption.needs.map((need) => (
+                    <div key={need} className={styles.needsItem}>
+                      <span className={styles.needsDot} aria-hidden />
+                      {need}
+                    </div>
+                  ))}
+                </div>
+              </aside>
             </div>
           </div>
         </WuModalContent>
@@ -243,7 +292,9 @@ export function CreateReportModal({
                 <WuButton variant="secondary" onClick={handleClose}>
                   Cancel
                 </WuButton>
-                <WuButton onClick={handleReportContinue}>Continue</WuButton>
+                <WuButton onClick={handleReportContinue} disabled={isSelectionBlocked}>
+                  Continue
+                </WuButton>
               </>
             ) : (
               <>

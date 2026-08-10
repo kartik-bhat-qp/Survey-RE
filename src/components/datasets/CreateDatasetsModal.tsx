@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
@@ -9,6 +9,7 @@ import { CreateDatasetStepBreadcrumb } from '@/components/datasets/CreateDataset
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
   DATASET_SUBTYPE_OPTIONS,
+  type CreateDatasetPayload,
   type CreateDatasetWizardStep,
   type DatasetSubTypeId,
 } from '@/data/mock-create-dataset';
@@ -38,6 +39,7 @@ export type DatasetCreateType = 'fresh' | 'map';
 interface CreateDatasetsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCreate?: (payload: CreateDatasetPayload) => void;
 }
 
 interface DatasetTypeCardProps {
@@ -86,17 +88,19 @@ function DatasetTypeCard({
   );
 }
 
-export function CreateDatasetsModal({ open, onOpenChange }: CreateDatasetsModalProps) {
+export function CreateDatasetsModal({
+  open,
+  onOpenChange,
+  onCreate,
+}: CreateDatasetsModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<CreateDatasetWizardStep>('type');
   const [createType, setCreateType] = useState<DatasetCreateType>('fresh');
   const [selectedSurvey, setSelectedSurvey] = useState<SurveyListItem | null>(null);
   const [datasourceName, setDatasourceName] = useState('');
   const [nameError, setNameError] = useState(false);
   const [subType, setSubType] = useState<DatasetSubTypeId>('import');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -106,10 +110,6 @@ export function CreateDatasetsModal({ open, onOpenChange }: CreateDatasetsModalP
       setDatasourceName('');
       setNameError(false);
       setSubType('import');
-      setSelectedFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
   }, [open]);
 
@@ -121,6 +121,15 @@ export function CreateDatasetsModal({ open, onOpenChange }: CreateDatasetsModalP
   const modalClassName =
     step === 'datasource' || step === 'subtype' ? styles.modalWide : styles.modal;
   const showStepper = createType === 'map' && step !== 'type';
+
+  function finishCreate(payload: CreateDatasetPayload): void {
+    onCreate?.(payload);
+    showToast({
+      message: `"${payload.name}" created from "${payload.surveyName}".`,
+      variant: 'success',
+    });
+    onOpenChange(false);
+  }
 
   function handleClose(): void {
     onOpenChange(false);
@@ -152,41 +161,17 @@ export function CreateDatasetsModal({ open, onOpenChange }: CreateDatasetsModalP
     setStep('subtype');
   }
 
-  function handleSubtypeNext(): void {
+  function handleCreate(): void {
     const trimmed = datasourceName.trim();
     if (!trimmed) {
       setNameError(true);
       return;
     }
-    if (subType === 'import') {
-      setSelectedFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      setStep('upload');
-      return;
-    }
-    const label = DATASET_SUBTYPE_OPTIONS.find((option) => option.id === subType)?.title;
-    showToast({
-      message: `"${trimmed}" created as ${label} dataset from "${selectedSurvey?.name}".`,
-      variant: 'success',
+    finishCreate({
+      name: trimmed,
+      subType,
+      surveyName: selectedSurvey?.name ?? trimmed,
     });
-    onOpenChange(false);
-  }
-
-  function handleUploadCreate(): void {
-    if (!selectedFile) {
-      showToast({
-        message: 'Select a file to continue.',
-        variant: 'error',
-      });
-      return;
-    }
-    showToast({
-      message: `"${datasourceName.trim()}" created from "${selectedFile.name}".`,
-      variant: 'success',
-    });
-    onOpenChange(false);
   }
 
   function handleBack(): void {
@@ -196,15 +181,11 @@ export function CreateDatasetsModal({ open, onOpenChange }: CreateDatasetsModalP
     }
     if (step === 'subtype') {
       setStep('datasource');
-      return;
-    }
-    if (step === 'upload') {
-      setStep('subtype');
     }
   }
 
   function handleStepClick(target: CreateDatasetWizardStep): void {
-    const order: CreateDatasetWizardStep[] = ['type', 'datasource', 'subtype', 'upload'];
+    const order: CreateDatasetWizardStep[] = ['type', 'datasource', 'subtype'];
     const currentIndex = order.indexOf(step);
     const targetIndex = order.indexOf(target);
     if (targetIndex >= 0 && targetIndex < currentIndex) {
@@ -289,37 +270,6 @@ export function CreateDatasetsModal({ open, onOpenChange }: CreateDatasetsModalP
         </WuModalContent>
       ) : null}
 
-      {step === 'upload' ? (
-        <WuModalContent>
-          <div className={styles.uploadContent}>
-            <p className={styles.uploadHint}>
-              Upload a file to map external data to &ldquo;{datasourceName.trim()}&rdquo;.
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xls,.xlsx,.csv"
-              className={styles.fileInput}
-              onChange={(event) => {
-                setSelectedFile(event.target.files?.[0] ?? null);
-              }}
-            />
-            <div className={styles.uploadActions}>
-              <WuButton
-                variant="secondary"
-                onClick={() => fileInputRef.current?.click()}
-                Icon={<span className="wm-upload" />}
-              >
-                Choose file
-              </WuButton>
-              <span className={styles.fileName}>
-                {selectedFile ? selectedFile.name : 'No file selected'}
-              </span>
-            </div>
-          </div>
-        </WuModalContent>
-      ) : null}
-
       <WuModalFooter>
         <div className={styles.footer}>
           {showStepper ? (
@@ -354,17 +304,7 @@ export function CreateDatasetsModal({ open, onOpenChange }: CreateDatasetsModalP
                 <WuButton variant="secondary" onClick={handleBack}>
                   Back
                 </WuButton>
-                <WuButton onClick={handleSubtypeNext}>Next</WuButton>
-              </>
-            ) : null}
-            {step === 'upload' ? (
-              <>
-                <WuButton variant="secondary" onClick={handleBack}>
-                  Back
-                </WuButton>
-                <WuButton onClick={handleUploadCreate} disabled={!selectedFile}>
-                  Create
-                </WuButton>
+                <WuButton onClick={handleCreate}>Create</WuButton>
               </>
             ) : null}
           </div>

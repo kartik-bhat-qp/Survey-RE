@@ -1,10 +1,89 @@
+.page {
+  font-family: 'Fira Sans', sans-serif;
+}
+
+.title {
+  color: #253449;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .title {
+    font-size: 24px;
+  }
+}
+
+.subhead {
+  color: #9aa3af;
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+
+.chipRow {
+  border-bottom: 1px solid #eef1f5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding-bottom: 18px;
+}
+
+.chip {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 999px;
+  color: #545e6b;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: inherit;
+  font-size: 12.5px;
+  gap: 6px;
+  padding: 5px 12px;
+  transition:
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out,
+    color 0.15s ease-in-out;
+}
+
+.chip:hover {
+  border-color: #1b87e6;
+  color: #1b87e6;
+}
+
+.chipActive {
+  background: #1b87e6;
+  border-color: #1b87e6;
+  color: #fff;
+  font-weight: 500;
+}
+
+.chipActive:hover {
+  color: #fff;
+}
+
+.chipCount {
+  background: #f0f2f6;
+  border-radius: 999px;
+  color: #9aa3af;
+  font-size: 11px;
+  padding: 0 5px;
+}
+
+.chipActive .chipCount {
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
+}
+
 .tableWrap {
-  overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
 }
 
 .tableWrap :global(table) {
-  min-width: 32rem;
+  min-width: 46rem;
 }
 
 .reportNameButton {
@@ -22,4 +101,29 @@
 .reportNameButton:focus-visible {
   color: #1b3380;
   text-decoration: underline;
+}
+
+.typeCell {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  min-width: 0;
+}
+
+.typeIcon {
+  flex-shrink: 0;
+  height: 20px;
+  width: 20px;
+}
+
+.typeLabel {
+  color: #545e6b;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mutedCell {
+  color: #67727e;
 }
