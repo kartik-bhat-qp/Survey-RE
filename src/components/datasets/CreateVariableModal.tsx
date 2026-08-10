@@ -41,7 +41,7 @@ export type CreateVariableSource = 'composite' | 'textai';
 interface CreateVariableModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreate: (variableName: string) => void;
+  onCreate: (payload: { source: CreateVariableSource; name: string }) => void;
 }
 
 type ResponseStatusOption = (typeof DATASET_VARIABLE_RESPONSE_STATUS_OPTIONS)[number];
@@ -197,10 +197,10 @@ export function CreateVariableModal({
         setNameError(true);
         return;
       }
-      onCreate(trimmed);
+      onCreate({ source: 'composite', name: trimmed });
     } else {
       if (!textAiOption) return;
-      onCreate(`${textAiOption.label} — themes`);
+      onCreate({ source: 'textai', name: textAiOption.label });
     }
     onOpenChange(false);
   }

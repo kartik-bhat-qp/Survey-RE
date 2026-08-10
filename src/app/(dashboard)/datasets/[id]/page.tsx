@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -12,9 +12,22 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
   getDatasetDetailData,
+  type DatasetResponseRow,
   type DatasetVariable,
   type DatasetVariableKind,
 } from '@/data/mock-dataset-detail';
+import {
+  TEXT_AI_PROCESS_MS,
+  TEXT_AI_SUBTHEME_ID,
+  TEXT_AI_THEME_ID,
+  buildTextAiColumnValues,
+  createTextAiProcessingVariables,
+  createTextAiReadyVariables,
+  expandVariablesForPreview,
+  getTextAiOptionCount,
+  isTextAiExpandableVariable,
+  isTextAiProcessingVariable,
+} from '@/data/mock-dataset-textai';
 import { MOCK_DATASETS } from '@/data/mock-datasets';
 import { useBiProductBasePath, withBiProductBasePath } from '@/hooks/useBiProductBasePath';
 import styles from './DatasetDetail.module.css';
@@ -66,10 +79,13 @@ export default function DatasetDetailPage() {
   const datasetId = Number(params.id);
   const dataset = MOCK_DATASETS.find((item) => item.id === datasetId);
   const detail = useMemo(() => getDatasetDetailData(datasetId), [datasetId]);
+  const textAiTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const responseRowsRef = useRef<DatasetResponseRow[]>(detail?.rows ?? []);
 
   const [variableSearch, setVariableSearch] = useState('');
   const [responseSearch, setResponseSearch] = useState('');
   const [variables, setVariables] = useState<DatasetVariable[]>(detail?.variables ?? []);
+  const [responseRows, setResponseRows] = useState<DatasetResponseRow[]>(detail?.rows ?? []);
   const [selectedRows, setSelectedRows] = useState<DatasetVariable[]>(() => {
     if (!detail) return [];
     return detail.variables.filter((variable) =>
@@ -80,16 +96,32 @@ export default function DatasetDetailPage() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isCreateVariableOpen, setIsCreateVariableOpen] = useState(false);
 
+  function clearTextAiTimer(): void {
+    if (textAiTimerRef.current) {
+      clearTimeout(textAiTimerRef.current);
+      textAiTimerRef.current = null;
+    }
+  }
+
+  useEffect(() => {
+    responseRowsRef.current = responseRows;
+  }, [responseRows]);
+
   useEffect(() => {
     const nextDetail = getDatasetDetailData(datasetId);
+    clearTextAiTimer();
     if (!nextDetail) {
       setVariables([]);
+      setResponseRows([]);
+      responseRowsRef.current = [];
       setSelectedRows([]);
       return;
     }
     setVariableSearch('');
     setResponseSearch('');
     setVariables(nextDetail.variables);
+    setResponseRows(nextDetail.rows);
+    responseRowsRef.current = nextDetail.rows;
     setSelectedRows(
       nextDetail.variables.filter((variable) =>
         nextDetail.defaultSelectedVariableIds.includes(variable.id)
@@ -100,23 +132,89 @@ export default function DatasetDetailPage() {
     setIsCreateVariableOpen(false);
   }, [datasetId]);
 
-  const selectedVariables = selectedRows;
+  useEffect(() => {
+    return () => {
+      clearTextAiTimer();
+    };
+  }, []);
+
+  const selectedVariables = selectedRows.filter(
+    (variable) => !isTextAiProcessingVariable(variable)
+  );
 
   const previewRows = useMemo(() => {
-    if (!detail) return [];
     const term = responseSearch.trim().toLowerCase();
-    return detail.rows.filter((row) => {
+    return responseRows.filter((row) => {
       if (!term) return true;
       return String(row.responseId).includes(term);
     });
-  }, [detail, responseSearch]);
+  }, [responseRows, responseSearch]);
 
   const rowSelection: IWuTableRowSelection<DatasetVariable> = {
     isEnabled: true,
     selectedRows,
-    onRowSelect: setSelectedRows,
+    onRowSelect: (next) => {
+      setSelectedRows(next.filter((variable) => !isTextAiProcessingVariable(variable)));
+    },
     rowUniqueKey: 'id',
   };
+
+  function startTextAiImport(sourceLabel: string): void {
+    clearTextAiTimer();
+    const processingVariables = createTextAiProcessingVariables();
+    setVariables((prev) => {
+      const withoutTextAi = prev.filter(
+        (variable) =>
+          variable.id !== TEXT_AI_THEME_ID && variable.id !== TEXT_AI_SUBTHEME_ID
+      );
+      return [...withoutTextAi, ...processingVariables];
+    });
+    setSelectedRows((prev) =>
+      prev.filter(
+        (variable) =>
+          variable.id !== TEXT_AI_THEME_ID && variable.id !== TEXT_AI_SUBTHEME_ID
+      )
+    );
+    showToast({
+      message: `Importing themes and sub-themes from "${sourceLabel}". Processing…`,
+      variant: 'info',
+    });
+
+    textAiTimerRef.current = setTimeout(() => {
+      const currentRows = responseRowsRef.current;
+      const responseCount = currentRows.length;
+      const readyVariables = createTextAiReadyVariables(responseCount);
+      const nextRows = currentRows.map((row) => ({
+        ...row,
+        values: {
+          ...row.values,
+          ...buildTextAiColumnValues(row.responseId),
+        },
+      }));
+
+      setVariables((prev) => {
+        const withoutTextAi = prev.filter(
+          (variable) =>
+            variable.id !== TEXT_AI_THEME_ID && variable.id !== TEXT_AI_SUBTHEME_ID
+        );
+        return [...withoutTextAi, ...readyVariables];
+      });
+      setResponseRows(nextRows);
+      responseRowsRef.current = nextRows;
+      setSelectedRows((prev) => {
+        const withoutTextAi = prev.filter(
+          (variable) =>
+            variable.id !== TEXT_AI_THEME_ID && variable.id !== TEXT_AI_SUBTHEME_ID
+        );
+        return [...withoutTextAi, readyVariables[0]];
+      });
+      showToast({
+        message: 'Themes and sub-themes are ready.',
+        variant: 'success',
+      });
+      textAiTimerRef.current = null;
+    }, TEXT_AI_PROCESS_MS);
+  }
 
   function handleUpload(): void {
     setIsUploadOpen(true);
@@ -133,21 +231,30 @@ export default function DatasetDetailPage() {
     setIsCreateVariableOpen(true);
   }
 
-  function handleVariableCreated(variableName: string): void {
+  function handleVariableCreated(payload: {
+    source: 'composite' | 'textai';
+    name: string;
+  }): void {
+    if (payload.source === 'textai') {
+      startTextAiImport(payload.name);
+      return;
+    }
     const newVariable: DatasetVariable = {
       id: `custom-${Date.now()}`,
-      name: variableName,
+      name: payload.name,
       kind: 'category',
       responses: 0,
+      status: 'ready',
     };
     setVariables((prev) => [...prev, newVariable]);
     showToast({
-      message: `"${variableName}" created`,
+      message: `"${payload.name}" created`,
       variant: 'success',
     });
   }
 
   function handleEditVariable(variable: DatasetVariable): void {
+    if (isTextAiProcessingVariable(variable)) return;
     showToast({
       message: `Editing "${variable.name}" will be available in a future update.`,
       variant: 'info',
@@ -172,12 +279,30 @@ export default function DatasetDetailPage() {
       filterable: true,
       enableSorting: false,
       size: 148,
-      cell: ({ row }) => (
-        <div className={styles.variableNameCell}>
-          <VariableTypeIcon kind={row.original.kind} />
-          <span className={styles.variableLabel}>{row.original.name}</span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const isProcessing = isTextAiProcessingVariable(row.original);
+        const optionCount = isTextAiExpandableVariable(row.original)
+          ? getTextAiOptionCount(row.original.id)
+          : null;
+        return (
+          <div className={styles.variableNameCell}>
+            {isProcessing ? (
+              <span className={`${styles.typeIcon} ${styles.typeIconProcessing}`} aria-hidden>
+                <span className={`wm-sync ${styles.processingSpinner}`} />
+              </span>
+            ) : (
+              <VariableTypeIcon kind={row.original.kind} />
+            )}
+            <span className={styles.variableLabel}>{row.original.name}</span>
+            {isProcessing ? (
+              <span className={styles.processingBadge}>Processing</span>
+            ) : null}
+            {optionCount ? (
+              <span className={styles.optionCountBadge}>{optionCount} options</span>
+            ) : null}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'responses',
@@ -186,33 +311,40 @@ export default function DatasetDetailPage() {
       cellAlign: 'left',
       enableSorting: false,
       size: 120,
-      cell: ({ row }) => (
-        <div className={styles.responsesCell}>
-          <span className={styles.responsesValue}>{row.original.responses}</span>
-          <div className={styles.rowActions}>
-            <WuTooltip content="Edit" position="top">
-              <button
-                type="button"
-                className={styles.rowActionButton}
-                aria-label={`Edit ${row.original.name}`}
-                onClick={() => handleEditVariable(row.original)}
-              >
-                <span className="wm-edit" aria-hidden />
-              </button>
-            </WuTooltip>
-            <WuTooltip content="Delete" position="top">
-              <button
-                type="button"
-                className={`${styles.rowActionButton} ${styles.rowActionButtonDelete}`}
-                aria-label={`Delete ${row.original.name}`}
-                onClick={() => setDeleteTarget(row.original)}
-              >
-                <span className="wm-delete" aria-hidden />
-              </button>
-            </WuTooltip>
+      cell: ({ row }) => {
+        const isProcessing = isTextAiProcessingVariable(row.original);
+        return (
+          <div className={styles.responsesCell}>
+            <span className={styles.responsesValue}>
+              {isProcessing ? '…' : row.original.responses}
+            </span>
+            {!isProcessing ? (
+              <div className={styles.rowActions}>
+                <WuTooltip content="Edit" position="top">
+                  <button
+                    type="button"
+                    className={styles.rowActionButton}
+                    aria-label={`Edit ${row.original.name}`}
+                    onClick={() => handleEditVariable(row.original)}
+                  >
+                    <span className="wm-edit" aria-hidden />
+                  </button>
+                </WuTooltip>
+                <WuTooltip content="Delete" position="top">
+                  <button
+                    type="button"
+                    className={`${styles.rowActionButton} ${styles.rowActionButtonDelete}`}
+                    aria-label={`Delete ${row.original.name}`}
+                    onClick={() => setDeleteTarget(row.original)}
+                  >
+                    <span className="wm-delete" aria-hidden />
+                  </button>
+                </WuTooltip>
+              </div>
+            ) : null}
           </div>
-        </div>
-      ),
+        );
+      },
     },
   ];
 
@@ -223,17 +355,17 @@ export default function DatasetDetailPage() {
       enableSorting: false,
       cell: ({ row }) => row.original.responseId,
     },
-    ...selectedVariables.map((variable) => ({
-      accessorKey: variable.id,
-      header: variable.name,
+    ...expandVariablesForPreview(selectedVariables).map((column) => ({
+      accessorKey: column.id,
+      header: column.name,
       enableSorting: false,
       cell: ({
         row,
       }: {
         row: { original: Record<string, string | number> };
       }) => (
-        <span className={styles.previewCell} title={String(row.original[variable.id] ?? '')}>
-          {row.original[variable.id] ?? ''}
+        <span className={styles.previewCell} title={String(row.original[column.id] ?? '')}>
+          {row.original[column.id] ?? ''}
         </span>
       ),
     })),
@@ -241,8 +373,8 @@ export default function DatasetDetailPage() {
 
   const previewTableData = previewRows.map((row) => {
     const record: Record<string, string | number> = { responseId: row.responseId };
-    for (const variable of selectedVariables) {
-      record[variable.id] = row.values[variable.id] ?? '';
+    for (const column of expandVariablesForPreview(selectedVariables)) {
+      record[column.id] = row.values[column.id] ?? '';
     }
     return record;
   });
@@ -331,6 +463,7 @@ export default function DatasetDetailPage() {
               sort={{ enabled: false }}
               filterText={variableSearch}
               tableLayout="fixed"
+              stickyHeader
               className={styles.variablesTable}
               rowSelection={
                 rowSelection as unknown as IWuTableRowSelection<unknown>
@@ -372,6 +505,7 @@ export default function DatasetDetailPage() {
                 size="compact"
                 sort={{ enabled: false }}
                 tableLayout="fixed"
+                stickyHeader
                 className={styles.previewTable}
                 NoDataContent={
                   <EmptyState
@@ -395,6 +529,7 @@ export default function DatasetDetailPage() {
         open={isUploadOpen}
         onOpenChange={setIsUploadOpen}
         datasetName={dataset.name}
+        onTextAiImport={() => startTextAiImport('TextAI')}
       />
 
       <ConfirmModal

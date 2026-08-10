@@ -145,54 +145,6 @@
   padding: 0 !important;
 }
 
-.confirmationPanel {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 8px 0;
-}
-
-.confirmationTitle {
-  color: #253449;
-  font-size: 15px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.confirmationCopy {
-  color: #67727e;
-  font-size: 13px;
-  line-height: 1.45;
-  margin: 0;
-}
-
-.confirmationMeta {
-  border: 1px solid #e7eaf0;
-  border-radius: 4px;
-  display: grid;
-  gap: 10px;
-  padding: 14px;
-}
-
-.metaRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 16px;
-}
-
-.metaLabel {
-  color: #9aa3af;
-  font-size: 12px;
-  font-weight: 500;
-  min-width: 88px;
-}
-
-.metaValue {
-  color: #253449;
-  font-size: 13px;
-  font-weight: 500;
-}
-
 .footer {
   align-items: center;
   display: flex;

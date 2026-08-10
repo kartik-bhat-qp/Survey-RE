@@ -23,6 +23,9 @@ export const PUBLIC_IMAGES = {
   createDataset: {
     freshData: publicImage('create-dataset', 'fresh-data.svg'),
     mapToSurvey: publicImage('create-dataset', 'map-to-survey.svg'),
+    import: publicImage('create-dataset', 'import.svg'),
+    composite: publicImage('create-dataset', 'composite.svg'),
+    textAi: publicImage('create-dataset', 'textai.svg'),
   },
 
   singleSelectWidgets: {

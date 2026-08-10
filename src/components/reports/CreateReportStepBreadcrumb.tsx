@@ -2,12 +2,11 @@
 
 import styles from './CreateReportStepBreadcrumb.module.css';
 
-export type CreateReportWizardStep = 'report' | 'survey' | 'confirmation';
+export type CreateReportWizardStep = 'report' | 'survey';
 
 const STEPS: { id: CreateReportWizardStep; label: string; icon: string }[] = [
   { id: 'report', label: 'Report', icon: 'wm-description' },
   { id: 'survey', label: 'Survey', icon: 'wm-description' },
-  { id: 'confirmation', label: 'Confirmation', icon: 'wm-bar-chart' },
 ];
 
 interface CreateReportStepBreadcrumbProps {

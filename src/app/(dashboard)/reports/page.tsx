@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
@@ -9,9 +9,10 @@ import { CreateReportModal } from '@/components/reports/CreateReportModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { getDefaultCreateReportName } from '@/data/mock-create-report';
+import { MOCK_CONJOINT_REPORT } from '@/data/mock-conjoint-report';
 import { MOCK_REPORTS, REPORTS_PER_PAGE, type Report } from '@/data/mock-reports';
 import { formatSmartDate } from '@/data/mock-utils';
-import { getSectionBasePath } from '@/lib/section-base-path';
+import { getSectionBasePath, withSectionBasePath } from '@/lib/section-base-path';
 import styles from './ReportsTable.module.css';
 
 const WuTable = dynamic(
@@ -33,7 +34,9 @@ const WuPagination = dynamic(
 
 export default function ReportsPage() {
   const pathname = usePathname();
+  const router = useRouter();
   const basePath = getSectionBasePath(pathname);
+  const reportsPath = withSectionBasePath(basePath, '/reports');
   const { showToast } = useWuShowToast();
   const [reports, setReports] = useState<Report[]>(MOCK_REPORTS);
   const [search, setSearch] = useState('');
@@ -53,6 +56,17 @@ export default function ReportsPage() {
 
   const defaultReportName = getDefaultCreateReportName(reports.length);
 
+  function openReport(report: Report): void {
+    if (report.typeId === 'conjoint') {
+      router.push(`${reportsPath}/${report.id}`);
+      return;
+    }
+    showToast({
+      message: `Opening report "${report.name}"`,
+      variant: 'info',
+    });
+  }
+
   const columns: IWuTableColumnDef<Report>[] = [
     {
       accessorKey: 'name',
@@ -63,12 +77,7 @@ export default function ReportsPage() {
         <button
           type="button"
           className={styles.reportNameButton}
-          onClick={() =>
-            showToast({
-              message: `Opening report "${row.original.name}"`,
-              variant: 'info',
-            })
-          }
+          onClick={() => openReport(row.original)}
         >
           {row.original.name}
         </button>
@@ -143,19 +152,27 @@ export default function ReportsPage() {
         defaultName={defaultReportName}
         onCreate={({ name, typeId, survey }) => {
           const nextId = Math.max(0, ...reports.map((report) => report.id)) + 1;
-          setReports((prev) => [
-            {
-              id: nextId,
-              name,
-              creationDate: new Date().toISOString().slice(0, 10),
-            },
-            ...prev,
-          ]);
+          const nextReport: Report = {
+            id: nextId,
+            name,
+            creationDate: new Date().toISOString().slice(0, 10),
+            typeId,
+            surveyName: survey.name,
+            questionLabel:
+              typeId === 'conjoint'
+                ? MOCK_CONJOINT_REPORT.questionLabel
+                : undefined,
+          };
+          setReports((prev) => [nextReport, ...prev]);
+          MOCK_REPORTS.unshift(nextReport);
           setCurrentPage(1);
           showToast({
-            message: `"${name}" (${typeId}) created from "${survey.name}"`,
+            message: `"${name}" created from "${survey.name}"`,
             variant: 'success',
           });
+          if (typeId === 'conjoint') {
+            router.push(`${reportsPath}/${nextId}`);
+          }
         }}
       />
     </PageContainer>

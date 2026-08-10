@@ -133,7 +133,6 @@ export function CreateReportModal({
   }
 
   const { WuModal, WuModalHeader, WuModalContent, WuModalFooter } = wick;
-  const selectedType = CREATE_REPORT_TYPE_OPTIONS.find((option) => option.id === reportType);
   const modalClassName = step === 'survey' ? styles.modalWide : styles.modal;
 
   function handleClose(): void {
@@ -157,7 +156,12 @@ export function CreateReportModal({
     setStep('survey');
   }
 
-  function handleSurveyContinue(): void {
+  function handleCreate(): void {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setNameError(true);
+      return;
+    }
     if (!selectedSurvey) {
       showToast({
         message: 'Select a survey to continue.',
@@ -165,12 +169,6 @@ export function CreateReportModal({
       });
       return;
     }
-    setStep('confirmation');
-  }
-
-  function handleCreate(): void {
-    const trimmed = name.trim();
-    if (!trimmed || !selectedSurvey) return;
     onCreate({
       name: trimmed,
       typeId: reportType,
@@ -233,31 +231,6 @@ export function CreateReportModal({
         </WuModalContent>
       ) : null}
 
-      {step === 'confirmation' && selectedSurvey && selectedType ? (
-        <WuModalContent>
-          <div className={styles.confirmationPanel}>
-            <h3 className={styles.confirmationTitle}>Confirm report details</h3>
-            <p className={styles.confirmationCopy}>
-              Review the report name, type, and survey before creating.
-            </p>
-            <div className={styles.confirmationMeta}>
-              <div className={styles.metaRow}>
-                <span className={styles.metaLabel}>Report name</span>
-                <span className={styles.metaValue}>{name.trim()}</span>
-              </div>
-              <div className={styles.metaRow}>
-                <span className={styles.metaLabel}>Report type</span>
-                <span className={styles.metaValue}>{selectedType.title}</span>
-              </div>
-              <div className={styles.metaRow}>
-                <span className={styles.metaLabel}>Survey</span>
-                <span className={styles.metaValue}>{selectedSurvey.name}</span>
-              </div>
-            </div>
-          </div>
-        </WuModalContent>
-      ) : null}
-
       <WuModalFooter>
         <div className={styles.footer}>
           <CreateReportStepBreadcrumb
@@ -272,23 +245,16 @@ export function CreateReportModal({
                 </WuButton>
                 <WuButton onClick={handleReportContinue}>Continue</WuButton>
               </>
-            ) : null}
-            {step === 'survey' ? (
+            ) : (
               <>
                 <WuButton variant="secondary" onClick={() => setStep('report')}>
                   Back
                 </WuButton>
-                <WuButton onClick={handleSurveyContinue}>Continue</WuButton>
-              </>
-            ) : null}
-            {step === 'confirmation' ? (
-              <>
-                <WuButton variant="secondary" onClick={() => setStep('survey')}>
-                  Back
+                <WuButton onClick={handleCreate} disabled={!selectedSurvey}>
+                  Create
                 </WuButton>
-                <WuButton onClick={handleCreate}>Create</WuButton>
               </>
-            ) : null}
+            )}
           </div>
         </div>
       </WuModalFooter>

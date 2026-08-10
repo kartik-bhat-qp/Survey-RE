@@ -5,8 +5,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getDashboardById } from '@/data/get-dashboard-by-id';
 import { getTextAiDashboardById } from '@/data/get-text-ai-dashboard-by-id';
+import { MOCK_DATASETS } from '@/data/mock-datasets';
+import { getReportById } from '@/data/mock-reports';
 import { MOCK_CURRENT_WORKSPACE } from '@/data/mock-workspace';
 import { getBiProductBasePath, withBiProductBasePath } from '@/hooks/useBiProductBasePath';
+import { getSectionBasePath, withSectionBasePath } from '@/lib/section-base-path';
 import styles from './AppHeaderBreadcrumb.module.css';
 
 const WuTruncatedLabel = dynamic(
@@ -20,12 +23,17 @@ interface BreadcrumbItem {
 }
 
 function buildBreadcrumbItems(pathname: string): BreadcrumbItem[] {
-  const basePath = getBiProductBasePath(pathname);
+  const biBasePath = getBiProductBasePath(pathname);
+  const sectionBasePath = getSectionBasePath(pathname);
+  const basePath = biBasePath || sectionBasePath;
   const routePath =
     basePath && pathname.startsWith(basePath)
       ? pathname.slice(basePath.length) || '/'
       : pathname;
-  const path = (href: string) => withBiProductBasePath(basePath, href);
+  const path = (href: string) =>
+    biBasePath
+      ? withBiProductBasePath(biBasePath, href)
+      : withSectionBasePath(sectionBasePath, href);
 
   const workspaces: BreadcrumbItem = { label: 'Workspaces', href: '/workspaces' };
   const workspace: BreadcrumbItem = { label: MOCK_CURRENT_WORKSPACE.name };
@@ -43,12 +51,37 @@ function buildBreadcrumbItems(pathname: string): BreadcrumbItem[] {
     return [workspaces, workspace, { label: 'Reports' }];
   }
 
+  const reportMatch = routePath.match(/^\/reports\/(\d+)$/);
+  if (reportMatch) {
+    const report = getReportById(Number(reportMatch[1]));
+    return [
+      workspaces,
+      workspace,
+      { label: 'Reports', href: path('/reports') },
+      { label: report?.name ?? 'Untitled' },
+    ];
+  }
+
   if (routePath === '/settings') {
     return [workspaces, workspace, { label: 'Settings' }];
   }
 
   if (routePath === '/text-ai') {
     return [workspaces, workspace, { label: 'TextAI' }];
+  }
+
+  if (routePath === '/datasets') {
+    return [workspace, { label: 'Data set' }];
+  }
+
+  const datasetMatch = routePath.match(/^\/datasets\/(\d+)$/);
+  if (datasetMatch) {
+    const dataset = MOCK_DATASETS.find((item) => item.id === Number(datasetMatch[1]));
+    return [
+      workspace,
+      { label: 'Data set', href: path('/datasets') },
+      { label: dataset?.name ?? 'Untitled' },
+    ];
   }
 
   const textAiThemeMatch = routePath.match(/^\/text-ai\/(\d+)\/theme-configuration$/);

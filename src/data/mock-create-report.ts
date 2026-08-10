@@ -35,7 +35,6 @@ export const CREATE_REPORT_TYPE_OPTIONS: CreateReportTypeOption[] = [
     description:
       'A Conjoint report analyzes customer preferences by measuring how they value different features of a product or service through trade-off evaluations.',
     iconSrc: publicImage('create-report', 'conjoint.svg'),
-    comingSoon: true,
   },
   {
     id: 'maxdiff',

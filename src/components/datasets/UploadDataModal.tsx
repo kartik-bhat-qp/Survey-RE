@@ -28,6 +28,7 @@ interface UploadDataModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   datasetName: string;
+  onTextAiImport?: () => void;
 }
 
 interface SourceCardProps {
@@ -97,7 +98,12 @@ const TEXT_AI_OPTIONS = MOCK_TEXT_AI_DASHBOARDS.map((dashboard) => ({
 
 type TextAiOption = (typeof TEXT_AI_OPTIONS)[number];
 
-export function UploadDataModal({ open, onOpenChange, datasetName }: UploadDataModalProps) {
+export function UploadDataModal({
+  open,
+  onOpenChange,
+  datasetName,
+  onTextAiImport,
+}: UploadDataModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -154,8 +160,9 @@ export function UploadDataModal({ open, onOpenChange, datasetName }: UploadDataM
       });
     } else {
       if (!textAiOption) return;
+      onTextAiImport?.();
       showToast({
-        message: `TextAI data from "${textAiOption.label}" imported to "${datasetName}".`,
+        message: `TextAI data from "${textAiOption.label}" is processing.`,
         variant: 'success',
       });
     }

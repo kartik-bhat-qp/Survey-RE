@@ -2,12 +2,14 @@ import type { Dataset } from '@/data/mock-datasets';
 import { MOCK_DATASETS } from '@/data/mock-datasets';
 
 export type DatasetVariableKind = 'question' | 'category' | 'numeric';
+export type DatasetVariableStatus = 'ready' | 'processing';
 
 export interface DatasetVariable {
   id: string;
   name: string;
   kind: DatasetVariableKind;
   responses: number;
+  status?: DatasetVariableStatus;
 }
 
 export interface DatasetResponseRow {
