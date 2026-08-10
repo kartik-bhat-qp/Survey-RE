@@ -28,6 +28,12 @@ interface UploadDataModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   datasetName: string;
+  initialSource?: UploadSource;
+  /** When false, hide Manual/TextAI picker and lock to initialSource. */
+  showSourcePicker?: boolean;
+  /** When false, hide Reupload/Upsert (first-time import). */
+  showUploadMode?: boolean;
+  onManualImport?: (fileName: string) => void;
   onTextAiImport?: () => void;
 }
 
@@ -102,12 +108,16 @@ export function UploadDataModal({
   open,
   onOpenChange,
   datasetName,
+  initialSource = 'manual',
+  showSourcePicker = true,
+  showUploadMode = true,
+  onManualImport,
   onTextAiImport,
 }: UploadDataModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [source, setSource] = useState<UploadSource>('manual');
+  const [source, setSource] = useState<UploadSource>(initialSource);
   const [uploadMode, setUploadMode] = useState<UploadMode>('upsert');
   const [fileType, setFileType] = useState<UploadFileType>('excel');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -115,7 +125,7 @@ export function UploadDataModal({
 
   useEffect(() => {
     if (open) {
-      setSource('manual');
+      setSource(initialSource);
       setUploadMode('upsert');
       setFileType('excel');
       setSelectedFile(null);
@@ -124,15 +134,21 @@ export function UploadDataModal({
         fileInputRef.current.value = '';
       }
     }
-  }, [open]);
+  }, [open, initialSource]);
 
   if (!open || !wick) {
     return null;
   }
 
   const { WuModal, WuModalHeader, WuModalContent, WuModalFooter } = wick;
+  const activeSource = showSourcePicker ? source : initialSource;
   const accept = fileType === 'excel' ? '.xls,.xlsx' : '.csv';
-  const canUpdate = source === 'manual' ? Boolean(selectedFile) : Boolean(textAiOption);
+  const canUpdate =
+    activeSource === 'manual' ? Boolean(selectedFile) : Boolean(textAiOption);
+  const fileTypeStep = showUploadMode ? 2 : 1;
+  const downloadStep = showUploadMode ? 3 : 2;
+  const fillStep = showUploadMode ? 4 : 3;
+  const uploadStep = showUploadMode ? 5 : 4;
 
   function handleDownloadTemplate(): void {
     const extension = fileType === 'excel' ? 'xlsx' : 'csv';
@@ -152,8 +168,9 @@ export function UploadDataModal({
   }
 
   function handleUpdate(): void {
-    if (source === 'manual') {
+    if (activeSource === 'manual') {
       if (!selectedFile) return;
+      onManualImport?.(selectedFile.name);
       showToast({
         message: `"${selectedFile.name}" uploaded to "${datasetName}".`,
         variant: 'success',
@@ -171,56 +188,62 @@ export function UploadDataModal({
 
   return (
     <WuModal open onOpenChange={onOpenChange} className={styles.modal} variant="action">
-      <WuModalHeader className={styles.modalTitle}>Upload data</WuModalHeader>
+      <WuModalHeader className={styles.modalTitle}>
+        {activeSource === 'textai' && !showSourcePicker ? 'Import TextAI data' : 'Upload data'}
+      </WuModalHeader>
       <WuModalContent>
         <div className={styles.content}>
-          <div className={styles.sourceGrid} role="group" aria-label="Upload source">
-            <SourceCard
-              selected={source === 'manual'}
-              iconClass="wm-description"
-              title="Manual"
-              description="Upload a file using the template"
-              onSelect={() => setSource('manual')}
-            />
-            <SourceCard
-              selected={source === 'textai'}
-              iconClass="wc-ai"
-              title="TextAI"
-              description="Import the themes and sub themes for this dataset"
-              onSelect={() => setSource('textai')}
-            />
-          </div>
+          {showSourcePicker ? (
+            <div className={styles.sourceGrid} role="group" aria-label="Upload source">
+              <SourceCard
+                selected={source === 'manual'}
+                iconClass="wm-description"
+                title="Manual"
+                description="Upload a file using the template"
+                onSelect={() => setSource('manual')}
+              />
+              <SourceCard
+                selected={source === 'textai'}
+                iconClass="wc-ai"
+                title="TextAI"
+                description="Import the themes, sub-themes and sentiment for this dataset"
+                onSelect={() => setSource('textai')}
+              />
+            </div>
+          ) : null}
 
-          {source === 'manual' ? (
+          {activeSource === 'manual' ? (
             <>
-              <div className={styles.stepRow}>
-                <div className={styles.stepText}>
-                  <span className={styles.stepLabel}>Step 1</span>
-                  <span className={styles.stepInstruction}>Select upload mode</span>
-                  <WuTooltip content={UPLOAD_MODE_HELP} position="top">
-                    <button
-                      type="button"
-                      className={styles.infoButton}
-                      aria-label="Upload mode help"
-                    >
-                      <span className="wm-info" aria-hidden />
-                    </button>
-                  </WuTooltip>
+              {showUploadMode ? (
+                <div className={styles.stepRow}>
+                  <div className={styles.stepText}>
+                    <span className={styles.stepLabel}>Step 1</span>
+                    <span className={styles.stepInstruction}>Select upload mode</span>
+                    <WuTooltip content={UPLOAD_MODE_HELP} position="top">
+                      <button
+                        type="button"
+                        className={styles.infoButton}
+                        aria-label="Upload mode help"
+                      >
+                        <span className="wm-info" aria-hidden />
+                      </button>
+                    </WuTooltip>
+                  </div>
+                  <SegmentedToggle
+                    label="Upload mode"
+                    value={uploadMode}
+                    onChange={setUploadMode}
+                    options={[
+                      { value: 'reupload', label: 'Reupload' },
+                      { value: 'upsert', label: 'Upsert' },
+                    ]}
+                  />
                 </div>
-                <SegmentedToggle
-                  label="Upload mode"
-                  value={uploadMode}
-                  onChange={setUploadMode}
-                  options={[
-                    { value: 'reupload', label: 'Reupload' },
-                    { value: 'upsert', label: 'Upsert' },
-                  ]}
-                />
-              </div>
+              ) : null}
 
               <div className={styles.stepRow}>
                 <div className={styles.stepText}>
-                  <span className={styles.stepLabel}>Step 2</span>
+                  <span className={styles.stepLabel}>Step {fileTypeStep}</span>
                   <span className={styles.stepInstruction}>Select file type.</span>
                 </div>
                 <SegmentedToggle
@@ -242,7 +265,7 @@ export function UploadDataModal({
 
               <div className={styles.stepRow}>
                 <div className={styles.stepText}>
-                  <span className={styles.stepLabel}>Step 3</span>
+                  <span className={styles.stepLabel}>Step {downloadStep}</span>
                   <span className={styles.stepInstruction}>Download template file.</span>
                   <WuTooltip content={TEMPLATE_HELP} position="top">
                     <button type="button" className={styles.infoButton} aria-label="Template help">
@@ -262,7 +285,7 @@ export function UploadDataModal({
 
               <div className={styles.stepRow}>
                 <div className={styles.stepText}>
-                  <span className={styles.stepLabel}>Step 4</span>
+                  <span className={styles.stepLabel}>Step {fillStep}</span>
                   <span className={styles.stepInstruction}>
                     Fill data in the downloaded template file and save it.
                   </span>
@@ -271,7 +294,7 @@ export function UploadDataModal({
 
               <div className={styles.stepRow}>
                 <div className={styles.stepText}>
-                  <span className={styles.stepLabel}>Step 5</span>
+                  <span className={styles.stepLabel}>Step {uploadStep}</span>
                   <span className={styles.stepInstruction}>
                     Select the saved template file and click &apos;Upload&apos; button.
                   </span>
@@ -303,8 +326,8 @@ export function UploadDataModal({
           ) : (
             <div className={styles.textAiPanel}>
               <p className={styles.textAiDescription}>
-                Choose a TextAI dashboard to import the themes and sub themes for this
-                dataset.
+                Choose a TextAI dashboard to import the themes, sub-themes and sentiment for
+                this dataset.
               </p>
               <WuCombobox
                 data={TEXT_AI_OPTIONS}
@@ -327,7 +350,11 @@ export function UploadDataModal({
       </WuModalContent>
       <WuModalFooter>
         <WuButton onClick={handleUpdate} disabled={!canUpdate}>
-          Update
+          {activeSource === 'textai'
+            ? 'Import'
+            : showUploadMode
+              ? 'Update'
+              : 'Upload'}
         </WuButton>
       </WuModalFooter>
     </WuModal>

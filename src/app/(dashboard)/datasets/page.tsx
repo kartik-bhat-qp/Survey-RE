@@ -96,10 +96,11 @@ export default function DatasetsPage() {
     const nextDataset: Dataset = {
       id: nextId,
       name: payload.name,
-      variableCount: 0,
-      rowCount: 0,
+      variableCount: 12,
+      rowCount: 8400,
       dataType: payload.subType === 'import' ? 'External' : 'Survey (Composite)',
       createdOn: new Date().toISOString().slice(0, 10),
+      surveyName: payload.surveyName,
     };
     setDatasets((prev) => [nextDataset, ...prev]);
     MOCK_DATASETS.unshift(nextDataset);

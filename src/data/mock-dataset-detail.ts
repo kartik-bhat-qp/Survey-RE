@@ -93,7 +93,8 @@ function buildSkimRows(): DatasetResponseRow[] {
 }
 
 function buildGenericVariables(dataset: Dataset): DatasetVariable[] {
-  const count = Math.max(dataset.variableCount, 3);
+  const count = Math.max(dataset.variableCount > 0 ? dataset.variableCount : 12, 3);
+  const effectiveRowCount = dataset.rowCount > 0 ? dataset.rowCount : 8400;
   const variables: DatasetVariable[] = [];
   for (let i = 1; i <= count; i += 1) {
     if (i === count - 1) {
@@ -101,7 +102,7 @@ function buildGenericVariables(dataset: Dataset): DatasetVariable[] {
         id: `category-${dataset.id}`,
         name: 'Category',
         kind: 'category',
-        responses: Math.max(4, Math.round(dataset.rowCount / 200)),
+        responses: Math.max(4, Math.round(effectiveRowCount / 200)),
       });
       continue;
     }
@@ -110,7 +111,7 @@ function buildGenericVariables(dataset: Dataset): DatasetVariable[] {
         id: `respondent-id-${dataset.id}`,
         name: 'Respondent ID',
         kind: 'numeric',
-        responses: dataset.rowCount,
+        responses: effectiveRowCount,
       });
       continue;
     }
@@ -118,7 +119,7 @@ function buildGenericVariables(dataset: Dataset): DatasetVariable[] {
       id: `q${i}-${dataset.id}`,
       name: `Q${i}`,
       kind: 'question',
-      responses: Math.max(8, Math.round(dataset.rowCount / (10 + i))),
+      responses: Math.max(8, Math.round(effectiveRowCount / (10 + i))),
     });
   }
   return variables;
@@ -128,7 +129,10 @@ function buildGenericRows(
   dataset: Dataset,
   variables: DatasetVariable[]
 ): DatasetResponseRow[] {
-  const rowCount = Math.min(12, Math.max(6, Math.round(dataset.rowCount / 700)));
+  if (variables.length === 0) return [];
+
+  const effectiveRowCount = dataset.rowCount > 0 ? dataset.rowCount : 8400;
+  const rowCount = Math.min(12, Math.max(6, Math.round(effectiveRowCount / 700)));
   return Array.from({ length: rowCount }, (_, index) => {
     const responseId = index * 2 + 1;
     const values: Record<string, string> = {};

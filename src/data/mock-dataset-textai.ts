@@ -2,10 +2,12 @@ import type { DatasetVariable } from '@/data/mock-dataset-detail';
 
 export const TEXT_AI_THEME_COUNT = 10;
 export const TEXT_AI_SUBTHEME_COUNT = 50;
+export const TEXT_AI_SENTIMENT_COUNT = 4;
 export const TEXT_AI_PROCESS_MS = 30_000;
 
 export const TEXT_AI_THEME_ID = 'textai-themes';
 export const TEXT_AI_SUBTHEME_ID = 'textai-sub-themes';
+export const TEXT_AI_SENTIMENT_ID = 'textai-sentiment';
 
 /** @deprecated Use TEXT_AI_THEME_ID */
 export const TEXT_AI_PROCESSING_THEME_ID = TEXT_AI_THEME_ID;
@@ -83,6 +85,16 @@ const SUBTHEME_SEEDS = [
   'Accessible UI',
 ];
 
+const SENTIMENT_LABELS = ['Positive', 'Neutral', 'Negative', 'Mixed'];
+
+export function isTextAiVariableId(variableId: string): boolean {
+  return (
+    variableId === TEXT_AI_THEME_ID ||
+    variableId === TEXT_AI_SUBTHEME_ID ||
+    variableId === TEXT_AI_SENTIMENT_ID
+  );
+}
+
 export function getTextAiThemeColumns(): TextAiExpandedColumn[] {
   return Array.from({ length: TEXT_AI_THEME_COUNT }, (_, index) => ({
     id: `${TEXT_AI_THEME_ID}__${index + 1}`,
@@ -101,6 +113,13 @@ export function getTextAiSubthemeColumns(): TextAiExpandedColumn[] {
   });
 }
 
+export function getTextAiSentimentColumns(): TextAiExpandedColumn[] {
+  return Array.from({ length: TEXT_AI_SENTIMENT_COUNT }, (_, index) => ({
+    id: `${TEXT_AI_SENTIMENT_ID}__${index + 1}`,
+    name: SENTIMENT_LABELS[index] ?? `Sentiment ${index + 1}`,
+  }));
+}
+
 export function createTextAiProcessingVariables(): DatasetVariable[] {
   return [
     {
@@ -113,6 +132,13 @@ export function createTextAiProcessingVariables(): DatasetVariable[] {
     {
       id: TEXT_AI_SUBTHEME_ID,
       name: 'Sub-themes',
+      kind: 'category',
+      responses: 0,
+      status: 'processing',
+    },
+    {
+      id: TEXT_AI_SENTIMENT_ID,
+      name: 'Sentiment',
       kind: 'category',
       responses: 0,
       status: 'processing',
@@ -136,6 +162,13 @@ export function createTextAiReadyVariables(responseCount: number): DatasetVariab
       responses: responseCount,
       status: 'ready',
     },
+    {
+      id: TEXT_AI_SENTIMENT_ID,
+      name: 'Sentiment',
+      kind: 'category',
+      responses: responseCount,
+      status: 'ready',
+    },
   ];
 }
 
@@ -151,6 +184,11 @@ export function buildTextAiColumnValues(responseId: number): Record<string, stri
     const score = (responseId * 17 + index * 13) % 100;
     values[column.id] = score > 55 ? 'Yes' : '';
   }
+  for (const column of getTextAiSentimentColumns()) {
+    const index = Number(column.id.split('__')[1] ?? '1');
+    const dominant = ((responseId + index * 3) % TEXT_AI_SENTIMENT_COUNT) + 1;
+    values[column.id] = dominant === index ? 'Yes' : '';
+  }
   return values;
 }
 
@@ -159,10 +197,7 @@ export function isTextAiProcessingVariable(variable: DatasetVariable): boolean {
 }
 
 export function isTextAiExpandableVariable(variable: DatasetVariable): boolean {
-  return (
-    (variable.id === TEXT_AI_THEME_ID || variable.id === TEXT_AI_SUBTHEME_ID) &&
-    variable.status !== 'processing'
-  );
+  return isTextAiVariableId(variable.id) && variable.status !== 'processing';
 }
 
 export function expandVariablesForPreview(
@@ -178,6 +213,10 @@ export function expandVariablesForPreview(
       columns.push(...getTextAiSubthemeColumns());
       continue;
     }
+    if (variable.id === TEXT_AI_SENTIMENT_ID && variable.status !== 'processing') {
+      columns.push(...getTextAiSentimentColumns());
+      continue;
+    }
     if (variable.status === 'processing') continue;
     columns.push({ id: variable.id, name: variable.name });
   }
@@ -187,5 +226,6 @@ export function expandVariablesForPreview(
 export function getTextAiOptionCount(variableId: string): number | null {
   if (variableId === TEXT_AI_THEME_ID) return TEXT_AI_THEME_COUNT;
   if (variableId === TEXT_AI_SUBTHEME_ID) return TEXT_AI_SUBTHEME_COUNT;
+  if (variableId === TEXT_AI_SENTIMENT_ID) return TEXT_AI_SENTIMENT_COUNT;
   return null;
 }

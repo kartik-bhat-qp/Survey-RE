@@ -7,6 +7,7 @@ export interface Dataset {
   rowCount: number;
   dataType: DatasetDataType;
   createdOn: string;
+  surveyName?: string;
 }
 
 export const MOCK_DATASETS: Dataset[] = [

@@ -222,7 +222,7 @@ export function CreateVariableModal({
               selected={source === 'textai'}
               iconClass="wc-ai"
               title="TextAI"
-              description="Import the themes and sub themes for this dataset"
+              description="Import the themes, sub-themes and sentiment for this dataset"
               onSelect={() => setSource('textai')}
             />
           </div>
@@ -417,8 +417,8 @@ export function CreateVariableModal({
           ) : (
             <div className={styles.textAiPanel}>
               <p className={styles.textAiDescription}>
-                Choose a TextAI dashboard to import the themes and sub themes for this
-                dataset.
+                Choose a TextAI dashboard to import the themes, sub-themes and sentiment for
+                this dataset.
               </p>
               <WuCombobox
                 data={TEXT_AI_OPTIONS}

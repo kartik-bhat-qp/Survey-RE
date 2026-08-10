@@ -7,6 +7,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import type { IWuTableColumnDef, IWuTableRowSelection } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { CreateVariableModal } from '@/components/datasets/CreateVariableModal';
+import { DatasetImportSourceView } from '@/components/datasets/DatasetImportSourceView';
 import { UploadDataModal } from '@/components/datasets/UploadDataModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -18,8 +19,6 @@ import {
 } from '@/data/mock-dataset-detail';
 import {
   TEXT_AI_PROCESS_MS,
-  TEXT_AI_SUBTHEME_ID,
-  TEXT_AI_THEME_ID,
   buildTextAiColumnValues,
   createTextAiProcessingVariables,
   createTextAiReadyVariables,
@@ -27,6 +26,7 @@ import {
   getTextAiOptionCount,
   isTextAiExpandableVariable,
   isTextAiProcessingVariable,
+  isTextAiVariableId,
 } from '@/data/mock-dataset-textai';
 import { MOCK_DATASETS } from '@/data/mock-datasets';
 import { useBiProductBasePath, withBiProductBasePath } from '@/hooks/useBiProductBasePath';
@@ -97,7 +97,9 @@ export default function DatasetDetailPage() {
   });
   const [deleteTarget, setDeleteTarget] = useState<DatasetVariable | null>(null);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [uploadSource, setUploadSource] = useState<'manual' | 'textai'>('manual');
   const [isCreateVariableOpen, setIsCreateVariableOpen] = useState(false);
+  const [datasetName, setDatasetName] = useState(dataset?.name ?? '');
 
   function clearTextAiTimer(): void {
     if (textAiTimerRef.current) {
@@ -133,7 +135,10 @@ export default function DatasetDetailPage() {
     );
     setDeleteTarget(null);
     setIsUploadOpen(false);
+    setUploadSource('manual');
     setIsCreateVariableOpen(false);
+    const nextDataset = MOCK_DATASETS.find((item) => item.id === datasetId);
+    setDatasetName(nextDataset?.name ?? '');
   }, [datasetId]);
 
   useEffect(() => {
@@ -169,21 +174,33 @@ export default function DatasetDetailPage() {
   function startTextAiImport(sourceLabel: string): void {
     clearTextAiTimer();
     const processingVariables = createTextAiProcessingVariables();
-    setVariables((prev) => {
-      const withoutTextAi = prev.filter(
-        (variable) =>
-          variable.id !== TEXT_AI_THEME_ID && variable.id !== TEXT_AI_SUBTHEME_ID
-      );
-      return [...withoutTextAi, ...processingVariables];
-    });
-    setSelectedRows((prev) =>
-      prev.filter(
-        (variable) =>
-          variable.id !== TEXT_AI_THEME_ID && variable.id !== TEXT_AI_SUBTHEME_ID
-      )
+    const existingSurveyVariables = variables.filter(
+      (variable) => !isTextAiVariableId(variable.id)
     );
+    let surveyVariables = existingSurveyVariables;
+    let surveyRows = responseRowsRef.current;
+
+    if (surveyVariables.length === 0) {
+      const target = MOCK_DATASETS.find((item) => item.id === datasetId);
+      if (target) {
+        target.variableCount = Math.max(target.variableCount, 12);
+        target.rowCount = Math.max(target.rowCount, 8400);
+      }
+      const seeded = getDatasetDetailData(datasetId);
+      surveyVariables = seeded?.variables ?? [];
+      surveyRows = seeded?.rows ?? [];
+      setResponseRows(surveyRows);
+      responseRowsRef.current = surveyRows;
+      setSelectedRows(surveyVariables.slice(0, 2));
+    }
+
+    setVariables([...surveyVariables, ...processingVariables]);
+    setSelectedRows((prev) => {
+      const withoutTextAi = prev.filter((variable) => !isTextAiVariableId(variable.id));
+      return withoutTextAi.length > 0 ? withoutTextAi : surveyVariables.slice(0, 2);
+    });
     showToast({
-      message: `Importing themes and sub-themes from "${sourceLabel}". Processing…`,
+      message: `Importing themes, sub-themes and sentiment from "${sourceLabel}". Processing…`,
       variant: 'info',
     });
 
@@ -200,23 +217,14 @@ export default function DatasetDetailPage() {
       }));
 
       setVariables((prev) => {
-        const withoutTextAi = prev.filter(
-          (variable) =>
-            variable.id !== TEXT_AI_THEME_ID && variable.id !== TEXT_AI_SUBTHEME_ID
-        );
+        const withoutTextAi = prev.filter((variable) => !isTextAiVariableId(variable.id));
         return [...withoutTextAi, ...readyVariables];
       });
       setResponseRows(nextRows);
       responseRowsRef.current = nextRows;
-      setSelectedRows((prev) => {
-        const withoutTextAi = prev.filter(
-          (variable) =>
-            variable.id !== TEXT_AI_THEME_ID && variable.id !== TEXT_AI_SUBTHEME_ID
-        );
-        return [...withoutTextAi, readyVariables[0]];
-      });
+      setSelectedRows((prev) => prev.filter((variable) => !isTextAiVariableId(variable.id)));
       showToast({
-        message: 'Themes and sub-themes are ready.',
+        message: 'Themes, sub-themes and sentiment are ready.',
         variant: 'success',
       });
       textAiTimerRef.current = null;
@@ -231,17 +239,44 @@ export default function DatasetDetailPage() {
     router.replace(`${datasetsPath}/${datasetId}`);
   }, [datasetId, datasetsPath, detail, router, searchParams]);
 
-  function handleUpload(): void {
+  function handleManualImport(_fileName: string): void {
+    const seeded: DatasetVariable[] = [
+      { id: `col-1-${datasetId}`, name: 'Response ID', kind: 'numeric', responses: 12 },
+      { id: `col-2-${datasetId}`, name: 'Q1', kind: 'question', responses: 12 },
+      { id: `col-3-${datasetId}`, name: 'Q2', kind: 'question', responses: 11 },
+      { id: `col-4-${datasetId}`, name: 'Segment', kind: 'category', responses: 12 },
+    ];
+    const rows: DatasetResponseRow[] = Array.from({ length: 8 }, (_, index) => {
+      const responseId = index + 1;
+      return {
+        responseId,
+        values: {
+          [seeded[0].id]: String(responseId),
+          [seeded[1].id]: `Answer ${responseId}A`,
+          [seeded[2].id]: `Answer ${responseId}B`,
+          [seeded[3].id]: ['A', 'B', 'C', 'D'][index % 4],
+        },
+      };
+    });
+    setVariables(seeded);
+    setResponseRows(rows);
+    responseRowsRef.current = rows;
+    setSelectedRows(seeded.slice(0, 2));
+    const target = MOCK_DATASETS.find((item) => item.id === datasetId);
+    if (target) {
+      target.variableCount = seeded.length;
+      target.rowCount = rows.length;
+    }
+  }
+
+  function handleUpload(source: 'manual' | 'textai' = 'manual'): void {
+    setUploadSource(source);
     setIsUploadOpen(true);
   }
 
   function handleSyncAll(): void {
     const isExternalWithTextAi =
-      dataset?.dataType === 'External' &&
-      variables.some(
-        (variable) =>
-          variable.id === TEXT_AI_THEME_ID || variable.id === TEXT_AI_SUBTHEME_ID
-      );
+      dataset?.dataType === 'External' && variables.some((variable) => isTextAiVariableId(variable.id));
     if (isExternalWithTextAi) {
       startTextAiImport('TextAI');
       return;
@@ -405,10 +440,9 @@ export default function DatasetDetailPage() {
   });
 
   const isComposite = dataset?.dataType === 'Survey (Composite)';
-  const hasTextAiData = variables.some(
-    (variable) =>
-      variable.id === TEXT_AI_THEME_ID || variable.id === TEXT_AI_SUBTHEME_ID
-  );
+  const isExternal = dataset?.dataType === 'External';
+  const hasTextAiData = variables.some((variable) => isTextAiVariableId(variable.id));
+  const showImportSetup = Boolean(isExternal && variables.length === 0);
 
   if (!dataset || !detail) {
     return (
@@ -429,10 +463,37 @@ export default function DatasetDetailPage() {
     );
   }
 
+  if (showImportSetup) {
+    return (
+      <>
+        <DatasetImportSourceView
+          datasetName={datasetName}
+          surveyName={dataset.surveyName ?? dataset.name}
+          onSyncAll={handleSyncAll}
+          onUploadData={() => handleUpload('manual')}
+          onManualImport={() => handleUpload('manual')}
+          onTextAiImport={() => handleUpload('textai')}
+        />
+
+        <UploadDataModal
+          key={`setup-upload-${uploadSource}`}
+          open={isUploadOpen}
+          onOpenChange={setIsUploadOpen}
+          datasetName={datasetName.trim() || dataset.name}
+          initialSource={uploadSource}
+          showSourcePicker={false}
+          showUploadMode={false}
+          onManualImport={handleManualImport}
+          onTextAiImport={() => startTextAiImport('TextAI')}
+        />
+      </>
+    );
+  }
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h1 className={styles.title}>{dataset.name}</h1>
+        <h1 className={styles.title}>{datasetName || dataset.name}</h1>
         {isComposite ? (
           <div className={styles.headerActions}>
             <button type="button" className={styles.syncAllBtn} onClick={handleSyncAll}>
@@ -458,7 +519,7 @@ export default function DatasetDetailPage() {
             <WuButton
               className={styles.uploadBtn}
               Icon={<span className="wm-cloud-upload" aria-hidden />}
-              onClick={handleUpload}
+              onClick={() => handleUpload('manual')}
             >
               Upload data
             </WuButton>
@@ -565,7 +626,11 @@ export default function DatasetDetailPage() {
       <UploadDataModal
         open={isUploadOpen}
         onOpenChange={setIsUploadOpen}
-        datasetName={dataset.name}
+        datasetName={datasetName.trim() || dataset.name}
+        initialSource={uploadSource}
+        showSourcePicker
+        showUploadMode
+        onManualImport={handleManualImport}
         onTextAiImport={() => startTextAiImport('TextAI')}
       />
 
