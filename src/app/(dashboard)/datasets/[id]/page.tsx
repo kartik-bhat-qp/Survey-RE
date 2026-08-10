@@ -154,7 +154,10 @@ export default function DatasetDetailPage() {
     isEnabled: true,
     selectedRows,
     onRowSelect: (next) => {
-      setSelectedRows(next.filter((variable) => !isTextAiProcessingVariable(variable)));
+      setSelectedRows((prev) => {
+        const resolved = typeof next === 'function' ? next(prev) : next;
+        return resolved.filter((variable) => !isTextAiProcessingVariable(variable));
+      });
     },
     rowUniqueKey: 'id',
   };
