@@ -15,15 +15,14 @@
   border-bottom: 1px solid #e7eaf0;
   display: flex;
   flex-shrink: 0;
-  height: 56px;
+  gap: 16px;
   justify-content: space-between;
-  padding: 0 16px;
+  min-height: 56px;
+  padding: 8px 16px;
 }
 
 .title {
   color: #7a8591;
-  font-size: 18px;
-  font-weight: 600;
   margin: 0;
 }
 

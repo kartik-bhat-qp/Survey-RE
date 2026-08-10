@@ -12,6 +12,7 @@ import { UploadDataModal } from '@/components/datasets/UploadDataModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
+  ensureDatasetSurveyMock,
   getDatasetDetailData,
   type DatasetResponseRow,
   type DatasetVariable,
@@ -34,6 +35,10 @@ import styles from './DatasetDetail.module.css';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
+  { ssr: false }
+);
+const WuHeading = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuHeading })),
   { ssr: false }
 );
 const WuInput = dynamic(
@@ -181,12 +186,7 @@ export default function DatasetDetailPage() {
     let surveyRows = responseRowsRef.current;
 
     if (surveyVariables.length === 0) {
-      const target = MOCK_DATASETS.find((item) => item.id === datasetId);
-      if (target) {
-        target.variableCount = Math.max(target.variableCount, 12);
-        target.rowCount = Math.max(target.rowCount, 8400);
-      }
-      const seeded = getDatasetDetailData(datasetId);
+      const seeded = ensureDatasetSurveyMock(datasetId);
       surveyVariables = seeded?.variables ?? [];
       surveyRows = seeded?.rows ?? [];
       setResponseRows(surveyRows);
@@ -223,6 +223,13 @@ export default function DatasetDetailPage() {
       setResponseRows(nextRows);
       responseRowsRef.current = nextRows;
       setSelectedRows((prev) => prev.filter((variable) => !isTextAiVariableId(variable.id)));
+      const target = MOCK_DATASETS.find((item) => item.id === datasetId);
+      if (target) {
+        target.variableCount = Math.max(
+          target.variableCount,
+          surveyVariables.length + readyVariables.length
+        );
+      }
       showToast({
         message: 'Themes, sub-themes and sentiment are ready.',
         variant: 'success',
@@ -240,33 +247,13 @@ export default function DatasetDetailPage() {
   }, [datasetId, datasetsPath, detail, router, searchParams]);
 
   function handleManualImport(_fileName: string): void {
-    const seeded: DatasetVariable[] = [
-      { id: `col-1-${datasetId}`, name: 'Response ID', kind: 'numeric', responses: 12 },
-      { id: `col-2-${datasetId}`, name: 'Q1', kind: 'question', responses: 12 },
-      { id: `col-3-${datasetId}`, name: 'Q2', kind: 'question', responses: 11 },
-      { id: `col-4-${datasetId}`, name: 'Segment', kind: 'category', responses: 12 },
-    ];
-    const rows: DatasetResponseRow[] = Array.from({ length: 8 }, (_, index) => {
-      const responseId = index + 1;
-      return {
-        responseId,
-        values: {
-          [seeded[0].id]: String(responseId),
-          [seeded[1].id]: `Answer ${responseId}A`,
-          [seeded[2].id]: `Answer ${responseId}B`,
-          [seeded[3].id]: ['A', 'B', 'C', 'D'][index % 4],
-        },
-      };
-    });
-    setVariables(seeded);
-    setResponseRows(rows);
-    responseRowsRef.current = rows;
-    setSelectedRows(seeded.slice(0, 2));
-    const target = MOCK_DATASETS.find((item) => item.id === datasetId);
-    if (target) {
-      target.variableCount = seeded.length;
-      target.rowCount = rows.length;
-    }
+    const seeded = ensureDatasetSurveyMock(datasetId);
+    const surveyVariables = seeded?.variables ?? [];
+    const surveyRows = seeded?.rows ?? [];
+    setVariables(surveyVariables);
+    setResponseRows(surveyRows);
+    responseRowsRef.current = surveyRows;
+    setSelectedRows(surveyVariables.slice(0, 2));
   }
 
   function handleUpload(source: 'manual' | 'textai' = 'manual'): void {
@@ -493,7 +480,9 @@ export default function DatasetDetailPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h1 className={styles.title}>{datasetName || dataset.name}</h1>
+        <WuHeading size="xl" className={styles.title}>
+          {datasetName || dataset.name}
+        </WuHeading>
         {isComposite ? (
           <div className={styles.headerActions}>
             <button type="button" className={styles.syncAllBtn} onClick={handleSyncAll}>

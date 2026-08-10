@@ -93,12 +93,13 @@ export default function DatasetsPage() {
         ...datasets.map((dataset) => dataset.id),
         ...MOCK_DATASETS.map((dataset) => dataset.id)
       ) + 1;
+    const isImport = payload.subType === 'import';
     const nextDataset: Dataset = {
       id: nextId,
       name: payload.name,
-      variableCount: 12,
-      rowCount: 8400,
-      dataType: payload.subType === 'import' ? 'External' : 'Survey (Composite)',
+      variableCount: isImport ? 0 : 12,
+      rowCount: isImport ? 0 : 8400,
+      dataType: isImport ? 'External' : 'Survey (Composite)',
       createdOn: new Date().toISOString().slice(0, 10),
       surveyName: payload.surveyName,
     };

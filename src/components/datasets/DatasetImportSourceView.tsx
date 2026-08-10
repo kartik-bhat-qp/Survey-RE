@@ -7,6 +7,10 @@ const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false }
 );
+const WuHeading = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuHeading })),
+  { ssr: false }
+);
 
 export interface DatasetImportSourceViewProps {
   datasetName: string;
@@ -34,7 +38,9 @@ export function DatasetImportSourceView({
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h1 className={styles.title}>{datasetName || 'Untitled dataset'}</h1>
+        <WuHeading size="xl" className={styles.title}>
+          {datasetName || 'Untitled dataset'}
+        </WuHeading>
         <div className={styles.headerActions}>
           <button type="button" className={styles.syncAllBtn} onClick={onSyncAll}>
             <span className="wm-sync" aria-hidden />

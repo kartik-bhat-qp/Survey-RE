@@ -93,7 +93,9 @@ function buildSkimRows(): DatasetResponseRow[] {
 }
 
 function buildGenericVariables(dataset: Dataset): DatasetVariable[] {
-  const count = Math.max(dataset.variableCount > 0 ? dataset.variableCount : 12, 3);
+  if (dataset.variableCount <= 0) return [];
+
+  const count = Math.max(dataset.variableCount, 3);
   const effectiveRowCount = dataset.rowCount > 0 ? dataset.rowCount : 8400;
   const variables: DatasetVariable[] = [];
   for (let i = 1; i <= count; i += 1) {
@@ -157,6 +159,24 @@ const DETAIL_BY_DATASET_ID: Record<number, DatasetDetailData> = {
     defaultSelectedVariableIds: ['q7', 'q5b'],
   },
 };
+
+export const DEFAULT_SURVEY_VARIABLE_COUNT = 12;
+export const DEFAULT_SURVEY_ROW_COUNT = 8400;
+
+/** Seeds mock survey variables/rows onto a dataset that still has none. */
+export function ensureDatasetSurveyMock(datasetId: number): DatasetDetailData | null {
+  const dataset = MOCK_DATASETS.find((item) => item.id === datasetId);
+  if (!dataset) return null;
+
+  if (dataset.variableCount <= 0) {
+    dataset.variableCount = DEFAULT_SURVEY_VARIABLE_COUNT;
+  }
+  if (dataset.rowCount <= 0) {
+    dataset.rowCount = DEFAULT_SURVEY_ROW_COUNT;
+  }
+
+  return getDatasetDetailData(datasetId);
+}
 
 export function getDatasetDetailData(datasetId: number): DatasetDetailData | null {
   const dataset = MOCK_DATASETS.find((item) => item.id === datasetId);
