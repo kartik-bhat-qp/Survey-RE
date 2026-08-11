@@ -231,7 +231,7 @@ export function WidgetQuestionSelection({
         <WuTable
           data={displayQuestions as unknown[]}
           columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-          variant="striped"
+          variant="unstyled"
           sort={{ enabled: true }}
           filterText={search}
         />

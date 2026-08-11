@@ -1,3 +1,10 @@
+import {
+  calculateBaseRespondentCount,
+  getSelectedQuestionValues,
+  summarizeBaseFilters,
+  type BaseFilterState,
+} from './mock-report-base-filters';
+
 export type ConjointFilterId = 'all' | 'young' | 'older' | 'hi';
 export type ConjointSectionId =
   | 'overview'
@@ -307,6 +314,113 @@ export function rankedProfiles(
     graphics: combo.picks.graphics,
     total: combo.u.toFixed(2),
   }));
+}
+
+export const CONJOINT_TOTAL_RESPONDENTS = 412;
+
+type UtilityMultipliers = Partial<Record<string, number>>;
+
+/**
+ * How a selected answer skews part-worths. Mock values only — they exist so the
+ * model, cards and charts visibly react to the filters used to build a base.
+ */
+const BASE_VALUE_EFFECTS: Record<number, Record<string, UtilityMultipliers>> = {
+  201: {
+    '18–24': { brand: 1.34, price: 0.66 },
+    '25–34': { brand: 1.24, price: 0.78 },
+    '35–44': { brand: 0.94, price: 1.14 },
+    '45–54': { brand: 0.85, price: 1.22 },
+    '55+': { brand: 0.78, price: 1.3 },
+  },
+  202: {
+    Male: { graphics: 1.18, processor: 1.1 },
+    Female: { storage: 1.12, ram: 1.06 },
+    'Prefer not to say': {},
+  },
+  203: {
+    'Under $50k': { brand: 0.8, price: 1.42 },
+    '$50k–$99k': { brand: 0.95, price: 1.1 },
+    '$100k–$149k': { brand: 1.15, price: 0.62 },
+    '$150k+': { brand: 1.24, price: 0.48 },
+  },
+  204: {
+    Northeast: { brand: 1.06 },
+    Midwest: { price: 1.08 },
+    South: { price: 1.12 },
+    West: { brand: 1.12, graphics: 1.08 },
+  },
+  205: {
+    Apple: { brand: 1.32, price: 0.74 },
+    Dell: { brand: 0.96, price: 1.06 },
+    Lenovo: { brand: 1.04, price: 1.02 },
+    Samsung: { brand: 0.92, price: 1.1 },
+    Sony: { brand: 0.9, price: 1.12 },
+    LG: { brand: 0.86, price: 1.16 },
+  },
+  206: {
+    'Within 3 months': { brand: 1.1, price: 0.9 },
+    '3–6 months': { brand: 1.02, price: 0.98 },
+    '6–12 months': { brand: 0.96, price: 1.06 },
+    'No plans': { brand: 0.88, price: 1.14 },
+  },
+};
+
+function averageEffects(effects: UtilityMultipliers[]): UtilityMultipliers {
+  const totals: Record<string, { sum: number; count: number }> = {};
+  for (const effect of effects) {
+    for (const [key, value] of Object.entries(effect)) {
+      if (value === undefined) continue;
+      const entry = totals[key] ?? { sum: 0, count: 0 };
+      entry.sum += value;
+      entry.count += 1;
+      totals[key] = entry;
+    }
+  }
+
+  const averaged: UtilityMultipliers = {};
+  for (const [key, entry] of Object.entries(totals)) {
+    averaged[key] = entry.sum / entry.count;
+  }
+  return averaged;
+}
+
+/** Builds a conjoint base (respondent count + skewed part-worths) from BI filters. */
+export function buildConjointBaseFromFilters(
+  name: string,
+  filters: BaseFilterState
+): Omit<ConjointFilter, 'id'> {
+  const selectedValues = getSelectedQuestionValues(filters);
+
+  const k: UtilityMultipliers = {};
+  for (const [questionId, values] of Object.entries(selectedValues)) {
+    const effectsForQuestion = BASE_VALUE_EFFECTS[Number(questionId)];
+    if (!effectsForQuestion) continue;
+
+    const averaged = averageEffects(
+      values.map((value) => effectsForQuestion[value] ?? {})
+    );
+    for (const [attributeKey, multiplier] of Object.entries(averaged)) {
+      if (multiplier === undefined) continue;
+      k[attributeKey] = (k[attributeKey] ?? 1) * multiplier;
+    }
+  }
+
+  for (const attributeKey of Object.keys(k)) {
+    const multiplier = k[attributeKey] ?? 1;
+    k[attributeKey] = Math.round(Math.min(1.9, Math.max(0.35, multiplier)) * 100) / 100;
+  }
+
+  const n = Math.max(
+    12,
+    calculateBaseRespondentCount(filters, CONJOINT_TOTAL_RESPONDENTS)
+  );
+
+  return {
+    label: name.trim() || 'Custom base',
+    n,
+    k: Object.keys(k).length > 0 ? k : { brand: 1, price: 1 },
+    note: summarizeBaseFilters(filters),
+  };
 }
 
 export function getConjointInsights(

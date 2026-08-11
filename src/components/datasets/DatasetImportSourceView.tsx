@@ -38,7 +38,7 @@ export function DatasetImportSourceView({
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <WuHeading size="xl" className={styles.title}>
+        <WuHeading size="xl" className={styles.title} style={{ color: '#7A8591' }}>
           {datasetName || 'Untitled dataset'}
         </WuHeading>
         <div className={styles.headerActions}>

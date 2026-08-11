@@ -216,7 +216,7 @@ export default function DatasetsPage() {
           <WuTable
             data={datasets as unknown[]}
             columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-            variant="striped"
+            variant="unstyled"
             size="default"
             sort={{ enabled: true }}
             stickyHeader

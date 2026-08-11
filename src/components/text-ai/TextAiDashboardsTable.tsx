@@ -174,7 +174,7 @@ export function TextAiDashboardsTable({ dashboards }: TextAiDashboardsTableProps
     <WuTable
       data={displayRows as unknown[]}
       columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-      variant="striped"
+      variant="unstyled"
       sort={{ enabled: true }}
       filterText=""
       tableLayout="auto"

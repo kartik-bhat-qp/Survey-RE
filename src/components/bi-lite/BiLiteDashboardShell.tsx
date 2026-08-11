@@ -61,13 +61,13 @@ export function BiLiteDashboardShell({ children }: { children: React.ReactNode }
         {mounted ? (
           <WuSidebar Sidebar={<BiLiteSideNav />} className={styles.sidebar}>
             <main className={styles.main}>
-              <div className="flex-1 min-h-0">{children}</div>
+              <div className={styles.content}>{children}</div>
               <BiLiteGlobalFooter />
             </main>
           </WuSidebar>
         ) : (
           <main className={styles.main}>
-            <div className="flex-1 min-h-0">{children}</div>
+            <div className={styles.content}>{children}</div>
             <BiLiteGlobalFooter />
           </main>
         )}

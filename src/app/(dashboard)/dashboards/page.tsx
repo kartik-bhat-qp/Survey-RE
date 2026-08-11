@@ -318,7 +318,7 @@ export default function DashboardsPage() {
         <WuTable
           data={paginatedDashboards as unknown[]}
           columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-          variant="striped"
+          variant="unstyled"
           sort={{ enabled: true }}
           filterText=""
           NoDataContent={

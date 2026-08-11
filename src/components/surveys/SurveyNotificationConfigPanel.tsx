@@ -14,6 +14,7 @@ import {
   getFixedNotificationHelpText,
   isQuotaNotification,
   isSystemSurveyNotification,
+  MOCK_NOTIFICATION_ORG_USERS,
   notificationSupportsEmailAdministrator,
   notificationSupportsEmailRespondent,
   notificationUsesEditableCriteria,
@@ -233,6 +234,7 @@ export function SurveyNotificationConfigPanel({
             onChange={(toEmails) => patchDraft({ toEmails })}
             placeholder="Enter email addresses"
             aria-label="To"
+            orgUsers={isQuota ? MOCK_NOTIFICATION_ORG_USERS : undefined}
           />
         </div>
         <div className={styles.emailFieldRow}>

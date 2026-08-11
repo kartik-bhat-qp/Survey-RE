@@ -287,7 +287,7 @@ export default function TextAiPage() {
         <WuTable
           data={filteredDashboards as unknown[]}
           columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-          variant="striped"
+          variant="unstyled"
           sort={{ enabled: true }}
           filterText=""
           tableLayout="auto"

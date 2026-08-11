@@ -480,7 +480,7 @@ export default function DatasetDetailPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <WuHeading size="xl" className={styles.title}>
+        <WuHeading size="xl" className={styles.title} style={{ color: '#7A8591' }}>
           {datasetName || dataset.name}
         </WuHeading>
         {isComposite ? (
@@ -545,7 +545,7 @@ export default function DatasetDetailPage() {
             <WuTable
               data={variables as unknown[]}
               columns={variableColumns as unknown as IWuTableColumnDef<unknown>[]}
-              variant="striped"
+              variant="unstyled"
               size="compact"
               sort={{ enabled: false }}
               filterText={variableSearch}
@@ -588,7 +588,7 @@ export default function DatasetDetailPage() {
               <WuTable
                 data={previewTableData as unknown[]}
                 columns={previewColumns as unknown as IWuTableColumnDef<unknown>[]}
-                variant="striped"
+                variant="unstyled"
                 size="compact"
                 sort={{ enabled: false }}
                 tableLayout="fixed"

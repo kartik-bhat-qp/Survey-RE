@@ -184,7 +184,7 @@ export function DashboardDataSlicersTab() {
         <WuTable
           data={filteredSlicers as unknown[]}
           columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-          variant="striped"
+          variant="unstyled"
           sort={{ enabled: false }}
           filterText=""
           NoDataContent={

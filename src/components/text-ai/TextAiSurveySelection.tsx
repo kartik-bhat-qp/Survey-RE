@@ -232,7 +232,7 @@ export function TextAiSurveySelection({
             <WuTable
               data={pageSurveys as unknown[]}
               columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-              variant="striped"
+              variant="unstyled"
               sort={{ enabled: true }}
               filterText=""
             />

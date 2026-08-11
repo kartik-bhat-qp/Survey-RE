@@ -202,6 +202,93 @@ export const SURVEY_NOTIFICATION_FROM_OPTIONS: { value: string; label: string }[
   },
 ];
 
+export type NotificationOrgUserRole = 'Survey Administrator' | 'Multi-User Account';
+
+export interface NotificationOrgUser {
+  id: string;
+  email: string;
+  role: NotificationOrgUserRole;
+}
+
+/** Organization users shown when picking recipients for notification To. */
+export const MOCK_NOTIFICATION_ORG_USERS: NotificationOrgUser[] = [
+  {
+    id: 'org-admin-1',
+    email: 'kartik.bhat@questionpro.com',
+    role: 'Survey Administrator',
+  },
+  {
+    id: 'org-mu-1',
+    email: 'block_kartik.r.bhat@gmail.com',
+    role: 'Multi-User Account',
+  },
+  {
+    id: 'org-mu-2',
+    email: 'kartik.dashboard@questionpro.com',
+    role: 'Multi-User Account',
+  },
+  {
+    id: 'org-mu-3',
+    email: 'kartikbhat@haha.com',
+    role: 'Multi-User Account',
+  },
+  {
+    id: 'org-mu-4',
+    email: 'testing_1@testing.com',
+    role: 'Multi-User Account',
+  },
+  {
+    id: 'org-mu-5',
+    email: 'invoicing@questionpro.com',
+    role: 'Multi-User Account',
+  },
+  {
+    id: 'org-mu-6',
+    email: 'zolin.gonwsalves+1@me.com',
+    role: 'Multi-User Account',
+  },
+  {
+    id: 'org-mu-7',
+    email: 'testinginvoice@questionpro.com',
+    role: 'Multi-User Account',
+  },
+  {
+    id: 'org-mu-8',
+    email: 'ops-alerts@questionpro.com',
+    role: 'Multi-User Account',
+  },
+  {
+    id: 'org-mu-9',
+    email: 'research.team@questionpro.com',
+    role: 'Multi-User Account',
+  },
+  {
+    id: 'org-mu-10',
+    email: 'qa.automation@questionpro.com',
+    role: 'Multi-User Account',
+  },
+];
+
+export const NOTIFICATION_ORG_USER_ROLE_ORDER: NotificationOrgUserRole[] = [
+  'Survey Administrator',
+  'Multi-User Account',
+];
+
+export function groupNotificationOrgUsers(
+  users: NotificationOrgUser[],
+  query = ''
+): { role: NotificationOrgUserRole; users: NotificationOrgUser[] }[] {
+  const trimmed = query.trim().toLowerCase();
+  const filtered = trimmed
+    ? users.filter((user) => user.email.toLowerCase().includes(trimmed))
+    : users;
+
+  return NOTIFICATION_ORG_USER_ROLE_ORDER.map((role) => ({
+    role,
+    users: filtered.filter((user) => user.role === role),
+  })).filter((group) => group.users.length > 0);
+}
+
 export function normalizeNotificationReplyTo(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return '';

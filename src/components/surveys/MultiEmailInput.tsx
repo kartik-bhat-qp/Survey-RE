@@ -1,11 +1,15 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
   isValidEmailAddress,
   normalizeEmailAddress,
 } from '@/data/mock-survey-distribute';
+import {
+  groupNotificationOrgUsers,
+  type NotificationOrgUser,
+} from '@/data/mock-survey-notifications';
 import styles from './MultiEmailInput.module.css';
 
 interface MultiEmailInputProps {
@@ -13,6 +17,8 @@ interface MultiEmailInputProps {
   onChange: (emails: string[]) => void;
   placeholder?: string;
   'aria-label'?: string;
+  /** When provided, focus shows a grouped org-user picker under the field. */
+  orgUsers?: NotificationOrgUser[];
 }
 
 function splitEmailCandidates(raw: string): string[] {
@@ -27,11 +33,47 @@ export function MultiEmailInput({
   onChange,
   placeholder = 'Enter email addresses',
   'aria-label': ariaLabel = 'Email addresses',
+  orgUsers,
 }: MultiEmailInputProps) {
   const { showToast } = useWuShowToast();
   const [draft, setDraft] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
   const valueRef = useRef(value);
   valueRef.current = value;
+
+  const orgGroups = useMemo(() => {
+    if (!orgUsers || orgUsers.length === 0) return [];
+    return groupNotificationOrgUsers(orgUsers, draft);
+  }, [orgUsers, draft]);
+
+  const draftNormalized = normalizeEmailAddress(draft);
+  const draftIsValidEmail = Boolean(draftNormalized) && isValidEmailAddress(draftNormalized);
+  const draftAlreadyAdded = draftIsValidEmail && value.includes(draftNormalized);
+  const canAddTypedEmail =
+    orgGroups.length === 0 && draftIsValidEmail && !draftAlreadyAdded;
+  const showOrgPicker = Boolean(orgUsers?.length) && pickerOpen;
+
+  useEffect(() => {
+    if (!pickerOpen) return;
+
+    function handlePointerDown(event: MouseEvent): void {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setPickerOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === 'Escape') setPickerOpen(false);
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [pickerOpen]);
 
   function commitCandidates(raw: string): boolean {
     const trimmed = raw.trim();
@@ -71,7 +113,6 @@ export function MultiEmailInput({
 
     if (invalid > 0) {
       showToast({ message: 'Enter a valid email address', variant: 'error' });
-      // Keep draft so the user can fix a mistyped address.
       return false;
     }
 
@@ -83,8 +124,26 @@ export function MultiEmailInput({
     return true;
   }
 
+  function addTypedEmail(): void {
+    if (!canAddTypedEmail) return;
+    if (commitCandidates(draftNormalized)) {
+      setPickerOpen(false);
+    }
+  }
+
   function removeEmail(email: string): void {
     const next = valueRef.current.filter((entry) => entry !== email);
+    valueRef.current = next;
+    onChange(next);
+  }
+
+  function toggleOrgUser(email: string): void {
+    const normalized = normalizeEmailAddress(email);
+    if (valueRef.current.includes(normalized)) {
+      removeEmail(normalized);
+      return;
+    }
+    const next = [...valueRef.current, normalized];
     valueRef.current = next;
     onChange(next);
   }
@@ -93,6 +152,10 @@ export function MultiEmailInput({
     if (event.key === 'Enter' || event.key === ',' || event.key === ' ') {
       event.preventDefault();
       if (!draft.trim()) return;
+      if (canAddTypedEmail && event.key === 'Enter') {
+        addTypedEmail();
+        return;
+      }
       commitCandidates(draft);
       return;
     }
@@ -104,13 +167,12 @@ export function MultiEmailInput({
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>): void {
     const next = event.target.value;
-    // Commit when the user types a delimiter instead of only relying on keydown
-    // (some browsers swallow Space in email-like inputs).
     if (/[,;\s]/.test(next)) {
       commitCandidates(next);
       return;
     }
     setDraft(next);
+    if (orgUsers?.length) setPickerOpen(true);
   }
 
   function handlePaste(event: React.ClipboardEvent<HTMLInputElement>): void {
@@ -121,47 +183,131 @@ export function MultiEmailInput({
   }
 
   return (
-    <div
-      className={styles.field}
-      onMouseDown={(event) => {
-        // Keep focus in the input when clicking chips/empty field chrome.
-        if ((event.target as HTMLElement).closest('button')) return;
-        const input = event.currentTarget.querySelector('input');
-        if (input && document.activeElement !== input) {
-          event.preventDefault();
-          input.focus();
-        }
-      }}
-    >
-      {value.map((email) => (
-        <span key={email} className={styles.chip}>
-          <span className="wm-mail" aria-hidden />
-          <span className={styles.chipLabel}>{email}</span>
-          <button
-            type="button"
-            className={styles.chipRemoveBtn}
-            aria-label={`Remove ${email}`}
-            onClick={() => removeEmail(email)}
-          >
-            <span className="wm-close" aria-hidden />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        inputMode="email"
-        autoComplete="email"
-        className={styles.input}
-        value={draft}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onPaste={handlePaste}
-        onBlur={() => {
-          if (draft.trim()) commitCandidates(draft);
+    <div ref={rootRef} className={styles.root}>
+      <div
+        className={styles.field}
+        onMouseDown={(event) => {
+          if ((event.target as HTMLElement).closest('button')) return;
+          const input = event.currentTarget.querySelector('input');
+          if (input && document.activeElement !== input) {
+            event.preventDefault();
+            input.focus();
+          }
+          if (orgUsers?.length) setPickerOpen(true);
         }}
-        placeholder={value.length > 0 ? 'Add another email' : placeholder}
-        aria-label={ariaLabel}
-      />
+      >
+        {value.map((email) => (
+          <span key={email} className={styles.chip}>
+            <span className="wm-mail" aria-hidden />
+            <span className={styles.chipLabel}>{email}</span>
+            <button
+              type="button"
+              className={styles.chipRemoveBtn}
+              aria-label={`Remove ${email}`}
+              onClick={() => removeEmail(email)}
+            >
+              <span className="wm-close" aria-hidden />
+            </button>
+          </span>
+        ))}
+        <input
+          type="text"
+          inputMode="email"
+          autoComplete="off"
+          className={styles.input}
+          value={draft}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
+          onFocus={() => {
+            if (orgUsers?.length) setPickerOpen(true);
+          }}
+          onBlur={() => {
+            // When the org picker is open, typing filters the list — only commit a
+            // complete email. Defer so checkbox clicks inside the picker win first.
+            window.setTimeout(() => {
+              if (rootRef.current?.contains(document.activeElement)) return;
+              const trimmed = draft.trim();
+              if (!trimmed) return;
+              if (orgUsers?.length) {
+                const normalized = normalizeEmailAddress(trimmed);
+                if (isValidEmailAddress(normalized)) {
+                  commitCandidates(trimmed);
+                }
+                return;
+              }
+              commitCandidates(trimmed);
+            }, 0);
+          }}
+          placeholder={value.length > 0 ? 'Add another email' : placeholder}
+          aria-label={ariaLabel}
+          aria-expanded={showOrgPicker}
+          aria-controls={showOrgPicker ? 'notification-org-user-picker' : undefined}
+        />
+      </div>
+
+      {showOrgPicker ? (
+        <div
+          id="notification-org-user-picker"
+          className={styles.orgPicker}
+          role="listbox"
+          aria-label="Organization users"
+          onMouseDown={(event) => {
+            // Keep input focus while interacting with the picker.
+            event.preventDefault();
+          }}
+        >
+          {orgGroups.length === 0 ? (
+            <div className={styles.orgEmptyState}>
+              {canAddTypedEmail ? (
+                <button
+                  type="button"
+                  className={styles.orgAddButton}
+                  onClick={addTypedEmail}
+                >
+                  <span className={`wm-add ${styles.orgAddIcon}`} aria-hidden />
+                  <span>
+                    Add <strong>{draftNormalized}</strong>
+                  </span>
+                </button>
+              ) : draftAlreadyAdded ? (
+                <p className={styles.orgEmpty}>Email address already added</p>
+              ) : (
+                <p className={styles.orgEmpty}>No matching users</p>
+              )}
+            </div>
+          ) : (
+            orgGroups.map((group, groupIndex) => (
+              <div key={group.role} className={styles.orgGroup}>
+                {groupIndex > 0 ? <div className={styles.orgDivider} /> : null}
+                <div className={styles.orgGroupLabel}>{group.role}</div>
+                <ul className={styles.orgList}>
+                  {group.users.map((user) => {
+                    const checked = value.includes(user.email);
+                    return (
+                      <li key={user.id}>
+                        <label
+                          className={`${styles.orgRow} ${
+                            checked ? styles.orgRowSelected : ''
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className={styles.orgCheckbox}
+                            checked={checked}
+                            onChange={() => toggleOrgUser(user.email)}
+                          />
+                          <span className={styles.orgEmail}>{user.email}</span>
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

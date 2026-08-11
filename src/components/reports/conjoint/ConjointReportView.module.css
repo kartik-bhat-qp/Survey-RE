@@ -9,6 +9,71 @@
   -webkit-font-smoothing: antialiased;
 }
 
+.baseModal {
+  /* Size via WuModal maxWidth — className is also applied to the inner border wrapper. */
+  font-family: 'Fira Sans', sans-serif;
+  width: 100%;
+}
+
+.baseModalHeader {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1b3380;
+}
+
+.baseModalContent {
+  padding-top: 12px;
+}
+
+.baseModalGrid {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 8px 24px;
+  align-items: end;
+  border-bottom: 1px solid #eef1f6;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+}
+
+@media (max-width: 820px) {
+  .baseModalGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.baseFieldLabel {
+  font-size: 13px;
+  color: #8b949f;
+  margin-bottom: 6px;
+}
+
+.baseFieldHint {
+  font-size: 13px;
+  color: #8b949f;
+  line-height: 20px;
+}
+
+.baseInput {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #cfd4da;
+  border-radius: 6px;
+  color: #404b58;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+}
+
+.baseInput:focus {
+  outline: none;
+  border-color: #1b87e6;
+  box-shadow: 0 0 0 3px rgba(27, 135, 230, 0.15);
+}
+
+.baseModalFooter {
+  justify-content: space-between;
+}
+
 .header {
   background: #fff;
   border-bottom: 1px solid #dfe2e5;

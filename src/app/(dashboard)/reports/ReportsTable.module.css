@@ -48,6 +48,16 @@
     color 0.15s ease-in-out;
 }
 
+.chipIcon {
+  flex-shrink: 0;
+  height: 16px;
+  width: 16px;
+}
+
+.chipActive .chipIcon {
+  filter: brightness(0) invert(1);
+}
+
 .chip:hover {
   border-color: #1b87e6;
   color: #1b87e6;
@@ -87,41 +97,42 @@
 }
 
 .reportNameButton {
+  align-items: center;
   background: transparent;
   border: 0;
   color: #1b3380;
   cursor: pointer;
+  display: inline-flex;
   font: inherit;
   font-weight: 400;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
   padding: 0;
   text-align: left;
 }
 
-.reportNameButton:hover,
-.reportNameButton:focus-visible {
-  color: #1b3380;
+.reportNameButton:hover .reportName,
+.reportNameButton:focus-visible .reportName {
   text-decoration: underline;
 }
 
-.typeCell {
-  align-items: center;
-  display: flex;
-  gap: 7px;
-  min-width: 0;
+.reportName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.typeIconWrap {
+  display: inline-flex;
+  flex-shrink: 0;
+  line-height: 0;
 }
 
 .typeIcon {
   flex-shrink: 0;
   height: 20px;
   width: 20px;
-}
-
-.typeLabel {
-  color: #545e6b;
-  font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .mutedCell {

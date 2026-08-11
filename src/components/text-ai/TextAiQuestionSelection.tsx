@@ -260,7 +260,7 @@ export function TextAiQuestionSelection({
         <WuTable
           data={pageQuestions as unknown[]}
           columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-          variant="striped"
+          variant="unstyled"
           sort={{ enabled: true }}
           filterText=""
         />

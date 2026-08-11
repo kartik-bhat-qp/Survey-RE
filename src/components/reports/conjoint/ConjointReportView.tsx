@@ -11,19 +11,26 @@ import {
   CONJOINT_FILTERS,
   CONJOINT_PRICES,
   CONJOINT_SECTION_NAV,
+  CONJOINT_TOTAL_RESPONDENTS,
   bestPicksForModel,
+  buildConjointBaseFromFilters,
   conceptShares,
   formatUtility,
-  getConjointFilter,
   getConjointInsights,
-  getScaledModel,
   rankedProfiles,
   utilityForPicks,
   type ConjointConcept,
+  type ConjointFilter,
   type ConjointFilterId,
   type ConjointSectionId,
 } from '@/data/mock-conjoint-report';
+import {
+  createDefaultBaseFilterState,
+  type BaseFilterState,
+} from '@/data/mock-report-base-filters';
+import { BaseFilterForm } from '@/components/reports/BaseFilterForm';
 import styles from './ConjointReportView.module.css';
+import { useWickUILib } from '@/components/ui/useWickUILib';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
@@ -80,7 +87,7 @@ export default function ConjointReportView({
   onShare,
 }: ConjointReportViewProps) {
   const [section, setSection] = useState<ConjointSectionId>('overview');
-  const [filterId, setFilterId] = useState<ConjointFilterId>('all');
+  const [filterId, setFilterId] = useState<string>('all');
   const [profileBrand, setProfileBrand] = useState('all');
   const [concepts, setConcepts] = useState<ConjointConcept[]>(() =>
     CONJOINT_DEFAULT_CONCEPTS.map((concept) => ({
@@ -94,8 +101,41 @@ export default function ConjointReportView({
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [premiumAttr, setPremiumAttr] = useState('brand');
 
-  const filter = getConjointFilter(filterId);
-  const model = getScaledModel(filterId);
+  type CustomConjointFilter = Omit<ConjointFilter, 'id'> & { id: string };
+  const [customFilters, setCustomFilters] = useState<CustomConjointFilter[]>([]);
+  const [isCreateBaseOpen, setIsCreateBaseOpen] = useState(false);
+  const [nextCustomBaseNum, setNextCustomBaseNum] = useState(1);
+  const [baseDraftName, setBaseDraftName] = useState('Custom base');
+  const [baseDraftFilters, setBaseDraftFilters] = useState<BaseFilterState>(
+    createDefaultBaseFilterState
+  );
+
+  const wick = useWickUILib();
+
+  const presetFilter = CONJOINT_FILTERS.find((f) => f.id === filterId);
+  const activeFilter =
+    customFilters.find((f) => f.id === filterId) ??
+    presetFilter ??
+    CONJOINT_FILTERS[0];
+
+  function getScaledModelForFilter(k: ConjointFilter['k']) {
+    return CONJOINT_BASE_ATTRIBUTES.map((attribute) => {
+      const multiplier = k[attribute.key] ?? 1;
+      const levels = attribute.levels.map((level) => ({
+        name: level.name,
+        u: Math.round(level.u * multiplier * 100) / 100,
+      }));
+      const values = levels.map((level) => level.u);
+      return {
+        ...attribute,
+        levels,
+        range: Math.max(...values) - Math.min(...values),
+      };
+    });
+  }
+
+  const model = getScaledModelForFilter(activeFilter.k);
+  const filter = activeFilter;
 
   const totalRange = model.reduce((sum, attribute) => sum + attribute.range, 0) || 1;
   const maxAbs =
@@ -380,6 +420,21 @@ export default function ConjointReportView({
     setSensConceptId(id);
   }
 
+  function openCreateBase(): void {
+    setBaseDraftName(`Custom base ${nextCustomBaseNum}`);
+    setBaseDraftFilters(createDefaultBaseFilterState());
+    setIsCreateBaseOpen(true);
+  }
+
+  function handleCreateBase(): void {
+    const base = buildConjointBaseFromFilters(baseDraftName, baseDraftFilters);
+    const next: CustomConjointFilter = { ...base, id: `custom-${nextCustomBaseNum}` };
+    setCustomFilters((prev) => [next, ...prev]);
+    setFilterId(next.id);
+    setNextCustomBaseNum((n) => n + 1);
+    setIsCreateBaseOpen(false);
+  }
+
   function applyPreset(presetId: (typeof PRESETS)[number]['id']) {
     const best = bestPicksForModel(model);
     if (presetId === 'best') {
@@ -448,7 +503,7 @@ export default function ConjointReportView({
             <select
               className={styles.select}
               value={filterId}
-              onChange={(e) => setFilterId(e.target.value as ConjointFilterId)}
+              onChange={(e) => setFilterId(e.target.value)}
               aria-label="Base filter"
             >
               {CONJOINT_FILTERS.map((item) => (
@@ -456,9 +511,17 @@ export default function ConjointReportView({
                   {item.label}
                 </option>
               ))}
+              {customFilters.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
             </select>
             <span className={styles.metaLabel}>n = {filter.n.toLocaleString()}</span>
             <div className={styles.divider} style={{ margin: '0 4px' }} />
+            <WuButton variant="secondary" onClick={openCreateBase}>
+              Create new base
+            </WuButton>
             <WuButton variant="secondary" onClick={() => onExport?.()}>
               Export
             </WuButton>
@@ -1052,7 +1115,7 @@ export default function ConjointReportView({
                   </div>
                 </div>
                 <div className={styles.filterGrid}>
-                  {CONJOINT_FILTERS.map((item) => (
+                  {[...CONJOINT_FILTERS, ...customFilters].map((item) => (
                     <button
                       key={item.id}
                       type="button"
@@ -1096,6 +1159,55 @@ export default function ConjointReportView({
           )}
         </main>
       </div>
+
+      {wick && (
+        (() => {
+          const { WuModal, WuModalHeader, WuModalContent, WuModalFooter, WuButton } = wick;
+          return (
+            <WuModal
+              open={isCreateBaseOpen}
+              onOpenChange={setIsCreateBaseOpen}
+              variant="action"
+              size="lg"
+              maxWidth="min(980px, calc(100vw - 2rem))"
+              className={styles.baseModal}
+            >
+              <WuModalHeader className={styles.baseModalHeader}>
+                Create new base
+              </WuModalHeader>
+              <WuModalContent className={styles.baseModalContent}>
+                <div className={styles.baseModalGrid}>
+                  <div className={styles.baseField}>
+                    <div className={styles.baseFieldLabel}>Base name</div>
+                    <input
+                      className={styles.baseInput}
+                      value={baseDraftName}
+                      onChange={(e) => setBaseDraftName(e.target.value)}
+                      aria-label="Base name"
+                    />
+                  </div>
+                  <div className={styles.baseFieldHint}>
+                    Filter respondents the same way you would in a dashboard. Every report
+                    section recalculates against the new base.
+                  </div>
+                </div>
+
+                <BaseFilterForm
+                  values={baseDraftFilters}
+                  onChange={setBaseDraftFilters}
+                  totalRespondents={CONJOINT_TOTAL_RESPONDENTS}
+                />
+              </WuModalContent>
+              <WuModalFooter className={styles.baseModalFooter}>
+                <WuButton variant="secondary" onClick={() => setIsCreateBaseOpen(false)}>
+                  Cancel
+                </WuButton>
+                <WuButton onClick={handleCreateBase}>Create base</WuButton>
+              </WuModalFooter>
+            </WuModal>
+          );
+        })()
+      )}
     </div>
   );
 }

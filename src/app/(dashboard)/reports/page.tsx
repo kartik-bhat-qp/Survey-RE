@@ -32,6 +32,10 @@ const WuInput = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
   { ssr: false }
 );
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
 
 export default function ReportsPage() {
   const pathname = usePathname();
@@ -67,12 +71,13 @@ export default function ReportsPage() {
 
   const chips = useMemo(
     () => [
-      { id: 'all', label: 'All reports', count: reports.length },
+      { id: 'all', label: 'All reports', count: reports.length, iconSrc: null as string | null },
       ...CREATE_REPORT_TYPE_OPTIONS.filter((option) => typeCounts[option.id]).map(
         (option) => ({
           id: option.id,
           label: option.title,
           count: typeCounts[option.id],
+          iconSrc: option.iconSrc as string | null,
         })
       ),
     ],
@@ -100,33 +105,27 @@ export default function ReportsPage() {
       header: 'Report',
       filterable: true,
       enableSorting: true,
-      cell: ({ row }) => (
-        <button
-          type="button"
-          className={styles.reportNameButton}
-          onClick={() => openReport(row.original)}
-        >
-          {row.original.name}
-        </button>
-      ),
-    },
-    {
-      accessorKey: 'typeId',
-      header: 'Type',
-      enableSorting: false,
       cell: ({ row }) => {
         const option = getCreateReportTypeOption(row.original.typeId);
         return (
-          <span className={styles.typeCell}>
-            <Image
-              src={option.iconSrc}
-              alt=""
-              width={20}
-              height={20}
-              className={styles.typeIcon}
-            />
-            <span className={styles.typeLabel}>{option.title}</span>
-          </span>
+          <button
+            type="button"
+            className={styles.reportNameButton}
+            onClick={() => openReport(row.original)}
+          >
+            <WuTooltip content={option.title} position="top">
+              <span className={styles.typeIconWrap}>
+                <Image
+                  src={option.iconSrc}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className={styles.typeIcon}
+                />
+              </span>
+            </WuTooltip>
+            <span className={styles.reportName}>{row.original.name}</span>
+          </button>
         );
       },
     },
@@ -190,6 +189,15 @@ export default function ReportsPage() {
               }`}
               onClick={() => setTypeFilter(chip.id)}
             >
+              {chip.iconSrc ? (
+                <Image
+                  src={chip.iconSrc}
+                  alt=""
+                  width={16}
+                  height={16}
+                  className={styles.chipIcon}
+                />
+              ) : null}
               {chip.label}
               <span className={styles.chipCount}>{chip.count}</span>
             </button>
@@ -221,7 +229,7 @@ export default function ReportsPage() {
           <WuTable
             data={filteredReports as unknown[]}
             columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-            variant="striped"
+            variant="unstyled"
             sort={{ enabled: true }}
             filterText=""
           />
