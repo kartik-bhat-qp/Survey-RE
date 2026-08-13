@@ -89,6 +89,7 @@ export interface ConjointConfigTab {
 
 export interface ConjointFeatureRow {
   feature: string;
+  featureType: string;
   levels: string[];
 }
 
@@ -960,17 +961,17 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     variant: 'conjoint',
     headerIcon: 'wm-account-tree',
     headerLabel: 'Choice Models (Conjoint)',
-    question:
-      'If you were to buy a TV, select the most likely feature set that you would go with.',
+    question: 'Which of the following would you buy?',
     conjoint: {
       configTabs: [
-        { id: 'design-type', label: 'Design Type', suffix: 'Random', active: true },
+        { id: 'random', label: 'Random', active: true },
         { id: 'prohibited', label: 'Prohibited Concepts' },
         { id: 'fixed-tasks', label: 'Add Fixed Tasks' },
       ],
       features: [
-        { feature: 'Brand', levels: ['Sony', 'LG', 'Vizio'] },
-        { feature: 'Price', levels: ['USD 800', 'USD 1200', 'USD 1500'] },
+        { feature: 'Brand', featureType: 'Brand', levels: ['Sony', 'LG', 'Vizio'] },
+        { feature: 'Price', featureType: 'Other', levels: ['USD 800', 'USD 1200', 'USD 1500'] },
+        { feature: 'Size', featureType: 'Other', levels: ['32"', '55"', '65"'] },
       ],
       taskCount: 2,
       conceptPerTask: 2,

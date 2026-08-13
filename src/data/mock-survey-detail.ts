@@ -44,7 +44,8 @@ export type SurveyQuestionKind =
   | 'presentation'
   | 'section-heading'
   | 'section-subheading'
-  | 'deep-dive-follow-ups';
+  | 'deep-dive-follow-ups'
+  | 'conjoint';
 
 export type SurveySmileyRatingTone =
   | 'very-unsatisfied'
@@ -86,6 +87,138 @@ export interface SurveyQuestionVanWestendorp {
 }
 
 export const DEFAULT_VAN_WESTENDORP_QUESTION_TEXT = 'At what price do you —';
+
+export type ConjointDesignType = 'random' | 'prohibited' | 'fixed-tasks';
+
+export type ConjointFeatureType = 'Brand' | 'Price' | 'Size' | 'Other';
+
+export const CONJOINT_FEATURE_TYPE_OPTIONS: ConjointFeatureType[] = [
+  'Brand',
+  'Price',
+  'Size',
+  'Other',
+];
+
+export const CONJOINT_DESIGN_TYPE_TABS: { id: ConjointDesignType; label: string }[] = [
+  { id: 'random', label: 'Random' },
+  { id: 'prohibited', label: 'Prohibited Concepts' },
+  { id: 'fixed-tasks', label: 'Add Fixed Tasks' },
+];
+
+export interface ConjointLevel {
+  id: string;
+  label: string;
+}
+
+export interface ConjointFeature {
+  id: string;
+  name: string;
+  featureType: ConjointFeatureType;
+  levels: ConjointLevel[];
+}
+
+export interface SurveyQuestionConjoint {
+  designType: ConjointDesignType;
+  features: ConjointFeature[];
+  taskCount: number;
+  conceptPerTask: number;
+  notApplicableOption: boolean;
+}
+
+export const DEFAULT_CONJOINT_QUESTION_TEXT = 'Which of the following would you buy?';
+
+function nextConjointId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+export function createConjointLevel(label = 'Level'): ConjointLevel {
+  return { id: nextConjointId('cj-lvl'), label };
+}
+
+export function createConjointFeature(
+  name = 'Feature',
+  featureType: ConjointFeatureType = 'Other',
+  levelLabels: string[] = ['Level 1', 'Level 2']
+): ConjointFeature {
+  return {
+    id: nextConjointId('cj-feat'),
+    name,
+    featureType,
+    levels: levelLabels.map((label) => createConjointLevel(label)),
+  };
+}
+
+export function createDefaultConjointData(): SurveyQuestionConjoint {
+  return {
+    designType: 'random',
+    features: [
+      createConjointFeature('Brand', 'Brand', ['Sony', 'LG', 'Vizio']),
+      createConjointFeature('Price', 'Other', ['USD 800', 'USD 1200', 'USD 1500']),
+      createConjointFeature('Size', 'Other', ['32"', '55"', '65"']),
+    ],
+    taskCount: 2,
+    conceptPerTask: 2,
+    notApplicableOption: false,
+  };
+}
+
+export interface ConjointPreviewConcept {
+  id: string;
+  levelsByFeatureId: Record<string, string>;
+}
+
+export interface ConjointPreviewTask {
+  concepts: ConjointPreviewConcept[];
+}
+
+/** Builds distinct concept profiles for each conjoint task (deterministic). */
+export function buildConjointPreviewTasks(
+  conjoint: SurveyQuestionConjoint
+): ConjointPreviewTask[] {
+  const taskCount = Math.max(1, conjoint.taskCount);
+  const conceptPerTask = Math.max(1, conjoint.conceptPerTask);
+  const features = conjoint.features;
+
+  return Array.from({ length: taskCount }, (_, taskIndex) => {
+    const concepts: ConjointPreviewConcept[] = Array.from(
+      { length: conceptPerTask },
+      (_, conceptIndex) => {
+        const levelsByFeatureId: Record<string, string> = {};
+        features.forEach((feature, featureIndex) => {
+          const levelCount = feature.levels.length;
+          if (levelCount === 0) {
+            levelsByFeatureId[feature.id] = '';
+            return;
+          }
+          const levelIndex =
+            (taskIndex + conceptIndex + featureIndex * (conceptIndex + 1) + 1) %
+            levelCount;
+          levelsByFeatureId[feature.id] = feature.levels[levelIndex].label;
+        });
+        return {
+          id: `task-${taskIndex}-concept-${conceptIndex}`,
+          levelsByFeatureId,
+        };
+      }
+    );
+
+    return { concepts };
+  });
+}
+
+export function cloneConjointData(data: SurveyQuestionConjoint): SurveyQuestionConjoint {
+  return {
+    ...data,
+    features: data.features.map((feature) => ({
+      ...feature,
+      id: nextConjointId('cj-feat'),
+      levels: feature.levels.map((level) => ({
+        ...level,
+        id: nextConjointId('cj-lvl'),
+      })),
+    })),
+  };
+}
 
 export function createDefaultVanWestendorpData(): SurveyQuestionVanWestendorp {
   return {
@@ -243,6 +376,8 @@ export interface SurveyQuestion {
   nps?: SurveyQuestionNps;
   /** Price sensitivity rows for Van Westendorp questions. */
   vanWestendorp?: SurveyQuestionVanWestendorp;
+  /** Features, levels, and task setup for Conjoint questions. */
+  conjoint?: SurveyQuestionConjoint;
   /** Lookup table dropdown preview for Data Reference questions. */
   lookupTable?: SurveyQuestionLookupTable;
   /** Five-point smiley scale for Smiley Rating questions. */
@@ -283,6 +418,7 @@ export function resolveAddQuestionTypeId(question: SurveyQuestion): string | und
   if (question.kind === 'section-heading') return 'section-heading';
   if (question.kind === 'section-subheading') return 'section-subheading';
   if (question.kind === 'deep-dive-follow-ups') return 'deepdive';
+  if (question.kind === 'conjoint') return 'conjoint';
   if (question.inputKind === 'checkbox') return 'select-many';
   if (question.inputKind === 'radio') return 'select-one';
   return undefined;

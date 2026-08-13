@@ -33,24 +33,35 @@ export function ConjointQuestionPreview({ data }: ConjointQuestionPreviewProps) 
         <thead>
           <tr>
             <th scope="col">Features</th>
+            <th scope="col">Feature Type</th>
             <th scope="col">Levels</th>
           </tr>
         </thead>
         <tbody>
-          {data.features.map((row) => (
+          {data.features.map((row, index) => (
             <tr key={row.feature}>
-              <th scope="row">{row.feature}</th>
+              <th scope="row">
+                {index + 1} {row.feature}
+              </th>
+              <td>{row.featureType}</td>
               <td>
                 <ul className={styles.levelList}>
                   {row.levels.map((level) => (
                     <li key={level}>{level}</li>
                   ))}
                 </ul>
+                <span className={styles.addLink}>Add Level</span>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      <div className={styles.tableTools}>
+        <span className={styles.addLink}>Add Feature</span>
+        <span className={styles.bulkLinks}>
+          bulk edit features | bulk edit levels
+        </span>
+      </div>
 
       <div className={styles.summaryBar}>
         <span>
@@ -59,7 +70,11 @@ export function ConjointQuestionPreview({ data }: ConjointQuestionPreviewProps) 
         <span>
           Concept Per Task: <strong>{data.conceptPerTask}</strong>
         </span>
+        <span>Not Applicable Option</span>
       </div>
+      <p className={styles.infoBanner}>
+        Conjoint questions require at least 2 features and 2 levels for each feature.
+      </p>
     </div>
   );
 }

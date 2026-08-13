@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#eef1f4; font-family:'Public Sans',Helvetica,Arial,sans-serif; }
+  a { color:#1b6fd8; } a:hover { color:#12508f; }
+  @keyframes cj-pop { 0%{transform:scale(.6);opacity:0} 100%{transform:scale(1);opacity:1} }
+</style>
+</helmet>
+<div style="max-width: {{ containerWidth }}; margin:0 auto; min-height:100vh; background:#fbfcfd; display:flex; flex-direction:column;">
+  <div style="height:4px; background:#e3e8ee; position:relative;">
+    <div style="position:absolute; inset:0; width: {{ progressPct }}; background:#1b6fd8; transition:width .35s ease;"></div>
+  </div>
+  <div style="padding:20px 20px 14px; display:flex; flex-direction:column; gap:4px;">
+    <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px;">
+      <span style="font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:#7a8694;">Question 1</span>
+      <span style="font-size:13px; font-weight:600; color:#1b6fd8; white-space:nowrap;">Step {{ step }} of {{ totalSteps }}</span>
+    </div>
+    <h1 style="margin:0; font-size:19px; line-height:1.35; font-weight:600; color:#1f2933; text-wrap:pretty;">{{ prompt }}</h1>
+  </div>
+  <div style="padding:2px 12px 16px; flex:1;">
+    <div role="radiogroup" style="display:flex; flex-direction: {{ groupDirection }}; gap: {{ groupGap }};">
+      <sc-for list="{{ concepts }}" as="c" hint-placeholder-count="3">
+        <div onClick="{{ c.select }}" role="radio" aria-checked="{{ c.selected }}" style="background:#ffffff; border:{{ c.border }}; border-radius:12px; padding: {{ cardPadding }}; cursor:pointer; box-shadow:{{ c.shadow }}; transition:border-color .15s, box-shadow .15s; display:flex; flex-direction: {{ cardDirection }}; align-items: {{ cardAlign }}; gap:12px; flex: {{ cardFlex }}; min-width:0;">
+          <div style="flex:1; width:100%; min-width:0; display:flex; flex-direction:column; gap:10px;">
+            <sc-for list="{{ c.rows }}" as="r" hint-placeholder-count="3">
+              <div style="display:grid; grid-template-columns: {{ rowColumns }}; gap: {{ rowGap }}; align-items:baseline; min-width:0;">
+                <span style="font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:#8a95a3;">{{ r.label }}</span>
+                <span style="font-size:{{ r.size }}; font-weight:{{ r.weight }}; color:#1f2933; line-height:1.35; overflow-wrap:anywhere;">{{ r.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="width:26px; height:26px; border-radius:50%; border:{{ c.dotBorder }}; background:{{ c.dotBg }}; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s; margin-top: {{ dotMarginTop }}; align-self: {{ dotAlignSelf }};">
+            <sc-if value="{{ c.selected }}" hint-placeholder-val="{{ false }}">
+              <svg width="13" height="13" viewBox="0 0 13 13" style="animation:cj-pop .18s ease;"><path d="M2.5 7l2.6 2.6L10.5 3.8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  <div style="position:sticky; bottom:0; background:linear-gradient(to top, #fbfcfd 70%, rgba(251,252,253,0)); padding:12px 16px calc(16px + env(safe-area-inset-bottom));">
+    <button onClick="{{ submit }}" disabled="{{ submitDisabled }}" style="width:100%; height:52px; border:none; border-radius:10px; background:{{ submitBg }}; color:#ffffff; font-family:inherit; font-size:17px; font-weight:600; cursor:pointer; transition:background .15s;">{{ submitLabel }}</button>
+    <div style="text-align:center; padding-top:10px; font-size:12px; color:#9aa4b0;">Powered by <a href="#" style="font-weight:600; text-decoration:none;">QuestionPro</a></div>
+  </div>
+  <sc-if value="{{ done }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(31,41,51,.45); display:flex; align-items:center; justify-content:center; padding:24px; z-index:10;">
+      <div style="background:#fff; border-radius:16px; padding:28px 24px; max-width:320px; text-align:center; display:flex; flex-direction:column; gap:10px;">
+        <div style="width:48px; height:48px; border-radius:50%; background:#1b6fd8; margin:0 auto; display:flex; align-items:center; justify-content:center;"><svg width="22" height="22" viewBox="0 0 13 13"><path d="M2.5 7l2.6 2.6L10.5 3.8" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+        <div style="font-size:17px; font-weight:600; color:#1f2933;">Response recorded</div>
+        <div style="font-size:14px; color:#7a8694; line-height:1.5;">All 3 choice tasks complete. This is where the survey would continue.</div>
+        <button onClick="{{ restart }}" style="margin-top:6px; height:44px; border:1px solid #d4dae1; border-radius:10px; background:#fff; color:#1b6fd8; font-family:inherit; font-size:15px; font-weight:600; cursor:pointer;">Restart demo</button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 390, &quot;height&quot;: 720}, &quot;layout&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;Mobile&quot;, &quot;options&quot;: [&quot;Mobile&quot;, &quot;Desktop&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Style&quot;}, &quot;prompt&quot;: {&quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;If these were your only options, which TV would you choose?&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Content&quot;}, &quot;longLabels&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Content&quot;}, &quot;accent&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#1b6fd8&quot;, &quot;options&quot;: [&quot;#1b6fd8&quot;, &quot;#0f7b6c&quot;, &quot;#7048c6&quot;, &quot;#c2410c&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Style&quot;}}">
+class Component extends DCLogic {
+  state = { step: 1, picks: {}, done: false };
+  renderVals() {
+    const { step, picks, done } = this.state;
+    const pick = picks[step] ?? null;
+    const accent = this.props.accent ?? "#1b6fd8";
+    const long = this.props.longLabels ?? false;
+    const tasks = [
+      [
+        { brand: long ? "Vizio. VizioVizioVizio Vizio Vizio" : "Vizio", price: "USD 1,200", size: "32\"" },
+        { brand: long ? "Sony zSony Sony" : "Sony", price: "USD 800", size: "32\"" },
+        { brand: "Samsung", price: "USD 800", size: "45\"" },
+      ],
+      [
+        { brand: "LG", price: "USD 950", size: "55\"" },
+        { brand: "Vizio", price: "USD 700", size: "45\"" },
+        { brand: "Sony", price: "USD 1,400", size: "65\"" },
+      ],
+      [
+        { brand: "Samsung", price: "USD 1,100", size: "55\"" },
+        { brand: "LG", price: "USD 850", size: "45\"" },
+        { brand: long ? "Vizio. VizioVizioVizio Vizio Vizio" : "Vizio", price: "USD 600", size: "32\"" },
+      ],
+    ];
+    const totalSteps = tasks.length;
+    const data = tasks[step - 1];
+    const concepts = data.map((c, i) => {
+      const sel = pick === i;
+      return {
+        selected: sel,
+        border: sel ? `2px solid ${accent}` : "2px solid #e3e8ee",
+        shadow: sel ? "0 4px 14px rgba(27,111,216,.16)" : "0 1px 3px rgba(31,41,51,.05)",
+        dotBorder: sel ? `2px solid ${accent}` : "2px solid #c3ccd6",
+        dotBg: sel ? accent : "#fff",
+        rows: [
+          { label: "Brand", value: c.brand, size: "16px", weight: 600 },
+          { label: "Price", value: c.price, size: "15px", weight: 500 },
+          { label: "Size", value: c.size, size: "15px", weight: 500 },
+        ],
+        select: () => this.setState(s => ({ picks: { ...s.picks, [s.step]: i } })),
+      };
+    });
+    const answered = pick !== null;
+    const desktop = (this.props.layout ?? "Mobile") === "Desktop";
+    return {
+      done, concepts, step, totalSteps,
+      progressPct: Math.round(((step - (answered ? 0 : 1)) / totalSteps) * 100) + "%",
+      containerWidth: desktop ? "900px" : "430px",
+      groupDirection: desktop ? "row" : "column",
+      groupGap: desktop ? "16px" : "10px",
+      cardDirection: desktop ? "column" : "row",
+      cardAlign: desktop ? "stretch" : "flex-start",
+      cardFlex: desktop ? "1" : "initial",
+      cardPadding: desktop ? "20px 18px" : "14px 16px",
+      rowColumns: desktop ? "1fr" : "56px 1fr",
+      rowGap: desktop ? "4px" : "12px",
+      dotMarginTop: desktop ? "8px" : "2px",
+      dotAlignSelf: desktop ? "center" : "auto",
+      prompt: this.props.prompt ?? "If these were your only options, which TV would you choose?",
+      submitDisabled: !answered,
+      submitBg: answered ? accent : "#c3ccd6",
+      submitLabel: step < totalSteps ? "Next" : "Submit",
+      submit: () => {
+        if (!answered) return;
+        if (step < totalSteps) this.setState({ step: step + 1 });
+        else this.setState({ done: true });
+      },
+      restart: () => this.setState({ step: 1, picks: {}, done: false }),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import type {
   SurveyMatrix,
+  SurveyQuestionConjoint,
   SurveyQuestionInputKind,
   SurveyQuestionKind,
 } from '@/data/mock-survey-detail';
@@ -108,7 +109,8 @@ export type SurveyQuestionPreviewKind =
   | 'select-one'
   | 'captcha'
   | 'open-ended'
-  | 'deepdive';
+  | 'deepdive'
+  | 'conjoint';
 
 /** The concrete open-ended question type inside a preview session. */
 export type OpenEndedQuestionType = 'comment-box' | 'single-row' | 'email' | 'contact';
@@ -204,6 +206,40 @@ export function selectOnePreviewStorageKey(surveyId: number): string {
 
 export function captchaPreviewStorageKey(surveyId: number): string {
   return `survey-captcha-preview-${surveyId}`;
+}
+
+export function conjointPreviewStorageKey(surveyId: number): string {
+  return `survey-conjoint-preview-${surveyId}`;
+}
+
+export interface ConjointQuestionPreviewSession {
+  surveyId: number;
+  surveyTitle: string;
+  questionCode?: string;
+  questionNumber: number;
+  questionText: string;
+  required?: boolean;
+  conjoint: SurveyQuestionConjoint;
+}
+
+export function writeConjointQuestionPreviewSession(
+  payload: ConjointQuestionPreviewSession
+): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(conjointPreviewStorageKey(payload.surveyId), JSON.stringify(payload));
+}
+
+export function readConjointQuestionPreviewSession(
+  surveyId: number
+): ConjointQuestionPreviewSession | null {
+  if (typeof window === 'undefined') return null;
+  const raw = localStorage.getItem(conjointPreviewStorageKey(surveyId));
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as ConjointQuestionPreviewSession;
+  } catch {
+    return null;
+  }
 }
 
 function deepDiveLivePreviewStorageKey(surveyId: number, questionCode: string): string {

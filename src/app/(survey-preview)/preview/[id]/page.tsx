@@ -3,6 +3,7 @@
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { CaptchaSurveyQuestionPreview } from '@/components/surveys/CaptchaSurveyQuestionPreview';
+import { ConjointSurveyQuestionPreview } from '@/components/surveys/ConjointSurveyQuestionPreview';
 import { MultiPointCardsCarouselPreview } from '@/components/surveys/MultiPointCardsCarouselPreview';
 import { DeepDiveQuestionPreview } from '@/components/surveys/DeepDiveQuestionPreview';
 import { OpenEndedQuestionPreview } from '@/components/surveys/OpenEndedQuestionPreview';
@@ -14,10 +15,12 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { DEFAULT_MULTI_POINT_SETTINGS } from '@/data/mock-multi-point-settings';
 import {
   captchaPreviewStorageKey,
+  conjointPreviewStorageKey,
   deepDivePreviewStorageKey,
   multiPointPreviewStorageKey,
   openEndedPreviewStorageKey,
   readCaptchaQuestionPreviewSession,
+  readConjointQuestionPreviewSession,
   readDeepDiveQuestionPreviewSession,
   readMultiPointQuestionPreviewSession,
   readOpenEndedQuestionPreviewSession,
@@ -26,6 +29,7 @@ import {
   selectManyPreviewStorageKey,
   selectOnePreviewStorageKey,
   type CaptchaQuestionPreviewSession,
+  type ConjointQuestionPreviewSession,
   type DeepDiveQuestionPreviewSession,
   type MultiPointQuestionPreviewSession,
   type OpenEndedQuestionPreviewSession,
@@ -52,6 +56,8 @@ export default function SurveyQuestionPreviewPage() {
     useState<OpenEndedQuestionPreviewSession | null>(null);
   const [deepDivePayload, setDeepDivePayload] =
     useState<DeepDiveQuestionPreviewSession | null>(null);
+  const [conjointPayload, setConjointPayload] =
+    useState<ConjointQuestionPreviewSession | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -93,6 +99,15 @@ export default function SurveyQuestionPreviewPage() {
         setSelectOnePayload(null);
         setMultiPointPayload(null);
         setCaptchaPayload(null);
+        setConjointPayload(null);
+      } else if (previewKind === 'conjoint') {
+        setConjointPayload(readConjointQuestionPreviewSession(surveyId));
+        setSelectManyPayload(null);
+        setSelectOnePayload(null);
+        setMultiPointPayload(null);
+        setCaptchaPayload(null);
+        setOpenEndedPayload(null);
+        setDeepDivePayload(null);
       } else {
         setMultiPointPayload(readMultiPointQuestionPreviewSession(surveyId));
         setSelectManyPayload(null);
@@ -100,6 +115,7 @@ export default function SurveyQuestionPreviewPage() {
         setCaptchaPayload(null);
         setOpenEndedPayload(null);
         setDeepDivePayload(null);
+        setConjointPayload(null);
       }
       setReady(true);
     }
@@ -118,7 +134,9 @@ export default function SurveyQuestionPreviewPage() {
                 ? openEndedPreviewStorageKey(surveyId)
                 : previewKind === 'deepdive'
                   ? deepDivePreviewStorageKey(surveyId)
-                  : multiPointPreviewStorageKey(surveyId);
+                  : previewKind === 'conjoint'
+                    ? conjointPreviewStorageKey(surveyId)
+                    : multiPointPreviewStorageKey(surveyId);
       if (
         event.key === key ||
         event.key?.startsWith(`survey-deepdive-live-${surveyId}-`)
@@ -292,6 +310,30 @@ export default function SurveyQuestionPreviewPage() {
         session={deepDivePayload}
         onClose={() => window.close()}
       />
+    );
+  }
+
+  if (previewKind === 'conjoint') {
+    if (!conjointPayload) {
+      return (
+        <div className={styles.emptyWrap}>
+          <EmptyState
+            icon="wm-visibility"
+            title="No preview available"
+            description="Open preview from the question menu in the survey editor."
+          />
+        </div>
+      );
+    }
+
+    return (
+      <SurveyQuestionPreviewChrome onClose={() => window.close()}>
+        <ConjointSurveyQuestionPreview
+          session={conjointPayload}
+          onDone={() => window.close()}
+          onClose={() => window.close()}
+        />
+      </SurveyQuestionPreviewChrome>
     );
   }
 

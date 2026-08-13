@@ -138,6 +138,14 @@ export const MOCK_HEADER_CATEGORIES: IWuAppHeaderMenuItem[] = [
         logo: `${APP_NAV}/live-polls-product.png`,
         order: 1,
       },
+      {
+        name: 'Logs',
+        icon: 'e308',
+        link: '/engagement/logs',
+        active: true,
+        logo: `${APP_NAV}/engagement.svg`,
+        order: 2,
+      },
     ],
   },
 ];

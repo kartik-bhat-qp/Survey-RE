@@ -159,10 +159,14 @@
   border: 1px solid #cfd4da;
   border-radius: 6px;
   color: #404b58;
+  cursor: pointer;
+  display: inline-flex;
   font-family: inherit;
   font-size: 13px;
+  max-width: 220px;
+  min-width: 140px;
   padding: 6px 28px 6px 10px;
-  cursor: pointer;
+  text-align: left;
 }
 
 .select:hover {
@@ -172,6 +176,47 @@
 .select:focus {
   border-color: #1b87e6;
   outline: none;
+}
+
+.baseMenuLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.baseMenuItem {
+  align-items: center;
+  display: flex;
+  font-family: 'Fira Sans', sans-serif;
+  gap: 8px;
+}
+
+.baseMenuCheck {
+  color: #1b87e6;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  width: 14px;
+}
+
+.baseMenuCheckVisible {
+  visibility: visible;
+}
+
+.baseMenuCreateItem {
+  align-items: center;
+  color: #1b87e6;
+  display: flex;
+  font-family: 'Fira Sans', sans-serif;
+  gap: 8px;
+}
+
+.baseMenuCreateIcon {
+  font-size: 14px;
+  line-height: 1;
 }
 
 .selectBlock {

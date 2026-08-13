@@ -8,6 +8,7 @@ import type {
   SurveyMatrix,
   SurveyQuestion,
   SurveyQuestionOption,
+  SurveyQuestionConjoint,
   SurveySection,
 } from '@/data/mock-survey-detail';
 import {
@@ -39,6 +40,9 @@ import {
   DEFAULT_CONSTANT_SUM_QUESTION_TEXT,
   DEFAULT_DRAG_DROP_QUESTION_TEXT,
   createDefaultVanWestendorpData,
+  cloneConjointData,
+  createDefaultConjointData,
+  DEFAULT_CONJOINT_QUESTION_TEXT,
   DEFAULT_LOOKUP_TABLE_QUESTION_TEXT,
   DEFAULT_DROPDOWN_QUESTION_TEXT,
   DEFAULT_COMMENT_BOX_QUESTION_TEXT,
@@ -102,6 +106,7 @@ import {
   SurveyAgentSidebar,
 } from '@/components/surveys/SurveyAgentSidebar';
 import { VanWestendorpQuestionRow } from '@/components/surveys/VanWestendorpQuestionRow';
+import { ConjointQuestionRow } from '@/components/surveys/ConjointQuestionRow';
 import { AddQuestionMenu } from '@/components/surveys/AddQuestionMenu';
 import { BulkEditLinesModal } from '@/components/surveys/BulkEditLinesModal';
 import { BulkEditOptionsModal } from '@/components/surveys/BulkEditOptionsModal';
@@ -178,6 +183,7 @@ import {
 import {
   syncDeepDiveSettingsToPreviewSessions,
   writeCaptchaQuestionPreviewSession,
+  writeConjointQuestionPreviewSession,
   writeMultiPointQuestionPreviewSession,
   writeOpenEndedQuestionPreviewSession,
   writeSelectManyQuestionPreviewSession,
@@ -357,6 +363,10 @@ function isVanWestendorpQuestion(question: SurveyQuestion): boolean {
   return question.kind === 'van-westendorp';
 }
 
+function isConjointQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'conjoint' || question.addQuestionTypeId === 'conjoint';
+}
+
 function isLookupTableQuestion(question: SurveyQuestion): boolean {
   return question.kind === 'lookup-table' || question.addQuestionTypeId === 'lookup-table';
 }
@@ -411,13 +421,15 @@ function isSelectOneQuestion(question: SurveyQuestion): boolean {
     !isConstantSumQuestion(question) &&
     !isDragDropQuestion(question) &&
     !isStaticContentQuestion(question) &&
+    !isConjointQuestion(question) &&
     (question.addQuestionTypeId === 'select-one' ||
       (question.inputKind === 'radio' &&
         !isMultiPointScalesQuestion(question) &&
     !isMatrixMultiSelectQuestion(question) &&
     !isMatrixSpreadsheetQuestion(question) &&
         !isNpsQuestion(question) &&
-        !isVanWestendorpQuestion(question)))
+        !isVanWestendorpQuestion(question) &&
+        !isConjointQuestion(question)))
   );
 }
 
@@ -432,6 +444,7 @@ function isSelectOnePreviewQuestion(
     !isMatrixSpreadsheetQuestion(question) &&
     !isNpsQuestion(question) &&
     !isVanWestendorpQuestion(question) &&
+    !isConjointQuestion(question) &&
     !isLookupTableQuestion(question) &&
     !isDropdownQuestion(question) &&
     !isCommentBoxQuestion(question) &&
@@ -452,6 +465,7 @@ function isSelectOnePreviewQuestion(
     !isConstantSumQuestion(question) &&
     !isDragDropQuestion(question) &&
     !isStaticContentQuestion(question) &&
+    !isConjointQuestion(question) &&
     question.options.length > 0
   );
 }
@@ -475,6 +489,7 @@ function cloneQuestionForCopy(question: SurveyQuestion): SurveyQuestion {
           },
         }
       : {}),
+    ...(question.conjoint ? { conjoint: cloneConjointData(question.conjoint) } : {}),
     ...(question.lookupTable ? { lookupTable: { ...question.lookupTable } } : {}),
     ...(question.smileyRating
       ? {
@@ -1686,6 +1701,23 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     []
   );
 
+  const handleConjointChange = useCallback(
+    (sectionId: string, questionId: string, conjoint: SurveyQuestionConjoint) => {
+      setSections((prev) =>
+        prev.map((sec) => {
+          if (sec.id !== sectionId) return sec;
+          return {
+            ...sec,
+            questions: sec.questions.map((q) =>
+              q.id === questionId ? { ...q, conjoint } : q
+            ),
+          };
+        })
+      );
+    },
+    []
+  );
+
   const handleOptionLabelChange = useCallback(
     (sectionId: string, questionId: string, optionId: string, label: string) => {
       setSections((prev) =>
@@ -2416,6 +2448,23 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           );
           const previewBaseUrl = `${window.location.origin}/surveys/preview/${detail.survey.id}`;
           const previewSignature = `${detail.survey.id}:${questionKey}`;
+
+          if (isConjointQuestion(question)) {
+            writeConjointQuestionPreviewSession({
+              surveyId: detail.survey.id,
+              surveyTitle: detail.editorTitle,
+              questionCode: question.code,
+              questionNumber: question.number,
+              questionText: question.text,
+              required: question.required,
+              conjoint: question.conjoint ?? createDefaultConjointData(),
+            });
+            openQuestionPreviewTab(
+              `${previewSignature}:conjoint`,
+              `${previewBaseUrl}?kind=conjoint`
+            );
+            return;
+          }
 
           if (isMultiPointScalesQuestion(question) && question.matrix) {
             const mpSettings = getMultiPointSettings(questionKey);
@@ -3642,6 +3691,40 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         return;
       }
 
+      if (typeId === 'conjoint') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        setSections((prev) => {
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: DEFAULT_CONJOINT_QUESTION_TEXT,
+              required: true,
+              kind: 'conjoint',
+              addQuestionTypeId: 'conjoint',
+              options: [],
+              conjoint: createDefaultConjointData(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          });
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
+          return next;
+        });
+        showToast({ message: 'Conjoint question added', variant: 'success' });
+        return;
+      }
+
       if (typeId === 'deepdive') {
         if (!canAddDeepDiveAt(sections, sectionId, insertIndex)) {
           showToast({
@@ -3882,6 +3965,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const isMatrixSpreadsheet = isMatrixSpreadsheetQuestion(question);
                     const isNps = isNpsQuestion(question);
                     const isVanWestendorp = isVanWestendorpQuestion(question);
+                    const isConjoint = isConjointQuestion(question);
                     const isLookupTable = isLookupTableQuestion(question);
                     const isDropdown = isDropdownQuestion(question);
                     const isCommentBox = isCommentBoxQuestion(question);
@@ -3974,7 +4058,8 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                           } ${isMatrixMultiSelect ? styles.questionBlockMatrixMultiSelect : ''} ${
                             isMatrixSpreadsheet ? styles.questionBlockMatrixSpreadsheet : ''
                           } ${isVanWestendorp ? styles.questionBlockVanWestendorp : ''} ${
-                            isDropdown ? styles.questionBlockDropdown : ''
+                            isConjoint ? styles.questionBlockConjoint : ''
+                          } ${isDropdown ? styles.questionBlockDropdown : ''
                           } ${isCommentBox ? styles.questionBlockCommentBox : ''} ${
                             isCaptcha ? styles.questionBlockSingleRowText : ''
                           } ${isSingleRowText ? styles.questionBlockSingleRowText : ''} ${
@@ -4605,6 +4690,27 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                   handleOpenSettings(section.id, question.id)
                                 }
                                 onQuestionTextChange={handleQuestionTextChange}
+                              />
+                            ) : isConjoint ? (
+                              <ConjointQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onConjointChange={handleConjointChange}
                               />
                             ) : isMatrixSpreadsheet && question.matrix ? (
                               <MatrixSpreadsheetQuestionRow

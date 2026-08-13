@@ -68,8 +68,25 @@
   gap: 0.25rem;
   line-height: 1.4;
   list-style: none;
-  margin: 0;
+  margin: 0 0 0.375rem;
   padding: 0;
+}
+
+.addLink {
+  color: #1b87e6;
+  font-size: 0.75rem;
+}
+
+.tableTools {
+  color: #1b87e6;
+  display: flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  justify-content: space-between;
+}
+
+.bulkLinks {
+  color: #1b87e6;
 }
 
 .summaryBar {
@@ -87,4 +104,14 @@
 .summaryBar strong {
   color: #1e293b;
   font-weight: 600;
+}
+
+.infoBanner {
+  background: #eaf4fc;
+  color: #1b4f9c;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
 }

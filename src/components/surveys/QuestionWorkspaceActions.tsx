@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import type { SurveyQuestion } from '@/data/mock-survey-detail';
 import { resolveAddQuestionTypeId } from '@/data/mock-survey-detail';
 import {
@@ -23,7 +24,9 @@ export interface QuestionWorkspaceActionsProps {
   onOpenValidation?: () => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   showValidation?: boolean;
+  showLogic?: boolean;
   showDeepDiveAttached?: boolean;
+  extraActions?: ReactNode;
   className?: string;
   menuBtnClassName?: string;
 }
@@ -36,7 +39,9 @@ export function QuestionWorkspaceActions({
   onOpenValidation,
   onMenuAction,
   showValidation = true,
+  showLogic = true,
   showDeepDiveAttached = false,
+  extraActions,
   className,
   menuBtnClassName,
 }: QuestionWorkspaceActionsProps) {
@@ -74,9 +79,11 @@ export function QuestionWorkspaceActions({
           </button>
         ) : null}
       </div>
-      <button type="button" className={styles.actionLink} onClick={() => onOpenLogic()}>
-        Logic
-      </button>
+      {showLogic ? (
+        <button type="button" className={styles.actionLink} onClick={() => onOpenLogic()}>
+          Logic
+        </button>
+      ) : null}
       <button
         type="button"
         className={styles.actionLink}
@@ -87,6 +94,7 @@ export function QuestionWorkspaceActions({
       >
         Settings
       </button>
+      {extraActions}
       <QuestionOptionsMenu
         onAction={onMenuAction}
         triggerClassName={menuBtnClassName ?? styles.menuBtn}

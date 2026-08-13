@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# post-merge: log a high-level summary after git pull / merge.
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel)"
+node "$root/scripts/record-git-activity.cjs" --action pull --range "ORIG_HEAD..HEAD" || true
+exit 0

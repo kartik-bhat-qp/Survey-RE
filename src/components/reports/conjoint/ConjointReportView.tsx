@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useState } from 'react';
+import { forwardRef, useState, type ButtonHTMLAttributes } from 'react';
 import {
   CONJOINT_BASE_ATTRIBUTES,
   CONJOINT_COLORS,
@@ -36,6 +36,37 @@ const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false }
 );
+const WuMenu = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
+  { ssr: false }
+);
+const WuMenuItem = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
+  { ssr: false }
+);
+const WuMenuSeparatorItem = dynamic(
+  () =>
+    import('@npm-questionpro/wick-ui-lib').then((m) => ({
+      default: m.WuMenuSeparatorItem,
+    })),
+  { ssr: false }
+);
+
+const BaseMenuTrigger = forwardRef<
+  HTMLButtonElement,
+  ButtonHTMLAttributes<HTMLButtonElement> & { label: string }
+>(function BaseMenuTrigger({ label, className, ...buttonProps }, ref) {
+  return (
+    <button
+      {...buttonProps}
+      ref={ref}
+      type="button"
+      className={`${styles.select} ${className ?? ''}`}
+    >
+      <span className={styles.baseMenuLabel}>{label}</span>
+    </button>
+  );
+});
 
 export interface ConjointReportViewProps {
   reportName: string;
@@ -500,28 +531,38 @@ export default function ConjointReportView({
           <div className={styles.spacer} />
           <div className={styles.headerActions}>
             <span className={styles.metaLabel}>Base</span>
-            <select
-              className={styles.select}
-              value={filterId}
-              onChange={(e) => setFilterId(e.target.value)}
-              aria-label="Base filter"
+            <WuMenu
+              Trigger={<BaseMenuTrigger label={filter.label} aria-label="Base filter" />}
+              align="start"
             >
-              {CONJOINT_FILTERS.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
+              {[...CONJOINT_FILTERS, ...customFilters].map((item) => (
+                <WuMenuItem
+                  key={item.id}
+                  className={styles.baseMenuItem}
+                  onSelect={() => setFilterId(item.id)}
+                >
+                  <span
+                    className={`${styles.baseMenuCheck} ${
+                      filterId === item.id ? styles.baseMenuCheckVisible : ''
+                    }`}
+                    aria-hidden
+                  >
+                    {filterId === item.id ? '✓' : ''}
+                  </span>
+                  <span>{item.label}</span>
+                </WuMenuItem>
               ))}
-              {customFilters.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+              <WuMenuSeparatorItem />
+              <WuMenuItem
+                className={styles.baseMenuCreateItem}
+                onSelect={() => openCreateBase()}
+              >
+                <span className={`wm-add ${styles.baseMenuCreateIcon}`} aria-hidden />
+                Create new base
+              </WuMenuItem>
+            </WuMenu>
             <span className={styles.metaLabel}>n = {filter.n.toLocaleString()}</span>
             <div className={styles.divider} style={{ margin: '0 4px' }} />
-            <WuButton variant="secondary" onClick={openCreateBase}>
-              Create new base
-            </WuButton>
             <WuButton variant="secondary" onClick={() => onExport?.()}>
               Export
             </WuButton>

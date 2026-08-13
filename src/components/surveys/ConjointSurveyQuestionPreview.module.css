@@ -1,0 +1,297 @@
+.canvas {
+  padding-left: clamp(1.5rem, 5vw, 5rem);
+  padding-right: clamp(1.5rem, 5vw, 5rem);
+}
+
+.canvas .card {
+  max-width: 72rem;
+  padding-top: 1.75rem;
+  width: 100%;
+}
+
+.taskHeader {
+  align-items: baseline;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin: 0 0 2rem;
+}
+
+.questionHeading {
+  color: #1e293b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.stepLabel {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.featureCell {
+  border-right: 1px solid #e2e8f0;
+  color: #1e293b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  padding: 0.85rem 1.25rem 0.85rem 0;
+  text-align: left;
+  vertical-align: middle;
+  width: 7.5rem;
+}
+
+.levelCell {
+  border-right: 1px solid #e2e8f0;
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  padding: 0.85rem 1rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.levelCell:last-child,
+.radioCell:last-child {
+  border-right: none;
+}
+
+.radioCell {
+  border-right: 1px solid #e2e8f0;
+  padding: 1.35rem 1rem 0.25rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.radioLabel {
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.radioLabel input {
+  accent-color: #1b87e6;
+  cursor: pointer;
+  height: 1rem;
+  margin: 0;
+  width: 1rem;
+}
+
+.mobileRoot {
+  --cj-accent: #1b87e6;
+  background: #fbfcfd;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.mobileProgressTrack {
+  background: #e3e8ee;
+  flex-shrink: 0;
+  height: 4px;
+  position: relative;
+  width: 100%;
+}
+
+.mobileProgressFill {
+  background: var(--cj-accent);
+  height: 100%;
+  transition: width 0.35s ease;
+}
+
+.mobileHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.25rem 1.25rem 0.875rem;
+}
+
+.mobileMeta {
+  align-items: baseline;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.mobileQuestionLabel {
+  color: #7a8694;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mobileStep {
+  color: var(--cj-accent);
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mobilePrompt {
+  color: #1f2933;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1.1875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.mobileCards {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.125rem 0.75rem 1rem;
+}
+
+.mobileCard {
+  align-items: flex-start;
+  appearance: none;
+  background: #fff;
+  border: 2px solid #e3e8ee;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgb(31 41 51 / 5%);
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  font: inherit;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.875rem 1rem;
+  text-align: left;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+  width: 100%;
+}
+
+.mobileCardSelected {
+  border-color: var(--cj-accent);
+  box-shadow: 0 4px 14px rgb(27 135 230 / 16%);
+}
+
+.mobileCardBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.625rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.mobileRow {
+  align-items: baseline;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 3.5rem 1fr;
+  min-width: 0;
+}
+
+.mobileRowLabel {
+  color: #8a95a3;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mobileRowValuePrimary,
+.mobileRowValue {
+  color: #1f2933;
+  font-family: 'Fira Sans', sans-serif;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.mobileRowValuePrimary {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.mobileRowValue {
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.mobileDot {
+  align-items: center;
+  align-self: flex-start;
+  background: #fff;
+  border: 2px solid #c3ccd6;
+  border-radius: 50%;
+  display: flex;
+  flex-shrink: 0;
+  height: 26px;
+  justify-content: center;
+  margin-top: 2px;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+  width: 26px;
+}
+
+.mobileCardSelected .mobileDot {
+  background: var(--cj-accent);
+  border-color: var(--cj-accent);
+}
+
+.mobileSticky {
+  background: linear-gradient(to top, #fbfcfd 70%, rgb(251 252 253 / 0%));
+  bottom: 0;
+  flex-shrink: 0;
+  padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  position: sticky;
+}
+
+.mobileSubmit {
+  background: var(--cj-accent);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  height: 3.25rem;
+  transition: background 0.15s;
+  width: 100%;
+}
+
+.mobileSubmit:disabled {
+  background: #c3ccd6;
+  cursor: default;
+}
+
+.mobilePowered {
+  color: #9aa4b0;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  margin: 0;
+  padding-top: 0.625rem;
+  text-align: center;
+}
+
+.mobilePowered span {
+  color: var(--cj-accent);
+  font-weight: 600;
+}
