@@ -119,6 +119,17 @@
   pointer-events: auto;
 }
 
+/* Docked to the field: square off the joined edge so they read as one control. */
+.orgPickerBelow {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.orgPickerAbove {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
 .orgGroup {
   padding: 8px 0 4px;
 }

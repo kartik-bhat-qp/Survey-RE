@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { MediaLibraryFolderModals } from '@/components/surveys/MediaLibraryFolderModals';
 import { formatDate } from '@/data/mock-utils';
@@ -23,6 +24,11 @@ import {
 } from '@/data/mock-media-library';
 import styles from './MediaLibraryDashboard.module.css';
 
+const WuSelect = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
+  { ssr: false }
+);
+
 interface MediaLibraryDashboardProps {
   surveyId: number;
 }
@@ -31,7 +37,24 @@ interface UploadItem {
   id: string;
   name: string;
   percent: number;
+  /** Per-file progress increment, so each tick stays a pure state update. */
+  speed: number;
 }
+
+interface FilterOption {
+  value: MediaLibraryFilter;
+  label: string;
+}
+
+interface PageRangeOption {
+  value: number;
+  label: string;
+}
+
+const FILTER_OPTIONS: FilterOption[] = MEDIA_LIBRARY_FILTERS.map((value) => ({
+  value,
+  label: value,
+}));
 
 type MediaLibraryModal = 'create-folder' | 'share' | 'move' | null;
 
@@ -44,7 +67,6 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
   const [view, setView] = useState<MediaLibraryView>('grid');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<MediaLibraryFilter>('All files');
-  const [filterOpen, setFilterOpen] = useState(false);
   const [menuFileId, setMenuFileId] = useState<string | null>(null);
   const [detailsFileId, setDetailsFileId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -58,11 +80,12 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
   const [dragging, setDragging] = useState(false);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [page, setPage] = useState(1);
-  const [pageMenuOpen, setPageMenuOpen] = useState(false);
 
   const uploadTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const uploadDoneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const uploadSeqRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const skipRenameCommitRef = useRef(false);
 
   const toast = useCallback(
     (message: string) => showToast({ message, variant: 'success' }),
@@ -70,15 +93,13 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
   );
 
   useEffect(() => {
-    if (menuFileId === null && !filterOpen && !pageMenuOpen) return;
+    if (menuFileId === null) return;
     function onDocumentClick(): void {
       setMenuFileId(null);
-      setFilterOpen(false);
-      setPageMenuOpen(false);
     }
     document.addEventListener('click', onDocumentClick);
     return () => document.removeEventListener('click', onDocumentClick);
-  }, [filterOpen, menuFileId, pageMenuOpen]);
+  }, [menuFileId]);
 
   useEffect(() => {
     return () => {
@@ -86,6 +107,44 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
       if (uploadDoneTimerRef.current) clearTimeout(uploadDoneTimerRef.current);
     };
   }, []);
+
+  const uploadsComplete = uploads.length > 0 && uploads.every((item) => item.percent >= 100);
+
+  useEffect(() => {
+    if (!uploadsComplete) return;
+
+    if (uploadTimerRef.current) {
+      clearInterval(uploadTimerRef.current);
+      uploadTimerRef.current = null;
+    }
+
+    uploadDoneTimerRef.current = setTimeout(() => {
+      const uploadedAt = new Date().toISOString();
+      const newFiles: MediaLibraryFile[] = uploads.map((item) => {
+        const type = getMediaTypeFromFileName(item.name);
+        return {
+          id: `media-${item.id}`,
+          name: item.name,
+          type,
+          size: `${(Math.round((0.2 + Math.random() * 2) * 10) / 10).toFixed(1)} MB`,
+          resolution:
+            type === 'image' ? '1600 × 900' : type === 'video' ? '1920 × 1080' : undefined,
+          uploadedAt,
+          folderId: activeFolderId,
+        };
+      });
+      setFiles((current) => [...newFiles, ...current]);
+      setUploads([]);
+      toast(`${newFiles.length} file${newFiles.length === 1 ? '' : 's'} uploaded`);
+    }, 800);
+
+    return () => {
+      if (uploadDoneTimerRef.current) {
+        clearTimeout(uploadDoneTimerRef.current);
+        uploadDoneTimerRef.current = null;
+      }
+    };
+  }, [activeFolderId, toast, uploads, uploadsComplete]);
 
   const allFolders = useMemo(
     () => [...MEDIA_LIBRARY_SYSTEM_FOLDERS, ...folders],
@@ -119,20 +178,24 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
     const start = (currentPage - 1) * MEDIA_LIBRARY_PAGE_SIZE;
     return visibleFiles.slice(start, start + MEDIA_LIBRARY_PAGE_SIZE);
   }, [currentPage, visibleFiles]);
-  const rangeStart = visibleFiles.length === 0 ? 0 : (currentPage - 1) * MEDIA_LIBRARY_PAGE_SIZE + 1;
-  const rangeEnd = Math.min(currentPage * MEDIA_LIBRARY_PAGE_SIZE, visibleFiles.length);
-  const pageRanges = useMemo(() => {
+  const pageRangeOptions = useMemo<PageRangeOption[]>(() => {
     if (visibleFiles.length === 0) return [];
     return Array.from({ length: pageCount }, (_, index) => {
       const start = index * MEDIA_LIBRARY_PAGE_SIZE + 1;
-      const end = (index + 1) * MEDIA_LIBRARY_PAGE_SIZE;
-      return { page: index + 1, start, end };
+      const end = Math.min((index + 1) * MEDIA_LIBRARY_PAGE_SIZE, visibleFiles.length);
+      return {
+        value: index + 1,
+        label: `${start} - ${end} of ${visibleFiles.length}`,
+      };
     });
   }, [pageCount, visibleFiles.length]);
+  const selectedPageRange =
+    pageRangeOptions.find((option) => option.value === currentPage) ?? null;
+  const selectedFilterOption =
+    FILTER_OPTIONS.find((option) => option.value === filter) ?? FILTER_OPTIONS[0];
 
   useEffect(() => {
     setPage(1);
-    setPageMenuOpen(false);
   }, [activeFolderId, filter, search]);
 
   useEffect(() => {
@@ -169,48 +232,27 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
   }
 
   function startUpload(names: string[]): void {
-    const items: UploadItem[] = names.map((name, index) => ({
-      id: `upload-${Date.now()}-${index}`,
-      name,
-      percent: 0,
-    }));
+    const items: UploadItem[] = names.map((name) => {
+      uploadSeqRef.current += 1;
+      return {
+        id: `upload-${Date.now()}-${uploadSeqRef.current}`,
+        name,
+        percent: 0,
+        speed: 6 + Math.random() * 12,
+      };
+    });
     setUploads(items);
     setModal(null);
     setPage(1);
 
     if (uploadTimerRef.current) clearInterval(uploadTimerRef.current);
     uploadTimerRef.current = setInterval(() => {
-      setUploads((prev) => {
-        const next = prev.map((item) => ({
+      setUploads((prev) =>
+        prev.map((item) => ({
           ...item,
-          percent: Math.min(100, item.percent + 6 + Math.random() * 12),
-        }));
-        if (next.length > 0 && next.every((item) => item.percent >= 100)) {
-          if (uploadTimerRef.current) clearInterval(uploadTimerRef.current);
-          uploadDoneTimerRef.current = setTimeout(() => {
-            const uploadedAt = new Date().toISOString();
-            const newFiles: MediaLibraryFile[] = next.map((item) => {
-              const type = getMediaTypeFromFileName(item.name);
-              return {
-                id: item.id,
-                name: item.name,
-                type,
-                size: `${(Math.round((0.2 + Math.random() * 2) * 10) / 10).toFixed(1)} MB`,
-                resolution:
-                  type === 'image' ? '1600 × 900' : type === 'video' ? '1920 × 1080' : undefined,
-                uploadedAt,
-                folderId: activeFolderId,
-              };
-            });
-            setFiles((current) => [...newFiles, ...current]);
-            setUploads([]);
-            toast(
-              `${newFiles.length} file${newFiles.length === 1 ? '' : 's'} uploaded`
-            );
-          }, 800);
-        }
-        return next;
-      });
+          percent: Math.min(100, item.percent + item.speed),
+        }))
+      );
     }, 160);
   }
 
@@ -230,6 +272,10 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
   }
 
   function handleCommitRename(): void {
+    if (skipRenameCommitRef.current) {
+      skipRenameCommitRef.current = false;
+      return;
+    }
     const value = renameValue.trim();
     if (!renamingId) return;
     if (value) {
@@ -239,6 +285,13 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
       toast('File renamed');
     }
     setRenamingId(null);
+    setRenameValue('');
+  }
+
+  function handleCancelRename(): void {
+    skipRenameCommitRef.current = true;
+    setRenamingId(null);
+    setRenameValue('');
   }
 
   function handleCreateFolder(name: string): void {
@@ -325,7 +378,8 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
         <button
           type="button"
           className={styles.menuItem}
-          onClick={() => {
+          onClick={(event) => {
+            event.stopPropagation();
             setRenamingId(file.id);
             setRenameValue(file.name);
             setMenuFileId(null);
@@ -485,42 +539,19 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
           </div>
 
           <div className={styles.filterWrap}>
-            <button
-              type="button"
-              className={styles.filterBtn}
-              aria-haspopup="menu"
-              aria-expanded={filterOpen}
-              onClick={(event) => {
-                event.stopPropagation();
-                setFilterOpen((prev) => !prev);
+            <WuSelect
+              data={FILTER_OPTIONS}
+              accessorKey={{ value: 'value', label: 'label' }}
+              value={selectedFilterOption}
+              variant="outlined"
+              aria-label="Filter files by type"
+              onSelect={(item) => {
+                const selected = item as FilterOption | null;
+                if (!selected) return;
+                setFilter(selected.value);
                 setMenuFileId(null);
-                setPageMenuOpen(false);
               }}
-            >
-              {filter}
-              <span className={`wm-arrow-drop-down ${styles.filterCaret}`} aria-hidden />
-            </button>
-            {filterOpen ? (
-              <div className={styles.filterMenu} role="menu">
-                {MEDIA_LIBRARY_FILTERS.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    className={styles.filterOption}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setFilter(option);
-                      setFilterOpen(false);
-                    }}
-                  >
-                    {option}
-                    {filter === option ? (
-                      <span className={`wm-check ${styles.filterCheck}`} aria-hidden />
-                    ) : null}
-                  </button>
-                ))}
-              </div>
-            ) : null}
+            />
           </div>
 
           <div className={styles.viewToggle} role="group" aria-label="View">
@@ -548,50 +579,22 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
 
           <div className={styles.pagination}>
             <div className={styles.pagePicker}>
-              <button
-                type="button"
-                className={styles.pageLabelBtn}
-                aria-haspopup="menu"
-                aria-expanded={pageMenuOpen}
-                disabled={visibleFiles.length === 0}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setPageMenuOpen((prev) => !prev);
-                  setFilterOpen(false);
+              <WuSelect
+                data={pageRangeOptions}
+                accessorKey={{ value: 'value', label: 'label' }}
+                value={selectedPageRange}
+                variant="flat"
+                placeholder="0 of 0"
+                disabled={pageRangeOptions.length === 0}
+                aria-label="Showing Files"
+                Header={<span className={styles.pageMenuTitle}>Showing Files</span>}
+                onSelect={(item) => {
+                  const selected = item as PageRangeOption | null;
+                  if (!selected) return;
+                  setPage(selected.value);
                   setMenuFileId(null);
                 }}
-              >
-                <span className={styles.pageLabel}>
-                  {visibleFiles.length === 0
-                    ? '0 of 0'
-                    : `${rangeStart} - ${rangeEnd} of ${visibleFiles.length}`}
-                </span>
-                <span className={`wm-arrow-drop-down ${styles.pageCaret}`} aria-hidden />
-              </button>
-              {pageMenuOpen && pageRanges.length > 0 ? (
-                <div className={styles.pageMenu} role="menu">
-                  <div className={styles.pageMenuTitle}>Showing Files</div>
-                  {pageRanges.map((range) => (
-                    <button
-                      key={range.page}
-                      type="button"
-                      role="menuitem"
-                      className={
-                        range.page === currentPage
-                          ? styles.pageMenuOptionActive
-                          : styles.pageMenuOption
-                      }
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setPage(range.page);
-                        setPageMenuOpen(false);
-                      }}
-                    >
-                      {range.start} to {range.end}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
+              />
             </div>
             <button
               type="button"
@@ -734,11 +737,19 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
                           autoFocus
                           aria-label={`Rename ${file.name}`}
                           onChange={(event) => setRenameValue(event.target.value)}
+                          onFocus={(event) => event.currentTarget.select()}
                           onBlur={handleCommitRename}
                           onKeyDown={(event) => {
-                            if (event.key === 'Enter') handleCommitRename();
-                            if (event.key === 'Escape') setRenamingId(null);
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              handleCommitRename();
+                            }
+                            if (event.key === 'Escape') {
+                              event.preventDefault();
+                              handleCancelRename();
+                            }
                           }}
+                          onClick={(event) => event.stopPropagation()}
                         />
                       ) : (
                         <button
@@ -757,7 +768,6 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
                         onClick={(event) => {
                           event.stopPropagation();
                           setMenuFileId((prev) => (prev === file.id ? null : file.id));
-                          setFilterOpen(false);
                         }}
                       >
                         <span className="wm-more-vert" aria-hidden />
@@ -808,14 +818,38 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
                     >
                       <span className={meta.icon} aria-hidden />
                     </button>
-                    <button
-                      type="button"
-                      className={styles.listName}
-                      title={file.name}
-                      onClick={() => setDetailsFileId(file.id)}
-                    >
-                      {file.name}
-                    </button>
+                    {renamingId === file.id ? (
+                      <input
+                        type="text"
+                        className={styles.renameInput}
+                        value={renameValue}
+                        autoFocus
+                        aria-label={`Rename ${file.name}`}
+                        onChange={(event) => setRenameValue(event.target.value)}
+                        onFocus={(event) => event.currentTarget.select()}
+                        onBlur={handleCommitRename}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            handleCommitRename();
+                          }
+                          if (event.key === 'Escape') {
+                            event.preventDefault();
+                            handleCancelRename();
+                          }
+                        }}
+                        onClick={(event) => event.stopPropagation()}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        className={styles.listName}
+                        title={file.name}
+                        onClick={() => setDetailsFileId(file.id)}
+                      >
+                        {file.name}
+                      </button>
+                    )}
                     <span className={styles.listCell}>{meta.label}</span>
                     <span className={styles.listCell}>{file.size}</span>
                     <span className={styles.listCell}>{file.resolution ?? '—'}</span>
@@ -827,7 +861,6 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
                       onClick={(event) => {
                         event.stopPropagation();
                         setMenuFileId((prev) => (prev === file.id ? null : file.id));
-                        setFilterOpen(false);
                       }}
                     >
                       <span className="wm-more-vert" aria-hidden />
@@ -981,9 +1014,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
       {uploads.length > 0 ? (
         <div className={styles.uploadTray} aria-live="polite">
           <div className={styles.uploadHeader}>
-            {uploads.every((item) => item.percent >= 100)
-              ? 'Upload complete'
-              : `Uploading ${uploads.length} files…`}
+            {uploadsComplete ? 'Upload complete' : `Uploading ${uploads.length} files…`}
           </div>
           {uploads.map((item) => {
             const percent = Math.round(item.percent);

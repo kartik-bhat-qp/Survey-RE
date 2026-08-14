@@ -344,13 +344,25 @@ export interface SurveyQuestionOption {
   imageAlt?: string;
 }
 
-export type FlexMatrixCellType = 'text' | 'radio' | 'checkbox' | 'numeric';
+export type FlexMatrixCellType =
+  | 'radio'
+  | 'checkbox'
+  | 'text'
+  | 'numeric'
+  | 'rank-order'
+  | 'dropdown'
+  | 'rating-scale'
+  | 'numeric-slider';
 
 export const FLEX_MATRIX_COLUMN_TYPES: { id: FlexMatrixCellType; label: string }[] = [
+  { id: 'radio', label: 'Single Select' },
+  { id: 'checkbox', label: 'Multi-Select' },
   { id: 'text', label: 'Text Input' },
-  { id: 'radio', label: 'Radio Button' },
-  { id: 'checkbox', label: 'Check Box' },
-  { id: 'numeric', label: 'Numeric' },
+  { id: 'numeric', label: 'Numeric Text Input' },
+  { id: 'rank-order', label: 'Rank Order' },
+  { id: 'dropdown', label: 'Drop-down Menu' },
+  { id: 'rating-scale', label: 'Rating Scale' },
+  { id: 'numeric-slider', label: 'Numeric Slider' },
 ];
 
 export interface SurveyMatrixColumn {
@@ -762,7 +774,11 @@ export function defaultFlexMatrixColumnLabel(
   existingColumns: SurveyMatrixColumn[]
 ): string {
   if (cellType === 'text') return 'Text Input';
-  if (cellType === 'numeric') return 'Numeric';
+  if (cellType === 'numeric') return 'Numeric Text Input';
+  if (cellType === 'rank-order') return 'Rank Order';
+  if (cellType === 'dropdown') return 'Drop-down Menu';
+  if (cellType === 'rating-scale') return 'Rating Scale';
+  if (cellType === 'numeric-slider') return 'Numeric Slider';
   const namedCount = existingColumns.filter((column) => {
     const type = resolveFlexMatrixCellType(column);
     return type === 'radio' || type === 'checkbox';

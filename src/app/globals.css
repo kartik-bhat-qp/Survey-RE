@@ -201,6 +201,7 @@
   max-height: min(var(--radix-popper-available-height, 18rem), 18rem) !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
+  scrollbar-color: #c1c7d0 transparent;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
 }
@@ -217,6 +218,34 @@
   max-height: calc(min(var(--radix-popper-available-height, 18rem), 18rem) - 0.5rem) !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
+  scrollbar-color: #c1c7d0 transparent;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
+}
+
+/*
+ * `scrollbar-width: thin` is ignored by Chrome/Safari, so dropdown panels fall
+ * back to the wide platform scrollbar. Match the slim bar used elsewhere.
+ */
+[data-radix-popper-content-wrapper] > *::-webkit-scrollbar,
+[data-radix-popper-content-wrapper] [role="menu"]::-webkit-scrollbar,
+[data-radix-popper-content-wrapper] [role="listbox"]::-webkit-scrollbar,
+[data-radix-popper-content-wrapper] .wu-select-list::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+[data-radix-popper-content-wrapper] > *::-webkit-scrollbar-track,
+[data-radix-popper-content-wrapper] [role="menu"]::-webkit-scrollbar-track,
+[data-radix-popper-content-wrapper] [role="listbox"]::-webkit-scrollbar-track,
+[data-radix-popper-content-wrapper] .wu-select-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-radix-popper-content-wrapper] > *::-webkit-scrollbar-thumb,
+[data-radix-popper-content-wrapper] [role="menu"]::-webkit-scrollbar-thumb,
+[data-radix-popper-content-wrapper] [role="listbox"]::-webkit-scrollbar-thumb,
+[data-radix-popper-content-wrapper] .wu-select-list::-webkit-scrollbar-thumb {
+  background: #c1c7d0;
+  border-radius: 999px;
 }

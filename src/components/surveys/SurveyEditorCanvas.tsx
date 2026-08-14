@@ -2397,6 +2397,25 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     [toast, updateQuestionMatrix]
   );
 
+  const handleRemoveFlexMatrixColumn = useCallback(
+    (sectionId: string, questionId: string, columnId: string) => {
+      const question = sections
+        .find((section) => section.id === sectionId)
+        ?.questions.find((item) => item.id === questionId);
+      const columnCount = question?.matrix?.columns.length ?? 0;
+      if (columnCount <= 1) {
+        toast('At least one column is required');
+        return;
+      }
+      updateQuestionMatrix(sectionId, questionId, (matrix) => ({
+        ...matrix,
+        columns: matrix.columns.filter((column) => column.id !== columnId),
+      }));
+      toast('Column removed');
+    },
+    [sections, toast, updateQuestionMatrix]
+  );
+
   const handleBulkEditMatrixSave = useCallback(
     (lines: string[]) => {
       if (!bulkEditMatrixTarget) return;
@@ -4793,6 +4812,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 onMatrixRowLabelChange={handleMatrixRowLabelChange}
                                 onAddRow={handleAddMatrixRow}
                                 onAddColumn={handleAddFlexMatrixColumn}
+                                onRemoveColumn={handleRemoveFlexMatrixColumn}
                                 onBulkEditRows={(secId, qId) =>
                                   setBulkEditMatrixTarget({
                                     sectionId: secId,

@@ -45,7 +45,7 @@ export function MultiValueInput({
   const pickerRef = useRef<HTMLDivElement>(null);
   const valueRef = useRef(value);
   valueRef.current = value;
-  const pickerStyle = useAnchoredPickerStyle(
+  const { style: pickerStyle, placement: pickerPlacement } = useAnchoredPickerStyle(
     pickerOpen && Boolean(suggestions?.length),
     rootRef
   );
@@ -262,7 +262,9 @@ export function MultiValueInput({
             <div
               ref={pickerRef}
               id="multi-value-suggestions"
-              className={`${styles.orgPicker} ${styles.orgPickerPortaled}`}
+              className={`${styles.orgPicker} ${styles.orgPickerPortaled} ${
+                pickerPlacement === 'above' ? styles.orgPickerAbove : styles.orgPickerBelow
+              }`}
               role="listbox"
               aria-label="Suggested values"
               style={pickerStyle}

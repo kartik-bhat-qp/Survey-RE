@@ -64,6 +64,43 @@ function FlexMatrixCell({
     );
   }
 
+  if (cellType === 'dropdown') {
+    return (
+      <span className={styles.dropdownBox} aria-label={ariaLabel}>
+        <span className={styles.dropdownPlaceholder}>Select</span>
+        <span className={`wm-keyboard-arrow-down ${styles.dropdownCaret}`} aria-hidden />
+      </span>
+    );
+  }
+
+  if (cellType === 'rank-order') {
+    return (
+      <span className={styles.rankBox} aria-label={ariaLabel}>
+        #
+      </span>
+    );
+  }
+
+  if (cellType === 'rating-scale') {
+    return (
+      <div className={styles.ratingCell} aria-label={ariaLabel}>
+        {[1, 2, 3, 4, 5].map((point) => (
+          <span key={point} className={`wm-star-border ${styles.ratingStar}`} aria-hidden />
+        ))}
+      </div>
+    );
+  }
+
+  if (cellType === 'numeric-slider') {
+    return (
+      <div className={styles.sliderCell} aria-label={ariaLabel}>
+        <span className={styles.sliderTrack}>
+          <span className={styles.sliderThumb} />
+        </span>
+      </div>
+    );
+  }
+
   return (
     <span className={styles.answerBox}>
       {cellType === 'numeric' ? FLEX_MATRIX_NUMERIC_PLACEHOLDER : FLEX_MATRIX_TEXT_PLACEHOLDER}
@@ -96,6 +133,7 @@ export interface FlexMatrixQuestionRowProps {
   ) => void;
   onAddRow: (sectionId: string, questionId: string) => void;
   onAddColumn: (sectionId: string, questionId: string, cellType: FlexMatrixCellType) => void;
+  onRemoveColumn: (sectionId: string, questionId: string, columnId: string) => void;
   onBulkEditRows: (sectionId: string, questionId: string) => void;
 }
 
@@ -114,6 +152,7 @@ export function FlexMatrixQuestionRow({
   onMatrixRowLabelChange,
   onAddRow,
   onAddColumn,
+  onRemoveColumn,
   onBulkEditRows,
 }: FlexMatrixQuestionRowProps) {
   const matrixGridStyle = { '--matrix-cols': matrix.columns.length } as CSSProperties;
@@ -151,16 +190,42 @@ export function FlexMatrixQuestionRow({
               <span className={styles.rowLabelSpacer} aria-hidden />
               {matrix.columns.map((column) => (
                 <div key={column.id} className={styles.columnHeader}>
-                  <QuestionRichTextField
-                    variant="option"
-                    value={column.label}
-                    onChange={(label) =>
-                      onMatrixColumnLabelChange(sectionId, question.id, column.id, label)
+                  <div className={styles.columnHeaderField}>
+                    <QuestionRichTextField
+                      variant="option"
+                      value={column.label}
+                      onChange={(label) =>
+                        onMatrixColumnLabelChange(sectionId, question.id, column.id, label)
+                      }
+                      ariaLabel="Column label"
+                      placeholder="Column"
+                      onPointerDown={stopQuestionEvent}
+                    />
+                  </div>
+                  <WuMenu
+                    Trigger={
+                      <button
+                        type="button"
+                        className={styles.columnMenuBtn}
+                        aria-label={`Column options for ${plainTextFromRichValue(column.label) || 'column'}`}
+                        onPointerDown={stopQuestionEvent}
+                        onClick={stopQuestionEvent}
+                      >
+                        <span className="wm-keyboard-arrow-down" aria-hidden />
+                      </button>
                     }
-                    ariaLabel="Column label"
-                    placeholder="Column"
-                    onPointerDown={stopQuestionEvent}
-                  />
+                    align="start"
+                    modal={false}
+                  >
+                    <WuMenuItem
+                      onSelect={() => onRemoveColumn(sectionId, question.id, column.id)}
+                    >
+                      <span className={styles.removeColumnItem}>
+                        <span className="wm-delete" aria-hidden />
+                        Remove Column
+                      </span>
+                    </WuMenuItem>
+                  </WuMenu>
                 </div>
               ))}
             </div>
@@ -214,6 +279,7 @@ export function FlexMatrixQuestionRow({
                   </button>
                 }
                 align="start"
+                modal={false}
               >
                 {FLEX_MATRIX_COLUMN_TYPES.map((columnType) => (
                   <WuMenuItem

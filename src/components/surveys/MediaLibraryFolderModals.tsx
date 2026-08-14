@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import { MultiEmailInput } from '@/components/surveys/MultiEmailInput';
 import { MultiValueInput } from '@/components/surveys/MultiValueInput';
@@ -10,9 +11,15 @@ import {
   MOCK_MEDIA_LIBRARY_TEAMS,
   type MediaLibraryFolder,
   type MediaLibraryShareMode,
+  type MediaLibraryShareOption,
 } from '@/data/mock-media-library';
 import { MOCK_NOTIFICATION_ORG_USERS } from '@/data/mock-survey-notifications';
 import styles from './MediaLibraryFolderModals.module.css';
+
+const WuSelect = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
+  { ssr: false }
+);
 
 interface MediaLibraryFolderModalsProps {
   modal: 'create-folder' | 'share' | 'move' | null;
@@ -48,6 +55,7 @@ export function MediaLibraryFolderModals({
   const [draftShareMode, setDraftShareMode] = useState<MediaLibraryShareMode>(shareMode);
   const [draftTeams, setDraftTeams] = useState<string[]>(shareTeams);
   const [draftUsers, setDraftUsers] = useState<string[]>(shareUsers);
+  const [moveFolderId, setMoveFolderId] = useState('');
 
   useEffect(() => {
     if (modal === 'create-folder') setFolderName('');
@@ -56,7 +64,10 @@ export function MediaLibraryFolderModals({
       setDraftTeams(shareTeams);
       setDraftUsers(shareUsers);
     }
-  }, [modal, shareMode, shareTeams, shareUsers]);
+    if (modal === 'move') {
+      setMoveFolderId(moveTargets[0]?.id ?? '');
+    }
+  }, [modal, moveTargets, shareMode, shareTeams, shareUsers]);
 
   if (!modal || !wick) {
     return null;
@@ -71,6 +82,8 @@ export function MediaLibraryFolderModals({
 
   const orgName = MOCK_HEADER_USER.profile?.companyName ?? 'your organization';
   const shareOptions = getMediaLibraryShareOptions(orgName);
+  const selectedShareOption =
+    shareOptions.find((option) => option.value === draftShareMode) ?? shareOptions[0];
 
   if (modal === 'create-folder') {
     const trimmed = folderName.trim();
@@ -120,23 +133,19 @@ export function MediaLibraryFolderModals({
         <WuModalContent className={styles.shareContent}>
           <div className={styles.shareBody}>
             <div className={styles.field}>
-              <label className={styles.label} htmlFor="media-library-share-mode">
-                Folder sharing options
-              </label>
-              <select
-                id="media-library-share-mode"
-                className={styles.shareSelect}
-                value={draftShareMode}
-                onChange={(event) =>
-                  setDraftShareMode(event.target.value as MediaLibraryShareMode)
-                }
-              >
-                {shareOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <span className={styles.label}>Folder sharing options</span>
+              <WuSelect
+                data={shareOptions}
+                accessorKey={{ value: 'value', label: 'label' }}
+                value={selectedShareOption}
+                variant="outlined"
+                aria-label="Folder sharing options"
+                onSelect={(item) => {
+                  const selected = item as MediaLibraryShareOption | null;
+                  if (!selected) return;
+                  setDraftShareMode(selected.value);
+                }}
+              />
             </div>
 
             {draftShareMode === 'restricted' ? (
@@ -189,27 +198,53 @@ export function MediaLibraryFolderModals({
     );
   }
 
+  // WuSelect treats an `icon` field on a data item as its option icon, so pass
+  // only the fields the select needs instead of the whole folder.
+  const moveOptions = moveTargets.map((folder) => ({ id: folder.id, name: folder.name }));
+  const selectedMoveOption = moveOptions.find((folder) => folder.id === moveFolderId) ?? null;
+
   return (
-    <WuModal open onOpenChange={handleOpenChange} size="sm" variant="action">
+    <WuModal
+      open
+      onOpenChange={handleOpenChange}
+      size="sm"
+      variant="action"
+      allowExternalPortals
+    >
       <WuModalHeader>
         {`Move ${moveCount} file${moveCount === 1 ? '' : 's'} to…`}
       </WuModalHeader>
       <WuModalContent>
-        <div className={styles.moveList}>
-          {moveTargets.map((folder) => (
-            <button
-              key={folder.id}
-              type="button"
-              className={styles.moveTarget}
-              onClick={() => onMoveTo(folder)}
-            >
-              <span className="wm-folder" aria-hidden />
-              <span className={styles.moveName}>{folder.name}</span>
-              <span className={`wm-chevron-right ${styles.moveChevron}`} aria-hidden />
-            </button>
-          ))}
+        <div className={styles.field}>
+          <span className={styles.label}>Destination folder</span>
+          <WuSelect
+            data={moveOptions}
+            accessorKey={{ value: 'id', label: 'name' }}
+            value={selectedMoveOption}
+            variant="outlined"
+            placeholder={moveOptions.length === 0 ? 'No folders available' : 'Select a folder'}
+            disabled={moveOptions.length === 0}
+            aria-label="Destination folder"
+            onSelect={(item) => {
+              const selected = item as { id: string } | null;
+              if (!selected) return;
+              setMoveFolderId(selected.id);
+            }}
+          />
         </div>
       </WuModalContent>
+      <WuModalFooter>
+        <WuModalClose variant="secondary">Cancel</WuModalClose>
+        <WuButton
+          disabled={!moveFolderId}
+          onClick={() => {
+            const folder = moveTargets.find((item) => item.id === moveFolderId);
+            if (folder) onMoveTo(folder);
+          }}
+        >
+          Move
+        </WuButton>
+      </WuModalFooter>
     </WuModal>
   );
 }

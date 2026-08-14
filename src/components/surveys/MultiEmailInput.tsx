@@ -49,7 +49,10 @@ export function MultiEmailInput({
   const pickerRef = useRef<HTMLDivElement>(null);
   const valueRef = useRef(value);
   valueRef.current = value;
-  const pickerStyle = useAnchoredPickerStyle(pickerOpen && Boolean(orgUsers?.length), rootRef);
+  const { style: pickerStyle, placement: pickerPlacement } = useAnchoredPickerStyle(
+    pickerOpen && Boolean(orgUsers?.length),
+    rootRef
+  );
 
   const orgEmailSet = useMemo(() => {
     if (!orgUsers || orgUsers.length === 0) return null;
@@ -308,7 +311,9 @@ export function MultiEmailInput({
             <div
               ref={pickerRef}
               id="notification-org-user-picker"
-              className={`${styles.orgPicker} ${styles.orgPickerPortaled}`}
+              className={`${styles.orgPicker} ${styles.orgPickerPortaled} ${
+                pickerPlacement === 'above' ? styles.orgPickerAbove : styles.orgPickerBelow
+              }`}
               role="listbox"
               aria-label="Organization users"
               style={pickerStyle}

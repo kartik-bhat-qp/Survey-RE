@@ -3,13 +3,23 @@
 import { useLayoutEffect, useState, type CSSProperties, type RefObject, type WheelEvent } from 'react';
 
 const PICKER_MAX_HEIGHT = 280;
-const PICKER_GAP = 4;
+/** Keeps an expanded list clear of the window edge. */
+const VIEWPORT_MARGIN = 8;
+/** Overlaps the field border so field and list share a single hairline. */
+const ANCHOR_OVERLAP = 1;
+
+export type AnchoredPickerPlacement = 'below' | 'above';
+
+export interface AnchoredPicker {
+  style: CSSProperties;
+  placement: AnchoredPickerPlacement;
+}
 
 export function useAnchoredPickerStyle(
   open: boolean,
   anchorRef: RefObject<HTMLElement | null>
-): CSSProperties {
-  const [style, setStyle] = useState<CSSProperties>({});
+): AnchoredPicker {
+  const [picker, setPicker] = useState<AnchoredPicker>({ style: {}, placement: 'below' });
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -19,32 +29,38 @@ export function useAnchoredPickerStyle(
       if (!anchor) return;
 
       const rect = anchor.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom - PICKER_GAP;
-      const spaceAbove = rect.top - PICKER_GAP;
+      const spaceBelow = window.innerHeight - rect.bottom - VIEWPORT_MARGIN;
+      const spaceAbove = rect.top - VIEWPORT_MARGIN;
       const openUpward =
         spaceBelow < Math.min(PICKER_MAX_HEIGHT, 160) && spaceAbove > spaceBelow;
 
       if (openUpward) {
-        setStyle({
-          position: 'fixed',
-          left: rect.left,
-          width: rect.width,
-          bottom: window.innerHeight - rect.top + PICKER_GAP,
-          top: 'auto',
-          maxHeight: Math.min(PICKER_MAX_HEIGHT, Math.max(120, spaceAbove)),
-          zIndex: 10050,
+        setPicker({
+          placement: 'above',
+          style: {
+            position: 'fixed',
+            left: rect.left,
+            width: rect.width,
+            bottom: window.innerHeight - rect.top - ANCHOR_OVERLAP,
+            top: 'auto',
+            maxHeight: Math.min(PICKER_MAX_HEIGHT, Math.max(120, spaceAbove)),
+            zIndex: 10050,
+          },
         });
         return;
       }
 
-      setStyle({
-        position: 'fixed',
-        left: rect.left,
-        width: rect.width,
-        top: rect.bottom + PICKER_GAP,
-        bottom: 'auto',
-        maxHeight: Math.min(PICKER_MAX_HEIGHT, Math.max(120, spaceBelow)),
-        zIndex: 10050,
+      setPicker({
+        placement: 'below',
+        style: {
+          position: 'fixed',
+          left: rect.left,
+          width: rect.width,
+          top: rect.bottom - ANCHOR_OVERLAP,
+          bottom: 'auto',
+          maxHeight: Math.min(PICKER_MAX_HEIGHT, Math.max(120, spaceBelow)),
+          zIndex: 10050,
+        },
       });
     }
 
@@ -57,7 +73,7 @@ export function useAnchoredPickerStyle(
     };
   }, [anchorRef, open]);
 
-  return style;
+  return picker;
 }
 
 /**
