@@ -10,6 +10,7 @@ import type {
   SurveyQuestionOption,
   SurveyQuestionConjoint,
   SurveySection,
+  FlexMatrixCellType,
 } from '@/data/mock-survey-detail';
 import {
   createDefaultLookupTableData,
@@ -17,6 +18,8 @@ import {
   createDefaultMultiPointMatrix,
   createDefaultMatrixMultiSelectMatrix,
   createDefaultMatrixSpreadsheetMatrix,
+  createDefaultFlexMatrix,
+  createFlexMatrixColumn,
   createDefaultStarRatingMatrix,
   createDefaultSmileyRatingData,
   createDefaultThumbsUpDownData,
@@ -113,6 +116,7 @@ import { BulkEditOptionsModal } from '@/components/surveys/BulkEditOptionsModal'
 import { MultiPointScalesQuestionRow } from '@/components/surveys/MultiPointScalesQuestionRow';
 import { MatrixMultiSelectQuestionRow } from '@/components/surveys/MatrixMultiSelectQuestionRow';
 import { MatrixSpreadsheetQuestionRow } from '@/components/surveys/MatrixSpreadsheetQuestionRow';
+import { FlexMatrixQuestionRow } from '@/components/surveys/FlexMatrixQuestionRow';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -299,6 +303,10 @@ function isMatrixSpreadsheetQuestion(question: SurveyQuestion): boolean {
   return question.kind === 'matrix-spreadsheet' || question.addQuestionTypeId === 'spreadsheet';
 }
 
+function isFlexMatrixQuestion(question: SurveyQuestion): boolean {
+  return question.kind === 'flex-matrix' || question.addQuestionTypeId === 'flex-matrix';
+}
+
 function isStarRatingQuestion(question: SurveyQuestion): boolean {
   return question.kind === 'star-rating' || question.addQuestionTypeId === 'star-rating';
 }
@@ -427,6 +435,7 @@ function isSelectOneQuestion(question: SurveyQuestion): boolean {
         !isMultiPointScalesQuestion(question) &&
     !isMatrixMultiSelectQuestion(question) &&
     !isMatrixSpreadsheetQuestion(question) &&
+    !isFlexMatrixQuestion(question) &&
         !isNpsQuestion(question) &&
         !isVanWestendorpQuestion(question) &&
         !isConjointQuestion(question)))
@@ -442,6 +451,7 @@ function isSelectOnePreviewQuestion(
     !isMultiPointScalesQuestion(question) &&
     !isMatrixMultiSelectQuestion(question) &&
     !isMatrixSpreadsheetQuestion(question) &&
+    !isFlexMatrixQuestion(question) &&
     !isNpsQuestion(question) &&
     !isVanWestendorpQuestion(question) &&
     !isConjointQuestion(question) &&
@@ -2376,6 +2386,17 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     [toast, updateQuestionMatrix]
   );
 
+  const handleAddFlexMatrixColumn = useCallback(
+    (sectionId: string, questionId: string, cellType: FlexMatrixCellType) => {
+      updateQuestionMatrix(sectionId, questionId, (matrix) => ({
+        ...matrix,
+        columns: [...matrix.columns, createFlexMatrixColumn(cellType, matrix.columns)],
+      }));
+      toast('Column added');
+    },
+    [toast, updateQuestionMatrix]
+  );
+
   const handleBulkEditMatrixSave = useCallback(
     (lines: string[]) => {
       if (!bulkEditMatrixTarget) return;
@@ -3586,6 +3607,40 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         return;
       }
 
+      if (typeId === 'flex-matrix') {
+        const ts = Date.now();
+        const newId = `q-new-${ts}`;
+        setSections((prev) => {
+          const next = prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            const nextNum = nextQuestionNumber(sec.questions);
+            const newQuestion: SurveyQuestion = {
+              id: newId,
+              code: `Q${nextNum}`,
+              number: nextNum,
+              text: `Question ${nextNum}`,
+              required: true,
+              kind: 'flex-matrix',
+              addQuestionTypeId: 'flex-matrix',
+              options: [],
+              matrix: createDefaultFlexMatrix(),
+            };
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          });
+          pendingScrollQuestionRef.current = {
+            sectionId,
+            questionId: newId,
+          };
+          setSelectedQuestionKey(`${sectionId}:${newId}`);
+          return next;
+        });
+        showToast({ message: 'Complex Grid / Flex Matrix question added', variant: 'success' });
+        return;
+      }
+
       if (typeId === 'nps') {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
@@ -3963,6 +4018,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const isMultiPoint = isMultiPointScalesQuestion(question);
                     const isMatrixMultiSelect = isMatrixMultiSelectQuestion(question);
                     const isMatrixSpreadsheet = isMatrixSpreadsheetQuestion(question);
+                    const isFlexMatrix = isFlexMatrixQuestion(question);
                     const isNps = isNpsQuestion(question);
                     const isVanWestendorp = isVanWestendorpQuestion(question);
                     const isConjoint = isConjointQuestion(question);
@@ -4057,8 +4113,9 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                             isMultiPoint ? styles.questionBlockMultiPoint : ''
                           } ${isMatrixMultiSelect ? styles.questionBlockMatrixMultiSelect : ''} ${
                             isMatrixSpreadsheet ? styles.questionBlockMatrixSpreadsheet : ''
-                          } ${isVanWestendorp ? styles.questionBlockVanWestendorp : ''} ${
-                            isConjoint ? styles.questionBlockConjoint : ''
+                          } ${isFlexMatrix ? styles.questionBlockFlexMatrix : ''} ${
+                            isVanWestendorp ? styles.questionBlockVanWestendorp : ''
+                          } ${isConjoint ? styles.questionBlockConjoint : ''}
                           } ${isDropdown ? styles.questionBlockDropdown : ''
                           } ${isCommentBox ? styles.questionBlockCommentBox : ''} ${
                             isCaptcha ? styles.questionBlockSingleRowText : ''
@@ -4711,6 +4768,38 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 }
                                 onQuestionTextChange={handleQuestionTextChange}
                                 onConjointChange={handleConjointChange}
+                              />
+                            ) : isFlexMatrix && question.matrix ? (
+                              <FlexMatrixQuestionRow
+                                question={question}
+                                matrix={question.matrix}
+                                sectionId={section.id}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onOpenValidation={() =>
+                                  handleOpenValidation(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onMatrixColumnLabelChange={handleMatrixColumnLabelChange}
+                                onMatrixRowLabelChange={handleMatrixRowLabelChange}
+                                onAddRow={handleAddMatrixRow}
+                                onAddColumn={handleAddFlexMatrixColumn}
+                                onBulkEditRows={(secId, qId) =>
+                                  setBulkEditMatrixTarget({
+                                    sectionId: secId,
+                                    questionId: qId,
+                                    target: 'rows',
+                                  })
+                                }
                               />
                             ) : isMatrixSpreadsheet && question.matrix ? (
                               <MatrixSpreadsheetQuestionRow

@@ -27,6 +27,7 @@ export type SurveyQuestionKind =
   | 'multi-point-scales'
   | 'matrix-multi-select'
   | 'matrix-spreadsheet'
+  | 'flex-matrix'
   | 'nps'
   | 'van-westendorp'
   | 'lookup-table'
@@ -343,9 +344,20 @@ export interface SurveyQuestionOption {
   imageAlt?: string;
 }
 
+export type FlexMatrixCellType = 'text' | 'radio' | 'checkbox' | 'numeric';
+
+export const FLEX_MATRIX_COLUMN_TYPES: { id: FlexMatrixCellType; label: string }[] = [
+  { id: 'text', label: 'Text Input' },
+  { id: 'radio', label: 'Radio Button' },
+  { id: 'checkbox', label: 'Check Box' },
+  { id: 'numeric', label: 'Numeric' },
+];
+
 export interface SurveyMatrixColumn {
   id: string;
   label: string;
+  /** Input control for Complex Grid / Flex Matrix columns. */
+  cellType?: FlexMatrixCellType;
 }
 
 export interface SurveyMatrixRow {
@@ -408,6 +420,7 @@ export function resolveAddQuestionTypeId(question: SurveyQuestion): string | und
   if (question.kind === 'multi-point-scales') return 'multi-point';
   if (question.kind === 'matrix-multi-select') return 'multi-select-matrix';
   if (question.kind === 'matrix-spreadsheet') return 'spreadsheet';
+  if (question.kind === 'flex-matrix') return 'flex-matrix';
   if (question.kind === 'star-rating') return 'star-rating';
   if (question.kind === 'smiley-rating') return 'smiley-rating';
   if (question.kind === 'thumbs-up-down') return 'thumbs';
@@ -723,6 +736,63 @@ export function createDefaultMatrixSpreadsheetMatrix(): SurveyMatrix {
     })),
     rows: DEFAULT_MATRIX_SPREADSHEET_ROW_LABELS.map((label, index) => ({
       id: `ss-row-${ts}-${index + 1}`,
+      label,
+    })),
+  };
+}
+
+export const FLEX_MATRIX_TEXT_PLACEHOLDER = 'Answer text';
+export const FLEX_MATRIX_NUMERIC_PLACEHOLDER = 'Numeric Input';
+
+const DEFAULT_FLEX_MATRIX_ROWS = ['Product Packaging', 'On-Time Arrival', 'Price'] as const;
+
+const DEFAULT_FLEX_MATRIX_COLUMNS: { label: string; cellType: FlexMatrixCellType }[] = [
+  { label: 'Text Input', cellType: 'text' },
+  { label: 'Column 1', cellType: 'radio' },
+  { label: 'Column 2', cellType: 'checkbox' },
+  { label: 'Numeric', cellType: 'numeric' },
+];
+
+export function resolveFlexMatrixCellType(column: SurveyMatrixColumn): FlexMatrixCellType {
+  return column.cellType ?? 'text';
+}
+
+export function defaultFlexMatrixColumnLabel(
+  cellType: FlexMatrixCellType,
+  existingColumns: SurveyMatrixColumn[]
+): string {
+  if (cellType === 'text') return 'Text Input';
+  if (cellType === 'numeric') return 'Numeric';
+  const namedCount = existingColumns.filter((column) => {
+    const type = resolveFlexMatrixCellType(column);
+    return type === 'radio' || type === 'checkbox';
+  }).length;
+  return `Column ${namedCount + 1}`;
+}
+
+export function createFlexMatrixColumn(
+  cellType: FlexMatrixCellType,
+  existingColumns: SurveyMatrixColumn[] = []
+): SurveyMatrixColumn {
+  return {
+    id: `fx-col-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    label: defaultFlexMatrixColumnLabel(cellType, existingColumns),
+    cellType,
+  };
+}
+
+export function createDefaultFlexMatrix(): SurveyMatrix {
+  const ts = Date.now();
+  return {
+    leftAnchor: '',
+    rightAnchor: '',
+    columns: DEFAULT_FLEX_MATRIX_COLUMNS.map((column, index) => ({
+      id: `fx-col-${ts}-${index + 1}`,
+      label: column.label,
+      cellType: column.cellType,
+    })),
+    rows: DEFAULT_FLEX_MATRIX_ROWS.map((label, index) => ({
+      id: `fx-row-${ts}-${index + 1}`,
       label,
     })),
   };

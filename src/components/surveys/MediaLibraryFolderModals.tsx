@@ -7,6 +7,7 @@ import { MultiValueInput } from '@/components/surveys/MultiValueInput';
 import { MOCK_HEADER_USER } from '@/data/mock-header-user';
 import {
   getMediaLibraryShareOptions,
+  MOCK_MEDIA_LIBRARY_TEAMS,
   type MediaLibraryFolder,
   type MediaLibraryShareMode,
 } from '@/data/mock-media-library';
@@ -112,7 +113,8 @@ export function MediaLibraryFolderModals({
         onOpenChange={handleOpenChange}
         size="md"
         variant="action"
-        className={styles.shareModal}
+        maxWidth="32rem"
+        allowExternalPortals
       >
         <WuModalHeader className={styles.shareHeader}>Folder Sharing</WuModalHeader>
         <WuModalContent className={styles.shareContent}>
@@ -147,6 +149,8 @@ export function MediaLibraryFolderModals({
                     onChange={setDraftTeams}
                     placeholder=""
                     aria-label="Share folder with teams"
+                    suggestions={MOCK_MEDIA_LIBRARY_TEAMS}
+                    allowCustomValues={false}
                   />
                 </div>
                 <div className={styles.field}>
@@ -158,6 +162,7 @@ export function MediaLibraryFolderModals({
                     placeholder=""
                     aria-label="Share folder with users"
                     orgUsers={MOCK_NOTIFICATION_ORG_USERS}
+                    internalOnly
                   />
                 </div>
               </>

@@ -20,6 +20,7 @@ export type QuestionPreviewVariant =
   | 'matrix-multi-point'
   | 'matrix-multi-select'
   | 'matrix-spreadsheet'
+  | 'flex-matrix'
   | 'date-time'
   | 'captcha'
   | 'calendar'
@@ -55,6 +56,18 @@ export type MatrixMultiPointPreviewData = TextSliderPreviewData;
 export type MatrixMultiSelectPreviewData = TextSliderPreviewData;
 
 export type MatrixSpreadsheetPreviewData = TextSliderPreviewData;
+
+export type FlexMatrixPreviewCellType = 'text' | 'radio' | 'checkbox' | 'numeric';
+
+export interface FlexMatrixPreviewColumn {
+  label: string;
+  cellType: FlexMatrixPreviewCellType;
+}
+
+export interface FlexMatrixPreviewData {
+  columns: FlexMatrixPreviewColumn[];
+  rows: string[];
+}
 
 export interface DateTimeFieldPreview {
   label: string;
@@ -329,6 +342,8 @@ export interface QuestionTypePreviewContent {
   matrixMultiSelect?: MatrixMultiSelectPreviewData;
   /** Basic matrix spreadsheet text-entry grid. */
   matrixSpreadsheet?: MatrixSpreadsheetPreviewData;
+  /** Complex Grid / Flex Matrix mixed-type grid. */
+  flexMatrix?: FlexMatrixPreviewData;
   /** Date / time dropdown fields (e.g. Month, Day, Year). */
   dateTime?: DateTimePreviewData;
   /** reCAPTCHA checkbox verification widget. */
@@ -1002,10 +1017,19 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     question: 'AI-powered follow-up questions after a selected answer.',
   },
   'flex-matrix': {
-    variant: 'placeholder',
+    variant: 'flex-matrix',
     headerIcon: 'wm-view-module',
     headerLabel: 'Complex Grid / Flex Matrix',
     question: 'Flexible grid with mixed question types.',
+    flexMatrix: {
+      columns: [
+        { label: 'Text Input', cellType: 'text' },
+        { label: 'Column 1', cellType: 'radio' },
+        { label: 'Column 2', cellType: 'checkbox' },
+        { label: 'Numeric', cellType: 'numeric' },
+      ],
+      rows: ['Product Packaging', 'On-Time Arrival', 'Price'],
+    },
   },
   'side-by-side': {
     variant: 'placeholder',

@@ -11,7 +11,7 @@ import {
   matchesMediaLibraryFilter,
   MEDIA_LIBRARY_FILTERS,
   MEDIA_LIBRARY_FOLDERS,
-  MEDIA_LIBRARY_SAMPLE_UPLOADS,
+  MEDIA_LIBRARY_PAGE_SIZE,
   MEDIA_LIBRARY_STORAGE,
   MEDIA_LIBRARY_SYSTEM_FOLDERS,
   MOCK_MEDIA_LIBRARY_FILES,
@@ -57,9 +57,12 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
   const [shareUsers, setShareUsers] = useState<string[]>([]);
   const [dragging, setDragging] = useState(false);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageMenuOpen, setPageMenuOpen] = useState(false);
 
   const uploadTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const uploadDoneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const toast = useCallback(
     (message: string) => showToast({ message, variant: 'success' }),
@@ -67,14 +70,15 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
   );
 
   useEffect(() => {
-    if (menuFileId === null && !filterOpen) return;
+    if (menuFileId === null && !filterOpen && !pageMenuOpen) return;
     function onDocumentClick(): void {
       setMenuFileId(null);
       setFilterOpen(false);
+      setPageMenuOpen(false);
     }
     document.addEventListener('click', onDocumentClick);
     return () => document.removeEventListener('click', onDocumentClick);
-  }, [filterOpen, menuFileId]);
+  }, [filterOpen, menuFileId, pageMenuOpen]);
 
   useEffect(() => {
     return () => {
@@ -109,6 +113,32 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
     );
   }, [activeFolderId, files, filter, search]);
 
+  const pageCount = Math.max(1, Math.ceil(visibleFiles.length / MEDIA_LIBRARY_PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pagedFiles = useMemo(() => {
+    const start = (currentPage - 1) * MEDIA_LIBRARY_PAGE_SIZE;
+    return visibleFiles.slice(start, start + MEDIA_LIBRARY_PAGE_SIZE);
+  }, [currentPage, visibleFiles]);
+  const rangeStart = visibleFiles.length === 0 ? 0 : (currentPage - 1) * MEDIA_LIBRARY_PAGE_SIZE + 1;
+  const rangeEnd = Math.min(currentPage * MEDIA_LIBRARY_PAGE_SIZE, visibleFiles.length);
+  const pageRanges = useMemo(() => {
+    if (visibleFiles.length === 0) return [];
+    return Array.from({ length: pageCount }, (_, index) => {
+      const start = index * MEDIA_LIBRARY_PAGE_SIZE + 1;
+      const end = (index + 1) * MEDIA_LIBRARY_PAGE_SIZE;
+      return { page: index + 1, start, end };
+    });
+  }, [pageCount, visibleFiles.length]);
+
+  useEffect(() => {
+    setPage(1);
+    setPageMenuOpen(false);
+  }, [activeFolderId, filter, search]);
+
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
+
   const detailsFile = files.find((file) => file.id === detailsFileId) ?? null;
   const selectionCount = selectedIds.length;
   const isEmpty = visibleFiles.length === 0 && uploads.length === 0;
@@ -118,12 +148,24 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
     setSelectedIds([]);
     setDetailsFileId(null);
     setRenamingId(null);
+    setPage(1);
   }
 
   function toggleSelected(fileId: string): void {
     setSelectedIds((prev) =>
       prev.includes(fileId) ? prev.filter((id) => id !== fileId) : [...prev, fileId]
     );
+  }
+
+  function openFilePicker(): void {
+    fileInputRef.current?.click();
+  }
+
+  function handleFileInputChange(event: React.ChangeEvent<HTMLInputElement>): void {
+    const selected = Array.from(event.target.files ?? []).map((file) => file.name);
+    event.target.value = '';
+    if (selected.length === 0) return;
+    startUpload(selected);
   }
 
   function startUpload(names: string[]): void {
@@ -134,6 +176,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
     }));
     setUploads(items);
     setModal(null);
+    setPage(1);
 
     if (uploadTimerRef.current) clearInterval(uploadTimerRef.current);
     uploadTimerRef.current = setInterval(() => {
@@ -227,7 +270,8 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
     event.preventDefault();
     setDragging(false);
     const dropped = Array.from(event.dataTransfer?.files ?? []).map((file) => file.name);
-    startUpload(dropped.length > 0 ? dropped : ['dropped-image.png']);
+    if (dropped.length === 0) return;
+    startUpload(dropped);
   }
 
   function renderFileMenu(file: MediaLibraryFile, placement: string): React.ReactNode {
@@ -338,6 +382,16 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
       }}
       onDrop={handleDrop}
     >
+      <input
+        ref={fileInputRef}
+        type="file"
+        className={styles.fileInput}
+        multiple
+        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.txt,.ttf,.otf,.woff,.woff2,.svg"
+        aria-hidden
+        tabIndex={-1}
+        onChange={handleFileInputChange}
+      />
       <aside className={styles.sidebar} aria-label="Media Library folders">
         <nav className={styles.sidebarNav}>
           {MEDIA_LIBRARY_SYSTEM_FOLDERS.map((folder) => (
@@ -440,6 +494,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
                 event.stopPropagation();
                 setFilterOpen((prev) => !prev);
                 setMenuFileId(null);
+                setPageMenuOpen(false);
               }}
             >
               {filter}
@@ -492,16 +547,58 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
           <div className={styles.toolbarSpacer} />
 
           <div className={styles.pagination}>
-            <span className={styles.pageLabel}>
-              {visibleFiles.length === 0
-                ? '0 of 0'
-                : `1–${visibleFiles.length} of ${visibleFiles.length}`}
-            </span>
+            <div className={styles.pagePicker}>
+              <button
+                type="button"
+                className={styles.pageLabelBtn}
+                aria-haspopup="menu"
+                aria-expanded={pageMenuOpen}
+                disabled={visibleFiles.length === 0}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setPageMenuOpen((prev) => !prev);
+                  setFilterOpen(false);
+                  setMenuFileId(null);
+                }}
+              >
+                <span className={styles.pageLabel}>
+                  {visibleFiles.length === 0
+                    ? '0 of 0'
+                    : `${rangeStart} - ${rangeEnd} of ${visibleFiles.length}`}
+                </span>
+                <span className={`wm-arrow-drop-down ${styles.pageCaret}`} aria-hidden />
+              </button>
+              {pageMenuOpen && pageRanges.length > 0 ? (
+                <div className={styles.pageMenu} role="menu">
+                  <div className={styles.pageMenuTitle}>Showing Files</div>
+                  {pageRanges.map((range) => (
+                    <button
+                      key={range.page}
+                      type="button"
+                      role="menuitem"
+                      className={
+                        range.page === currentPage
+                          ? styles.pageMenuOptionActive
+                          : styles.pageMenuOption
+                      }
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setPage(range.page);
+                        setPageMenuOpen(false);
+                      }}
+                    >
+                      {range.start} to {range.end}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
             <button
               type="button"
               className={styles.pageBtn}
               aria-label="Previous page"
-              disabled
+              disabled={currentPage <= 1}
+              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
             >
               <span className="wm-chevron-left" aria-hidden />
             </button>
@@ -509,7 +606,8 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
               type="button"
               className={styles.pageBtn}
               aria-label="Next page"
-              disabled
+              disabled={currentPage >= pageCount || visibleFiles.length === 0}
+              onClick={() => setPage((prev) => Math.min(pageCount, prev + 1))}
             >
               <span className="wm-chevron-right" aria-hidden />
             </button>
@@ -526,7 +624,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
           <button
             type="button"
             className={styles.primaryBtn}
-            onClick={() => startUpload(MEDIA_LIBRARY_SAMPLE_UPLOADS)}
+            onClick={openFilePicker}
           >
             <span className="wm-upload" aria-hidden />
             Upload
@@ -591,7 +689,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
               <button
                 type="button"
                 className={styles.primaryBtn}
-                onClick={() => startUpload(MEDIA_LIBRARY_SAMPLE_UPLOADS)}
+                onClick={openFilePicker}
               >
                 <span className="wm-upload" aria-hidden />
                 Upload files
@@ -599,7 +697,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
             </div>
           ) : view === 'grid' ? (
             <div className={styles.grid}>
-              {visibleFiles.map((file) => {
+              {pagedFiles.map((file) => {
                 const meta = getMediaTypeMeta(file.type);
                 const selected = selectedIds.includes(file.id);
                 return (
@@ -682,7 +780,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
                 <span>Uploaded</span>
                 <span />
               </div>
-              {visibleFiles.map((file) => {
+              {pagedFiles.map((file) => {
                 const meta = getMediaTypeMeta(file.type);
                 const selected = selectedIds.includes(file.id);
                 return (

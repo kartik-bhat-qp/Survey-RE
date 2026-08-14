@@ -273,6 +273,7 @@
 .questionBlockMultiPoint .questionCodeColumn,
 .questionBlockMatrixMultiSelect .questionCodeColumn,
 .questionBlockMatrixSpreadsheet .questionCodeColumn,
+.questionBlockFlexMatrix .questionCodeColumn,
 .questionBlockNps .questionCodeColumn,
 .questionBlockVanWestendorp .questionCodeColumn,
 .questionBlockConjoint .questionCodeColumn,

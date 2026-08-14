@@ -61,7 +61,8 @@ function isMatrixKindQuestion(question: SurveyQuestion): boolean {
   return (
     question.kind === 'multi-point-scales' ||
     question.kind === 'matrix-multi-select' ||
-    question.kind === 'matrix-spreadsheet'
+    question.kind === 'matrix-spreadsheet' ||
+    question.kind === 'flex-matrix'
   );
 }
 

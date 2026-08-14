@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
   isValidEmailAddress,
@@ -10,6 +11,7 @@ import {
   groupNotificationOrgUsers,
   type NotificationOrgUser,
 } from '@/data/mock-survey-notifications';
+import { useAnchoredPickerStyle, handlePortaledPickerWheel } from '@/components/surveys/useAnchoredPickerStyle';
 import styles from './MultiEmailInput.module.css';
 
 interface MultiEmailInputProps {
@@ -19,6 +21,8 @@ interface MultiEmailInputProps {
   'aria-label'?: string;
   /** When provided, focus shows a grouped org-user picker under the field. */
   orgUsers?: NotificationOrgUser[];
+  /** When true with orgUsers, only listed org users can be added — no freeform emails. */
+  internalOnly?: boolean;
   fieldClassName?: string;
 }
 
@@ -35,14 +39,22 @@ export function MultiEmailInput({
   placeholder = 'Enter email addresses',
   'aria-label': ariaLabel = 'Email addresses',
   orgUsers,
+  internalOnly = false,
   fieldClassName,
 }: MultiEmailInputProps) {
   const { showToast } = useWuShowToast();
   const [draft, setDraft] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
   const valueRef = useRef(value);
   valueRef.current = value;
+  const pickerStyle = useAnchoredPickerStyle(pickerOpen && Boolean(orgUsers?.length), rootRef);
+
+  const orgEmailSet = useMemo(() => {
+    if (!orgUsers || orgUsers.length === 0) return null;
+    return new Set(orgUsers.map((user) => normalizeEmailAddress(user.email)));
+  }, [orgUsers]);
 
   const orgGroups = useMemo(() => {
     if (!orgUsers || orgUsers.length === 0) return [];
@@ -53,16 +65,18 @@ export function MultiEmailInput({
   const draftIsValidEmail = Boolean(draftNormalized) && isValidEmailAddress(draftNormalized);
   const draftAlreadyAdded = draftIsValidEmail && value.includes(draftNormalized);
   const canAddTypedEmail =
-    orgGroups.length === 0 && draftIsValidEmail && !draftAlreadyAdded;
+    !internalOnly && orgGroups.length === 0 && draftIsValidEmail && !draftAlreadyAdded;
   const showOrgPicker = Boolean(orgUsers?.length) && pickerOpen;
 
   useEffect(() => {
     if (!pickerOpen) return;
 
     function handlePointerDown(event: MouseEvent): void {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setPickerOpen(false);
+      const target = event.target as Node;
+      if (rootRef.current?.contains(target) || pickerRef.current?.contains(target)) {
+        return;
       }
+      setPickerOpen(false);
     }
 
     function handleKeyDown(event: KeyboardEvent): void {
@@ -94,10 +108,15 @@ export function MultiEmailInput({
     let added = 0;
     let invalid = 0;
     let duplicate = 0;
+    let external = 0;
 
     for (const candidate of candidates) {
       if (!isValidEmailAddress(candidate)) {
         invalid += 1;
+        continue;
+      }
+      if (internalOnly && orgEmailSet && !orgEmailSet.has(candidate)) {
+        external += 1;
         continue;
       }
       if (next.includes(candidate)) {
@@ -111,6 +130,15 @@ export function MultiEmailInput({
     if (added > 0) {
       valueRef.current = next;
       onChange(next);
+    }
+
+    if (external > 0) {
+      showToast({
+        message: 'Only organization users can be shared with',
+        variant: 'error',
+      });
+      setDraft('');
+      return false;
     }
 
     if (invalid > 0) {
@@ -154,6 +182,10 @@ export function MultiEmailInput({
     if (event.key === 'Enter' || event.key === ',' || event.key === ' ') {
       event.preventDefault();
       if (!draft.trim()) return;
+      if (internalOnly) {
+        // Filter-only: pick from the org list, don't freeform-add.
+        return;
+      }
       if (canAddTypedEmail && event.key === 'Enter') {
         addTypedEmail();
         return;
@@ -170,6 +202,11 @@ export function MultiEmailInput({
   function handleChange(event: React.ChangeEvent<HTMLInputElement>): void {
     const next = event.target.value;
     if (/[,;\s]/.test(next)) {
+      if (internalOnly) {
+        setDraft(next.replace(/[,;\s]+$/g, ''));
+        if (orgUsers?.length) setPickerOpen(true);
+        return;
+      }
       commitCandidates(next);
       return;
     }
@@ -178,6 +215,14 @@ export function MultiEmailInput({
   }
 
   function handlePaste(event: React.ClipboardEvent<HTMLInputElement>): void {
+    if (internalOnly) {
+      event.preventDefault();
+      const pasted = event.clipboardData.getData('text').trim();
+      if (!pasted) return;
+      setDraft(pasted);
+      if (orgUsers?.length) setPickerOpen(true);
+      return;
+    }
     const pasted = event.clipboardData.getData('text');
     if (!/[,;\s]/.test(pasted)) return;
     event.preventDefault();
@@ -231,6 +276,10 @@ export function MultiEmailInput({
               if (rootRef.current?.contains(document.activeElement)) return;
               const trimmed = draft.trim();
               if (!trimmed) return;
+              if (internalOnly) {
+                setDraft('');
+                return;
+              }
               if (orgUsers?.length) {
                 const normalized = normalizeEmailAddress(trimmed);
                 if (isValidEmailAddress(normalized)) {
@@ -241,75 +290,87 @@ export function MultiEmailInput({
               commitCandidates(trimmed);
             }, 0);
           }}
-          placeholder={value.length > 0 ? 'Add another email' : placeholder}
+          placeholder={
+            value.length > 0
+              ? 'Add another email'
+              : internalOnly
+                ? 'Search organization users'
+                : placeholder
+          }
           aria-label={ariaLabel}
           aria-expanded={showOrgPicker}
           aria-controls={showOrgPicker ? 'notification-org-user-picker' : undefined}
         />
       </div>
 
-      {showOrgPicker ? (
-        <div
-          id="notification-org-user-picker"
-          className={styles.orgPicker}
-          role="listbox"
-          aria-label="Organization users"
-          onMouseDown={(event) => {
-            // Keep input focus while interacting with the picker.
-            event.preventDefault();
-          }}
-        >
-          {orgGroups.length === 0 ? (
-            <div className={styles.orgEmptyState}>
-              {canAddTypedEmail ? (
-                <button
-                  type="button"
-                  className={styles.orgAddButton}
-                  onClick={addTypedEmail}
-                >
-                  <span className={`wm-add ${styles.orgAddIcon}`} aria-hidden />
-                  <span>
-                    Add <strong>{draftNormalized}</strong>
-                  </span>
-                </button>
-              ) : draftAlreadyAdded ? (
-                <p className={styles.orgEmpty}>Email address already added</p>
+      {showOrgPicker
+        ? createPortal(
+            <div
+              ref={pickerRef}
+              id="notification-org-user-picker"
+              className={`${styles.orgPicker} ${styles.orgPickerPortaled}`}
+              role="listbox"
+              aria-label="Organization users"
+              style={pickerStyle}
+              onMouseDown={(event) => {
+                // Keep input focus while interacting with the picker.
+                event.preventDefault();
+              }}
+              onWheel={handlePortaledPickerWheel}
+            >
+              {orgGroups.length === 0 ? (
+                <div className={styles.orgEmptyState}>
+                  {canAddTypedEmail ? (
+                    <button
+                      type="button"
+                      className={styles.orgAddButton}
+                      onClick={addTypedEmail}
+                    >
+                      <span className={`wm-add ${styles.orgAddIcon}`} aria-hidden />
+                      <span>
+                        Add <strong>{draftNormalized}</strong>
+                      </span>
+                    </button>
+                  ) : draftAlreadyAdded ? (
+                    <p className={styles.orgEmpty}>Email address already added</p>
+                  ) : (
+                    <p className={styles.orgEmpty}>No matching users</p>
+                  )}
+                </div>
               ) : (
-                <p className={styles.orgEmpty}>No matching users</p>
+                orgGroups.map((group, groupIndex) => (
+                  <div key={group.role} className={styles.orgGroup}>
+                    {groupIndex > 0 ? <div className={styles.orgDivider} /> : null}
+                    <div className={styles.orgGroupLabel}>{group.role}</div>
+                    <ul className={styles.orgList}>
+                      {group.users.map((user) => {
+                        const checked = value.includes(user.email);
+                        return (
+                          <li key={user.id}>
+                            <label
+                              className={`${styles.orgRow} ${
+                                checked ? styles.orgRowSelected : ''
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                className={styles.orgCheckbox}
+                                checked={checked}
+                                onChange={() => toggleOrgUser(user.email)}
+                              />
+                              <span className={styles.orgEmail}>{user.email}</span>
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))
               )}
-            </div>
-          ) : (
-            orgGroups.map((group, groupIndex) => (
-              <div key={group.role} className={styles.orgGroup}>
-                {groupIndex > 0 ? <div className={styles.orgDivider} /> : null}
-                <div className={styles.orgGroupLabel}>{group.role}</div>
-                <ul className={styles.orgList}>
-                  {group.users.map((user) => {
-                    const checked = value.includes(user.email);
-                    return (
-                      <li key={user.id}>
-                        <label
-                          className={`${styles.orgRow} ${
-                            checked ? styles.orgRowSelected : ''
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            className={styles.orgCheckbox}
-                            checked={checked}
-                            onChange={() => toggleOrgUser(user.email)}
-                          />
-                          <span className={styles.orgEmail}>{user.email}</span>
-                        </label>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))
-          )}
-        </div>
-      ) : null}
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }

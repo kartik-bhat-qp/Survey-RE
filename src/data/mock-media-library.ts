@@ -1,5 +1,7 @@
 export type MediaFileType = 'image' | 'video' | 'document' | 'font';
 
+export type MediaLibraryView = 'grid' | 'list';
+
 export type MediaLibraryShareMode = 'everyone' | 'restricted';
 
 export interface MediaLibraryShareOption {
@@ -8,6 +10,10 @@ export interface MediaLibraryShareOption {
 }
 
 export const MOCK_MEDIA_LIBRARY_TEAMS = [
+  'USA team',
+  'EU team',
+  'APAC team',
+  'LATAM team',
   'Research',
   'Design',
   'Product Marketing',
@@ -84,7 +90,9 @@ export const MEDIA_LIBRARY_STORAGE: MediaLibraryStorage = {
   usedPercent: 9,
 };
 
-export const MOCK_MEDIA_LIBRARY_FILES: MediaLibraryFile[] = [
+export const MEDIA_LIBRARY_PAGE_SIZE = 100;
+
+const MEDIA_LIBRARY_SEED_FILES: MediaLibraryFile[] = [
   {
     id: 'media-1',
     name: 'SAR LOGO-2021.jpg',
@@ -227,6 +235,67 @@ export const MOCK_MEDIA_LIBRARY_FILES: MediaLibraryFile[] = [
     uploadedAt: '2026-05-18',
     folderId: 'ali-tyson',
   },
+];
+
+const GENERATED_FILE_TEMPLATES: {
+  prefix: string;
+  ext: string;
+  type: MediaFileType;
+  resolution?: string;
+}[] = [
+  { prefix: 'survey-hero', ext: 'jpg', type: 'image', resolution: '1600 × 900' },
+  { prefix: 'brand-mark', ext: 'png', type: 'image', resolution: '512 × 512' },
+  { prefix: 'quota-screenshot', ext: 'png', type: 'image', resolution: '1440 × 900' },
+  { prefix: 'heatmap-overlay', ext: 'png', type: 'image', resolution: '960 × 1200' },
+  { prefix: 'campaign-still', ext: 'jpg', type: 'image', resolution: '1280 × 720' },
+  { prefix: 'logo-lockup', ext: 'svg', type: 'image', resolution: '640 × 160' },
+  { prefix: 'respondent-intro', ext: 'mp4', type: 'video', resolution: '1920 × 1080' },
+  { prefix: 'field-guide', ext: 'pdf', type: 'document' },
+  { prefix: 'brand-typeface', ext: 'ttf', type: 'font' },
+  { prefix: 'question-icon', ext: 'png', type: 'image', resolution: '256 × 256' },
+];
+
+function padFileIndex(index: number): string {
+  return String(index).padStart(3, '0');
+}
+
+function generatedFileSize(index: number, type: MediaFileType): string {
+  if (type === 'video') return `${(12 + (index % 18)).toFixed(1)} MB`;
+  if (type === 'document') return `${(1.1 + (index % 9) * 0.3).toFixed(1)} MB`;
+  if (type === 'font') return `${180 + (index % 40) * 7} KB`;
+  return index % 5 === 0 ? `${(1.1 + (index % 4) * 0.4).toFixed(1)} MB` : `${120 + (index % 80) * 9} KB`;
+}
+
+function generatedUploadDate(index: number): string {
+  const day = 1 + (index % 28);
+  const month = 1 + (index % 7);
+  return `2026-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function buildMyFilesLibrary(): MediaLibraryFile[] {
+  const seed = MEDIA_LIBRARY_SEED_FILES.filter((file) => file.folderId === 'my-files');
+  const generated: MediaLibraryFile[] = [];
+  // Seed files already occupy media-1 … media-16 across folders.
+  let index = 17;
+  while (seed.length + generated.length < 480) {
+    const template = GENERATED_FILE_TEMPLATES[(index - 1) % GENERATED_FILE_TEMPLATES.length];
+    generated.push({
+      id: `media-${index}`,
+      name: `${template.prefix}-${padFileIndex(index)}.${template.ext}`,
+      type: template.type,
+      size: generatedFileSize(index, template.type),
+      resolution: template.resolution,
+      uploadedAt: generatedUploadDate(index),
+      folderId: 'my-files',
+    });
+    index += 1;
+  }
+  return [...seed, ...generated];
+}
+
+export const MOCK_MEDIA_LIBRARY_FILES: MediaLibraryFile[] = [
+  ...buildMyFilesLibrary(),
+  ...MEDIA_LIBRARY_SEED_FILES.filter((file) => file.folderId !== 'my-files'),
 ];
 
 /** File names used by the simulated upload flow. */

@@ -36,6 +36,7 @@ import { ImageChooserRatingQuestionPreview } from '@/components/surveys/ImageCho
 import { MatrixMultiPointScalesQuestionPreview } from '@/components/surveys/MatrixMultiPointScalesQuestionPreview';
 import { MatrixMultiSelectQuestionPreview } from '@/components/surveys/MatrixMultiSelectQuestionPreview';
 import { MatrixSpreadsheetQuestionPreview } from '@/components/surveys/MatrixSpreadsheetQuestionPreview';
+import { FlexMatrixQuestionPreview } from '@/components/surveys/FlexMatrixQuestionPreview';
 import { MapsQuestionPreview } from '@/components/surveys/MapsQuestionPreview';
 import { NpsQuestionPreview } from '@/components/surveys/NpsQuestionPreview';
 import { ImageChooserSelectManyQuestionPreview } from '@/components/surveys/ImageChooserSelectManyQuestionPreview';
@@ -121,6 +122,7 @@ function QuestionTypeHoverPreview({
     content.variant === 'matrix-multi-point' ||
     content.variant === 'matrix-multi-select' ||
     content.variant === 'matrix-spreadsheet' ||
+    content.variant === 'flex-matrix' ||
     content.variant === 'maps';
   const isWidePreview =
     content.variant === 'push-to-social' ||
@@ -348,6 +350,10 @@ function QuestionTypeHoverPreview({
 
         {content.variant === 'matrix-spreadsheet' && content.matrixSpreadsheet ? (
           <MatrixSpreadsheetQuestionPreview data={content.matrixSpreadsheet} />
+        ) : null}
+
+        {content.variant === 'flex-matrix' && content.flexMatrix ? (
+          <FlexMatrixQuestionPreview data={content.flexMatrix} />
         ) : null}
 
         {content.variant === 'date-time' && content.dateTime ? (

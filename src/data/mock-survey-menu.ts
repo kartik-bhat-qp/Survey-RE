@@ -34,6 +34,7 @@ import {
   createDefaultLookupTableOptions,
   createDefaultMatrixMultiSelectMatrix,
   createDefaultMatrixSpreadsheetMatrix,
+  createDefaultFlexMatrix,
   createDefaultMultiPointMatrix,
   createDefaultNumericSliderMatrix,
   createDefaultRankOrderOptions,
@@ -275,6 +276,14 @@ function buildSurveyMenuQuestion(typeId: string, number: number): SurveyQuestion
         kind: 'matrix-spreadsheet',
         options: [],
         matrix: createDefaultMatrixSpreadsheetMatrix(),
+      };
+    case 'flex-matrix':
+      return {
+        ...base,
+        text: `Question ${number}`,
+        kind: 'flex-matrix',
+        options: [],
+        matrix: createDefaultFlexMatrix(),
       };
     case 'nps':
       return {
