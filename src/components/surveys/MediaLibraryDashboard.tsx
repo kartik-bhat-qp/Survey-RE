@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { MediaLibraryFolderModals } from '@/components/surveys/MediaLibraryFolderModals';
@@ -56,7 +57,17 @@ const FILTER_OPTIONS: FilterOption[] = MEDIA_LIBRARY_FILTERS.map((value) => ({
   label: value,
 }));
 
-type MediaLibraryModal = 'create-folder' | 'share' | 'move' | null;
+const FILE_MENU_WIDTH = 184;
+const FILE_MENU_VIEWPORT_MARGIN = 8;
+const FILE_MENU_GAP = 4;
+
+type MediaLibraryModal = 'create-folder' | 'share' | 'move' | 'rename' | null;
+
+interface FileMenuPosition {
+  top: number;
+  left: number;
+  maxHeight: number;
+}
 
 export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashboardProps) {
   const { showToast } = useWuShowToast();
@@ -68,6 +79,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<MediaLibraryFilter>('All files');
   const [menuFileId, setMenuFileId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<FileMenuPosition | null>(null);
   const [detailsFileId, setDetailsFileId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -85,7 +97,8 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
   const uploadDoneTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const uploadSeqRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const skipRenameCommitRef = useRef(false);
+  const menuAnchorRef = useRef<HTMLElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const toast = useCallback(
     (message: string) => showToast({ message, variant: 'success' }),
@@ -94,11 +107,76 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
 
   useEffect(() => {
     if (menuFileId === null) return;
-    function onDocumentClick(): void {
+    function onDocumentPointerDown(event: PointerEvent): void {
+      const target = event.target as Node | null;
+      if (menuRef.current?.contains(target)) return;
+      if (menuAnchorRef.current?.contains(target)) return;
       setMenuFileId(null);
+      setMenuPosition(null);
+      menuAnchorRef.current = null;
     }
-    document.addEventListener('click', onDocumentClick);
-    return () => document.removeEventListener('click', onDocumentClick);
+    function onKeyDown(event: KeyboardEvent): void {
+      if (event.key === 'Escape') {
+        setMenuFileId(null);
+        setMenuPosition(null);
+        menuAnchorRef.current = null;
+      }
+    }
+    document.addEventListener('pointerdown', onDocumentPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onDocumentPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuFileId]);
+
+  useLayoutEffect(() => {
+    if (menuFileId === null) return;
+
+    function updateMenuPosition(): void {
+      const anchor = menuAnchorRef.current;
+      if (!anchor) return;
+      const rect = anchor.getBoundingClientRect();
+      const menuHeight = menuRef.current?.offsetHeight ?? 320;
+      const spaceBelow = window.innerHeight - rect.bottom - FILE_MENU_VIEWPORT_MARGIN;
+      const spaceAbove = rect.top - FILE_MENU_VIEWPORT_MARGIN;
+      const openUpward = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+      const maxHeight = Math.max(
+        160,
+        openUpward ? spaceAbove - FILE_MENU_GAP : spaceBelow - FILE_MENU_GAP
+      );
+      const top = openUpward
+        ? Math.max(
+            FILE_MENU_VIEWPORT_MARGIN,
+            rect.top - Math.min(menuHeight, maxHeight) - FILE_MENU_GAP
+          )
+        : rect.bottom + FILE_MENU_GAP;
+      const left = Math.min(
+        Math.max(FILE_MENU_VIEWPORT_MARGIN, rect.right - FILE_MENU_WIDTH),
+        window.innerWidth - FILE_MENU_WIDTH - FILE_MENU_VIEWPORT_MARGIN
+      );
+      setMenuPosition((prev) => {
+        if (
+          prev &&
+          prev.top === top &&
+          prev.left === left &&
+          prev.maxHeight === maxHeight
+        ) {
+          return prev;
+        }
+        return { top, left, maxHeight };
+      });
+    }
+
+    updateMenuPosition();
+    const rafId = window.requestAnimationFrame(updateMenuPosition);
+    window.addEventListener('resize', updateMenuPosition);
+    window.addEventListener('scroll', updateMenuPosition, true);
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', updateMenuPosition);
+      window.removeEventListener('scroll', updateMenuPosition, true);
+    };
   }, [menuFileId]);
 
   useEffect(() => {
@@ -211,6 +289,9 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
     setSelectedIds([]);
     setDetailsFileId(null);
     setRenamingId(null);
+    setMenuFileId(null);
+    setMenuPosition(null);
+    menuAnchorRef.current = null;
     setPage(1);
   }
 
@@ -260,7 +341,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
     setFiles((prev) => prev.filter((item) => item.id !== file.id));
     setSelectedIds((prev) => prev.filter((id) => id !== file.id));
     if (detailsFileId === file.id) setDetailsFileId(null);
-    setMenuFileId(null);
+    closeFileMenu();
     toast(`"${file.name}" deleted`);
   }
 
@@ -271,27 +352,58 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
     setSelectedIds([]);
   }
 
-  function handleCommitRename(): void {
-    if (skipRenameCommitRef.current) {
-      skipRenameCommitRef.current = false;
-      return;
-    }
-    const value = renameValue.trim();
-    if (!renamingId) return;
-    if (value) {
-      setFiles((prev) =>
-        prev.map((file) => (file.id === renamingId ? { ...file, name: value } : file))
-      );
-      toast('File renamed');
-    }
+  function handleCommitRename(name: string): void {
+    const value = name.trim();
+    if (!renamingId || !value) return;
+    setFiles((prev) =>
+      prev.map((file) => (file.id === renamingId ? { ...file, name: value } : file))
+    );
     setRenamingId(null);
     setRenameValue('');
+    setModal(null);
+    toast('File renamed');
   }
 
-  function handleCancelRename(): void {
-    skipRenameCommitRef.current = true;
-    setRenamingId(null);
-    setRenameValue('');
+  function openFileMenu(fileId: string, anchor: HTMLElement): void {
+    if (menuFileId === fileId) {
+      closeFileMenu();
+      return;
+    }
+    menuAnchorRef.current = anchor;
+    const rect = anchor.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom - FILE_MENU_VIEWPORT_MARGIN;
+    const spaceAbove = rect.top - FILE_MENU_VIEWPORT_MARGIN;
+    const estimatedHeight = 320;
+    const openUpward = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+    const maxHeight = Math.max(
+      160,
+      openUpward ? spaceAbove - FILE_MENU_GAP : spaceBelow - FILE_MENU_GAP
+    );
+    const top = openUpward
+      ? Math.max(
+          FILE_MENU_VIEWPORT_MARGIN,
+          rect.top - Math.min(estimatedHeight, maxHeight) - FILE_MENU_GAP
+        )
+      : rect.bottom + FILE_MENU_GAP;
+    const left = Math.min(
+      Math.max(FILE_MENU_VIEWPORT_MARGIN, rect.right - FILE_MENU_WIDTH),
+      window.innerWidth - FILE_MENU_WIDTH - FILE_MENU_VIEWPORT_MARGIN
+    );
+    setMenuPosition({ top, left, maxHeight });
+    setMenuFileId(fileId);
+  }
+
+  function closeFileMenu(): void {
+    setMenuFileId(null);
+    setMenuPosition(null);
+    menuAnchorRef.current = null;
+  }
+
+  function handleStartRename(file: MediaLibraryFile): void {
+    setRenamingId(file.id);
+    setRenameValue(file.name);
+    closeFileMenu();
+    setModal('rename');
   }
 
   function handleCreateFolder(name: string): void {
@@ -327,15 +439,27 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
     startUpload(dropped);
   }
 
-  function renderFileMenu(file: MediaLibraryFile, placement: string): React.ReactNode {
-    return (
-      <div className={`${styles.menu} ${placement}`} role="menu">
+  function renderFileMenu(file: MediaLibraryFile): React.ReactNode {
+    if (!menuPosition || typeof document === 'undefined') return null;
+
+    return createPortal(
+      <div
+        ref={menuRef}
+        className={styles.menu}
+        role="menu"
+        style={{
+          top: menuPosition.top,
+          left: menuPosition.left,
+          maxHeight: menuPosition.maxHeight,
+        }}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
         <button
           type="button"
           className={styles.menuItem}
           onClick={() => {
             setDetailsFileId(file.id);
-            setMenuFileId(null);
+            closeFileMenu();
           }}
         >
           <span className="wm-info" aria-hidden />
@@ -346,7 +470,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
           className={styles.menuItem}
           onClick={() => {
             handleCopyUrl(file);
-            setMenuFileId(null);
+            closeFileMenu();
           }}
         >
           <span className="wm-link" aria-hidden />
@@ -357,7 +481,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
           className={styles.menuItem}
           onClick={() => {
             toast('HTML snippet copied');
-            setMenuFileId(null);
+            closeFileMenu();
           }}
         >
           <span className="wm-code" aria-hidden />
@@ -368,7 +492,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
           className={styles.menuItem}
           onClick={() => {
             toast('Set as survey logo');
-            setMenuFileId(null);
+            closeFileMenu();
           }}
         >
           <span className="wm-open-with" aria-hidden />
@@ -378,12 +502,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
         <button
           type="button"
           className={styles.menuItem}
-          onClick={(event) => {
-            event.stopPropagation();
-            setRenamingId(file.id);
-            setRenameValue(file.name);
-            setMenuFileId(null);
-          }}
+          onClick={() => handleStartRename(file)}
         >
           <span className="wm-edit" aria-hidden />
           Rename
@@ -393,7 +512,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
           className={styles.menuItem}
           onClick={() => {
             toast(`Downloading ${file.name}`);
-            setMenuFileId(null);
+            closeFileMenu();
           }}
         >
           <span className="wm-download" aria-hidden />
@@ -405,7 +524,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
           onClick={() => {
             setMoveIds([file.id]);
             setModal('move');
-            setMenuFileId(null);
+            closeFileMenu();
           }}
         >
           <span className="wm-drive-file-move" aria-hidden />
@@ -415,12 +534,16 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
         <button
           type="button"
           className={styles.menuItemDanger}
-          onClick={() => handleDeleteFile(file)}
+          onClick={() => {
+            handleDeleteFile(file);
+            closeFileMenu();
+          }}
         >
           <span className="wm-delete" aria-hidden />
           Delete
         </button>
-      </div>
+      </div>,
+      document.body
     );
   }
 
@@ -549,7 +672,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
                 const selected = item as FilterOption | null;
                 if (!selected) return;
                 setFilter(selected.value);
-                setMenuFileId(null);
+                closeFileMenu();
               }}
             />
           </div>
@@ -592,7 +715,7 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
                   const selected = item as PageRangeOption | null;
                   if (!selected) return;
                   setPage(selected.value);
-                  setMenuFileId(null);
+                  closeFileMenu();
                 }}
               />
             </div>
@@ -729,51 +852,28 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
                       <span className={styles.thumbLabel}>{meta.label}</span>
                     </button>
                     <div className={styles.cardFooter}>
-                      {renamingId === file.id ? (
-                        <input
-                          type="text"
-                          className={styles.renameInput}
-                          value={renameValue}
-                          autoFocus
-                          aria-label={`Rename ${file.name}`}
-                          onChange={(event) => setRenameValue(event.target.value)}
-                          onFocus={(event) => event.currentTarget.select()}
-                          onBlur={handleCommitRename}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                              event.preventDefault();
-                              handleCommitRename();
-                            }
-                            if (event.key === 'Escape') {
-                              event.preventDefault();
-                              handleCancelRename();
-                            }
-                          }}
-                          onClick={(event) => event.stopPropagation()}
-                        />
-                      ) : (
-                        <button
-                          type="button"
-                          className={styles.cardName}
-                          title={file.name}
-                          onClick={() => setDetailsFileId(file.id)}
-                        >
-                          {file.name}
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className={styles.cardName}
+                        title={file.name}
+                        onClick={() => setDetailsFileId(file.id)}
+                      >
+                        {file.name}
+                      </button>
                       <button
                         type="button"
                         className={styles.iconBtn}
                         aria-label={`More actions for ${file.name}`}
+                        aria-expanded={menuFileId === file.id}
                         onClick={(event) => {
                           event.stopPropagation();
-                          setMenuFileId((prev) => (prev === file.id ? null : file.id));
+                          openFileMenu(file.id, event.currentTarget);
                         }}
                       >
                         <span className="wm-more-vert" aria-hidden />
                       </button>
                     </div>
-                    {menuFileId === file.id ? renderFileMenu(file, styles.menuCard) : null}
+                    {menuFileId === file.id ? renderFileMenu(file) : null}
                   </div>
                 );
               })}
@@ -818,38 +918,14 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
                     >
                       <span className={meta.icon} aria-hidden />
                     </button>
-                    {renamingId === file.id ? (
-                      <input
-                        type="text"
-                        className={styles.renameInput}
-                        value={renameValue}
-                        autoFocus
-                        aria-label={`Rename ${file.name}`}
-                        onChange={(event) => setRenameValue(event.target.value)}
-                        onFocus={(event) => event.currentTarget.select()}
-                        onBlur={handleCommitRename}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.preventDefault();
-                            handleCommitRename();
-                          }
-                          if (event.key === 'Escape') {
-                            event.preventDefault();
-                            handleCancelRename();
-                          }
-                        }}
-                        onClick={(event) => event.stopPropagation()}
-                      />
-                    ) : (
-                      <button
-                        type="button"
-                        className={styles.listName}
-                        title={file.name}
-                        onClick={() => setDetailsFileId(file.id)}
-                      >
-                        {file.name}
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className={styles.listName}
+                      title={file.name}
+                      onClick={() => setDetailsFileId(file.id)}
+                    >
+                      {file.name}
+                    </button>
                     <span className={styles.listCell}>{meta.label}</span>
                     <span className={styles.listCell}>{file.size}</span>
                     <span className={styles.listCell}>{file.resolution ?? '—'}</span>
@@ -858,14 +934,15 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
                       type="button"
                       className={styles.iconBtn}
                       aria-label={`More actions for ${file.name}`}
+                      aria-expanded={menuFileId === file.id}
                       onClick={(event) => {
                         event.stopPropagation();
-                        setMenuFileId((prev) => (prev === file.id ? null : file.id));
+                        openFileMenu(file.id, event.currentTarget);
                       }}
                     >
                       <span className="wm-more-vert" aria-hidden />
                     </button>
-                    {menuFileId === file.id ? renderFileMenu(file, styles.menuRow) : null}
+                    {menuFileId === file.id ? renderFileMenu(file) : null}
                   </div>
                 );
               })}
@@ -1046,8 +1123,13 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
         onCloseModal={() => {
           setModal(null);
           setMoveIds([]);
+          setRenamingId(null);
+          setRenameValue('');
         }}
         onCreateFolder={handleCreateFolder}
+        renameValue={renameValue}
+        onRenameValueChange={setRenameValue}
+        onRename={handleCommitRename}
         shareMode={shareMode}
         shareTeams={shareTeams}
         shareUsers={shareUsers}

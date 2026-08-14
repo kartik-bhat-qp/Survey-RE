@@ -22,9 +22,12 @@ const WuSelect = dynamic(
 );
 
 interface MediaLibraryFolderModalsProps {
-  modal: 'create-folder' | 'share' | 'move' | null;
+  modal: 'create-folder' | 'share' | 'move' | 'rename' | null;
   onCloseModal: () => void;
   onCreateFolder: (name: string) => void;
+  renameValue: string;
+  onRenameValueChange: (value: string) => void;
+  onRename: (name: string) => void;
   shareMode: MediaLibraryShareMode;
   shareTeams: string[];
   shareUsers: string[];
@@ -42,6 +45,9 @@ export function MediaLibraryFolderModals({
   modal,
   onCloseModal,
   onCreateFolder,
+  renameValue,
+  onRenameValueChange,
+  onRename,
   shareMode,
   shareTeams,
   shareUsers,
@@ -113,6 +119,40 @@ export function MediaLibraryFolderModals({
           <WuModalClose variant="secondary">Cancel</WuModalClose>
           <WuButton disabled={!trimmed} onClick={() => onCreateFolder(trimmed)}>
             Create folder
+          </WuButton>
+        </WuModalFooter>
+      </WuModal>
+    );
+  }
+
+  if (modal === 'rename') {
+    const trimmed = renameValue.trim();
+    return (
+      <WuModal open onOpenChange={handleOpenChange} size="sm" variant="action">
+        <WuModalHeader>Rename file</WuModalHeader>
+        <WuModalContent>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="media-library-rename">
+              File name
+            </label>
+            <input
+              id="media-library-rename"
+              type="text"
+              className={styles.input}
+              value={renameValue}
+              autoFocus
+              onFocus={(event) => event.currentTarget.select()}
+              onChange={(event) => onRenameValueChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && trimmed) onRename(trimmed);
+              }}
+            />
+          </div>
+        </WuModalContent>
+        <WuModalFooter>
+          <WuModalClose variant="secondary">Cancel</WuModalClose>
+          <WuButton disabled={!trimmed} onClick={() => onRename(trimmed)}>
+            Rename
           </WuButton>
         </WuModalFooter>
       </WuModal>
