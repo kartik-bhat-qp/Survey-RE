@@ -15,7 +15,12 @@ import {
   getSurveyEditorPhasePath,
 } from '@/components/surveys/survey-editor-navigation';
 
-export type SurveyEditorPhase = 'edit' | 'distribute' | 'analytics' | 'integration';
+export type SurveyEditorPhase =
+  | 'edit'
+  | 'distribute'
+  | 'analytics'
+  | 'analytics-2'
+  | 'integration';
 
 interface SurveyEditorPhaseContextValue {
   activePhase: SurveyEditorPhase;

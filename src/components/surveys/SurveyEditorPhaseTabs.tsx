@@ -50,6 +50,7 @@ const PHASE_TABS: { id: SurveyEditorPhase; label: string }[] = [
   { id: 'edit', label: 'Edit' },
   { id: 'distribute', label: 'Distribute' },
   { id: 'analytics', label: 'Analytics' },
+  { id: 'analytics-2', label: 'Analytics 2.0' },
   { id: 'integration', label: 'Integration' },
 ];
 
@@ -168,7 +169,12 @@ export function SurveyEditorPhaseTabs() {
           active={activePhase === tab.id}
           onClick={(event) => {
             event.preventDefault();
-            if (tab.id === 'edit' || tab.id === 'analytics' || tab.id === 'distribute') {
+            if (
+              tab.id === 'edit' ||
+              tab.id === 'analytics' ||
+              tab.id === 'analytics-2' ||
+              tab.id === 'distribute'
+            ) {
               setActivePhase(tab.id);
               return;
             }

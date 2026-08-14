@@ -50,6 +50,10 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
         router.replace(getSurveyEditorPhasePath(survey.id, 'analytics'));
         return;
       }
+      if (activePhase === 'analytics-2') {
+        router.replace(getSurveyEditorPhasePath(survey.id, 'analytics-2'));
+        return;
+      }
       if (activePhase === 'distribute') {
         router.replace(getCanonicalDistributePath(survey.id, getDefaultDistributeRouteState()));
       }
@@ -85,6 +89,7 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
   }
 
   const showAnalytics = activePhase === 'analytics';
+  const showAnalytics2 = activePhase === 'analytics-2';
   const showDistribute = activePhase === 'distribute';
 
   return (
@@ -92,7 +97,7 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
       <SurveyEditorPhaseTabs />
       {showAnalytics ? (
         <SurveyAnalyticsSubNav />
-      ) : showDistribute ? (
+      ) : showAnalytics2 ? null : showDistribute ? (
         <SurveyDistributeSubNav surveyId={survey.id} />
       ) : (
         <>

@@ -15,6 +15,9 @@ export function getSurveyEditorPhaseFromPathname(
   if (pathname === `${base}/analytics` || pathname.startsWith(`${base}/analytics/`)) {
     return 'analytics';
   }
+  if (pathname === `${base}/analytics-2` || pathname.startsWith(`${base}/analytics-2/`)) {
+    return 'analytics-2';
+  }
   return 'edit';
 }
 
@@ -28,6 +31,9 @@ export function getSurveyEditorPhasePath(
   }
   if (phase === 'analytics') {
     return `${base}/analytics`;
+  }
+  if (phase === 'analytics-2') {
+    return `${base}/analytics-2`;
   }
   return base;
 }
