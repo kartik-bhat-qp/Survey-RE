@@ -69,7 +69,7 @@ export function MediaLibraryFolderModals({
     if (!open) onCloseModal();
   }
 
-  const orgName = MOCK_HEADER_USER.profile.companyName;
+  const orgName = MOCK_HEADER_USER.profile?.companyName ?? 'your organization';
   const shareOptions = getMediaLibraryShareOptions(orgName);
 
   if (modal === 'create-folder') {
