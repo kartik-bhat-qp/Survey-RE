@@ -40,6 +40,7 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
     if (
       pathname.includes('/advance-quotas') ||
       pathname.includes('/settings') ||
+      pathname.includes('/media-library') ||
       pathname.includes('/languages') ||
       pathname.includes('/finish-options') ||
       pathname.includes('/variables') ||

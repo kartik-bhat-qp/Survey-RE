@@ -964,14 +964,14 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     question: 'Which of the following would you buy?',
     conjoint: {
       configTabs: [
-        { id: 'random', label: 'Random', active: true },
+        { id: 'random', label: 'Design Type', suffix: 'Random', active: true },
         { id: 'prohibited', label: 'Prohibited Concepts' },
         { id: 'fixed-tasks', label: 'Add Fixed Tasks' },
       ],
       features: [
-        { feature: 'Brand', featureType: 'Brand', levels: ['Sony', 'LG', 'Vizio'] },
+        { feature: 'Brand', featureType: 'Other', levels: ['Sony', 'LG', 'Vizio'] },
         { feature: 'Price', featureType: 'Other', levels: ['USD 800', 'USD 1200', 'USD 1500'] },
-        { feature: 'Size', featureType: 'Other', levels: ['32"', '55"', '65"'] },
+        { feature: 'Size', featureType: 'Other', levels: ['32"', '36"', '45"'] },
       ],
       taskCount: 2,
       conceptPerTask: 2,

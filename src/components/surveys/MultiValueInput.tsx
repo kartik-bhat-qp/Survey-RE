@@ -8,6 +8,7 @@ interface MultiValueInputProps {
   onChange: (values: string[]) => void;
   placeholder?: string;
   'aria-label'?: string;
+  className?: string;
 }
 
 function splitCandidates(raw: string): string[] {
@@ -22,6 +23,7 @@ export function MultiValueInput({
   onChange,
   placeholder = 'Enter value',
   'aria-label': ariaLabel = 'Values',
+  className,
 }: MultiValueInputProps) {
   const [draft, setDraft] = useState('');
   const valueRef = useRef(value);
@@ -92,7 +94,7 @@ export function MultiValueInput({
 
   return (
     <div
-      className={`${styles.field} ${styles.compactField}`}
+      className={`${styles.field} ${styles.compactField} ${className ?? ''}`.trim()}
       onMouseDown={(event) => {
         if ((event.target as HTMLElement).closest('button')) return;
         const input = event.currentTarget.querySelector('input');

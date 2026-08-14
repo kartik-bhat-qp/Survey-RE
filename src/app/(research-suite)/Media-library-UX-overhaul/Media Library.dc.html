@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..500,0..1,0">
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#fff;}
+  a{color:#1b87e6;text-decoration:none;} a:hover{color:#1570c2;text-decoration:underline;}
+  .msi{font-family:'Material Symbols Outlined';font-weight:normal;font-style:normal;line-height:1;letter-spacing:normal;text-transform:none;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;user-select:none;}
+  input::placeholder{color:#94a3b8;font-weight:300;}
+  ::selection{background:#cfe6fb;}
+</style>
+</helmet>
+<div style="display:flex;height:100vh;min-height:520px;background:#fff;font-family:'Fira Sans',sans-serif;font-weight:300;color:#334155;overflow:hidden" onDragOver="{{ onDragOver }}" onDragLeave="{{ onDragLeave }}" onDrop="{{ onDrop }}" data-screen-label="Media Library">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside style="width:236px;flex-shrink:0;background:#fbfcfd;border-right:1px solid #e5e9ef;display:flex;flex-direction:column;min-height:0">
+    <nav style="display:flex;flex-direction:column;padding:10px 0 4px 0">
+      <sc-for list="{{ navItems }}" as="nav" hint-placeholder-count="2">
+        <button type="button" onClick="{{ nav.onSelect }}" style="position:relative;display:flex;align-items:center;gap:10px;padding:10px 16px;background:transparent;border:none;cursor:pointer;font-family:inherit;font-size:13.5px;color:#475569;text-align:left;width:100%" style-hover="background:#f1f5f9">
+          <sc-if value="{{ nav.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;left:0;top:6px;bottom:6px;width:3px;background:#1b87e6;border-radius:0 2px 2px 0"></span>
+          </sc-if>
+          <span class="msi" style="font-size:18px;color:#94a3b8">{{ nav.icon }}</span>
+          <sc-if value="{{ nav.active }}" hint-placeholder-val="{{ false }}"><span style="flex:1;font-weight:500;color:#1e293b">{{ nav.name }}</span></sc-if>
+          <sc-if value="{{ nav.inactive }}" hint-placeholder-val="{{ true }}"><span style="flex:1;font-weight:400">{{ nav.name }}</span></sc-if>
+          <span style="font-size:12px;color:#94a3b8">{{ nav.count }}</span>
+        </button>
+      </sc-for>
+    </nav>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px 16px">
+      <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;color:#94a3b8;text-transform:uppercase">Folders</span>
+      <button type="button" onClick="{{ openCreateFolder }}" title="New folder" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:transparent;border:none;border-radius:4px;color:#64748b;cursor:pointer" style-hover="background:#e8f2fc;color:#1b87e6">
+        <span class="msi" style="font-size:17px">add</span>
+      </button>
+    </div>
+    <div style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column">
+      <sc-for list="{{ folderItems }}" as="fol" hint-placeholder-count="2">
+        <button type="button" onClick="{{ fol.onSelect }}" style="position:relative;display:flex;align-items:center;gap:10px;padding:9px 16px;background:transparent;border:none;cursor:pointer;font-family:inherit;font-size:13.5px;color:#475569;text-align:left;width:100%" style-hover="background:#f1f5f9">
+          <sc-if value="{{ fol.active }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;left:0;top:6px;bottom:6px;width:3px;background:#1b87e6;border-radius:0 2px 2px 0"></span>
+          </sc-if>
+          <span class="msi" style="font-size:18px;color:#94a3b8">folder</span>
+          <sc-if value="{{ fol.active }}" hint-placeholder-val="{{ false }}"><span style="flex:1;font-weight:500;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ fol.name }}</span></sc-if>
+          <sc-if value="{{ fol.inactive }}" hint-placeholder-val="{{ true }}"><span style="flex:1;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ fol.name }}</span></sc-if>
+          <span style="font-size:12px;color:#94a3b8">{{ fol.count }}</span>
+        </button>
+      </sc-for>
+    </div>
+    <sc-if value="{{ showStorage }}" hint-placeholder-val="{{ true }}">
+      <div style="border-top:1px solid #e5e9ef;padding:14px 16px 16px 16px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;color:#475569"><span class="msi" style="font-size:16px;color:#94a3b8">cloud</span>Storage</span>
+          <span style="font-size:11.5px;color:#94a3b8">9% used</span>
+        </div>
+        <div style="height:6px;background:#e2e8f0;border-radius:999px;overflow:hidden">
+          <div style="height:100%;width:9%;background:#1b87e6;border-radius:999px"></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:11.5px;color:#64748b">467 MB of 5.0 GB</span>
+          <a href="#" onClick="{{ onUpgrade }}" style="font-size:11.5px;font-weight:500">Upgrade</a>
+        </div>
+      </div>
+    </sc-if>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main style="flex:1;min-width:0;display:flex;flex-direction:column;position:relative">
+
+    <!-- Toolbar -->
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid #eef2f6;flex-shrink:0;flex-wrap:wrap">
+      <div style="position:relative;width:260px">
+        <span class="msi" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:18px;color:#94a3b8;pointer-events:none">search</span>
+        <input type="text" value="{{ search }}" onChange="{{ onSearch }}" placeholder="Search files" style="width:100%;box-sizing:border-box;height:34px;padding:0 10px 0 34px;border:1px solid #d5dde6;border-radius:6px;font-family:inherit;font-size:13px;color:#334155;outline:none;background:#fff" style-focus="border-color:#1b87e6;box-shadow:0 0 0 3px rgba(27,135,230,0.12)">
+      </div>
+      <div style="position:relative">
+        <button type="button" onClick="{{ toggleFilterMenu }}" style="display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 10px 0 12px;background:#fff;border:1px solid #d5dde6;border-radius:6px;font-family:inherit;font-size:13px;color:#475569;cursor:pointer" style-hover="border-color:#1b87e6;color:#1b87e6">
+          {{ filterLabel }}
+          <span class="msi" style="font-size:18px;color:#94a3b8">arrow_drop_down</span>
+        </button>
+        <sc-if value="{{ filterOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;top:38px;left:0;z-index:60;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,0.12);padding:6px 0;min-width:170px">
+            <sc-for list="{{ filterOptions }}" as="fo" hint-placeholder-count="5">
+              <button type="button" onClick="{{ fo.onSelect }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#475569;cursor:pointer;text-align:left" style-hover="background:#f1f5f9">
+                {{ fo.label }}
+                <sc-if value="{{ fo.active }}" hint-placeholder-val="{{ false }}"><span class="msi" style="font-size:16px;color:#1b87e6">check</span></sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+      <div style="display:inline-flex;border:1px solid #d5dde6;border-radius:6px;overflow:hidden">
+        <button type="button" onClick="{{ setGridView }}" title="Grid view" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:32px;border:none;cursor:pointer;background:{{ gridBtnBg }};color:{{ gridBtnColor }}">
+          <span class="msi" style="font-size:18px">grid_view</span>
+        </button>
+        <button type="button" onClick="{{ setListView }}" title="List view" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:32px;border:none;border-left:1px solid #d5dde6;cursor:pointer;background:{{ listBtnBg }};color:{{ listBtnColor }}">
+          <span class="msi" style="font-size:18px">view_list</span>
+        </button>
+      </div>
+      <div style="flex:1"></div>
+      <div style="display:inline-flex;align-items:center;gap:2px">
+        <span style="font-size:12.5px;color:#64748b;margin-right:4px">{{ pageLabel }}</span>
+        <button type="button" title="Previous page" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:transparent;border:none;border-radius:6px;color:#cbd5e1;cursor:default"><span class="msi" style="font-size:18px">chevron_left</span></button>
+        <button type="button" title="Next page" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:transparent;border:none;border-radius:6px;color:#cbd5e1;cursor:default"><span class="msi" style="font-size:18px">chevron_right</span></button>
+      </div>
+      <button type="button" onClick="{{ openShare }}" style="display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;background:#fff;border:1px solid #d5dde6;border-radius:6px;font-family:inherit;font-size:13px;font-weight:400;color:#475569;cursor:pointer" style-hover="border-color:#1b87e6;color:#1b87e6">
+        <span class="msi" style="font-size:17px">person_add</span>
+        Share Folder
+      </button>
+      <button type="button" onClick="{{ startUpload }}" style="display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;background:#1b87e6;border:none;border-radius:6px;font-family:inherit;font-size:13px;font-weight:500;color:#fff;cursor:pointer" style-hover="background:#1570c2">
+        <span class="msi" style="font-size:17px">upload</span>
+        Upload
+      </button>
+    </div>
+
+    <!-- Selection bar -->
+    <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:4px;padding:7px 20px;background:#eef7ff;border-bottom:1px solid #cfe6fb;flex-shrink:0;flex-wrap:wrap;min-width:0">
+        <span style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:#1e293b;margin-right:10px">
+          <span class="msi" style="font-size:18px;color:#1b87e6">check_box</span>
+          {{ selCount }} selected
+        </span>
+        <button type="button" onClick="{{ openMoveSelected }}" style="display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;background:transparent;border:none;border-radius:6px;font-family:inherit;font-size:13px;color:#1b87e6;cursor:pointer" style-hover="background:#dbeeff"><span class="msi" style="font-size:16px">drive_file_move</span>Move</button>
+        <button type="button" onClick="{{ downloadSelected }}" style="display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;background:transparent;border:none;border-radius:6px;font-family:inherit;font-size:13px;color:#1b87e6;cursor:pointer" style-hover="background:#dbeeff"><span class="msi" style="font-size:16px">download</span>Download</button>
+        <button type="button" onClick="{{ deleteSelected }}" style="display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;background:transparent;border:none;border-radius:6px;font-family:inherit;font-size:13px;color:#dc2626;cursor:pointer" style-hover="background:#fee2e2"><span class="msi" style="font-size:16px">delete</span>Delete</button>
+        <div style="flex:1"></div>
+        <button type="button" onClick="{{ clearSel }}" style="height:28px;padding:0 10px;background:transparent;border:none;border-radius:6px;font-family:inherit;font-size:13px;color:#64748b;cursor:pointer" style-hover="background:#dbeeff;color:#334155">Clear selection</button>
+      </div>
+    </sc-if>
+
+    <!-- Content -->
+    <div style="flex:1;min-height:0;overflow-y:auto;position:relative;background:#fff">
+
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;height:100%;padding:40px;text-align:center">
+          <span class="msi" style="font-size:52px;color:#cbd5e1">cloud_upload</span>
+          <div style="font-size:16px;font-weight:500;color:#1e293b">{{ emptyTitle }}</div>
+          <div style="font-size:13px;color:#64748b;max-width:340px">Drag and drop files anywhere on this page, or upload from your computer.</div>
+          <button type="button" onClick="{{ startUpload }}" style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 16px;background:#1b87e6;border:none;border-radius:6px;font-family:inherit;font-size:13px;font-weight:500;color:#fff;cursor:pointer" style-hover="background:#1570c2">
+            <span class="msi" style="font-size:17px">upload</span>
+            Upload files
+          </button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showGrid }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:16px;padding:20px">
+          <sc-for list="{{ files }}" as="f" hint-placeholder-count="10">
+            <div style="position:relative;border:1px solid #e2e8f0;border-radius:8px;background:#fff;display:flex;flex-direction:column" style-hover="box-shadow:0 4px 14px rgba(15,23,42,0.08)">
+              <sc-if value="{{ f.sel }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;inset:-1px;border:2px solid #1b87e6;border-radius:8px;pointer-events:none;z-index:4"></div>
+              </sc-if>
+              <button type="button" onClick="{{ f.onToggleSel }}" title="Select" style="position:absolute;top:8px;left:8px;z-index:5;width:18px;height:18px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;background:{{ f.checkBg }};border:1px solid {{ f.checkBorder }}">
+                <sc-if value="{{ f.sel }}" hint-placeholder-val="{{ false }}"><span class="msi" style="font-size:14px;color:#fff;font-variation-settings:'FILL' 0,'wght' 500">check</span></sc-if>
+              </button>
+              <div onClick="{{ f.onOpen }}" style="height:132px;border-radius:8px 8px 0 0;background:repeating-linear-gradient(45deg,#f8fafc,#f8fafc 7px,#f1f5f9 7px,#f1f5f9 14px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer">
+                <span class="msi" style="font-size:34px;color:#94a3b8">{{ f.icon }}</span>
+                <span style="font-family:monospace;font-size:10px;color:#94a3b8">{{ f.typeLabel }}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;padding:8px 6px 8px 10px;border-top:1px solid #eef2f6">
+                <sc-if value="{{ f.renaming }}" hint-placeholder-val="{{ false }}">
+                  <input type="text" value="{{ renameVal }}" onChange="{{ onRenameChange }}" onKeyDown="{{ onRenameKey }}" autoFocus="{{ true }}" style="flex:1;min-width:0;height:24px;padding:0 6px;border:1px solid #1b87e6;border-radius:4px;font-family:inherit;font-size:12.5px;color:#334155;outline:none">
+                </sc-if>
+                <sc-if value="{{ f.notRenaming }}" hint-placeholder-val="{{ true }}">
+                  <span onClick="{{ f.onOpen }}" title="{{ f.name }}" style="flex:1;min-width:0;font-size:12.5px;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer">{{ f.name }}</span>
+                </sc-if>
+                <button type="button" onClick="{{ f.onMenu }}" title="More actions" style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:transparent;border:none;border-radius:6px;color:#94a3b8;cursor:pointer;flex-shrink:0" style-hover="background:#f1f5f9;color:#475569">
+                  <span class="msi" style="font-size:18px">more_vert</span>
+                </button>
+              </div>
+              <sc-if value="{{ f.menuOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;right:6px;bottom:40px;z-index:50;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 10px 28px rgba(15,23,42,0.16);padding:6px 0;width:184px">
+                  <button type="button" onClick="{{ f.onView }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#475569;cursor:pointer;text-align:left" style-hover="background:#f1f5f9"><span class="msi" style="font-size:16px;color:#94a3b8">info</span>View details</button>
+                  <button type="button" onClick="{{ f.onGetLink }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#475569;cursor:pointer;text-align:left" style-hover="background:#f1f5f9"><span class="msi" style="font-size:16px;color:#94a3b8">link</span>Get link</button>
+                  <button type="button" onClick="{{ f.onGetHtml }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#475569;cursor:pointer;text-align:left" style-hover="background:#f1f5f9"><span class="msi" style="font-size:16px;color:#94a3b8">code</span>Get HTML</button>
+                  <button type="button" onClick="{{ f.onSetLogo }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#475569;cursor:pointer;text-align:left" style-hover="background:#f1f5f9"><span class="msi" style="font-size:16px;color:#94a3b8">open_with</span>Set as logo</button>
+                  <div style="height:1px;background:#eef2f6;margin:5px 0"></div>
+                  <button type="button" onClick="{{ f.onRename }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#475569;cursor:pointer;text-align:left" style-hover="background:#f1f5f9"><span class="msi" style="font-size:16px;color:#94a3b8">edit</span>Rename</button>
+                  <button type="button" onClick="{{ f.onDownload }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#475569;cursor:pointer;text-align:left" style-hover="background:#f1f5f9"><span class="msi" style="font-size:16px;color:#94a3b8">download</span>Download</button>
+                  <button type="button" onClick="{{ f.onMove }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#475569;cursor:pointer;text-align:left" style-hover="background:#f1f5f9"><span class="msi" style="font-size:16px;color:#94a3b8">drive_file_move</span>Move</button>
+                  <div style="height:1px;background:#eef2f6;margin:5px 0"></div>
+                  <button type="button" onClick="{{ f.onDelete }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#dc2626;cursor:pointer;text-align:left" style-hover="background:#fee2e2"><span class="msi" style="font-size:16px">delete</span>Delete</button>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showList }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:0 20px 20px 20px">
+          <div style="display:grid;grid-template-columns:36px 48px minmax(140px,1fr) minmax(64px,90px) minmax(56px,90px) minmax(0,110px) minmax(78px,110px) 40px;align-items:center;gap:8px;padding:10px 8px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;background:#fff;z-index:10">
+            <span></span><span></span>
+            <span style="font-size:12px;font-weight:600;color:#64748b">Name</span>
+            <span style="font-size:12px;font-weight:600;color:#64748b">Type</span>
+            <span style="font-size:12px;font-weight:600;color:#64748b">Size</span>
+            <span style="font-size:12px;font-weight:600;color:#64748b">Resolution</span>
+            <span style="font-size:12px;font-weight:600;color:#64748b">Uploaded</span>
+            <span></span>
+          </div>
+          <sc-for list="{{ files }}" as="f" hint-placeholder-count="10">
+            <div style="position:relative;display:grid;grid-template-columns:36px 48px minmax(140px,1fr) minmax(64px,90px) minmax(56px,90px) minmax(0,110px) minmax(78px,110px) 40px;align-items:center;gap:8px;padding:7px 8px;border-bottom:1px solid #eef2f6;background:{{ f.rowBg }}" style-hover="background:#f8fafc">
+              <button type="button" onClick="{{ f.onToggleSel }}" title="Select" style="width:18px;height:18px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;background:{{ f.checkBg }};border:1px solid {{ f.checkBorder }}">
+                <sc-if value="{{ f.sel }}" hint-placeholder-val="{{ false }}"><span class="msi" style="font-size:14px;color:#fff">check</span></sc-if>
+              </button>
+              <div onClick="{{ f.onOpen }}" style="width:40px;height:32px;border-radius:4px;background:repeating-linear-gradient(45deg,#f8fafc,#f8fafc 5px,#f1f5f9 5px,#f1f5f9 10px);border:1px solid #eef2f6;display:flex;align-items:center;justify-content:center;cursor:pointer">
+                <span class="msi" style="font-size:17px;color:#94a3b8">{{ f.icon }}</span>
+              </div>
+              <span onClick="{{ f.onOpen }}" style="font-size:13px;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer">{{ f.name }}</span>
+              <span style="font-size:12.5px;color:#64748b">{{ f.typeLabel }}</span>
+              <span style="font-size:12.5px;color:#64748b">{{ f.size }}</span>
+              <span style="font-size:12.5px;color:#64748b">{{ f.res }}</span>
+              <span style="font-size:12.5px;color:#64748b">{{ f.uploaded }}</span>
+              <button type="button" onClick="{{ f.onMenu }}" title="More actions" style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:transparent;border:none;border-radius:6px;color:#94a3b8;cursor:pointer" style-hover="background:#f1f5f9;color:#475569">
+                <span class="msi" style="font-size:18px">more_vert</span>
+              </button>
+              <sc-if value="{{ f.menuOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;right:34px;top:34px;z-index:50;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 10px 28px rgba(15,23,42,0.16);padding:6px 0;width:184px">
+                  <button type="button" onClick="{{ f.onView }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#475569;cursor:pointer;text-align:left" style-hover="background:#f1f5f9"><span class="msi" style="font-size:16px;color:#94a3b8">info</span>View details</button>
+                  <button type="button" onClick="{{ f.onGetLink }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#475569;cursor:pointer;text-align:left" style-hover="background:#f1f5f9"><span class="msi" style="font-size:16px;color:#94a3b8">link</span>Get link</button>
+                  <button type="button" onClick="{{ f.onRename }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#475569;cursor:pointer;text-align:left" style-hover="background:#f1f5f9"><span class="msi" style="font-size:16px;color:#94a3b8">edit</span>Rename</button>
+                  <button type="button" onClick="{{ f.onDownload }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#475569;cursor:pointer;text-align:left" style-hover="background:#f1f5f9"><span class="msi" style="font-size:16px;color:#94a3b8">download</span>Download</button>
+                  <button type="button" onClick="{{ f.onMove }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#475569;cursor:pointer;text-align:left" style-hover="background:#f1f5f9"><span class="msi" style="font-size:16px;color:#94a3b8">drive_file_move</span>Move</button>
+                  <div style="height:1px;background:#eef2f6;margin:5px 0"></div>
+                  <button type="button" onClick="{{ f.onDelete }}" style="display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;background:transparent;border:none;font-family:inherit;font-size:13px;color:#dc2626;cursor:pointer;text-align:left" style-hover="background:#fee2e2"><span class="msi" style="font-size:16px">delete</span>Delete</button>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ dragging }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:12px;z-index:80;background:rgba(27,135,230,0.06);border:2px dashed #1b87e6;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none">
+          <span class="msi" style="font-size:44px;color:#1b87e6">upload</span>
+          <span style="font-size:15px;font-weight:500;color:#1b87e6">Drop files to upload</span>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+
+  <!-- ============ DETAILS PANEL ============ -->
+  <sc-if value="{{ hasDetails }}" hint-placeholder-val="{{ false }}">
+    <aside style="width:320px;flex-shrink:0;border-left:1px solid #e5e9ef;background:#fff;display:flex;flex-direction:column;min-height:0" data-screen-label="File details">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #eef2f6">
+        <span style="font-size:14px;font-weight:600;color:#1e293b">File details</span>
+        <button type="button" onClick="{{ closeDetails }}" title="Close" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:transparent;border:none;border-radius:6px;color:#94a3b8;cursor:pointer" style-hover="background:#f1f5f9;color:#475569">
+          <span class="msi" style="font-size:18px">close</span>
+        </button>
+      </div>
+      <div style="flex:1;overflow-y:auto;min-height:0">
+        <div style="height:170px;background:repeating-linear-gradient(45deg,#f8fafc,#f8fafc 8px,#f1f5f9 8px,#f1f5f9 16px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border-bottom:1px solid #eef2f6">
+          <span class="msi" style="font-size:44px;color:#94a3b8">{{ detailsIcon }}</span>
+          <span style="font-family:monospace;font-size:11px;color:#94a3b8">{{ detailsTypeLabel }} preview</span>
+        </div>
+        <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+          <div style="font-size:13.5px;font-weight:500;color:#1e293b;word-break:break-all">{{ detailsName }}</div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <span style="font-size:11.5px;font-weight:600;letter-spacing:0.04em;color:#94a3b8;text-transform:uppercase">URL</span>
+            <div style="display:flex;gap:6px">
+              <input type="text" readOnly="{{ true }}" value="{{ detailsUrl }}" style="flex:1;min-width:0;height:30px;padding:0 8px;border:1px solid #d5dde6;border-radius:6px;font-family:monospace;font-size:11px;color:#475569;background:#f8fafc;outline:none">
+              <button type="button" onClick="{{ copyDetailsUrl }}" title="Copy link" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:#fff;border:1px solid #d5dde6;border-radius:6px;color:#64748b;cursor:pointer;flex-shrink:0" style-hover="border-color:#1b87e6;color:#1b87e6">
+                <span class="msi" style="font-size:16px">content_copy</span>
+              </button>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 12px">
+            <sc-for list="{{ detailsMeta }}" as="m" hint-placeholder-count="4">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:11.5px;font-weight:600;letter-spacing:0.04em;color:#94a3b8;text-transform:uppercase">{{ m.label }}</span>
+                <span style="font-size:13px;color:#334155">{{ m.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="height:1px;background:#eef2f6"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <sc-for list="{{ detailsActions }}" as="da" hint-placeholder-count="6">
+              <button type="button" onClick="{{ da.onClick }}" style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 10px;background:#fff;border:1px solid #d5dde6;border-radius:6px;font-family:inherit;font-size:12.5px;cursor:pointer;color:{{ da.color }}" style-hover="border-color:#1b87e6;background:#f6fafe">
+                <span class="msi" style="font-size:16px">{{ da.icon }}</span>
+                {{ da.label }}
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </sc-if>
+
+  <!-- ============ MODALS ============ -->
+  <sc-if value="{{ showCreateFolder }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(15,23,42,0.4);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding-top:14vh">
+      <div onClick="{{ stopProp }}" style="background:#fff;border-radius:10px;width:420px;max-width:calc(100vw - 48px);box-shadow:0 24px 60px rgba(15,23,42,0.25)" data-screen-label="Create new folder">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #eef2f6">
+          <span style="font-size:16px;font-weight:600;color:#1e293b">Create new folder</span>
+          <button type="button" onClick="{{ closeModal }}" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:transparent;border:none;border-radius:6px;color:#94a3b8;cursor:pointer" style-hover="background:#f1f5f9;color:#475569"><span class="msi" style="font-size:18px">close</span></button>
+        </div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:6px">
+          <label style="font-size:12.5px;font-weight:500;color:#475569">Folder name</label>
+          <input type="text" value="{{ newFolderName }}" onChange="{{ onNewFolderName }}" onKeyDown="{{ onNewFolderKey }}" autoFocus="{{ true }}" placeholder="e.g. Brand assets" style="height:34px;padding:0 10px;border:1px solid #d5dde6;border-radius:6px;font-family:inherit;font-size:13px;color:#334155;outline:none" style-focus="border-color:#1b87e6;box-shadow:0 0 0 3px rgba(27,135,230,0.12)">
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid #eef2f6">
+          <button type="button" onClick="{{ closeModal }}" style="height:34px;padding:0 14px;background:#fff;border:1px solid #d5dde6;border-radius:6px;font-family:inherit;font-size:13px;color:#475569;cursor:pointer" style-hover="border-color:#94a3b8">Cancel</button>
+          <button type="button" onClick="{{ createFolder }}" style="height:34px;padding:0 14px;background:#1b87e6;border:none;border-radius:6px;font-family:inherit;font-size:13px;font-weight:500;color:#fff;cursor:pointer" style-hover="background:#1570c2">Create folder</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showShare }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(15,23,42,0.4);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding-top:12vh">
+      <div onClick="{{ stopProp }}" style="background:#fff;border-radius:10px;width:460px;max-width:calc(100vw - 48px);box-shadow:0 24px 60px rgba(15,23,42,0.25)" data-screen-label="Folder sharing">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #eef2f6">
+          <span style="font-size:16px;font-weight:600;color:#1e293b">Folder sharing</span>
+          <button type="button" onClick="{{ closeModal }}" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:transparent;border:none;border-radius:6px;color:#94a3b8;cursor:pointer" style-hover="background:#f1f5f9;color:#475569"><span class="msi" style="font-size:18px">close</span></button>
+        </div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:13.5px;font-weight:500;color:#1e293b">Share this folder</span>
+              <span style="font-size:12.5px;color:#64748b">{{ shareHint }}</span>
+            </div>
+            <button type="button" onClick="{{ toggleShareOn }}" role="switch" style="position:relative;width:40px;height:22px;border-radius:999px;border:none;cursor:pointer;flex-shrink:0;transition:background 0.15s;background:{{ shareTrackBg }}">
+              <span style="position:absolute;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,0.3);transition:left 0.15s;left:{{ shareKnobLeft }}"></span>
+            </button>
+          </div>
+          <sc-if value="{{ shareOn }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <label style="font-size:12.5px;font-weight:500;color:#475569">Share with teams</label>
+                <input type="text" placeholder="Type a team name…" style="height:34px;padding:0 10px;border:1px solid #d5dde6;border-radius:6px;font-family:inherit;font-size:13px;color:#334155;outline:none" style-focus="border-color:#1b87e6;box-shadow:0 0 0 3px rgba(27,135,230,0.12)">
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <label style="font-size:12.5px;font-weight:500;color:#475569">Share with users</label>
+                <input type="text" placeholder="Type an email address…" style="height:34px;padding:0 10px;border:1px solid #d5dde6;border-radius:6px;font-family:inherit;font-size:13px;color:#334155;outline:none" style-focus="border-color:#1b87e6;box-shadow:0 0 0 3px rgba(27,135,230,0.12)">
+              </div>
+            </div>
+          </sc-if>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid #eef2f6">
+          <button type="button" onClick="{{ closeModal }}" style="height:34px;padding:0 14px;background:#fff;border:1px solid #d5dde6;border-radius:6px;font-family:inherit;font-size:13px;color:#475569;cursor:pointer" style-hover="border-color:#94a3b8">Cancel</button>
+          <button type="button" onClick="{{ saveShare }}" style="height:34px;padding:0 14px;background:#1b87e6;border:none;border-radius:6px;font-family:inherit;font-size:13px;font-weight:500;color:#fff;cursor:pointer" style-hover="background:#1570c2">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showMove }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(15,23,42,0.4);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding-top:14vh">
+      <div onClick="{{ stopProp }}" style="background:#fff;border-radius:10px;width:420px;max-width:calc(100vw - 48px);box-shadow:0 24px 60px rgba(15,23,42,0.25)" data-screen-label="Move files">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #eef2f6">
+          <span style="font-size:16px;font-weight:600;color:#1e293b">{{ moveTitle }}</span>
+          <button type="button" onClick="{{ closeModal }}" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:transparent;border:none;border-radius:6px;color:#94a3b8;cursor:pointer" style-hover="background:#f1f5f9;color:#475569"><span class="msi" style="font-size:18px">close</span></button>
+        </div>
+        <div style="padding:12px;display:flex;flex-direction:column;gap:2px;max-height:300px;overflow-y:auto">
+          <sc-for list="{{ moveTargets }}" as="mt" hint-placeholder-count="3">
+            <button type="button" onClick="{{ mt.onSelect }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:transparent;border:none;border-radius:8px;font-family:inherit;font-size:13.5px;color:#334155;cursor:pointer;text-align:left" style-hover="background:#f1f5f9">
+              <span class="msi" style="font-size:18px;color:#94a3b8">folder</span>
+              <span style="flex:1">{{ mt.name }}</span>
+              <span class="msi" style="font-size:16px;color:#cbd5e1">chevron_right</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Upload progress -->
+  <sc-if value="{{ hasUploads }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;right:20px;bottom:20px;z-index:120;width:320px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 16px 40px rgba(15,23,42,0.2);overflow:hidden" data-screen-label="Upload progress">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-bottom:1px solid #eef2f6">
+        <span style="font-size:13px;font-weight:600;color:#1e293b">{{ uploadHeader }}</span>
+        <span class="msi" style="font-size:16px;color:#94a3b8">expand_more</span>
+      </div>
+      <sc-for list="{{ uploads }}" as="u" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;gap:6px;padding:10px 14px;border-bottom:1px solid #f1f5f9">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="msi" style="font-size:17px;color:#94a3b8">{{ u.icon }}</span>
+            <span style="flex:1;min-width:0;font-size:12.5px;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ u.name }}</span>
+            <sc-if value="{{ u.done }}" hint-placeholder-val="{{ false }}"><span class="msi" style="font-size:17px;color:#16a34a;font-variation-settings:'FILL' 1,'wght' 400">check_circle</span></sc-if>
+            <sc-if value="{{ u.pending }}" hint-placeholder-val="{{ true }}"><span style="font-size:11.5px;color:#94a3b8">{{ u.pctLabel }}</span></sc-if>
+          </div>
+          <div style="height:4px;background:#e2e8f0;border-radius:999px;overflow:hidden">
+            <div style="height:100%;background:#1b87e6;border-radius:999px;transition:width 0.15s;width:{{ u.pctWidth }}"></div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- Toast -->
+  <sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:150;background:#1e293b;color:#fff;font-size:13px;padding:10px 18px;border-radius:8px;box-shadow:0 10px 30px rgba(15,23,42,0.35);display:flex;align-items:center;gap:8px;white-space:nowrap">
+      <span class="msi" style="font-size:16px;color:#4ade80">check_circle</span>
+      {{ toast }}
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultView&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;grid&quot;, &quot;options&quot;: [&quot;grid&quot;, &quot;list&quot;], &quot;tsType&quot;: &quot;'grid' | 'list'&quot;, &quot;section&quot;: &quot;Behavior&quot;}, &quot;showStoragePanel&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Behavior&quot;}}">
+class Component extends DCLogic {
+  state = {
+    view: null, folder: 'my', search: '', filter: 'All files', filterOpen: false,
+    menuId: null, detailsId: null, modal: null, moveIds: null,
+    selected: {}, renamingId: null, renameVal: '', newFolderName: '',
+    shareOn: false, dragging: 0, uploads: [], toast: null,
+    folders: [
+      { id: 'brand', name: 'Brand Assets' },
+      { id: 'ali-tyson', name: 'Ali vs Tyson Campaign' },
+    ],
+    files: [
+      { id: 1, name: 'SAR LOGO-2021.jpg', type: 'image', size: '696 KB', res: '731 × 447', uploaded: 'Jul 02, 2026', folder: 'my' },
+      { id: 2, name: 'SAR LOGO-2021 (1).jpg', type: 'image', size: '696 KB', res: '731 × 447', uploaded: 'Jul 02, 2026', folder: 'my' },
+      { id: 3, name: 'HPE-logo-full-clr-pos-rgb-survey-14.png', type: 'image', size: '128 KB', res: '1200 × 503', uploaded: 'Jun 28, 2026', folder: 'my' },
+      { id: 4, name: 'ai-icon.png', type: 'image', size: '42 KB', res: '512 × 512', uploaded: 'Jun 25, 2026', folder: 'my' },
+      { id: 5, name: 'liali.png', type: 'image', size: '1.2 MB', res: '1080 × 1080', uploaded: 'Jun 21, 2026', folder: 'my' },
+      { id: 6, name: 'Monosnap-Ready-to-Sell---Advance-Quotas.png', type: 'image', size: '864 KB', res: '1440 × 900', uploaded: 'Jun 18, 2026', folder: 'my' },
+      { id: 7, name: 'heatmpa-fgt.png', type: 'image', size: '733 KB', res: '960 × 1200', uploaded: 'Jun 12, 2026', folder: 'my' },
+      { id: 8, name: 'heatmap_4141119_2084451.png', type: 'image', size: '733 KB', res: '960 × 1200', uploaded: 'Jun 12, 2026', folder: 'my' },
+      { id: 9, name: 'Gemini_Generated_Image_7tg5mj7tg.png', type: 'image', size: '2.1 MB', res: '2048 × 2048', uploaded: 'Jun 08, 2026', folder: 'my' },
+      { id: 10, name: 'mayweather-presser.jpg', type: 'image', size: '512 KB', res: '1280 × 720', uploaded: 'May 30, 2026', folder: 'ali-tyson' },
+      { id: 11, name: 'confused-cat.png', type: 'image', size: '388 KB', res: '1024 × 1024', uploaded: 'May 27, 2026', folder: 'my' },
+      { id: 12, name: 'ali-1966-archive.jpg', type: 'image', size: '244 KB', res: '800 × 1000', uploaded: 'May 22, 2026', folder: 'ali-tyson' },
+      { id: 13, name: 'fight-night-intro.mp4', type: 'video', size: '24.6 MB', res: '1920 × 1080', uploaded: 'May 18, 2026', folder: 'ali-tyson' },
+      { id: 14, name: 'brand-guidelines.pdf', type: 'doc', size: '3.4 MB', res: '—', uploaded: 'May 12, 2026', folder: 'my' },
+      { id: 15, name: 'FiraSans-Regular.ttf', type: 'font', size: '418 KB', res: '—', uploaded: 'May 05, 2026', folder: 'my' },
+    ],
+    nextId: 100,
+  };
+
+  componentDidMount() {
+    this._docClick = () => {
+      if (this.state.menuId !== null || this.state.filterOpen) this.setState({ menuId: null, filterOpen: false });
+    };
+    document.addEventListener('click', this._docClick);
+  }
+  componentWillUnmount() {
+    document.removeEventListener('click', this._docClick);
+    clearInterval(this._uploadTimer);
+    clearTimeout(this._toastTimer);
+    clearTimeout(this._uploadDoneTimer);
+  }
+
+  showToast(msg) {
+    clearTimeout(this._toastTimer);
+    this.setState({ toast: msg });
+    this._toastTimer = setTimeout(() => this.setState({ toast: null }), 2500);
+  }
+
+  typeMeta(type) {
+    return {
+      image: { icon: 'image', label: 'image' },
+      video: { icon: 'movie', label: 'video' },
+      doc: { icon: 'description', label: 'document' },
+      font: { icon: 'font_download', label: 'font' },
+    }[type] || { icon: 'draft', label: 'file' };
+  }
+
+  matchesFilter(f) {
+    const flt = this.state.filter;
+    if (flt === 'All files') return true;
+    if (flt === 'Images') return f.type === 'image';
+    if (flt === 'Videos/Audio') return f.type === 'video';
+    if (flt === 'Documents') return f.type === 'doc';
+    if (flt === 'Fonts') return f.type === 'font';
+    return true;
+  }
+
+  visibleFiles() {
+    const q = this.state.search.trim().toLowerCase();
+    return this.state.files.filter((f) =>
+      f.folder === this.state.folder && this.matchesFilter(f) && (!q || f.name.toLowerCase().includes(q))
+    );
+  }
+
+  simulateUpload(names) {
+    const items = names.map((name, i) => ({
+      id: this.state.nextId + i, name, pct: 0,
+      type: name.endsWith('.mp4') ? 'video' : name.endsWith('.pdf') ? 'doc' : 'image',
+    }));
+    this.setState({ uploads: items, nextId: this.state.nextId + names.length, modal: null });
+    clearInterval(this._uploadTimer);
+    this._uploadTimer = setInterval(() => {
+      const ups = this.state.uploads.map((u) => ({ ...u, pct: Math.min(100, u.pct + 4 + Math.random() * 10) }));
+      this.setState({ uploads: ups });
+      if (ups.every((u) => u.pct >= 100)) {
+        clearInterval(this._uploadTimer);
+        this._uploadDoneTimer = setTimeout(() => {
+          const now = new Date();
+          const uploaded = now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+          const newFiles = this.state.uploads.map((u) => ({
+            id: u.id, name: u.name, type: u.type,
+            size: (Math.round((0.2 + Math.random() * 2) * 10) / 10) + ' MB',
+            res: u.type === 'image' ? '1600 × 900' : u.type === 'video' ? '1920 × 1080' : '—',
+            uploaded, folder: this.state.folder,
+          }));
+          this.setState({ uploads: [], files: [...newFiles, ...this.state.files] });
+          this.showToast(newFiles.length + (newFiles.length === 1 ? ' file uploaded' : ' files uploaded'));
+        }, 900);
+      }
+    }, 160);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const view = s.view ?? this.props.defaultView ?? 'grid';
+    const showStorage = this.props.showStoragePanel ?? true;
+    const stop = (e) => e.stopPropagation();
+    const setSt = (patch) => () => this.setState(patch);
+
+    const allCounts = {};
+    this.state.files.forEach((f) => { allCounts[f.folder] = (allCounts[f.folder] || 0) + 1; });
+
+    const navItems = [
+      { id: 'my', name: 'My Files', icon: 'home_storage', count: allCounts['my'] || 0 },
+      { id: 'common', name: 'Common Files', icon: 'folder_shared', count: allCounts['common'] || 0 },
+    ].map((n) => ({
+      ...n, active: s.folder === n.id, inactive: s.folder !== n.id,
+      onSelect: () => this.setState({ folder: n.id, selected: {}, detailsId: null }),
+    }));
+
+    const folderItems = s.folders.map((fo) => ({
+      ...fo, count: allCounts[fo.id] || 0,
+      active: s.folder === fo.id, inactive: s.folder !== fo.id,
+      onSelect: () => this.setState({ folder: fo.id, selected: {}, detailsId: null }),
+    }));
+
+    const vis = this.visibleFiles();
+    const files = vis.map((f) => {
+      const meta = this.typeMeta(f.type);
+      const sel = !!s.selected[f.id];
+      return {
+        ...f, icon: meta.icon, typeLabel: meta.label, sel,
+        checkBg: sel ? '#1b87e6' : '#fff',
+        checkBorder: sel ? '#1b87e6' : '#cbd5e1',
+        rowBg: sel ? '#eef7ff' : 'transparent',
+        menuOpen: s.menuId === f.id,
+        renaming: s.renamingId === f.id,
+        notRenaming: s.renamingId !== f.id,
+        onToggleSel: (e) => { e.stopPropagation(); const next = { ...s.selected }; if (next[f.id]) delete next[f.id]; else next[f.id] = true; this.setState({ selected: next }); },
+        onOpen: () => this.setState({ detailsId: f.id, menuId: null }),
+        onMenu: (e) => { e.stopPropagation(); this.setState({ menuId: s.menuId === f.id ? null : f.id, filterOpen: false }); },
+        onView: (e) => { e.stopPropagation(); this.setState({ detailsId: f.id, menuId: null }); },
+        onGetLink: (e) => { e.stopPropagation(); this.setState({ menuId: null }); this.showToast('Link copied to clipboard'); },
+        onGetHtml: (e) => { e.stopPropagation(); this.setState({ menuId: null }); this.showToast('HTML snippet copied'); },
+        onSetLogo: (e) => { e.stopPropagation(); this.setState({ menuId: null }); this.showToast('Set as survey logo'); },
+        onRename: (e) => { e.stopPropagation(); this.setState({ menuId: null, renamingId: f.id, renameVal: f.name }); },
+        onDownload: (e) => { e.stopPropagation(); this.setState({ menuId: null }); this.showToast('Downloading ' + f.name); },
+        onMove: (e) => { e.stopPropagation(); this.setState({ menuId: null, modal: 'move', moveIds: [f.id] }); },
+        onDelete: (e) => { e.stopPropagation(); this.setState({ menuId: null, files: s.files.filter((x) => x.id !== f.id), detailsId: s.detailsId === f.id ? null : s.detailsId }); this.showToast('"' + f.name + '" deleted'); },
+      };
+    });
+
+    const selCount = Object.keys(s.selected).length;
+    const isEmpty = vis.length === 0 && s.uploads.length === 0;
+    const folderName = s.folder === 'my' ? 'My Files' : s.folder === 'common' ? 'Common Files' : (s.folders.find((x) => x.id === s.folder) || {}).name || 'this folder';
+
+    const filterOptions = ['All files', 'Images', 'Videos/Audio', 'Documents', 'Fonts'].map((label) => ({
+      label, active: s.filter === label,
+      onSelect: (e) => { e.stopPropagation(); this.setState({ filter: label, filterOpen: false }); },
+    }));
+
+    const details = s.detailsId !== null ? s.files.find((f) => f.id === s.detailsId) : null;
+    const dMeta = details ? this.typeMeta(details.type) : { icon: '', label: '' };
+    const detailsUrl = details ? 'https://admin.questionpro.com/qp_userimages/sub-2/2084451/' + encodeURIComponent(details.name) : '';
+    const detailsActions = details ? [
+      { label: 'Get link', icon: 'link', color: '#475569', onClick: () => this.showToast('Link copied to clipboard') },
+      { label: 'Get HTML', icon: 'code', color: '#475569', onClick: () => this.showToast('HTML snippet copied') },
+      { label: 'Set as logo', icon: 'open_with', color: '#475569', onClick: () => this.showToast('Set as survey logo') },
+      { label: 'Download', icon: 'download', color: '#475569', onClick: () => this.showToast('Downloading ' + details.name) },
+      { label: 'Move', icon: 'drive_file_move', color: '#475569', onClick: () => this.setState({ modal: 'move', moveIds: [details.id] }) },
+      { label: 'Delete', icon: 'delete', color: '#dc2626', onClick: () => { this.setState({ files: s.files.filter((x) => x.id !== details.id), detailsId: null }); this.showToast('"' + details.name + '" deleted'); } },
+    ] : [];
+
+    const moveIds = s.moveIds || [];
+    const targets = [
+      { id: 'my', name: 'My Files' },
+      { id: 'common', name: 'Common Files' },
+      ...s.folders,
+    ].filter((t) => t.id !== s.folder).map((t) => ({
+      ...t,
+      onSelect: () => {
+        const idSet = {}; moveIds.forEach((id) => { idSet[id] = true; });
+        this.setState({
+          files: s.files.map((f) => (idSet[f.id] ? { ...f, folder: t.id } : f)),
+          modal: null, moveIds: null, selected: {}, detailsId: null,
+        });
+        this.showToast(moveIds.length + (moveIds.length === 1 ? ' file moved to ' : ' files moved to ') + t.name);
+      },
+    }));
+
+    const uploads = s.uploads.map((u) => {
+      const meta = this.typeMeta(u.type);
+      const pct = Math.round(u.pct);
+      return { ...u, icon: meta.icon, done: pct >= 100, pending: pct < 100, pctLabel: pct + '%', pctWidth: pct + '%' };
+    });
+    const allDone = uploads.length > 0 && uploads.every((u) => u.done);
+
+    return {
+      navItems, folderItems, showStorage,
+      onUpgrade: (e) => { e.preventDefault(); this.showToast('Upgrade options opened'); },
+      search: s.search,
+      onSearch: (e) => this.setState({ search: e.target.value }),
+      filterLabel: s.filter, filterOpen: s.filterOpen, filterOptions,
+      toggleFilterMenu: (e) => { e.stopPropagation(); this.setState({ filterOpen: !s.filterOpen, menuId: null }); },
+      setGridView: () => this.setState({ view: 'grid' }),
+      setListView: () => this.setState({ view: 'list' }),
+      gridBtnBg: view === 'grid' ? '#e8f2fc' : '#fff',
+      gridBtnColor: view === 'grid' ? '#1b87e6' : '#64748b',
+      listBtnBg: view === 'list' ? '#e8f2fc' : '#fff',
+      listBtnColor: view === 'list' ? '#1b87e6' : '#64748b',
+      pageLabel: vis.length === 0 ? '0 of 0' : '1–' + vis.length + ' of ' + vis.length,
+      openShare: setSt({ modal: 'share' }),
+      startUpload: () => this.simulateUpload(['ali-vs-tyson-poster-v2.png', 'sar-station-hero.jpg', 'sponsor-reel.mp4']),
+      hasSel: selCount > 0, selCount,
+      clearSel: setSt({ selected: {} }),
+      openMoveSelected: () => this.setState({ modal: 'move', moveIds: Object.keys(s.selected).map(Number) }),
+      downloadSelected: () => { this.showToast('Downloading ' + selCount + ' files'); this.setState({ selected: {} }); },
+      deleteSelected: () => { this.setState({ files: s.files.filter((f) => !s.selected[f.id]), selected: {}, detailsId: null }); this.showToast(selCount + ' files deleted'); },
+      files,
+      isEmpty, emptyTitle: 'No files in ' + folderName,
+      showGrid: !isEmpty && view === 'grid',
+      showList: !isEmpty && view === 'list',
+      renameVal: s.renameVal,
+      onRenameChange: (e) => this.setState({ renameVal: e.target.value }),
+      onRenameKey: (e) => {
+        if (e.key === 'Enter') {
+          const val = s.renameVal.trim();
+          if (val) this.setState({ files: s.files.map((f) => (f.id === s.renamingId ? { ...f, name: val } : f)), renamingId: null });
+          else this.setState({ renamingId: null });
+          this.showToast('File renamed');
+        }
+        if (e.key === 'Escape') this.setState({ renamingId: null });
+      },
+      dragging: s.dragging > 0,
+      onDragOver: (e) => { e.preventDefault(); if (!s.dragging) this.setState({ dragging: 1 }); },
+      onDragLeave: (e) => { if (e.target === e.currentTarget) this.setState({ dragging: 0 }); },
+      onDrop: (e) => {
+        e.preventDefault();
+        this.setState({ dragging: 0 });
+        const names = Array.from(e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : []).map((f) => f.name);
+        this.simulateUpload(names.length ? names : ['dropped-image.png']);
+      },
+      hasDetails: !!details, closeDetails: setSt({ detailsId: null }),
+      detailsName: details ? details.name : '', detailsIcon: dMeta.icon, detailsTypeLabel: dMeta.label,
+      detailsUrl,
+      copyDetailsUrl: () => { try { navigator.clipboard.writeText(detailsUrl); } catch (e) {} this.showToast('Link copied to clipboard'); },
+      detailsMeta: details ? [
+        { label: 'Type', value: dMeta.label },
+        { label: 'Size', value: details.size },
+        { label: 'Resolution', value: details.res },
+        { label: 'Uploaded', value: details.uploaded },
+      ] : [],
+      detailsActions,
+      showCreateFolder: s.modal === 'createFolder',
+      openCreateFolder: setSt({ modal: 'createFolder', newFolderName: '' }),
+      newFolderName: s.newFolderName,
+      onNewFolderName: (e) => this.setState({ newFolderName: e.target.value }),
+      onNewFolderKey: (e) => { if (e.key === 'Enter') this.doCreateFolder(); },
+      createFolder: () => this.doCreateFolder(),
+      showShare: s.modal === 'share',
+      shareOn: s.shareOn,
+      shareHint: s.shareOn ? 'Specific teams and users can access this folder.' : 'Off — only you can access this folder.',
+      shareTrackBg: s.shareOn ? '#1b87e6' : '#cbd5e1',
+      shareKnobLeft: s.shareOn ? '20px' : '2px',
+      toggleShareOn: () => this.setState({ shareOn: !s.shareOn }),
+      saveShare: () => { this.setState({ modal: null }); this.showToast('Sharing settings saved'); },
+      showMove: s.modal === 'move',
+      moveTitle: 'Move ' + moveIds.length + (moveIds.length === 1 ? ' file to…' : ' files to…'),
+      moveTargets: targets,
+      closeModal: setSt({ modal: null, moveIds: null }),
+      stopProp: stop,
+      hasUploads: uploads.length > 0, uploads,
+      uploadHeader: allDone ? 'Upload complete' : 'Uploading ' + uploads.length + ' files…',
+      hasToast: !!s.toast, toast: s.toast,
+    };
+  }
+
+  doCreateFolder() {
+    const name = this.state.newFolderName.trim();
+    if (!name) return;
+    const id = 'f' + Date.now();
+    this.setState({ folders: [...this.state.folders, { id, name }], modal: null, folder: id, selected: {}, detailsId: null });
+    this.showToast('Folder "' + name + '" created');
+  }
+}
+</script>
+</body>
+</html>

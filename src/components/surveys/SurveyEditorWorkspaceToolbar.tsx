@@ -41,6 +41,7 @@ type PublishMode = 'draft' | 'publish';
 function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null {
   if (tool === 'workspace') return `/surveys/${surveyId}`;
   if (tool === 'design' && surveyHasDesignTab(surveyId)) return `/surveys/${surveyId}/design`;
+  if (tool === 'media-library') return `/surveys/${surveyId}/media-library`;
   if (tool === 'languages') return `/surveys/${surveyId}/languages`;
   if (tool === 'finish-options') return `/surveys/${surveyId}/finish-options`;
   if (tool === 'advance-quotas') return `/surveys/${surveyId}/advance-quotas`;
@@ -51,6 +52,7 @@ function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null
 
 function getActiveTool(pathname: string, surveyId: number): SurveyWorkspaceTool {
   if (pathname === `/surveys/${surveyId}/design`) return 'design';
+  if (pathname === `/surveys/${surveyId}/media-library`) return 'media-library';
   if (pathname === `/surveys/${surveyId}/languages`) return 'languages';
   if (pathname === `/surveys/${surveyId}/finish-options`) return 'finish-options';
   if (pathname === `/surveys/${surveyId}/advance-quotas`) return 'advance-quotas';
@@ -215,6 +217,7 @@ export function SurveyEditorWorkspaceToolbar({
   const showPublishArea =
     activeTool !== 'advance-quotas' &&
     activeTool !== 'settings' &&
+    activeTool !== 'media-library' &&
     activeTool !== 'languages' &&
     activeTool !== 'finish-options' &&
     activeTool !== 'variables' &&

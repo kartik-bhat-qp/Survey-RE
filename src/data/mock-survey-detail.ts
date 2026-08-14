@@ -90,14 +90,19 @@ export const DEFAULT_VAN_WESTENDORP_QUESTION_TEXT = 'At what price do you —';
 
 export type ConjointDesignType = 'random' | 'prohibited' | 'fixed-tasks';
 
-export type ConjointFeatureType = 'Brand' | 'Price' | 'Size' | 'Other';
+export type ConjointFeatureType = 'Brand' | 'Cost/Price' | 'Other';
 
 export const CONJOINT_FEATURE_TYPE_OPTIONS: ConjointFeatureType[] = [
   'Brand',
-  'Price',
-  'Size',
+  'Cost/Price',
   'Other',
 ];
+
+export function normalizeConjointFeatureType(value: string): ConjointFeatureType {
+  if (value === 'Brand' || value === 'Cost/Price' || value === 'Other') return value;
+  if (value === 'Price') return 'Cost/Price';
+  return 'Other';
+}
 
 export const CONJOINT_DESIGN_TYPE_TABS: { id: ConjointDesignType; label: string }[] = [
   { id: 'random', label: 'Random' },
@@ -152,9 +157,9 @@ export function createDefaultConjointData(): SurveyQuestionConjoint {
   return {
     designType: 'random',
     features: [
-      createConjointFeature('Brand', 'Brand', ['Sony', 'LG', 'Vizio']),
+      createConjointFeature('Brand', 'Other', ['Sony', 'LG', 'Vizio']),
       createConjointFeature('Price', 'Other', ['USD 800', 'USD 1200', 'USD 1500']),
-      createConjointFeature('Size', 'Other', ['32"', '55"', '65"']),
+      createConjointFeature('Size', 'Other', ['32"', '36"', '45"']),
     ],
     taskCount: 2,
     conceptPerTask: 2,

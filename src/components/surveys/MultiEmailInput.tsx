@@ -19,6 +19,7 @@ interface MultiEmailInputProps {
   'aria-label'?: string;
   /** When provided, focus shows a grouped org-user picker under the field. */
   orgUsers?: NotificationOrgUser[];
+  fieldClassName?: string;
 }
 
 function splitEmailCandidates(raw: string): string[] {
@@ -34,6 +35,7 @@ export function MultiEmailInput({
   placeholder = 'Enter email addresses',
   'aria-label': ariaLabel = 'Email addresses',
   orgUsers,
+  fieldClassName,
 }: MultiEmailInputProps) {
   const { showToast } = useWuShowToast();
   const [draft, setDraft] = useState('');
@@ -185,7 +187,7 @@ export function MultiEmailInput({
   return (
     <div ref={rootRef} className={styles.root}>
       <div
-        className={styles.field}
+        className={fieldClassName ? `${styles.field} ${fieldClassName}` : styles.field}
         onMouseDown={(event) => {
           if ((event.target as HTMLElement).closest('button')) return;
           const input = event.currentTarget.querySelector('input');

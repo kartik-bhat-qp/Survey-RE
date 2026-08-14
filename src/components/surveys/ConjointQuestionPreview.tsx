@@ -59,7 +59,7 @@ export function ConjointQuestionPreview({ data }: ConjointQuestionPreviewProps) 
       <div className={styles.tableTools}>
         <span className={styles.addLink}>Add Feature</span>
         <span className={styles.bulkLinks}>
-          bulk edit features | bulk edit levels
+          Bulk Edit Features | Bulk Edit Levels
         </span>
       </div>
 
@@ -73,6 +73,7 @@ export function ConjointQuestionPreview({ data }: ConjointQuestionPreviewProps) 
         <span>Not Applicable Option</span>
       </div>
       <p className={styles.infoBanner}>
+        <span className={`wm-warning ${styles.infoIcon}`} aria-hidden />
         Conjoint questions require at least 2 features and 2 levels for each feature.
       </p>
     </div>
