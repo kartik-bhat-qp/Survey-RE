@@ -2416,6 +2416,18 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     [sections, toast, updateQuestionMatrix]
   );
 
+  const handleFlexMatrixColumnOptionsChange = useCallback(
+    (sectionId: string, questionId: string, columnId: string, options: string[]) => {
+      updateQuestionMatrix(sectionId, questionId, (matrix) => ({
+        ...matrix,
+        columns: matrix.columns.map((column) =>
+          column.id === columnId ? { ...column, options } : column
+        ),
+      }));
+    },
+    [updateQuestionMatrix]
+  );
+
   const handleBulkEditMatrixSave = useCallback(
     (lines: string[]) => {
       if (!bulkEditMatrixTarget) return;
@@ -4813,6 +4825,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 onAddRow={handleAddMatrixRow}
                                 onAddColumn={handleAddFlexMatrixColumn}
                                 onRemoveColumn={handleRemoveFlexMatrixColumn}
+                                onColumnOptionsChange={handleFlexMatrixColumnOptionsChange}
                                 onBulkEditRows={(secId, qId) =>
                                   setBulkEditMatrixTarget({
                                     sectionId: secId,

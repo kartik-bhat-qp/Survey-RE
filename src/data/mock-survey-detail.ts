@@ -370,6 +370,8 @@ export interface SurveyMatrixColumn {
   label: string;
   /** Input control for Complex Grid / Flex Matrix columns. */
   cellType?: FlexMatrixCellType;
+  /** Answer choices for Drop-down Menu (and similar) columns. */
+  options?: string[];
 }
 
 export interface SurveyMatrixRow {
@@ -755,6 +757,10 @@ export function createDefaultMatrixSpreadsheetMatrix(): SurveyMatrix {
 
 export const FLEX_MATRIX_TEXT_PLACEHOLDER = 'Answer text';
 export const FLEX_MATRIX_NUMERIC_PLACEHOLDER = 'Numeric Input';
+export const FLEX_MATRIX_NUMERIC_SLIDER_MIN = 0;
+export const FLEX_MATRIX_NUMERIC_SLIDER_MAX = 100;
+export const DEFAULT_FLEX_MATRIX_DROPDOWN_OPTIONS = ['Option 1', 'Option 2'] as const;
+export const DEFAULT_FLEX_MATRIX_RATING_SCALE_OPTIONS = ['1', '2', '3'] as const;
 
 const DEFAULT_FLEX_MATRIX_ROWS = ['Product Packaging', 'On-Time Arrival', 'Price'] as const;
 
@@ -777,11 +783,10 @@ export function defaultFlexMatrixColumnLabel(
   if (cellType === 'numeric') return 'Numeric Text Input';
   if (cellType === 'rank-order') return 'Rank Order';
   if (cellType === 'dropdown') return 'Drop-down Menu';
-  if (cellType === 'rating-scale') return 'Rating Scale';
   if (cellType === 'numeric-slider') return 'Numeric Slider';
   const namedCount = existingColumns.filter((column) => {
     const type = resolveFlexMatrixCellType(column);
-    return type === 'radio' || type === 'checkbox';
+    return type === 'radio' || type === 'checkbox' || type === 'rating-scale';
   }).length;
   return `Column ${namedCount + 1}`;
 }
@@ -790,11 +795,29 @@ export function createFlexMatrixColumn(
   cellType: FlexMatrixCellType,
   existingColumns: SurveyMatrixColumn[] = []
 ): SurveyMatrixColumn {
+  const options =
+    cellType === 'dropdown'
+      ? [...DEFAULT_FLEX_MATRIX_DROPDOWN_OPTIONS]
+      : cellType === 'rating-scale'
+        ? [...DEFAULT_FLEX_MATRIX_RATING_SCALE_OPTIONS]
+        : undefined;
+
   return {
     id: `fx-col-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     label: defaultFlexMatrixColumnLabel(cellType, existingColumns),
     cellType,
+    ...(options ? { options } : {}),
   };
+}
+
+export function resolveFlexMatrixColumnOptions(column: SurveyMatrixColumn): string[] {
+  if (column.options && column.options.length > 0) {
+    return column.options;
+  }
+  if (resolveFlexMatrixCellType(column) === 'rating-scale') {
+    return [...DEFAULT_FLEX_MATRIX_RATING_SCALE_OPTIONS];
+  }
+  return [...DEFAULT_FLEX_MATRIX_DROPDOWN_OPTIONS];
 }
 
 export function createDefaultFlexMatrix(): SurveyMatrix {
