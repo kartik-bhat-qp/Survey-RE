@@ -140,6 +140,11 @@ export function SurveyEditorPhaseTabs() {
     deferOpenChange(setToolsMenuOpen, false);
   }
 
+  function handleOpenStaleCookiesPreview() {
+    deferOpenChange(setToolsMenuOpen, false);
+    window.open('/stale-cookies', '_blank', 'noopener,noreferrer');
+  }
+
   function handleDownloadAction(label: string) {
     showToast({ message: label, variant: 'success' });
     deferOpenChange(setDownloadMenuOpen, false);
@@ -300,6 +305,12 @@ export function SurveyEditorPhaseTabs() {
                     onSelect={handleOpenUpdateQuestionCodes}
                   >
                     Update Question Codes
+                  </WuMenuItem>
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
+                    onSelect={handleOpenStaleCookiesPreview}
+                  >
+                    Stale Cookies
                   </WuMenuItem>
                 </WuMenuItemGroup>
                 <WuMenuItemGroup

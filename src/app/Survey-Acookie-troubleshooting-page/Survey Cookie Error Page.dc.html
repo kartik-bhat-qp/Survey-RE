@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Fira Sans';src:local('Fira Sans');}
+body{margin:0;background:#f0f2f5;font-family:'Fira Sans',Arial,sans-serif;}
+</style>
+<script src="./image-slot.js"></script>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;padding:0 15%;box-sizing:border-box;">
+  <div style="width:100%;background:#ffffff;padding:48px 64px;box-sizing:border-box;">
+
+    <div style="display:flex;align-items:center;gap:40px;margin-bottom:32px;">
+      <div style="display:flex;align-items:flex-start;gap:16px;flex:1;">
+        <div style="flex-shrink:0;width:40px;height:40px;border-radius:50%;background:#eaf3fd;display:flex;align-items:center;justify-content:center;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#1b87e6;"></div>
+        </div>
+        <div>
+          <h1 style="margin:0 0 8px 0;font-size:22px;font-weight:600;color:#1b3380;line-height:1.3;">This survey link needs a fresh page load</h1>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:#4a5568;">This usually happens when your browser holds on to an old cookie from a previous survey session. Reload the page below to clear it.</p>
+        </div>
+      </div>
+      <div style="flex-shrink:0;width:260px;height:170px;">
+        <svg viewBox="0 0 260 170" width="260" height="170" role="img" aria-label="Browser with a cookie being refreshed">
+          <rect x="20" y="18" width="180" height="128" rx="8" fill="#eaf3fd"></rect>
+          <rect x="20" y="18" width="180" height="28" rx="8" fill="#1b3380"></rect>
+          <rect x="20" y="38" width="180" height="8" fill="#1b3380"></rect>
+          <circle cx="36" cy="32" r="4" fill="#7ea4d9"></circle>
+          <circle cx="50" cy="32" r="4" fill="#7ea4d9"></circle>
+          <circle cx="64" cy="32" r="4" fill="#7ea4d9"></circle>
+          <rect x="80" y="26" width="108" height="12" rx="6" fill="#42548f"></rect>
+          <rect x="38" y="62" width="100" height="10" rx="5" fill="#c3ddf5"></rect>
+          <rect x="38" y="82" width="130" height="10" rx="5" fill="#c3ddf5"></rect>
+          <rect x="38" y="102" width="80" height="10" rx="5" fill="#c3ddf5"></rect>
+          <circle cx="196" cy="112" r="38" fill="#f0b452"></circle>
+          <circle cx="182" cy="100" r="5" fill="#8a5a1e"></circle>
+          <circle cx="205" cy="96" r="6" fill="#8a5a1e"></circle>
+          <circle cx="212" cy="120" r="5" fill="#8a5a1e"></circle>
+          <circle cx="190" cy="126" r="6" fill="#8a5a1e"></circle>
+          <circle cx="199" cy="111" r="3" fill="#8a5a1e"></circle>
+          <path d="M 226 60 A 26 26 0 1 0 232 86" fill="none" stroke="#1b87e6" stroke-width="7" stroke-linecap="round"></path>
+          <path d="M 222 46 L 228 62 L 211 64 Z" fill="#1b87e6"></path>
+        </svg>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:36px;">
+      <button onclick="{{ onReload }}" style="background:#1b87e6;color:#fff;border:none;padding:12px 28px;font-size:15px;font-weight:600;border-radius:4px;cursor:pointer;font-family:inherit;" style-hover="background:#1671c4;">Reload the survey</button>
+      <span style="font-size:13px;color:#8a94a6;">Clears local site data for this page, then tries again</span>
+    </div>
+
+    <div style="border-top:1px solid #e8eaf0;padding-top:28px;">
+      <button onclick="{{ toggleSteps }}" style="display:flex;align-items:center;gap:8px;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;">
+        <span style="font-size:14px;font-weight:600;color:#1b3380;">If that did not work, try clearing cookies manually</span>
+        <span style="font-size:12px;color:#1b87e6;transform:{{ arrowRotate }};display:inline-block;transition:transform .15s;">v</span>
+      </button>
+
+      <sc-if value="{{ stepsOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:20px;">
+          <div style="display:flex;gap:6px;margin-bottom:16px;">
+            <sc-for list="{{ platforms }}" as="p" hint-placeholder-count="2">
+              <button onclick="{{ p.select }}" style="background:{{ p.bg }};color:{{ p.color }};border:none;padding:6px 16px;font-size:13px;font-weight:600;border-radius:14px;cursor:pointer;font-family:inherit;">{{ p.name }}</button>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:4px;margin-bottom:16px;">
+            <sc-for list="{{ browsers }}" as="b" hint-placeholder-count="3">
+              <button onclick="{{ b.select }}" style="background:{{ b.bg }};color:{{ b.color }};border:none;padding:8px 16px;font-size:13px;font-weight:600;border-radius:4px 4px 0 0;cursor:pointer;font-family:inherit;">{{ b.name }}</button>
+            </sc-for>
+          </div>
+          <div style="background:#f7f9fc;border-radius:0 4px 4px 4px;padding:20px 24px;">
+            <ol style="margin:0;padding-left:20px;color:#3a4256;font-size:14px;line-height:1.9;">
+              <sc-for list="{{ activeSteps }}" as="step" hint-placeholder-count="4">
+                <li>{{ step }}</li>
+              </sc-for>
+            </ol>
+          </div>
+          <p style="margin:16px 0 0 0;font-size:13px;color:#8a94a6;">Or open the survey link in a private/incognito window, which always starts with a clean slate.</p>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:8px;margin-top:24px;padding-left:calc(15% + 64px);color:#8a94a6;font-size:13px;">
+    <span>Powered by</span>
+    <span style="color:#1b87e6;font-weight:600;">QuestionPro</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { stepsOpen: false, activeBrowser: "Chrome", activePlatform: "Desktop" };
+    this.steps = {
+      Chrome: {
+        Desktop: [
+          "Click the three dots in the top-right corner, then Settings.",
+          "Go to Privacy and security, then Clear browsing data.",
+          "Select Cookies and other site data, set range to All time, then Clear data.",
+          "Reload the survey link."
+        ],
+        Mobile: [
+          "Tap the three dots menu, then Settings.",
+          "Tap Privacy and security, then Clear browsing data.",
+          "Select Cookies, site data, set range to All time, then tap Clear data.",
+          "Reload the survey link."
+        ]
+      },
+      Safari: {
+        Desktop: [
+          "Open Safari Settings, then Privacy.",
+          "Click Manage Website Data, search for the survey domain, and remove it.",
+          "Or enable the Develop menu in Advanced settings, then use Develop, Empty Caches.",
+          "Reload the survey link."
+        ],
+        Mobile: [
+          "On the device, open Settings, then scroll down to Safari.",
+          "Tap Advanced, then Website Data.",
+          "Search for the survey domain and swipe to remove it, or tap Remove All Website Data.",
+          "Reload the survey link."
+        ]
+      },
+      Firefox: {
+        Desktop: [
+          "Click the menu icon in the top-right corner, then Settings.",
+          "Go to Privacy and Security, then Cookies and Site Data, then Clear Data.",
+          "Check Cookies and Site Data, then click Clear.",
+          "Reload the survey link."
+        ],
+        Mobile: [
+          "Tap the three dots menu, then Settings.",
+          "Tap Delete browsing data.",
+          "Select Cookies and site data, then tap Delete browsing data.",
+          "Reload the survey link."
+        ]
+      }
+    };
+    this.toggleSteps = this.toggleSteps.bind(this);
+    this.onReload = this.onReload.bind(this);
+  }
+
+  selectPlatform(name) {
+    this.setState({ activePlatform: name });
+  }
+
+  toggleSteps() {
+    this.setState({ stepsOpen: !this.state.stepsOpen });
+  }
+
+  selectBrowser(name) {
+    this.setState({ activeBrowser: name });
+  }
+
+  onReload() {
+    try {
+      var cookies = document.cookie.split(";");
+      for (var i = 0; i < cookies.length; i++) {
+        var name = cookies[i].split("=")[0].trim();
+        if (name) {
+          document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+        }
+      }
+      if (window.localStorage) { window.localStorage.clear(); }
+      if (window.sessionStorage) { window.sessionStorage.clear(); }
+    } catch (e) {}
+    window.location.reload();
+  }
+
+  renderVals() {
+    var names = ["Chrome", "Safari", "Firefox"];
+    var active = this.state.activeBrowser;
+    var activePlatform = this.state.activePlatform;
+    var self = this;
+    var browsers = names.map(function (name) {
+      return {
+        name: name,
+        bg: name === active ? "#f7f9fc" : "#eef1f6",
+        color: name === active ? "#1b87e6" : "#6b7280",
+        select: function () { self.selectBrowser(name); }
+      };
+    });
+    var platforms = ["Desktop", "Mobile"].map(function (name) {
+      return {
+        name: name,
+        bg: name === activePlatform ? "#1b87e6" : "#eef1f6",
+        color: name === activePlatform ? "#fff" : "#6b7280",
+        select: function () { self.selectPlatform(name); }
+      };
+    });
+    return {
+      stepsOpen: this.state.stepsOpen,
+      arrowRotate: this.state.stepsOpen ? "rotate(180deg)" : "rotate(0deg)",
+      toggleSteps: this.toggleSteps,
+      onReload: this.onReload,
+      browsers: browsers,
+      platforms: platforms,
+      activeSteps: this.steps[active][activePlatform]
+    };
+  }
+}
+</script>
+</body>
+</html>
