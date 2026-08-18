@@ -1,0 +1,15 @@
+transcript_id,respondent,question,response
+INT-041,Alex Chen,How was onboarding?,The first week was chaotic. We did not get credentials until day three and the walkthrough was a recorded webinar from 2023.
+INT-041,Alex Chen,What would you improve?,Give every new team a named admin and a single export format. Right now finance gets CSV and research gets XLSX and they never match.
+INT-041,Alex Chen,How often do you use the dashboard?,Daily in the morning. After 9am I barely open it unless a client asks for a number.
+INT-052,Priya Raman,How was onboarding?,Much smoother than last year. We were productive by day two.
+INT-052,Priya Raman,What would you improve?,The reporting exports. They land in three different formats and none of them match finance.
+INT-052,Priya Raman,How often do you use the dashboard?,A few times a week. I live in the raw data export more than the dashboard.
+INT-063,Sofia Alvarez,How was onboarding?,Fine until we hit languages. Nobody told us translations had to be requested separately.
+INT-063,Sofia Alvarez,What would you improve?,Search. I cannot find last quarter's transcript without guessing the file name.
+INT-063,Sofia Alvarez,Would you recommend us to a peer?,Yes with one caveat — only if they have an analyst who can clean the exports.
+INT-074,Marcus Williams,How was onboarding?,It took a full week. Too many dashboards and no source of truth.
+INT-074,Marcus Williams,What would you improve?,Keep the classic Analytics tab while rolling out Analytics 2.0. Advisors asked for both.
+INT-074,Marcus Williams,How often do you use the dashboard?,Weekly for the exec readout. Daily would be better if the numbers were trusted.
+INT-088,Lina Park,How was onboarding?,Managers wanted weekly pulse summaries instead of a quarterly dump. That was not in the kickoff.
+INT-088,Lina Park,Would you recommend us to a peer?,Not yet. The product is strong but the first 30 days still feel like a scavenger hunt.

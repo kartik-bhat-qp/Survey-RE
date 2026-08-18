@@ -48,7 +48,14 @@ export function SurveyAnalyticsHub({ detail }: SurveyAnalyticsHubProps) {
   const { setAnalyticsSelection } = useSurveyAnalyticsView();
   const [screen, setScreen] = useState<Analytics2ScreenId>('overview');
   const [navSearch, setNavSearch] = useState('');
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(
+      ANALYTICS_2_NAV.filter((section) => section.label !== 'Insights').map((section) => [
+        section.label,
+        true,
+      ])
+    )
+  );
   const [filterModalOpen, setFilterModalOpen] = useState(false);
 
   const toast = useCallback(

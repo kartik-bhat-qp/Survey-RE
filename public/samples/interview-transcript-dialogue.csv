@@ -1,0 +1,13 @@
+Speaker,Timestamp,Text
+Priya Raman (Researcher),00:00:04,"Thanks for making the time today, Daniel. I'll record this so I don't miss anything."
+Daniel Okafor,00:00:11,"No problem at all, happy to help."
+Priya Raman (Researcher),00:00:18,"To start, how do you currently share insights with your stakeholders?"
+Daniel Okafor,00:00:26,"Mostly PowerPoint. I export charts from the survey tool, paste them into slides, and then rewrite the takeaways by hand. It takes me most of a Friday."
+Daniel Okafor,00:00:44,"Sometimes I'll send a raw CSV to the analysts if they want to slice it themselves."
+Priya Raman (Researcher),00:01:02,"What is the most frustrating part of that process?"
+Daniel Okafor,00:01:09,"The rework. Every time the data refreshes I have to redo the slides, and there's no way to tell whether the numbers in last month's deck are still accurate."
+Priya Raman (Researcher),00:01:31,"Got it. How often do you need to combine data from more than one source?"
+Daniel Okafor,00:01:39,"Almost every study. We pull survey responses, support tickets, and NPS from a separate platform. Joining them is manual work in a spreadsheet."
+Priya Raman (Researcher),00:02:02,"Makes sense. What would a good dashboard need to have for you to trust it?"
+Daniel Okafor,00:02:11,"Clear filters, a visible last-refreshed timestamp, and the ability to click a number and see the responses behind it."
+Priya Raman (Researcher),00:02:29,"That's really helpful, thank you."

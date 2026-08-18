@@ -148,6 +148,22 @@ export const MOCK_HEADER_CATEGORIES: IWuAppHeaderMenuItem[] = [
       },
     ],
   },
+  {
+    name: 'Transcripts',
+    active: true,
+    logo: `${APP_NAV}/transcripts.svg`,
+    order: 6,
+    products: [
+      {
+        name: 'Transcripts',
+        icon: 'e308',
+        link: '/transcripts',
+        active: true,
+        logo: `${APP_NAV}/transcripts.svg`,
+        order: 1,
+      },
+    ],
+  },
 ];
 
 export const HEADER_PRODUCT_NAME = 'Business Intelligence';

@@ -1,0 +1,20 @@
+transcript,speaker,text
+Focus group Mumbai,Moderator,To start how was onboarding for your team?
+Focus group Mumbai,P3,Reliability is high. We have not had a major outage in two years.
+Focus group Mumbai,P6,Onboarding took forever. Too many dashboards. I never know which one is the source of truth.
+Focus group Mumbai,Moderator,Got it. What would you improve?
+Focus group Mumbai,P3,A single export. Finance and research should not be reconciling two files every Friday.
+Focus group Mumbai,P6,Search across past events. I still cannot find last quarter's transcript.
+Focus group Mumbai,Moderator,How often do you use the dashboard?
+Focus group Mumbai,P3,Daily.
+Focus group Mumbai,P6,Maybe once a week unless a client asks.
+Focus group Mumbai,Moderator,Would you recommend us to a peer?
+Focus group Mumbai,P3,Yes.
+Focus group Mumbai,P6,Yes if they have an analyst.
+Win-loss Contoso,Interviewer,How was onboarding compared with the competitor?
+Win-loss Contoso,Buyer,Implementation timeline lost us the deal more than price.
+Win-loss Contoso,Interviewer,What would you improve?
+Win-loss Contoso,Buyer,Security review still came up twice. That slowed everything.
+Win-loss Contoso,Security lead,We needed a named owner on your side. We did not get one until week three.
+Win-loss Contoso,Interviewer,Would you recommend us to a peer?
+Win-loss Contoso,Buyer,Not this cycle. Maybe after the security packet is reusable.
