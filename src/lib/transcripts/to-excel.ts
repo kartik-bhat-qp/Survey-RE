@@ -1,5 +1,4 @@
 import ExcelJS from 'exceljs';
-import { format } from 'date-fns';
 
 const MAX_CELL_CHARS = 32_000;
 const MAX_SHEET_NAME = 31;
@@ -584,7 +583,14 @@ function writeSummarySheet(
   sheet.name = 'Summary';
   sheet.getCell('A1').value = 'Transcript responses by question';
   sheet.getCell('A1').font = TITLE_FONT;
-  sheet.getCell('A2').value = `Generated ${format(new Date(), 'd MMM yyyy, h:mm a')}`;
+  sheet.getCell('A2').value = `Generated ${new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(new Date())}`;
   sheet.getCell('A3').value = `${fileReports.length} source file(s) · ${groups.length} question(s) · ${groups.reduce((sum, group) => sum + group.responses.length, 0)} response(s)`;
 
   let row = 5;
