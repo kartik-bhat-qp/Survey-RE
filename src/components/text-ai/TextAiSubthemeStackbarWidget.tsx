@@ -16,6 +16,7 @@ import {
   limitTextAiWidgetItems,
   type TextAiWidgetTopN,
 } from '@/data/mock-text-ai-widget-settings';
+import type { TextAiThemePreferences } from '@/data/text-ai-theme-preferences';
 import styles from './TextAiSubthemeStackbarWidget.module.css';
 
 const SENTIMENT_BUCKETS: {
@@ -35,6 +36,7 @@ interface TextAiSubthemeStackbarWidgetProps {
   question: string;
   themeStatus: TextAiThemeStatusFilter;
   onDelete?: () => void;
+  themePreferences: TextAiThemePreferences;
 }
 
 function SentimentStackbar({
@@ -107,6 +109,7 @@ export function TextAiSubthemeStackbarWidget({
   question,
   themeStatus,
   onDelete,
+  themePreferences,
 }: TextAiSubthemeStackbarWidgetProps) {
   const wick = useWickUILib();
   const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
@@ -117,31 +120,46 @@ export function TextAiSubthemeStackbarWidget({
     Set<TextAiSentimentBucket>
   >(() => new Set(SENTIMENT_BUCKETS.map((bucket) => bucket.key)));
   const visibleThemes = useMemo(() => {
-    const filtered =
-      themeStatus === 'all'
-        ? TEXT_AI_SUBTHEME_STACKBAR_ROWS
-        : TEXT_AI_SUBTHEME_STACKBAR_ROWS.flatMap((theme) => {
-            const themeEmerging = Boolean(theme.emerging);
+    const filtered = TEXT_AI_SUBTHEME_STACKBAR_ROWS.flatMap((theme) => {
+      const themeEmerging = Boolean(theme.emerging);
+      const themeApproved =
+        !themeEmerging ||
+        themePreferences.autoApproveEmergingThemes ||
+        themePreferences.approvedEmergingNames.includes(theme.label);
+      const approvedSubthemes = theme.subthemes.filter(
+        (subtheme) =>
+          !(themeEmerging || subtheme.emerging) ||
+          themePreferences.autoApproveEmergingThemes ||
+          themePreferences.approvedEmergingNames.includes(subtheme.label)
+      );
 
-            if (themeStatus === 'emerging') {
-              const subthemes = theme.subthemes.filter(
-                (subtheme) => themeEmerging || subtheme.emerging
-              );
-              if (!themeEmerging && subthemes.length === 0) return [];
-              return [{ ...theme, subthemes }];
-            }
+      if (themeStatus === 'all') {
+        if (!themeApproved) return [];
+        return [{ ...theme, subthemes: approvedSubthemes }];
+      }
 
-            if (themeEmerging) return [];
-            return [
-              {
-                ...theme,
-                subthemes: theme.subthemes.filter((subtheme) => !subtheme.emerging),
-              },
-            ];
-          });
+      if (themeStatus === 'emerging') {
+        const subthemes = approvedSubthemes.filter(
+          (subtheme) =>
+            (themeEmerging || subtheme.emerging) &&
+            (themeApproved ||
+              themePreferences.approvedEmergingNames.includes(subtheme.label))
+        );
+        if ((!themeEmerging || !themeApproved) && subthemes.length === 0) return [];
+        return [{ ...theme, subthemes }];
+      }
+
+      if (themeEmerging) return [];
+      return [
+        {
+          ...theme,
+          subthemes: theme.subthemes.filter((subtheme) => !subtheme.emerging),
+        },
+      ];
+    });
 
     return limitTextAiWidgetItems(filtered, topN);
-  }, [themeStatus, topN]);
+  }, [themePreferences, themeStatus, topN]);
 
   function toggleTheme(themeId: string): void {
     setExpandedThemeIds((current) => {

@@ -17,6 +17,9 @@ export interface TextAiDashboardCreationQuestion {
 
 export interface TextAiDashboardCreationPreferences {
   codebookPreference: string;
+  codebookFileDataUrl?: string;
+  codebookFileName?: string;
+  dashboardLayout: 'Combined dashboard' | 'Separate dashboard for each question';
   dataSourceName: string;
   dataSourceType: string;
   outputLanguage: string;

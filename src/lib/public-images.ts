@@ -51,6 +51,16 @@ export const PUBLIC_IMAGES = {
     spider: publicImage('matrix-widgets', 'matrix_spider.svg'),
     heatmap: publicImage('matrix-widgets', 'matrix_heatmap.svg'),
   },
+  textAiWidgets: {
+    themeStackedBar: publicImage('text-ai-widgets', 'theme-stacked-bar.svg'),
+    subthemeStackedBar: publicImage('text-ai-widgets', 'subtheme-stacked-bar.svg'),
+    comparativeChart: publicImage('text-ai-widgets', 'comparative-chart.svg'),
+    subthemeComparativeChart: publicImage(
+      'text-ai-widgets',
+      'subtheme-comparative-chart.svg'
+    ),
+    textSummary: publicImage('text-ai-widgets', 'text-summary.svg'),
+  },
   advancedWidgets: {
     textBox: publicImage('advanced-widgets', 'text_box.svg'),
     textSummary: publicImage('advanced-widgets', 'text_summary.svg'),

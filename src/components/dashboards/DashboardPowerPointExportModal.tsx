@@ -1,16 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { CSSProperties } from 'react';
 import dynamic from 'next/dynamic';
-import Image from 'next/image';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
-import {
-  DESIGN_FONT_SIZE_OPTIONS,
-  type DesignSelectOption,
-  type DesignTypographyOptions,
-} from './DashboardDesignSettingsTab';
+import type { DesignTypographyOptions } from './DashboardDesignSettingsTab';
 import styles from './DashboardPowerPointExportModal.module.css';
 
 const WuButton = dynamic(
@@ -45,10 +39,6 @@ const WuModalFooter = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuModalFooter })),
   { ssr: false }
 );
-const WuCard = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCard })),
-  { ssr: false }
-);
 const WuCheckbox = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCheckbox })),
   { ssr: false }
@@ -62,7 +52,7 @@ const WuToggle = dynamic(
   { ssr: false }
 );
 
-type LayoutMode = 'manual' | 'ai';
+type ExportStep = 'widgets' | 'options';
 
 type DashboardWidget = {
   id: string;
@@ -114,24 +104,12 @@ interface DashboardPowerPointExportModalProps {
 }
 
 const WIDGET_DATA_SOURCE = 'Guest dining preferences';
-const MAX_WIDGETS_PER_SLIDE = 4;
 const PPT_SLIDE_WIDTH_EMU = 9144000;
 const PPT_SLIDE_HEIGHT_EMU = 5143500;
 const PPT_WATERMARK_SRC = '/questionpro-logo-nw.svg';
 const PPT_WATERMARK_VIEWBOX_WIDTH = 166.365;
 const PPT_WATERMARK_VIEWBOX_HEIGHT = 32;
 const PPT_WATERMARK_ASPECT = PPT_WATERMARK_VIEWBOX_HEIGHT / PPT_WATERMARK_VIEWBOX_WIDTH;
-const PPT_WATERMARK_PREVIEW_WIDTH = {
-  compact: 56,
-  full: 80,
-} as const;
-
-function getWatermarkDimensions(width: number) {
-  return {
-    width,
-    height: Math.round(width * PPT_WATERMARK_ASPECT),
-  };
-}
 
 const WIDGETS: DashboardWidget[] = [
   {
@@ -177,25 +155,6 @@ function createDefaultWidgetSlideAssignments(widgetIds: string[], widgetsPerSlid
     assignments[widgetId] = Math.floor(index / widgetsPerSlide) + 1;
     return assignments;
   }, {});
-}
-
-function getProofTextStyle(typography: DesignTypographyOptions) {
-  const proofSizeMap = {
-    'extra-small': '9px',
-    small: '10px',
-    medium: '12px',
-    large: '14px',
-    'extra-large': '16px',
-  };
-
-  return {
-    fontSize:
-      proofSizeMap[typography.fontSize.value as keyof typeof proofSizeMap] ??
-      proofSizeMap.medium,
-    fontFamily: typography.fontFamily.value,
-    fontStyle: typography.fontStyle.value === 'italic' ? 'italic' : 'normal',
-    fontWeight: typography.fontStyle.value === 'bold' ? 600 : 400,
-  } as CSSProperties;
 }
 
 function getPptWidgetImage(widget: DashboardWidget): PptImage {
@@ -695,17 +654,15 @@ export function DashboardPowerPointExportModal({
   designTypography,
 }: DashboardPowerPointExportModalProps) {
   const { showToast } = useWuShowToast();
+  const [currentStep, setCurrentStep] = useState<ExportStep>('widgets');
   const [widgetSearch, setWidgetSearch] = useState('');
   const [selectedWidgetIds, setSelectedWidgetIds] = useState<string[]>(
     WIDGETS.map((widget) => widget.id)
   );
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>('manual');
-  const [widgetsPerSlideInput, setWidgetsPerSlideInput] = useState('1');
   const [widgetSlideAssignments, setWidgetSlideAssignments] =
     useState<WidgetSlideAssignments>(() =>
       createDefaultWidgetSlideAssignments(WIDGETS.map((widget) => widget.id), 1)
     );
-  const [maximizedSlideIndex, setMaximizedSlideIndex] = useState<number | null>(null);
   const [includeIntroSlide, setIncludeIntroSlide] = useState(false);
   const [includeOutroSlide, setIncludeOutroSlide] = useState(false);
   const [isPowerPointExporting, setIsPowerPointExporting] = useState(false);
@@ -729,20 +686,10 @@ export function DashboardPowerPointExportModal({
     );
   }, [widgetSearch]);
 
-  const manualWidgetsPerSlide = Math.min(
-    MAX_WIDGETS_PER_SLIDE,
-    Math.max(1, Number.parseInt(widgetsPerSlideInput, 10) || 1)
-  );
-  const aiOptimizedWidgetsPerSlide = selectedWidgets.length <= 2 ? 1 : 2;
-  const widgetsPerSlide =
-    layoutMode === 'ai' ? aiOptimizedWidgetsPerSlide : manualWidgetsPerSlide;
-  const isManualLayoutMissing = layoutMode === 'manual' && !widgetsPerSlideInput.trim();
-
   const slideGroups = useMemo<SlideGroup[]>(() => {
-    const baseSlideCount =
-      selectedWidgets.length > 0 ? Math.ceil(selectedWidgets.length / widgetsPerSlide) : 0;
+    const baseSlideCount = selectedWidgets.length;
     const highestAssignedSlide = selectedWidgets.reduce((highestSlide, widget, index) => {
-      const fallbackSlide = Math.floor(index / widgetsPerSlide) + 1;
+      const fallbackSlide = index + 1;
       return Math.max(highestSlide, widgetSlideAssignments[widget.id] ?? fallbackSlide);
     }, 0);
     const totalSlideCount = Math.max(baseSlideCount, highestAssignedSlide);
@@ -752,7 +699,7 @@ export function DashboardPowerPointExportModal({
     }));
 
     selectedWidgets.forEach((widget, index) => {
-      const fallbackSlide = Math.floor(index / widgetsPerSlide) + 1;
+      const fallbackSlide = index + 1;
       const assignedSlide = Math.min(
         totalSlideCount,
         Math.max(1, widgetSlideAssignments[widget.id] ?? fallbackSlide)
@@ -761,7 +708,7 @@ export function DashboardPowerPointExportModal({
     });
 
     return groups;
-  }, [selectedWidgets, widgetSlideAssignments, widgetsPerSlide]);
+  }, [selectedWidgets, widgetSlideAssignments]);
 
   const previewSlideGroups = useMemo<PreviewSlideGroup[]>(() => {
     let previewSlideNumber = 1;
@@ -789,16 +736,8 @@ export function DashboardPowerPointExportModal({
     return groups;
   }, [includeIntroSlide, includeOutroSlide, slideGroups]);
 
-  const hasOverCapacitySlides = slideGroups.some(
-    (slide) => slide.widgets.length > widgetsPerSlide
-  );
-  const activeMaximizedSlideIndex =
-    maximizedSlideIndex === null || previewSlideGroups.length === 0
-      ? null
-      : Math.min(maximizedSlideIndex, previewSlideGroups.length - 1);
-  const proofPreviewTypographyStyle = getProofTextStyle(designTypography);
-
   function resetExportFlow() {
+    setCurrentStep('widgets');
     setWidgetSearch('');
     setSelectedWidgetIds(WIDGETS.map((widget) => widget.id));
     setWidgetSlideAssignments(
@@ -807,9 +746,6 @@ export function DashboardPowerPointExportModal({
         1
       )
     );
-    setLayoutMode('manual');
-    setWidgetsPerSlideInput('1');
-    setMaximizedSlideIndex(null);
     setIncludeIntroSlide(false);
     setIncludeOutroSlide(false);
   }
@@ -821,8 +757,7 @@ export function DashboardPowerPointExportModal({
 
   function getWidgetSlideNumber(widgetId: string) {
     const widgetIndex = selectedWidgetIds.indexOf(widgetId);
-    const fallbackSlide =
-      widgetIndex === -1 ? 1 : Math.floor(widgetIndex / widgetsPerSlide) + 1;
+    const fallbackSlide = widgetIndex === -1 ? 1 : widgetIndex + 1;
 
     return Math.min(
       Math.max(1, slideGroups.length),
@@ -831,7 +766,7 @@ export function DashboardPowerPointExportModal({
   }
 
   function getNextAvailableSlideNumber() {
-    const availableSlide = slideGroups.find((slide) => slide.widgets.length < widgetsPerSlide);
+    const availableSlide = slideGroups.find((slide) => slide.widgets.length === 0);
     return availableSlide?.slideNumber ?? Math.max(1, slideGroups.length + 1);
   }
 
@@ -843,7 +778,7 @@ export function DashboardPowerPointExportModal({
         (widget) => widget.id !== widgetId
       ).length;
       const isCurrentSlide = slide.slideNumber === currentSlideNumber;
-      const hasSpace = widgetCountWithoutCurrent < widgetsPerSlide;
+      const hasSpace = widgetCountWithoutCurrent === 0;
 
       return {
         value: String(slide.slideNumber),
@@ -873,64 +808,6 @@ export function DashboardPowerPointExportModal({
     }));
   }
 
-  function removeWidgetFromPreview(widgetId: string) {
-    setSelectedWidgetIds((currentSelection) =>
-      currentSelection.filter((id) => id !== widgetId)
-    );
-    setWidgetSlideAssignments((currentAssignments) => {
-      const remainingAssignments = { ...currentAssignments };
-      delete remainingAssignments[widgetId];
-      return remainingAssignments;
-    });
-  }
-
-  function removeSlide(slideNumber: number) {
-    const slide = slideGroups.find((currentSlide) => currentSlide.slideNumber === slideNumber);
-    const widgetIdsOnSlide = slide?.widgets.map((widget) => widget.id) ?? [];
-
-    if (widgetIdsOnSlide.length > 0) {
-      setSelectedWidgetIds((currentSelection) =>
-        currentSelection.filter((widgetId) => !widgetIdsOnSlide.includes(widgetId))
-      );
-    }
-
-    setWidgetSlideAssignments((currentAssignments) => {
-      const remainingAssignments = { ...currentAssignments };
-      widgetIdsOnSlide.forEach((widgetId) => {
-        delete remainingAssignments[widgetId];
-      });
-      Object.entries(remainingAssignments).forEach(([widgetId, assignedSlideNumber]) => {
-        if (assignedSlideNumber > slideNumber) {
-          remainingAssignments[widgetId] = assignedSlideNumber - 1;
-        }
-      });
-      return remainingAssignments;
-    });
-
-    setMaximizedSlideIndex((currentIndex) => {
-      if (currentIndex === null) return null;
-      if (currentIndex === slideNumber - 1) return null;
-      if (currentIndex > slideNumber - 1) return currentIndex - 1;
-      return currentIndex;
-    });
-  }
-
-  function removePreviewSlide(slide: PreviewSlideGroup) {
-    if (slide.kind === 'intro') {
-      setIncludeIntroSlide(false);
-      setMaximizedSlideIndex(null);
-      return;
-    }
-
-    if (slide.kind === 'outro') {
-      setIncludeOutroSlide(false);
-      setMaximizedSlideIndex(null);
-      return;
-    }
-
-    if (slide.contentSlideNumber) removeSlide(slide.contentSlideNumber);
-  }
-
   function changeWidgetSlide(
     widgetId: string,
     option: SlideSelectOption | SlideSelectOption[]
@@ -948,9 +825,9 @@ export function DashboardPowerPointExportModal({
     const targetWidgetCount =
       targetSlide?.widgets.filter((widget) => widget.id !== widgetId).length ?? 0;
 
-    if (targetSlideNumber !== currentSlideNumber && targetWidgetCount >= widgetsPerSlide) {
+    if (targetSlideNumber !== currentSlideNumber && targetWidgetCount >= 1) {
       showToast({
-        message: `Slide ${targetSlideNumber} already has ${widgetsPerSlide} widget${widgetsPerSlide === 1 ? '' : 's'}.`,
+        message: `Slide ${targetSlideNumber} already has a widget.`,
         variant: 'error',
         duration: 3000,
         position: 'top',
@@ -962,29 +839,6 @@ export function DashboardPowerPointExportModal({
       ...currentAssignments,
       [widgetId]: targetSlideNumber,
     }));
-  }
-
-  function handleWidgetsPerSlideChange(value: string) {
-    const normalizedValue = value.replace(/\D/g, '');
-    const nextValue = normalizedValue
-      ? String(
-          Math.min(MAX_WIDGETS_PER_SLIDE, Math.max(1, Number.parseInt(normalizedValue, 10)))
-        )
-      : '';
-    setWidgetsPerSlideInput(nextValue);
-    setLayoutMode('manual');
-  }
-
-  function selectAiOptimizedLayout() {
-    setLayoutMode('ai');
-    setWidgetsPerSlideInput('');
-  }
-
-  function activateManualLayout() {
-    if (layoutMode === 'ai') {
-      setLayoutMode('manual');
-      setWidgetsPerSlideInput('');
-    }
   }
 
   async function handleExportPowerPoint() {
@@ -1009,73 +863,6 @@ export function DashboardPowerPointExportModal({
     } finally {
       setIsPowerPointExporting(false);
     }
-  }
-
-  function renderProofWidget(widget: DashboardWidget) {
-    const previewImage = getPptWidgetImage(widget);
-
-    return (
-      <section className="h-full w-full overflow-hidden rounded border border-[#dbe3f0] bg-white">
-        <Image
-          src={previewImage.src}
-          alt={widget.name}
-          width={previewImage.width}
-          height={previewImage.height}
-          sizes="520px"
-          className="h-full w-full object-cover object-center"
-        />
-      </section>
-    );
-  }
-
-  function renderSlideWatermark(isCompact = false) {
-    const { width, height } = getWatermarkDimensions(
-      isCompact ? PPT_WATERMARK_PREVIEW_WIDTH.compact : PPT_WATERMARK_PREVIEW_WIDTH.full
-    );
-
-    return (
-      <Image
-        src={PPT_WATERMARK_SRC}
-        alt="QuestionPro"
-        width={width}
-        height={height}
-        unoptimized
-        className="pointer-events-none absolute bottom-2 right-2 z-10"
-        style={{ width, height, maxWidth: width, maxHeight: height }}
-      />
-    );
-  }
-
-  function renderSupplementalSlide(slide: PreviewSlideGroup, isCompact = false) {
-    const slideText = slide.kind === 'intro' ? dashboardName : 'Thank you';
-    const bookendTypography = {
-      ...designTypography,
-      fontSize: DESIGN_FONT_SIZE_OPTIONS[4] as DesignSelectOption,
-    };
-    const bookendTextStyle = {
-      ...getProofTextStyle(bookendTypography),
-      fontSize: isCompact ? '22px' : '44px',
-      fontStyle: 'italic',
-      fontWeight: 700,
-    } as CSSProperties;
-
-    return (
-      <div
-        className={`relative grid h-full w-full place-items-center overflow-hidden bg-white text-center ${
-          isCompact ? 'p-2' : 'p-6'
-        }`}
-      >
-        <h4
-          className={`${
-            isCompact ? 'max-w-[96%] leading-[1.05]' : 'max-w-[82%] leading-tight'
-          } break-words text-[#1f2a44]`}
-          style={bookendTextStyle}
-        >
-          {slideText}
-        </h4>
-        {renderSlideWatermark(isCompact)}
-      </div>
-    );
   }
 
   const widgetColumns: IWuTableColumnDef<DashboardWidget>[] = [
@@ -1189,7 +976,7 @@ export function DashboardPowerPointExportModal({
     <WuModal
       open={open}
       onOpenChange={handleOpenChange}
-      maxWidth="1120px"
+      maxWidth="900px"
       maxHeight="calc(100vh - 48px)"
       className={styles.modal}
     >
@@ -1199,373 +986,160 @@ export function DashboardPowerPointExportModal({
         </span>
       </WuModalHeader>
 
-      <WuModalContent className="h-[calc(100vh-210px)] overflow-hidden px-6 py-6">
-        <div
-          className={
-            activeMaximizedSlideIndex !== null
-              ? 'h-full space-y-6 overflow-y-auto'
-              : 'grid h-full min-h-0 grid-cols-[minmax(0,1fr)_330px] gap-6'
-          }
-        >
-          {activeMaximizedSlideIndex !== null && previewSlideGroups[activeMaximizedSlideIndex] && (
-            <section className="p-0">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <h3 className="text-[16px] font-semibold">
-                  Slide {activeMaximizedSlideIndex + 1} of {previewSlideGroups.length}
-                </h3>
-                <div className="flex items-center gap-2">
-                  <WuButton
-                    type="button"
-                    variant="iconOnly"
-                    aria-label="Previous slide"
-                    disabled={activeMaximizedSlideIndex === 0}
-                    onClick={() =>
-                      setMaximizedSlideIndex((currentIndex) =>
-                        currentIndex === null ? currentIndex : Math.max(0, currentIndex - 1)
-                      )
-                    }
-                    className="grid h-8 w-8 place-items-center rounded-[3px] bg-white p-0 text-[#536277] hover:bg-[#eef3f8]"
-                  >
-                    <span className="wm-keyboard-arrow-left text-[22px]" aria-hidden="true" />
-                  </WuButton>
-                  <WuButton
-                    type="button"
-                    variant="iconOnly"
-                    aria-label="Next slide"
-                    disabled={activeMaximizedSlideIndex >= previewSlideGroups.length - 1}
-                    onClick={() =>
-                      setMaximizedSlideIndex((currentIndex) =>
-                        currentIndex === null
-                          ? currentIndex
-                          : Math.min(previewSlideGroups.length - 1, currentIndex + 1)
-                      )
-                    }
-                    className="grid h-8 w-8 place-items-center rounded-[3px] bg-white p-0 text-[#536277] hover:bg-[#eef3f8]"
-                  >
-                    <span className="wm-keyboard-arrow-right text-[22px]" aria-hidden="true" />
-                  </WuButton>
-                  <WuButton
-                    type="button"
-                    variant="iconOnly"
-                    aria-label="Minimize preview"
-                    onClick={() => setMaximizedSlideIndex(null)}
-                    className="grid h-8 w-8 place-items-center rounded-[3px] bg-white p-0 text-[#536277] hover:bg-[#eef3f8]"
-                  >
-                    <span className="wm-fullscreen-exit text-[16px]" aria-hidden="true" />
-                  </WuButton>
-                </div>
-              </div>
-              <div
-                className={`relative aspect-[16/9] w-full overflow-hidden rounded-none border bg-white p-3 ${
-                  previewSlideGroups[activeMaximizedSlideIndex].kind === 'content' &&
-                  previewSlideGroups[activeMaximizedSlideIndex].widgets.length > widgetsPerSlide
-                    ? 'border-[#d92d20]'
-                    : 'border-[#d9d9d9]'
+      <WuModalContent className="h-[calc(100vh-210px)] max-h-[560px] overflow-hidden px-6 py-6">
+        <div className="mx-auto flex h-full w-full max-w-[800px] flex-col">
+          <div className="mb-6 flex items-start justify-between gap-8">
+            <div>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#1e63d7]">
+                Step {currentStep === 'widgets' ? 1 : 2} of 2
+              </p>
+              <h3 className="mt-1 text-[18px] font-semibold text-[#1f2a44]">
+                {currentStep === 'widgets' ? 'Select widgets' : 'Export options'}
+              </h3>
+              <p className="mt-1 text-[13px] text-[#687385]">
+                {currentStep === 'widgets'
+                  ? 'Choose the dashboard widgets to include in the presentation.'
+                  : 'Choose optional bookend slides, then export your presentation.'}
+              </p>
+            </div>
+            <div className="flex w-28 shrink-0 gap-2 pt-2" aria-label="Export progress">
+              <span className="h-1.5 flex-1 rounded-full bg-[#1e88e5]" />
+              <span
+                className={`h-1.5 flex-1 rounded-full ${
+                  currentStep === 'options' ? 'bg-[#1e88e5]' : 'bg-[#dbe3f0]'
                 }`}
-                style={proofPreviewTypographyStyle}
-              >
-                <div
-                  className={
-                    previewSlideGroups[activeMaximizedSlideIndex].kind !== 'content' ||
-                    previewSlideGroups[activeMaximizedSlideIndex].widgets.length <= 1
-                      ? 'grid h-full place-items-center'
-                      : 'grid h-full grid-cols-2 auto-rows-fr gap-4'
-                  }
-                >
-                  {previewSlideGroups[activeMaximizedSlideIndex].kind !== 'content'
-                    ? renderSupplementalSlide(previewSlideGroups[activeMaximizedSlideIndex])
-                    : previewSlideGroups[activeMaximizedSlideIndex].widgets.length === 0
-                      ? (
-                          <div className="grid h-full place-items-center rounded border border-dashed border-[#cbd5e1] text-[13px] text-[#687385]">
-                            Empty slide
-                          </div>
-                        )
-                      : previewSlideGroups[activeMaximizedSlideIndex].widgets.map((widget) => (
-                          <div
-                            key={widget.id}
-                            className="grid h-full min-h-0 w-full place-items-center overflow-hidden"
-                          >
-                            {renderProofWidget(widget)}
-                          </div>
-                        ))}
-                </div>
-                {renderSlideWatermark()}
+              />
+            </div>
+          </div>
+
+          {currentStep === 'widgets' ? (
+            <section className="flex min-h-0 flex-1 flex-col">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-[13px] font-medium text-[#566173]">
+                  Dashboard widgets
+                </span>
+                <span className="rounded-full bg-[#eef6ff] px-3 py-1 text-[12px] font-medium text-[#1e63d7]">
+                  {selectedWidgets.length}/{WIDGETS.length} selected
+                </span>
+              </div>
+
+              <WuInput
+                variant="outlined"
+                placeholder="Search widgets"
+                aria-label="Search widgets"
+                Icon={<span className="wm-search text-[14px]" aria-hidden="true" />}
+                iconPosition="left"
+                value={widgetSearch}
+                onChange={(event) => setWidgetSearch(event.target.value)}
+                className="mt-4 h-10 w-full rounded-lg text-[13px]"
+              />
+
+              <div className="mt-4 min-h-0 flex-1 overflow-hidden overflow-y-auto rounded-sm border border-[#e1e5ec] [&_.wu-table-container>div]:overflow-x-hidden [&_table]:w-full [&_table]:table-fixed [&_table]:text-[12px]">
+                <WuTable
+                  data={filteredWidgets as unknown[]}
+                  columns={widgetColumns as unknown as IWuTableColumnDef<unknown>[]}
+                  variant="bordered"
+                  size="compact"
+                  sort={{ enabled: true }}
+                  tableLayout="fixed"
+                  NoDataContent="No widgets match your search."
+                />
               </div>
             </section>
-          )}
-
-          {activeMaximizedSlideIndex === null && (
-            <div className="min-h-0 min-w-0 space-y-6 overflow-y-auto pr-1">
-              <section>
-                <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-[16px] font-semibold text-[#1f2a44]">
-                    Widgets selection
-                  </h3>
-                  <span className="rounded-full bg-[#eef6ff] px-3 py-1 text-[12px] font-medium text-[#1e63d7]">
-                    {selectedWidgets.length}/{WIDGETS.length} selected
-                  </span>
-                </div>
-
-                <WuInput
-                  variant="outlined"
-                  placeholder="Search widgets"
-                  aria-label="Search widgets"
-                  Icon={<span className="wm-search text-[14px]" aria-hidden="true" />}
-                  iconPosition="left"
-                  value={widgetSearch}
-                  onChange={(event) => setWidgetSearch(event.target.value)}
-                  className="mt-4 h-10 w-full rounded-lg text-[13px]"
-                />
-
-                <div className="mt-4 max-h-[280px] min-w-0 overflow-hidden overflow-y-auto rounded-sm border border-[#e1e5ec] [&_.wu-table-container>div]:overflow-x-hidden [&_table]:w-full [&_table]:table-fixed [&_table]:text-[12px]">
-                  <WuTable
-                    data={filteredWidgets as unknown[]}
-                    columns={widgetColumns as unknown as IWuTableColumnDef<unknown>[]}
-                    variant="bordered"
-                    size="compact"
-                    sort={{ enabled: true }}
-                    tableLayout="fixed"
-                    NoDataContent="No widgets match your search."
+          ) : (
+            <section className="mx-auto w-full max-w-[640px]">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-5 rounded-lg border border-[#dbe3f0] bg-white p-5">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-[#eef6ff] text-[#1e63d7]">
+                      <span className="wm-slideshow text-[19px]" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <h4 className="text-[14px] font-semibold text-[#1f2a44]">
+                        Intro slide
+                      </h4>
+                      <p className="mt-1 text-[12px] leading-5 text-[#687385]">
+                        Add a title slide for {dashboardName}.
+                      </p>
+                    </div>
+                  </div>
+                  <WuToggle
+                    checked={includeIntroSlide}
+                    onChange={setIncludeIntroSlide}
+                    aria-label="Include intro slide"
                   />
                 </div>
-              </section>
 
-              <section>
-                <h3 className="text-[16px] font-semibold text-[#1f2a44]">Slide Layout</h3>
-                <div className="mt-3 grid grid-cols-2 gap-3">
-                  <WuCard
-                    className={`rounded-lg border p-4 text-left transition ${
-                      layoutMode === 'manual'
-                        ? 'border-[#1e88e5] bg-[#f5f9ff]'
-                        : 'border-[#dbe3f0] bg-white'
-                    }`}
-                  >
-                    <WuInput
-                      Label="Widgets per slide"
-                      labelPosition="top"
-                      type="number"
-                      min={1}
-                      max={MAX_WIDGETS_PER_SLIDE}
-                      step={1}
-                      readonly={layoutMode === 'ai'}
-                      value={widgetsPerSlideInput}
-                      onClick={activateManualLayout}
-                      onFocus={activateManualLayout}
-                      onChange={(event) => handleWidgetsPerSlideChange(event.target.value)}
-                      onBlur={(event) => handleWidgetsPerSlideChange(event.target.value)}
-                      placeholder={layoutMode === 'ai' ? 'AI optimized' : 'Enter number'}
-                      className={`h-8 rounded-[4px] border border-[#cfd8e6] px-2 text-[13px] ${
-                        layoutMode === 'ai'
-                          ? 'bg-[#f1f5f9] text-[#8792a2]'
-                          : 'bg-white text-[#1f2a44]'
-                      }`}
-                    />
-                  </WuCard>
-                  <WuCard
-                    role="radio"
-                    tabIndex={0}
-                    aria-checked={layoutMode === 'ai'}
-                    onClick={selectAiOptimizedLayout}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        selectAiOptimizedLayout();
-                      }
-                    }}
-                    className={`flex min-h-24 items-center gap-3 rounded-lg border p-4 text-left transition focus:outline focus:outline-2 focus:outline-[#1e88e5] ${
-                      layoutMode === 'ai'
-                        ? 'border-[#1e88e5] bg-[#f5f9ff]'
-                        : 'border-[#dbe3f0] bg-white'
-                    }`}
-                  >
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-[#e8f1ff] text-[#1e63d7]">
-                      <span className="wm-auto-awesome text-[20px]" aria-hidden="true" />
+                <div className="flex items-center justify-between gap-5 rounded-lg border border-[#dbe3f0] bg-white p-5">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-[#eef6ff] text-[#1e63d7]">
+                      <span className="wm-flag text-[19px]" aria-hidden="true" />
                     </span>
-                    <span>
-                      <span className="block text-[13px] font-semibold text-[#1f2a44]">
-                        AI Optimized Layout
-                      </span>
-                      <span className="mt-1 block text-[12px] leading-4 text-[#687385]">
-                        Let AI choose the number of widgets and their placement for each slide.
-                      </span>
-                    </span>
-                  </WuCard>
-                </div>
-                <div className="mt-5 space-y-4">
-                  <div className="grid grid-cols-[170px_1fr] items-center gap-4">
-                    <span className="text-[14px] font-normal text-[#5f6b7a]">Intro slide</span>
-                    <WuToggle
-                      checked={includeIntroSlide}
-                      onChange={setIncludeIntroSlide}
-                      aria-label="Include intro slide"
-                    />
-                  </div>
-                  <div className="grid grid-cols-[170px_1fr] items-center gap-4">
-                    <span className="text-[14px] font-normal text-[#5f6b7a]">Outro slide</span>
-                    <WuToggle
-                      checked={includeOutroSlide}
-                      onChange={setIncludeOutroSlide}
-                      aria-label="Include outro slide"
-                    />
-                  </div>
-                </div>
-              </section>
-            </div>
-          )}
-
-          {activeMaximizedSlideIndex === null && (
-            <aside className="min-h-0 min-w-0">
-              <div className="flex h-full min-h-0 flex-col rounded-lg border border-[#dbe3f0] bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-[16px] font-semibold text-[#1f2a44]">
-                      Presentation Preview
-                    </h3>
-                    <p className="mt-1 text-[12px] text-[#687385]">
-                      {previewSlideGroups.length} estimated slides
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <WuButton
-                      type="button"
-                      variant="iconOnly"
-                      aria-label="Open expanded preview"
-                      disabled={previewSlideGroups.length === 0}
-                      onClick={() => setMaximizedSlideIndex(0)}
-                      className="grid h-8 w-8 place-items-center rounded-[3px] bg-white p-0 text-[#536277] hover:bg-[#eef3f8] disabled:text-[#a8b2c1]"
-                    >
-                      <span className="wm-open-in-full text-[16px]" aria-hidden="true" />
-                    </WuButton>
-                  </div>
-                </div>
-
-                <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
-                  {previewSlideGroups.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-[#cbd5e1] p-6 text-center text-[13px] text-[#687385]">
-                      Select at least one widget to preview slide grouping.
+                    <div>
+                      <h4 className="text-[14px] font-semibold text-[#1f2a44]">
+                        Outro slide
+                      </h4>
+                      <p className="mt-1 text-[12px] leading-5 text-[#687385]">
+                        Add a closing thank-you slide.
+                      </p>
                     </div>
-                  ) : (
-                    previewSlideGroups.map((slide) => {
-                      const group = slide.widgets;
-                      const slideIndex = slide.previewSlideNumber - 1;
-                      const isOverCapacity =
-                        slide.kind === 'content' && group.length > widgetsPerSlide;
-
-                      return (
-                        <div
-                          key={`slide-${slide.kind}-${slide.previewSlideNumber}`}
-                          role="button"
-                          tabIndex={0}
-                          aria-label={`Open slide ${slide.previewSlideNumber} expanded preview`}
-                          onClick={() => setMaximizedSlideIndex(slideIndex)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              setMaximizedSlideIndex(slideIndex);
-                            }
-                          }}
-                          className={`cursor-pointer rounded-lg border p-3 transition focus:outline focus:outline-2 focus:outline-[#1e88e5] ${
-                            isOverCapacity
-                              ? 'border-[#d92d20] bg-[#fff7f7] hover:border-[#b42318]'
-                              : 'border-[#d9d9d9] bg-[#fbfcff] hover:border-[#d9d9d9]'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="flex items-center gap-2 text-[12px] font-semibold">
-                              Slide {slide.previewSlideNumber}
-                              {slide.kind !== 'content' && (
-                                <span className="rounded-full bg-[#eef6ff] px-2 py-0.5 text-[10px] font-medium capitalize text-[#1e63d7]">
-                                  {slide.kind}
-                                </span>
-                              )}
-                            </span>
-                            <WuButton
-                              type="button"
-                              variant="iconOnly"
-                              aria-label={`Remove slide ${slide.previewSlideNumber}`}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                removePreviewSlide(slide);
-                              }}
-                              className="grid h-6 w-6 place-items-center rounded-[3px] bg-transparent p-0 text-[#536277] hover:bg-[#eef3f8]"
-                            >
-                              <span className="wm-close text-[15px]" aria-hidden="true" />
-                            </WuButton>
-                          </div>
-                          <div
-                            className={
-                              slide.kind !== 'content' || group.length === 1
-                                ? 'relative mt-3 grid aspect-[16/9] w-full place-items-center'
-                                : 'relative mt-3 grid aspect-[16/9] w-full grid-cols-2 auto-rows-fr gap-2'
-                            }
-                            style={proofPreviewTypographyStyle}
-                          >
-                            {slide.kind !== 'content'
-                              ? renderSupplementalSlide(slide, true)
-                              : group.length === 0
-                                ? (
-                                    <div className="col-span-2 grid h-full place-items-center rounded border border-dashed border-[#cbd5e1] text-[12px] text-[#687385]">
-                                      Empty slide
-                                    </div>
-                                  )
-                                : group.map((widget) => (
-                                    <div
-                                      key={widget.id}
-                                      className="group relative grid h-full min-h-0 place-items-center"
-                                    >
-                                      {renderProofWidget(widget)}
-                                      <div className="absolute right-1 top-1 flex gap-1 rounded bg-white/90 p-1 opacity-0 shadow-sm transition group-hover:opacity-100 group-focus-within:opacity-100">
-                                        <WuButton
-                                          type="button"
-                                          variant="iconOnly"
-                                          aria-label={`Remove ${widget.name}`}
-                                          onClick={(event) => {
-                                            event.stopPropagation();
-                                            removeWidgetFromPreview(widget.id);
-                                          }}
-                                          className="grid h-6 w-6 place-items-center rounded-[3px] bg-white p-0 text-[#536277] hover:bg-[#eef3f8]"
-                                        >
-                                          <span className="wm-close text-[16px]" aria-hidden="true" />
-                                        </WuButton>
-                                      </div>
-                                    </div>
-                                  ))}
-                            {slide.kind === 'content' ? renderSlideWatermark(true) : null}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
+                  </div>
+                  <WuToggle
+                    checked={includeOutroSlide}
+                    onChange={setIncludeOutroSlide}
+                    aria-label="Include outro slide"
+                  />
                 </div>
               </div>
-            </aside>
+
+              <div className="mt-5 flex items-center gap-2 rounded-lg bg-[#f5f9ff] px-4 py-3 text-[13px] text-[#536277]">
+                <span className="wm-info text-[16px] text-[#1e63d7]" aria-hidden="true" />
+                <span>
+                  {selectedWidgets.length} widget{selectedWidgets.length === 1 ? '' : 's'} ·{' '}
+                  {previewSlideGroups.length} slide
+                  {previewSlideGroups.length === 1 ? '' : 's'} in the export
+                </span>
+              </div>
+            </section>
           )}
         </div>
       </WuModalContent>
 
       <WuModalFooter className="flex h-16 items-center justify-between border-t border-[#d3dcff] px-6">
-        <div className="min-w-0">
-          {hasOverCapacitySlides ? (
-            <div className="flex items-center gap-2 rounded-[3px] bg-[#fff1f0] px-3 py-2 text-[12px] font-medium text-[#b42318]">
-              <span className="wm-error text-[15px]" aria-hidden="true" />
-              <span>Please fix slides with too many widgets before exporting.</span>
-            </div>
-          ) : null}
-        </div>
-        <WuButton
-          type="button"
-          size="md"
-          onClick={handleExportPowerPoint}
-          disabled={
-            isPowerPointExporting ||
-            selectedWidgetIds.length === 0 ||
-            isManualLayoutMissing ||
-            hasOverCapacitySlides
-          }
-          className="min-w-[160px] rounded-[4px] bg-[#1e88e5] px-4 text-[14px] font-normal text-white hover:bg-[#1976d2]"
-        >
-          {isPowerPointExporting ? 'Exporting...' : 'Export'}
-        </WuButton>
+        {currentStep === 'options' ? (
+          <WuButton
+            type="button"
+            variant="secondary"
+            size="md"
+            onClick={() => setCurrentStep('widgets')}
+          >
+            Back
+          </WuButton>
+        ) : (
+          <span />
+        )}
+
+        {currentStep === 'widgets' ? (
+          <WuButton
+            type="button"
+            size="md"
+            onClick={() => setCurrentStep('options')}
+            disabled={selectedWidgetIds.length === 0}
+            className="min-w-[160px] rounded-[4px] bg-[#1e88e5] px-4 text-[14px] font-normal text-white hover:bg-[#1976d2]"
+          >
+            Next
+          </WuButton>
+        ) : (
+          <WuButton
+            type="button"
+            size="md"
+            onClick={handleExportPowerPoint}
+            disabled={isPowerPointExporting || selectedWidgetIds.length === 0}
+            className="min-w-[160px] rounded-[4px] bg-[#1e88e5] px-4 text-[14px] font-normal text-white hover:bg-[#1976d2]"
+          >
+            {isPowerPointExporting ? 'Exporting...' : 'Export'}
+          </WuButton>
+        )}
       </WuModalFooter>
     </WuModal>
   );

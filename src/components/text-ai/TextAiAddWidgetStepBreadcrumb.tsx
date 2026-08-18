@@ -30,7 +30,9 @@ export function TextAiAddWidgetStepBreadcrumb({
         return (
           <span key={step.id} className={styles.segment}>
             {index > 0 ? (
-              <span className={`wm-chevron-right ${styles.separator}`} aria-hidden />
+              <span className={styles.separator} aria-hidden>
+                ›
+              </span>
             ) : null}
             <button
               type="button"

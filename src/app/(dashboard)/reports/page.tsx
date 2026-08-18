@@ -89,14 +89,7 @@ export default function ReportsPage() {
   const defaultReportName = getDefaultCreateReportName(reports.length);
 
   function openReport(report: Report): void {
-    if (report.typeId === 'conjoint') {
-      router.push(`${reportsPath}/${report.id}`);
-      return;
-    }
-    showToast({
-      message: `Opening report "${report.name}"`,
-      variant: 'info',
-    });
+    router.push(`${reportsPath}/${report.id}`);
   }
 
   const columns: IWuTableColumnDef<Report>[] = [
@@ -258,9 +251,7 @@ export default function ReportsPage() {
             message: `"${name}" created from "${survey.name}"`,
             variant: 'success',
           });
-          if (typeId === 'conjoint') {
-            router.push(`${reportsPath}/${nextId}`);
-          }
+          router.push(`${reportsPath}/${nextId}`);
         }}
       />
     </PageContainer>

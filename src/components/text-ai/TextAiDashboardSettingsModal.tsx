@@ -1,17 +1,26 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type { TextAiDashboard } from '@/data/mock-text-ai-dashboards';
 import {
   getTextAiDashboardCreationPreferences,
-  getTextAiRecodeLogs,
-  type TextAiRecodeLogEntry,
 } from '@/data/text-ai-activity-logs';
+import {
+  getTextAiThemePreferences,
+  saveTextAiThemePreferences,
+  TEXT_AI_THEME_PREFERENCES_EVENT,
+  type TextAiThemePreferences,
+} from '@/data/text-ai-theme-preferences';
 import styles from './TextAiDashboardSettingsModal.module.css';
 
-type SettingsTab = 'data-slicers' | 'filters' | 'logs';
-type LogCategory = 'dashboard' | 'recode';
+const WuToggle = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((module) => ({ default: module.WuToggle })),
+  { ssr: false }
+);
+
+type SettingsTab = 'preferences' | 'data-slicers' | 'filters' | 'logs';
 
 interface TextAiDataSlicer {
   id: number;
@@ -47,18 +56,17 @@ export function TextAiDashboardSettingsModal({
   onOpenChange,
 }: TextAiDashboardSettingsModalProps) {
   const { showToast } = useWuShowToast();
-  const [activeTab, setActiveTab] = useState<SettingsTab>('data-slicers');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('preferences');
   const [search, setSearch] = useState('');
   const [expandedSlicerId, setExpandedSlicerId] = useState<number | null>(null);
   const [slicers, setSlicers] = useState<TextAiDataSlicer[]>(INITIAL_DATA_SLICERS);
-  const [logCategory, setLogCategory] = useState<LogCategory>('dashboard');
+  const [themePreferences, setThemePreferences] = useState<TextAiThemePreferences>(() =>
+    getTextAiThemePreferences(dashboard.id)
+  );
   const creationPreferences = useMemo(
     () => getTextAiDashboardCreationPreferences(dashboard),
     [dashboard]
   );
-  const recodeLogs: TextAiRecodeLogEntry[] = open
-    ? getTextAiRecodeLogs(dashboard.id)
-    : [];
 
   useEffect(() => {
     if (!open) return;
@@ -71,6 +79,22 @@ export function TextAiDashboardSettingsModal({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [dashboard.id, onOpenChange, open]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const refreshPreferences = () =>
+      setThemePreferences(getTextAiThemePreferences(dashboard.id));
+
+    refreshPreferences();
+    window.addEventListener(TEXT_AI_THEME_PREFERENCES_EVENT, refreshPreferences);
+    window.addEventListener('storage', refreshPreferences);
+
+    return () => {
+      window.removeEventListener(TEXT_AI_THEME_PREFERENCES_EVENT, refreshPreferences);
+      window.removeEventListener('storage', refreshPreferences);
+    };
+  }, [dashboard.id, open]);
+
   const filteredSlicers = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return slicers;
@@ -80,6 +104,15 @@ export function TextAiDashboardSettingsModal({
   if (!open) return null;
 
   const visibleCount = filteredSlicers.length;
+
+  function setShowThemesWithNoResponses(checked: boolean): void {
+    const nextPreferences = {
+      ...themePreferences,
+      showThemesWithNoResponses: checked,
+    };
+    setThemePreferences(nextPreferences);
+    saveTextAiThemePreferences(dashboard.id, nextPreferences);
+  }
 
   return (
     <div
@@ -110,6 +143,17 @@ export function TextAiDashboardSettingsModal({
           <div className={styles.tabs} role="tablist" aria-label="TextAI settings">
             <button
               type="button"
+              id="preferences-tab"
+              role="tab"
+              aria-selected={activeTab === 'preferences'}
+              aria-controls="preferences-panel"
+              className={activeTab === 'preferences' ? styles.activeTab : undefined}
+              onClick={() => setActiveTab('preferences')}
+            >
+              Preferences
+            </button>
+            <button
+              type="button"
               id="data-slicers-tab"
               role="tab"
               aria-selected={activeTab === 'data-slicers'}
@@ -117,7 +161,7 @@ export function TextAiDashboardSettingsModal({
               className={activeTab === 'data-slicers' ? styles.activeTab : undefined}
               onClick={() => setActiveTab('data-slicers')}
             >
-              Data Slicers
+              Data slicers
             </button>
             <button
               type="button"
@@ -143,7 +187,28 @@ export function TextAiDashboardSettingsModal({
             </button>
           </div>
 
-          {activeTab === 'data-slicers' ? (
+          {activeTab === 'preferences' ? (
+            <div
+              id="preferences-panel"
+              role="tabpanel"
+              aria-labelledby="preferences-tab"
+              className={`${styles.tabPanel} ${styles.preferencesPanel}`}
+            >
+              <label className={styles.preferenceRow}>
+                <span>
+                  <strong>Show themes with no responses</strong>
+                  <small>
+                    Include themes and sub-themes that do not have tagged responses.
+                  </small>
+                </span>
+                <WuToggle
+                  checked={themePreferences.showThemesWithNoResponses}
+                  onChange={setShowThemesWithNoResponses}
+                  aria-label="Show themes with no responses"
+                />
+              </label>
+            </div>
+          ) : activeTab === 'data-slicers' ? (
             <div
               id="data-slicers-panel"
               role="tabpanel"
@@ -299,41 +364,8 @@ export function TextAiDashboardSettingsModal({
               aria-labelledby="logs-tab"
               className={`${styles.tabPanel} ${styles.logsPanel}`}
             >
-              <div
-                className={styles.logCategoryTabs}
-                role="tablist"
-                aria-label="Log category"
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={logCategory === 'dashboard'}
-                  className={
-                    logCategory === 'dashboard' ? styles.activeLogCategory : undefined
-                  }
-                  onClick={() => setLogCategory('dashboard')}
-                >
-                  <span className="wm-dashboard" aria-hidden />
-                  Dashboard
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={logCategory === 'recode'}
-                  className={
-                    logCategory === 'recode' ? styles.activeLogCategory : undefined
-                  }
-                  onClick={() => setLogCategory('recode')}
-                >
-                  <span className="wm-table-edit" aria-hidden />
-                  Themes
-                  <span className={styles.logCount}>{recodeLogs.length}</span>
-                </button>
-              </div>
-
               <div className={styles.logContent}>
-                {logCategory === 'dashboard' ? (
-                  <article className={styles.creationLog}>
+                <article className={styles.creationLog}>
                     <header className={styles.logHeader}>
                       <span className={`wm-dashboard ${styles.logHeaderIcon}`} aria-hidden />
                       <span>
@@ -366,6 +398,23 @@ export function TextAiDashboardSettingsModal({
                         <dt>Codebook preference</dt>
                         <dd>
                           <strong>{creationPreferences.codebookPreference}</strong>
+                          {creationPreferences.codebookFileDataUrl &&
+                          creationPreferences.codebookFileName ? (
+                            <a
+                              className={styles.codebookDownload}
+                              href={creationPreferences.codebookFileDataUrl}
+                              download={creationPreferences.codebookFileName}
+                            >
+                              <span className="wm-download" aria-hidden />
+                              Download {creationPreferences.codebookFileName}
+                            </a>
+                          ) : null}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Coding preference</dt>
+                        <dd>
+                          <strong>Coded separately</strong>
                         </dd>
                       </div>
                       <div className={styles.promptPreference}>
@@ -397,41 +446,7 @@ export function TextAiDashboardSettingsModal({
                         ))}
                       </div>
                     </section>
-                  </article>
-                ) : recodeLogs.length > 0 ? (
-                  <ol className={styles.recodeTimeline}>
-                    {recodeLogs.map((entry) => (
-                      <li key={entry.id}>
-                        <span className={styles.timelineMarker} aria-hidden />
-                        <article className={styles.recodeLogCard}>
-                          <header>
-                            <span>
-                              <strong>{entry.title}</strong>
-                              <small>{entry.question}</small>
-                            </span>
-                            <time dateTime={entry.occurredAt}>
-                              {new Intl.DateTimeFormat('en', {
-                                dateStyle: 'medium',
-                                timeStyle: 'short',
-                              }).format(new Date(entry.occurredAt))}
-                            </time>
-                          </header>
-                          <p>{entry.details}</p>
-                          <footer>Kartik Bhat</footer>
-                        </article>
-                      </li>
-                    ))}
-                  </ol>
-                ) : (
-                  <div className={styles.emptyLogs}>
-                    <span className="wm-history" aria-hidden />
-                    <h3>No theme changes yet</h3>
-                    <p>
-                      Granularity changes, sub-theme edits, and rejected emerging themes
-                      will be recorded here.
-                    </p>
-                  </div>
-                )}
+                </article>
               </div>
             </div>
           )}

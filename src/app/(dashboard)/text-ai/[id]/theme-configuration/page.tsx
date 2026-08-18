@@ -1,16 +1,28 @@
 'use client';
 
-import { use, useMemo, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Title as DialogTitle } from '@radix-ui/react-dialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
+import { TextAiThemeLogs } from '@/components/text-ai/TextAiThemeLogs';
 import { getTextAiDashboardById } from '@/data/get-text-ai-dashboard-by-id';
 import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
 import { MOCK_TEXT_AI_ANALYSIS_QUESTIONS } from '@/data/mock-text-ai-questions';
 import { appendTextAiRecodeLog } from '@/data/text-ai-activity-logs';
+import {
+  TEXT_AI_THEME_STATUS_FILTER_OPTIONS,
+  type TextAiFilterOption,
+  type TextAiThemeStatusFilter,
+} from '@/data/mock-text-ai-widget-data';
+import {
+  getTextAiThemePreferences,
+  saveTextAiThemePreferences,
+  TEXT_AI_THEME_PREFERENCES_EVENT,
+  type TextAiThemePreferences,
+} from '@/data/text-ai-theme-preferences';
 import styles from './ThemeConfiguration.module.css';
 
 const WuCombobox = dynamic(
@@ -39,6 +51,10 @@ const WuModalHeader = dynamic(
 );
 const WuToggle = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
+  { ssr: false }
+);
+const WuSelect = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
   { ssr: false }
 );
 
@@ -76,7 +92,7 @@ interface ThemeGroup {
   subThemes: SubTheme[];
 }
 
-type RejectTarget =
+type ApproveTarget =
   | {
       kind: 'theme';
       name: string;
@@ -120,24 +136,21 @@ const GRANULARITY_OPTIONS: GranularityOption[] = [
     classificationCount: 40,
     level: 'high',
     label: 'Detailed',
-    description:
-      'Classifies responses into up to 40 sub-themes for the most specific view.',
+    description: 'Creates the most specific view of response themes.',
     subThemeCounts: [12, 10, 15],
   },
   {
     classificationCount: 20,
     level: 'medium',
     label: 'Balanced',
-    description:
-      'Classifies responses into up to 20 sub-themes for a balanced level of detail.',
+    description: 'Balances useful detail with a streamlined code frame.',
     subThemeCounts: [6, 5, 6],
   },
   {
     classificationCount: 10,
     level: 'low',
     label: 'Compressed',
-    description:
-      'Classifies responses into up to 10 sub-themes for a concise overview.',
+    description: 'Creates a concise overview of the strongest response patterns.',
     subThemeCounts: [3, 2, 2],
   },
 ];
@@ -531,16 +544,18 @@ function ThemeGroupCard({
   group,
   collapsed,
   onEditSubTheme,
-  onRejectSubTheme,
-  onRejectTheme,
+  onApproveSubTheme,
+  onApproveTheme,
   onToggle,
+  shouldOfferApproval,
 }: {
   group: ThemeGroup;
   collapsed: boolean;
   onEditSubTheme: (subTheme: SubTheme) => void;
-  onRejectSubTheme: (subTheme: SubTheme) => void;
-  onRejectTheme: () => void;
+  onApproveSubTheme: (subTheme: SubTheme) => void;
+  onApproveTheme: () => void;
   onToggle: () => void;
+  shouldOfferApproval: (name: string) => boolean;
 }) {
   return (
     <section className={`${styles.themeGroup} ${styles[`themeGroup${group.tone}`]}`}>
@@ -565,15 +580,15 @@ function ThemeGroupCard({
             {group.subThemes.length} sub-theme{group.subThemes.length === 1 ? '' : 's'}
           </span>
           <span className={styles.themeGroupPercentage}>{group.percentage}</span>
-          {group.emerging && (
+          {group.emerging && shouldOfferApproval(group.name) && (
             <button
               type="button"
-              className={styles.rejectEmergingButton}
-              onClick={onRejectTheme}
-              aria-label={`Reject emerging theme ${group.name}`}
+              className={styles.approveEmergingButton}
+              onClick={onApproveTheme}
+              aria-label={`Approve emerging theme ${group.name}`}
             >
-              <span className="wm-block" aria-hidden />
-              Reject
+              <span className="wm-check" aria-hidden />
+              Approve
             </button>
           )}
         </div>
@@ -597,15 +612,15 @@ function ThemeGroupCard({
                 >
                   <span className="wm-edit" aria-hidden />
                 </button>
-                {subTheme.emerging && (
+                {subTheme.emerging && shouldOfferApproval(subTheme.name) && (
                   <button
                     type="button"
-                    className={styles.rejectEmergingButton}
-                    onClick={() => onRejectSubTheme(subTheme)}
-                    aria-label={`Reject emerging sub-theme ${subTheme.name}`}
+                    className={styles.approveEmergingButton}
+                    onClick={() => onApproveSubTheme(subTheme)}
+                    aria-label={`Approve emerging sub-theme ${subTheme.name}`}
                   >
-                    <span className="wm-block" aria-hidden />
-                    Reject
+                    <span className="wm-check" aria-hidden />
+                    Approve
                   </button>
                 )}
               </div>
@@ -634,11 +649,17 @@ export default function TextAiThemeConfigurationPage({
   );
   const [search, setSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
-  const [rejectedThemeIds, setRejectedThemeIds] = useState<Set<string>>(() => new Set());
-  const [rejectedSubThemeKeys, setRejectedSubThemeKeys] = useState<Set<string>>(
-    () => new Set()
+  const [approveTarget, setApproveTarget] = useState<ApproveTarget | null>(null);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<'preferences' | 'logs'>(
+    'preferences'
   );
-  const [rejectTarget, setRejectTarget] = useState<RejectTarget | null>(null);
+  const [themeStatus, setThemeStatus] = useState<TextAiThemeStatusFilter>('all');
+  const [themePreferences, setThemePreferences] = useState<TextAiThemePreferences>({
+    approvedEmergingNames: [],
+    autoApproveEmergingThemes: true,
+    showThemesWithNoResponses: true,
+  });
   const [granularityModalOpen, setGranularityModalOpen] = useState(false);
   const [appliedGranularity, setAppliedGranularity] =
     useState<GranularityLevel>('medium');
@@ -659,7 +680,32 @@ export default function TextAiThemeConfigurationPage({
     useState<EditSubThemeTarget | null>(null);
   const [draftSubThemeName, setDraftSubThemeName] = useState('');
   const [draftSubThemeDescription, setDraftSubThemeDescription] = useState('');
-  const [showItemsWithoutResponses, setShowItemsWithoutResponses] = useState(true);
+
+  useEffect(() => {
+    const refreshPreferences = () =>
+      setThemePreferences(getTextAiThemePreferences(numericDashboardId));
+    const timeoutId = window.setTimeout(refreshPreferences, 0);
+    window.addEventListener(TEXT_AI_THEME_PREFERENCES_EVENT, refreshPreferences);
+    window.addEventListener('storage', refreshPreferences);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener(
+        TEXT_AI_THEME_PREFERENCES_EVENT,
+        refreshPreferences
+      );
+      window.removeEventListener('storage', refreshPreferences);
+    };
+  }, [numericDashboardId]);
+
+  function updateThemePreferences(
+    update: (current: TextAiThemePreferences) => TextAiThemePreferences
+  ): void {
+    setThemePreferences((current) => {
+      const next = update(current);
+      saveTextAiThemePreferences(numericDashboardId, next);
+      return next;
+    });
+  }
 
   const selectedQuestionIndex = Math.max(
     0,
@@ -724,24 +770,36 @@ export default function TextAiThemeConfigurationPage({
   const visibleThemeGroups = useMemo(
     () =>
       themeGroups
-        .filter((group) => !rejectedThemeIds.has(group.id))
+        .filter((group) =>
+          themeStatus === 'all'
+            ? true
+            : themeStatus === 'emerging'
+              ? Boolean(group.emerging || group.subThemes.some((item) => item.emerging))
+              : !group.emerging
+        )
         .flatMap((group) => {
-          if (!showItemsWithoutResponses && !hasResponses(group.percentage)) {
+          if (
+            !themePreferences.showThemesWithNoResponses &&
+            !hasResponses(group.percentage)
+          ) {
             return [];
           }
 
           const subThemes = group.subThemes.filter(
             (subTheme) =>
-              !rejectedSubThemeKeys.has(`${group.id}:${subTheme.id}`) &&
-              (showItemsWithoutResponses || hasResponses(subTheme.percentage))
+              (themePreferences.showThemesWithNoResponses ||
+                hasResponses(subTheme.percentage)) &&
+              (themeStatus === 'all' ||
+                (themeStatus === 'emerging'
+                  ? Boolean(group.emerging || subTheme.emerging)
+                  : !subTheme.emerging))
           );
 
           return [{ ...group, subThemes }];
         }),
     [
-      rejectedSubThemeKeys,
-      rejectedThemeIds,
-      showItemsWithoutResponses,
+      themePreferences.showThemesWithNoResponses,
+      themeStatus,
       themeGroups,
     ]
   );
@@ -816,31 +874,39 @@ export default function TextAiThemeConfigurationPage({
     });
   }
 
-  function confirmRejection(): void {
-    if (!rejectTarget) return;
+  function confirmApproval(): void {
+    if (!approveTarget) return;
 
-    if (rejectTarget.kind === 'theme') {
-      setRejectedThemeIds((current) => new Set(current).add(rejectTarget.themeId));
-      appendTextAiRecodeLog({
-        action: 'theme-rejected',
-        dashboardId: numericDashboardId,
-        details: `Removed the emerging theme “${rejectTarget.name}” and its sub-themes from the code frame.`,
-        question: selectedQuestion?.text ?? 'Selected question',
-        title: 'Emerging theme rejected',
-      });
-    } else {
-      const subThemeKey = `${rejectTarget.themeId}:${rejectTarget.subThemeId}`;
-      setRejectedSubThemeKeys((current) => new Set(current).add(subThemeKey));
-      appendTextAiRecodeLog({
-        action: 'sub-theme-rejected',
-        dashboardId: numericDashboardId,
-        details: `Removed the emerging sub-theme “${rejectTarget.name}” from the code frame.`,
-        question: selectedQuestion?.text ?? 'Selected question',
-        title: 'Emerging sub-theme rejected',
-      });
-    }
+    const childNames =
+      themeGroups
+        .find((group) => group.id === approveTarget.themeId)
+        ?.subThemes.map((subTheme) => subTheme.name) ?? [];
+    const names =
+      approveTarget.kind === 'theme'
+        ? [approveTarget.name, ...childNames]
+        : [approveTarget.name];
 
-    setRejectTarget(null);
+    updateThemePreferences((current) => ({
+      ...current,
+      approvedEmergingNames: [
+        ...new Set([...current.approvedEmergingNames, ...names]),
+      ],
+    }));
+    appendTextAiRecodeLog({
+      action:
+        approveTarget.kind === 'theme' ? 'theme-approved' : 'sub-theme-approved',
+      dashboardId: numericDashboardId,
+      details:
+        approveTarget.kind === 'theme'
+          ? `Approved the emerging theme “${approveTarget.name}” and its sub-themes.`
+          : `Approved the emerging sub-theme “${approveTarget.name}”.`,
+      question: selectedQuestion?.text ?? 'Selected question',
+      title:
+        approveTarget.kind === 'theme'
+          ? 'Emerging theme approved'
+          : 'Emerging sub-theme approved',
+    });
+    setApproveTarget(null);
   }
 
   function saveSubThemeEdit(): void {
@@ -910,29 +976,51 @@ export default function TextAiThemeConfigurationPage({
     <PageContainer className={styles.page}>
       <div className={styles.utilityBar}>
         <div className={styles.utilityControls}>
-          <div className={styles.questionFilter}>
-            <span className={styles.filterLabel}>Question</span>
-            <WuCombobox
-              data={questions}
-              accessorKey={{ value: 'id', label: 'text' }}
-              value={selectedQuestion}
-              onSelect={(option) => {
-                if (!option || Array.isArray(option)) return;
-                setSelectedQuestionId((option as TextAiDashboardQuestion).id);
-                setSearch('');
-                setRejectedThemeIds(new Set());
-                setRejectedSubThemeKeys(new Set());
-                setRejectTarget(null);
-                setEditSubThemeTarget(null);
-              }}
-              variant="outlined"
-              enableSearch
-              isEllipse
-              maxHeight={320}
-              noDataContent="No questions found"
-              className={styles.questionSelect}
-              aria-label="Question"
-            />
+          <div className={styles.configurationFilters}>
+            <div className={styles.questionFilter}>
+              <span className={styles.filterLabel}>Question</span>
+              <WuCombobox
+                data={questions}
+                accessorKey={{ value: 'id', label: 'text' }}
+                value={selectedQuestion}
+                onSelect={(option) => {
+                  if (!option || Array.isArray(option)) return;
+                  setSelectedQuestionId((option as TextAiDashboardQuestion).id);
+                  setSearch('');
+                  setApproveTarget(null);
+                  setEditSubThemeTarget(null);
+                }}
+                variant="outlined"
+                enableSearch
+                isEllipse
+                maxHeight={320}
+                noDataContent="No questions found"
+                className={styles.questionSelect}
+                aria-label="Question"
+              />
+            </div>
+            <div className={styles.questionFilter}>
+              <span className={styles.filterLabel}>Theme status</span>
+              <WuSelect
+                data={TEXT_AI_THEME_STATUS_FILTER_OPTIONS}
+                accessorKey={{ value: 'value', label: 'label' }}
+                value={
+                  TEXT_AI_THEME_STATUS_FILTER_OPTIONS.find(
+                    (option) => option.value === themeStatus
+                  ) ?? TEXT_AI_THEME_STATUS_FILTER_OPTIONS[0]
+                }
+                onSelect={(option) => {
+                  if (!option || Array.isArray(option)) return;
+                  setThemeStatus(
+                    (option as TextAiFilterOption)
+                      .value as TextAiThemeStatusFilter
+                  );
+                }}
+                variant="outlined"
+                className={styles.statusSelect}
+                aria-label="Theme status"
+              />
+            </div>
           </div>
           <div className={styles.themeVisibilityControls}>
             <label className={styles.searchBox}>
@@ -944,14 +1032,6 @@ export default function TextAiThemeConfigurationPage({
                 placeholder="Search themes or responses..."
               />
             </label>
-            <div className={styles.emptyItemsToggle}>
-              <WuToggle
-                checked={showItemsWithoutResponses}
-                onChange={setShowItemsWithoutResponses}
-                aria-label="Show themes with no responses"
-              />
-              <span>Show themes with no responses</span>
-            </div>
           </div>
         </div>
         <div className={styles.utilityActions}>
@@ -988,6 +1068,18 @@ export default function TextAiThemeConfigurationPage({
             <span className="wm-tune" aria-hidden />
             <span>Granularity</span>
           </button>
+          <WuButton
+            type="button"
+            variant="iconOnly"
+            size="sm"
+            className={styles.settingsAction}
+            aria-label="Theme configuration settings"
+            Icon={<span className="wm-settings" aria-hidden />}
+            onClick={() => {
+              setSettingsTab('preferences');
+              setSettingsModalOpen(true);
+            }}
+          />
         </div>
       </div>
 
@@ -1039,22 +1131,26 @@ export default function TextAiThemeConfigurationPage({
                       getDefaultSubThemeDescription(subTheme.name)
                   );
                 }}
-                onRejectSubTheme={(subTheme) =>
-                  setRejectTarget({
+                onApproveSubTheme={(subTheme) =>
+                  setApproveTarget({
                     kind: 'sub-theme',
                     name: subTheme.name,
                     subThemeId: subTheme.id,
                     themeId: group.id,
                   })
                 }
-                onRejectTheme={() =>
-                  setRejectTarget({
+                onApproveTheme={() =>
+                  setApproveTarget({
                     kind: 'theme',
                     name: group.name,
                     themeId: group.id,
                   })
                 }
                 onToggle={() => toggleGroup(group.id)}
+                shouldOfferApproval={(name) =>
+                  !themePreferences.autoApproveEmergingThemes &&
+                  !themePreferences.approvedEmergingNames.includes(name)
+                }
               />
             ))}
           </div>
@@ -1339,7 +1435,7 @@ export default function TextAiThemeConfigurationPage({
         <WuModalContent>
           <div className={styles.granularityModalContent}>
             <p className={styles.granularityIntroduction}>
-              Choose how many sub-themes TextAI should use to classify responses.
+              Choose how detailed the response tagging should be.
             </p>
             {granularityChangeLimitReached && (
               <p className={styles.granularityLimitMessage}>
@@ -1375,9 +1471,6 @@ export default function TextAiThemeConfigurationPage({
                   <span className={styles.granularityOptionText}>
                     <span className={styles.granularityOptionHeading}>
                       <strong>{option.label}</strong>
-                      <span>
-                        {`Up to ${option.classificationCount} sub-themes`}
-                      </span>
                     </span>
                     <span className={styles.granularityDescription}>
                       {option.description}
@@ -1433,8 +1526,6 @@ export default function TextAiThemeConfigurationPage({
               setGranularityChangesUsed((current) =>
                 Math.min(current + 1, GRANULARITY_CHANGE_LIMIT)
               );
-              setRejectedThemeIds(new Set());
-              setRejectedSubThemeKeys(new Set());
               setGranularityModalOpen(false);
             }}
           >
@@ -1444,35 +1535,126 @@ export default function TextAiThemeConfigurationPage({
       </WuModal>
 
       <WuModal
-        open={rejectTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setRejectTarget(null);
-        }}
-        size="sm"
-        variant="critical"
+        open={settingsModalOpen}
+        onOpenChange={setSettingsModalOpen}
+        size="lg"
+        variant="action"
       >
         <DialogTitle className={styles.srOnly}>
-          Reject emerging {rejectTarget?.kind === 'theme' ? 'theme' : 'sub-theme'}
+          Theme configuration settings
         </DialogTitle>
-        <WuModalHeader>
-          Reject emerging {rejectTarget?.kind === 'theme' ? 'theme' : 'sub-theme'}?
-        </WuModalHeader>
-        <WuModalContent>
-          <div className={styles.rejectModalContent}>
-            <p>
-              This will remove <strong>{rejectTarget?.name}</strong> from the code frame.
-            </p>
-            {rejectTarget?.kind === 'theme' && (
-              <p>All sub-themes within this emerging theme will also be removed.</p>
+        <WuModalHeader>Theme configuration settings</WuModalHeader>
+        <WuModalContent className={styles.settingsModalBody}>
+          <div className={styles.settingsModalContent}>
+            <div className={styles.settingsTabs} role="tablist" aria-label="Settings">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={settingsTab === 'preferences'}
+                className={settingsTab === 'preferences' ? styles.activeSettingsTab : ''}
+                onClick={() => setSettingsTab('preferences')}
+              >
+                Preferences
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={settingsTab === 'logs'}
+                className={settingsTab === 'logs' ? styles.activeSettingsTab : ''}
+                onClick={() => setSettingsTab('logs')}
+              >
+                Logs
+              </button>
+            </div>
+
+            {settingsTab === 'preferences' ? (
+              <div className={styles.settingsPreferences}>
+                <label className={styles.settingsPreference}>
+                  <span>
+                    <strong>Show themes with no responses</strong>
+                    <small>
+                      Include themes and sub-themes that do not have tagged responses.
+                    </small>
+                  </span>
+                  <WuToggle
+                    checked={themePreferences.showThemesWithNoResponses}
+                    onChange={(checked) =>
+                      updateThemePreferences((current) => ({
+                        ...current,
+                        showThemesWithNoResponses: checked,
+                      }))
+                    }
+                    aria-label="Show themes with no responses"
+                  />
+                </label>
+                <label className={styles.settingsPreference}>
+                  <span>
+                    <strong>Auto approve emerging themes</strong>
+                    <small>
+                      Show new emerging themes and sub-themes on the dashboard
+                      without manual approval.
+                    </small>
+                  </span>
+                  <WuToggle
+                    checked={themePreferences.autoApproveEmergingThemes}
+                    onChange={(checked) =>
+                      updateThemePreferences((current) => ({
+                        ...current,
+                        approvedEmergingNames: checked
+                          ? current.approvedEmergingNames
+                          : [],
+                        autoApproveEmergingThemes: checked,
+                      }))
+                    }
+                    aria-label="Auto approve emerging themes"
+                  />
+                </label>
+              </div>
+            ) : (
+              <div className={styles.settingsLogs}>
+                <TextAiThemeLogs dashboardId={numericDashboardId} />
+              </div>
             )}
           </div>
         </WuModalContent>
         <WuModalFooter>
-          <WuButton type="button" variant="secondary" onClick={() => setRejectTarget(null)}>
+          <WuButton type="button" onClick={() => setSettingsModalOpen(false)}>
+            Done
+          </WuButton>
+        </WuModalFooter>
+      </WuModal>
+
+      <WuModal
+        open={approveTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setApproveTarget(null);
+        }}
+        size="sm"
+        variant="action"
+      >
+        <DialogTitle className={styles.srOnly}>
+          Approve emerging {approveTarget?.kind === 'theme' ? 'theme' : 'sub-theme'}
+        </DialogTitle>
+        <WuModalHeader>
+          Approve emerging {approveTarget?.kind === 'theme' ? 'theme' : 'sub-theme'}?
+        </WuModalHeader>
+        <WuModalContent>
+          <div className={styles.approveModalContent}>
+            <p>
+              This will make <strong>{approveTarget?.name}</strong> visible on
+              the dashboard.
+            </p>
+            {approveTarget?.kind === 'theme' && (
+              <p>All sub-themes within this emerging theme will also be approved.</p>
+            )}
+          </div>
+        </WuModalContent>
+        <WuModalFooter>
+          <WuButton type="button" variant="secondary" onClick={() => setApproveTarget(null)}>
             Cancel
           </WuButton>
-          <WuButton type="button" color="error" onClick={confirmRejection}>
-            Reject
+          <WuButton type="button" onClick={confirmApproval}>
+            Approve
           </WuButton>
         </WuModalFooter>
       </WuModal>

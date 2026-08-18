@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { TextAiAddWidgetModal } from '@/components/text-ai/TextAiAddWidgetModal';
@@ -26,6 +26,11 @@ import {
   type TextAiTopicSegmentWidget,
 } from '@/data/mock-text-ai-topic-segment-widget';
 import type { TextAiThemeStatusFilter } from '@/data/mock-text-ai-widget-data';
+import {
+  getTextAiThemePreferences,
+  TEXT_AI_THEME_PREFERENCES_EVENT,
+  type TextAiThemePreferences,
+} from '@/data/text-ai-theme-preferences';
 
 function resolveDashboardQuestions(
   dashboardId: number,
@@ -61,6 +66,26 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const [addedTopicSegmentWidgets, setAddedTopicSegmentWidgets] = useState<
     TextAiTopicSegmentWidget[]
   >([]);
+  const [themePreferences, setThemePreferences] = useState<TextAiThemePreferences>({
+    approvedEmergingNames: [],
+    autoApproveEmergingThemes: true,
+    showThemesWithNoResponses: true,
+  });
+
+  useEffect(() => {
+    const refreshPreferences = () =>
+      setThemePreferences(getTextAiThemePreferences(numericId));
+    refreshPreferences();
+    window.addEventListener(TEXT_AI_THEME_PREFERENCES_EVENT, refreshPreferences);
+    window.addEventListener('storage', refreshPreferences);
+    return () => {
+      window.removeEventListener(
+        TEXT_AI_THEME_PREFERENCES_EVENT,
+        refreshPreferences
+      );
+      window.removeEventListener('storage', refreshPreferences);
+    };
+  }, [numericId]);
 
   if (!dashboard) {
     if (!wick) {
@@ -115,7 +140,10 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     });
     setSelectedQuestion(dashboardQuestion);
 
-    if (chartTypeId === 'comparative-chart') {
+    if (
+      chartTypeId === 'comparative-chart' ||
+      chartTypeId === 'subtheme-comparative-chart'
+    ) {
       setAddedTopicSegmentWidgets((prev) => [
         createTextAiComparativeChartWidget(question.text),
         ...prev,
@@ -150,6 +178,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         )}
         themeStatus={themeStatus}
         addedTopicSegmentWidgets={addedTopicSegmentWidgets}
+        themePreferences={themePreferences}
       />
       <TextAiDashboardSettingsModal
         dashboard={currentDashboard}

@@ -32,6 +32,13 @@
   min-width: 0;
 }
 
+.configurationFilters {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
 .filterLabel {
   color: #545e6b;
   flex-shrink: 0;
@@ -42,6 +49,11 @@
 .questionSelect {
   min-width: 16rem;
   width: min(28vw, 24rem);
+}
+
+.statusSelect {
+  min-width: 15rem;
+  width: min(25vw, 18rem);
 }
 
 .themeVisibilityControls {
@@ -147,6 +159,10 @@
 
 .granularityAction :global(.wm-tune) {
   font-size: 1rem;
+}
+
+.settingsAction {
+  color: #626c76;
 }
 
 .dashboardLink {
@@ -429,12 +445,12 @@
   font-size: 0.85rem;
 }
 
-.rejectEmergingButton {
+.approveEmergingButton {
   align-items: center;
   background: transparent;
   border: 0;
   border-radius: 0.25rem;
-  color: #7b5962;
+  color: #267343;
   cursor: pointer;
   display: inline-flex;
   font: inherit;
@@ -445,13 +461,13 @@
   padding: 0 0.4rem;
 }
 
-.rejectEmergingButton:hover,
-.rejectEmergingButton:focus-visible {
-  background: rgba(180, 35, 60, 0.08);
-  color: #b4233c;
+.approveEmergingButton:hover,
+.approveEmergingButton:focus-visible {
+  background: #eaf6ee;
+  color: #176535;
 }
 
-.rejectEmergingButton :global(.wm-block) {
+.approveEmergingButton :global(.wm-check) {
   font-size: 0.78rem;
 }
 
@@ -464,7 +480,7 @@
   text-align: center;
 }
 
-.rejectModalContent {
+.approveModalContent {
   color: #505965;
   display: grid;
   font-size: 0.875rem;
@@ -472,12 +488,90 @@
   line-height: 1.45;
 }
 
-.rejectModalContent p {
+.approveModalContent p {
   margin: 0;
 }
 
-.rejectModalContent strong {
+.approveModalContent strong {
   color: #252b33;
+}
+
+.settingsModalContent {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 24rem;
+}
+
+.settingsModalBody {
+  padding-top: 0.75rem !important;
+}
+
+.settingsTabs {
+  border-bottom: 1px solid #e2e7eb;
+  display: flex;
+  gap: 1.25rem;
+}
+
+.settingsTabs button {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #687480;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.25rem;
+  padding: 0 0 0.25rem;
+}
+
+.settingsTabs .activeSettingsTab {
+  border-bottom-color: #1686e4;
+  color: #1674c5;
+  font-weight: 500;
+}
+
+.settingsPreferences {
+  align-content: start;
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.25rem 0.125rem;
+}
+
+.settingsPreference {
+  align-items: center;
+  display: flex;
+  gap: 2rem;
+  justify-content: space-between;
+  max-width: 46rem;
+  padding: 0;
+}
+
+.settingsPreference + .settingsPreference {
+  border-top: 0;
+}
+
+.settingsPreference > span {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.settingsPreference strong {
+  color: #38434e;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.settingsPreference small {
+  color: #78838e;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.settingsLogs {
+  max-height: 32rem;
+  overflow-y: auto;
+  padding: 0.25rem;
 }
 
 .editSubThemeModalContent {

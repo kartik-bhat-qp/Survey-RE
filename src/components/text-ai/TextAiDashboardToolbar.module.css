@@ -24,7 +24,15 @@
 .titleSection {
   align-items: center;
   display: flex;
+  gap: 1rem;
   margin-left: 15px;
+  min-width: 0;
+}
+
+.titleQuestionFilter {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
   min-width: 0;
 }
 
@@ -220,6 +228,16 @@
   .titleSection,
   .filterRow {
     margin-left: 0;
+  }
+
+  .titleSection {
+    align-items: flex-start;
+    flex: 1 1 100%;
+    flex-direction: column;
+  }
+
+  .titleQuestionFilter {
+    width: 100%;
   }
 
   .actions {

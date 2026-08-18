@@ -31,6 +31,7 @@ import {
   type TextAiAnalysisWidget,
   type TextAiThemeStatusFilter,
 } from '@/data/mock-text-ai-widget-data';
+import type { TextAiThemePreferences } from '@/data/text-ai-theme-preferences';
 import styles from './TextAiDashboardCanvas.module.css';
 
 import 'react-grid-layout/css/styles.css';
@@ -64,6 +65,7 @@ interface TextAiDashboardCanvasProps {
   themeStatus: TextAiThemeStatusFilter;
   /** Widgets added via Add widget (e.g. comparative chart). Shown above default widgets. */
   addedTopicSegmentWidgets?: TextAiTopicSegmentWidget[];
+  themePreferences: TextAiThemePreferences;
 }
 
 const INITIAL_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
@@ -251,16 +253,20 @@ function adaptAnalysisWidgets(
 
 function filterTopicRowsByStatus(
   rows: TextAiTopicSegmentRow[],
-  status: TextAiThemeStatusFilter
+  status: TextAiThemeStatusFilter,
+  canShowEmerging: (name: string) => boolean
 ): TextAiTopicSegmentRow[] {
-  if (status === 'all') return rows;
-
   return rows.flatMap((row) => {
     const subtopics = row.subtopics
-      ? filterTopicRowsByStatus(row.subtopics, status)
+      ? filterTopicRowsByStatus(row.subtopics, status, canShowEmerging)
       : undefined;
+    const rowApproved = !row.emerging || canShowEmerging(row.topic);
     const rowMatches =
-      status === 'emerging' ? Boolean(row.emerging) : !row.emerging;
+      status === 'all'
+        ? rowApproved
+        : status === 'emerging'
+          ? Boolean(row.emerging && rowApproved)
+          : !row.emerging;
 
     if (!rowMatches && !subtopics?.length) return [];
 
@@ -275,15 +281,22 @@ function filterTopicRowsByStatus(
 
 function filterAnalysisWidgetsByStatus(
   widgets: TextAiAnalysisWidget[],
-  status: TextAiThemeStatusFilter
+  status: TextAiThemeStatusFilter,
+  canShowEmerging: (name: string) => boolean
 ): TextAiAnalysisWidget[] {
-  if (status === 'all') return widgets;
-
   return widgets.map((widget) => ({
     ...widget,
     rows: widget.rows.filter((row) => {
       const emerging = Boolean(row.topicEmerging || row.subtopicEmerging);
-      return status === 'emerging' ? emerging : !emerging;
+      const approved =
+        !emerging ||
+        (row.topicEmerging && canShowEmerging(row.topic)) ||
+        (row.subtopicEmerging && canShowEmerging(row.subtopic));
+      return status === 'all'
+        ? approved
+        : status === 'emerging'
+          ? emerging && approved
+          : !emerging;
     }),
   }));
 }
@@ -294,10 +307,14 @@ export function TextAiDashboardCanvas({
   questionIndex,
   themeStatus,
   addedTopicSegmentWidgets = [],
+  themePreferences,
 }: TextAiDashboardCanvasProps) {
   const isMobile = useIsMobile();
   const [isPositioning, setIsPositioning] = useState(false);
   const [removedWidgetIds, setRemovedWidgetIds] = useState<Set<string>>(() => new Set());
+  const canShowEmerging = (name: string) =>
+    themePreferences.autoApproveEmergingThemes ||
+    themePreferences.approvedEmergingNames.includes(name);
   const questionFactor = getQuestionFactor(questionIndex);
   const summaryWidgets = adaptSummaryWidgets(
     getTextAiSummaryWidgets(dashboardId),
@@ -317,15 +334,16 @@ export function TextAiDashboardCanvas({
   );
   const visibleAddedTopicSegmentWidgets = addedTopicSegmentWidgets.map((widget) => ({
     ...widget,
-    rows: filterTopicRowsByStatus(widget.rows, themeStatus),
+    rows: filterTopicRowsByStatus(widget.rows, themeStatus, canShowEmerging),
   }));
   const visibleTopicSegmentWidgets = topicSegmentWidgets.map((widget) => ({
     ...widget,
-    rows: filterTopicRowsByStatus(widget.rows, themeStatus),
+    rows: filterTopicRowsByStatus(widget.rows, themeStatus, canShowEmerging),
   }));
   const visibleAnalysisWidgets = filterAnalysisWidgetsByStatus(
     analysisWidgets,
-    themeStatus
+    themeStatus,
+    canShowEmerging
   );
 
   function removeWidget(widgetId: string): void {
@@ -373,6 +391,7 @@ export function TextAiDashboardCanvas({
           question={selectedQuestion.text}
           themeStatus={themeStatus}
           onDelete={() => removeWidget('subtheme-stackbar')}
+          themePreferences={themePreferences}
         />
       ),
     },
@@ -384,6 +403,7 @@ export function TextAiDashboardCanvas({
           question={selectedQuestion.text}
           themeStatus={themeStatus}
           onDelete={() => removeWidget('theme-stackbar')}
+          themePreferences={themePreferences}
         />
       ),
     },

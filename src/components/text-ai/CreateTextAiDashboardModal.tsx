@@ -113,6 +113,8 @@ export function CreateTextAiDashboardModal({
     }
     onCreate({
       codebookSource: modelSetup.codebookSource,
+      codebookFileDataUrl: modelSetup.codebookFileDataUrl,
+      codebookFileName: modelSetup.codebookFileName,
       name: getTrimmedName(),
       modelingGoal: modelSetup.modelingGoal,
       outputLanguage: modelSetup.outputLanguage,

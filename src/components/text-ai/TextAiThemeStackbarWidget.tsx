@@ -16,6 +16,7 @@ import {
   limitTextAiWidgetItems,
   type TextAiWidgetTopN,
 } from '@/data/mock-text-ai-widget-settings';
+import type { TextAiThemePreferences } from '@/data/text-ai-theme-preferences';
 import styles from './TextAiThemeStackbarWidget.module.css';
 
 
@@ -36,6 +37,7 @@ interface TextAiThemeStackbarWidgetProps {
   question: string;
   themeStatus: TextAiThemeStatusFilter;
   onDelete?: () => void;
+  themePreferences: TextAiThemePreferences;
 }
 
 function formatThemeLabel(label: string): string {
@@ -108,6 +110,7 @@ export function TextAiThemeStackbarWidget({
   question,
   themeStatus,
   onDelete,
+  themePreferences,
 }: TextAiThemeStackbarWidgetProps) {
   const wick = useWickUILib();
   const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
@@ -115,14 +118,19 @@ export function TextAiThemeStackbarWidget({
     Set<TextAiSentimentBucket>
   >(() => new Set(SENTIMENT_BUCKETS.map((bucket) => bucket.key)));
   const visibleThemes = useMemo(() => {
-    const filtered =
-      themeStatus === 'all'
-        ? TEXT_AI_SUBTHEME_STACKBAR_ROWS
-        : TEXT_AI_SUBTHEME_STACKBAR_ROWS.filter((theme) =>
-            themeStatus === 'emerging' ? theme.emerging : !theme.emerging
-          );
+    const filtered = TEXT_AI_SUBTHEME_STACKBAR_ROWS.filter((theme) => {
+      const approved =
+        !theme.emerging ||
+        themePreferences.autoApproveEmergingThemes ||
+        themePreferences.approvedEmergingNames.includes(theme.label);
+      if (themeStatus === 'all') return approved;
+      return themeStatus === 'emerging'
+        ? Boolean(theme.emerging && approved)
+        : !theme.emerging;
+    });
+
     return limitTextAiWidgetItems(filtered, topN);
-  }, [themeStatus, topN]);
+  }, [themePreferences, themeStatus, topN]);
 
   function toggleSentiment(bucket: TextAiSentimentBucket): void {
     setActiveSentimentBuckets((current) => {

@@ -110,6 +110,38 @@
   padding-top: 1rem;
 }
 
+.preferencesPanel {
+  align-content: start;
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem 0.25rem 1rem;
+}
+
+.preferenceRow {
+  align-items: center;
+  display: flex;
+  gap: 2rem;
+  justify-content: space-between;
+  max-width: 46rem;
+}
+
+.preferenceRow > span {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.preferenceRow strong {
+  color: #38434e;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.preferenceRow small {
+  color: #78838e;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
 .searchRow,
 .actionRow {
   align-items: center;
@@ -301,7 +333,7 @@
 
 .logsPanel {
   display: flex;
-  gap: 1.25rem;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -357,8 +389,10 @@
 
 .logContent {
   flex: 1;
+  min-height: 0;
   min-width: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0.25rem 0.5rem 1rem 0;
 }
 
@@ -408,7 +442,7 @@
 .preferenceGrid {
   display: grid;
   gap: 0;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 0;
 }
 
@@ -418,7 +452,7 @@
   padding: 0.9rem 1rem;
 }
 
-.preferenceGrid > div:nth-child(3) {
+.preferenceGrid > div:nth-child(4) {
   border-right: 0;
 }
 
@@ -431,7 +465,6 @@
   color: #77818d;
   font-size: 0.68rem;
   margin-bottom: 0.35rem;
-  text-transform: uppercase;
 }
 
 .preferenceGrid dd {
@@ -451,6 +484,22 @@
 .preferenceGrid dd span {
   color: #737e89;
   font-size: 0.72rem;
+}
+
+.codebookDownload {
+  align-items: center;
+  color: #1678cc;
+  display: inline-flex;
+  font-size: 0.7rem;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.codebookDownload:hover,
+.codebookDownload:focus-visible {
+  text-decoration: underline;
 }
 
 .questionLogSection {

@@ -58,6 +58,8 @@ export interface TextAiModelSetupValues {
   outputLanguage: TextAiLanguageOption;
   modelingGoal: string;
   codebookSource: TextAiCodebookSource;
+  codebookFileDataUrl: string;
+  codebookFileName: string;
   reportCodebook: TextAiReportCodebookOption | null;
   expertReviewRequested: boolean;
 }
@@ -90,7 +92,16 @@ export function TextAiModelSetupForm({
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
-    showToast({ message: `Uploaded "${file.name}"`, variant: 'success' });
+    const reader = new FileReader();
+    reader.addEventListener('load', () => {
+      patch({
+        codebookFileDataUrl:
+          typeof reader.result === 'string' ? reader.result : '',
+        codebookFileName: file.name,
+      });
+      showToast({ message: `Uploaded "${file.name}"`, variant: 'success' });
+    });
+    reader.readAsDataURL(file);
   }
 
   return (
@@ -214,6 +225,11 @@ export function TextAiModelSetupForm({
               {TEXT_AI_CODEBOOK_TEMPLATE_UPLOAD_LABEL}
             </button>
             <p className={styles.supportedFiles}>{TEXT_AI_CODEBOOK_TEMPLATE_SUPPORTED_FILES}</p>
+            {values.codebookFileName ? (
+              <p className={styles.supportedFiles}>
+                Uploaded file: {values.codebookFileName}
+              </p>
+            ) : null}
           </div>
         ) : null}
 
@@ -261,6 +277,8 @@ export function createDefaultModelSetupValues(defaultName: string): TextAiModelS
     outputLanguage: DEFAULT_TEXT_AI_OUTPUT_LANGUAGE,
     modelingGoal: '',
     codebookSource: 'none',
+    codebookFileDataUrl: '',
+    codebookFileName: '',
     reportCodebook: null,
     expertReviewRequested: false,
   };

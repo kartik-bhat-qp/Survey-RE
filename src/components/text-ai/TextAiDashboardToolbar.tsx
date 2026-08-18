@@ -147,6 +147,27 @@ export function TextAiDashboardToolbar({
               maxLength={100}
               aria-label="Dashboard name"
             />
+            <div className={styles.titleQuestionFilter}>
+              <span className={styles.filterLabel}>Question</span>
+              <WuCombobox
+                data={questions}
+                accessorKey={{ value: 'id', label: 'text' }}
+                value={selectedQuestion}
+                onSelect={(option) => {
+                  if (!option || Array.isArray(option)) return;
+                  onQuestionChange(option as TextAiDashboardQuestion);
+                  setTheme(null);
+                  setSubtheme(null);
+                }}
+                variant="outlined"
+                enableSearch
+                isEllipse
+                maxHeight={320}
+                noDataContent="No questions found"
+                className={`${styles.filterSelect} ${styles.questionSelect}`}
+                aria-label="Question"
+              />
+            </div>
           </div>
 
           <div className={styles.actions}>
@@ -230,27 +251,6 @@ export function TextAiDashboardToolbar({
 
         <div className={styles.filterRow}>
           <div className={styles.filters}>
-            <div className={styles.inlineFilter}>
-              <span className={styles.filterLabel}>Question</span>
-              <WuCombobox
-                data={questions}
-                accessorKey={{ value: 'id', label: 'text' }}
-                value={selectedQuestion}
-                onSelect={(option) => {
-                  if (!option || Array.isArray(option)) return;
-                  onQuestionChange(option as TextAiDashboardQuestion);
-                  setTheme(null);
-                  setSubtheme(null);
-                }}
-                variant="outlined"
-                enableSearch
-                isEllipse
-                maxHeight={320}
-                noDataContent="No questions found"
-                className={`${styles.filterSelect} ${styles.questionSelect}`}
-                aria-label="Question"
-              />
-            </div>
             <div className={styles.inlineFilter}>
               <span className={styles.filterLabel}>Themes</span>
               <WuSelect<TextAiFilterSelectOption>

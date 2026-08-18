@@ -8,6 +8,8 @@ import type {
 
 export interface TextAiDashboardCreatePayload {
   codebookSource: TextAiCodebookSource;
+  codebookFileDataUrl: string;
+  codebookFileName: string;
   name: string;
   modelingGoal: string;
   outputLanguage: TextAiLanguageOption;

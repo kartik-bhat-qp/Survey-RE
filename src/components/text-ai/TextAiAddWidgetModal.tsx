@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
@@ -65,8 +65,7 @@ export function TextAiAddWidgetModal({
     DEFAULT_TEXT_AI_WIDGET_CHART_TYPE_ID
   );
 
-  useEffect(() => {
-    if (!open) return;
+  function resetModalState(): void {
     setStep('question');
     setSearch('');
     setSelectedQuestion(null);
@@ -74,7 +73,14 @@ export function TextAiAddWidgetModal({
     setDescriptionEnabled(false);
     setWidgetDescription('');
     setSelectedChartTypeId(DEFAULT_TEXT_AI_WIDGET_CHART_TYPE_ID);
-  }, [open]);
+  }
+
+  function handleOpenChange(nextOpen: boolean): void {
+    if (!nextOpen) {
+      resetModalState();
+    }
+    onOpenChange(nextOpen);
+  }
 
   const filteredQuestions = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -98,12 +104,13 @@ export function TextAiAddWidgetModal({
         accessorKey: 'code',
         header: 'Code',
         enableSorting: true,
-        size: 88,
+        size: 106,
       },
       {
         accessorKey: 'text',
         header: 'Questions',
         enableSorting: true,
+        size: 695,
         cell: ({ row }) => {
           const question = row.original;
           const isSelected = selectedQuestion?.id === question.id;
@@ -115,7 +122,7 @@ export function TextAiAddWidgetModal({
               }`}
               onClick={() => {
                 setSelectedQuestion(question);
-                setWidgetName(question.text);
+                setWidgetName('');
                 setSelectedChartTypeId(DEFAULT_TEXT_AI_WIDGET_CHART_TYPE_ID);
                 setStep('chart');
               }}
@@ -129,7 +136,7 @@ export function TextAiAddWidgetModal({
         accessorKey: 'type',
         header: 'Type',
         enableSorting: true,
-        size: 96,
+        size: 159,
       },
     ],
     [selectedQuestion]
@@ -151,17 +158,17 @@ export function TextAiAddWidgetModal({
       message: `Added ${chartLabel} for ${selectedQuestion.code}`,
       variant: 'success',
     });
-    onOpenChange(false);
+    handleOpenChange(false);
   }
 
   if (!open || !wick) {
     return null;
   }
 
-  const { WuModal, WuModalHeader, WuModalContent, WuModalFooter, WuModalClose } = wick;
+  const { WuModal, WuModalHeader, WuModalContent, WuModalFooter } = wick;
 
   return (
-    <WuModal open onOpenChange={onOpenChange} className={styles.modal}>
+    <WuModal open onOpenChange={handleOpenChange} className={styles.modal}>
       <WuModalHeader className={styles.modalTitle}>Add widget</WuModalHeader>
       <WuModalContent className={styles.stepContent}>
         {step === 'question' ? (
@@ -203,7 +210,7 @@ export function TextAiAddWidgetModal({
                 variant="standard"
                 Label="Name"
                 labelPosition="top"
-                placeholder="Widget name"
+                placeholder={selectedQuestion?.text ?? 'Widget name'}
                 value={widgetName}
                 maxLength={100}
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -253,7 +260,7 @@ export function TextAiAddWidgetModal({
                       src={chartType.imageSrc}
                       alt=""
                       width={80}
-                      height={70}
+                      height={64}
                       className={styles.chartImage}
                     />
                     <span className={styles.chartCardLabel}>{chartType.label}</span>
@@ -270,24 +277,20 @@ export function TextAiAddWidgetModal({
             currentStep={step}
             onStepClick={handleBreadcrumbClick}
           />
-          <div className={styles.wizardActions}>
-            {step === 'chart' ? (
-              <>
-                <button
-                  type="button"
-                  className={styles.backLink}
-                  onClick={() => setStep('question')}
-                >
-                  Back
-                </button>
-                <WuButton onClick={handleAddWidget} disabled={!selectedQuestion}>
-                  Add widget
-                </WuButton>
-              </>
-            ) : (
-              <WuModalClose variant="secondary">Cancel</WuModalClose>
-            )}
-          </div>
+          {step === 'chart' ? (
+            <div className={styles.wizardActions}>
+              <button
+                type="button"
+                className={styles.backLink}
+                onClick={() => setStep('question')}
+              >
+                Back
+              </button>
+              <WuButton onClick={handleAddWidget} disabled={!selectedQuestion}>
+                Add widget
+              </WuButton>
+            </div>
+          ) : null}
         </div>
       </WuModalFooter>
     </WuModal>
