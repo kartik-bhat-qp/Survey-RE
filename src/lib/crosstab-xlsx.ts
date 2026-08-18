@@ -136,10 +136,16 @@ function makeBlankRow(columns: number): ExportCell[] {
   return Array.from({ length: columns }, () => ({ style: 'blank' as const }));
 }
 
+function displayLineCount(value: ExportCell['value']): number {
+  if (typeof value !== 'object' || value.kind !== 'rich') return 1;
+  const text = value.runs.map((run) => run.text).join('');
+  return Math.max(1, text.split('\n').length);
+}
+
 function buildExportGrid(
   report: CrosstabReportData,
   settings: CrosstabDisplaySettings
-): { rows: ExportCell[][]; merges: string[]; answerRows: Set<number> } {
+): { rows: ExportCell[][]; merges: string[] } {
   const rowOverallColumns = settings.rowOverall ? 1 : 0;
   const showRowTotalColumn = settings.rowTotal || settings.totalRowPercentage;
   const showColumnTotalRow = settings.columnTotal || settings.totalColumnPercentage;
@@ -152,7 +158,6 @@ function buildExportGrid(
   const totalColumns = 3 + rowOverallColumns + groupWidths.reduce((sum, width) => sum + width, 0);
   const rows: ExportCell[][] = [];
   const merges: string[] = [];
-  const answerRows = new Set<number>();
 
   const header1 = makeBlankRow(totalColumns);
   merges.push('A1:C1');
@@ -231,8 +236,6 @@ function buildExportGrid(
     const firstAnswerRow = rows.length + 1;
     rowGroup.answers.forEach((answer, answerIndex) => {
       const row = makeBlankRow(totalColumns);
-      const rowNumber = rows.length + 1;
-      answerRows.add(rowNumber);
       if (answerIndex === 0) {
         row[0] = { value: rowGroup.question, style: 'question' };
       }
@@ -353,7 +356,7 @@ function buildExportGrid(
     if (showColumnTotalRow) addSummaryRow('Total', rowGroup.columnTotals);
   });
 
-  return { rows, merges, answerRows };
+  return { rows, merges };
 }
 
 function buildStylesXml(): string {
@@ -404,7 +407,7 @@ export function createCrosstabWorkbook(
   report: CrosstabReportData,
   settings: CrosstabDisplaySettings
 ): Uint8Array {
-  const { rows, merges, answerRows } = buildExportGrid(report, settings);
+  const { rows, merges } = buildExportGrid(report, settings);
   const sharedStrings: SharedStringEntry[] = [];
   const stringIndexes = new Map<string, number>();
   const getStringIndex = (value: string | RichTextValue): number => {
@@ -432,7 +435,11 @@ export function createCrosstabWorkbook(
   const sheetRows = rows
     .map((row, rowIndex) => {
       const rowNumber = rowIndex + 1;
-      const height = answerRows.has(rowNumber) && (settings.rowPercentage || settings.columnPercentage) ? 45 : 15;
+      const lineCount = row.reduce(
+        (maximum, cell) => Math.max(maximum, displayLineCount(cell.value)),
+        1
+      );
+      const height = lineCount * 15;
       const cells = row
         .map((cell, columnIndex) => {
           const reference = `${columnLetter(columnIndex + 1)}${rowNumber}`;
