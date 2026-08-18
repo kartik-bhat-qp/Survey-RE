@@ -10,11 +10,15 @@
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 
 const ROOT = path.resolve(__dirname, '..');
 const LOG_PATH = path.join(ROOT, 'public', 'engagement-logs.json');
+const CAPTURED_PROMPTS_PATH = path.join(ROOT, '.cursor', 'agent-prompts.jsonl');
 const MAX_ENTRIES = 100;
 const MAX_CHANGE_LINES = 8;
+const MAX_PROMPTS = 20;
+const MAX_PROMPT_CHARS = 800;
 
 /** Path → human-readable product/feature area for log bullets. */
 const AREA_RULES = [
@@ -51,6 +55,10 @@ const AREA_RULES = [
     label: 'App shell & navigation',
   },
   {
+    test: /(transcripts|to-excel|transcripts_to_excel)/,
+    label: 'Transcripts',
+  },
+  {
     test: /(surveys\/|SurveyEditor|mock-survey|advance-quota|Quota)/,
     label: 'Surveys',
   },
@@ -69,11 +77,12 @@ const AREA_RULES = [
 ];
 
 function parseArgs(argv) {
-  const args = { action: null, range: null };
+  const args = { action: null, range: null, backfillPrompts: false };
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
     if (token === '--action') args.action = argv[++i];
     else if (token === '--range') args.range = argv[++i];
+    else if (token === '--backfill-prompts') args.backfillPrompts = true;
   }
   return args;
 }
@@ -270,10 +279,275 @@ function buildChangeBullets({ subjects, files, stats }) {
   return changes.slice(0, MAX_CHANGE_LINES);
 }
 
+const MONTHS = {
+  Jan: 0,
+  Feb: 1,
+  Mar: 2,
+  Apr: 3,
+  May: 4,
+  Jun: 5,
+  Jul: 6,
+  Aug: 7,
+  Sep: 8,
+  Oct: 9,
+  Nov: 10,
+  Dec: 11,
+};
+
+function parseTranscriptTimestamp(raw) {
+  if (!raw) return null;
+  const match = String(raw).match(
+    /([A-Z][a-z]{2}) (\d{1,2}), (\d{4}), (\d{1,2}):(\d{2}) ([AP]M) \(UTC([+-])(\d{1,2}):(\d{2})\)/
+  );
+  if (!match) {
+    const parsed = Date.parse(raw);
+    return Number.isNaN(parsed) ? null : new Date(parsed).toISOString();
+  }
+  let hour = Number(match[4]) % 12;
+  if (match[6] === 'PM') hour += 12;
+  const utcMs = Date.UTC(
+    Number(match[3]),
+    MONTHS[match[1]] ?? 0,
+    Number(match[2]),
+    hour,
+    Number(match[5])
+  );
+  const offsetMin =
+    (Number(match[8]) * 60 + Number(match[9])) * (match[7] === '+' ? 1 : -1);
+  return new Date(utcMs - offsetMin * 60_000).toISOString();
+}
+
+function normalizePromptText(value) {
+  return String(value || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
+}
+
+function clipPrompt(text) {
+  const cleaned = normalizePromptText(text);
+  if (cleaned.length <= MAX_PROMPT_CHARS) return cleaned;
+  return `${cleaned.slice(0, MAX_PROMPT_CHARS - 1).trim()}…`;
+}
+
+function promptKey(text) {
+  return normalizePromptText(text).toLowerCase().replace(/\s+/g, ' ');
+}
+
+function extractPromptFromMessageText(text) {
+  const source = String(text || '');
+  const queryMatch = source.match(/<user_query>\s*([\s\S]*?)\s*<\/user_query>/);
+  if (!queryMatch) return null;
+  const prompt = clipPrompt(queryMatch[1].replace(/\\\n/g, '\n'));
+  if (!prompt || prompt === '[Image]') return null;
+  const tsMatch = source.match(/<timestamp>([^<]+)<\/timestamp>/);
+  return {
+    text: prompt,
+    createdAt: parseTranscriptTimestamp(tsMatch?.[1]?.trim()) || null,
+  };
+}
+
+function textFromUnknown(value) {
+  if (typeof value === 'string') return value;
+  if (!value || typeof value !== 'object') return '';
+  if (typeof value.text === 'string') return value.text;
+  if (Array.isArray(value.content)) {
+    return value.content
+      .map((part) => (part && typeof part.text === 'string' ? part.text : ''))
+      .filter(Boolean)
+      .join('\n');
+  }
+  if (typeof value.content === 'string') return value.content;
+  return '';
+}
+
+function collectPromptsFromJsonl(filePath) {
+  let raw = '';
+  try {
+    raw = fs.readFileSync(filePath, 'utf8');
+  } catch {
+    return [];
+  }
+
+  const prompts = [];
+  for (const line of raw.split('\n')) {
+    if (!line.trim()) continue;
+    let event;
+    try {
+      event = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (!event || typeof event !== 'object') continue;
+    if (event.role && event.role !== 'user') continue;
+    const text = textFromUnknown(event.message) || textFromUnknown(event);
+    if (!text.includes('<user_query>') && event.role !== 'user') continue;
+    const extracted = extractPromptFromMessageText(text);
+    if (extracted) prompts.push(extracted);
+  }
+  return prompts;
+}
+
+function walkFiles(dir, acc = []) {
+  let entries = [];
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return acc;
+  }
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === 'subagents' || entry.name === 'node_modules') continue;
+      walkFiles(full, acc);
+    } else if (entry.isFile() && entry.name.endsWith('.jsonl')) {
+      acc.push(full);
+    }
+  }
+  return acc;
+}
+
+function agentTranscriptDirs() {
+  const home = os.homedir();
+  const slug = ROOT.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\//g, '-');
+  return [
+    path.join(ROOT, '.cursor', 'agent-transcripts'),
+    path.join(home, '.cursor', 'projects', slug, 'agent-transcripts'),
+  ].filter((dir) => fs.existsSync(dir));
+}
+
+function loadCapturedPrompts() {
+  if (!fs.existsSync(CAPTURED_PROMPTS_PATH)) return [];
+  let raw = '';
+  try {
+    raw = fs.readFileSync(CAPTURED_PROMPTS_PATH, 'utf8');
+  } catch {
+    return [];
+  }
+
+  const prompts = [];
+  for (const line of raw.split('\n')) {
+    if (!line.trim()) continue;
+    let event;
+    try {
+      event = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const text = clipPrompt(textFromUnknown(event) || event.prompt || event.text || '');
+    if (!text) continue;
+    prompts.push({
+      text,
+      createdAt: event.createdAt || parseTranscriptTimestamp(event.timestamp) || null,
+    });
+  }
+  return prompts;
+}
+
+function collectAllAgentPrompts() {
+  const collected = [];
+  for (const dir of agentTranscriptDirs()) {
+    for (const file of walkFiles(dir)) {
+      collected.push(...collectPromptsFromJsonl(file));
+    }
+  }
+  collected.push(...loadCapturedPrompts());
+
+  const unique = [];
+  const seen = new Set();
+  for (const prompt of collected) {
+    if (!prompt.text) continue;
+    const key = `${promptKey(prompt.text)}|${(prompt.createdAt || '').slice(0, 16)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push({
+      text: prompt.text,
+      ...(prompt.createdAt ? { createdAt: prompt.createdAt } : {}),
+    });
+  }
+  return unique.sort((a, b) => Date.parse(a.createdAt || 0) - Date.parse(b.createdAt || 0));
+}
+
+function promptsBetween(prompts, startMs, endMs) {
+  return prompts
+    .filter((prompt) => {
+      const time = Date.parse(prompt.createdAt || '');
+      if (Number.isNaN(time)) return false;
+      return time > startMs && time <= endMs;
+    })
+    .slice(0, MAX_PROMPTS);
+}
+
+function attachPromptsToEntry(entry, prompts) {
+  if (!prompts.length) {
+    const next = { ...entry };
+    delete next.prompts;
+    return next;
+  }
+  return { ...entry, prompts };
+}
+
+function fillEntryPrompts(entries, prompts) {
+  const chronological = [...entries].sort(
+    (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)
+  );
+  const buckets = new Map(chronological.map((entry) => [entry.id, []]));
+  const maxLookbackMs = 36 * 60 * 60 * 1000;
+  const followUpMs = 20 * 60 * 1000;
+  const longGapMs = 8 * 60 * 60 * 1000;
+
+  for (const prompt of prompts) {
+    const time = Date.parse(prompt.createdAt || '');
+    if (Number.isNaN(time)) continue;
+
+    let previous = null;
+    let next = null;
+    for (const entry of chronological) {
+      const entryTime = Date.parse(entry.createdAt);
+      if (entryTime < time) previous = entry;
+      else {
+        next = entry;
+        break;
+      }
+    }
+
+    let target = next;
+    if (
+      previous &&
+      (!next || Date.parse(next.createdAt) - time > longGapMs) &&
+      time - Date.parse(previous.createdAt) <= followUpMs
+    ) {
+      target = previous;
+    }
+    if (!target) continue;
+    if (Date.parse(target.createdAt) - time > maxLookbackMs && target === next) {
+      continue;
+    }
+
+    const bucket = buckets.get(target.id);
+    if (bucket.length < MAX_PROMPTS) bucket.push(prompt);
+  }
+
+  return entries.map((entry) => attachPromptsToEntry(entry, buckets.get(entry.id) || []));
+}
+
 function main() {
-  const { action, range: rangeArg } = parseArgs(process.argv.slice(2));
+  const { action, range: rangeArg, backfillPrompts } = parseArgs(process.argv.slice(2));
+
+  if (backfillPrompts) {
+    const existing = readLogs();
+    const prompts = collectAllAgentPrompts();
+    writeLogs(fillEntryPrompts(existing, prompts));
+    console.log(
+      `[engagement-logs] backfilled agent prompts from ${prompts.length} captured prompt(s)`
+    );
+    return;
+  }
+
   if (action !== 'push' && action !== 'pull') {
-    console.error('Usage: record-git-activity.cjs --action push|pull [--range A..B]');
+    console.error(
+      'Usage: record-git-activity.cjs --action push|pull [--range A..B]\n       record-git-activity.cjs --backfill-prompts'
+    );
     process.exit(1);
   }
 
@@ -322,10 +596,29 @@ function main() {
     createdAt: new Date().toISOString(),
   };
 
-  writeLogs([entry, ...readLogs()].slice(0, MAX_ENTRIES));
+  const existing = readLogs();
+  const usedKeys = new Set(
+    existing.flatMap((item) =>
+      (item.prompts || []).map((prompt) => `${promptKey(prompt.text)}|${prompt.createdAt || ''}`)
+    )
+  );
+  const previousTime = Date.parse(existing[0]?.createdAt || '') || 0;
+  const matchedPrompts = promptsBetween(
+    collectAllAgentPrompts().filter(
+      (prompt) => !usedKeys.has(`${promptKey(prompt.text)}|${prompt.createdAt || ''}`)
+    ),
+    previousTime,
+    Date.parse(entry.createdAt) + 20 * 60 * 1000
+  );
+  const recorded = attachPromptsToEntry(entry, matchedPrompts);
+
+  writeLogs([recorded, ...existing].slice(0, MAX_ENTRIES));
   console.log(`[engagement-logs] recorded ${action}: ${summary}`);
   for (const line of changes) {
     console.log(`  • ${line}`);
+  }
+  for (const prompt of matchedPrompts) {
+    console.log(`  ↳ ${prompt.text.slice(0, 120)}`);
   }
 }
 

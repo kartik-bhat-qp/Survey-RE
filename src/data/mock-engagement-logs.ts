@@ -1,5 +1,10 @@
 export type EngagementGitAction = 'push' | 'pull';
 
+export interface EngagementAgentPrompt {
+  text: string;
+  createdAt?: string;
+}
+
 export interface EngagementGitLogEntry {
   id: string;
   action: EngagementGitAction;
@@ -7,6 +12,8 @@ export interface EngagementGitLogEntry {
   summary: string;
   /** High-level change bullets (commit subjects / file highlights) */
   changes: string[];
+  /** User prompts sent to the agent that produced this work */
+  prompts?: EngagementAgentPrompt[];
   branch: string;
   remote: string;
   author: string;
@@ -33,6 +40,16 @@ export const MOCK_ENGAGEMENT_GIT_LOGS: EngagementGitLogEntry[] = [
       'Added org-user picker for Quota Notification recipients',
       '12 files changed · +486 −94',
     ],
+    prompts: [
+      {
+        text: 'Move Create new base into the Base dropdown instead of a separate button.',
+        createdAt: '2026-08-11T10:48:00.000Z',
+      },
+      {
+        text: 'Cap the notification To field at 3 chip rows and scroll after that.',
+        createdAt: '2026-08-11T10:57:00.000Z',
+      },
+    ],
     branch: 'main',
     remote: 'origin',
     author: 'Kartik Bhat',
@@ -46,6 +63,12 @@ export const MOCK_ENGAGEMENT_GIT_LOGS: EngagementGitLogEntry[] = [
       'Synced latest dashboard shell scroll fixes',
       'Updated WickUI table defaults for BI list pages',
       '5 files changed · +62 −28',
+    ],
+    prompts: [
+      {
+        text: 'Pull the latest dashboard shell scroll fixes and keep BI list tables on WickUI defaults.',
+        createdAt: '2026-08-11T09:30:00.000Z',
+      },
     ],
     branch: 'main',
     remote: 'origin',

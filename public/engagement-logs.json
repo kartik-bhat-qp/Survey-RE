@@ -1,5 +1,30 @@
 [
   {
+    "id": "log-push-1787052063989-k5evg",
+    "action": "push",
+    "summary": "Pushed 3 commits to origin/main",
+    "changes": [
+      "High-level updates across Engagement Logs",
+      "Updated Engagement Logs (1 file)",
+      "Key files: public/engagement-logs.json",
+      "1 files changed · +40"
+    ],
+    "branch": "main",
+    "remote": "origin",
+    "author": "Kartik Bhat",
+    "createdAt": "2026-08-18T11:21:03.989Z",
+    "prompts": [
+      {
+        "text": "I just did a git push, why do I still see this when I go git status? modified:   public/engagement-logs.json",
+        "createdAt": "2026-08-18T11:25:00.000Z"
+      },
+      {
+        "text": "In the logs, also include the prompots that were made to the agent to build the software",
+        "createdAt": "2026-08-18T11:26:00.000Z"
+      }
+    ]
+  },
+  {
     "id": "log-push-1787051820333-ray5c",
     "action": "push",
     "summary": "Pushed latest commits to origin/main",
@@ -37,7 +62,13 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-18T06:14:19.063Z"
+    "createdAt": "2026-08-18T06:14:19.063Z",
+    "prompts": [
+      {
+        "text": "Fix 11:29:12.004 Running build in Washington, D.C., USA (East) – iad1\n11:29:12.005 Build machine configuration: 2 cores, 8 GB\n11:29:12.140 Cloning github.com/kartik-bhat-qp/Survey-RE (Branch: main, Commit: 3786078)\n11:29:14.997 Warning: Failed to fetch one or more git submodules\n11:29:14.999 Cloning completed: 2.859s\n11:29:15.383 Restored build cache from previous deployment (FPtoHMFyW5oLUz9NVW17CC1xaA8L)\n11:29:17.816 Running \"vercel build\"\n11:29:17.835 Vercel CLI 58.1.0\n11:29:18.139 Installing dependencies...\n11:29:19.960 npm warn deprecated lodash.isequal@4.5.0: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.\n11:29:19.976 npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported\n11:29:19.982 npm warn deprecated inflight@1.0.6:…",
+        "createdAt": "2026-08-18T06:01:00.000Z"
+      }
+    ]
   },
   {
     "id": "log-push-1787032747714-1g1kn",
@@ -55,7 +86,13 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-18T05:59:07.714Z"
+    "createdAt": "2026-08-18T05:59:07.714Z",
+    "prompts": [
+      {
+        "text": "Add all dependencies needed for Vercel to requirements.txt Right now, on Vercel I get attached error",
+        "createdAt": "2026-08-18T05:54:00.000Z"
+      }
+    ]
   },
   {
     "id": "log-push-1787029825926-e0wav",
@@ -74,7 +111,17 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-18T05:10:25.926Z"
+    "createdAt": "2026-08-18T05:10:25.926Z",
+    "prompts": [
+      {
+        "text": "Add a product called transcripts",
+        "createdAt": "2026-08-18T04:44:00.000Z"
+      },
+      {
+        "text": "When I click on transcripts, I need a product that can accept a transcript file in CSV and give me back an excel file broken by common question from all the transcripts and the response to that question under it. Use a python script for it",
+        "createdAt": "2026-08-18T05:02:00.000Z"
+      }
+    ]
   },
   {
     "id": "log-pull-1787028117700-urzg0",
@@ -106,7 +153,13 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-14T09:51:14.630Z"
+    "createdAt": "2026-08-14T09:51:14.630Z",
+    "prompts": [
+      {
+        "text": "The default state should be closed and only insights should be open like attached.",
+        "createdAt": "2026-08-14T09:52:00.000Z"
+      }
+    ]
   },
   {
     "id": "log-push-1786700804939-yacei",
@@ -124,7 +177,17 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-14T09:46:44.939Z"
+    "createdAt": "2026-08-14T09:46:44.939Z",
+    "prompts": [
+      {
+        "text": "Add analytics 2.0 here. Use @src/app/(research-suite)/Analytics-UX-redesign to build it",
+        "createdAt": "2026-08-14T09:00:00.000Z"
+      },
+      {
+        "text": "I need both. So 2 tabs. Analytics is the old one and Analytics 2.0 is the new one",
+        "createdAt": "2026-08-14T09:43:00.000Z"
+      }
+    ]
   },
   {
     "id": "log-push-1786697593911-3wcfk",
@@ -155,7 +218,13 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-14T08:40:20.902Z"
+    "createdAt": "2026-08-14T08:40:20.902Z",
+    "prompts": [
+      {
+        "text": "Not visible",
+        "createdAt": "2026-08-14T08:28:00.000Z"
+      }
+    ]
   },
   {
     "id": "log-push-1786692167326-f4hjh",
@@ -173,7 +242,49 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-14T07:22:47.326Z"
+    "createdAt": "2026-08-14T07:22:47.326Z",
+    "prompts": [
+      {
+        "text": "In media library, when I want to move file, the folders should be a dropdown since there may be many folders",
+        "createdAt": "2026-08-14T06:49:00.000Z"
+      },
+      {
+        "text": "Use WuSelect for all dropdowns in media library",
+        "createdAt": "2026-08-14T06:52:00.000Z"
+      },
+      {
+        "text": "Fix Encountered two children with the same key, `upload-1786690455070-0`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.",
+        "createdAt": "2026-08-14T06:57:00.000Z"
+      },
+      {
+        "text": "In workspace, add column, attached should be the options",
+        "createdAt": "2026-08-14T06:58:00.000Z"
+      },
+      {
+        "text": "Fix gap",
+        "createdAt": "2026-08-14T06:59:00.000Z"
+      },
+      {
+        "text": "When I open column dropdown for flex, page scroll stops workingg in the workspace, that should not happen. If My cursor in the dropdown, then it should scroll there. If outside, it should scroll the page",
+        "createdAt": "2026-08-14T07:01:00.000Z"
+      },
+      {
+        "text": "Use thinner scroll here",
+        "createdAt": "2026-08-14T07:02:00.000Z"
+      },
+      {
+        "text": "Clicking rename should let me rename the file\n\\",
+        "createdAt": "2026-08-14T07:11:00.000Z"
+      },
+      {
+        "text": "In flex matrixc, need abiluity to delete a columnd",
+        "createdAt": "2026-08-14T07:12:00.000Z"
+      },
+      {
+        "text": "The dropdown to delete should only be visible when I click on content area, and make content area bigger and then the dropdown",
+        "createdAt": "2026-08-14T07:15:00.000Z"
+      }
+    ]
   },
   {
     "id": "log-push-1786689764136-uhc3s",
@@ -188,7 +299,13 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-14T06:42:44.136Z"
+    "createdAt": "2026-08-14T06:42:44.136Z",
+    "prompts": [
+      {
+        "text": "Fix 11:55:53.102 Running build in Washington, D.C., USA (East) – iad1\n11:55:53.102 Build machine configuration: 2 cores, 8 GB\n11:55:53.233 Cloning github.com/kartik-bhat-qp/Survey-RE (Branch: main, Commit: bbad65e)\n11:55:55.740 Warning: Failed to fetch one or more git submodules\n11:55:55.741 Cloning completed: 2.508s\n11:55:56.250 Restored build cache from previous deployment (DMcj4Ba3LG1LwDVJrqkkXCoeNpCk)\n11:55:59.293 Running \"vercel build\"\n11:55:59.309 Vercel CLI 58.1.0\n11:55:59.660 Installing dependencies...\n11:56:02.649\n11:56:02.650 > bi-lite@0.1.0 postinstall\n11:56:02.650 > node scripts/patch-wick-ui-editor.cjs\n11:56:02.650\n11:56:02.683 [patch-wick-ui-editor] already up to date\n11:56:02.695\n11:56:02.695 up to date in 3s\n11:56:02.695\n11:56:02.696 220 packages are looking for funding\n11…",
+        "createdAt": "2026-08-14T06:41:00.000Z"
+      }
+    ]
   },
   {
     "id": "log-push-1786688749070-mi4ua",
@@ -206,7 +323,57 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-14T06:25:49.070Z"
+    "createdAt": "2026-08-14T06:25:49.070Z",
+    "prompts": [
+      {
+        "text": "Show like there are 480 files. 100 should be shown per page",
+        "createdAt": "2026-08-14T06:04:00.000Z"
+      },
+      {
+        "text": "Fix",
+        "createdAt": "2026-08-14T06:06:00.000Z"
+      },
+      {
+        "text": "In workspace, when I add a flex matrix question, show like attached",
+        "createdAt": "2026-08-14T06:06:00.000Z"
+      },
+      {
+        "text": "Fix this in media library share folder",
+        "createdAt": "2026-08-14T06:09:00.000Z"
+      },
+      {
+        "text": "In media library, I should be able to pick a page",
+        "createdAt": "2026-08-14T06:11:00.000Z"
+      },
+      {
+        "text": "In media library, when I click on share folder, the media library modal looks wrong, see",
+        "createdAt": "2026-08-14T06:12:00.000Z"
+      },
+      {
+        "text": "In media library, when I click on share folder and click in the input box for teams, show mock teams like USA team, EU team, etc",
+        "createdAt": "2026-08-14T06:14:00.000Z"
+      },
+      {
+        "text": "In media library, share folder, adding a user is not possible, this is internal sharing onlly",
+        "createdAt": "2026-08-14T06:15:00.000Z"
+      },
+      {
+        "text": "Adding a team is not possible",
+        "createdAt": "2026-08-14T06:16:00.000Z"
+      },
+      {
+        "text": "Let the dropdopwn come outside the modal so it is visible",
+        "createdAt": "2026-08-14T06:18:00.000Z"
+      },
+      {
+        "text": "I am not able to make selections",
+        "createdAt": "2026-08-14T06:20:00.000Z"
+      },
+      {
+        "text": "Mouse scroll does not seem to work for the drodown for users or teams",
+        "createdAt": "2026-08-14T06:22:00.000Z"
+      }
+    ]
   },
   {
     "id": "log-push-1786687419723-545m4",
@@ -225,7 +392,25 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-14T06:03:39.723Z"
+    "createdAt": "2026-08-14T06:03:39.723Z",
+    "prompts": [
+      {
+        "text": "When I click on Media Library, build screen similar to @src/app/(research-suite)/Media-library-UX-overhaul",
+        "createdAt": "2026-08-13T13:32:00.000Z"
+      },
+      {
+        "text": "In surveys, workspace, when I add a conjoint question, show like attached",
+        "createdAt": "2026-08-14T05:56:00.000Z"
+      },
+      {
+        "text": "In media library, clicking on share should open a modal like attached",
+        "createdAt": "2026-08-14T06:00:00.000Z"
+      },
+      {
+        "text": "Clicking on upload should open a file selector from my desktop",
+        "createdAt": "2026-08-14T06:02:00.000Z"
+      }
+    ]
   },
   {
     "id": "log-push-1786626205234-ilczb",
@@ -244,7 +429,25 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-13T13:03:25.234Z"
+    "createdAt": "2026-08-13T13:03:25.234Z",
+    "prompts": [
+      {
+        "text": "In add question, when I add a conjoint question, show like attached",
+        "createdAt": "2026-08-13T10:14:00.000Z"
+      },
+      {
+        "text": "When I preview a conjoint question, show like attached",
+        "createdAt": "2026-08-13T10:30:00.000Z"
+      },
+      {
+        "text": "In preview for conjoint, match the width of the content area to attached",
+        "createdAt": "2026-08-13T12:06:00.000Z"
+      },
+      {
+        "text": "For preview of conjoint, when I select mobile, take design similar to @src/app/(bi-lite)/bi-lite/Mobile-Optimized-Conjoint-Survey/",
+        "createdAt": "2026-08-13T12:10:00.000Z"
+      }
+    ]
   },
   {
     "id": "log-push-1786447799314-fuusq",
@@ -263,7 +466,21 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-11T11:29:59.314Z"
+    "createdAt": "2026-08-11T11:29:59.314Z",
+    "prompts": [
+      {
+        "text": "Put create new base here",
+        "createdAt": "2026-08-11T11:16:00.000Z"
+      },
+      {
+        "text": "In the product switcher, in engagemetn, add logs. Everytime something is pushed to git or pulled from git, it should go in logs as a high level summary of the list of changes",
+        "createdAt": "2026-08-11T11:23:00.000Z"
+      },
+      {
+        "text": "Need more descr updates here",
+        "createdAt": "2026-08-11T11:28:00.000Z"
+      }
+    ]
   },
   {
     "id": "log-seed-1",
@@ -278,7 +495,37 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-11T11:10:00.000Z"
+    "createdAt": "2026-08-11T11:10:00.000Z",
+    "prompts": [
+      {
+        "text": "Use #7A8591 for Platform connect",
+        "createdAt": "2026-08-11T10:30:00.000Z"
+      },
+      {
+        "text": "Create new base should use similar filter options like in dashboards",
+        "createdAt": "2026-08-11T10:32:00.000Z"
+      },
+      {
+        "text": "All tables used in bi should be white, not alternating colors like this",
+        "createdAt": "2026-08-11T10:39:00.000Z"
+      },
+      {
+        "text": "Fix",
+        "createdAt": "2026-08-11T10:42:00.000Z"
+      },
+      {
+        "text": "In settings, notificationas, quota notification, when I click on to to enter an email, it should also show me users in the org like attached",
+        "createdAt": "2026-08-11T10:59:00.000Z"
+      },
+      {
+        "text": "If not matching users and email format correct, give option to add",
+        "createdAt": "2026-08-11T11:03:00.000Z"
+      },
+      {
+        "text": "The max height should be 3 lines, after that there should be a scroller",
+        "createdAt": "2026-08-11T11:07:00.000Z"
+      }
+    ]
   },
   {
     "id": "log-seed-2",
@@ -292,6 +539,88 @@
     "branch": "main",
     "remote": "origin",
     "author": "Kartik Bhat",
-    "createdAt": "2026-08-11T09:42:00.000Z"
+    "createdAt": "2026-08-11T09:42:00.000Z",
+    "prompts": [
+      {
+        "text": "Fix 12:38:21.414 Running build in Washington, D.C., USA (East) – iad1\n12:38:21.415 Build machine configuration: 2 cores, 8 GB\n12:38:21.557 Cloning github.com/kartik-bhat-qp/Survey-RE (Branch: main, Commit: 9f101db)\n12:38:23.372 Warning: Failed to fetch one or more git submodules\n12:38:23.374 Cloning completed: 1.817s\n12:38:23.845 Restored build cache from previous deployment (6A84yLaXbnTp9UJ54yhGAwHP9JGR)\n12:38:26.371 Running \"vercel build\"\n12:38:26.393 Vercel CLI 58.1.0\n12:38:26.730 Installing dependencies...\n12:38:28.375\n12:38:28.376 > bi-lite@0.1.0 postinstall\n12:38:28.376 > node scripts/patch-wick-ui-editor.cjs\n12:38:28.376\n12:38:28.409 [patch-wick-ui-editor] already up to date\n12:38:28.420\n12:38:28.421 up to date in 2s\n12:38:28.421\n12:38:28.422 220 packages are looking for funding\n12…",
+        "createdAt": "2026-08-10T07:23:00.000Z"
+      },
+      {
+        "text": "In external dataset, if I synch textai data, there should be a synch button like in composite",
+        "createdAt": "2026-08-10T07:48:00.000Z"
+      },
+      {
+        "text": "In datasets, new dataset, map to survey, after survey selection, when I select TextAI, I the next screen should ask me for which textai report and then create the dataset",
+        "createdAt": "2026-08-10T08:31:00.000Z"
+      },
+      {
+        "text": "In create dataset, map to survey, remove text ai.",
+        "createdAt": "2026-08-10T08:34:00.000Z"
+      },
+      {
+        "text": "This should be create instead of next",
+        "createdAt": "2026-08-10T08:39:00.000Z"
+      },
+      {
+        "text": "Redo this page as per  @src/components/createreport",
+        "createdAt": "2026-08-10T08:43:00.000Z"
+      },
+      {
+        "text": "Remove this, table is the only option",
+        "createdAt": "2026-08-10T08:56:00.000Z"
+      },
+      {
+        "text": "In dataset, new dataset, map to survey, survey select, import and create, show page like attached",
+        "createdAt": "2026-08-10T08:58:00.000Z"
+      },
+      {
+        "text": "This should be datasource type and Survey name. See attached.",
+        "createdAt": "2026-08-10T09:05:00.000Z"
+      },
+      {
+        "text": "For, use col #7A8591",
+        "createdAt": "2026-08-10T09:06:00.000Z"
+      },
+      {
+        "text": "Remove reupload or upsert, that option is only after some data is in",
+        "createdAt": "2026-08-10T09:07:00.000Z"
+      },
+      {
+        "text": "Remopve this, in manual Excel/CSV only options",
+        "createdAt": "2026-08-10T09:08:00.000Z"
+      },
+      {
+        "text": "In textAI, textai only option",
+        "createdAt": "2026-08-10T09:09:00.000Z"
+      },
+      {
+        "text": "Remove this",
+        "createdAt": "2026-08-10T09:11:00.000Z"
+      },
+      {
+        "text": "Need CSV also here",
+        "createdAt": "2026-08-10T09:12:00.000Z"
+      },
+      {
+        "text": "Remove processed in background here",
+        "createdAt": "2026-08-10T09:12:00.000Z"
+      },
+      {
+        "text": "This should be theme, sub-themes and sentiment. Also add sentiment as a variable in the data like theme and sub-themes",
+        "createdAt": "2026-08-10T09:13:00.000Z"
+      },
+      {
+        "text": "Anytime a dataset is crearted, mock survey data should also always be here",
+        "createdAt": "2026-08-10T09:15:00.000Z"
+      },
+      {
+        "text": "For attached, use col #7A8591",
+        "createdAt": "2026-08-10T09:21:00.000Z"
+      },
+      {
+        "text": "Make it bold",
+        "createdAt": "2026-08-10T09:22:00.000Z"
+      }
+    ]
   }
 ]

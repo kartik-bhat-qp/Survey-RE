@@ -10,6 +10,7 @@ import {
   ENGAGEMENT_LOGS_URL,
   MOCK_ENGAGEMENT_GIT_LOGS,
   formatEngagementLogTime,
+  type EngagementAgentPrompt,
   type EngagementGitAction,
   type EngagementGitLogEntry,
 } from '@/data/mock-engagement-logs';
@@ -34,6 +35,16 @@ function isLogEntry(value: unknown): value is EngagementGitLogEntry {
     Array.isArray(entry.changes) &&
     typeof entry.createdAt === 'string'
   );
+}
+
+function promptsOf(entry: EngagementGitLogEntry): EngagementAgentPrompt[] {
+  if (!Array.isArray(entry.prompts)) return [];
+  return entry.prompts
+    .map((item) => (typeof item === 'string' ? { text: item } : item))
+    .filter(
+      (item): item is EngagementAgentPrompt =>
+        Boolean(item) && typeof item.text === 'string' && item.text.trim().length > 0
+    );
 }
 
 function ActionBadge({ action }: { action: EngagementGitAction }) {
@@ -87,6 +98,7 @@ export default function EngagementLogsPage() {
         entry.remote,
         entry.author,
         ...entry.changes,
+        ...promptsOf(entry).map((prompt) => prompt.text),
       ]
         .join(' ')
         .toLowerCase();
@@ -98,7 +110,7 @@ export default function EngagementLogsPage() {
     <PageContainer>
       <PageHeader
         title="Logs"
-        description="High-level summaries of git pushes and pulls for this workspace."
+        description="High-level summaries of git pushes and pulls, including the agent prompts that produced the work."
         action={
           <WuButton variant="secondary" onClick={() => void loadLogs()}>
             Refresh
@@ -174,6 +186,23 @@ export default function EngagementLogsPage() {
                   <li key={change}>{change}</li>
                 ))}
               </ul>
+              {promptsOf(entry).length > 0 ? (
+                <div className={styles.prompts}>
+                  <h3 className={styles.promptsTitle}>Agent prompts</h3>
+                  <ol className={styles.promptList}>
+                    {promptsOf(entry).map((prompt, index) => (
+                      <li key={`${prompt.createdAt ?? 'prompt'}-${index}`}>
+                        <blockquote className={styles.promptText}>{prompt.text}</blockquote>
+                        {prompt.createdAt ? (
+                          <time className={styles.promptTime} dateTime={prompt.createdAt}>
+                            {formatEngagementLogTime(prompt.createdAt)}
+                          </time>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>

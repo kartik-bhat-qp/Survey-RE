@@ -155,3 +155,52 @@
   top: 8px;
   width: 5px;
 }
+
+.prompts {
+  border-top: 1px solid #eef2f6;
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+.promptsTitle {
+  color: #536277;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.promptList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.promptText {
+  background: #f7fafc;
+  border-left: 3px solid #1b87e6;
+  color: #253449;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  margin: 0;
+  max-height: 9.5em;
+  overflow: auto;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+}
+
+.promptTime {
+  color: #8b949f;
+  display: block;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  margin-top: 4px;
+}
