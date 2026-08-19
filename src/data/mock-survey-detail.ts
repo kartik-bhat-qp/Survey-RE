@@ -11,6 +11,7 @@ import {
   createSurveyMenuSections,
 } from '@/data/mock-survey-menu';
 import type { DeepDiveFollowUpQuestionConfig } from '@/data/mock-deepdive-question-settings';
+import type { ListenAiQuestionConfig } from '@/data/mock-listenai-question';
 import {
   DEEPDIVE_V2_SURVEY_ID,
   createDeepDiveV2Sections,
@@ -19,6 +20,10 @@ import {
   AUDIO_INPUT_SURVEY_ID,
   createAudioInputSections,
 } from '@/data/mock-audio-input-survey';
+import {
+  SURVEY_REVIEW_MODE_SURVEY_ID,
+  createSurveyReviewModeSections,
+} from '@/data/mock-survey-review-mode';
 
 export type SurveyQuestionInputKind = 'radio' | 'checkbox';
 
@@ -46,7 +51,8 @@ export type SurveyQuestionKind =
   | 'section-heading'
   | 'section-subheading'
   | 'deep-dive-follow-ups'
-  | 'conjoint';
+  | 'conjoint'
+  | 'listenai';
 
 export type SurveySmileyRatingTone =
   | 'very-unsatisfied'
@@ -423,6 +429,8 @@ export interface SurveyQuestion {
   editorHidden?: boolean;
   /** Target question and follow-up settings for DeepDive config questions. */
   deepDiveFollowUpConfig?: DeepDiveFollowUpQuestionConfig;
+  /** Connected ListenAI study for ListenAI questions. */
+  listenAiConfig?: ListenAiQuestionConfig;
 }
 
 /** Resolves the Add Question type id used for license diamond and tier checks. */
@@ -451,6 +459,7 @@ export function resolveAddQuestionTypeId(question: SurveyQuestion): string | und
   if (question.kind === 'section-subheading') return 'section-subheading';
   if (question.kind === 'deep-dive-follow-ups') return 'deepdive';
   if (question.kind === 'conjoint') return 'conjoint';
+  if (question.kind === 'listenai') return 'listenai';
   if (question.inputKind === 'checkbox') return 'select-many';
   if (question.inputKind === 'radio') return 'select-one';
   return undefined;
@@ -929,6 +938,14 @@ export function getSurveyDetail(survey: Survey): SurveyDetail {
       survey,
       editorTitle: getSurveyEditorTitle(survey),
       sections: createAudioInputSections(),
+    };
+  }
+
+  if (survey.id === SURVEY_REVIEW_MODE_SURVEY_ID) {
+    return {
+      survey,
+      editorTitle: getSurveyEditorTitle(survey),
+      sections: createSurveyReviewModeSections(),
     };
   }
 

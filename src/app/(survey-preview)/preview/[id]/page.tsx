@@ -186,6 +186,7 @@ export default function SurveyQuestionPreviewPage() {
             alternateFlipReversed={selectManyPayload.alternateFlipReversed}
             showHideOptions={selectManyPayload.showHideOptions ?? null}
             deepDiveFollowUpSettings={selectManyPayload.deepDiveFollowUpSettings ?? null}
+            listenAiLaunch={selectManyPayload.listenAiLaunch ?? null}
             samePageFollowUps={selectManyPayload.samePageFollowUps ?? []}
             nextPages={selectManyPayload.nextPages ?? []}
             onDone={() => window.close()}
@@ -225,6 +226,7 @@ export default function SurveyQuestionPreviewPage() {
             showHideOptions={selectOnePayload.showHideOptions ?? null}
             deepDiveFollowUpSettings={selectOnePayload.deepDiveFollowUpSettings ?? null}
             isFirstQuestion={selectOnePayload.isFirstQuestion}
+            listenAiLaunch={selectOnePayload.listenAiLaunch ?? null}
             samePageFollowUps={selectOnePayload.samePageFollowUps ?? []}
             nextPages={selectOnePayload.nextPages ?? []}
             onDone={() => window.close()}

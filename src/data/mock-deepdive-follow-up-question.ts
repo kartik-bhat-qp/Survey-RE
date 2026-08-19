@@ -1,4 +1,9 @@
 import type { SurveyQuestion, SurveySection } from '@/data/mock-survey-detail';
+import { DEEPDIVE_V2_SURVEY_ID } from '@/data/mock-deepdive-question-settings';
+import {
+  ensureListenAiQuestionInSections,
+  migrateDeepDiveQuestionToListenAi,
+} from '@/data/mock-listenai-question';
 import {
   DEFAULT_DEEPDIVE_FOLLOW_UP_SETTINGS,
   DEFAULT_DEEPDIVE_PROBE_WHEN,
@@ -40,7 +45,7 @@ export function isDeepDiveFollowUpConfigQuestion(question: SurveyQuestion): bool
 export function isDeepDiveEligibleTargetQuestion(question: SurveyQuestion): boolean {
   if (isDeepDiveFollowUpConfigQuestion(question)) return false;
   if (question.editorHidden) return false;
-  if (question.options.length === 0) return false;
+  if ((question.options ?? []).length === 0) return false;
 
   if (question.addQuestionTypeId === 'select-one') return true;
 
@@ -538,12 +543,20 @@ function normalizeDeepDiveV2TargetQuestion(question: SurveyQuestion): SurveyQues
 }
 
 /** Applies DeepDive copy and config defaults to persisted workspace sections. */
-export function normalizeSurveyEditorSections(sections: SurveySection[]): SurveySection[] {
+export function normalizeSurveyEditorSections(
+  sections: SurveySection[],
+  surveyId?: number
+): SurveySection[] {
+  const migrateToListenAi = surveyId === DEEPDIVE_V2_SURVEY_ID;
   let changed = false;
   let nextSections = sections.map((section) => {
     const nextQuestions = section.questions.map((question) => {
-      let nextQuestion = normalizeDeepDiveConfigQuestion(question);
-      nextQuestion = normalizeDeepDiveV2TargetQuestion(nextQuestion);
+      let nextQuestion = migrateToListenAi
+        ? migrateDeepDiveQuestionToListenAi(question)
+        : normalizeDeepDiveConfigQuestion(question);
+      if (!migrateToListenAi) {
+        nextQuestion = normalizeDeepDiveV2TargetQuestion(nextQuestion);
+      }
       if (nextQuestion !== question) changed = true;
       return nextQuestion;
     });
@@ -556,7 +569,17 @@ export function normalizeSurveyEditorSections(sections: SurveySection[]): Survey
     return section;
   });
 
-  const configEntry = findDeepDiveFollowUpConfigQuestion(nextSections);
+  if (migrateToListenAi) {
+    const ensured = ensureListenAiQuestionInSections(nextSections);
+    if (ensured !== nextSections) {
+      changed = true;
+      nextSections = ensured;
+    }
+  }
+
+  const configEntry = migrateToListenAi
+    ? null
+    : findDeepDiveFollowUpConfigQuestion(nextSections);
   if (configEntry) {
     const config = readDeepDiveFollowUpQuestionConfig(configEntry.question);
     if (config && isDeepDiveTargetSelected(config)) {
@@ -576,7 +599,13 @@ export function normalizeSurveyEditorSections(sections: SurveySection[]): Survey
 }
 
 /** One-time migration for editor saves created before DeepDive UX updates. */
-export function migrateLegacyDeepDiveSurveySections(sections: SurveySection[]): SurveySection[] {
+export function migrateLegacyDeepDiveSurveySections(
+  sections: SurveySection[],
+  surveyId?: number
+): SurveySection[] {
+  if (surveyId === DEEPDIVE_V2_SURVEY_ID) {
+    return normalizeSurveyEditorSections(sections, surveyId);
+  }
   return normalizeSurveyEditorSections(
     sections.map((section) => ({
       ...section,

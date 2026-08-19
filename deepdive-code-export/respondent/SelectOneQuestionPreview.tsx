@@ -1,0 +1,190 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import { SurveyPreviewFollowUpQuestion } from '@/components/surveys/SurveyPreviewFollowUpQuestion';
+import { useSurveyPreviewPagination } from '@/components/surveys/useSurveyPreviewPagination';
+import { useSurveyPreviewAnswers } from '@/components/surveys/SurveyPreviewAnswerContext';
+import { DeepDiveConversationScreen } from '@/components/surveys/DeepDiveConversationScreen';
+import {
+  DEFAULT_QUESTION_SETTINGS,
+  type AnswerDisplayOrder,
+  type RandomizeAnswerCount,
+} from '@/data/mock-question-settings';
+import {
+  shouldTriggerDeepDiveForSelection,
+  type DeepDiveFollowUpSettings,
+} from '@/data/mock-deepdive-question-settings';
+import type { SurveyQuestionInputKind } from '@/data/mock-survey-detail';
+import type { SurveyQuestionPreviewFollowUp } from '@/data/survey-question-preview-session';
+import type { ShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
+import shellStyles from './MultiPointCardsCarouselPreview.module.css';
+import { SurveyPreviewRespondentFooter } from '@/components/surveys/SurveyPreviewRespondentFooter';
+
+export interface SelectOneQuestionPreviewProps {
+  surveyId: number;
+  surveyTitle: string;
+  questionCode: string;
+  questionText: string;
+  required?: boolean;
+  options: { id: string; label: string }[];
+  inputKind?: SurveyQuestionInputKind;
+  answerDisplayOrder?: AnswerDisplayOrder;
+  randomizeAnswerCount?: RandomizeAnswerCount;
+  alternateFlipReversed?: boolean;
+  showHideOptions?: ShowHideOptionsPreviewConfig | null;
+  deepDiveFollowUpSettings?: DeepDiveFollowUpSettings | null;
+  isFirstQuestion?: boolean;
+  samePageFollowUps?: SurveyQuestionPreviewFollowUp[];
+  nextPages?: SurveyQuestionPreviewFollowUp[][];
+  onDone?: () => void;
+  onClose?: () => void;
+}
+
+export function SelectOneQuestionPreview({
+  surveyId,
+  surveyTitle,
+  questionCode = 'Q',
+  questionText,
+  required,
+  options,
+  inputKind = 'radio',
+  answerDisplayOrder = DEFAULT_QUESTION_SETTINGS.answerDisplayOrder,
+  randomizeAnswerCount = DEFAULT_QUESTION_SETTINGS.randomizeAnswerCount,
+  alternateFlipReversed,
+  showHideOptions = null,
+  deepDiveFollowUpSettings = null,
+  isFirstQuestion = false,
+  samePageFollowUps = [],
+  nextPages = [],
+  onDone,
+  onClose,
+}: SelectOneQuestionPreviewProps) {
+  const [deepDiveLabel, setDeepDiveLabel] = useState<string | null>(null);
+  const { answersByCode } = useSurveyPreviewAnswers();
+
+  const pages = useMemo(() => {
+    const anchorPage: SurveyQuestionPreviewFollowUp = {
+      code: questionCode,
+      text: questionText,
+      required,
+      kind: 'standard',
+      inputKind,
+      options,
+      answerDisplayOrder,
+      randomizeAnswerCount,
+      alternateFlipReversed,
+      showHideOptions,
+      deepDiveFollowUpSettings: null,
+    };
+
+    return [[anchorPage, ...samePageFollowUps], ...nextPages];
+  }, [
+    alternateFlipReversed,
+    answerDisplayOrder,
+    randomizeAnswerCount,
+    inputKind,
+    nextPages,
+    options,
+    questionCode,
+    questionText,
+    required,
+    samePageFollowUps,
+    showHideOptions,
+  ]);
+
+  const startsFromSurveyBeginning = isFirstQuestion;
+  const { pageIndex, getFooterLabel, handleFooterAction } = useSurveyPreviewPagination(
+    pages.length,
+    0
+  );
+
+  const currentPageQuestions = pages[pageIndex] ?? [];
+
+  if (deepDiveLabel !== null && deepDiveFollowUpSettings?.enabled) {
+    return (
+      <div className={shellStyles.shell}>
+        <header className={shellStyles.previewHeader}>
+          <span className={shellStyles.previewHeaderTitle}>{surveyTitle}</span>
+          <button
+            type="button"
+            className={shellStyles.previewCloseBtn}
+            aria-label="Close preview"
+            onClick={onClose}
+          >
+            <span className="wm-logout" aria-hidden />
+          </button>
+        </header>
+
+        <div className={shellStyles.previewCanvas}>
+          <div className={shellStyles.questionContainer}>
+            <DeepDiveConversationScreen
+              settings={deepDiveFollowUpSettings}
+              selectedAnswerLabel={deepDiveLabel}
+              onDone={() => {
+                setDeepDiveLabel(null);
+                handleFooterAction(onDone);
+              }}
+            />
+          </div>
+        </div>
+
+        <SurveyPreviewRespondentFooter surveyId={surveyId} />
+      </div>
+    );
+  }
+
+  function handleNext(): void {
+    if (pageIndex === 0 && deepDiveFollowUpSettings?.enabled) {
+      const answer = answersByCode[questionCode];
+      const selectedOptionIds = answer?.selectedOptionIds ?? [];
+      const selectedLabels = answer?.selectedLabels ?? [];
+      if (
+        selectedLabels.length > 0 &&
+        shouldTriggerDeepDiveForSelection(deepDiveFollowUpSettings, selectedOptionIds)
+      ) {
+        setDeepDiveLabel(selectedLabels[0]);
+        return;
+      }
+    }
+    handleFooterAction(onDone);
+  }
+
+  return (
+    <div className={shellStyles.shell}>
+      <header className={shellStyles.previewHeader}>
+        <span className={shellStyles.previewHeaderTitle}>{surveyTitle}</span>
+        <button
+          type="button"
+          className={shellStyles.previewCloseBtn}
+          aria-label="Close preview"
+          onClick={onClose}
+        >
+          <span className="wm-logout" aria-hidden />
+        </button>
+      </header>
+
+      <div className={shellStyles.previewCanvas}>
+        <div className={shellStyles.questionContainer}>
+          <p className={shellStyles.requiredNote}>Questions marked with a * are required</p>
+
+          {currentPageQuestions.map((question, index) => (
+            <SurveyPreviewFollowUpQuestion
+              key={`${question.code}-${pageIndex}`}
+              question={question}
+              surveyId={surveyId}
+              showDivider={index > 0}
+            />
+          ))}
+
+          <div className={shellStyles.previewFooter}>
+            <button type="button" className={shellStyles.doneBtn} onClick={handleNext}>
+              {getFooterLabel(startsFromSurveyBeginning && pageIndex === 0)}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <SurveyPreviewRespondentFooter surveyId={surveyId} />
+    </div>
+  );
+}

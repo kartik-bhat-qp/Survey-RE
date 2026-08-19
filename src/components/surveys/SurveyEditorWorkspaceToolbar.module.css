@@ -110,6 +110,15 @@
   color: #334155;
 }
 
+.toggleDisabled,
+.toggleDisabled:hover {
+  cursor: not-allowed;
+}
+
+.toggleInactive.toggleDisabled:hover {
+  color: #64748b;
+}
+
 .previewBtn {
   align-items: center;
   background: #1b87e6;

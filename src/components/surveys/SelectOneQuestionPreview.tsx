@@ -6,6 +6,12 @@ import { useSurveyPreviewPagination } from '@/components/surveys/useSurveyPrevie
 import { useSurveyPreviewAnswers } from '@/components/surveys/SurveyPreviewAnswerContext';
 import { DeepDiveConversationScreen } from '@/components/surveys/DeepDiveConversationScreen';
 import {
+  ListenAiRespondentFlow,
+  findListenAiOnPage,
+  resolveListenAiAnswerLabel,
+} from '@/components/surveys/ListenAiRespondentFlow';
+import type { ListenAiPreviewPayload } from '@/data/mock-listenai-question';
+import {
   DEFAULT_QUESTION_SETTINGS,
   type AnswerDisplayOrder,
   type RandomizeAnswerCount,
@@ -34,6 +40,7 @@ export interface SelectOneQuestionPreviewProps {
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
   deepDiveFollowUpSettings?: DeepDiveFollowUpSettings | null;
   isFirstQuestion?: boolean;
+  listenAiLaunch?: ListenAiPreviewPayload | null;
   samePageFollowUps?: SurveyQuestionPreviewFollowUp[];
   nextPages?: SurveyQuestionPreviewFollowUp[][];
   onDone?: () => void;
@@ -54,15 +61,23 @@ export function SelectOneQuestionPreview({
   showHideOptions = null,
   deepDiveFollowUpSettings = null,
   isFirstQuestion = false,
+  listenAiLaunch = null,
   samePageFollowUps = [],
   nextPages = [],
   onDone,
   onClose,
 }: SelectOneQuestionPreviewProps) {
   const [deepDiveLabel, setDeepDiveLabel] = useState<string | null>(null);
+  const [listenAiPhase, setListenAiPhase] = useState<'idle' | 'active'>(
+    listenAiLaunch ? 'active' : 'idle'
+  );
   const { answersByCode } = useSurveyPreviewAnswers();
 
   const pages = useMemo(() => {
+    if (listenAiLaunch) {
+      return [...nextPages];
+    }
+
     const anchorPage: SurveyQuestionPreviewFollowUp = {
       code: questionCode,
       text: questionText,
@@ -81,6 +96,7 @@ export function SelectOneQuestionPreview({
   }, [
     alternateFlipReversed,
     answerDisplayOrder,
+    listenAiLaunch,
     randomizeAnswerCount,
     inputKind,
     nextPages,
@@ -99,6 +115,37 @@ export function SelectOneQuestionPreview({
   );
 
   const currentPageQuestions = pages[pageIndex] ?? [];
+  const listenAiOnPage = findListenAiOnPage(currentPageQuestions);
+  const surveyQuestionsOnPage = currentPageQuestions.filter((question) => question.kind !== 'listenai');
+  const shouldShowListenAi =
+    listenAiPhase === 'active' ||
+    Boolean(listenAiOnPage && surveyQuestionsOnPage.length === 0);
+
+  if (shouldShowListenAi) {
+    const payload =
+      listenAiLaunch && listenAiPhase === 'active'
+        ? listenAiLaunch
+        : (listenAiOnPage?.listenAi ?? null);
+    return (
+      <ListenAiRespondentFlow
+        payload={payload}
+        selectedAnswerLabel={resolveListenAiAnswerLabel(payload, answersByCode)}
+        surveyId={surveyId}
+        surveyTitle={surveyTitle}
+        onClose={onClose}
+        onComplete={() => {
+          setListenAiPhase('idle');
+          if (listenAiLaunch) {
+            if (nextPages.length === 0) {
+              onDone?.();
+            }
+            return;
+          }
+          handleFooterAction(onDone);
+        }}
+      />
+    );
+  }
 
   if (deepDiveLabel !== null && deepDiveFollowUpSettings?.enabled) {
     return (
@@ -134,6 +181,10 @@ export function SelectOneQuestionPreview({
   }
 
   function handleNext(): void {
+    if (listenAiOnPage && surveyQuestionsOnPage.length > 0 && listenAiPhase === 'idle') {
+      setListenAiPhase('active');
+      return;
+    }
     if (pageIndex === 0 && deepDiveFollowUpSettings?.enabled) {
       const answer = answersByCode[questionCode];
       const selectedOptionIds = answer?.selectedOptionIds ?? [];
@@ -167,7 +218,7 @@ export function SelectOneQuestionPreview({
         <div className={shellStyles.questionContainer}>
           <p className={shellStyles.requiredNote}>Questions marked with a * are required</p>
 
-          {currentPageQuestions.map((question, index) => (
+          {surveyQuestionsOnPage.map((question, index) => (
             <SurveyPreviewFollowUpQuestion
               key={`${question.code}-${pageIndex}`}
               question={question}

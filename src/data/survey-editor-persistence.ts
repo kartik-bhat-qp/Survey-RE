@@ -21,7 +21,7 @@ export function writePersistedSurveyEditorFlag(key: string): void {
 }
 
 /** localStorage key for persisted survey editor sections (used with `survey-re:` prefix). */
-export const SURVEY_EDITOR_SECTIONS_STORAGE_VERSION = 4;
+export const SURVEY_EDITOR_SECTIONS_STORAGE_VERSION = 10;
 
 export function getSurveyEditorSectionsStorageKey(surveyId: number): string {
   return `survey-editor-sections-v${SURVEY_EDITOR_SECTIONS_STORAGE_VERSION}:${surveyId}`;

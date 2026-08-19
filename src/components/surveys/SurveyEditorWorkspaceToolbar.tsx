@@ -22,6 +22,12 @@ import {
   type SurveyWorkspaceTool,
 } from '@/components/surveys/survey-workspace-tools';
 import { surveyHasDesignTab } from '@/data/mock-survey-design';
+import {
+  readSurveyApprovalState,
+  subscribeSurveyApprovalState,
+  surveyHasApprovalTab,
+  writeSurveyApprovalState,
+} from '@/data/mock-survey-approval';
 import styles from './SurveyEditorWorkspaceToolbar.module.css';
 
 const WuSecondaryNavbar = dynamic(
@@ -47,6 +53,9 @@ function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null
   if (tool === 'advance-quotas') return `/surveys/${surveyId}/advance-quotas`;
   if (tool === 'variables') return `/surveys/${surveyId}/variables`;
   if (tool === 'settings') return `/surveys/${surveyId}/settings`;
+  if (tool === 'approval' && surveyHasApprovalTab(surveyId)) {
+    return `/surveys/${surveyId}/approval`;
+  }
   return null;
 }
 
@@ -58,6 +67,7 @@ function getActiveTool(pathname: string, surveyId: number): SurveyWorkspaceTool 
   if (pathname === `/surveys/${surveyId}/advance-quotas`) return 'advance-quotas';
   if (pathname === `/surveys/${surveyId}/variables`) return 'variables';
   if (pathname === `/surveys/${surveyId}/settings`) return 'settings';
+  if (pathname === `/surveys/${surveyId}/approval`) return 'approval';
   return 'workspace';
 }
 
@@ -81,6 +91,18 @@ export function SurveyEditorWorkspaceToolbar({
     useState<PublishLicenseModalView>('conflicts');
   const [licenseConflicts, setLicenseConflicts] = useState<SurveyLicenseConflict[]>([]);
   const [draftConfirmOpen, setDraftConfirmOpen] = useState(false);
+  const requiresApproval = surveyHasApprovalTab(surveyId);
+
+  useEffect(() => {
+    if (!requiresApproval) return;
+    const applyPublished = (published: boolean): void => {
+      setMode(published ? 'publish' : 'draft');
+    };
+    applyPublished(readSurveyApprovalState(surveyId).published);
+    return subscribeSurveyApprovalState(surveyId, (state) => {
+      applyPublished(state.published);
+    });
+  }, [requiresApproval, surveyId]);
 
   useEffect(() => {
     if (!licenseModalOpen || licenseModalView !== 'conflicts') return;
@@ -138,13 +160,19 @@ export function SurveyEditorWorkspaceToolbar({
 
   const handleConfirmDraft = useCallback(() => {
     setMode('draft');
+    if (requiresApproval) {
+      const current = readSurveyApprovalState(surveyId);
+      writeSurveyApprovalState(surveyId, { ...current, published: false });
+    }
     showToast({ message: 'Switched to Draft', variant: 'success' });
-  }, [showToast]);
+  }, [requiresApproval, showToast, surveyId]);
 
   function selectMode(next: PublishMode) {
     if (next === mode) return;
 
     if (next === 'publish') {
+      if (requiresApproval) return;
+
       const conflicts = collectSurveyLicenseConflicts(
         sections,
         getUserPlanLicense(footerBrand),
@@ -180,7 +208,9 @@ export function SurveyEditorWorkspaceToolbar({
 
   const links = useMemo(
     () =>
-      SURVEY_WORKSPACE_TOOLS.map((tool) => {
+      SURVEY_WORKSPACE_TOOLS.filter(
+        (tool) => tool.id !== 'approval' || surveyHasApprovalTab(surveyId)
+      ).map((tool) => {
         const href = getToolHref(tool.id, surveyId);
         return {
           link: (
@@ -249,14 +279,33 @@ export function SurveyEditorWorkspaceToolbar({
               >
                 Draft
               </button>
-              <button
-                type="button"
-                className={mode === 'publish' ? styles.toggleActive : styles.toggleInactive}
-                aria-pressed={mode === 'publish'}
-                onClick={() => selectMode('publish')}
-              >
-                Publish
-              </button>
+              {requiresApproval ? (
+                <WuTooltip
+                  content="A reviewer publishes this survey after they approve it."
+                  position="bottom"
+                >
+                  <span>
+                    <button
+                      type="button"
+                      className={`${mode === 'publish' ? styles.toggleActive : styles.toggleInactive} ${styles.toggleDisabled}`}
+                      aria-pressed={mode === 'publish'}
+                      aria-disabled="true"
+                      disabled
+                    >
+                      Publish
+                    </button>
+                  </span>
+                </WuTooltip>
+              ) : (
+                <button
+                  type="button"
+                  className={mode === 'publish' ? styles.toggleActive : styles.toggleInactive}
+                  aria-pressed={mode === 'publish'}
+                  onClick={() => selectMode('publish')}
+                >
+                  Publish
+                </button>
+              )}
             </div>
             <button
               type="button"

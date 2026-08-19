@@ -123,6 +123,8 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { CaptchaQuestionSettingsPanel } from '@/components/surveys/CaptchaQuestionSettingsPanel';
 import { DeepDiveFollowUpQuestionRow } from '@/components/surveys/DeepDiveFollowUpQuestionRow';
 import { DeepDiveQuestionSettingsPanel } from '@/components/surveys/DeepDiveQuestionSettingsPanel';
+import { ListenAIQuestionRow } from '@/components/surveys/ListenAIQuestionRow';
+import { ListenAIQuestionSettingsPanel } from '@/components/surveys/ListenAIQuestionSettingsPanel';
 import { MultiPointScalesSettingsPanel } from '@/components/surveys/MultiPointScalesSettingsPanel';
 import { QuestionLogicModal } from '@/components/surveys/QuestionLogicModal';
 import { QuestionSettingsPanel } from '@/components/surveys/QuestionSettingsPanel';
@@ -171,6 +173,20 @@ import {
   surveyHasDeepDiveEligibleTarget,
   updateDeepDiveFollowUpConfigQuestion,
 } from '@/data/mock-deepdive-follow-up-question';
+import {
+  canAddListenAiAt,
+  createListenAiQuestion,
+  findSurveyQuestionAcrossSections,
+  getListenAiInsertError,
+  isListenAiEnabledSurvey,
+  isListenAiQuestion,
+  isListenAiStudySelected,
+  readListenAiConfig,
+  toListenAiPreviewPayload,
+  updateListenAiConfig,
+  type ListenAiQuestionConfig,
+} from '@/data/mock-listenai-question';
+import { upsertListenAiStudyInCatalog } from '@/data/listenai-study-catalog';
 import { AUDIO_INPUT_SURVEY_ID } from '@/data/mock-audio-input-survey';
 import {
   DEFAULT_MULTI_POINT_SETTINGS,
@@ -395,6 +411,10 @@ function isDeepDiveConfigQuestion(question: SurveyQuestion): boolean {
   return isDeepDiveFollowUpConfigQuestion(question);
 }
 
+function isListenAiConfigQuestion(question: SurveyQuestion): boolean {
+  return isListenAiQuestion(question);
+}
+
 function isSingleRowTextQuestion(question: SurveyQuestion): boolean {
   return question.addQuestionTypeId === 'single-row';
 }
@@ -414,6 +434,7 @@ function isSelectOneQuestion(question: SurveyQuestion): boolean {
     !isCommentBoxQuestion(question) &&
     !isCaptchaQuestion(question) &&
     !isDeepDiveConfigQuestion(question) &&
+    !isListenAiConfigQuestion(question) &&
     !isSingleRowTextQuestion(question) &&
     !isEmailAddressQuestion(question) &&
     !isContactInformationQuestion(question) &&
@@ -460,6 +481,7 @@ function isSelectOnePreviewQuestion(
     !isCommentBoxQuestion(question) &&
     !isCaptchaQuestion(question) &&
     !isDeepDiveConfigQuestion(question) &&
+    !isListenAiConfigQuestion(question) &&
     !isSingleRowTextQuestion(question) &&
     !isEmailAddressQuestion(question) &&
     !isContactInformationQuestion(question) &&
@@ -1249,7 +1271,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   }, [detail.survey.id, blankSurveyDraftEpoch]);
   const [sections, setSections] = usePersistedState<SurveySection[]>(
     sectionsStorageKey,
-    normalizeSurveyEditorSections(cloneSections(detail.sections))
+    normalizeSurveyEditorSections(cloneSections(detail.sections), detail.survey.id)
   );
   const sectionsMigratedRef = useRef(false);
 
@@ -1265,10 +1287,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       );
 
       if (legacySections) {
-        setSections(migrateLegacyDeepDiveSurveySections(legacySections));
+        setSections(migrateLegacyDeepDiveSurveySections(legacySections, detail.survey.id));
       } else {
         setSections((prev) => {
-          const normalized = normalizeSurveyEditorSections(prev);
+          const normalized = normalizeSurveyEditorSections(prev, detail.survey.id);
           return normalized === prev ? prev : normalized;
         });
       }
@@ -1278,7 +1300,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     }
 
     setSections((prev) => {
-      const normalized = normalizeSurveyEditorSections(prev);
+      const normalized = normalizeSurveyEditorSections(prev, detail.survey.id);
       return normalized === prev ? prev : normalized;
     });
   }, [detail.survey.id, setSections]);
@@ -2010,6 +2032,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     settingsQuestion && isDeepDiveConfigQuestion(settingsQuestion)
       ? readDeepDiveFollowUpQuestionConfig(settingsQuestion)
       : null;
+  const settingsListenAiConfig =
+    settingsQuestion && isListenAiConfigQuestion(settingsQuestion)
+      ? readListenAiConfig(settingsQuestion)
+      : null;
 
   const validationQuestion = validationTarget
     ? sections
@@ -2183,7 +2209,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       const questionKey = `${itemSectionId}:${followUpQuestion.id}`;
       const questionSettings = getQuestionSettings(followUpQuestion, questionKey);
       const questionLogic = getQuestionLogic(questionKey, followUpQuestion);
-      const optionIds = followUpQuestion.options.map((option) => option.id);
+      const optionIds = (followUpQuestion.options ?? []).map((option) => option.id);
 
       return {
         ...toQuestionPreviewFollowUp(followUpQuestion, questionSettings),
@@ -2264,6 +2290,16 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       return { ...DEFAULT_DEEPDIVE_FOLLOW_UP_SETTINGS };
     },
     [sections]
+  );
+
+  const handleListenAiConfigChange = useCallback(
+    (questionId: string, nextConfig: ListenAiQuestionConfig) => {
+      if (nextConfig.studyId && nextConfig.study.title.trim()) {
+        upsertListenAiStudyInCatalog(nextConfig.study);
+      }
+      setSections((prev) => updateListenAiConfig(prev, questionId, nextConfig));
+    },
+    []
   );
 
   const handleDeepDiveConfigChange = useCallback(
@@ -2489,7 +2525,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           const questionKey = `${sectionId}:${questionId}`;
           const questionSettings = getQuestionSettings(question, questionKey);
           const questionLogic = getQuestionLogic(questionKey, question);
-          const optionIds = question.options.map((option) => option.id);
+          const optionIds = (question.options ?? []).map((option) => option.id);
           const showHideOptions = toShowHideOptionsPreviewConfig(questionLogic, optionIds);
           const { samePageFollowUps, nextPages } = collectPreviewPagesAfterQuestion(
             sections,
@@ -2728,6 +2764,110 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             });
             openQuestionPreviewTab(
               `${previewSignature}:select-one`,
+              `${previewBaseUrl}?kind=select-one`
+            );
+            return;
+          }
+
+          if (isListenAiConfigQuestion(question)) {
+            const listenAiConfig = readListenAiConfig(question);
+            if (!isListenAiStudySelected(listenAiConfig)) {
+              showToast({
+                message: 'Connect a ListenAI study before previewing',
+                variant: 'info',
+              });
+              return;
+            }
+
+            const sourceEntry = listenAiConfig.study.sourceQuestionId
+              ? findSurveyQuestionAcrossSections(sections, listenAiConfig.study.sourceQuestionId)
+              : null;
+
+            if (sourceEntry) {
+              const sourceKey = `${sourceEntry.sectionId}:${sourceEntry.question.id}`;
+              const sourceSettings = getQuestionSettings(sourceEntry.question, sourceKey);
+              const sourcePages = collectPreviewPagesAfterQuestion(
+                sections,
+                sourceEntry.sectionId,
+                sourceEntry.question.id,
+                pageBreakBySlotKey,
+                buildPreviewFollowUp
+              );
+              const sourceOptions = (sourceEntry.question.options ?? []).map((option) => ({
+                id: option.id,
+                label: option.label,
+              }));
+
+              if (isSelectManyPreviewQuestion(sourceEntry.question, sourceSettings)) {
+                writeSelectManyQuestionPreviewSession({
+                  surveyId: detail.survey.id,
+                  surveyTitle: detail.editorTitle,
+                  questionCode: sourceEntry.question.code,
+                  questionText: sourceEntry.question.text,
+                  required: sourceEntry.question.required,
+                  options: sourceOptions,
+                  answerDisplayOrder: sourceSettings.answerDisplayOrder,
+                  randomizeAnswerCount: sourceSettings.randomizeAnswerCount,
+                  alternateFlipReversed:
+                    sourceSettings.answerDisplayOrder === 'alternate-flip'
+                      ? getAndAdvanceAlternateFlipState(
+                          detail.survey.id,
+                          sourceEntry.question.code
+                        )
+                      : undefined,
+                  samePageFollowUps: sourcePages.samePageFollowUps,
+                  nextPages: sourcePages.nextPages,
+                });
+                openQuestionPreviewTab(
+                  `${previewSignature}:select-many`,
+                  `${previewBaseUrl}?kind=select-many`
+                );
+                return;
+              }
+
+              writeSelectOneQuestionPreviewSession({
+                surveyId: detail.survey.id,
+                surveyTitle: detail.editorTitle,
+                questionCode: sourceEntry.question.code,
+                questionText: sourceEntry.question.text,
+                required: sourceEntry.question.required,
+                options: sourceOptions,
+                answerDisplayOrder: sourceSettings.answerDisplayOrder,
+                randomizeAnswerCount: sourceSettings.randomizeAnswerCount,
+                alternateFlipReversed:
+                  sourceSettings.answerDisplayOrder === 'alternate-flip'
+                    ? getAndAdvanceAlternateFlipState(detail.survey.id, sourceEntry.question.code)
+                    : undefined,
+                isFirstQuestion: isFirstSurveyQuestion(
+                  sections,
+                  sourceEntry.sectionId,
+                  sourceEntry.question.id
+                ),
+                samePageFollowUps: sourcePages.samePageFollowUps,
+                nextPages: sourcePages.nextPages,
+              });
+              openQuestionPreviewTab(
+                `${previewSignature}:select-one`,
+                `${previewBaseUrl}?kind=select-one`
+              );
+              return;
+            }
+
+            const launchPayload = toListenAiPreviewPayload(question);
+            writeSelectOneQuestionPreviewSession({
+              surveyId: detail.survey.id,
+              surveyTitle: detail.editorTitle,
+              questionCode: question.code,
+              questionText: listenAiConfig.study.title,
+              required: question.required,
+              options: [],
+              listenAiLaunch: launchPayload,
+              isFirstQuestion: false,
+              samePageFollowUps: [],
+              nextPages,
+            });
+            openQuestionPreviewTab(
+              `${previewSignature}:listenai`,
               `${previewBaseUrl}?kind=select-one`
             );
             return;
@@ -3811,6 +3951,35 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         return;
       }
 
+      if (typeId === 'listenai') {
+        if (!isListenAiEnabledSurvey(detail.survey.id)) {
+          showToast({ message: 'ListenAI is only available on this survey', variant: 'info' });
+          return;
+        }
+        const insertError = getListenAiInsertError(sections, sectionId, insertIndex);
+        if (insertError) {
+          showToast({ message: insertError, variant: 'info' });
+          return;
+        }
+        const ts = Date.now();
+        const newId = `q-listenai-${ts}`;
+        const questionNumber = nextVisibleQuestionNumber(sections);
+        const newQuestion = createListenAiQuestion(newId, questionNumber);
+        setSections((prev) =>
+          prev.map((sec) => {
+            if (sec.id !== sectionId) return sec;
+            return {
+              ...sec,
+              questions: insertQuestionAtIndex(sec.questions, insertIndex, newQuestion),
+            };
+          })
+        );
+        pendingScrollQuestionRef.current = { sectionId, questionId: newId };
+        setSelectedQuestionKey(`${sectionId}:${newId}`);
+        showToast({ message: 'ListenAI question added', variant: 'success' });
+        return;
+      }
+
       if (typeId === 'deepdive') {
         if (!canAddDeepDiveAt(sections, sectionId, insertIndex)) {
           showToast({
@@ -3942,18 +4111,27 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     if (detail.survey.id !== RECAPTCHA_V3_SURVEY_ID) {
       excluded.push('captcha');
     }
+    if (isListenAiEnabledSurvey(detail.survey.id)) {
+      excluded.push('deepdive');
+    } else {
+      excluded.push('listenai');
+    }
     return excluded;
   }, [detail.survey.id]);
 
   const getAddQuestionExcludeTypeIds = useCallback(
     (sectionId: string, insertIndex: number): string[] => {
       const excluded = [...addQuestionExcludeTypeIds];
-      if (!canAddDeepDiveAt(sections, sectionId, insertIndex)) {
-        excluded.push('deepdive');
+      if (!isListenAiEnabledSurvey(detail.survey.id)) {
+        if (!canAddDeepDiveAt(sections, sectionId, insertIndex)) {
+          excluded.push('deepdive');
+        }
+      } else if (!canAddListenAiAt(sections, sectionId, insertIndex)) {
+        excluded.push('listenai');
       }
       return excluded;
     },
-    [addQuestionExcludeTypeIds, sections]
+    [addQuestionExcludeTypeIds, detail.survey.id, sections]
   );
 
   return (
@@ -4058,6 +4236,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const isCommentBox = isCommentBoxQuestion(question);
                     const isCaptcha = isCaptchaQuestion(question);
                     const isDeepDive = isDeepDiveConfigQuestion(question);
+                    const isListenAi = isListenAiConfigQuestion(question);
                     const isSingleRowText = isSingleRowTextQuestion(question);
                     const isEmailAddress = isEmailAddressQuestion(question);
                     const isContactInformation = isContactInformationQuestion(question);
@@ -4083,13 +4262,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const deepDiveConfig = isDeepDive
                       ? readDeepDiveFollowUpQuestionConfig(question)
                       : null;
+                    const listenAiConfig = isListenAi ? readListenAiConfig(question) : null;
                     const deepDiveAttached = hasDeepDiveAttachedToQuestion(
                       sections,
                       section.id,
                       question.id
                     );
                     const savedLogic = logicByQuestionKey[questionKey];
-                    const questionOptionIds = question.options.map((option) => option.id);
+                    const questionOptionIds = (question.options ?? []).map((option) => option.id);
                     const showHideOptionsApplied =
                       savedLogic != null &&
                       isShowHideOptionsLogicApplied(savedLogic, questionOptionIds);
@@ -4168,7 +4348,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                             isConstantSum ? styles.questionBlockConstantSum : ''
                           } ${isDragDrop ? styles.questionBlockDragDrop : ''} ${
                             isStaticContent ? styles.questionBlockStaticContent : ''
-                          } ${isDeepDive ? styles.questionBlockSingleRowText : ''} ${
+                          } ${isDeepDive || isListenAi ? styles.questionBlockSingleRowText : ''} ${
                             isSelected ? styles.questionBlockSelected : ''
                           }`}
                         >
@@ -4200,7 +4380,29 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                             className={styles.questionShell}
                             onClick={() => setSelectedQuestionKey(questionKey)}
                           >
-                            {isNps ? (
+                            {isListenAi && listenAiConfig ? (
+                              <ListenAIQuestionRow
+                                question={question}
+                                sectionId={section.id}
+                                sections={sections}
+                                config={listenAiConfig}
+                                showHideOptionsApplied={showHideOptionsApplied}
+                                onAction={(label) =>
+                                  toast(`${label}: ${plainTextFromRichValue(question.text)}`)
+                                }
+                                onMenuAction={(action) =>
+                                  handleQuestionMenuAction(section.id, question.id, action)
+                                }
+                                onOpenLogic={() => handleOpenLogic(section.id, question.id)}
+                                onOpenSettings={() =>
+                                  handleOpenSettings(section.id, question.id)
+                                }
+                                onQuestionTextChange={handleQuestionTextChange}
+                                onConfigChange={(next) =>
+                                  handleListenAiConfigChange(question.id, next)
+                                }
+                              />
+                            ) : isNps ? (
                               <NpsQuestionRow
                                 question={question}
                                 sectionId={section.id}
@@ -5123,6 +5325,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           <MultiPointScalesSettingsPanel
             settings={getMultiPointSettings(settingsQuestionKey)}
             onChange={(next) => handleMultiPointSettingsChange(settingsQuestionKey, next)}
+            onClose={() => setSettingsTarget(null)}
+          />
+        ) : isListenAiConfigQuestion(settingsQuestion) && settingsListenAiConfig && settingsTarget ? (
+          <ListenAIQuestionSettingsPanel
+            config={settingsListenAiConfig}
+            sections={sections}
+            questionId={settingsTarget.questionId}
+            onChange={(next) => handleListenAiConfigChange(settingsTarget.questionId, next)}
             onClose={() => setSettingsTarget(null)}
           />
         ) : isDeepDiveConfigQuestion(settingsQuestion) && settingsDeepDiveConfig && settingsTarget ? (

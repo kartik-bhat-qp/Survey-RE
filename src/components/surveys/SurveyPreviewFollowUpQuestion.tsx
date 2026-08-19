@@ -122,6 +122,10 @@ export function SurveyPreviewFollowUpQuestion({
             </p>
           ) : null}
         </div>
+      ) : kind === 'listenai' ? (
+        <p className={styles.matrixRowHint}>
+          Respondents leave the survey for a ListenAI interview, then return to the next question.
+        </p>
       ) : (
         <SurveyPreviewOptionsBlock
           questionCode={question.code}

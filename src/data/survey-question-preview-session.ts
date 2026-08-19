@@ -23,6 +23,7 @@ import {
   type DeepDiveFollowUpSettings,
 } from '@/data/mock-deepdive-question-settings';
 import type { ShowHideOptionsPreviewConfig } from '@/data/show-hide-options-preview';
+import type { ListenAiPreviewPayload } from '@/data/mock-listenai-question';
 
 export interface SurveyQuestionPreviewFollowUp {
   code: string;
@@ -38,6 +39,7 @@ export interface SurveyQuestionPreviewFollowUp {
   alternateFlipReversed?: boolean;
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
   deepDiveFollowUpSettings?: DeepDiveFollowUpSettings | null;
+  listenAi?: ListenAiPreviewPayload | null;
 }
 
 export interface SurveyQuestionPreviewPagination {
@@ -68,6 +70,7 @@ export interface SelectManyQuestionPreviewSession {
   alternateFlipReversed?: boolean;
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
   deepDiveFollowUpSettings?: DeepDiveFollowUpSettings | null;
+  listenAiLaunch?: ListenAiPreviewPayload | null;
   priorPages?: SurveyQuestionPreviewFollowUp[][];
   samePageFollowUps?: SurveyQuestionPreviewFollowUp[];
   nextPages?: SurveyQuestionPreviewFollowUp[][];
@@ -86,6 +89,7 @@ export interface SelectOneQuestionPreviewSession {
   showHideOptions?: ShowHideOptionsPreviewConfig | null;
   deepDiveFollowUpSettings?: DeepDiveFollowUpSettings | null;
   isFirstQuestion?: boolean;
+  listenAiLaunch?: ListenAiPreviewPayload | null;
   priorPages?: SurveyQuestionPreviewFollowUp[][];
   samePageFollowUps?: SurveyQuestionPreviewFollowUp[];
   nextPages?: SurveyQuestionPreviewFollowUp[][];

@@ -3,7 +3,7 @@ import {
   DEEPDIVE_FOLLOW_UP_QUESTION_NUMBER,
   DEEPDIVE_V2_SURVEY_ID,
 } from '@/data/mock-deepdive-question-settings';
-import { createDeepDiveFollowUpConfigQuestion } from '@/data/mock-deepdive-follow-up-question';
+import { createListenAiQuestion } from '@/data/mock-listenai-question';
 
 export { DEEPDIVE_V2_SURVEY_ID, DEEPDIVE_FOLLOW_UP_QUESTION_NUMBER };
 
@@ -80,19 +80,27 @@ export function createDeepDiveV2Sections(): SurveySection[] {
     options: makeOptions(targetQuestionId, ['Taco Bell', 'KFC', 'McD', 'Burger King']),
   };
 
-  const deepDiveConfigQuestion = createDeepDiveFollowUpConfigQuestion(
-    'q-deepdive-config',
-    '',
-    '',
-    DEEPDIVE_FOLLOW_UP_QUESTION_NUMBER + 1,
-    { enabled: true, maxFollowUp: 3, tone: 'neutral' }
+  const listenAiQuestion = createListenAiQuestion(
+    'q-listenai-18',
+    DEEPDIVE_FOLLOW_UP_QUESTION_NUMBER + 1
   );
+
+  const closingQuestion: SurveyQuestion = {
+    id: 'q-deepdive-19',
+    code: 'Q19',
+    number: DEEPDIVE_FOLLOW_UP_QUESTION_NUMBER + 2,
+    text: 'Is there anything else you would like to add?',
+    required: false,
+    inputKind: 'radio',
+    addQuestionTypeId: 'select-one',
+    options: makeOptions('q-deepdive-19', ['Yes', 'No']),
+  };
 
   return [
     {
       id: sectionId,
       title: 'Block 1',
-      questions: [...screeningQuestions, targetQuestion, deepDiveConfigQuestion],
+      questions: [targetQuestion, listenAiQuestion, ...screeningQuestions, closingQuestion],
     },
   ];
 }

@@ -1010,6 +1010,12 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     headerLabel: 'Custom Logic Engine',
     question: 'Advanced scripted logic and validation.',
   },
+  listenai: {
+    variant: 'placeholder',
+    headerIcon: 'wc-ai',
+    headerLabel: 'ListenAI',
+    question: 'Launch a ListenAI study, then return the respondent to the survey.',
+  },
   deepdive: {
     variant: 'placeholder',
     headerIcon: 'wc-ai',
