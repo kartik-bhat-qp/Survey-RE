@@ -13,10 +13,13 @@ import { SaveAndContinueEmailModal } from '@/components/surveys/SaveAndContinueE
 import { SurveyNotificationConfigPanel } from '@/components/surveys/SurveyNotificationConfigPanel';
 import { NotificationCriteriaViewModal } from '@/components/surveys/NotificationCriteriaViewModal';
 import { SurveySettingsRichText } from '@/components/surveys/SurveySettingsRichText';
+import { SurveyApprovalDashboard } from '@/components/surveys/SurveyApprovalDashboard';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { useSurveyById } from '@/hooks/useSurveyById';
 import { MOCK_EMAIL_LISTS } from '@/data/mock-survey-distribute';
+import { surveyHasApprovalTab } from '@/data/mock-survey-approval';
+import { getSurveyEditorTitle } from '@/data/get-survey-by-id';
 import {
   getDefaultSurveySettings,
   getSurveyDisplayId,
@@ -599,7 +602,9 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
     <div className={styles.workspace}>
       <aside className={styles.sidebar} aria-label="Settings">
         <nav className={styles.sidebarNav}>
-          {SURVEY_SETTINGS_TABS.map((tab) =>
+          {SURVEY_SETTINGS_TABS.filter(
+            (tab) => tab.id !== 'approvals' || surveyHasApprovalTab(surveyId)
+          ).map((tab) =>
             tab.comingSoon ? (
               <span
                 key={tab.id}
@@ -1306,6 +1311,16 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
             <div className={styles.actions}>
               <WuButton onClick={handleSave}>Save Changes</WuButton>
             </div>
+          </div>
+        ) : activeTab === 'approvals' ? (
+          <div className={styles.panel}>
+            {survey && surveyHasApprovalTab(surveyId) ? (
+              <SurveyApprovalDashboard surveyId={surveyId} surveyName={getSurveyEditorTitle(survey)} />
+            ) : (
+              <div style={{ padding: '24px', color: 'var(--wu-text-secondary, #666)' }}>
+                Approvals are not enabled for this survey.
+              </div>
+            )}
           </div>
         ) : (
           <div className={`${styles.panel} ${styles.notificationsPanel}`}>
