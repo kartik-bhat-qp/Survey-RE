@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { NavLink } from '@/components/surveys/NavLink';
 import { SearchReplaceModal } from '@/components/surveys/SearchReplaceModal';
@@ -19,6 +19,7 @@ import {
 import { getSurveyEditorPhasePath } from '@/components/surveys/survey-editor-navigation';
 import { useSurveyEditorBulkEdit } from '@/components/surveys/SurveyEditorBulkEditContext';
 import { DEFAULT_SURVEY_CUSTOM_JS } from '@/data/mock-survey-custom-js';
+import { surveyHasApprovalTab } from '@/data/mock-survey-approval';
 import styles from './SurveyEditorPhaseTabs.module.css';
 
 const WuPrimaryNavbar = dynamic(
@@ -61,8 +62,10 @@ function deferOpenChange(setOpen: (open: boolean) => void, open: boolean) {
 export function SurveyEditorPhaseTabs() {
   const params = useParams();
   const pathname = usePathname() ?? '';
+  const router = useRouter();
   const surveyId = Number(params.id);
   const { showToast } = useWuShowToast();
+  const showApprovals = surveyHasApprovalTab(surveyId);
   const { activePhase, setActivePhase } = useSurveyEditorPhase();
   const { bulkEditModeEnabled, enableBulkEditMode, disableBulkEditMode } =
     useSurveyEditorBulkEdit();
@@ -312,6 +315,14 @@ export function SurveyEditorPhaseTabs() {
                   >
                     Stale Cookies
                   </WuMenuItem>
+                  {showApprovals ? (
+                    <WuMenuItem
+                      className={styles.toolsMenuItem}
+                      onSelect={() => router.push(`/surveys/${surveyId}/approval`)}
+                    >
+                      Approvals
+                    </WuMenuItem>
+                  ) : null}
                 </WuMenuItemGroup>
                 <WuMenuItemGroup
                   className={styles.toolsMenuGroup}
