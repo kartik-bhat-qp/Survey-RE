@@ -19,7 +19,8 @@ export type TextAiRecodeAction =
   | 'theme-rejected'
   | 'sub-theme-rejected'
   | 'theme-approved'
-  | 'sub-theme-approved';
+  | 'sub-theme-approved'
+  | 'all-emerging-approved';
 
 export interface TextAiRecodeLogEntry {
   action: TextAiRecodeAction;

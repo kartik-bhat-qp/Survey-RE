@@ -650,6 +650,8 @@ export default function TextAiThemeConfigurationPage({
   const [search, setSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
   const [approveTarget, setApproveTarget] = useState<ApproveTarget | null>(null);
+  const [approveAllConfirmationOpen, setApproveAllConfirmationOpen] =
+    useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'preferences' | 'logs'>(
     'preferences'
@@ -766,6 +768,23 @@ export default function TextAiThemeConfigurationPage({
       subThemeEdits,
     ]
   );
+
+  const allEmergingItems = useMemo(() => {
+    const themeNames = themeGroups
+      .filter((group) => group.emerging)
+      .map((group) => group.name);
+    const subThemeNames = themeGroups.flatMap((group) =>
+      group.subThemes
+        .filter((subTheme) => subTheme.emerging)
+        .map((subTheme) => subTheme.name)
+    );
+
+    return {
+      names: [...new Set([...themeNames, ...subThemeNames])],
+      subThemeCount: new Set(subThemeNames).size,
+      themeCount: new Set(themeNames).size,
+    };
+  }, [themeGroups]);
 
   const visibleThemeGroups = useMemo(
     () =>
@@ -907,6 +926,31 @@ export default function TextAiThemeConfigurationPage({
           : 'Emerging sub-theme approved',
     });
     setApproveTarget(null);
+  }
+
+  function openApproveAllConfirmation(): void {
+    setApproveTarget(null);
+    setApproveAllConfirmationOpen(true);
+  }
+
+  function confirmApproveAll(): void {
+    updateThemePreferences((current) => ({
+      ...current,
+      approvedEmergingNames: [
+        ...new Set([
+          ...current.approvedEmergingNames,
+          ...allEmergingItems.names,
+        ]),
+      ],
+    }));
+    appendTextAiRecodeLog({
+      action: 'all-emerging-approved',
+      dashboardId: numericDashboardId,
+      details: `Approved all emerging items (${allEmergingItems.themeCount} themes and ${allEmergingItems.subThemeCount} sub-themes).`,
+      question: selectedQuestion?.text ?? 'Selected question',
+      title: 'All emerging items approved',
+    });
+    setApproveAllConfirmationOpen(false);
   }
 
   function saveSubThemeEdit(): void {
@@ -1653,8 +1697,55 @@ export default function TextAiThemeConfigurationPage({
           <WuButton type="button" variant="secondary" onClick={() => setApproveTarget(null)}>
             Cancel
           </WuButton>
+          <WuButton
+            type="button"
+            variant="secondary"
+            onClick={openApproveAllConfirmation}
+          >
+            Approve all
+          </WuButton>
           <WuButton type="button" onClick={confirmApproval}>
             Approve
+          </WuButton>
+        </WuModalFooter>
+      </WuModal>
+
+      <WuModal
+        open={approveAllConfirmationOpen}
+        onOpenChange={setApproveAllConfirmationOpen}
+        size="sm"
+        variant="action"
+      >
+        <DialogTitle className={styles.srOnly}>
+          Confirm approval of all emerging items
+        </DialogTitle>
+        <WuModalHeader>Approve all emerging items?</WuModalHeader>
+        <WuModalContent>
+          <div className={styles.approveModalContent}>
+            <p>
+              You are about to approve all{' '}
+              <strong>
+                {allEmergingItems.themeCount} emerging themes and{' '}
+                {allEmergingItems.subThemeCount} emerging sub-themes
+              </strong>
+              . They will become visible on the dashboard while auto approval is
+              turned off.
+            </p>
+            <p>
+              <strong>This action cannot be undone.</strong>
+            </p>
+          </div>
+        </WuModalContent>
+        <WuModalFooter>
+          <WuButton
+            type="button"
+            variant="secondary"
+            onClick={() => setApproveAllConfirmationOpen(false)}
+          >
+            Cancel
+          </WuButton>
+          <WuButton type="button" onClick={confirmApproveAll}>
+            Approve all
           </WuButton>
         </WuModalFooter>
       </WuModal>
