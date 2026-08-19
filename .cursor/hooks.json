@@ -1,16 +1,6 @@
 {
   "version": 1,
   "hooks": {
-    "afterShellExecution": [
-      {
-        "command": ".cursor/hooks/record-git-activity.sh",
-        "matcher": "git\\s+(push|pull)\\b"
-      }
-    ],
-    "beforeSubmitPrompt": [
-      {
-        "command": ".cursor/hooks/record-agent-prompt.sh"
-      }
-    ]
+    
   }
 }

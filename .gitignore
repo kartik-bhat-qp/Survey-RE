@@ -41,9 +41,6 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
-# local prompt capture for Engagement Logs (merged into public/engagement-logs.json on push)
-.cursor/agent-prompts.jsonl
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
