@@ -45,7 +45,7 @@ function questionOptions(question: SurveyQuestion): string[] {
     return question.options.map((option) => option.label).filter(Boolean);
   }
   if (question.nps) {
-    return [question.nps.leftAnchor, question.nps.rightAnchor].filter(Boolean);
+    return [question.nps.minLabel, question.nps.maxLabel].filter(Boolean);
   }
   return [];
 }

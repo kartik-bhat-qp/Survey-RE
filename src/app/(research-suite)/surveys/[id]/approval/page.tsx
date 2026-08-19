@@ -9,7 +9,7 @@ export default function SurveyApprovalPage() {
   const surveyId = Number(params.id);
 
   useEffect(() => {
-    router.replace(`/surveys/${surveyId}/settings`);
+    router.replace(`/surveys/${surveyId}`);
   }, [router, surveyId]);
 
   return null;

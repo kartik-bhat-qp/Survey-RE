@@ -211,6 +211,8 @@ export interface SurveyQuestionOption {
 export interface SurveyMatrixColumn {
   id: string;
   label: string;
+  cellType?: string;
+  options?: string[];
 }
 
 export interface SurveyMatrixRow {
@@ -258,8 +260,12 @@ export interface SurveyQuestion {
   addQuestionTypeId?: string;
   /** Hidden from survey takers; shown in the workspace with a hidden-question treatment. */
   editorHidden?: boolean;
+  /** Features, levels, and task setup for Conjoint questions. */
+  conjoint?: unknown;
   /** Target question and follow-up settings for DeepDive config questions. */
   deepDiveFollowUpConfig?: DeepDiveFollowUpQuestionConfig;
+  /** Connected ListenAI study for ListenAI questions. */
+  listenAiConfig?: unknown;
 }
 
 /** Resolves the Add Question type id used for license diamond and tier checks. */

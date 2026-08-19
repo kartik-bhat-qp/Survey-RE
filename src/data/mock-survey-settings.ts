@@ -10,7 +10,7 @@ export {
   normalizeSurveyNotificationSettings,
 } from '@/data/mock-survey-notifications';
 
-export type SurveySettingsTab = 'settings' | 'security' | 'privacy' | 'notifications' | 'approvals';
+export type SurveySettingsTab = 'settings' | 'security' | 'privacy' | 'notifications';
 
 export type SurveySettingsNavItemId = SurveySettingsTab | 'advanced-quota-notifications';
 
@@ -170,7 +170,6 @@ export const SURVEY_SETTINGS_TABS: SurveySettingsNavItem[] = [
   { id: 'security', label: 'Security' },
   { id: 'privacy', label: 'Privacy and compliance' },
   { id: 'notifications', label: 'Notifications' },
-  { id: 'approvals', label: 'Approvals' },
   {
     id: 'advanced-quota-notifications',
     label: 'Advanced quota notifications',

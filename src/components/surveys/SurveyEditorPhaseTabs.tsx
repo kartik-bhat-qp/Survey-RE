@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useParams, usePathname, useRouter } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { NavLink } from '@/components/surveys/NavLink';
 import { SearchReplaceModal } from '@/components/surveys/SearchReplaceModal';
@@ -20,6 +20,7 @@ import { getSurveyEditorPhasePath } from '@/components/surveys/survey-editor-nav
 import { useSurveyEditorBulkEdit } from '@/components/surveys/SurveyEditorBulkEditContext';
 import { DEFAULT_SURVEY_CUSTOM_JS } from '@/data/mock-survey-custom-js';
 import { surveyHasApprovalTab } from '@/data/mock-survey-approval';
+import { SurveyApprovalsModal } from '@/components/surveys/SurveyApprovalsModal';
 import styles from './SurveyEditorPhaseTabs.module.css';
 
 const WuPrimaryNavbar = dynamic(
@@ -62,7 +63,6 @@ function deferOpenChange(setOpen: (open: boolean) => void, open: boolean) {
 export function SurveyEditorPhaseTabs() {
   const params = useParams();
   const pathname = usePathname() ?? '';
-  const router = useRouter();
   const surveyId = Number(params.id);
   const { showToast } = useWuShowToast();
   const showApprovals = surveyHasApprovalTab(surveyId);
@@ -77,6 +77,7 @@ export function SurveyEditorPhaseTabs() {
   const [logicCriteriaOpen, setLogicCriteriaOpen] = useState(false);
   const [customJsOpen, setCustomJsOpen] = useState(false);
   const [removeAllLogicOpen, setRemoveAllLogicOpen] = useState(false);
+  const [approvalsModalOpen, setApprovalsModalOpen] = useState(false);
   const [customJs, setCustomJs] = useState(DEFAULT_SURVEY_CUSTOM_JS);
   const isWorkspaceView =
     activePhase === 'edit' &&
@@ -318,9 +319,21 @@ export function SurveyEditorPhaseTabs() {
                   {showApprovals ? (
                     <WuMenuItem
                       className={styles.toolsMenuItem}
-                      onSelect={() => router.push(`/surveys/${surveyId}/approval`)}
+                      onSelect={() => setApprovalsModalOpen(true)}
                     >
-                      Approvals
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        Approvals
+                        <span style={{
+                          background: '#e8f4fd',
+                          border: '1px solid #b6daf8',
+                          borderRadius: '999px',
+                          color: '#1b87e6',
+                          fontSize: '0.5625rem',
+                          fontWeight: 600,
+                          lineHeight: 1,
+                          padding: '2px 6px',
+                        }}>New</span>
+                      </span>
                     </WuMenuItem>
                   ) : null}
                 </WuMenuItemGroup>
@@ -405,6 +418,13 @@ export function SurveyEditorPhaseTabs() {
           open
           onClearCustomJs={handleClearCustomJs}
           onOpenChange={handleRemoveAllLogicOpenChange}
+        />
+      ) : null}
+      {approvalsModalOpen ? (
+        <SurveyApprovalsModal
+          open
+          onOpenChange={setApprovalsModalOpen}
+          surveyId={surveyId}
         />
       ) : null}
     </>
