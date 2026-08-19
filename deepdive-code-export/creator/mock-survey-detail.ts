@@ -27,6 +27,7 @@ export type SurveyQuestionKind =
   | 'multi-point-scales'
   | 'matrix-multi-select'
   | 'matrix-spreadsheet'
+  | 'flex-matrix'
   | 'nps'
   | 'van-westendorp'
   | 'lookup-table'
@@ -44,7 +45,9 @@ export type SurveyQuestionKind =
   | 'presentation'
   | 'section-heading'
   | 'section-subheading'
-  | 'deep-dive-follow-ups';
+  | 'deep-dive-follow-ups'
+  | 'conjoint'
+  | 'listenai';
 
 export type SurveySmileyRatingTone =
   | 'very-unsatisfied'

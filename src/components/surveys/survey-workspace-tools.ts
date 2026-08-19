@@ -7,8 +7,7 @@ export type SurveyWorkspaceTool =
   | 'advanced-quota'
   | 'advance-quotas'
   | 'variables'
-  | 'settings'
-  | 'approval';
+  | 'settings';
 
 export interface SurveyWorkspaceToolItem {
   id: SurveyWorkspaceTool;
@@ -26,5 +25,4 @@ export const SURVEY_WORKSPACE_TOOLS: SurveyWorkspaceToolItem[] = [
   { id: 'advance-quotas', label: 'Quota Management', icon: 'wm-pie-chart' },
   { id: 'variables', label: 'Variables', icon: 'wm-code' },
   { id: 'settings', label: 'Settings', icon: 'wm-settings' },
-  { id: 'approval', label: 'Approval', icon: 'wm-check-circle' },
 ];

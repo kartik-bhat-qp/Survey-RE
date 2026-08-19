@@ -53,9 +53,6 @@ function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null
   if (tool === 'advance-quotas') return `/surveys/${surveyId}/advance-quotas`;
   if (tool === 'variables') return `/surveys/${surveyId}/variables`;
   if (tool === 'settings') return `/surveys/${surveyId}/settings`;
-  if (tool === 'approval' && surveyHasApprovalTab(surveyId)) {
-    return `/surveys/${surveyId}/approval`;
-  }
   return null;
 }
 
@@ -67,7 +64,6 @@ function getActiveTool(pathname: string, surveyId: number): SurveyWorkspaceTool 
   if (pathname === `/surveys/${surveyId}/advance-quotas`) return 'advance-quotas';
   if (pathname === `/surveys/${surveyId}/variables`) return 'variables';
   if (pathname === `/surveys/${surveyId}/settings`) return 'settings';
-  if (pathname === `/surveys/${surveyId}/approval`) return 'approval';
   return 'workspace';
 }
 
@@ -208,9 +204,7 @@ export function SurveyEditorWorkspaceToolbar({
 
   const links = useMemo(
     () =>
-      SURVEY_WORKSPACE_TOOLS.filter(
-        (tool) => tool.id !== 'approval' || surveyHasApprovalTab(surveyId)
-      ).map((tool) => {
+      SURVEY_WORKSPACE_TOOLS.map((tool) => {
         const href = getToolHref(tool.id, surveyId);
         return {
           link: (
