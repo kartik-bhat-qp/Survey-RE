@@ -114,6 +114,18 @@ export function TextAiDashboardSettingsModal({
     saveTextAiThemePreferences(dashboard.id, nextPreferences);
   }
 
+  function setAutoApproveEmergingThemes(checked: boolean): void {
+    const nextPreferences = {
+      ...themePreferences,
+      approvedEmergingNames: checked
+        ? themePreferences.approvedEmergingNames
+        : [],
+      autoApproveEmergingThemes: checked,
+    };
+    setThemePreferences(nextPreferences);
+    saveTextAiThemePreferences(dashboard.id, nextPreferences);
+  }
+
   return (
     <div
       className={styles.backdrop}
@@ -205,6 +217,20 @@ export function TextAiDashboardSettingsModal({
                   checked={themePreferences.showThemesWithNoResponses}
                   onChange={setShowThemesWithNoResponses}
                   aria-label="Show themes with no responses"
+                />
+              </label>
+              <label className={styles.preferenceRow}>
+                <span>
+                  <strong>Auto approve emerging themes</strong>
+                  <small>
+                    Show new emerging themes and sub-themes on the dashboard
+                    without manual approval.
+                  </small>
+                </span>
+                <WuToggle
+                  checked={themePreferences.autoApproveEmergingThemes}
+                  onChange={setAutoApproveEmergingThemes}
+                  aria-label="Auto approve emerging themes"
                 />
               </label>
             </div>
