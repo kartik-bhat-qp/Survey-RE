@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type HTMLAttributes } from 'react';
 import dynamic from 'next/dynamic';
 import { useSurveyAnalyticsView } from '@/components/surveys/SurveyAnalyticsViewContext';
 import {
@@ -42,13 +42,28 @@ function AnalyticsTabNavIcon({
       ? (items.find((item) => item.id === activeSubView)?.icon ?? defaultIcon)
       : defaultIcon;
 
+  return <span className={`${icon} ${styles.tabIcon}`} aria-hidden />;
+}
+
+function AnalyticsTabLink({
+  tabId,
+  className,
+  children,
+  ...rest
+}: {
+  tabId: AnalyticsTabId;
+} & HTMLAttributes<HTMLDivElement>) {
+  const { activeTab } = useSurveyAnalyticsView();
+  const isActiveTab = activeTab === tabId;
+
   return (
-    <div className={styles.tabIconWrap}>
-      <div className={styles.tabNavGrid}>
-        <span className={styles.tabGridSpacer} aria-hidden />
-        <span className={`${icon} ${styles.tabIcon}`} aria-hidden />
-        <span className={styles.tabGridSpacer} aria-hidden />
-      </div>
+    <div
+      {...rest}
+      className={`${styles.tabLinkWrap} ${className ?? ''} ${
+        isActiveTab ? 'wu-secondary-nav-active-link' : ''
+      } ${isActiveTab ? styles.tabLinkActive : ''}`}
+    >
+      {children}
     </div>
   );
 }
@@ -65,7 +80,7 @@ function AnalyticsTabNavMenu({
   const { activeTab, activeSubView, setAnalyticsSelection } = useSurveyAnalyticsView();
   const [menuOpen, setMenuOpen] = useState(false);
   const isActiveTab = activeTab === tabId;
-
+  const menuHasIcons = items.some((item) => Boolean(item.icon));
   const displayLabel = isActiveTab
     ? (items.find((item) => item.id === activeSubView)?.label ?? label)
     : label;
@@ -87,18 +102,17 @@ function AnalyticsTabNavMenu({
       Trigger={
         <button
           type="button"
-          className={`${styles.tabTrigger} ${styles.tabNavGrid} ${
-            isActiveTab ? 'wu-secondary-nav-active-link' : ''
-          }`}
+          className={`${styles.tabTrigger} ${menuOpen ? styles.tabTriggerOpen : ''}`}
           aria-haspopup="menu"
           aria-expanded={menuOpen}
+          aria-label={displayLabel}
         >
-          <span className={styles.tabGridSpacer} aria-hidden />
           <span className={styles.tabLabel}>{displayLabel}</span>
           <span className={`wm-arrow-drop-down ${styles.tabChevron}`} aria-hidden />
         </button>
       }
       align="start"
+      side="bottom"
       className={styles.tabMenu}
     >
       {items.map((item) => (
@@ -112,6 +126,11 @@ function AnalyticsTabNavMenu({
           onSelect={() => handleSelectView(item)}
         >
           <span className={styles.tabMenuItemContent}>
+            {item.icon ? (
+              <span className={`${item.icon} ${styles.tabMenuItemIcon}`} aria-hidden />
+            ) : menuHasIcons ? (
+              <span className={styles.tabMenuItemIconSpacer} aria-hidden />
+            ) : null}
             <span className={styles.tabMenuItemLabel}>
               {item.label}
               {item.openInNewTab ? (
@@ -144,18 +163,16 @@ export function SurveyAnalyticsSubNav() {
         const tab = ANALYTICS_TAB_CONFIG[tabId];
         return {
           link: (
-            <div className={styles.tabLinkWrap}>
+            <AnalyticsTabLink tabId={tabId}>
               <AnalyticsTabNavMenu tabId={tabId} label={tab.label} items={tab.items} />
-            </div>
+            </AnalyticsTabLink>
           ),
           imgOrIcon: (
-            <div className={styles.tabIconWrap}>
-              <AnalyticsTabNavIcon
-                tabId={tabId}
-                defaultIcon={tab.icon}
-                items={tab.items}
-              />
-            </div>
+            <AnalyticsTabNavIcon
+              tabId={tabId}
+              defaultIcon={tab.icon}
+              items={tab.items}
+            />
           ),
         };
       }),

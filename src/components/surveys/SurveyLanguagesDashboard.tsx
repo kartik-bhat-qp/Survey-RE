@@ -1,11 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { AddLanguageVersionDropdown } from '@/components/surveys/AddLanguageVersionDropdown';
+import { ManualTranslationsPanel } from '@/components/surveys/ManualTranslationsPanel';
 import { QuestionRichTextField } from '@/components/surveys/QuestionRichTextField';
+import { getSurveyById } from '@/data/get-survey-by-id';
+import { getSurveyDetail } from '@/data/mock-survey-detail';
 import {
   createSurveyLanguageFromOption,
   getDefaultSurveyLanguages,
@@ -37,7 +40,7 @@ interface SurveyLanguagesDashboardProps {
   surveyId: number;
 }
 
-export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguagesDashboardProps) {
+export function SurveyLanguagesDashboard({ surveyId }: SurveyLanguagesDashboardProps) {
   const { showToast } = useWuShowToast();
   const [activeTab, setActiveTab] = useState<SurveyLanguagesSidebarTab>('languages');
   const [languages, setLanguages] = useState<SurveyLanguageVersion[]>(() =>
@@ -46,6 +49,12 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
   const [changeLanguageWithinSurvey, setChangeLanguageWithinSurvey] = useState(false);
   const [screenerQuestion, setScreenerQuestion] = useState(SCREENER_QUESTION_LABEL);
   const [deleteTarget, setDeleteTarget] = useState<SurveyLanguageVersion | null>(null);
+
+  const questions = useMemo(() => {
+    const survey = getSurveyById(surveyId);
+    if (!survey) return [];
+    return getSurveyDetail(survey).sections.flatMap((section) => section.questions);
+  }, [surveyId]);
 
   const hasAdditionalLanguages = languages.some((language) => !language.isDefault);
 
@@ -93,6 +102,22 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
       variant: 'success',
     });
   }
+
+  const handleTranslationProgress = useCallback((languageId: string, percent: number) => {
+    setLanguages((prev) =>
+      prev.map((language) =>
+        language.id === languageId
+          ? language.progressPercent === percent
+            ? language
+            : {
+                ...language,
+                progressPercent: percent,
+                status: percent >= 100 ? 'complete' : percent > 0 ? 'in-progress' : 'not-started',
+              }
+          : language
+      )
+    );
+  }, []);
 
   function handleAutoTranslate(language: SurveyLanguageVersion): void {
     setLanguages((prev) =>
@@ -152,15 +177,13 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
                 activeTab === item.id ? styles.sidebarItemActive : styles.sidebarItem
               }
               onClick={() => {
-                if (item.id === 'languages') {
-                  setActiveTab(item.id);
-                  return;
-                }
-                showToast({
-                  message: `${item.label} is not available in this prototype`,
-                  variant: 'info',
-                });
                 setActiveTab(item.id);
+                if (item.id === 'import-translations') {
+                  showToast({
+                    message: `${item.label} is not available in this prototype`,
+                    variant: 'info',
+                  });
+                }
               }}
             >
               {item.label}
@@ -170,7 +193,14 @@ export function SurveyLanguagesDashboard({ surveyId: _surveyId }: SurveyLanguage
       </aside>
 
       <div className={styles.content}>
-        {activeTab !== 'languages' ? (
+        {activeTab === 'manual-translations' ? (
+          <ManualTranslationsPanel
+            questions={questions}
+            languages={languages}
+            onBack={() => setActiveTab('languages')}
+            onProgressChange={handleTranslationProgress}
+          />
+        ) : activeTab !== 'languages' ? (
           <div className={styles.panel}>
             {renderPlaceholder(
               sidebarItems.find((item) => item.id === activeTab)?.label ?? 'Languages'

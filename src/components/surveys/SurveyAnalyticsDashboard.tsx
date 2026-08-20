@@ -10,6 +10,7 @@ import { SurveyDeepDiveAnalysis } from '@/components/surveys/SurveyDeepDiveAnaly
 import { consumeVideoAiRestoreState } from '@/components/video-ai/videoAiNavigation';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SurveyAnalyticsResponses } from '@/components/surveys/SurveyAnalyticsResponses';
+import { SurveyParticipantStatistics } from '@/components/surveys/SurveyParticipantStatistics';
 import type { SurveyDetail } from '@/data/mock-survey-detail';
 import {
   getAnalyticsViewLabel,
@@ -124,6 +125,8 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
   const activeViewLabel = getAnalyticsViewLabel(activeTab, activeSubView);
   const showDashboardContent = activeTab === 'dashboard' && activeSubView === 'dashboard';
   const showResponsesContent = activeTab === 'dashboard' && activeSubView === 'responses';
+  const showParticipantStatistics =
+    activeTab === 'dashboard' && activeSubView === 'participant-statistics';
   const showDeepDiveAnalysis = activeTab === 'analysis' && activeSubView === 'deepdive-analysis';
   const showVideoAiAnalysis = activeTab === 'analysis' && activeSubView === 'video-ai-analysis';
 
@@ -159,6 +162,10 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
 
   if (showResponsesContent) {
     return <SurveyAnalyticsResponses />;
+  }
+
+  if (showParticipantStatistics) {
+    return <SurveyParticipantStatistics />;
   }
 
   if (!showDashboardContent) {

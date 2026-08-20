@@ -28,7 +28,7 @@ export const ANALYTICS_TAB_CONFIG: Record<
         isNew: true,
         openInNewTab: '/bi-lite/dashboards',
       },
-      { id: 'participant-statistics', label: 'Participant Statistics', icon: 'wm-people' },
+      { id: 'participant-statistics', label: 'Participant Statistics', icon: 'wm-group' },
       { id: 'responses', label: 'Responses', icon: 'wm-format-list-bulleted' },
       { id: 'datapad', label: 'Datapad', icon: 'wm-table-chart' },
       { id: 'infographic', label: 'InfoGraphic', icon: 'wm-insert-chart', requiresAdvancedLicense: true },
