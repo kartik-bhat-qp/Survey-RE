@@ -1,16 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { SurveyFinishOptionsDashboard } from '@/components/surveys/SurveyFinishOptionsDashboard';
+import { useSurveyById } from '@/hooks/useSurveyById';
 
 export default function SurveyFinishOptionsPage() {
   const params = useParams();
-  const router = useRouter();
   const surveyId = Number(params.id);
+  const { survey, ready } = useSurveyById(surveyId);
 
-  useEffect(() => {
-    router.replace(`/surveys/${surveyId}/settings`);
-  }, [router, surveyId]);
+  if (!ready || !survey) {
+    return null;
+  }
 
-  return null;
+  return <SurveyFinishOptionsDashboard surveyId={survey.id} />;
 }

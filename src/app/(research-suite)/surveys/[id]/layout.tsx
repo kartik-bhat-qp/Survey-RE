@@ -42,6 +42,8 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
       pathname.includes('/settings') ||
       pathname.includes('/approval') ||
       pathname.includes('/media-library') ||
+      pathname.includes('/languages') ||
+      pathname.includes('/finish-options') ||
       pathname.includes('/variables') ||
       pathname.includes('/design')
     ) {
@@ -104,7 +106,7 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
           {bulkEditModeEnabled ? <SurveyEditorBulkEditToolbar /> : null}
         </>
       )}
-      {children}
+      <div className={styles.workspace}>{children}</div>
     </div>
   );
 }

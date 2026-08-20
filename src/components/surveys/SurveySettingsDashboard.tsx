@@ -13,8 +13,6 @@ import { SaveAndContinueEmailModal } from '@/components/surveys/SaveAndContinueE
 import { SurveyNotificationConfigPanel } from '@/components/surveys/SurveyNotificationConfigPanel';
 import { NotificationCriteriaViewModal } from '@/components/surveys/NotificationCriteriaViewModal';
 import { SurveySettingsRichText } from '@/components/surveys/SurveySettingsRichText';
-import { SurveyLanguagesDashboard } from '@/components/surveys/SurveyLanguagesDashboard';
-import { SurveyFinishOptionsDashboard } from '@/components/surveys/SurveyFinishOptionsDashboard';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { useSurveyById } from '@/hooks/useSurveyById';
@@ -1308,14 +1306,6 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
             <div className={styles.actions}>
               <WuButton onClick={handleSave}>Save Changes</WuButton>
             </div>
-          </div>
-        ) : activeTab === 'languages' ? (
-          <div className={styles.panel}>
-            <SurveyLanguagesDashboard surveyId={surveyId} />
-          </div>
-        ) : activeTab === 'finish-options' ? (
-          <div className={styles.panel}>
-            <SurveyFinishOptionsDashboard surveyId={surveyId} />
           </div>
         ) : (
           <div className={`${styles.panel} ${styles.notificationsPanel}`}>
