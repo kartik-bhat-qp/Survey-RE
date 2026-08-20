@@ -8,6 +8,7 @@ import ReactGridLayout, {
   type ResizeHandleAxis,
 } from 'react-grid-layout/legacy';
 import { TextAiAnalysisWidgetCard } from '@/components/text-ai/TextAiAnalysisWidget';
+import { TextAiKpiByThemeWidget } from '@/components/text-ai/TextAiKpiByThemeWidget';
 import { TextAiSubthemeStackbarWidget } from '@/components/text-ai/TextAiSubthemeStackbarWidget';
 import { TextAiSummaryWidgetCard } from '@/components/text-ai/TextAiSummaryWidget';
 import { TextAiThemeStackbarWidget } from '@/components/text-ai/TextAiThemeStackbarWidget';
@@ -33,6 +34,7 @@ import {
 } from '@/data/mock-text-ai-widget-data';
 import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import type { TextAiThemePreferences } from '@/data/text-ai-theme-preferences';
+import type { TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
 import styles from './TextAiDashboardCanvas.module.css';
 
 import 'react-grid-layout/css/styles.css';
@@ -47,6 +49,7 @@ const TEXT_AI_GRID_GUIDE_CELL_COUNT = TEXT_AI_GRID_COLS * 60;
 const TEXT_AI_WIDGET_DRAG_HANDLE_CLASS = 'text-ai-widget-drag-handle';
 
 type TextAiCanvasWidgetKind =
+  | 'kpi-by-theme'
   | 'topic-segment'
   | 'subtheme-stackbar'
   | 'theme-stackbar'
@@ -66,10 +69,13 @@ interface TextAiDashboardCanvasProps {
   themeStatus: TextAiThemeStatusFilter;
   /** Widgets added via Add widget (e.g. comparative chart). Shown above default widgets. */
   addedTopicSegmentWidgets?: TextAiTopicSegmentWidget[];
+  /** KPI correlation widgets added through the TextAI widget gallery. */
+  addedKpiWidgets?: TextAiKpiWidgetInstance[];
   themePreferences: TextAiThemePreferences;
 }
 
 const INITIAL_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
+  'kpi-by-theme': 14,
   'topic-segment': 9,
   'subtheme-stackbar': 8,
   'theme-stackbar': 11,
@@ -78,6 +84,7 @@ const INITIAL_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
 };
 
 const MIN_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
+  'kpi-by-theme': 8,
   'topic-segment': 5,
   'subtheme-stackbar': 6,
   'theme-stackbar': 6,
@@ -329,6 +336,7 @@ export function TextAiDashboardCanvas({
   questionIndex,
   themeStatus,
   addedTopicSegmentWidgets = [],
+  addedKpiWidgets = [],
   themePreferences,
 }: TextAiDashboardCanvasProps) {
   const isMobile = useIsMobile();
@@ -394,6 +402,20 @@ export function TextAiDashboardCanvas({
   }
 
   const allCanvasWidgets: TextAiCanvasWidget[] = [
+    ...addedKpiWidgets.map((widget) => {
+      const id = `kpi-widget-${widget.id}`;
+      return {
+        id,
+        kind: 'kpi-by-theme' as const,
+        content: (
+          <TextAiKpiByThemeWidget
+            key={widget.id}
+            question={widget.question}
+            onDelete={() => removeWidget(id)}
+          />
+        ),
+      };
+    }),
     ...visibleAddedTopicSegmentWidgets.map((widget) => {
       const id = `topic-segment-${widget.id}`;
       return {
@@ -484,6 +506,9 @@ export function TextAiDashboardCanvas({
   );
 
   useEffect(() => {
+    // Grid layout is the external state owned by react-grid-layout; reconcile it
+    // when the set of rendered widgets changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDesktopLayout((prev) => {
       const visibleIds = new Set(canvasWidgets.map((widget) => widget.id));
       const kept = prev.filter((item) => visibleIds.has(item.i));

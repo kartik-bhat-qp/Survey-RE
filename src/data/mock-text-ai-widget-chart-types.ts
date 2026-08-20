@@ -9,7 +9,8 @@ export type TextAiWidgetChartTypeId =
   | 'trend-line'
   | 'comparative-chart'
   | 'subtheme-comparative-chart'
-  | 'text-summary';
+  | 'text-summary'
+  | 'kpi-by-theme';
 
 export interface TextAiWidgetChartType {
   id: TextAiWidgetChartTypeId;
@@ -47,6 +48,11 @@ export const TEXT_AI_WIDGET_CHART_TYPES: TextAiWidgetChartType[] = [
     imageSrc: TEXT_AI.subthemeComparativeChart,
   },
   { id: 'text-summary', label: 'Text Summary', imageSrc: TEXT_AI.textSummary },
+  {
+    id: 'kpi-by-theme',
+    label: 'KPI by Theme',
+    imageSrc: ADVANCED.driverAnalysis,
+  },
 ];
 
 export const DEFAULT_TEXT_AI_WIDGET_CHART_TYPE_ID: TextAiWidgetChartTypeId = 'gauge';

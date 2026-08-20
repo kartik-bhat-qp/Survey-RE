@@ -292,9 +292,7 @@
 .themeGroupHeader {
   align-items: center;
   color: #242a31;
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
   min-height: 3rem;
   padding: 0.4rem 0.75rem 0.4rem 1rem;
 }
@@ -319,18 +317,27 @@
   cursor: pointer;
   display: flex;
   font: inherit;
-  font-weight: 600;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  justify-content: flex-start;
   min-height: 2.2rem;
   min-width: 0;
   padding: 0;
   text-align: left;
+  width: 100%;
 }
 
-.themeGroupToggle:hover .themeGroupName,
-.themeGroupToggle:focus-visible .themeGroupName {
-  text-decoration: underline;
-  text-underline-offset: 0.15rem;
+.themeGroupToggle:hover,
+.themeGroupToggle:focus-visible {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 0.25rem;
+}
+
+.themeGroupLabel {
+  align-items: center;
+  display: flex;
+  font-weight: 600;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .themeGroupName {
@@ -343,6 +350,10 @@
   display: flex;
   flex-shrink: 0;
   gap: 0.55rem;
+}
+
+.themeGroupMeta {
+  margin-left: auto;
 }
 
 .themeGroupPercentage {
@@ -397,6 +408,42 @@
   border-color: #c5d7e6;
 }
 
+.subThemeSelected {
+  background: #e9f6eb;
+  border-color: #4d9c5a;
+  box-shadow: 0 0 0 1px #4d9c5a;
+}
+
+.subThemeSelected:hover,
+.subThemeSelected:focus-within {
+  background: #e9f6eb;
+  border-color: #4d9c5a;
+}
+
+.subThemeSelectButton {
+  align-items: center;
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  flex: 1;
+  font: inherit;
+  font-weight: inherit;
+  gap: 0.75rem;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.subThemeSelectButton:focus-visible {
+  border-radius: 0.2rem;
+  box-shadow: 0 0 0 2px #1686e4;
+  outline: 0;
+}
+
 .subThemeMain {
   align-items: center;
   display: flex;
@@ -445,30 +492,101 @@
   font-size: 0.85rem;
 }
 
-.approveEmergingButton {
+.codeFrameSelectionBar {
   align-items: center;
-  background: transparent;
+  background: #ffffff;
+  border-top: 1px solid #d9dee3;
+  bottom: 0;
+  box-shadow: 0 -0.25rem 0.75rem rgba(30, 45, 60, 0.12);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  left: 16rem;
+  min-height: 3.5rem;
+  padding: 0.5rem 1rem;
+  position: fixed;
+  right: 0;
+  z-index: 40;
+}
+
+.selectionClearButton,
+.selectionTextAction,
+.selectionApproveAction,
+.selectionDeleteAction {
+  align-items: center;
   border: 0;
   border-radius: 0.25rem;
-  color: #267343;
   cursor: pointer;
   display: inline-flex;
   font: inherit;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
+  gap: 0.35rem;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0 0.75rem;
+}
+
+.selectionClearButton {
+  background: transparent;
+  color: #59636e;
+  font-size: 1rem;
+  padding: 0;
+  width: 2rem;
+}
+
+.selectionClearButton:hover,
+.selectionClearButton:focus-visible {
+  background: #eef2f5;
+  color: #28313a;
+}
+
+.selectionDivider {
+  background: #d9dee3;
+  height: 1.5rem;
+  width: 1px;
+}
+
+.selectionCount {
+  color: #3f4953;
+  font-size: 0.75rem;
   font-weight: 500;
-  gap: 0.25rem;
-  min-height: 1.75rem;
-  padding: 0 0.4rem;
+  min-width: 4.5rem;
+  text-align: center;
 }
 
-.approveEmergingButton:hover,
-.approveEmergingButton:focus-visible {
-  background: #eaf6ee;
-  color: #176535;
+.selectionTextAction {
+  background: transparent;
+  color: #1674c5;
 }
 
-.approveEmergingButton :global(.wm-check) {
-  font-size: 0.78rem;
+.selectionTextAction:hover:not(:disabled),
+.selectionTextAction:focus-visible:not(:disabled) {
+  background: #eef7fd;
+}
+
+.selectionTextAction:disabled {
+  color: #adb4bb;
+  cursor: default;
+}
+
+.selectionApproveAction {
+  background: #1686e4;
+  color: #ffffff;
+}
+
+.selectionApproveAction:hover,
+.selectionApproveAction:focus-visible {
+  background: #0f73c4;
+}
+
+.selectionDeleteAction {
+  background: #cf3346;
+  color: #ffffff;
+}
+
+.selectionDeleteAction:hover,
+.selectionDeleteAction:focus-visible {
+  background: #b82a3c;
 }
 
 .noSubThemes {
@@ -478,22 +596,6 @@
   margin: 0;
   padding: 0.65rem;
   text-align: center;
-}
-
-.approveModalContent {
-  color: #505965;
-  display: grid;
-  font-size: 0.875rem;
-  gap: 0.65rem;
-  line-height: 1.45;
-}
-
-.approveModalContent p {
-  margin: 0;
-}
-
-.approveModalContent strong {
-  color: #252b33;
 }
 
 .settingsModalContent {
@@ -569,8 +671,13 @@
 }
 
 .validitySelect {
-  flex: 0 0 8rem;
-  width: 8rem;
+  align-self: center;
+  flex: 0 0 9.5rem;
+  height: 2.25rem !important;
+  max-height: 2.25rem;
+  min-height: 2.25rem !important;
+  padding: 0.4rem 0.75rem !important;
+  width: 9.5rem;
 }
 
 .settingsLogs {
@@ -1091,6 +1198,10 @@
   .rawDataPanel {
     min-height: 34rem;
   }
+
+  .codeFrameSelectionBar {
+    left: 0;
+  }
 }
 
 @media (max-width: 42rem) {
@@ -1132,6 +1243,12 @@
 
   .subThemeGrid {
     grid-template-columns: 1fr;
+  }
+
+  .codeFrameSelectionBar {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    justify-content: flex-start;
   }
 
   .editSubThemeButton {

@@ -26,6 +26,7 @@ import {
   type TextAiTopicSegmentWidget,
 } from '@/data/mock-text-ai-topic-segment-widget';
 import type { TextAiThemeStatusFilter } from '@/data/mock-text-ai-widget-data';
+import type { TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
 import {
   getTextAiThemePreferences,
   TEXT_AI_THEME_PREFERENCES_EVENT,
@@ -66,10 +67,13 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const [addedTopicSegmentWidgets, setAddedTopicSegmentWidgets] = useState<
     TextAiTopicSegmentWidget[]
   >([]);
+  const [addedKpiWidgets, setAddedKpiWidgets] = useState<
+    TextAiKpiWidgetInstance[]
+  >([]);
   const [themePreferences, setThemePreferences] = useState<TextAiThemePreferences>({
     approvedEmergingNames: [],
     autoApproveEmergingThemes: true,
-    emergingThemeValidityDays: 28,
+    emergingThemeValidityDays: 30,
     showThemesWithNoResponses: true,
   });
 
@@ -150,6 +154,16 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         ...prev,
       ]);
     }
+
+    if (chartTypeId === 'kpi-by-theme') {
+      setAddedKpiWidgets((prev) => [
+        {
+          id: `kpi-by-theme-${question.code}-${Date.now()}`,
+          question: question.text,
+        },
+        ...prev,
+      ]);
+    }
   }
 
   return (
@@ -179,6 +193,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         )}
         themeStatus={themeStatus}
         addedTopicSegmentWidgets={addedTopicSegmentWidgets}
+        addedKpiWidgets={addedKpiWidgets}
         themePreferences={themePreferences}
       />
       <TextAiDashboardSettingsModal

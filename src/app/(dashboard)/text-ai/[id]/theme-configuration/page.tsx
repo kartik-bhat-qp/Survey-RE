@@ -108,6 +108,12 @@ type ApproveTarget =
       themeId: string;
     };
 
+function getApproveTargetKey(target: ApproveTarget): string {
+  return target.kind === 'theme'
+    ? `theme:${target.themeId}`
+    : `sub-theme:${target.themeId}:${target.subThemeId}`;
+}
+
 interface RawResponse {
   id: number;
   text: string;
@@ -547,18 +553,16 @@ function ThemeGroupCard({
   group,
   collapsed,
   onEditSubTheme,
-  onApproveSubTheme,
-  onApproveTheme,
+  onSelectionToggle,
   onToggle,
-  shouldOfferApproval,
+  selectedKeys,
 }: {
   group: ThemeGroup;
   collapsed: boolean;
   onEditSubTheme: (subTheme: SubTheme) => void;
-  onApproveSubTheme: (subTheme: SubTheme) => void;
-  onApproveTheme: () => void;
+  onSelectionToggle: (target: ApproveTarget) => void;
   onToggle: () => void;
-  shouldOfferApproval: (name: string) => boolean;
+  selectedKeys: ReadonlySet<string>;
 }) {
   return (
     <section className={`${styles.themeGroup} ${styles[`themeGroup${group.tone}`]}`}>
@@ -570,65 +574,72 @@ function ThemeGroupCard({
           className={styles.themeGroupToggle}
           onClick={onToggle}
           aria-expanded={!collapsed}
+          aria-label={`${collapsed ? 'Expand' : 'Collapse'} theme ${group.name}`}
         >
           <span
             className={`wm-chevron-down ${collapsed ? styles.chevronCollapsed : ''}`}
             aria-hidden
           />
-          <span className={styles.themeGroupName}>{group.name}</span>
-          {group.emerging && <TextAiEmergingBadge />}
-        </button>
-        <div className={styles.themeGroupMeta}>
-          <span className={styles.subThemeCount}>
-            {group.subThemes.length} sub-theme{group.subThemes.length === 1 ? '' : 's'}
+          <span className={styles.themeGroupLabel}>
+            <span className={styles.themeGroupName}>{group.name}</span>
+            {group.emerging && <TextAiEmergingBadge />}
           </span>
-          <span className={styles.themeGroupPercentage}>{group.percentage}</span>
-          {group.emerging && shouldOfferApproval(group.name) && (
-            <button
-              type="button"
-              className={styles.approveEmergingButton}
-              onClick={onApproveTheme}
-              aria-label={`Approve emerging theme ${group.name}`}
-            >
-              <span className="wm-check" aria-hidden />
-              Approve
-            </button>
-          )}
-        </div>
+          <span className={styles.themeGroupMeta}>
+            <span className={styles.subThemeCount}>
+              {group.subThemes.length} sub-theme{group.subThemes.length === 1 ? '' : 's'}
+            </span>
+            <span className={styles.themeGroupPercentage}>{group.percentage}</span>
+          </span>
+        </button>
       </div>
       {!collapsed && (
         <div className={styles.subThemeGrid}>
-          {group.subThemes.map((subTheme) => (
-            <div className={styles.subTheme} key={subTheme.id}>
-              <div className={styles.subThemeMain}>
-                <span title={subTheme.description}>{subTheme.name}</span>
-                {subTheme.emerging && <TextAiEmergingBadge />}
-              </div>
-              <div className={styles.subThemeMeta}>
-                <span className={styles.subThemePercentage}>{subTheme.percentage}</span>
+          {group.subThemes.map((subTheme) => {
+            const subThemeTarget: ApproveTarget = {
+              kind: 'sub-theme',
+              name: subTheme.name,
+              subThemeId: subTheme.id,
+              themeId: group.id,
+            };
+            const subThemeSelected = selectedKeys.has(
+              getApproveTargetKey(subThemeTarget)
+            );
+            return (
+              <div
+                className={`${styles.subTheme} ${
+                  subThemeSelected ? styles.subThemeSelected : ''
+                }`}
+                key={subTheme.id}
+              >
                 <button
                   type="button"
-                  className={styles.editSubThemeButton}
-                  onClick={() => onEditSubTheme(subTheme)}
-                  aria-label={`Edit sub-theme ${subTheme.name}`}
-                  title="Edit sub-theme"
+                  className={styles.subThemeSelectButton}
+                  aria-pressed={subThemeSelected}
+                  aria-label={`${subThemeSelected ? 'Deselect' : 'Select'} sub-theme ${subTheme.name}`}
+                  onClick={() => onSelectionToggle(subThemeTarget)}
                 >
-                  <span className="wm-edit" aria-hidden />
+                  <div className={styles.subThemeMain}>
+                    <span title={subTheme.description}>{subTheme.name}</span>
+                    {subTheme.emerging && <TextAiEmergingBadge />}
+                  </div>
+                  <span className={styles.subThemePercentage}>
+                    {subTheme.percentage}
+                  </span>
                 </button>
-                {subTheme.emerging && shouldOfferApproval(subTheme.name) && (
+                <div className={styles.subThemeMeta}>
                   <button
                     type="button"
-                    className={styles.approveEmergingButton}
-                    onClick={() => onApproveSubTheme(subTheme)}
-                    aria-label={`Approve emerging sub-theme ${subTheme.name}`}
+                    className={styles.editSubThemeButton}
+                    onClick={() => onEditSubTheme(subTheme)}
+                    aria-label={`Edit sub-theme ${subTheme.name}`}
+                    title="Edit sub-theme"
                   >
-                    <span className="wm-check" aria-hidden />
-                    Approve
+                    <span className="wm-edit" aria-hidden />
                   </button>
-                )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {group.subThemes.length === 0 && (
             <p className={styles.noSubThemes}>No sub-themes remain in this theme.</p>
           )}
@@ -652,9 +663,9 @@ export default function TextAiThemeConfigurationPage({
   );
   const [search, setSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
-  const [approveTarget, setApproveTarget] = useState<ApproveTarget | null>(null);
-  const [approveAllConfirmationOpen, setApproveAllConfirmationOpen] =
-    useState(false);
+  const [selectedCodeFrameKeys, setSelectedCodeFrameKeys] = useState<Set<string>>(
+    () => new Set()
+  );
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'preferences' | 'logs'>(
     'preferences'
@@ -663,7 +674,7 @@ export default function TextAiThemeConfigurationPage({
   const [themePreferences, setThemePreferences] = useState<TextAiThemePreferences>({
     approvedEmergingNames: [],
     autoApproveEmergingThemes: true,
-    emergingThemeValidityDays: 28,
+    emergingThemeValidityDays: 30,
     showThemesWithNoResponses: true,
   });
   const [granularityModalOpen, setGranularityModalOpen] = useState(false);
@@ -791,22 +802,66 @@ export default function TextAiThemeConfigurationPage({
     ]
   );
 
-  const allEmergingItems = useMemo(() => {
-    const themeNames = themeGroups
-      .filter((group) => group.emerging)
-      .map((group) => group.name);
-    const subThemeNames = themeGroups.flatMap((group) =>
-      group.subThemes
-        .filter((subTheme) => subTheme.emerging)
-        .map((subTheme) => subTheme.name)
-    );
+  const pendingApprovalTargets = useMemo(() => {
+    if (themePreferences.autoApproveEmergingThemes) return [];
+    return themeGroups.flatMap((group): ApproveTarget[] => {
+      const targets: ApproveTarget[] = [];
+      group.subThemes.forEach((subTheme) => {
+        if (
+          subTheme.emerging &&
+          !themePreferences.approvedEmergingNames.includes(subTheme.name)
+        ) {
+          targets.push({
+            kind: 'sub-theme',
+            name: subTheme.name,
+            subThemeId: subTheme.id,
+            themeId: group.id,
+          });
+        }
+      });
+      return targets;
+    });
+  }, [themeGroups, themePreferences]);
 
-    return {
-      names: [...new Set([...themeNames, ...subThemeNames])],
-      subThemeCount: new Set(subThemeNames).size,
-      themeCount: new Set(themeNames).size,
-    };
-  }, [themeGroups]);
+  const codeFrameTargets = useMemo(
+    () =>
+      themeGroups.flatMap((group): ApproveTarget[] =>
+        group.subThemes.map((subTheme): ApproveTarget => ({
+          kind: 'sub-theme',
+          name: subTheme.name,
+          subThemeId: subTheme.id,
+          themeId: group.id,
+        }))
+      ),
+    [themeGroups]
+  );
+
+  const selectedCodeFrameTargets = useMemo(
+    () =>
+      codeFrameTargets.filter((target) =>
+        selectedCodeFrameKeys.has(getApproveTargetKey(target))
+      ),
+    [codeFrameTargets, selectedCodeFrameKeys]
+  );
+
+  const pendingApprovalKeys = useMemo(
+    () =>
+      new Set(
+        pendingApprovalTargets.map((target) => getApproveTargetKey(target))
+      ),
+    [pendingApprovalTargets]
+  );
+
+  const canApproveSelection =
+    selectedCodeFrameTargets.length > 0 &&
+    selectedCodeFrameTargets.every((target) =>
+      pendingApprovalKeys.has(getApproveTargetKey(target))
+    );
+  const selectionContainsOnlySubThemes =
+    selectedCodeFrameTargets.length > 0 &&
+    selectedCodeFrameTargets.every((target) => target.kind === 'sub-theme');
+  const canMergeSelection =
+    selectionContainsOnlySubThemes && selectedCodeFrameTargets.length > 1;
 
   const visibleThemeGroups = useMemo(
     () =>
@@ -915,17 +970,36 @@ export default function TextAiThemeConfigurationPage({
     });
   }
 
-  function confirmApproval(): void {
-    if (!approveTarget) return;
+  function toggleCodeFrameSelection(target: ApproveTarget): void {
+    const key = getApproveTargetKey(target);
+    setSelectedCodeFrameKeys((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
-    const childNames =
-      themeGroups
-        .find((group) => group.id === approveTarget.themeId)
-        ?.subThemes.map((subTheme) => subTheme.name) ?? [];
-    const names =
-      approveTarget.kind === 'theme'
-        ? [approveTarget.name, ...childNames]
-        : [approveTarget.name];
+  function approveTargets(targets: readonly ApproveTarget[]): void {
+    if (targets.length === 0) return;
+    const automaticallyApprovedParentNames = new Set<string>();
+    const names = targets.flatMap((target) => {
+      if (target.kind === 'sub-theme') {
+        const parentTheme = themeGroups.find(
+          (group) => group.id === target.themeId
+        );
+        if (parentTheme?.emerging) {
+          automaticallyApprovedParentNames.add(parentTheme.name);
+          return [target.name, parentTheme.name];
+        }
+        return [target.name];
+      }
+      const childNames =
+        themeGroups
+          .find((group) => group.id === target.themeId)
+          ?.subThemes.map((subTheme) => subTheme.name) ?? [];
+      return [target.name, ...childNames];
+    });
 
     updateThemePreferences((current) => ({
       ...current,
@@ -933,46 +1007,42 @@ export default function TextAiThemeConfigurationPage({
         ...new Set([...current.approvedEmergingNames, ...names]),
       ],
     }));
-    appendTextAiRecodeLog({
-      action:
-        approveTarget.kind === 'theme' ? 'theme-approved' : 'sub-theme-approved',
-      dashboardId: numericDashboardId,
-      details:
-        approveTarget.kind === 'theme'
-          ? `Approved the emerging theme “${approveTarget.name}” and its sub-themes.`
-          : `Approved the emerging sub-theme “${approveTarget.name}”.`,
-      question: selectedQuestion?.text ?? 'Selected question',
-      title:
-        approveTarget.kind === 'theme'
-          ? 'Emerging theme approved'
-          : 'Emerging sub-theme approved',
-    });
-    setApproveTarget(null);
-  }
-
-  function openApproveAllConfirmation(): void {
-    setApproveTarget(null);
-    setApproveAllConfirmationOpen(true);
-  }
-
-  function confirmApproveAll(): void {
-    updateThemePreferences((current) => ({
-      ...current,
-      approvedEmergingNames: [
-        ...new Set([
-          ...current.approvedEmergingNames,
-          ...allEmergingItems.names,
-        ]),
-      ],
-    }));
-    appendTextAiRecodeLog({
-      action: 'all-emerging-approved',
-      dashboardId: numericDashboardId,
-      details: `Approved all emerging items (${allEmergingItems.themeCount} themes and ${allEmergingItems.subThemeCount} sub-themes).`,
-      question: selectedQuestion?.text ?? 'Selected question',
-      title: 'All emerging items approved',
-    });
-    setApproveAllConfirmationOpen(false);
+    if (targets.length === 1) {
+      const target = targets[0];
+      const automaticallyApprovedParentName =
+        target.kind === 'sub-theme'
+          ? themeGroups.find((group) => group.id === target.themeId)?.emerging
+            ? themeGroups.find((group) => group.id === target.themeId)?.name
+            : undefined
+          : undefined;
+      appendTextAiRecodeLog({
+        action:
+          target.kind === 'theme' ? 'theme-approved' : 'sub-theme-approved',
+        dashboardId: numericDashboardId,
+        details:
+          target.kind === 'theme'
+            ? `Approved the emerging theme “${target.name}” and its sub-themes.`
+            : automaticallyApprovedParentName
+              ? `Approved the emerging sub-theme “${target.name}” and its emerging parent theme “${automaticallyApprovedParentName}”.`
+              : `Approved the emerging sub-theme “${target.name}”.`,
+        question: selectedQuestion?.text ?? 'Selected question',
+        title:
+          target.kind === 'theme'
+            ? 'Emerging theme approved'
+            : 'Emerging sub-theme approved',
+      });
+    } else {
+      const themeCount = targets.filter((target) => target.kind === 'theme').length;
+      const subThemeCount = targets.length - themeCount;
+      appendTextAiRecodeLog({
+        action: 'selected-emerging-approved',
+        dashboardId: numericDashboardId,
+        details: `Approved ${targets.length} selected emerging items (${themeCount} themes and ${subThemeCount} sub-themes), plus ${automaticallyApprovedParentNames.size} emerging parent theme${automaticallyApprovedParentNames.size === 1 ? '' : 's'} automatically.`,
+        question: selectedQuestion?.text ?? 'Selected question',
+        title: 'Selected emerging items approved',
+      });
+    }
+    setSelectedCodeFrameKeys(new Set());
   }
 
   function saveSubThemeEdit(): void {
@@ -1053,7 +1123,7 @@ export default function TextAiThemeConfigurationPage({
                   if (!option || Array.isArray(option)) return;
                   setSelectedQuestionId((option as TextAiDashboardQuestion).id);
                   setSearch('');
-                  setApproveTarget(null);
+                  setSelectedCodeFrameKeys(new Set());
                   setEditSubThemeTarget(null);
                 }}
                 variant="outlined"
@@ -1197,26 +1267,9 @@ export default function TextAiThemeConfigurationPage({
                       getDefaultSubThemeDescription(subTheme.name)
                   );
                 }}
-                onApproveSubTheme={(subTheme) =>
-                  setApproveTarget({
-                    kind: 'sub-theme',
-                    name: subTheme.name,
-                    subThemeId: subTheme.id,
-                    themeId: group.id,
-                  })
-                }
-                onApproveTheme={() =>
-                  setApproveTarget({
-                    kind: 'theme',
-                    name: group.name,
-                    themeId: group.id,
-                  })
-                }
+                onSelectionToggle={toggleCodeFrameSelection}
                 onToggle={() => toggleGroup(group.id)}
-                shouldOfferApproval={(name) =>
-                  !themePreferences.autoApproveEmergingThemes &&
-                  !themePreferences.approvedEmergingNames.includes(name)
-                }
+                selectedKeys={selectedCodeFrameKeys}
               />
             ))}
           </div>
@@ -1302,6 +1355,57 @@ export default function TextAiThemeConfigurationPage({
           </div>
         </section>
       </div>
+
+      {selectedCodeFrameTargets.length > 0 ? (
+        <div
+          className={styles.codeFrameSelectionBar}
+          role="region"
+          aria-label="Code frame selection actions"
+          aria-live="polite"
+        >
+          <button
+            type="button"
+            className={styles.selectionClearButton}
+            onClick={() => setSelectedCodeFrameKeys(new Set())}
+            aria-label="Clear selection"
+            title="Clear selection"
+          >
+            <span className="wm-close" aria-hidden />
+          </button>
+          <span className={styles.selectionDivider} aria-hidden />
+          <strong className={styles.selectionCount}>
+            {selectedCodeFrameTargets.length} selected
+          </strong>
+          <span className={styles.selectionDivider} aria-hidden />
+          <button
+            type="button"
+            className={styles.selectionTextAction}
+            disabled={!canMergeSelection}
+          >
+            Merge
+          </button>
+          <button
+            type="button"
+            className={styles.selectionTextAction}
+            disabled={!selectionContainsOnlySubThemes}
+          >
+            Add to theme
+          </button>
+          {canApproveSelection ? (
+            <button
+              type="button"
+              className={styles.selectionApproveAction}
+              onClick={() => approveTargets(selectedCodeFrameTargets)}
+            >
+              <span className="wm-check" aria-hidden />
+              Approve
+            </button>
+          ) : null}
+          <button type="button" className={styles.selectionDeleteAction}>
+            Delete
+          </button>
+        </div>
+      ) : null}
 
       <WuModal
         open={recodeModalOpen}
@@ -1663,15 +1767,16 @@ export default function TextAiThemeConfigurationPage({
                   </span>
                   <WuToggle
                     checked={themePreferences.autoApproveEmergingThemes}
-                    onChange={(checked) =>
+                    onChange={(checked) => {
+                      setSelectedCodeFrameKeys(new Set());
                       updateThemePreferences((current) => ({
                         ...current,
                         approvedEmergingNames: checked
                           ? current.approvedEmergingNames
                           : [],
                         autoApproveEmergingThemes: checked,
-                      }))
-                    }
+                      }));
+                    }}
                     aria-label="Auto approve emerging themes"
                   />
                 </label>
@@ -1722,87 +1827,6 @@ export default function TextAiThemeConfigurationPage({
         </WuModalFooter>
       </WuModal>
 
-      <WuModal
-        open={approveTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setApproveTarget(null);
-        }}
-        size="sm"
-        variant="action"
-      >
-        <DialogTitle className={styles.srOnly}>
-          Approve emerging {approveTarget?.kind === 'theme' ? 'theme' : 'sub-theme'}
-        </DialogTitle>
-        <WuModalHeader>
-          Approve emerging {approveTarget?.kind === 'theme' ? 'theme' : 'sub-theme'}?
-        </WuModalHeader>
-        <WuModalContent>
-          <div className={styles.approveModalContent}>
-            <p>
-              This will make <strong>{approveTarget?.name}</strong> visible on
-              the dashboard.
-            </p>
-            {approveTarget?.kind === 'theme' && (
-              <p>All sub-themes within this emerging theme will also be approved.</p>
-            )}
-          </div>
-        </WuModalContent>
-        <WuModalFooter>
-          <WuButton type="button" variant="secondary" onClick={() => setApproveTarget(null)}>
-            Cancel
-          </WuButton>
-          <WuButton
-            type="button"
-            variant="secondary"
-            onClick={openApproveAllConfirmation}
-          >
-            Approve all
-          </WuButton>
-          <WuButton type="button" onClick={confirmApproval}>
-            Approve
-          </WuButton>
-        </WuModalFooter>
-      </WuModal>
-
-      <WuModal
-        open={approveAllConfirmationOpen}
-        onOpenChange={setApproveAllConfirmationOpen}
-        size="sm"
-        variant="action"
-      >
-        <DialogTitle className={styles.srOnly}>
-          Confirm approval of all emerging items
-        </DialogTitle>
-        <WuModalHeader>Approve all emerging items?</WuModalHeader>
-        <WuModalContent>
-          <div className={styles.approveModalContent}>
-            <p>
-              You are about to approve all{' '}
-              <strong>
-                {allEmergingItems.themeCount} emerging themes and{' '}
-                {allEmergingItems.subThemeCount} emerging sub-themes
-              </strong>
-              . They will become visible on the dashboard while auto approval is
-              turned off.
-            </p>
-            <p>
-              <strong>This action cannot be undone.</strong>
-            </p>
-          </div>
-        </WuModalContent>
-        <WuModalFooter>
-          <WuButton
-            type="button"
-            variant="secondary"
-            onClick={() => setApproveAllConfirmationOpen(false)}
-          >
-            Cancel
-          </WuButton>
-          <WuButton type="button" onClick={confirmApproveAll}>
-            Approve all
-          </WuButton>
-        </WuModalFooter>
-      </WuModal>
     </PageContainer>
   );
 }

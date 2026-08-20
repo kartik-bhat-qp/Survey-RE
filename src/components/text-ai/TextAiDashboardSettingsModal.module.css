@@ -143,8 +143,13 @@
 }
 
 .validitySelect {
-  flex: 0 0 8rem;
-  width: 8rem;
+  align-self: center;
+  flex: 0 0 9.5rem;
+  height: 2.25rem !important;
+  max-height: 2.25rem;
+  min-height: 2.25rem !important;
+  padding: 0.4rem 0.75rem !important;
+  width: 9.5rem;
 }
 
 .searchRow,
