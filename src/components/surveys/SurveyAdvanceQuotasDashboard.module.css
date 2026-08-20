@@ -585,9 +585,59 @@
 .targetCell {
   align-items: center;
   display: inline-flex;
+  gap: 0.375rem;
   justify-content: flex-end;
   margin-left: auto;
   width: 100%;
+}
+
+.refreshBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 0.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.9375rem;
+  height: 1.5rem;
+  justify-content: center;
+  opacity: 0;
+  padding: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  width: 1.5rem;
+}
+
+.targetCell:hover .refreshBtn,
+.targetCell:focus-within .refreshBtn,
+:global(tr:hover) .refreshBtn,
+.refreshBtnBusy,
+.refreshBtn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.refreshBtn:hover,
+.refreshBtn:focus-visible {
+  background: rgb(27 135 230 / 8%);
+  color: #1b87e6;
+  outline: none;
+}
+
+.refreshBtn:disabled {
+  cursor: wait;
+}
+
+.refreshBtnBusy :global(.wm-refresh) {
+  animation: quotaCountRefreshSpin 0.7s linear infinite;
+}
+
+@keyframes quotaCountRefreshSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .targetValue {

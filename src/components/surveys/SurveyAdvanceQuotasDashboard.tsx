@@ -507,7 +507,17 @@ function QuotaNameCell({
   );
 }
 
-function QuotaTargetCell({ quota }: { quota: AdvanceQuotaRow }) {
+function QuotaTargetCell({
+  quota,
+  showRefresh,
+  isRefreshing,
+  onRefresh,
+}: {
+  quota: AdvanceQuotaRow;
+  showRefresh?: boolean;
+  isRefreshing?: boolean;
+  onRefresh?: () => void;
+}) {
   const isOptionRow = Boolean(quota.isOption);
   const isMinParent =
     !isOptionRow && isMinQuestionQuotaScope(quota.questionQuotaScope);
@@ -552,9 +562,65 @@ function QuotaTargetCell({ quota }: { quota: AdvanceQuotaRow }) {
       title={titleParts.join('. ')}
       aria-label={`Target ${label}`}
     >
+      {showRefresh && onRefresh ? (
+        <button
+          type="button"
+          className={`${styles.refreshBtn} ${isRefreshing ? styles.refreshBtnBusy : ''}`}
+          disabled={isRefreshing}
+          title="Refresh counts"
+          aria-label={`Refresh counts for ${quota.name}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRefresh();
+          }}
+        >
+          <span className="wm-refresh" aria-hidden />
+        </button>
+      ) : null}
       <span className={valueClass}>{label}</span>
     </span>
   );
+}
+
+function nextFilledCount(current: number, target: number): number {
+  const base = Math.max(0, Math.round(current));
+  const cap = Math.max(0, Math.round(target));
+  if (cap <= 0) return base;
+  const room = Math.max(0, cap - base);
+  if (room === 0) return base;
+  const bump = 1 + Math.floor(Math.random() * Math.min(5, room));
+  return base + bump;
+}
+
+function simulateRefreshedQuota(quota: AdvanceQuota): AdvanceQuota {
+  if (quota.options && quota.options.length > 0) {
+    const options = quota.options.map((option) => ({
+      ...option,
+      current: nextFilledCount(option.current ?? 0, option.target),
+    }));
+    const current = options.reduce((sum, option) => sum + (option.current ?? 0), 0);
+    return { ...quota, options, current };
+  }
+
+  const fallbackCurrent =
+    quota.current ??
+    (isMinQuestionQuotaScope(quota.questionQuotaScope) ? 0 : quota.target);
+  return {
+    ...quota,
+    current: nextFilledCount(fallbackCurrent, quota.target),
+  };
+}
+
+function applyCountOverride(
+  quota: AdvanceQuota,
+  override: AdvanceQuota | undefined
+): AdvanceQuota {
+  if (!override) return quota;
+  return {
+    ...quota,
+    current: override.current,
+    options: override.options ?? quota.options,
+  };
 }
 
 function ColumnHeader({
@@ -810,6 +876,8 @@ export function SurveyAdvanceQuotasDashboard({
     );
   const [clientShareModalOpen, setClientShareModalOpen] = useState(false);
   const [editingQuota, setEditingQuota] = useState<AdvanceQuota | null>(null);
+  const [countOverrides, setCountOverrides] = useState<Record<string, AdvanceQuota>>({});
+  const [refreshingQuotaIds, setRefreshingQuotaIds] = useState<Set<string>>(() => new Set());
   const [crossVariableEditSet, setCrossVariableEditSet] =
     useState<CrossVariableTrackingSet | null>(null);
   const [crossVariableEditOpen, setCrossVariableEditOpen] = useState(false);
@@ -824,8 +892,10 @@ export function SurveyAdvanceQuotasDashboard({
       [
         ...addedQuotas.filter((quota) => !isRemovedDashboardQuota(quota)),
         ...MOCK_ADVANCE_QUOTAS.filter((quota) => !deletedMockQuotaIds.has(quota.id)),
-      ].map(normalizeQuestionBasedMinQuota),
-    [addedQuotas, deletedMockQuotaIds]
+      ]
+        .map(normalizeQuestionBasedMinQuota)
+        .map((quota) => applyCountOverride(quota, countOverrides[quota.id])),
+    [addedQuotas, countOverrides, deletedMockQuotaIds]
   );
 
   const displayQuotas = useMemo(
@@ -1028,6 +1098,31 @@ export function SurveyAdvanceQuotasDashboard({
       setCriteriaQuotaGroup(null);
       setCriteriaQuotaOpen(true);
     }
+  }
+
+  function handleRefreshQuotaCounts(quotaId: string): void {
+    const quota = displayQuotas.find((item) => item.id === quotaId);
+    if (!quota || refreshingQuotaIds.has(quotaId)) return;
+
+    setRefreshingQuotaIds((prev) => {
+      const next = new Set(prev);
+      next.add(quotaId);
+      return next;
+    });
+
+    window.setTimeout(() => {
+      const refreshed = simulateRefreshedQuota(quota);
+      setCountOverrides((prev) => ({ ...prev, [quotaId]: refreshed }));
+      setRefreshingQuotaIds((prev) => {
+        const next = new Set(prev);
+        next.delete(quotaId);
+        return next;
+      });
+      showToast({
+        message: `Counts refreshed for "${quota.name}"`,
+        variant: 'success',
+      });
+    }, 550);
   }
 
   function handleCrossVariableBatchUpdate(result: CrossVariableQuotaSaveResult): void {
@@ -1380,8 +1475,17 @@ export function SurveyAdvanceQuotasDashboard({
         headerAlign: 'right',
         enableSorting: true,
         cellAlign: 'right',
-        size: 130,
-        cell: ({ row }) => <QuotaTargetCell quota={row.original} />,
+        size: 160,
+        cell: ({ row }) => (
+          <QuotaTargetCell
+            quota={row.original}
+            showRefresh={!clientView && !row.original.isOption}
+            isRefreshing={refreshingQuotaIds.has(row.original.parentId ?? row.original.id)}
+            onRefresh={() =>
+              handleRefreshQuotaCounts(row.original.parentId ?? row.original.id)
+            }
+          />
+        ),
       });
 
       return cols;
@@ -1395,6 +1499,7 @@ export function SurveyAdvanceQuotasDashboard({
       quotaGroupOptions,
       quotaTypeFilter,
       quotaTypeOptions,
+      refreshingQuotaIds,
       selectableParentRows.length,
       selectedQuotaIds,
     ]
