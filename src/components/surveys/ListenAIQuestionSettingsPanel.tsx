@@ -202,11 +202,16 @@ export function ListenAIQuestionSettingsPanel({
           />
         </div>
 
-        <p className={styles.constraintNote}>
-          ListenAI uses the same placement rules as Platform Connect: it cannot be the first
-          question on a page, cannot be the last question in the survey, and is not compatible with
-          question or block randomization or Respondent Anonymity Assurance.
-        </p>
+        <div className={styles.constraintNote} role="note" aria-label="ListenAI placement rules">
+          <span className={styles.constraintIcon} aria-hidden>
+            i
+          </span>
+          <p className={styles.constraintText}>
+            ListenAI uses the same placement rules as Platform Connect: it cannot be the first
+            question on a page, cannot be the last question in the survey, and is not compatible
+            with question or block randomization or Respondent Anonymity Assurance.
+          </p>
+        </div>
       </div>
     </aside>
   );

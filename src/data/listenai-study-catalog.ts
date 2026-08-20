@@ -189,10 +189,7 @@ export function createListenAiStudyDraft(input: CreateListenAiStudyInput): Liste
   const discussionGuide = (guideQuestions.length > 0 ? guideQuestions : sourceText ? [sourceText] : []).map(
     (text, index) => ({
       id: `${studyId}-q-${index + 1}`,
-      text:
-        index === 0
-          ? `Tell me more about why you chose ${LISTENAI_RESPONSE_FIELD_TOKEN}.`
-          : text,
+      text,
       followUpInstructions:
         'Ask what specifically led them to that answer, then probe on a recent example.',
       required: true,

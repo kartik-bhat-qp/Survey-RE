@@ -1,17 +1,16 @@
 'use client';
 
-import { useParams } from 'next/navigation';
-import { SurveyLanguagesDashboard } from '@/components/surveys/SurveyLanguagesDashboard';
-import { useSurveyById } from '@/hooks/useSurveyById';
+import { useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 
 export default function SurveyLanguagesPage() {
   const params = useParams();
+  const router = useRouter();
   const surveyId = Number(params.id);
-  const { survey, ready } = useSurveyById(surveyId);
 
-  if (!ready || !survey) {
-    return null;
-  }
+  useEffect(() => {
+    router.replace(`/surveys/${surveyId}/settings`);
+  }, [router, surveyId]);
 
-  return <SurveyLanguagesDashboard surveyId={survey.id} />;
+  return null;
 }

@@ -200,11 +200,21 @@ export function getListenAiMaxFollowUps(study: ListenAiStudy): number {
   return Math.min(5, Math.max(1, study.maxFollowUps || study.discussionGuide[0]?.maxFollowUps || 3));
 }
 
+function getListenAiOpeningQuestion(study: ListenAiStudy): string {
+  const configured = study.discussionGuide.find((question) => question.text.trim())?.text.trim();
+  if (configured) return configured;
+
+  const sourceText = study.sourceQuestionText?.trim();
+  if (sourceText) {
+    return generateListenAiFirstQuestionFromSource(sourceText);
+  }
+
+  return 'Tell me more about what led you to that answer.';
+}
+
 export function getListenAiOpeningMessages(study: ListenAiStudy): string[] {
   const intro = study.introduction.trim() || LISTENAI_CONVERSATION_GREETING;
-  const firstQuestion =
-    study.discussionGuide.find((question) => question.text.trim())?.text.trim() ||
-    'Tell me more about what led you to that answer.';
+  const firstQuestion = getListenAiOpeningQuestion(study);
   if (intro === firstQuestion) return [intro];
   return [intro, firstQuestion];
 }

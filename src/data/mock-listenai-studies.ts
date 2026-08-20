@@ -118,7 +118,7 @@ export const MOCK_LISTENAI_STUDIES: ListenAiStudy[] = [
       guideQuestion(
         'study-12',
         1,
-        'You selected {Q18}. What usually makes you choose that option over other fast-food chains?',
+        '',
         'Ask what specifically makes them choose that chain (taste, price, convenience, menu variety, location, speed).',
         3
       ),

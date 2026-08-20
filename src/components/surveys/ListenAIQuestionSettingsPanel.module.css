@@ -235,9 +235,38 @@
 }
 
 .constraintNote {
+  align-items: flex-start;
+  background: #f8fbff;
+  border: 1px solid #d7e9fb;
+  border-radius: 0.5rem;
+  display: flex;
+  gap: 0.625rem;
+  margin: 0.5rem 0 0;
+  padding: 0.75rem;
+}
+
+.constraintIcon {
+  align-items: center;
+  background: #1b87e6;
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 700;
+  height: 1rem;
+  justify-content: center;
+  line-height: 1;
+  margin-top: 0.125rem;
+  width: 1rem;
+}
+
+.constraintText {
   color: #64748b;
   font-family: 'Fira Sans', sans-serif;
   font-size: 0.75rem;
   line-height: 1.45;
-  margin: 0.5rem 0 0;
+  margin: 0;
 }

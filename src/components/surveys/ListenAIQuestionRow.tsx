@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useMemo, useRef, useState, type SyntheticEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import type { SurveyQuestion, SurveySection } from '@/data/mock-survey-detail';
 import {
   getListenAiFirstQuestion,
@@ -13,7 +13,6 @@ import {
   type ListenAiQuestionConfig,
 } from '@/data/mock-listenai-question';
 import type { ListenAiStudy } from '@/data/mock-listenai-studies';
-import { generateListenAiFirstQuestionFromSource } from '@/data/mock-listenai-interview';
 import { QuestionRichTextField } from '@/components/surveys/QuestionRichTextField';
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
@@ -34,9 +33,50 @@ const WuButton = dynamic(
 );
 
 const UNSET_STUDY_VALUE = '';
+const SUGGESTION_ROTATE_MS = 3000;
+const MAX_SUGGESTIONS = 3;
 
 function stopQuestionEvent(event: SyntheticEvent): void {
   event.stopPropagation();
+}
+
+function buildSuggestedFirstQuestions(
+  sourceQuestionText: string | undefined,
+  responseFieldToken: string
+): string[] {
+  const source = sourceQuestionText?.trim().replace(/\?+$/, '');
+  if (!source) return [];
+
+  const lower = source.toLowerCase();
+  const suggestions: string[] = [];
+
+  if (lower.includes('like the most')) {
+    suggestions.push(
+      `What do you like the most about ${responseFieldToken}?`,
+      `What stands out most when you think about ${responseFieldToken}?`,
+      `Can you share a recent experience that made you choose ${responseFieldToken}?`
+    );
+  } else if (lower.startsWith('which ')) {
+    suggestions.push(
+      `What made you choose ${responseFieldToken}?`,
+      `What do you like the most about ${responseFieldToken}?`,
+      `Can you tell me more about why ${responseFieldToken} stood out?`
+    );
+  } else if (lower.startsWith('what ')) {
+    suggestions.push(
+      `Can you tell me more about why you answered ${responseFieldToken}?`,
+      `What do you like the most about ${responseFieldToken}?`,
+      `What usually drives you toward ${responseFieldToken}?`
+    );
+  } else {
+    suggestions.push(
+      `Can you tell me more about ${responseFieldToken}?`,
+      `What do you like the most about ${responseFieldToken}?`,
+      `What made ${responseFieldToken} the right choice for you?`
+    );
+  }
+
+  return suggestions.slice(0, MAX_SUGGESTIONS);
 }
 
 export interface ListenAIQuestionRowProps {
@@ -68,6 +108,7 @@ export function ListenAIQuestionRow({
 }: ListenAIQuestionRowProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerCreateMode, setPickerCreateMode] = useState(false);
+  const [suggestionIndex, setSuggestionIndex] = useState(0);
   const firstQuestionRef = useRef<HTMLTextAreaElement | null>(null);
   const hasStudy = isListenAiStudySelected(config);
   const sourceQuestions = useMemo(
@@ -77,12 +118,34 @@ export function ListenAIQuestionRow({
   const selectedSourceValue =
     sourceQuestions.find((option) => option.questionId === config.study.sourceQuestionId)?.value ??
     UNSET_STUDY_VALUE;
+  const selectedSourceQuestion =
+    sourceQuestions.find((option) => option.questionId === config.study.sourceQuestionId) ?? null;
   const responseFieldToken = getListenAiResponseFieldToken(config.study.sourceQuestionCode);
+  const suggestedFirstQuestions = useMemo(
+    () =>
+      buildSuggestedFirstQuestions(selectedSourceQuestion?.text, responseFieldToken),
+    [responseFieldToken, selectedSourceQuestion?.text]
+  );
+  const activeSuggestion =
+    suggestedFirstQuestions.length > 0
+      ? suggestedFirstQuestions[suggestionIndex % suggestedFirstQuestions.length]
+      : null;
+
+  useEffect(() => {
+    setSuggestionIndex(0);
+    if (suggestedFirstQuestions.length <= 1) return;
+
+    const intervalId = window.setInterval(() => {
+      setSuggestionIndex((current) => (current + 1) % suggestedFirstQuestions.length);
+    }, SUGGESTION_ROTATE_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [suggestedFirstQuestions]);
 
   function handleSelectStudy(nextStudy: ListenAiStudy): void {
     onConfigChange({
       studyId: nextStudy.id,
-      study: nextStudy,
+      study: updateListenAiFirstQuestion(nextStudy, ''),
     });
   }
 
@@ -96,13 +159,17 @@ export function ListenAIQuestionRow({
     const nextStudy = updateListenAiSourceQuestion(config.study, selected ?? null);
     onConfigChange({
       ...config,
-      study:
-        selected != null
-          ? updateListenAiFirstQuestion(
-              nextStudy,
-              generateListenAiFirstQuestionFromSource(selected.text)
-            )
-          : nextStudy,
+      study: updateListenAiFirstQuestion(nextStudy, ''),
+    });
+  }
+
+  function applySuggestedFirstQuestion(suggestion: string): void {
+    onConfigChange({
+      ...config,
+      study: updateListenAiFirstQuestion(config.study, suggestion),
+    });
+    queueMicrotask(() => {
+      firstQuestionRef.current?.focus();
     });
   }
 
@@ -188,7 +255,7 @@ export function ListenAIQuestionRow({
 
               <label className={styles.formRow}>
                 <span className={styles.labelRow}>
-                  <span className={styles.fieldLabel}>First Question</span>
+                  <span className={styles.fieldLabel}>First ListenAI Question</span>
                   <button
                     type="button"
                     className={styles.inlineInsertBtn}
@@ -210,6 +277,25 @@ export function ListenAIQuestionRow({
                   }
                   placeholder="Ask the first ListenAI question"
                 />
+                {activeSuggestion ? (
+                  <p className={styles.firstQuestionHelper} aria-live="polite">
+                    <span className={styles.firstQuestionHelperPrefix}>
+                      Suggested for this source question:
+                    </span>
+                    <button
+                      type="button"
+                      className={styles.firstQuestionExample}
+                      title="Double-click to use this suggestion"
+                      onDoubleClick={() => applySuggestedFirstQuestion(activeSuggestion)}
+                    >
+                      {activeSuggestion}
+                    </button>
+                  </p>
+                ) : (
+                  <p className={styles.firstQuestionHelper}>
+                    Use Insert Response to reference the selected answer in your prompt.
+                  </p>
+                )}
               </label>
             </div>
           ) : (
