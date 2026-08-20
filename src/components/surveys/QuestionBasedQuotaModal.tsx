@@ -65,7 +65,7 @@ export function QuestionBasedQuotaModal({
 }: QuestionBasedQuotaModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
-  const [step, setStep] = useState<ModalStep>('question');
+  const [step, setStep] = useState<ModalStep>(editQuota ? 'dimension' : 'question');
   const [search, setSearch] = useState('');
   const [expandedParentIds, setExpandedParentIds] = useState<Set<number>>(() => new Set());
   const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
@@ -259,6 +259,10 @@ export function QuestionBasedQuotaModal({
   }
 
   function handleBack(): void {
+    if (editQuota) {
+      handleOpenChange(false);
+      return;
+    }
     if (step === 'dimension') {
       setStep('question');
       return;
@@ -272,6 +276,7 @@ export function QuestionBasedQuotaModal({
   }
 
   function handleBreadcrumbClick(target: QuotaStep): void {
+    if (editQuota) return;
     if (target === 'quota-type') {
       if (onBack) {
         resetState();
@@ -315,7 +320,8 @@ export function QuestionBasedQuotaModal({
 
   const { WuModal, WuModalContent, WuModalHeader, WuModalFooter, WuButton } = wick;
   const selectedCount = selectedIds.size;
-  const breadcrumbStep: QuotaStep = step === 'question' ? 'question' : 'dimension';
+  const breadcrumbStep: QuotaStep =
+    editQuota || step !== 'question' ? 'dimension' : 'question';
 
   return (
     <WuModal
@@ -332,7 +338,7 @@ export function QuestionBasedQuotaModal({
             : 'Create Quota'}
       </WuModalHeader>
       <WuModalContent className={styles.content}>
-        {step === 'question' ? (
+        {step === 'question' && !editQuota ? (
           <div className={styles.body}>
             <p className={styles.instructions}>
               Select the question you would like to add quota for.
@@ -391,6 +397,7 @@ export function QuestionBasedQuotaModal({
             distribution={distribution}
             onDistributionChange={setDistribution}
             onRemoveQuestion={handleRemoveQuestion}
+            numbersOnly={Boolean(editQuota)}
           />
         )}
       </WuModalContent>
@@ -398,13 +405,13 @@ export function QuestionBasedQuotaModal({
         <div className={styles.footerActions}>
           <QuotaStepBreadcrumb
             currentStep={breadcrumbStep}
-            onStepClick={handleBreadcrumbClick}
+            onStepClick={editQuota ? undefined : handleBreadcrumbClick}
           />
           <div className={styles.footerButtons}>
             <WuButton variant="secondary" onClick={handleBack}>
-              Back
+              {editQuota ? 'Cancel' : 'Back'}
             </WuButton>
-            {step === 'question' ? (
+            {step === 'question' && !editQuota ? (
               <WuButton onClick={handleNext} disabled={selectedCount === 0}>
                 Next
               </WuButton>

@@ -68,6 +68,18 @@
   width: 100%;
 }
 
+.matrixNameReadOnly {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  color: #1f2937;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+}
+
 .searchRow {
   padding: 0.75rem 1.5rem;
 }

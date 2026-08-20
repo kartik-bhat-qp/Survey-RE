@@ -18,12 +18,17 @@ const WuMenuItem = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
   { ssr: false }
 );
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
 
 interface AdvanceQuotaOverLimitSelectProps {
   surveyId: number;
   currentQuestionId: number;
   value: string;
   onChange: (next: string) => void;
+  disabled?: boolean;
 }
 
 function MenuOption({
@@ -49,6 +54,7 @@ export function AdvanceQuotaOverLimitSelect({
   currentQuestionId,
   value,
   onChange,
+  disabled = false,
 }: AdvanceQuotaOverLimitSelectProps) {
   const primaryOptions = useMemo(() => buildAdvanceQuotaOverLimitPrimaryOptions(), []);
   const branchingOptions = useMemo(
@@ -59,6 +65,18 @@ export function AdvanceQuotaOverLimitSelect({
     findAdvanceQuotaOverLimitOption(surveyId, currentQuestionId, value) ??
     primaryOptions.find((option) => option.value === 'quota-overlimit') ??
     primaryOptions[0];
+
+  if (disabled) {
+    return (
+      <WuTooltip content="Only quota targets can be edited." position="top">
+        <div className={styles.tooltipWrap}>
+          <div className={`${styles.menuTrigger} ${styles.menuTriggerDisabled}`} aria-disabled="true">
+            <span className={styles.menuTriggerLabel}>{selected.label}</span>
+          </div>
+        </div>
+      </WuTooltip>
+    );
+  }
 
   return (
     <WuMenu

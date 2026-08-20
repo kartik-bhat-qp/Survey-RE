@@ -8,12 +8,14 @@ interface CrossVariableQuotaTypeStepProps {
   value: QuestionQuotaScope;
   onChange: (next: QuestionQuotaScope) => void;
   variant?: 'cards' | 'inline';
+  readOnly?: boolean;
 }
 
 export function CrossVariableQuotaTypeStep({
   value,
   onChange,
   variant = 'cards',
+  readOnly = false,
 }: CrossVariableQuotaTypeStepProps) {
   if (variant === 'inline') {
     return (
@@ -25,14 +27,19 @@ export function CrossVariableQuotaTypeStep({
             return (
               <label
                 key={option.id}
-                className={`${styles.inlineOption} ${selected ? styles.inlineOptionSelected : ''}`}
+                className={`${styles.inlineOption} ${selected ? styles.inlineOptionSelected : ''} ${
+                  readOnly ? styles.inlineOptionReadOnly : ''
+                }`}
               >
                 <input
                   type="radio"
                   name="cross-variable-quota-type"
                   className={styles.inlineRadio}
                   checked={selected}
-                  onChange={() => onChange(option.id)}
+                  disabled={readOnly}
+                  onChange={() => {
+                    if (!readOnly) onChange(option.id);
+                  }}
                 />
                 <span className={styles.inlineOptionLabel}>{option.label}</span>
               </label>

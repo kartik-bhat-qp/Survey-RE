@@ -20,8 +20,14 @@ const WuMenuItem = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
   { ssr: false }
 );
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
 
 export type QuotaScopeType = 'max-count' | 'min-count' | 'min-pct';
+
+const NUMBERS_ONLY_TOOLTIP = 'Only quota targets can be edited.';
 
 const SCOPE_OPTIONS: { id: QuotaScopeType; label: string }[] = [
   { id: 'max-count', label: 'Maximum count' },
@@ -143,6 +149,8 @@ interface QuotaDimensionStepProps {
   distribution: QuotaDimensionState;
   onDistributionChange: (next: QuotaDimensionState) => void;
   onRemoveQuestion: (questionId: number) => void;
+  /** Edit mode: quota numbers can change; question, type, and jump-to stay fixed. */
+  numbersOnly?: boolean;
 }
 
 function evenDistribute(count: number): number[] {
@@ -319,6 +327,7 @@ interface QuestionCardProps {
   onTargetChange: (target: number) => void;
   onRemove: () => void;
   removable: boolean;
+  numbersOnly?: boolean;
 }
 
 function QuestionCard({
@@ -331,6 +340,7 @@ function QuestionCard({
   onTargetChange,
   onRemove,
   removable,
+  numbersOnly = false,
 }: QuestionCardProps) {
   const [collapsed, setCollapsed] = useState(false);
   const options = useMemo(() => resolveOptionsFor(question), [question]);
@@ -353,7 +363,11 @@ function QuestionCard({
       ? !minCountInvalid
       : true;
 
-  const scopeDropdown = (
+  const scopeDropdown = numbersOnly ? (
+    <WuTooltip content={NUMBERS_ONLY_TOOLTIP} position="top">
+      <span className={styles.scopeLocked}>{scopeLabel(entry.scope)}</span>
+    </WuTooltip>
+  ) : (
     <WuMenu
       Trigger={
         <button type="button" className={styles.scopeTrigger}>
@@ -484,6 +498,7 @@ function QuestionCard({
                     currentQuestionId={question.id}
                     value={actionValue}
                     onChange={(next) => onOverLimitActionChange(option, next)}
+                    disabled={numbersOnly}
                   />
                 </div>
               </div>
@@ -542,6 +557,7 @@ export function QuotaDimensionStep({
   distribution,
   onDistributionChange,
   onRemoveQuestion,
+  numbersOnly = false,
 }: QuotaDimensionStepProps) {
   const [search, setSearch] = useState('');
 
@@ -660,7 +676,8 @@ export function QuotaDimensionStep({
               onScopeChange={(scope) => handleScopeChange(question, scope)}
               onTargetChange={(target) => handleTargetChange(question.id, target)}
               onRemove={() => onRemoveQuestion(question.id)}
-              removable={questions.length > 1}
+              removable={!numbersOnly && questions.length > 1}
+              numbersOnly={numbersOnly}
             />
           ))
         ) : (

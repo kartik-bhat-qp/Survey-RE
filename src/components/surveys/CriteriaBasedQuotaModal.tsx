@@ -404,6 +404,8 @@ interface QuotaBlockEditorProps {
   questions: SurveyQuestion[];
   removable: boolean;
   hideQuotaChecks?: boolean;
+  numbersOnly?: boolean;
+  readOnlyCriteriaBlocks?: AdvanceQuotaCriterionBlock[];
   onChange: (next: QuotaBlock) => void;
   onRemove: () => void;
 }
@@ -414,6 +416,8 @@ function QuotaBlockEditor({
   questions,
   removable,
   hideQuotaChecks = false,
+  numbersOnly = false,
+  readOnlyCriteriaBlocks,
   onChange,
   onRemove,
 }: QuotaBlockEditorProps) {
@@ -489,15 +493,19 @@ function QuotaBlockEditor({
         <div className={styles.quotaBlockBody}>
           <div className={styles.field}>
             <label className={styles.label}>Quota name</label>
-            <WuInput
-              variant="outlined"
-              placeholder="e.g. Female non-drinkers"
-              value={block.name}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                update({ name: event.target.value })
-              }
-              className={styles.fieldInput}
-            />
+            {numbersOnly ? (
+              <p className={styles.readOnlyValue}>{block.name.trim() || '—'}</p>
+            ) : (
+              <WuInput
+                variant="outlined"
+                placeholder="e.g. Female non-drinkers"
+                value={block.name}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                  update({ name: event.target.value })
+                }
+                className={styles.fieldInput}
+              />
+            )}
           </div>
 
           <div className={styles.targetRow}>
@@ -516,16 +524,26 @@ function QuotaBlockEditor({
             </div>
           </div>
 
-          <CriteriaEngineEditor
-            criteria={block.criteria}
-            collapsedCriterionIds={block.collapsedCriterionIds}
-            questions={questions}
-            variant="quota"
-            addCriteriaLabel="Add criteria"
-            onChange={({ criteria, collapsedCriterionIds }) =>
-              update({ criteria, collapsedCriterionIds })
-            }
-          />
+          {numbersOnly ? (
+            readOnlyCriteriaBlocks && readOnlyCriteriaBlocks.length > 0 ? (
+              <div className={styles.readonlyCriteriaShell} aria-readonly="true">
+                <CriteriaRulesExpanded blocks={readOnlyCriteriaBlocks} showHeader variant="panel" />
+              </div>
+            ) : (
+              <p className={styles.readonlyDescriptionFallback}>No criteria defined.</p>
+            )
+          ) : (
+            <CriteriaEngineEditor
+              criteria={block.criteria}
+              collapsedCriterionIds={block.collapsedCriterionIds}
+              questions={questions}
+              variant="quota"
+              addCriteriaLabel="Add criteria"
+              onChange={({ criteria, collapsedCriterionIds }) =>
+                update({ criteria, collapsedCriterionIds })
+              }
+            />
+          )}
 
           {!hideQuotaChecks ? (
           <div className={styles.checksSection}>
@@ -534,6 +552,13 @@ function QuotaBlockEditor({
               <p className={styles.checkHint}>
                 The quota will be checked after the respondent answers this question.
               </p>
+              {numbersOnly ? (
+                <p className={styles.readOnlyValue}>
+                  {firstCheckQuestion
+                    ? `${firstCheckQuestion.code} – ${firstCheckQuestion.text}`
+                    : '—'}
+                </p>
+              ) : (
               <WuMenu
                 Trigger={
                   <button type="button" className={styles.menuTrigger}>
@@ -559,6 +584,7 @@ function QuotaBlockEditor({
                   </WuMenuItem>
                 ))}
               </WuMenu>
+              )}
             </div>
 
             <div className={styles.field}>
@@ -569,6 +595,13 @@ function QuotaBlockEditor({
               <p className={styles.checkHint}>
                 Must be the same question or one that comes after the first quota check.
               </p>
+              {numbersOnly ? (
+                <p className={styles.readOnlyValue}>
+                  {secondCheckQuestion
+                    ? `${secondCheckQuestion.code} – ${secondCheckQuestion.text}`
+                    : 'None'}
+                </p>
+              ) : (
               <div className={styles.menuTriggerGroup}>
                 <WuMenu
                   Trigger={
@@ -613,6 +646,7 @@ function QuotaBlockEditor({
                   </button>
                 ) : null}
               </div>
+              )}
             </div>
           </div>
           ) : null}
@@ -678,6 +712,10 @@ export function CriteriaBasedQuotaModal({
   );
 
   function handleBack(): void {
+    if (editQuota) {
+      handleOpenChange(false);
+      return;
+    }
     if (isAdvancedGroupFlow && onBackToQuotaGroup) {
       resetState();
       onBackToQuotaGroup();
@@ -692,6 +730,7 @@ export function CriteriaBasedQuotaModal({
   }
 
   function handleBreadcrumbClick(step: QuotaStep): void {
+    if (editQuota) return;
     if (step === 'criteria') return;
     if (isAdvancedGroupFlow) {
       if (step === 'quota-group' && onBackToQuotaGroup) {
@@ -799,6 +838,8 @@ export function CriteriaBasedQuotaModal({
                 ). Quota checks are set at the group level. Existing quotas in the group are listed
                 below (read-only). Add your new quota under <strong>New quota</strong>.
               </>
+            ) : editQuota ? (
+              <>Update the target count. Criteria, name, and quota checks cannot be changed.</>
             ) : (
               <>
                 Define a criteria based quota with one or more criteria. The quota applies when{' '}
@@ -828,14 +869,17 @@ export function CriteriaBasedQuotaModal({
                 block={block}
                 blockIndex={index}
                 questions={questions}
-                removable={blocks.length > 1}
+                removable={!editQuota && blocks.length > 1}
                 hideQuotaChecks={isAdvancedGroupFlow}
+                numbersOnly={Boolean(editQuota)}
+                readOnlyCriteriaBlocks={editQuota?.criterionBlocks}
                 onChange={(next) => handleUpdateBlock(block.id, next)}
                 onRemove={() => handleRemoveBlock(block.id)}
               />
             ))}
           </div>
 
+          {editQuota ? null : (
           <button
             type="button"
             className={styles.addQuotaBtn}
@@ -844,6 +888,7 @@ export function CriteriaBasedQuotaModal({
             <span className="wm-add" aria-hidden />
             <span>Add another quota</span>
           </button>
+          )}
         </div>
       </WuModalContent>
       <WuModalFooter>
@@ -851,11 +896,11 @@ export function CriteriaBasedQuotaModal({
           <QuotaStepBreadcrumb
             steps={breadcrumbSteps}
             currentStep="criteria"
-            onStepClick={handleBreadcrumbClick}
+            onStepClick={editQuota ? undefined : handleBreadcrumbClick}
           />
           <div className={styles.footerButtons}>
             <WuButton variant="secondary" onClick={handleBack}>
-              Back
+              {editQuota ? 'Cancel' : 'Back'}
             </WuButton>
             <WuButton onClick={handleSave} disabled={!canSave}>
               {blocks.length === 1 ? 'Save' : `Save ${blocks.length} quotas`}

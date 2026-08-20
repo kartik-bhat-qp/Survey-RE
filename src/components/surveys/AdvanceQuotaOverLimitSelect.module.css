@@ -18,10 +18,26 @@
   width: 100%;
 }
 
+.tooltipWrap {
+  display: block;
+  width: 100%;
+}
+
 .menuTrigger:hover,
 .menuTrigger:focus-visible {
   border-color: #1b87e6;
   outline: none;
+}
+
+.menuTriggerDisabled {
+  background: #f8fafc;
+  color: #67727e;
+  cursor: help;
+}
+
+.menuTriggerDisabled:hover,
+.menuTriggerDisabled:focus-visible {
+  border-color: #d0d5dd;
 }
 
 .menuTriggerLabel {

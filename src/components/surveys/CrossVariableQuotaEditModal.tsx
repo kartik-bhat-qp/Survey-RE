@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type { QuestionQuotaScope } from '@/data/mock-advance-quotas';
 import {
@@ -20,11 +19,6 @@ import { CrossVariableQuotaTypeStep } from '@/components/surveys/CrossVariableQu
 import { CrossVariableExcelImportModal } from '@/components/surveys/CrossVariableExcelImportModal';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import styles from './CrossVariableQuotaModal.module.css';
-
-const WuInput = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
-  { ssr: false }
-);
 
 interface CrossVariableQuotaEditModalProps {
   open: boolean;
@@ -118,21 +112,15 @@ export function CrossVariableQuotaEditModal({
               <label className={styles.matrixNameLabel} htmlFor="cross-variable-matrix-name">
                 Matrix name
               </label>
-              <WuInput
-                id="cross-variable-matrix-name"
-                variant="outlined"
-                value={matrixName}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                  setMatrixName(event.target.value)
-                }
-                aria-label="Matrix name"
-                className={styles.matrixNameInput}
-              />
+              <p id="cross-variable-matrix-name" className={styles.matrixNameReadOnly}>
+                {matrixName || '—'}
+              </p>
             </div>
             <CrossVariableQuotaTypeStep
               value={quotaScope}
               onChange={setQuotaScope}
               variant="inline"
+              readOnly
             />
             <p className={styles.instructions}>{CROSS_VARIABLE_MATRIX_INSTRUCTIONS}</p>
             <p className={styles.matrixSummary}>

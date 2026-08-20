@@ -98,6 +98,20 @@
   white-space: nowrap;
 }
 
+.scopeLocked {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  color: #67727e;
+  cursor: help;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  padding: 0.375rem 0.75rem;
+  white-space: nowrap;
+}
+
 .scopeTriggerCaret {
   font-size: 1rem;
   transition: transform 0.15s ease;

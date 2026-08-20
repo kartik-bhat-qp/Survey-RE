@@ -108,6 +108,11 @@
   box-shadow: 0 0 0 1px #1b87e6;
 }
 
+.inlineOptionReadOnly {
+  background: #f8fafc;
+  cursor: default;
+}
+
 .inlineRadio {
   accent-color: #1b87e6;
   margin: 0;
