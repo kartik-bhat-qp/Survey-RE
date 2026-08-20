@@ -1,6 +1,20 @@
+export type TextAiEmergingValidityDays = 7 | 14 | 28;
+
+export interface TextAiEmergingValidityOption {
+  label: string;
+  value: TextAiEmergingValidityDays;
+}
+
+export const TEXT_AI_EMERGING_VALIDITY_OPTIONS: TextAiEmergingValidityOption[] = [
+  { label: '7 days', value: 7 },
+  { label: '14 days', value: 14 },
+  { label: '28 days', value: 28 },
+];
+
 export interface TextAiThemePreferences {
   approvedEmergingNames: string[];
   autoApproveEmergingThemes: boolean;
+  emergingThemeValidityDays: TextAiEmergingValidityDays;
   showThemesWithNoResponses: boolean;
 }
 
@@ -10,6 +24,7 @@ export const TEXT_AI_THEME_PREFERENCES_EVENT = 'text-ai-theme-preferences-change
 const DEFAULT_PREFERENCES: TextAiThemePreferences = {
   approvedEmergingNames: [],
   autoApproveEmergingThemes: true,
+  emergingThemeValidityDays: 28,
   showThemesWithNoResponses: true,
 };
 

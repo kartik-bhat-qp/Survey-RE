@@ -69,6 +69,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const [themePreferences, setThemePreferences] = useState<TextAiThemePreferences>({
     approvedEmergingNames: [],
     autoApproveEmergingThemes: true,
+    emergingThemeValidityDays: 28,
     showThemesWithNoResponses: true,
   });
 

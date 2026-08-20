@@ -10,13 +10,19 @@ import {
 import {
   getTextAiThemePreferences,
   saveTextAiThemePreferences,
+  TEXT_AI_EMERGING_VALIDITY_OPTIONS,
   TEXT_AI_THEME_PREFERENCES_EVENT,
+  type TextAiEmergingValidityOption,
   type TextAiThemePreferences,
 } from '@/data/text-ai-theme-preferences';
 import styles from './TextAiDashboardSettingsModal.module.css';
 
 const WuToggle = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((module) => ({ default: module.WuToggle })),
+  { ssr: false }
+);
+const WuSelect = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((module) => ({ default: module.WuSelect })),
   { ssr: false }
 );
 
@@ -121,6 +127,17 @@ export function TextAiDashboardSettingsModal({
         ? themePreferences.approvedEmergingNames
         : [],
       autoApproveEmergingThemes: checked,
+    };
+    setThemePreferences(nextPreferences);
+    saveTextAiThemePreferences(dashboard.id, nextPreferences);
+  }
+
+  function setEmergingThemeValidity(
+    option: TextAiEmergingValidityOption
+  ): void {
+    const nextPreferences = {
+      ...themePreferences,
+      emergingThemeValidityDays: option.value,
     };
     setThemePreferences(nextPreferences);
     saveTextAiThemePreferences(dashboard.id, nextPreferences);
@@ -233,6 +250,35 @@ export function TextAiDashboardSettingsModal({
                   aria-label="Auto approve emerging themes"
                 />
               </label>
+              <div className={styles.preferenceRow}>
+                <span>
+                  <strong>Emerging theme validity</strong>
+                  <small>
+                    Choose how long a new theme or sub-theme remains Emerging
+                    before it becomes Established.
+                  </small>
+                </span>
+                <WuSelect
+                  data={TEXT_AI_EMERGING_VALIDITY_OPTIONS}
+                  accessorKey={{ value: 'value', label: 'label' }}
+                  value={
+                    TEXT_AI_EMERGING_VALIDITY_OPTIONS.find(
+                      (option) =>
+                        option.value ===
+                        themePreferences.emergingThemeValidityDays
+                    ) ?? TEXT_AI_EMERGING_VALIDITY_OPTIONS[2]
+                  }
+                  onSelect={(option) => {
+                    if (!option || Array.isArray(option)) return;
+                    setEmergingThemeValidity(
+                      option as TextAiEmergingValidityOption
+                    );
+                  }}
+                  variant="outlined"
+                  className={styles.validitySelect}
+                  aria-label="Emerging theme validity"
+                />
+              </div>
             </div>
           ) : activeTab === 'data-slicers' ? (
             <div

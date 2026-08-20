@@ -142,6 +142,11 @@
   line-height: 1.4;
 }
 
+.validitySelect {
+  flex: 0 0 8rem;
+  width: 8rem;
+}
+
 .searchRow,
 .actionRow {
   align-items: center;

@@ -31,6 +31,7 @@ import {
   type TextAiAnalysisWidget,
   type TextAiThemeStatusFilter,
 } from '@/data/mock-text-ai-widget-data';
+import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import type { TextAiThemePreferences } from '@/data/text-ai-theme-preferences';
 import styles from './TextAiDashboardCanvas.module.css';
 
@@ -254,25 +255,36 @@ function adaptAnalysisWidgets(
 function filterTopicRowsByStatus(
   rows: TextAiTopicSegmentRow[],
   status: TextAiThemeStatusFilter,
-  canShowEmerging: (name: string) => boolean
+  canShowEmerging: (name: string) => boolean,
+  isEmerging: (name: string, candidate: boolean | undefined) => boolean,
+  parentEmerging = false
 ): TextAiTopicSegmentRow[] {
   return rows.flatMap((row) => {
+    const rowEmerging =
+      parentEmerging || isEmerging(row.topic, row.emerging);
     const subtopics = row.subtopics
-      ? filterTopicRowsByStatus(row.subtopics, status, canShowEmerging)
+      ? filterTopicRowsByStatus(
+          row.subtopics,
+          status,
+          canShowEmerging,
+          isEmerging,
+          rowEmerging
+        )
       : undefined;
-    const rowApproved = !row.emerging || canShowEmerging(row.topic);
+    const rowApproved = !rowEmerging || canShowEmerging(row.topic);
     const rowMatches =
       status === 'all'
         ? rowApproved
         : status === 'emerging'
-          ? Boolean(row.emerging && rowApproved)
-          : !row.emerging;
+          ? rowEmerging && rowApproved
+          : !rowEmerging;
 
     if (!rowMatches && !subtopics?.length) return [];
 
     return [
       {
         ...row,
+        emerging: rowEmerging,
         subtopics,
       },
     ];
@@ -282,21 +294,31 @@ function filterTopicRowsByStatus(
 function filterAnalysisWidgetsByStatus(
   widgets: TextAiAnalysisWidget[],
   status: TextAiThemeStatusFilter,
-  canShowEmerging: (name: string) => boolean
+  canShowEmerging: (name: string) => boolean,
+  isEmerging: (name: string, candidate: boolean | undefined) => boolean
 ): TextAiAnalysisWidget[] {
   return widgets.map((widget) => ({
     ...widget,
-    rows: widget.rows.filter((row) => {
-      const emerging = Boolean(row.topicEmerging || row.subtopicEmerging);
+    rows: widget.rows.flatMap((row) => {
+      const topicEmerging = isEmerging(row.topic, row.topicEmerging);
+      const subtopicEmerging = Boolean(
+        topicEmerging || isEmerging(row.subtopic, row.subtopicEmerging)
+      );
+      const emerging = Boolean(topicEmerging || subtopicEmerging);
       const approved =
         !emerging ||
-        (row.topicEmerging && canShowEmerging(row.topic)) ||
-        (row.subtopicEmerging && canShowEmerging(row.subtopic));
-      return status === 'all'
-        ? approved
-        : status === 'emerging'
-          ? emerging && approved
-          : !emerging;
+        (topicEmerging && canShowEmerging(row.topic)) ||
+        (subtopicEmerging && canShowEmerging(row.subtopic));
+      const visible =
+        status === 'all'
+          ? approved
+          : status === 'emerging'
+            ? emerging && approved
+            : !emerging;
+
+      return visible
+        ? [{ ...row, subtopicEmerging, topicEmerging }]
+        : [];
     }),
   }));
 }
@@ -315,6 +337,12 @@ export function TextAiDashboardCanvas({
   const canShowEmerging = (name: string) =>
     themePreferences.autoApproveEmergingThemes ||
     themePreferences.approvedEmergingNames.includes(name);
+  const isEmerging = (name: string, candidate: boolean | undefined) =>
+    isTextAiItemEmerging(
+      name,
+      candidate,
+      themePreferences.emergingThemeValidityDays
+    );
   const questionFactor = getQuestionFactor(questionIndex);
   const summaryWidgets = adaptSummaryWidgets(
     getTextAiSummaryWidgets(dashboardId),
@@ -334,16 +362,27 @@ export function TextAiDashboardCanvas({
   );
   const visibleAddedTopicSegmentWidgets = addedTopicSegmentWidgets.map((widget) => ({
     ...widget,
-    rows: filterTopicRowsByStatus(widget.rows, themeStatus, canShowEmerging),
+    rows: filterTopicRowsByStatus(
+      widget.rows,
+      themeStatus,
+      canShowEmerging,
+      isEmerging
+    ),
   }));
   const visibleTopicSegmentWidgets = topicSegmentWidgets.map((widget) => ({
     ...widget,
-    rows: filterTopicRowsByStatus(widget.rows, themeStatus, canShowEmerging),
+    rows: filterTopicRowsByStatus(
+      widget.rows,
+      themeStatus,
+      canShowEmerging,
+      isEmerging
+    ),
   }));
   const visibleAnalysisWidgets = filterAnalysisWidgetsByStatus(
     analysisWidgets,
     themeStatus,
-    canShowEmerging
+    canShowEmerging,
+    isEmerging
   );
 
   function removeWidget(widgetId: string): void {

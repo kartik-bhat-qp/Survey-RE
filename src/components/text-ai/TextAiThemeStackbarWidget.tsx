@@ -11,6 +11,7 @@ import {
   type TextAiSentimentDistribution,
 } from '@/data/mock-text-ai-subtheme-stackbar';
 import type { TextAiThemeStatusFilter } from '@/data/mock-text-ai-widget-data';
+import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import {
   DEFAULT_TEXT_AI_WIDGET_TOP_N,
   limitTextAiWidgetItems,
@@ -118,15 +119,24 @@ export function TextAiThemeStackbarWidget({
     Set<TextAiSentimentBucket>
   >(() => new Set(SENTIMENT_BUCKETS.map((bucket) => bucket.key)));
   const visibleThemes = useMemo(() => {
-    const filtered = TEXT_AI_SUBTHEME_STACKBAR_ROWS.filter((theme) => {
+    const filtered = TEXT_AI_SUBTHEME_STACKBAR_ROWS.flatMap((theme) => {
+      const emerging = isTextAiItemEmerging(
+        theme.label,
+        theme.emerging,
+        themePreferences.emergingThemeValidityDays
+      );
       const approved =
-        !theme.emerging ||
+        !emerging ||
         themePreferences.autoApproveEmergingThemes ||
         themePreferences.approvedEmergingNames.includes(theme.label);
-      if (themeStatus === 'all') return approved;
-      return themeStatus === 'emerging'
-        ? Boolean(theme.emerging && approved)
-        : !theme.emerging;
+      const visible =
+        themeStatus === 'all'
+          ? approved
+          : themeStatus === 'emerging'
+            ? emerging && approved
+            : !emerging;
+
+      return visible ? [{ ...theme, emerging }] : [];
     });
 
     return limitTextAiWidgetItems(filtered, topN);

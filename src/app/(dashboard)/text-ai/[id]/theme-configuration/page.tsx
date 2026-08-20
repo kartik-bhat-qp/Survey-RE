@@ -12,6 +12,7 @@ import { getTextAiDashboardById } from '@/data/get-text-ai-dashboard-by-id';
 import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
 import { MOCK_TEXT_AI_ANALYSIS_QUESTIONS } from '@/data/mock-text-ai-questions';
 import { appendTextAiRecodeLog } from '@/data/text-ai-activity-logs';
+import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import {
   TEXT_AI_THEME_STATUS_FILTER_OPTIONS,
   type TextAiFilterOption,
@@ -20,7 +21,9 @@ import {
 import {
   getTextAiThemePreferences,
   saveTextAiThemePreferences,
+  TEXT_AI_EMERGING_VALIDITY_OPTIONS,
   TEXT_AI_THEME_PREFERENCES_EVENT,
+  type TextAiEmergingValidityOption,
   type TextAiThemePreferences,
 } from '@/data/text-ai-theme-preferences';
 import styles from './ThemeConfiguration.module.css';
@@ -660,6 +663,7 @@ export default function TextAiThemeConfigurationPage({
   const [themePreferences, setThemePreferences] = useState<TextAiThemePreferences>({
     approvedEmergingNames: [],
     autoApproveEmergingThemes: true,
+    emergingThemeValidityDays: 28,
     showThemesWithNoResponses: true,
   });
   const [granularityModalOpen, setGranularityModalOpen] = useState(false);
@@ -730,42 +734,60 @@ export default function TextAiThemeConfigurationPage({
 
   const themeGroups = useMemo(
     () =>
-      THEME_GROUPS.map((group, groupIndex) => ({
-        ...group,
-        percentage: formatPercentage(questionVariant.groupPercentages[groupIndex]),
-        subThemes: group.subThemes
-          .slice(0, appliedGranularityOption.subThemeCounts[groupIndex])
-          .map((subTheme, subThemeIndex) => {
-            const basePercentage = Number.parseFloat(subTheme.percentage);
-            const indexAdjustment =
-              ((subThemeIndex % 3) - 1) * selectedQuestionIndex * 0.04;
-            const edit =
-              subThemeEdits[
-                getSubThemeEditKey(selectedQuestionId, group.id, subTheme.id)
-              ];
-            return {
-              ...subTheme,
-              emerging: Boolean(group.emerging || subTheme.emerging),
-              description:
-                edit?.description ??
-                subTheme.description ??
-                getDefaultSubThemeDescription(subTheme.name),
-              name: edit?.name ?? subTheme.name,
-              percentage: formatPercentage(
-                Math.max(
-                  0,
-                  basePercentage * questionVariant.subThemeFactor + indexAdjustment
-                )
-              ),
-            };
-          }),
-      })),
+      THEME_GROUPS.map((group, groupIndex) => {
+        const groupEmerging = isTextAiItemEmerging(
+          group.name,
+          group.emerging,
+          themePreferences.emergingThemeValidityDays
+        );
+
+        return {
+          ...group,
+          emerging: groupEmerging,
+          percentage: formatPercentage(questionVariant.groupPercentages[groupIndex]),
+          subThemes: group.subThemes
+            .slice(0, appliedGranularityOption.subThemeCounts[groupIndex])
+            .map((subTheme, subThemeIndex) => {
+              const basePercentage = Number.parseFloat(subTheme.percentage);
+              const indexAdjustment =
+                ((subThemeIndex % 3) - 1) * selectedQuestionIndex * 0.04;
+              const edit =
+                subThemeEdits[
+                  getSubThemeEditKey(selectedQuestionId, group.id, subTheme.id)
+                ];
+              const name = edit?.name ?? subTheme.name;
+              return {
+                ...subTheme,
+                emerging: Boolean(
+                  groupEmerging ||
+                    isTextAiItemEmerging(
+                      name,
+                      subTheme.emerging,
+                      themePreferences.emergingThemeValidityDays
+                    )
+                ),
+                description:
+                  edit?.description ??
+                  subTheme.description ??
+                  getDefaultSubThemeDescription(subTheme.name),
+                name,
+                percentage: formatPercentage(
+                  Math.max(
+                    0,
+                    basePercentage * questionVariant.subThemeFactor + indexAdjustment
+                  )
+                ),
+              };
+            }),
+        };
+      }),
     [
       appliedGranularityOption,
       questionVariant,
       selectedQuestionId,
       selectedQuestionIndex,
       subThemeEdits,
+      themePreferences.emergingThemeValidityDays,
     ]
   );
 
@@ -1653,6 +1675,38 @@ export default function TextAiThemeConfigurationPage({
                     aria-label="Auto approve emerging themes"
                   />
                 </label>
+                <div className={styles.settingsPreference}>
+                  <span>
+                    <strong>Emerging theme validity</strong>
+                    <small>
+                      Choose how long a new theme or sub-theme remains Emerging
+                      before it becomes Established.
+                    </small>
+                  </span>
+                  <WuSelect
+                    data={TEXT_AI_EMERGING_VALIDITY_OPTIONS}
+                    accessorKey={{ value: 'value', label: 'label' }}
+                    value={
+                      TEXT_AI_EMERGING_VALIDITY_OPTIONS.find(
+                        (option) =>
+                          option.value ===
+                          themePreferences.emergingThemeValidityDays
+                      ) ?? TEXT_AI_EMERGING_VALIDITY_OPTIONS[2]
+                    }
+                    onSelect={(option) => {
+                      if (!option || Array.isArray(option)) return;
+                      updateThemePreferences((current) => ({
+                        ...current,
+                        emergingThemeValidityDays: (
+                          option as TextAiEmergingValidityOption
+                        ).value,
+                      }));
+                    }}
+                    variant="outlined"
+                    className={styles.validitySelect}
+                    aria-label="Emerging theme validity"
+                  />
+                </div>
               </div>
             ) : (
               <div className={styles.settingsLogs}>

@@ -568,6 +568,11 @@
   line-height: 1.4;
 }
 
+.validitySelect {
+  flex: 0 0 8rem;
+  width: 8rem;
+}
+
 .settingsLogs {
   max-height: 32rem;
   overflow-y: auto;

@@ -11,6 +11,7 @@ import {
   type TextAiSentimentDistribution,
 } from '@/data/mock-text-ai-subtheme-stackbar';
 import type { TextAiThemeStatusFilter } from '@/data/mock-text-ai-widget-data';
+import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import {
   DEFAULT_TEXT_AI_WIDGET_TOP_N,
   limitTextAiWidgetItems,
@@ -121,39 +122,57 @@ export function TextAiSubthemeStackbarWidget({
   >(() => new Set(SENTIMENT_BUCKETS.map((bucket) => bucket.key)));
   const visibleThemes = useMemo(() => {
     const filtered = TEXT_AI_SUBTHEME_STACKBAR_ROWS.flatMap((theme) => {
-      const themeEmerging = Boolean(theme.emerging);
+      const themeEmerging = isTextAiItemEmerging(
+        theme.label,
+        theme.emerging,
+        themePreferences.emergingThemeValidityDays
+      );
       const themeApproved =
         !themeEmerging ||
         themePreferences.autoApproveEmergingThemes ||
         themePreferences.approvedEmergingNames.includes(theme.label);
-      const approvedSubthemes = theme.subthemes.filter(
+      const effectiveSubthemes = theme.subthemes.map((subtheme) => ({
+        ...subtheme,
+        emerging: Boolean(
+          themeEmerging ||
+            isTextAiItemEmerging(
+              subtheme.label,
+              subtheme.emerging,
+              themePreferences.emergingThemeValidityDays
+            )
+        ),
+      }));
+      const approvedSubthemes = effectiveSubthemes.filter(
         (subtheme) =>
-          !(themeEmerging || subtheme.emerging) ||
+          !subtheme.emerging ||
           themePreferences.autoApproveEmergingThemes ||
           themePreferences.approvedEmergingNames.includes(subtheme.label)
       );
 
       if (themeStatus === 'all') {
         if (!themeApproved) return [];
-        return [{ ...theme, subthemes: approvedSubthemes }];
+        return [
+          { ...theme, emerging: themeEmerging, subthemes: approvedSubthemes },
+        ];
       }
 
       if (themeStatus === 'emerging') {
         const subthemes = approvedSubthemes.filter(
           (subtheme) =>
-            (themeEmerging || subtheme.emerging) &&
+            subtheme.emerging &&
             (themeApproved ||
               themePreferences.approvedEmergingNames.includes(subtheme.label))
         );
         if ((!themeEmerging || !themeApproved) && subthemes.length === 0) return [];
-        return [{ ...theme, subthemes }];
+        return [{ ...theme, emerging: themeEmerging, subthemes }];
       }
 
       if (themeEmerging) return [];
       return [
         {
           ...theme,
-          subthemes: theme.subthemes.filter((subtheme) => !subtheme.emerging),
+          emerging: false,
+          subthemes: effectiveSubthemes.filter((subtheme) => !subtheme.emerging),
         },
       ];
     });
