@@ -174,11 +174,9 @@ import {
   updateDeepDiveFollowUpConfigQuestion,
 } from '@/data/mock-deepdive-follow-up-question';
 import {
-  canAddListenAiAt,
   createListenAiQuestion,
   findSurveyQuestionAcrossSections,
   getListenAiInsertError,
-  isListenAiEnabledSurvey,
   isListenAiQuestion,
   isListenAiStudySelected,
   readListenAiConfig,
@@ -3952,10 +3950,6 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       }
 
       if (typeId === 'listenai') {
-        if (!isListenAiEnabledSurvey(detail.survey.id)) {
-          showToast({ message: 'ListenAI is only available on this survey', variant: 'info' });
-          return;
-        }
         const insertError = getListenAiInsertError(sections, sectionId, insertIndex);
         if (insertError) {
           showToast({ message: insertError, variant: 'info' });
@@ -4107,31 +4101,18 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   );
 
   const addQuestionExcludeTypeIds = useMemo(() => {
-    const excluded: string[] = [];
+    const excluded: string[] = ['deepdive'];
     if (detail.survey.id !== RECAPTCHA_V3_SURVEY_ID) {
       excluded.push('captcha');
-    }
-    if (isListenAiEnabledSurvey(detail.survey.id)) {
-      excluded.push('deepdive');
-    } else {
-      excluded.push('listenai');
     }
     return excluded;
   }, [detail.survey.id]);
 
   const getAddQuestionExcludeTypeIds = useCallback(
-    (sectionId: string, insertIndex: number): string[] => {
-      const excluded = [...addQuestionExcludeTypeIds];
-      if (!isListenAiEnabledSurvey(detail.survey.id)) {
-        if (!canAddDeepDiveAt(sections, sectionId, insertIndex)) {
-          excluded.push('deepdive');
-        }
-      } else if (!canAddListenAiAt(sections, sectionId, insertIndex)) {
-        excluded.push('listenai');
-      }
-      return excluded;
+    (_sectionId: string, _insertIndex: number): string[] => {
+      return [...addQuestionExcludeTypeIds];
     },
-    [addQuestionExcludeTypeIds, detail.survey.id, sections]
+    [addQuestionExcludeTypeIds]
   );
 
   return (

@@ -197,8 +197,6 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
     tier: 'advanced',
     types: [
       { id: 'custom-logic', label: 'Custom Logic Engine', icon: 'wm-code' },
-      { id: 'listenai', label: 'ListenAI', icon: 'wc-ai', highlight: true },
-      { id: 'deepdive', label: 'DeepDive', icon: 'wc-ai', highlight: true },
     ],
   },
   {
@@ -221,6 +219,7 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
         icon: 'wm-lightbulb',
         highlight: true,
       },
+      { id: 'listenai', label: 'ListenAI', icon: 'wc-ai', highlight: true },
       { id: 'timer', label: 'Timer', icon: 'wm-hourglass-empty' },
       { id: 'community-recruitment', label: 'Community Recruitment', icon: 'wm-groups' },
     ],

@@ -1,5 +1,4 @@
 import type { SurveyQuestion, SurveySection } from '@/data/mock-survey-detail';
-import { DEEPDIVE_V2_SURVEY_ID } from '@/data/mock-deepdive-question-settings';
 import {
   cloneListenAiStudy,
   getDefaultListenAiStudy,
@@ -13,8 +12,9 @@ import { findListenAiStudyInCatalog } from '@/data/listenai-study-catalog';
 
 export { LISTENAI_ADD_QUESTION_TYPE_ID };
 
-export function isListenAiEnabledSurvey(surveyId: number): boolean {
-  return surveyId === DEEPDIVE_V2_SURVEY_ID;
+/** ListenAI is available from Add Question on every survey. */
+export function isListenAiEnabledSurvey(_surveyId?: number): boolean {
+  return true;
 }
 
 export const DEFAULT_LISTENAI_QUESTION_TEXT = 'ListenAI';
@@ -79,18 +79,62 @@ export interface ListenAiSourceQuestionOption {
   text: string;
 }
 
-/** Survey questions that can be selected as the ListenAI DeepDive source. */
+/** Single Select questions only (same eligibility rules as DeepDive targets). */
+function isListenAiEligibleSourceQuestion(question: SurveyQuestion): boolean {
+  if (isListenAiQuestion(question)) return false;
+  if (question.editorHidden) return false;
+  if ((question.options ?? []).length === 0) return false;
+
+  if (question.addQuestionTypeId === 'select-one') return true;
+
+  if (question.inputKind !== 'radio') return false;
+  if (question.kind && question.kind !== 'standard') return false;
+  if (question.addQuestionTypeId && question.addQuestionTypeId !== 'select-one') {
+    return false;
+  }
+
+  return true;
+}
+
+function findListenAiQuestionGlobalIndex(
+  sections: SurveySection[],
+  listenAiQuestionId: string
+): number {
+  let index = 0;
+  for (const section of sections) {
+    for (const question of section.questions) {
+      if (question.id === listenAiQuestionId) return index;
+      index += 1;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Source options for ListenAI: Single Select questions that appear strictly
+ * before this ListenAI question in survey order.
+ */
 export function listListenAiSourceQuestions(
   sections: SurveySection[],
   listenAiQuestionId?: string
 ): ListenAiSourceQuestionOption[] {
   const options: ListenAiSourceQuestionOption[] = [];
+  const stopAtIndex =
+    listenAiQuestionId != null && listenAiQuestionId.trim()
+      ? findListenAiQuestionGlobalIndex(sections, listenAiQuestionId)
+      : -1;
+  const beforeIndex = stopAtIndex >= 0 ? stopAtIndex : Number.POSITIVE_INFINITY;
+
+  let index = 0;
   for (const section of sections) {
     for (const question of section.questions) {
-      if (listenAiQuestionId && question.id === listenAiQuestionId) continue;
-      if (isListenAiQuestion(question)) continue;
+      if (index >= beforeIndex) return options;
+      index += 1;
+
+      if (!isListenAiEligibleSourceQuestion(question)) continue;
       const text = stripRichText(question.text);
       if (!text) continue;
+
       options.push({
         value: `${section.id}:${question.id}`,
         label: `${question.code} — ${text}`,
@@ -101,6 +145,7 @@ export function listListenAiSourceQuestions(
       });
     }
   }
+
   return options;
 }
 
