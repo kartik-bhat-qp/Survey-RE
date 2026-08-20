@@ -8,6 +8,7 @@ import {
   isListenAiStudySelected,
   getListenAiResponseFieldToken,
   listListenAiSourceQuestions,
+  resetListenAiSurveyBinding,
   updateListenAiFirstQuestion,
   updateListenAiSourceQuestion,
   type ListenAiQuestionConfig,
@@ -145,7 +146,7 @@ export function ListenAIQuestionRow({
   function handleSelectStudy(nextStudy: ListenAiStudy): void {
     onConfigChange({
       studyId: nextStudy.id,
-      study: updateListenAiFirstQuestion(nextStudy, ''),
+      study: resetListenAiSurveyBinding(nextStudy),
     });
   }
 

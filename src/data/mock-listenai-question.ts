@@ -158,6 +158,11 @@ export function updateListenAiFirstQuestion(
   };
 }
 
+/** Default survey binding after connecting a study: no source, empty first question. */
+export function resetListenAiSurveyBinding(study: ListenAiStudy): ListenAiStudy {
+  return updateListenAiFirstQuestion(updateListenAiSourceQuestion(study, null), '');
+}
+
 export function appendListenAiResponseField(text: string): string {
   if (text.includes(LISTENAI_RESPONSE_FIELD_TOKEN)) return text;
   const suffix = text.trim().length > 0 ? ' ' : '';

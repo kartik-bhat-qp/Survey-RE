@@ -3,7 +3,11 @@ import {
   DEEPDIVE_FOLLOW_UP_QUESTION_NUMBER,
   DEEPDIVE_V2_SURVEY_ID,
 } from '@/data/mock-deepdive-question-settings';
-import { createListenAiQuestion } from '@/data/mock-listenai-question';
+import {
+  createListenAiQuestion,
+  resetListenAiSurveyBinding,
+  resolveListenAiConfig,
+} from '@/data/mock-listenai-question';
 
 export { DEEPDIVE_V2_SURVEY_ID, DEEPDIVE_FOLLOW_UP_QUESTION_NUMBER };
 
@@ -80,9 +84,14 @@ export function createDeepDiveV2Sections(): SurveySection[] {
     options: makeOptions(targetQuestionId, ['Taco Bell', 'KFC', 'McD', 'Burger King']),
   };
 
+  const listenAiSeed = resolveListenAiConfig({ studyId: 'study-12' });
   const listenAiQuestion = createListenAiQuestion(
     'q-listenai-18',
-    DEEPDIVE_FOLLOW_UP_QUESTION_NUMBER + 1
+    DEEPDIVE_FOLLOW_UP_QUESTION_NUMBER + 1,
+    {
+      studyId: listenAiSeed.studyId,
+      study: resetListenAiSurveyBinding(listenAiSeed.study),
+    }
   );
 
   const closingQuestion: SurveyQuestion = {

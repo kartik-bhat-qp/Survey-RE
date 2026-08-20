@@ -126,9 +126,6 @@ export const MOCK_LISTENAI_STUDIES: ListenAiStudy[] = [
     thankYouNote:
       'Thank you for sharing your experience. You will now return to the survey to continue with the remaining questions.',
     moderatorInstructions: ['Stay curious', 'Probe on a recent visit before moving on'],
-    sourceQuestionId: 'q-deepdive-17',
-    sourceQuestionCode: 'Q17',
-    sourceQuestionText: 'Which fast-food chain you like the most?',
   },
 ];
 
