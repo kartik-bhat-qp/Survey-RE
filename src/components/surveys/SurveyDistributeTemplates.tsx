@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
-import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { NewDistributeTemplateModal } from '@/components/surveys/NewDistributeTemplateModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TableScrollWrap } from '@/components/ui/TableScrollWrap';
@@ -34,9 +33,9 @@ const WuSelect = dynamic(
 type TypeFilterOption = (typeof DISTRIBUTE_TEMPLATE_TYPE_FILTERS)[number];
 
 export function SurveyDistributeTemplates() {
-  const { showToast } = useWuShowToast();
   const [search, setSearch] = useState('');
   const [isNewTemplateOpen, setIsNewTemplateOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<DistributeTemplate | null>(null);
   const [templates, setTemplates] = useState<DistributeTemplate[]>(MOCK_DISTRIBUTE_TEMPLATES);
   const [typeFilter, setTypeFilter] = useState<TypeFilterOption>(
     DISTRIBUTE_TEMPLATE_TYPE_FILTERS[0]
@@ -66,9 +65,7 @@ export function SurveyDistributeTemplates() {
         <button
           type="button"
           className={styles.nameBtn}
-          onClick={() =>
-            showToast({ message: `Opened "${row.original.name}"`, variant: 'info' })
-          }
+          onClick={() => setEditingTemplate(row.original)}
         >
           {row.original.name}
         </button>
@@ -91,7 +88,10 @@ export function SurveyDistributeTemplates() {
       <div className={styles.toolbar}>
         <WuButton
           Icon={<span className="wm-add" aria-hidden />}
-          onClick={() => setIsNewTemplateOpen(true)}
+          onClick={() => {
+            setEditingTemplate(null);
+            setIsNewTemplateOpen(true);
+          }}
         >
           New Template
         </WuButton>
@@ -137,11 +137,26 @@ export function SurveyDistributeTemplates() {
       </TableScrollWrap>
 
       <NewDistributeTemplateModal
-        open={isNewTemplateOpen}
-        onOpenChange={setIsNewTemplateOpen}
+        open={isNewTemplateOpen || Boolean(editingTemplate)}
+        template={editingTemplate}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsNewTemplateOpen(false);
+            setEditingTemplate(null);
+          }
+        }}
         onSaved={(template) => {
-          setTemplates((prev) => [template, ...prev]);
+          setTemplates((prev) => {
+            const existingIndex = prev.findIndex((item) => item.id === template.id);
+            if (existingIndex >= 0) {
+              const next = [...prev];
+              next[existingIndex] = template;
+              return next;
+            }
+            return [template, ...prev];
+          });
           setIsNewTemplateOpen(false);
+          setEditingTemplate(null);
         }}
       />
     </div>

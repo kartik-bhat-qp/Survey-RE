@@ -40,6 +40,10 @@ export interface DistributeTemplate {
   name: string;
   type: DistributeTemplateType;
   defaultLanguage: string;
+  subject?: string;
+  body?: string;
+  fromValue?: string;
+  replyToValue?: string;
 }
 
 export interface EmailComposeDefaults {
@@ -182,6 +186,10 @@ export const EMAIL_COMPOSE_FORMAT_TOOLBAR_ACTIONS: EmailToolbarAction[] = [
 
 export const MOCK_EMAIL_SENDERS: EmailSenderOption[] = [
   {
+    value: 'qp-survey',
+    label: 'QuestionPro Survey (survey@qp-mail.com)',
+  },
+  {
     value: 'kartik-bhat',
     label: 'Kartik Bhat (kartik.bhat@questionpro.com)',
   },
@@ -208,12 +216,18 @@ export const MOCK_DISTRIBUTE_TEMPLATES: DistributeTemplate[] = [
     name: 'Default SMS',
     type: 'SMS',
     defaultLanguage: 'NA',
+    body: 'Hi, you have been invited to take part in our online survey. Please click <SURVEY_LINK> to give us your feedback. Look forward to hearing from you!',
   },
   {
     id: 'default-email',
     name: 'Default Email',
     type: 'Email - Survey Specific',
     defaultLanguage: 'NA',
+    subject: 'Survey Invitation',
+    body:
+      'Hello,\n\nWe would appreciate your feedback...\n\nPlease click on this link to complete the survey:\n\n<SURVEY_LINK>\n\nThank You',
+    fromValue: 'qp-survey',
+    replyToValue: 'kartik-bhat',
   },
 ];
 
@@ -747,7 +761,8 @@ export function composeBodyHasRenderableHtml(text: string): boolean {
 const COMPOSE_BLOB_URL_PATTERN = /blob:(?:https?|file|null):[^\s"'<>]*/i;
 const COMPOSE_DATA_IMAGE_PATTERN = /data:image\/[a-z0-9.+-]+;base64,/i;
 
-export const COMPOSE_BLOB_UNSUPPORTED_MESSAGE = 'Blobs are not supported';
+export const COMPOSE_BLOB_UNSUPPORTED_MESSAGE =
+  'Blob images aren’t supported. Use an image URL instead.';
 
 export function composeHtmlContainsBlobUrl(text: string): boolean {
   return COMPOSE_BLOB_URL_PATTERN.test(text);
@@ -758,7 +773,7 @@ export function composeHtmlContainsUnsupportedBlob(text: string): boolean {
 }
 
 export function composePlainTextToHtml(text: string): string {
-  if (composeBodyLooksLikeHtml(text)) {
+  if (composeBodyHasRenderableHtml(text)) {
     return text;
   }
 
@@ -767,15 +782,7 @@ export function composePlainTextToHtml(text: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  const paragraphs = escaped.split(/\n\n+/);
-  if (paragraphs.length === 1) {
-    return escaped
-      .split('\n')
-      .map((line) => (line ? line : '<br>'))
-      .join('<br>\n');
-  }
-
-  return paragraphs.map((paragraph) => `<p>${paragraph.split('\n').join('<br>')}</p>`).join('\n');
+  return escaped.split('\n').join('<br />\n');
 }
 
 export function insertTextAtComposeHtmlCursor(

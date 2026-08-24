@@ -292,11 +292,6 @@
   padding: 0.625rem 1rem;
 }
 
-.bodyPreview {
-  min-height: 10rem;
-  padding: 1rem;
-}
-
 .bodyPreviewFrame {
   display: block;
   min-height: 10rem;
@@ -333,6 +328,12 @@
   padding: 1rem;
   resize: vertical;
   width: 100%;
+}
+
+.bodyFieldSource {
+  font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.6;
 }
 
 .toolbar {

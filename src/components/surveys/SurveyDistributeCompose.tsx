@@ -9,8 +9,7 @@ import { AudioInputButton } from '@/components/ui/AudioInputButton';
 import { useParams } from 'next/navigation';
 import { ComposeEmailToolbar } from '@/components/surveys/ComposeEmailToolbar';
 import { ComposeHelpMeWrite } from '@/components/surveys/ComposeHelpMeWrite';
-import { ComposeHtmlSourceEditor } from '@/components/surveys/ComposeHtmlSourceEditor';
-import { ComposeHtmlPreviewFrame } from '@/components/surveys/ComposeHtmlPreviewFrame';
+import { ComposeHtmlBodyEditor } from '@/components/surveys/ComposeHtmlBodyEditor';
 import { ComposeRecipientsField } from '@/components/surveys/ComposeRecipientsField';
 import { NavLink } from '@/components/surveys/NavLink';
 import { SurveyAgentSidebar } from '@/components/surveys/SurveyAgentSidebar';
@@ -28,6 +27,7 @@ import {
   SMS_SEGMENT_CHAR_LIMIT,
   composeBodyHasRenderableHtml,
   composeHtmlContainsUnsupportedBlob,
+  composePlainTextToHtml,
   getSmsSegmentUsage,
   readComposeBodySelection,
   type ComposeWritingSelection,
@@ -161,9 +161,17 @@ export function SurveyEmailComposePanel({
     showToast({ message: 'Schedule invitation', variant: 'info' });
   }
 
+  function handleSourceToggle(): void {
+    setHtmlSourceOpen((open) => {
+      if (open) return false;
+      setBody((prev) => composePlainTextToHtml(prev));
+      return true;
+    });
+  }
+
   function handleToolbarAction(label: string): void {
     if (label === 'Source') {
-      setHtmlSourceOpen(true);
+      handleSourceToggle();
       return;
     }
     showToast({ message: label, variant: 'info' });
@@ -324,21 +332,23 @@ export function SurveyEmailComposePanel({
                       className={styles.editorLoader}
                       message="Updating your message…"
                     >
-                      {bodyIsHtml ? (
-                        <div className={styles.bodyPreview} aria-label="Email body">
-                          <ComposeHtmlPreviewFrame
-                            html={body}
-                            title="Email body preview"
-                            className={styles.bodyPreviewFrame}
-                          />
-                        </div>
+                      {bodyIsHtml && !htmlSourceOpen ? (
+                        <ComposeHtmlBodyEditor
+                          html={body}
+                          onChange={handleBodyChange}
+                          disabled={isWritingWithAi}
+                          ariaLabel="Email body"
+                          className={styles.bodyPreviewFrame}
+                        />
                       ) : null}
                       <textarea
                         ref={bodyFieldRef}
                         className={
-                          bodyIsHtml
+                          bodyIsHtml && !htmlSourceOpen
                             ? `${styles.bodyField} ${styles.bodyFieldHidden}`
-                            : styles.bodyField
+                            : htmlSourceOpen
+                              ? `${styles.bodyField} ${styles.bodyFieldSource}`
+                              : styles.bodyField
                         }
                         value={body}
                         onChange={(event) => handleBodyChange(event.target.value)}
@@ -346,10 +356,11 @@ export function SurveyEmailComposePanel({
                         onMouseUp={updateBodySelection}
                         onKeyUp={updateBodySelection}
                         rows={12}
-                        aria-label={bodyIsHtml ? 'Email HTML source' : 'Email body'}
-                        aria-hidden={bodyIsHtml}
-                        tabIndex={bodyIsHtml ? -1 : undefined}
+                        aria-label={htmlSourceOpen ? 'Email HTML source' : 'Email body'}
+                        aria-hidden={bodyIsHtml && !htmlSourceOpen}
+                        tabIndex={bodyIsHtml && !htmlSourceOpen ? -1 : undefined}
                         disabled={isWritingWithAi}
+                        spellCheck={!htmlSourceOpen}
                       />
                     </WuLoaderWrapper>
 
@@ -372,18 +383,12 @@ export function SurveyEmailComposePanel({
                       micDisabled={isWritingWithAi}
                       onHelpMeWriteToggle={() => setHelpMeWriteOpen((open) => !open)}
                       onAction={handleToolbarAction}
-                      onSourceClick={() => setHtmlSourceOpen(true)}
+                      onSourceClick={handleSourceToggle}
                       onMicTranscript={(text) =>
                         setBody((prev) => (prev ? `${prev}\n\n${text}` : text))
                       }
                     />
 
-                    <ComposeHtmlSourceEditor
-                      open={htmlSourceOpen}
-                      onOpenChange={setHtmlSourceOpen}
-                      body={body}
-                      onApply={handleBodyChange}
-                    />
                   </div>
                 </>
               ) : null}

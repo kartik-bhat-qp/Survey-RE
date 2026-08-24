@@ -22,7 +22,7 @@
 .toolbarBtn {
   align-items: center;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 0.25rem;
   color: #475569;
   cursor: pointer;
@@ -40,8 +40,9 @@
 }
 
 .toolbarBtnActive {
-  background: #eef6ff;
-  color: #1b87e6;
+  background: #fff;
+  border-color: #334155;
+  color: #1e293b;
 }
 
 .toolbarBtn span {
