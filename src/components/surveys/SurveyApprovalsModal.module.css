@@ -1,0 +1,17 @@
+.modal {
+  max-height: 90vh !important;
+  max-width: min(56rem, calc(100vw - 2rem)) !important;
+  width: min(56rem, calc(100vw - 2rem)) !important;
+}
+
+.header {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.content {
+  max-height: calc(90vh - 4rem);
+  overflow: auto;
+  padding: 0 !important;
+}

@@ -9,11 +9,12 @@ import {
 } from '@/data/mock-listenai-interview';
 import styles from './ListenAIConversationScreen.module.css';
 
+const RETURN_TO_SURVEY_DELAY_MS = 1600;
+
 interface ListenAIConversationScreenProps {
   study: ListenAiStudy;
   selectedAnswerLabel: string;
   onComplete: () => void;
-  completeLabel?: string;
 }
 
 interface ChatMessage {
@@ -31,7 +32,6 @@ export function ListenAIConversationScreen({
   study,
   selectedAnswerLabel,
   onComplete,
-  completeLabel = 'Return to survey',
 }: ListenAIConversationScreenProps) {
   const opening = useMemo(
     () => getResolvedListenAiOpeningMessages(study, selectedAnswerLabel),
@@ -49,15 +49,30 @@ export function ListenAIConversationScreen({
   const [followUpsAsked, setFollowUpsAsked] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const threadRef = useRef<HTMLDivElement | null>(null);
-  const progressPercent = isComplete
-    ? 100
-    : Math.min(95, Math.round(((followUpsAsked + 1) / (maxFollowUps + 2)) * 100));
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+  const totalSteps = maxFollowUps + 1;
+  const currentStep = isComplete ? totalSteps : Math.min(totalSteps, followUpsAsked + 1);
+  const progressPercent = Math.round((currentStep / totalSteps) * 100);
+  const progressLabel = isComplete
+    ? 'Complete'
+    : followUpsAsked === 0
+      ? `Opening question · ${currentStep} of ${totalSteps}`
+      : `Follow-up ${followUpsAsked} of ${maxFollowUps}`;
 
   useEffect(() => {
     const node = threadRef.current;
     if (!node) return;
     node.scrollTop = node.scrollHeight;
   }, [messages, isComplete]);
+
+  useEffect(() => {
+    if (!isComplete) return;
+    const timeoutId = window.setTimeout(() => {
+      onCompleteRef.current();
+    }, RETURN_TO_SURVEY_DELAY_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [isComplete]);
 
   function finishInterview(): void {
     const thankYou =
@@ -110,21 +125,29 @@ export function ListenAIConversationScreen({
   return (
     <div className={styles.screen}>
       <header className={styles.header}>
-        <span className={styles.logo} aria-hidden>
-          ?
-        </span>
-        <div className={styles.headerCopy}>
-          <h1 className={styles.headerTitle}>{study.title}</h1>
+        <div className={styles.headerTop}>
+          <span className={styles.logo} aria-hidden>
+            ?
+          </span>
+          <div className={styles.headerCopy}>
+            <h1 className={styles.headerTitle}>Conversation</h1>
+            <p className={styles.headerSubtitle}>
+              A short AI follow-up based on your previous answer
+            </p>
+          </div>
+        </div>
+        <div className={styles.progressRow}>
           <div
             className={styles.progressTrack}
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={progressPercent}
-            aria-label="Interview progress"
+            aria-label={progressLabel}
           >
             <div className={styles.progressFill} style={{ width: `${progressPercent}%` }} />
           </div>
+          <span className={styles.progressMeta}>{progressLabel}</span>
         </div>
       </header>
 
@@ -155,9 +178,9 @@ export function ListenAIConversationScreen({
 
       <div className={styles.composer}>
         {isComplete ? (
-          <button type="button" className={styles.returnBtn} onClick={onComplete}>
-            {completeLabel}
-          </button>
+          <p className={styles.returningNote} role="status" aria-live="polite">
+            Returning to the survey…
+          </p>
         ) : (
           <div className={styles.inputRow}>
             <textarea
@@ -184,7 +207,15 @@ export function ListenAIConversationScreen({
 
       <footer className={styles.footer}>
         <span>
-          Powered by <span className={styles.brand}>QuestionPro</span>
+          Powered by{' '}
+          <a
+            className={styles.brandLink}
+            href="https://staging.listenai.questionpro.com/ui/interviews/create/ai"
+            target="_blank"
+            rel="noreferrer"
+          >
+            QuestionProAI Interviews
+          </a>
         </span>
         <span>Enter to send · Shift+Enter for new line</span>
       </footer>

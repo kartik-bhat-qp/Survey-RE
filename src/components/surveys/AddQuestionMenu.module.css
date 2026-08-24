@@ -232,6 +232,29 @@
   width: min(38rem, 100%);
 }
 
+.previewCardConversation {
+  max-width: min(36rem, calc(100vw - 2rem));
+  width: min(36rem, 100%);
+}
+
+.previewCardConversation .previewBody {
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.previewCardConversation .previewQuestion {
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.45;
+  margin-bottom: 1rem;
+}
+
+.hoverPreviewConversation {
+  max-width: min(36rem, calc(100vw - 2rem));
+  min-width: min(32rem, 100%);
+  width: min(36rem, 100%);
+}
+
 .previewCardMatrix {
   min-width: min(38rem, 100%);
 }
@@ -252,6 +275,19 @@
 .previewHeaderIcon {
   color: #64748b;
   font-size: 1.25rem;
+}
+
+.previewHeaderLabel {
+  align-items: flex-start;
+  display: inline-flex;
+}
+
+.previewAiMark {
+  color: #e6a700;
+  font-size: 0.75rem;
+  line-height: 1;
+  margin-left: 0.15rem;
+  margin-top: -0.2rem;
 }
 
 .previewHeaderAdvancedLicense {
@@ -727,8 +763,18 @@
 }
 
 .typeLabel {
+  align-items: flex-start;
+  display: inline-flex;
   flex: 1;
   min-width: 0;
+}
+
+.typeAiMark {
+  color: #e6a700;
+  font-size: 0.6875rem;
+  line-height: 1;
+  margin-left: 0.125rem;
+  margin-top: -0.2rem;
 }
 
 .emptyState {

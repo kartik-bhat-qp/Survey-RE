@@ -5,6 +5,7 @@ import { SurveyApprovalDashboard } from '@/components/surveys/SurveyApprovalDash
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import { getSurveyEditorTitle } from '@/data/get-survey-by-id';
 import { useSurveyById } from '@/hooks/useSurveyById';
+import styles from './SurveyApprovalsModal.module.css';
 
 interface SurveyApprovalsModalProps {
   open: boolean;
@@ -27,7 +28,7 @@ export function SurveyApprovalsModal({ open, onOpenChange, surveyId }: SurveyApp
     return null;
   }
 
-  const { WuModal, WuModalHeader, WuModalContent, WuModalClose } = wick;
+  const { WuModal, WuModalHeader, WuModalContent } = wick;
 
   return (
     <WuModal
@@ -35,18 +36,14 @@ export function SurveyApprovalsModal({ open, onOpenChange, surveyId }: SurveyApp
       onOpenChange={handleModalOpenChange}
       variant="action"
       size="lg"
-      style={{ maxWidth: '720px', maxHeight: '85vh' }}
+      className={styles.modal}
     >
-      <WuModalHeader style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontWeight: 600, fontSize: '1.125rem' }}>Approvals</span>
-        <WuModalClose variant="secondary" style={{ minWidth: 'auto', padding: '4px 8px' }}>
-          ✕
-        </WuModalClose>
-      </WuModalHeader>
-      <WuModalContent style={{ overflow: 'auto', maxHeight: 'calc(85vh - 60px)', padding: 0 }}>
+      <WuModalHeader className={styles.header}>Approvals</WuModalHeader>
+      <WuModalContent className={styles.content}>
         <SurveyApprovalDashboard
           surveyId={surveyId}
           surveyName={getSurveyEditorTitle(survey)}
+          compact
         />
       </WuModalContent>
     </WuModal>

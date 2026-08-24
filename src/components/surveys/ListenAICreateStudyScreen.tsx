@@ -59,7 +59,6 @@ export function ListenAICreateStudyScreen({ study }: ListenAICreateStudyScreenPr
       <ListenAIConversationScreen
         study={generated}
         selectedAnswerLabel="Taco Bell"
-        completeLabel="Back to study"
         onComplete={() => setPreviewingConversation(false)}
       />
     );

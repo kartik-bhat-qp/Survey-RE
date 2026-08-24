@@ -321,18 +321,11 @@ export function SurveyEditorPhaseTabs() {
                       className={styles.toolsMenuItem}
                       onSelect={() => setApprovalsModalOpen(true)}
                     >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className={styles.toolsMenuItemWithBadge}>
                         Approvals
-                        <span style={{
-                          background: '#e8f4fd',
-                          border: '1px solid #b6daf8',
-                          borderRadius: '999px',
-                          color: '#1b87e6',
-                          fontSize: '0.5625rem',
-                          fontWeight: 600,
-                          lineHeight: 1,
-                          padding: '2px 6px',
-                        }}>New</span>
+                        <span className={styles.newBadge} aria-label="New feature">
+                          New
+                        </span>
                       </span>
                     </WuMenuItem>
                   ) : null}

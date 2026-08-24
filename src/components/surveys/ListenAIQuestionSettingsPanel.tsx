@@ -4,7 +4,6 @@ import dynamic from 'next/dynamic';
 import type { ListenAiQuestionConfig } from '@/data/mock-listenai-question';
 import { normalizeListenAiMaxFollowUps } from '@/data/mock-listenai-question';
 import {
-  LISTENAI_INTERVIEW_TYPE_OPTIONS,
   LISTENAI_MAX_FOLLOW_UP_LIMIT,
   LISTENAI_TONE_OPTIONS,
   type ListenAiStudy,
@@ -49,6 +48,8 @@ export function ListenAIQuestionSettingsPanel({
     LISTENAI_TONE_OPTIONS.find((item) => item.value === study.tone) ??
     LISTENAI_TONE_OPTIONS[4] ??
     null;
+  const objectivesText = study.objectives.join('\n');
+  const objectivesMissing = objectivesText.trim().length === 0;
 
   function patchMaxFollowUps(maxFollowUps: number): void {
     const next = normalizeListenAiMaxFollowUps(maxFollowUps);
@@ -74,10 +75,30 @@ export function ListenAIQuestionSettingsPanel({
   }
 
   return (
-    <aside className={`${panelStyles.panel} ${styles.panel}`} aria-label="ListenAI settings">
+    <aside className={`${panelStyles.panel} ${styles.panel}`} aria-label="Conversation settings">
       <header className={styles.header}>
         <div className={styles.headerStart}>
-          <h3 className={styles.headerTitle}>ListenAI</h3>
+          <div className={styles.headerCopy}>
+            <h3 className={styles.headerTitle}>
+              Conversation
+              <span
+                className={`wc-ai ${styles.aiMark}`}
+                title="This question uses QuestionPro AI"
+                aria-label="This question uses QuestionPro AI"
+              />
+            </h3>
+            <p className={styles.headerTagline}>
+              Powered by{' '}
+              <a
+                className={styles.headerTaglineLink}
+                href="https://staging.listenai.questionpro.com/ui/interviews/create/ai"
+                target="_blank"
+                rel="noreferrer"
+              >
+                QuestionProAI Interviews
+              </a>
+            </p>
+          </div>
         </div>
         <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Close">
           <span className="wm-close" aria-hidden />
@@ -85,31 +106,6 @@ export function ListenAIQuestionSettingsPanel({
       </header>
 
       <div className={styles.body}>
-        <div className={panelStyles.field}>
-          <span className={panelStyles.fieldLabel}>Interview type</span>
-          <div className={styles.typeList}>
-            {LISTENAI_INTERVIEW_TYPE_OPTIONS.map((option) => {
-              const active = study.interviewType === option.value;
-              return (
-                <label key={option.value} className={styles.typeItem}>
-                  <input
-                    type="radio"
-                    name="listenai-interview-type"
-                    checked={active}
-                    onChange={() =>
-                      onChange(patchStudy(config, { ...study, interviewType: 'conversation' }))
-                    }
-                  />
-                  <span>
-                    <span className={styles.typeLabel}>{option.label}</span>
-                    <span className={styles.typeDescription}>{option.description}</span>
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </div>
-
         <div className={styles.twoColumnRow}>
           <div className={panelStyles.field}>
             <span className={panelStyles.fieldLabel}>Follow Ups</span>
@@ -163,32 +159,22 @@ export function ListenAIQuestionSettingsPanel({
         </div>
 
         <div className={panelStyles.field}>
-          <span className={panelStyles.fieldLabel}>Key learning objectives</span>
+          <span className={panelStyles.fieldLabel}>
+            Key learning objectives <span className={styles.requiredMark}>*</span>
+          </span>
           <textarea
-            className={styles.textarea}
+            className={`${styles.textarea} ${objectivesMissing ? styles.textareaRequired : ''}`}
             rows={4}
             placeholder="e.g. understand why respondents prefer a brand and what would change a return visit"
-            value={study.objectives.join('\n')}
+            value={objectivesText}
             onChange={(event) => patchLongText('objectives', event.target.value)}
+            aria-required="true"
+            aria-invalid={objectivesMissing}
+            required
           />
-        </div>
-
-        <div className={panelStyles.field}>
-          <span className={panelStyles.fieldLabel}>Target audience (optional)</span>
-          <textarea
-            className={styles.textarea}
-            rows={3}
-            placeholder="e.g. frequent fast-food customers, parents of young children"
-            value={study.audienceNotes}
-            onChange={(event) =>
-              onChange(
-                patchStudy(config, {
-                  ...study,
-                  audienceNotes: event.target.value,
-                })
-              )
-            }
-          />
+          {objectivesMissing ? (
+            <p className={styles.requiredHelper}>Add at least one key learning objective.</p>
+          ) : null}
         </div>
 
         <div className={panelStyles.field}>
@@ -202,12 +188,12 @@ export function ListenAIQuestionSettingsPanel({
           />
         </div>
 
-        <div className={styles.constraintNote} role="note" aria-label="ListenAI placement rules">
+        <div className={styles.constraintNote} role="note" aria-label="Conversation placement rules">
           <span className={styles.constraintIcon} aria-hidden>
             i
           </span>
           <p className={styles.constraintText}>
-            ListenAI uses the same placement rules as Platform Connect: it cannot be the first
+            Conversation uses the same placement rules as Platform Connect: it cannot be the first
             question on a page, cannot be the last question in the survey, and is not compatible
             with question or block randomization or Respondent Anonymity Assurance.
           </p>

@@ -213,10 +213,7 @@ function getListenAiOpeningQuestion(study: ListenAiStudy): string {
 }
 
 export function getListenAiOpeningMessages(study: ListenAiStudy): string[] {
-  const intro = study.introduction.trim() || LISTENAI_CONVERSATION_GREETING;
-  const firstQuestion = getListenAiOpeningQuestion(study);
-  if (intro === firstQuestion) return [intro];
-  return [intro, firstQuestion];
+  return [getListenAiOpeningQuestion(study)];
 }
 
 export function getResolvedListenAiOpeningMessages(

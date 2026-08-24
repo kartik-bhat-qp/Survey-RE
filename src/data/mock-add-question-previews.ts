@@ -44,6 +44,7 @@ export type QuestionPreviewVariant =
   | 'signature'
   | 'video-ai'
   | 'community-recruitment'
+  | 'conversation'
   | 'placeholder';
 
 export interface TextSliderPreviewData {
@@ -157,6 +158,14 @@ export interface VideoAiPreviewData {
 
 export interface CommunityRecruitmentPreviewData {
   fields: string[];
+}
+
+export interface ConversationPreviewData {
+  sourceCode: string;
+  sourceAnswer: string;
+  aiQuestion: string;
+  responsePlaceholder: string;
+  footerNote: string;
 }
 
 export interface NpsPreviewData {
@@ -390,6 +399,8 @@ export interface QuestionTypePreviewContent {
   videoAi?: VideoAiPreviewData;
   /** Community recruitment name and email fields. */
   communityRecruitment?: CommunityRecruitmentPreviewData;
+  /** Conversation AI follow-up chat preview. */
+  conversation?: ConversationPreviewData;
   /** Secondary line under question (e.g. rating scale) */
   hint?: string;
   /** Leading icon inside a text input preview (e.g. email). */
@@ -1011,10 +1022,18 @@ const PREVIEWS: Partial<Record<string, QuestionTypePreviewContent>> = {
     question: 'Advanced scripted logic and validation.',
   },
   listenai: {
-    variant: 'placeholder',
-    headerIcon: 'wc-ai',
-    headerLabel: 'ListenAI',
-    question: 'Launch a ListenAI study, then return the respondent to the survey.',
+    variant: 'conversation',
+    headerIcon: 'wm-chat',
+    headerLabel: 'Conversation',
+    question: 'Dig deeper after a survey answer with an AI follow-up interview.',
+    conversation: {
+      sourceCode: 'Q17',
+      sourceAnswer: 'Taco Bell',
+      aiQuestion:
+        "You selected Taco Bell. What made you choose that answer for 'Which fast-food chain you like the most'?",
+      responsePlaceholder: 'Type your response',
+      footerNote: 'Respondents return to the survey after the follow-up questions.',
+    },
   },
   deepdive: {
     variant: 'placeholder',

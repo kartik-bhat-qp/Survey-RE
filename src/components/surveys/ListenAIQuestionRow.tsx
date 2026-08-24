@@ -14,7 +14,6 @@ import {
   type ListenAiQuestionConfig,
 } from '@/data/mock-listenai-question';
 import type { ListenAiStudy } from '@/data/mock-listenai-studies';
-import { QuestionRichTextField } from '@/components/surveys/QuestionRichTextField';
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
@@ -104,7 +103,6 @@ export function ListenAIQuestionRow({
   onMenuAction,
   onOpenLogic,
   onOpenSettings,
-  onQuestionTextChange,
   onConfigChange,
 }: ListenAIQuestionRowProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -221,16 +219,6 @@ export function ListenAIQuestionRow({
             />
           </div>
 
-          <div className={styles.questionTextWrap}>
-            <QuestionRichTextField
-              value={question.text}
-              onChange={(text) => onQuestionTextChange(sectionId, question.id, text)}
-              ariaLabel="Question text"
-              placeholder="Enter question text"
-              onPointerDown={stopQuestionEvent}
-            />
-          </div>
-
           {hasStudy ? (
             <div
               className={styles.targetField}
@@ -238,12 +226,14 @@ export function ListenAIQuestionRow({
               onClick={(event) => event.stopPropagation()}
             >
               <label className={styles.formRow}>
-                <span className={styles.fieldLabel}>Select Source Question</span>
+                <span className={styles.fieldLabel}>
+                  Select the survey question you want to follow-up on
+                </span>
                 <select
                   className={styles.nativeSelect}
                   value={selectedSourceValue}
                   onChange={(event) => handleSourceQuestionChange(event.target.value)}
-                  aria-label="Select source question"
+                  aria-label="Select the survey question you want to follow-up on"
                 >
                   <option value={UNSET_STUDY_VALUE}>Select a question</option>
                   {sourceQuestions.map((option) => (
@@ -255,8 +245,8 @@ export function ListenAIQuestionRow({
               </label>
 
               <label className={styles.formRow}>
-                <span className={styles.labelRow}>
-                  <span className={styles.fieldLabel}>First ListenAI Question</span>
+                <span className={styles.fieldLabel}>Enter the follow-up question you want to start with</span>
+                <div className={styles.firstQuestionInputWrap}>
                   <button
                     type="button"
                     className={styles.inlineInsertBtn}
@@ -264,20 +254,20 @@ export function ListenAIQuestionRow({
                   >
                     Insert Response
                   </button>
-                </span>
-                <textarea
-                  ref={firstQuestionRef}
-                  className={styles.firstQuestionInput}
-                  rows={3}
-                  value={getListenAiFirstQuestion(config.study)}
-                  onChange={(event) =>
-                    onConfigChange({
-                      ...config,
-                      study: updateListenAiFirstQuestion(config.study, event.target.value),
-                    })
-                  }
-                  placeholder="Ask the first ListenAI question"
-                />
+                  <textarea
+                    ref={firstQuestionRef}
+                    className={styles.firstQuestionInput}
+                    rows={3}
+                    value={getListenAiFirstQuestion(config.study)}
+                    onChange={(event) =>
+                      onConfigChange({
+                        ...config,
+                        study: updateListenAiFirstQuestion(config.study, event.target.value),
+                      })
+                    }
+                    placeholder="Enter the follow-up question you want to start with"
+                  />
+                </div>
                 {activeSuggestion ? (
                   <p className={styles.firstQuestionHelper} aria-live="polite">
                     <span className={styles.firstQuestionHelperPrefix}>
@@ -305,7 +295,7 @@ export function ListenAIQuestionRow({
               onPointerDown={stopQuestionEvent}
               onClick={(event) => event.stopPropagation()}
             >
-              <p className={styles.emptyTitle}>Connect a ListenAI study</p>
+              <p className={styles.emptyTitle}>Connect a Conversation study</p>
               <p className={styles.emptyCopy}>
                 Respondents will be sent to this study for an AI interview, then return to the next
                 survey question.

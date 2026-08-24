@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { ListenAiPreviewPayload } from '@/data/mock-listenai-question';
-import { LISTENAI_INTERVIEW_TYPE_OPTIONS } from '@/data/mock-listenai-studies';
 import { ListenAIConversationScreen } from '@/components/surveys/ListenAIConversationScreen';
 import { ListenAIHandoffScreen } from '@/components/surveys/ListenAIHandoffScreen';
 import { SurveyPreviewRespondentFooter } from '@/components/surveys/SurveyPreviewRespondentFooter';
@@ -17,12 +16,6 @@ interface ListenAiRespondentFlowProps {
   surveyTitle: string;
   onComplete: () => void;
   onClose?: () => void;
-}
-
-function interviewTypeLabel(value: string): string {
-  return (
-    LISTENAI_INTERVIEW_TYPE_OPTIONS.find((option) => option.value === value)?.label ?? 'Conversation'
-  );
 }
 
 export function findListenAiOnPage(
@@ -49,26 +42,53 @@ export function ListenAiRespondentFlow({
   payload,
   selectedAnswerLabel,
   surveyId,
-  surveyTitle,
   onComplete,
   onClose,
 }: ListenAiRespondentFlowProps) {
   const [phase, setPhase] = useState<'handoff' | 'interview'>('handoff');
 
+  const handleContinue = useCallback(() => {
+    if (!payload) {
+      onComplete();
+      return;
+    }
+    setPhase('interview');
+  }, [onComplete, payload]);
+
   if (payload && phase === 'interview') {
     return (
-      <ListenAIConversationScreen
-        study={payload.study}
-        selectedAnswerLabel={selectedAnswerLabel}
-        onComplete={onComplete}
-      />
+      <div className={shellStyles.shell}>
+        <header className={shellStyles.previewHeader}>
+          <span className={shellStyles.previewHeaderTitle}>Conversation</span>
+          <button
+            type="button"
+            className={shellStyles.previewCloseBtn}
+            aria-label="Close preview"
+            onClick={onClose}
+          >
+            <span className="wm-logout" aria-hidden />
+          </button>
+        </header>
+
+        <div className={shellStyles.previewCanvas}>
+          <div className={shellStyles.questionContainer}>
+            <ListenAIConversationScreen
+              study={payload.study}
+              selectedAnswerLabel={selectedAnswerLabel}
+              onComplete={onComplete}
+            />
+          </div>
+        </div>
+
+        <SurveyPreviewRespondentFooter surveyId={surveyId} />
+      </div>
     );
   }
 
   return (
     <div className={shellStyles.shell}>
       <header className={shellStyles.previewHeader}>
-        <span className={shellStyles.previewHeaderTitle}>{surveyTitle}</span>
+        <span className={shellStyles.previewHeaderTitle}>Conversation</span>
         <button
           type="button"
           className={shellStyles.previewCloseBtn}
@@ -81,18 +101,7 @@ export function ListenAiRespondentFlow({
 
       <div className={shellStyles.previewCanvas}>
         <div className={shellStyles.questionContainer}>
-          <ListenAIHandoffScreen
-            studyTitle={payload?.study.title ?? 'ListenAI'}
-            interviewTypeLabel={interviewTypeLabel(payload?.study.interviewType ?? 'conversation')}
-            connected={payload != null}
-            onContinue={() => {
-              if (!payload) {
-                onComplete();
-                return;
-              }
-              setPhase('interview');
-            }}
-          />
+          <ListenAIHandoffScreen connected={payload != null} onContinue={handleContinue} />
         </div>
       </div>
 

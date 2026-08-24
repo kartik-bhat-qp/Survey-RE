@@ -106,6 +106,7 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
       { id: 'captcha', label: 'Captcha', icon: 'wm-verified-user' },
       { id: 'calendar', label: 'Calendar', icon: 'wm-calendar-month' },
       { id: 'maps', label: 'Maps', icon: 'wm-map' },
+      { id: 'timer', label: 'Timer', icon: 'wm-hourglass-empty' },
     ],
   },
   {
@@ -210,17 +211,15 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
   },
   {
     id: 'misc-advanced',
-    title: 'Misc',
+    title: 'Integrations',
     tier: 'advanced',
     types: [
       {
         id: 'platform-connect',
         label: 'Platform Connect',
         icon: 'wm-lightbulb',
-        highlight: true,
       },
-      { id: 'listenai', label: 'ListenAI', icon: 'wc-ai', highlight: true },
-      { id: 'timer', label: 'Timer', icon: 'wm-hourglass-empty' },
+      { id: 'listenai', label: 'Conversation', icon: 'wm-chat' },
       { id: 'community-recruitment', label: 'Community Recruitment', icon: 'wm-groups' },
     ],
   },

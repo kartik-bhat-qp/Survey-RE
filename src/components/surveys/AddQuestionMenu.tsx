@@ -57,6 +57,7 @@ import { UploadFileQuestionPreview } from '@/components/surveys/UploadFileQuesti
 import { SignatureQuestionPreview } from '@/components/surveys/SignatureQuestionPreview';
 import { VideoAiQuestionPreview } from '@/components/surveys/VideoAiQuestionPreview';
 import { CommunityRecruitmentQuestionPreview } from '@/components/surveys/CommunityRecruitmentQuestionPreview';
+import { ConversationQuestionPreview } from '@/components/surveys/ConversationQuestionPreview';
 import { ReferenceDataQuestionPreview } from '@/components/surveys/ReferenceDataQuestionPreview';
 import { VanWestendorpQuestionPreview } from '@/components/surveys/VanWestendorpQuestionPreview';
 import { VerifiedSignatureQuestionPreview } from '@/components/surveys/VerifiedSignatureQuestionPreview';
@@ -150,6 +151,7 @@ function QuestionTypeHoverPreview({
   const isSignaturePreview = content.variant === 'signature';
   const isVideoAiPreview = content.variant === 'video-ai';
   const isCommunityRecruitmentPreview = content.variant === 'community-recruitment';
+  const isConversationPreview = content.variant === 'conversation';
 
   const previewCardClass = isMatrixPreview
     ? `${styles.previewCard} ${styles.previewCardWide} ${styles.previewCardMatrix}`
@@ -169,7 +171,9 @@ function QuestionTypeHoverPreview({
                   ? `${styles.previewCard} ${styles.previewCardVideoAi}`
                   : isCommunityRecruitmentPreview
                     ? `${styles.previewCard} ${styles.previewCardCommunityRecruitment}`
-                    : styles.previewCard;
+                    : isConversationPreview
+                      ? `${styles.previewCard} ${styles.previewCardConversation}`
+                      : styles.previewCard;
 
   return (
     <div className={previewCardClass}>
@@ -192,7 +196,12 @@ function QuestionTypeHoverPreview({
         ) : (
           <>
             <span className={`${content.headerIcon} ${styles.previewHeaderIcon}`} aria-hidden />
-            <span>{content.headerLabel}</span>
+            <span className={styles.previewHeaderLabel}>
+              {content.headerLabel}
+              {typeId === 'listenai' ? (
+                <span className={`wc-ai ${styles.previewAiMark}`} aria-hidden />
+              ) : null}
+            </span>
           </>
         )}
       </div>
@@ -438,6 +447,10 @@ function QuestionTypeHoverPreview({
           <CommunityRecruitmentQuestionPreview data={content.communityRecruitment} />
         ) : null}
 
+        {content.variant === 'conversation' && content.conversation ? (
+          <ConversationQuestionPreview data={content.conversation} />
+        ) : null}
+
         {content.variant === 'placeholder' && content.hint ? (
           <p className={styles.previewHint}>{content.hint}</p>
         ) : null}
@@ -488,7 +501,16 @@ function CategoryBlock({
                 }`}
                 aria-hidden
               />
-              <span className={styles.typeLabel}>{type.label}</span>
+              <span className={styles.typeLabel}>
+                {type.label}
+                {type.id === 'listenai' ? (
+                  <span
+                    className={`wc-ai ${styles.typeAiMark}`}
+                    title="AI feature"
+                    aria-label="AI feature"
+                  />
+                ) : null}
+              </span>
               {tier === 'advanced' && showLicenseDiamonds ? (
                 <BiDiamondIcon
                   tooltip={getAddQuestionAdvancedLicenseTooltip(type.id)}
@@ -785,7 +807,7 @@ export function AddQuestionMenu({ onSelect, excludeTypeIds }: AddQuestionMenuPro
                   hoveredType?.id === 'community-recruitment'
                     ? styles.hoverPreviewCommunityRecruitment
                     : ''
-                }`}
+                } ${hoveredType?.id === 'listenai' ? styles.hoverPreviewConversation : ''}`}
                 aria-label="Question type preview"
                 onPointerEnter={clearLeaveTimer}
                 onPointerLeave={schedulePreviewLeave}

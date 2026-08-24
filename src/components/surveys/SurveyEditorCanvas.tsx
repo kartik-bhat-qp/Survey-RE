@@ -2771,7 +2771,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             const listenAiConfig = readListenAiConfig(question);
             if (!isListenAiStudySelected(listenAiConfig)) {
               showToast({
-                message: 'Connect a ListenAI study before previewing',
+                message: 'Connect a Conversation study before previewing',
                 variant: 'info',
               });
               return;
@@ -3970,7 +3970,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         );
         pendingScrollQuestionRef.current = { sectionId, questionId: newId };
         setSelectedQuestionKey(`${sectionId}:${newId}`);
-        showToast({ message: 'ListenAI question added', variant: 'success' });
+        showToast({ message: 'Conversation question added', variant: 'success' });
         return;
       }
 

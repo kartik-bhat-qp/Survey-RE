@@ -39,7 +39,7 @@ export const MOCK_SURVEY_FOLDERS: SurveyFolder[] = [
 export const MOCK_SURVEYS: Survey[] = [
   {
     id: 16,
-    name: 'ListenAI (DeepDive)',
+    name: 'Conversation',
     folderId: 'all',
     createdAt: '2026-08-19T09:00:00Z',
     modifiedAt: '2026-08-19T10:00:00Z',

@@ -1,0 +1,118 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  width: 100%;
+}
+
+.contextCard {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 0.875rem;
+}
+
+.contextLabel {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.contextText {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.contextCode {
+  color: #1b87e6;
+  font-weight: 700;
+  margin-right: 0.375rem;
+}
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.aiRow {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.625rem;
+  max-width: 100%;
+}
+
+.avatar {
+  align-items: center;
+  background: #1b6ef3;
+  border-radius: 0.375rem;
+  color: #fff;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 0.875rem;
+  font-weight: 800;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+}
+
+.bubble {
+  background: #2f6fed;
+  border-bottom-left-radius: 0.25rem;
+  border-radius: 0.875rem;
+  color: #fff;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 100%;
+  padding: 0.75rem 0.875rem;
+}
+
+.composer {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d5dee9;
+  border-radius: 0.75rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.875rem;
+}
+
+.composerPlaceholder {
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+}
+
+.sendBtn {
+  align-items: center;
+  background: #1b6ef3;
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 0.875rem;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.footerNote {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  margin: 0;
+}

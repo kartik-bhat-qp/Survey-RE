@@ -17,12 +17,12 @@ export function isListenAiEnabledSurvey(_surveyId?: number): boolean {
   return true;
 }
 
-export const DEFAULT_LISTENAI_QUESTION_TEXT = 'ListenAI';
+export const DEFAULT_LISTENAI_QUESTION_TEXT = 'Conversation';
 
 export const LISTENAI_PLACE_NOT_FIRST_TOAST =
-  'ListenAI cannot be the first question on a page';
+  'Conversation cannot be the first question on a page';
 export const LISTENAI_PLACE_NOT_LAST_TOAST =
-  'ListenAI cannot be the last question in the survey';
+  'Conversation cannot be the last question in the survey';
 
 export interface ListenAiQuestionConfig {
   studyId: string;
@@ -350,7 +350,7 @@ export function getListenAiInsertError(
   insertIndex: number
 ): string | null {
   if (findListenAiQuestion(sections)) {
-    return 'ListenAI is already configured for this survey';
+    return 'Conversation is already configured for this survey';
   }
 
   const insertGlobalIndex = getInsertGlobalIndex(sections, sectionId, insertIndex);
@@ -371,7 +371,8 @@ export function migrateDeepDiveQuestionToListenAi(question: SurveyQuestion): Sur
   const looksLikeListenAiTitle =
     plainText === 'ListenAI' ||
     plainText === 'ListenAI interview' ||
-    plainText === 'ListenAI Interview';
+    plainText === 'ListenAI Interview' ||
+    plainText === 'Conversation';
 
   if (!isLegacyDeepDive && !isListenAiQuestion(question) && !looksLikeListenAiTitle) {
     return question;
@@ -381,6 +382,7 @@ export function migrateDeepDiveQuestionToListenAi(question: SurveyQuestion): Sur
   const nextText =
     plainText === 'DeepDive' ||
     plainText === 'DeepDive Follow Ups' ||
+    plainText === 'ListenAI' ||
     plainText === 'ListenAI interview' ||
     plainText === 'ListenAI Interview'
       ? DEFAULT_LISTENAI_QUESTION_TEXT

@@ -1,17 +1,27 @@
 .screen {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
   background: #ffffff;
   color: #0f172a;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  height: 100%;
+  min-height: 70dvh;
 }
 
 .header {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 16px 20px 10px;
   border-bottom: 1px solid #eef2f7;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px 20px 14px;
+}
+
+.headerTop {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
 }
 
 .logo {
@@ -28,23 +38,41 @@
 }
 
 .headerCopy {
-  min-width: 0;
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
 }
 
 .headerTitle {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.35;
   color: #0f172a;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.headerSubtitle {
+  color: #64748b;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.progressRow {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
 }
 
 .progressTrack {
-  margin-top: 10px;
-  height: 4px;
-  border-radius: 99px;
   background: #dbe7fb;
+  border-radius: 99px;
+  flex: 1;
+  height: 6px;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -53,6 +81,15 @@
   background: #163a7a;
   border-radius: 99px;
   transition: width 0.35s ease;
+}
+
+.progressMeta {
+  color: #64748b;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
 }
 
 .thread {
@@ -186,22 +223,13 @@
   cursor: default;
 }
 
-.returnBtn {
-  appearance: none;
-  width: 100%;
-  border: none;
-  border-radius: 10px;
-  background: #163a7a;
-  color: #fff;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  padding: 14px 16px;
-}
-
-.returnBtn:hover {
-  background: #0f2d61;
+.returningNote {
+  margin: 0;
+  padding: 14px 8px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .footer {
@@ -213,6 +241,13 @@
   font-size: 12px;
 }
 
-.brand {
+.brandLink {
+  color: #64748b;
   font-weight: 600;
+  text-decoration: none;
+}
+
+.brandLink:hover {
+  color: #1b87e6;
+  text-decoration: underline;
 }

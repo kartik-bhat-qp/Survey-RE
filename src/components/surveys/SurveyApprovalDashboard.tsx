@@ -34,6 +34,8 @@ const WuButton = dynamic(
 interface SurveyApprovalDashboardProps {
   surveyId: number;
   surveyName: string;
+  /** Tighter layout when embedded in the Approvals modal. */
+  compact?: boolean;
 }
 
 function statusClass(status: SurveyApprovalState['status']): string {
@@ -58,6 +60,13 @@ function activityLabel(type: SurveyApprovalActivityType): string {
   }
 }
 
+function activityDotClass(type: SurveyApprovalActivityType): string {
+  if (type === 'submitted') return styles.activityDotSubmitted;
+  if (type === 'approved') return styles.activityDotApproved;
+  if (type === 'rejected' || type === 'changes-requested') return styles.activityDotRejected;
+  return styles.activityDotIdle;
+}
+
 function canSendForReview(state: SurveyApprovalState): boolean {
   return (
     state.status === 'not-submitted' ||
@@ -67,7 +76,11 @@ function canSendForReview(state: SurveyApprovalState): boolean {
   );
 }
 
-export function SurveyApprovalDashboard({ surveyId, surveyName }: SurveyApprovalDashboardProps) {
+export function SurveyApprovalDashboard({
+  surveyId,
+  surveyName,
+  compact = false,
+}: SurveyApprovalDashboardProps) {
   const { showToast } = useWuShowToast();
   const [state, setState] = useState<SurveyApprovalState>(DEFAULT_SURVEY_APPROVAL_STATE);
   const [sendOpen, setSendOpen] = useState(false);
@@ -116,11 +129,8 @@ export function SurveyApprovalDashboard({ surveyId, surveyName }: SurveyApproval
       requesterName: SURVEY_APPROVAL_OWNER_NAME,
       ownerNotes: notes,
     });
-    const inboxWindow = openReviewerInbox(reviewer.email);
     showToast({
-      message: inboxWindow
-        ? `Review request emailed to ${reviewer.email}. Their inbox opened in a new tab.`
-        : `Review request emailed to ${reviewer.email}. Open ${getReviewerInboxPagePath(reviewer.email)} if the tab was blocked.`,
+      message: `Review request emailed to ${reviewer.email}`,
       variant: 'success',
     });
   }
@@ -151,8 +161,8 @@ export function SurveyApprovalDashboard({ surveyId, surveyName }: SurveyApproval
       state.status === 'approved');
 
   return (
-    <div className={styles.workspace}>
-      <div className={styles.panel}>
+    <div className={`${styles.workspace} ${compact ? styles.workspaceCompact : ''}`}>
+      <div className={`${styles.panel} ${compact ? styles.panelCompact : ''}`}>
         <header className={styles.header}>
           <h1 className={styles.title}>Approval</h1>
           <p className={styles.subtitle}>
@@ -164,12 +174,14 @@ export function SurveyApprovalDashboard({ surveyId, surveyName }: SurveyApproval
         <div className={styles.tabBody}>
           <section className={styles.statusCard} aria-label="Review status">
             <div className={styles.statusHeader}>
-              <span className={`${styles.statusBadge} ${statusClass(state.status)}`}>
-                {getSurveyApprovalStatusLabel(state.status)}
-              </span>
-              {canSendForReview(state) ? (
-                <WuButton onClick={() => setSendOpen(true)}>Send for review</WuButton>
-              ) : null}
+              <div className={styles.statusHeaderStart}>
+                <span className={`${styles.statusBadge} ${statusClass(state.status)}`}>
+                  {getSurveyApprovalStatusLabel(state.status)}
+                </span>
+                {canSendForReview(state) ? (
+                  <WuButton onClick={() => setSendOpen(true)}>Send for review</WuButton>
+                ) : null}
+              </div>
               {state.status === 'pending' ? (
                 <div className={styles.statusActions}>
                   <WuButton
@@ -252,11 +264,17 @@ export function SurveyApprovalDashboard({ surveyId, surveyName }: SurveyApproval
               <ol className={styles.activityList}>
                 {state.activity.map((item) => (
                   <li key={item.id} className={styles.activityItem}>
-                    <span className={styles.activityType}>{activityLabel(item.type)}</span>
-                    <span className={styles.activityMeta}>
-                      {item.actorName} · {formatSmartDate(item.createdAt)}
-                    </span>
-                    <span className={styles.activityMessage}>{item.message}</span>
+                    <span
+                      className={`${styles.activityDot} ${activityDotClass(item.type)}`}
+                      aria-hidden
+                    />
+                    <div className={styles.activityBody}>
+                      <span className={styles.activityType}>{activityLabel(item.type)}</span>
+                      <span className={styles.activityMeta}>
+                        {item.actorName} · {formatSmartDate(item.createdAt)}
+                      </span>
+                      <span className={styles.activityMessage}>{item.message}</span>
+                    </div>
                   </li>
                 ))}
               </ol>
