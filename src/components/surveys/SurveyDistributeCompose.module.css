@@ -281,15 +281,38 @@
   flex-direction: column;
 }
 
+.blobWarning {
+  background: #fef2f2;
+  border-bottom: 1px solid #fecaca;
+  color: #991b1b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0.625rem 1rem;
+}
+
 .bodyPreview {
-  border-bottom: 1px solid #e5e9ef;
-  min-height: 8rem;
+  min-height: 10rem;
+  padding: 1rem;
 }
 
 .bodyPreviewFrame {
   display: block;
-  min-height: 8rem;
+  min-height: 10rem;
   width: 100%;
+}
+
+.bodyFieldHidden {
+  height: 0;
+  margin: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  resize: none;
+  width: 1px;
+  clip: rect(0 0 0 0);
 }
 
 .editorLoader {
@@ -381,6 +404,10 @@
   gap: 1rem;
 }
 
+.sendBtnWrap {
+  display: inline-flex;
+}
+
 .sendBtn {
   background: #1b87e6;
   border: none;
@@ -394,8 +421,13 @@
   padding: 0.5rem 1.25rem;
 }
 
-.sendBtn:hover {
+.sendBtn:hover:not(:disabled) {
   background: #1570c2;
+}
+
+.sendBtn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
 }
 
 .scheduleBtn {
@@ -408,6 +440,15 @@
   font-size: 0.875rem;
   padding: 0;
   text-decoration: none;
+}
+
+.scheduleBtn:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.scheduleBtn:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
 }
 
 .canSpamBadge {

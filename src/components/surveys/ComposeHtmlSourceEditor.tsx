@@ -5,7 +5,10 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import { ComposeHtmlPreviewFrame } from '@/components/surveys/ComposeHtmlPreviewFrame';
 import {
+  COMPOSE_BLOB_UNSUPPORTED_MESSAGE,
   COMPOSE_HTML_INSERT_SNIPPETS,
+  composeHtmlContainsBlobUrl,
+  composeHtmlContainsUnsupportedBlob,
   composePlainTextToHtml,
   insertTextAtComposeHtmlCursor,
 } from '@/data/mock-survey-distribute';
@@ -34,15 +37,41 @@ export function ComposeHtmlSourceEditor({
   const [draftHtml, setDraftHtml] = useState('');
   const [selectionRange, setSelectionRange] = useState({ start: 0, end: 0 });
   const wasOpenRef = useRef(false);
+  const hasNotifiedBlobRef = useRef(false);
+
+  const containsBlob = composeHtmlContainsUnsupportedBlob(draftHtml);
+
+  function notifyBlobUnsupported(): void {
+    showToast({ message: COMPOSE_BLOB_UNSUPPORTED_MESSAGE, variant: 'error' });
+  }
+
+  function handleDraftHtmlChange(nextHtml: string): void {
+    setDraftHtml(nextHtml);
+
+    if (!composeHtmlContainsUnsupportedBlob(nextHtml)) {
+      hasNotifiedBlobRef.current = false;
+      return;
+    }
+
+    if (hasNotifiedBlobRef.current) return;
+    hasNotifiedBlobRef.current = true;
+    notifyBlobUnsupported();
+  }
 
   useEffect(() => {
     if (open && !wasOpenRef.current) {
-      setDraftHtml(composePlainTextToHtml(body));
+      const nextHtml = composePlainTextToHtml(body);
+      setDraftHtml(nextHtml);
       setActiveTab('code');
       setSelectionRange({ start: 0, end: 0 });
+      hasNotifiedBlobRef.current = false;
+      if (composeHtmlContainsUnsupportedBlob(nextHtml)) {
+        hasNotifiedBlobRef.current = true;
+        showToast({ message: COMPOSE_BLOB_UNSUPPORTED_MESSAGE, variant: 'error' });
+      }
     }
     wasOpenRef.current = open;
-  }, [open, body]);
+  }, [open, body, showToast]);
 
   function updateSelection(): void {
     const field = codeFieldRef.current;
@@ -64,7 +93,7 @@ export function ComposeHtmlSourceEditor({
       end
     );
 
-    setDraftHtml(nextHtml);
+    handleDraftHtmlChange(nextHtml);
     setSelectionRange({ start: nextCursor, end: nextCursor });
     showToast({ message: `Inserted ${label}`, variant: 'info' });
 
@@ -103,9 +132,22 @@ export function ComposeHtmlSourceEditor({
   }
 
   function handleApply(): void {
+    if (composeHtmlContainsBlobUrl(draftHtml)) {
+      hasNotifiedBlobRef.current = true;
+      notifyBlobUnsupported();
+      return;
+    }
+
+    if (composeHtmlContainsUnsupportedBlob(draftHtml)) {
+      hasNotifiedBlobRef.current = true;
+      notifyBlobUnsupported();
+    }
+
     onApply(draftHtml.trim());
     onOpenChange(false);
-    showToast({ message: 'HTML source applied', variant: 'success' });
+    if (!composeHtmlContainsUnsupportedBlob(draftHtml)) {
+      showToast({ message: 'HTML source applied', variant: 'success' });
+    }
   }
 
   if (!open || !wick) {
@@ -157,7 +199,7 @@ export function ComposeHtmlSourceEditor({
             className={styles.insertBtn}
             onClick={() => fileInputRef.current?.click()}
           >
-            Image / blob
+            Image
           </button>
           <input
             ref={fileInputRef}
@@ -174,7 +216,14 @@ export function ComposeHtmlSourceEditor({
               ref={codeFieldRef}
               className={styles.codeField}
               value={draftHtml}
-              onChange={(event) => setDraftHtml(event.target.value)}
+              onChange={(event) => handleDraftHtmlChange(event.target.value)}
+              onPaste={(event) => {
+                const pasted = event.clipboardData.getData('text');
+                if (composeHtmlContainsUnsupportedBlob(pasted)) {
+                  hasNotifiedBlobRef.current = true;
+                  notifyBlobUnsupported();
+                }
+              }}
               onSelect={updateSelection}
               onKeyUp={updateSelection}
               onMouseUp={updateSelection}
@@ -196,9 +245,15 @@ export function ComposeHtmlSourceEditor({
           )}
         </div>
 
+        {containsBlob ? (
+          <p className={styles.blobWarning} role="alert">
+            {COMPOSE_BLOB_UNSUPPORTED_MESSAGE}
+          </p>
+        ) : null}
+
         <p className={styles.hint}>
-          Edit raw HTML, insert tags, or upload images as base64 data URLs. Tiny images are
-          enlarged in Preview so they are easier to verify.
+          Edit raw HTML here. Applied source is rendered in the email body — open Source again to
+          see the markup.
         </p>
       </WuModalContent>
       <WuModalFooter>

@@ -14,8 +14,10 @@ import { ComposeHtmlPreviewFrame } from '@/components/surveys/ComposeHtmlPreview
 import { ComposeRecipientsField } from '@/components/surveys/ComposeRecipientsField';
 import { NavLink } from '@/components/surveys/NavLink';
 import { SurveyAgentSidebar } from '@/components/surveys/SurveyAgentSidebar';
+import { SurveyDistributeTemplates } from '@/components/surveys/SurveyDistributeTemplates';
 import { getDistributeChannelPath } from '@/components/surveys/survey-distribute-navigation';
 import {
+  COMPOSE_BLOB_UNSUPPORTED_MESSAGE,
   DEFAULT_EMAIL_COMPOSE,
   EMAIL_SIDEBAR_ITEMS,
   MOCK_DISTRIBUTE_CREDITS,
@@ -25,6 +27,7 @@ import {
   MOCK_REPLY_TO_OPTIONS,
   SMS_SEGMENT_CHAR_LIMIT,
   composeBodyHasRenderableHtml,
+  composeHtmlContainsUnsupportedBlob,
   getSmsSegmentUsage,
   readComposeBodySelection,
   type ComposeWritingSelection,
@@ -96,6 +99,7 @@ export function SurveyEmailComposePanel({
   const [isWritingWithAi, setIsWritingWithAi] = useState(false);
   const [researchAgentOpen, setResearchAgentOpen] = useState(false);
   const [bodySelection, setBodySelection] = useState<ComposeWritingSelection | null>(null);
+  const hasNotifiedBlobRef = useRef(false);
 
   const sidebarPlaceholder = useMemo(() => {
     const item = EMAIL_SIDEBAR_ITEMS.find((entry) => entry.id === activeSidebar);
@@ -104,8 +108,34 @@ export function SurveyEmailComposePanel({
 
   const smsSegmentUsage = useMemo(() => getSmsSegmentUsage(smsBody), [smsBody]);
   const bodyIsHtml = useMemo(() => composeBodyHasRenderableHtml(body), [body]);
+  const bodyContainsBlob = useMemo(() => composeHtmlContainsUnsupportedBlob(body), [body]);
+
+  function notifyIfBlobUnsupported(content: string): boolean {
+    if (!composeHtmlContainsUnsupportedBlob(content)) {
+      hasNotifiedBlobRef.current = false;
+      return false;
+    }
+
+    if (!hasNotifiedBlobRef.current) {
+      hasNotifiedBlobRef.current = true;
+      showToast({ message: COMPOSE_BLOB_UNSUPPORTED_MESSAGE, variant: 'error' });
+    }
+
+    return true;
+  }
+
+  function handleBodyChange(nextBody: string): void {
+    setBody(nextBody);
+    notifyIfBlobUnsupported(nextBody);
+  }
 
   function handleSend(): void {
+    if (bodyContainsBlob) {
+      hasNotifiedBlobRef.current = true;
+      showToast({ message: COMPOSE_BLOB_UNSUPPORTED_MESSAGE, variant: 'error' });
+      return;
+    }
+
     if (!selectedList && recipientEmails.length === 0) {
       showToast({ message: 'Add at least one list or email address', variant: 'error' });
       return;
@@ -119,6 +149,16 @@ export function SurveyEmailComposePanel({
       .join(' and ');
 
     showToast({ message: `Invitation sent to ${recipientSummary}`, variant: 'success' });
+  }
+
+  function handleSchedule(): void {
+    if (bodyContainsBlob) {
+      hasNotifiedBlobRef.current = true;
+      showToast({ message: COMPOSE_BLOB_UNSUPPORTED_MESSAGE, variant: 'error' });
+      return;
+    }
+
+    showToast({ message: 'Schedule invitation', variant: 'info' });
   }
 
   function handleToolbarAction(label: string): void {
@@ -274,30 +314,41 @@ export function SurveyEmailComposePanel({
                   </div>
 
                   <div className={styles.editorSection}>
-                    {bodyIsHtml ? (
-                      <div className={styles.bodyPreview} aria-label="Email body preview">
-                        <ComposeHtmlPreviewFrame
-                          html={body}
-                          title="Email body preview"
-                          className={styles.bodyPreviewFrame}
-                        />
-                      </div>
+                    {bodyContainsBlob ? (
+                      <p className={styles.blobWarning} role="alert">
+                        {COMPOSE_BLOB_UNSUPPORTED_MESSAGE}
+                      </p>
                     ) : null}
                     <WuLoaderWrapper
                       showLoader={isWritingWithAi}
                       className={styles.editorLoader}
                       message="Updating your message…"
                     >
+                      {bodyIsHtml ? (
+                        <div className={styles.bodyPreview} aria-label="Email body">
+                          <ComposeHtmlPreviewFrame
+                            html={body}
+                            title="Email body preview"
+                            className={styles.bodyPreviewFrame}
+                          />
+                        </div>
+                      ) : null}
                       <textarea
                         ref={bodyFieldRef}
-                        className={styles.bodyField}
+                        className={
+                          bodyIsHtml
+                            ? `${styles.bodyField} ${styles.bodyFieldHidden}`
+                            : styles.bodyField
+                        }
                         value={body}
-                        onChange={(event) => setBody(event.target.value)}
+                        onChange={(event) => handleBodyChange(event.target.value)}
                         onSelect={updateBodySelection}
                         onMouseUp={updateBodySelection}
                         onKeyUp={updateBodySelection}
                         rows={12}
-                        aria-label="Email body"
+                        aria-label={bodyIsHtml ? 'Email HTML source' : 'Email body'}
+                        aria-hidden={bodyIsHtml}
+                        tabIndex={bodyIsHtml ? -1 : undefined}
                         disabled={isWritingWithAi}
                       />
                     </WuLoaderWrapper>
@@ -309,7 +360,7 @@ export function SurveyEmailComposePanel({
                       subject={subject}
                       bodyFieldRef={bodyFieldRef}
                       bodySelection={bodySelection}
-                      onBodyChange={setBody}
+                      onBodyChange={handleBodyChange}
                       onSubjectChange={setSubject}
                       onGeneratingChange={setIsWritingWithAi}
                     />
@@ -331,7 +382,7 @@ export function SurveyEmailComposePanel({
                       open={htmlSourceOpen}
                       onOpenChange={setHtmlSourceOpen}
                       body={body}
-                      onApply={setBody}
+                      onApply={handleBodyChange}
                     />
                   </div>
                 </>
@@ -453,20 +504,36 @@ export function SurveyEmailComposePanel({
 
             <div className={styles.composeFooter}>
               <div className={styles.footerActions}>
-                <button
-                  type="button"
-                  className={styles.sendBtn}
-                  onClick={handleSend}
+                <WuTooltip
+                  content={bodyContainsBlob ? COMPOSE_BLOB_UNSUPPORTED_MESSAGE : undefined}
+                  position="top"
                 >
-                  Send
-                </button>
-                <button
-                  type="button"
-                  className={styles.scheduleBtn}
-                  onClick={() => showToast({ message: 'Schedule invitation', variant: 'info' })}
+                  <span className={styles.sendBtnWrap}>
+                    <button
+                      type="button"
+                      className={styles.sendBtn}
+                      onClick={handleSend}
+                      disabled={bodyContainsBlob}
+                    >
+                      Send
+                    </button>
+                  </span>
+                </WuTooltip>
+                <WuTooltip
+                  content={bodyContainsBlob ? COMPOSE_BLOB_UNSUPPORTED_MESSAGE : undefined}
+                  position="top"
                 >
-                  Schedule
-                </button>
+                  <span className={styles.sendBtnWrap}>
+                    <button
+                      type="button"
+                      className={styles.scheduleBtn}
+                      onClick={handleSchedule}
+                      disabled={bodyContainsBlob}
+                    >
+                      Schedule
+                    </button>
+                  </span>
+                </WuTooltip>
                 <span className={styles.canSpamBadge}>
                   CAN-SPAM
                   <span className="wm-check-circle" aria-hidden />
@@ -474,6 +541,8 @@ export function SurveyEmailComposePanel({
               </div>
             </div>
           </div>
+        ) : activeSidebar === 'templates' ? (
+          <SurveyDistributeTemplates />
         ) : (
           <div className={styles.placeholderPanel}>
             <EmptyState

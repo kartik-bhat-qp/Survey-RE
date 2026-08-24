@@ -33,6 +33,15 @@ export interface EmailTemplateOption {
   label: string;
 }
 
+export type DistributeTemplateType = 'SMS' | 'Email - Survey Specific' | 'Email';
+
+export interface DistributeTemplate {
+  id: string;
+  name: string;
+  type: DistributeTemplateType;
+  defaultLanguage: string;
+}
+
 export interface EmailComposeDefaults {
   subject: string;
   body: string;
@@ -192,6 +201,27 @@ export const MOCK_EMAIL_TEMPLATES: EmailTemplateOption[] = [
   { value: 'formal', label: 'Formal Invitation' },
   { value: 'reminder', label: 'Friendly Reminder' },
 ];
+
+export const MOCK_DISTRIBUTE_TEMPLATES: DistributeTemplate[] = [
+  {
+    id: 'default-sms',
+    name: 'Default SMS',
+    type: 'SMS',
+    defaultLanguage: 'NA',
+  },
+  {
+    id: 'default-email',
+    name: 'Default Email',
+    type: 'Email - Survey Specific',
+    defaultLanguage: 'NA',
+  },
+];
+
+export const DISTRIBUTE_TEMPLATE_TYPE_FILTERS = [
+  { value: 'all', label: 'All' },
+  { value: 'sms', label: 'SMS' },
+  { value: 'email', label: 'Email' },
+] as const;
 
 export const DEFAULT_EMAIL_COMPOSE: EmailComposeDefaults = {
   subject: 'Survey Invitation',
@@ -714,6 +744,19 @@ export function composeBodyHasRenderableHtml(text: string): boolean {
   return COMPOSE_RENDERABLE_HTML_PATTERN.test(text);
 }
 
+const COMPOSE_BLOB_URL_PATTERN = /blob:(?:https?|file|null):[^\s"'<>]*/i;
+const COMPOSE_DATA_IMAGE_PATTERN = /data:image\/[a-z0-9.+-]+;base64,/i;
+
+export const COMPOSE_BLOB_UNSUPPORTED_MESSAGE = 'Blobs are not supported';
+
+export function composeHtmlContainsBlobUrl(text: string): boolean {
+  return COMPOSE_BLOB_URL_PATTERN.test(text);
+}
+
+export function composeHtmlContainsUnsupportedBlob(text: string): boolean {
+  return COMPOSE_BLOB_URL_PATTERN.test(text) || COMPOSE_DATA_IMAGE_PATTERN.test(text);
+}
+
 export function composePlainTextToHtml(text: string): string {
   if (composeBodyLooksLikeHtml(text)) {
     return text;
@@ -787,13 +830,8 @@ export function buildComposeHtmlPreviewDocument(html: string): string {
         padding: 0;
       }
       img {
-        border: 1px dashed #cbd5e1;
         display: inline-block;
-        height: auto;
         max-width: 100%;
-        min-height: 32px;
-        min-width: 32px;
-        object-fit: contain;
         vertical-align: middle;
       }
       table {

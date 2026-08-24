@@ -133,3 +133,15 @@
   font-size: 0.75rem;
   margin: 0;
 }
+
+.blobWarning {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.375rem;
+  color: #991b1b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+}

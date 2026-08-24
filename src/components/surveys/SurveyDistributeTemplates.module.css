@@ -1,0 +1,56 @@
+.panel {
+  background: #fff;
+  border: 1px solid #e5e9ef;
+  border-radius: 0.25rem;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 20rem;
+  overflow: hidden;
+  padding: 1.25rem 1.5rem;
+}
+
+.toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.toolbarRight {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.searchWrap {
+  min-width: 12rem;
+  width: 14rem;
+}
+
+.filterWrap {
+  min-width: 7.5rem;
+  width: 8.5rem;
+}
+
+.tableWrap {
+  min-height: 12rem;
+}
+
+.nameBtn {
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  padding: 0;
+  text-align: left;
+}
+
+.nameBtn:hover {
+  text-decoration: underline;
+}
