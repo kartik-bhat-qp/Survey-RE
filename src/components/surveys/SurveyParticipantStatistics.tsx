@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
-import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
   EMAIL_INVITATION_STATS,
   PARTICIPANT_DROPOUT_BLOCKWISE_ROWS,
@@ -13,9 +12,9 @@ import {
   buildDropoutCompletionUrls,
   downloadDropoutCompletionUrlsCsv,
   formatDropoutPercent,
-  getDropoutQuestionOptions,
   sumEmailInvitationStats,
 } from '@/data/mock-participant-statistics';
+import { formatNumber } from '@/data/mock-utils';
 import styles from './SurveyParticipantStatistics.module.css';
 
 const WuSelect = dynamic(
@@ -27,19 +26,14 @@ const WuToggle = dynamic(
   { ssr: false }
 );
 
-type DropoutDownloadScope = 'all' | string;
-
 function formatCount(value: number | null): string {
-  return value == null ? '—' : String(value);
+  return value == null ? '—' : formatNumber(value);
 }
 
 export function SurveyParticipantStatistics() {
   const { showToast } = useWuShowToast();
-  const wick = useWickUILib();
   const [range, setRange] = useState('all');
   const [blockwiseDropout, setBlockwiseDropout] = useState(false);
-  const [downloadOpen, setDownloadOpen] = useState(false);
-  const [downloadScope, setDownloadScope] = useState<DropoutDownloadScope>('all');
   const [viewedCount, setViewedCount] = useState(PARTICIPANT_OVERALL_STATS.viewed);
   const [lastRefreshed, setLastRefreshed] = useState(
     PARTICIPANT_OVERALL_STATS.lastRefreshedLabel
@@ -50,33 +44,9 @@ export function SurveyParticipantStatistics() {
     () => sumEmailInvitationStats(EMAIL_INVITATION_STATS),
     []
   );
-  const dropoutQuestionOptions = useMemo(() => getDropoutQuestionOptions(), []);
   const dropoutRows = blockwiseDropout
     ? PARTICIPANT_DROPOUT_BLOCKWISE_ROWS
     : PARTICIPANT_DROPOUT_QUESTION_ROWS;
-  const downloadCount = useMemo(() => {
-    if (downloadScope === 'all') return stats.dropouts;
-    return (
-      dropoutQuestionOptions.find((row) => row.id === downloadScope)?.count ?? 0
-    );
-  }, [downloadScope, dropoutQuestionOptions, stats.dropouts]);
-  const downloadScopeOptions = useMemo(
-    () => [
-      {
-        value: 'all',
-        label: `All dropouts (${stats.dropouts})`,
-      },
-      ...dropoutQuestionOptions.map((row) => ({
-        value: row.id,
-        label: `${row.label} (${row.count})`,
-      })),
-    ],
-    [dropoutQuestionOptions, stats.dropouts]
-  );
-  const selectedDownloadScope =
-    downloadScopeOptions.find((opt) => opt.value === downloadScope) ??
-    downloadScopeOptions[0] ??
-    null;
 
   const selectedRangeOption =
     PARTICIPANT_RANGE_OPTIONS.find((opt) => opt.value === range) ?? null;
@@ -85,26 +55,20 @@ export function SurveyParticipantStatistics() {
     showToast({ message: `${title}: ${message}`, variant: 'info' });
   }
 
-  function openCompletionUrlDownload(scope: DropoutDownloadScope = 'all') {
-    setDownloadScope(scope);
-    setDownloadOpen(true);
-  }
-
-  function handleDownloadCompletionUrls() {
-    const rows = buildDropoutCompletionUrls(downloadScope);
+  function handleDownloadCompletionUrls(scope: 'all' | string = 'all') {
+    const rows = buildDropoutCompletionUrls(scope);
     if (rows.length === 0) {
       showToast({ message: 'No completion URLs to download', variant: 'error' });
       return;
     }
     const stamp = new Date().toISOString().slice(0, 10);
-    const suffix = downloadScope === 'all' ? 'all' : downloadScope;
+    const suffix = scope === 'all' ? 'all' : scope;
     downloadDropoutCompletionUrlsCsv(
       rows,
       `dropout-completion-urls-${suffix}-${stamp}.csv`
     );
-    setDownloadOpen(false);
     showToast({
-      message: `Downloaded ${rows.length} completion URL${rows.length === 1 ? '' : 's'}`,
+      message: `Downloaded ${formatNumber(rows.length)} completion URL${rows.length === 1 ? '' : 's'}`,
       variant: 'success',
     });
   }
@@ -133,7 +97,7 @@ export function SurveyParticipantStatistics() {
     {
       id: 'viewed',
       label: 'Viewed',
-      value: String(viewedCount),
+      value: formatCount(viewedCount),
       help: 'Total number of users who clicked the survey link. Includes started and completed counts.',
       reset: true,
       highlight: true,
@@ -141,13 +105,13 @@ export function SurveyParticipantStatistics() {
     {
       id: 'total',
       label: 'Total',
-      value: String(stats.total),
+      value: formatCount(stats.total),
       emphasized: true,
     },
     {
       id: 'completed',
       label: 'Completed',
-      value: String(stats.completed),
+      value: formatCount(stats.completed),
       help: 'Respondents who went through the whole survey and clicked Finish on the last page.',
       emphasized: true,
     },
@@ -161,23 +125,23 @@ export function SurveyParticipantStatistics() {
     {
       id: 'dropouts',
       label: 'Drop Outs (After Starting)',
-      value: String(stats.dropouts),
+      value: formatCount(stats.dropouts),
       emphasized: true,
     },
     {
       id: 'timed-out',
       label: 'Timed Out',
-      value: String(stats.timedOut),
+      value: formatCount(stats.timedOut),
     },
     {
       id: 'quality',
       label: 'Quality Terminates',
-      value: String(stats.qualityTerminates),
+      value: formatCount(stats.qualityTerminates),
     },
     {
       id: 'validation',
       label: 'Validation Errors',
-      value: String(stats.validationErrors),
+      value: formatCount(stats.validationErrors),
       help: 'The number of times someone encountered a validation error during the survey.',
     },
   ];
@@ -307,36 +271,22 @@ export function SurveyParticipantStatistics() {
       </section>
 
       <section className={styles.section} aria-labelledby="email-stats-title">
-        <div className={styles.sectionToolbar}>
-          <div className={styles.sectionHead}>
-            <h2 id="email-stats-title" className={styles.sectionTitle}>
-              Email Invitation Participation Statistics
-            </h2>
-            <button
-              type="button"
-              className={styles.helpBtn}
-              aria-label="About email invitation statistics"
-              onClick={() =>
-                handleHelp(
-                  'Email Invitation Participation Statistics',
-                  'Sent, opened, started, and completed counts by email list'
-                )
-              }
-            >
-              ?
-            </button>
-          </div>
+        <div className={styles.sectionHead}>
+          <h2 id="email-stats-title" className={styles.sectionTitle}>
+            Email Invitation Participation Statistics
+          </h2>
           <button
             type="button"
-            className={styles.exportBtn}
+            className={styles.helpBtn}
+            aria-label="About email invitation statistics"
             onClick={() =>
-              showToast({
-                message: 'Exporting email invitation statistics…',
-                variant: 'success',
-              })
+              handleHelp(
+                'Email Invitation Participation Statistics',
+                'Sent, opened, started, and completed counts by email list'
+              )
             }
           >
-            XL
+            ?
           </button>
         </div>
         <div className={styles.tableWrap}>
@@ -387,23 +337,23 @@ export function SurveyParticipantStatistics() {
                   <td className={`${styles.num} ${row.clicked == null ? styles.muted : ''}`}>
                     {formatCount(row.clicked)}
                   </td>
-                  <td className={styles.num}>{row.started}</td>
-                  <td className={styles.num}>{row.completed}</td>
-                  <td className={styles.num}>{row.terminated}</td>
-                  <td className={styles.num}>{row.overQuota}</td>
+                  <td className={styles.num}>{formatCount(row.started)}</td>
+                  <td className={styles.num}>{formatCount(row.completed)}</td>
+                  <td className={styles.num}>{formatCount(row.terminated)}</td>
+                  <td className={styles.num}>{formatCount(row.overQuota)}</td>
                   <td>{row.lastActivity}</td>
                 </tr>
               ))}
               <tr className={styles.totalRow}>
                 <td>Total</td>
-                <td className={styles.num}>{emailTotal.sent}</td>
-                <td className={styles.num}>{emailTotal.bounced}</td>
-                <td className={styles.num}>{emailTotal.opened}</td>
-                <td className={styles.num}>{emailTotal.clicked}</td>
-                <td className={styles.num}>{emailTotal.started}</td>
-                <td className={styles.num}>{emailTotal.completed}</td>
-                <td className={styles.num}>{emailTotal.terminated}</td>
-                <td className={styles.num}>{emailTotal.overQuota}</td>
+                <td className={styles.num}>{formatCount(emailTotal.sent)}</td>
+                <td className={styles.num}>{formatCount(emailTotal.bounced)}</td>
+                <td className={styles.num}>{formatCount(emailTotal.opened)}</td>
+                <td className={styles.num}>{formatCount(emailTotal.clicked)}</td>
+                <td className={styles.num}>{formatCount(emailTotal.started)}</td>
+                <td className={styles.num}>{formatCount(emailTotal.completed)}</td>
+                <td className={styles.num}>{formatCount(emailTotal.terminated)}</td>
+                <td className={styles.num}>{formatCount(emailTotal.overQuota)}</td>
                 <td />
               </tr>
             </tbody>
@@ -435,10 +385,10 @@ export function SurveyParticipantStatistics() {
             <button
               type="button"
               className={styles.primaryActionBtn}
-              onClick={() => openCompletionUrlDownload('all')}
+              onClick={() => handleDownloadCompletionUrls('all')}
             >
               <span className="wm-download" aria-hidden />
-              Completion URLs ({stats.dropouts.toLocaleString()})
+              Completion URLs ({formatNumber(stats.dropouts)})
             </button>
           </div>
         </div>
@@ -488,7 +438,7 @@ export function SurveyParticipantStatistics() {
                       className={styles.quotaNameBtn}
                       onClick={() =>
                         showToast({
-                          message: `${row.label}: ${row.count} dropouts (${formatDropoutPercent(row.basePercent)})`,
+                          message: `${row.label}: ${formatNumber(row.count)} dropouts (${formatDropoutPercent(row.basePercent)})`,
                           variant: 'info',
                         })
                       }
@@ -496,7 +446,9 @@ export function SurveyParticipantStatistics() {
                       {row.label}
                     </button>
                   </td>
-                  <td className={`${styles.num} ${styles.dropoutCount}`}>{row.count}</td>
+                  <td className={`${styles.num} ${styles.dropoutCount}`}>
+                    {formatCount(row.count)}
+                  </td>
                   <td className={styles.num}>{formatDropoutPercent(row.basePercent)}</td>
                   <td className={styles.num}>{formatDropoutPercent(row.cumulativePercent)}</td>
                   <td className={styles.dropoutActionCol}>
@@ -504,11 +456,13 @@ export function SurveyParticipantStatistics() {
                       <button
                         type="button"
                         className={styles.rowDownloadBtn}
-                        aria-label={`Download ${row.count} completion URLs for ${row.label}`}
-                        onClick={() => openCompletionUrlDownload(row.id)}
+                        aria-label={`Download ${formatNumber(row.count)} completion URLs for ${row.label}`}
+                        onClick={() => handleDownloadCompletionUrls(row.id)}
                       >
                         <span className="wm-download" aria-hidden />
-                        <span className={styles.rowDownloadCount}>{row.count}</span>
+                        <span className={styles.rowDownloadCount}>
+                          {formatCount(row.count)}
+                        </span>
                       </button>
                     )}
                   </td>
@@ -518,71 +472,6 @@ export function SurveyParticipantStatistics() {
           </table>
         </div>
       </section>
-
-      {downloadOpen && wick
-        ? (() => {
-            const {
-              WuModal,
-              WuModalHeader,
-              WuModalContent,
-              WuModalFooter,
-              WuModalClose,
-              WuButton,
-            } = wick;
-            return (
-              <WuModal
-                open
-                onOpenChange={setDownloadOpen}
-                size="md"
-                variant="action"
-                maxWidth="32rem"
-              >
-                <WuModalHeader>Download completion URLs</WuModalHeader>
-                <WuModalContent>
-                  <div className={styles.downloadBody}>
-                    <p className={styles.downloadCopy}>
-                      Export a CSV with Response ID, Email, Last Completed Question, and a unique
-                      completion URL for each dropout.
-                    </p>
-                    <div className={styles.downloadField}>
-                      <span className={styles.downloadLabel}>Include dropouts from</span>
-                      <WuSelect
-                        value={selectedDownloadScope}
-                        data={downloadScopeOptions}
-                        accessorKey={{ value: 'value', label: 'label' }}
-                        onSelect={(opt) => {
-                          const next = Array.isArray(opt) ? opt[0] : opt;
-                          if (!next) return;
-                          setDownloadScope(next.value);
-                        }}
-                        variant="outlined"
-                        aria-label="Completion URL download scope"
-                      />
-                    </div>
-                    <div className={styles.downloadSummary}>
-                      <span className={`wm-link ${styles.downloadSummaryIcon}`} aria-hidden />
-                      <div>
-                        <p className={styles.downloadSummaryTitle}>
-                          {downloadCount.toLocaleString()} completion URL
-                          {downloadCount === 1 ? '' : 's'}
-                        </p>
-                        <p className={styles.downloadSummaryText}>
-                          File format: CSV · Ready to import into email or CRM tools
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </WuModalContent>
-                <WuModalFooter>
-                  <WuModalClose variant="secondary">Cancel</WuModalClose>
-                  <WuButton onClick={handleDownloadCompletionUrls}>
-                    Download {downloadCount.toLocaleString()} URLs
-                  </WuButton>
-                </WuModalFooter>
-              </WuModal>
-            );
-          })()
-        : null}
     </div>
   );
 }
