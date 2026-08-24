@@ -386,9 +386,23 @@ export function formatDropoutPercent(value: number): string {
 
 export interface DropoutCompletionUrlRow {
   responseId: string;
-  email: string;
-  lastCompletedQuestion: string;
-  lastCompletedQuestionId: string;
+  responseStatus: string;
+  ipAddress: string;
+  timestamp: string;
+  duplicate: string;
+  timeTakenToComplete: string;
+  seqNumber: string;
+  externalReference: string;
+  customVariable1: string;
+  customVariable2: string;
+  customVariable3: string;
+  customVariable4: string;
+  customVariable5: string;
+  customVariable6: string;
+  respondentEmail: string;
+  emailList: string;
+  countryCode: string;
+  region: string;
   completionUrl: string;
 }
 
@@ -400,12 +414,65 @@ const DROPOUT_EMAIL_DOMAINS = [
   'researchpanel.io',
 ] as const;
 
+const DROPOUT_EMAIL_LISTS = [
+  'Customer Experience Panel',
+  'Monthly Newsletter Subscribers',
+  'Product Beta Testers – West Region',
+  'Direct Link / Anonymous',
+] as const;
+
+const DROPOUT_REGIONS: { countryCode: string; region: string }[] = [
+  { countryCode: 'US', region: 'California' },
+  { countryCode: 'US', region: 'New York' },
+  { countryCode: 'IN', region: 'Maharashtra' },
+  { countryCode: 'IN', region: 'Karnataka' },
+  { countryCode: 'GB', region: 'England' },
+  { countryCode: 'CA', region: 'Ontario' },
+  { countryCode: 'DE', region: 'Bavaria' },
+  { countryCode: 'AU', region: 'New South Wales' },
+];
+
+const COMPLETION_URL_CSV_HEADERS = [
+  'Response ID',
+  'Response Status',
+  'IP Address',
+  'Timestamp (dd/mm/yyyy)',
+  'Duplicate',
+  'Time Taken to Complete',
+  'Seq. Number',
+  'External Reference',
+  'Custom Variable 1',
+  'Custom Variable 2',
+  'Custom Variable 3',
+  'Custom Variable 4',
+  'Custom Variable 5',
+  'Custom Variable 6',
+  'Respondent Email',
+  'Email List',
+  'Country Code',
+  'Region',
+  'Completion URL',
+] as const;
+
 function hashSeed(input: string): number {
   let hash = 0;
   for (let i = 0; i < input.length; i += 1) {
     hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
   }
   return hash || 1;
+}
+
+function formatDropoutTimestamp(seed: number): string {
+  const day = String((seed % 28) + 1).padStart(2, '0');
+  const month = String((seed % 12) + 1).padStart(2, '0');
+  const year = 2026;
+  const hour = String(seed % 24).padStart(2, '0');
+  const minute = String((seed * 7) % 60).padStart(2, '0');
+  return `${day}/${month}/${year} ${hour}:${minute}`;
+}
+
+function formatDropoutIp(seed: number): string {
+  return `${10 + (seed % 200)}.${(seed * 3) % 256}.${(seed * 5) % 256}.${(seed * 11) % 256}`;
 }
 
 export function getDropoutQuestionOptions(): DropoutAnalysisRow[] {
@@ -419,6 +486,7 @@ export function buildDropoutCompletionUrls(
     (row) => questionId === 'all' || row.id === questionId
   );
   const rows: DropoutCompletionUrlRow[] = [];
+  let seq = 1;
 
   for (const question of questions) {
     for (let index = 0; index < question.count; index += 1) {
@@ -430,13 +498,30 @@ export function buildDropoutCompletionUrls(
           ? `panelist.${question.id}.${index + 1}`
           : `respondent${(seed % 9000) + 1000}`;
       const domain = DROPOUT_EMAIL_DOMAINS[seed % DROPOUT_EMAIL_DOMAINS.length];
+      const location = DROPOUT_REGIONS[seed % DROPOUT_REGIONS.length];
+      const emailList = DROPOUT_EMAIL_LISTS[seed % DROPOUT_EMAIL_LISTS.length];
       rows.push({
         responseId,
-        email: `${local}@${domain}`,
-        lastCompletedQuestion: question.label,
-        lastCompletedQuestionId: question.id,
+        responseStatus: 'Incomplete',
+        ipAddress: formatDropoutIp(seed),
+        timestamp: formatDropoutTimestamp(seed),
+        duplicate: seed % 17 === 0 ? 'Yes' : 'No',
+        timeTakenToComplete: String(45 + (seed % 1800)),
+        seqNumber: String(seq),
+        externalReference: seed % 5 === 0 ? `EXT-${(seed % 9000) + 1000}` : '',
+        customVariable1: seed % 3 === 0 ? `CV1-${seed % 100}` : '',
+        customVariable2: seed % 6 === 0 ? `CV2-${seed % 50}` : '',
+        customVariable3: '',
+        customVariable4: '',
+        customVariable5: '',
+        customVariable6: '',
+        respondentEmail: `${local}@${domain}`,
+        emailList: emailList === 'Direct Link / Anonymous' ? '' : emailList,
+        countryCode: location.countryCode,
+        region: location.region,
         completionUrl: `https://www.questionpro.com/a/TakeSurvey?id=8614451&rid=${responseId}&mode=continue&token=${token}`,
       });
+      seq += 1;
     }
   }
 
@@ -444,19 +529,33 @@ export function buildDropoutCompletionUrls(
 }
 
 export function buildDropoutCompletionUrlsCsv(rows: DropoutCompletionUrlRow[]): string {
-  const header = [
-    'Response ID',
-    'Email',
-    'Last Completed Question',
-    'Completion URL',
-  ];
   const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
   const lines = rows.map((row) =>
-    [row.responseId, row.email, row.lastCompletedQuestion, row.completionUrl]
+    [
+      row.responseId,
+      row.responseStatus,
+      row.ipAddress,
+      row.timestamp,
+      row.duplicate,
+      row.timeTakenToComplete,
+      row.seqNumber,
+      row.externalReference,
+      row.customVariable1,
+      row.customVariable2,
+      row.customVariable3,
+      row.customVariable4,
+      row.customVariable5,
+      row.customVariable6,
+      row.respondentEmail,
+      row.emailList,
+      row.countryCode,
+      row.region,
+      row.completionUrl,
+    ]
       .map(escape)
       .join(',')
   );
-  return [header.join(','), ...lines].join('\n');
+  return [COMPLETION_URL_CSV_HEADERS.join(','), ...lines].join('\n');
 }
 
 export function downloadDropoutCompletionUrlsCsv(

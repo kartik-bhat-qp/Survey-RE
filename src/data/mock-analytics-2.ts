@@ -616,23 +616,6 @@ export const ANALYTICS_2_TOOLS: Record<
   },
 };
 
-export const ANALYTICS_2_CJ_IMPORTANCE = [
-  { attr: 'Tecnique', importance: '37%', level: '7/10', utility: -0.4 },
-  { attr: '', importance: '', level: '8/10', utility: -0.18 },
-  { attr: '', importance: '', level: '9/10', utility: 0.18 },
-  { attr: '', importance: '', level: '10/10', utility: 0.48 },
-  { attr: 'Agility', importance: '32%', level: '7/10', utility: -0.41 },
-  { attr: '', importance: '', level: '8/10', utility: -0.22 },
-  { attr: '', importance: '', level: '9/10', utility: 0.19 },
-  { attr: '', importance: '', level: '10/10', utility: 0.43 },
-  { attr: 'Height', importance: '17%', level: '5ft 7 inches', utility: -0.26 },
-  { attr: '', importance: '', level: '6 ft', utility: 0.08 },
-  { attr: '', importance: '', level: '6ft 3 inches', utility: 0.17 },
-  { attr: 'Weight', importance: '14%', level: '66 Kg', utility: -0.2 },
-  { attr: '', importance: '', level: '76 Kg', utility: 0.03 },
-  { attr: '', importance: '', level: '86 KG', utility: 0.16 },
-];
-
 export const ANALYTICS_2_WEIGHT_ROWS = [
   { label: 'Male', current: '43.98', count: '1,177' },
   { label: 'Female', current: '55.57', count: '1,487' },

@@ -281,6 +281,17 @@
   flex-direction: column;
 }
 
+.bodyPreview {
+  border-bottom: 1px solid #e5e9ef;
+  min-height: 8rem;
+}
+
+.bodyPreviewFrame {
+  display: block;
+  min-height: 8rem;
+  width: 100%;
+}
+
 .editorLoader {
   display: flex;
   flex: 1;

@@ -9,6 +9,8 @@ import { AudioInputButton } from '@/components/ui/AudioInputButton';
 import { useParams } from 'next/navigation';
 import { ComposeEmailToolbar } from '@/components/surveys/ComposeEmailToolbar';
 import { ComposeHelpMeWrite } from '@/components/surveys/ComposeHelpMeWrite';
+import { ComposeHtmlSourceEditor } from '@/components/surveys/ComposeHtmlSourceEditor';
+import { ComposeHtmlPreviewFrame } from '@/components/surveys/ComposeHtmlPreviewFrame';
 import { ComposeRecipientsField } from '@/components/surveys/ComposeRecipientsField';
 import { NavLink } from '@/components/surveys/NavLink';
 import { SurveyAgentSidebar } from '@/components/surveys/SurveyAgentSidebar';
@@ -22,6 +24,7 @@ import {
   MOCK_EMAIL_TEMPLATES,
   MOCK_REPLY_TO_OPTIONS,
   SMS_SEGMENT_CHAR_LIMIT,
+  composeBodyHasRenderableHtml,
   getSmsSegmentUsage,
   readComposeBodySelection,
   type ComposeWritingSelection,
@@ -89,6 +92,7 @@ export function SurveyEmailComposePanel({
   const [emailEnabled, setEmailEnabled] = useState(DEFAULT_EMAIL_COMPOSE.emailEnabled);
   const [smsEnabled, setSmsEnabled] = useState(DEFAULT_EMAIL_COMPOSE.smsEnabled);
   const [helpMeWriteOpen, setHelpMeWriteOpen] = useState(false);
+  const [htmlSourceOpen, setHtmlSourceOpen] = useState(false);
   const [isWritingWithAi, setIsWritingWithAi] = useState(false);
   const [researchAgentOpen, setResearchAgentOpen] = useState(false);
   const [bodySelection, setBodySelection] = useState<ComposeWritingSelection | null>(null);
@@ -99,6 +103,7 @@ export function SurveyEmailComposePanel({
   }, [activeSidebar]);
 
   const smsSegmentUsage = useMemo(() => getSmsSegmentUsage(smsBody), [smsBody]);
+  const bodyIsHtml = useMemo(() => composeBodyHasRenderableHtml(body), [body]);
 
   function handleSend(): void {
     if (!selectedList && recipientEmails.length === 0) {
@@ -117,6 +122,10 @@ export function SurveyEmailComposePanel({
   }
 
   function handleToolbarAction(label: string): void {
+    if (label === 'Source') {
+      setHtmlSourceOpen(true);
+      return;
+    }
     showToast({ message: label, variant: 'info' });
   }
 
@@ -265,6 +274,15 @@ export function SurveyEmailComposePanel({
                   </div>
 
                   <div className={styles.editorSection}>
+                    {bodyIsHtml ? (
+                      <div className={styles.bodyPreview} aria-label="Email body preview">
+                        <ComposeHtmlPreviewFrame
+                          html={body}
+                          title="Email body preview"
+                          className={styles.bodyPreviewFrame}
+                        />
+                      </div>
+                    ) : null}
                     <WuLoaderWrapper
                       showLoader={isWritingWithAi}
                       className={styles.editorLoader}
@@ -299,12 +317,21 @@ export function SurveyEmailComposePanel({
                     <ComposeEmailToolbar
                       helpMeWriteOpen={helpMeWriteOpen}
                       helpMeWriteDisabled={isWritingWithAi}
+                      sourceEditorOpen={htmlSourceOpen}
                       micDisabled={isWritingWithAi}
                       onHelpMeWriteToggle={() => setHelpMeWriteOpen((open) => !open)}
                       onAction={handleToolbarAction}
+                      onSourceClick={() => setHtmlSourceOpen(true)}
                       onMicTranscript={(text) =>
                         setBody((prev) => (prev ? `${prev}\n\n${text}` : text))
                       }
+                    />
+
+                    <ComposeHtmlSourceEditor
+                      open={htmlSourceOpen}
+                      onOpenChange={setHtmlSourceOpen}
+                      body={body}
+                      onApply={setBody}
                     />
                   </div>
                 </>

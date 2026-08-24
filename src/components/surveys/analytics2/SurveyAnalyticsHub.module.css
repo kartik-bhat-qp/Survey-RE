@@ -160,6 +160,17 @@
   overflow-y: auto;
 }
 
+.mainConjoint {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.mainConjoint::-webkit-scrollbar {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
 .screen {
   display: flex;
   flex-direction: column;
@@ -540,6 +551,10 @@
   min-height: 0;
 }
 
+.conjointEmbed {
+  min-width: 0;
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -620,28 +635,6 @@
 .word {
   font-weight: 500;
   line-height: 1;
-}
-
-.utilBar {
-  display: flex;
-  height: 10px;
-  justify-content: center;
-  width: 10rem;
-}
-
-.utilNeg,
-.utilPos {
-  height: 100%;
-}
-
-.utilNeg {
-  background: #fca5a5;
-  border-radius: 3px 0 0 3px;
-}
-
-.utilPos {
-  background: #86efac;
-  border-radius: 0 3px 3px 0;
 }
 
 .heatmapCell {

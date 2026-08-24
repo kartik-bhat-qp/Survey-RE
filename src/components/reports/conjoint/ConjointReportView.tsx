@@ -72,7 +72,10 @@ export interface ConjointReportViewProps {
   reportName: string;
   questionLabel: string;
   surveyName: string;
-  reportsHref: string;
+  /** Back-link target when not embedded (Reports list). */
+  reportsHref?: string;
+  /** Hide Reports back link when shown inside Analytics 2.0 (or similar). */
+  embedded?: boolean;
   onExport?: () => void;
   onShare?: () => void;
 }
@@ -113,7 +116,8 @@ export default function ConjointReportView({
   reportName,
   questionLabel,
   surveyName,
-  reportsHref,
+  reportsHref = '/reports',
+  embedded = false,
   onExport,
   onShare,
 }: ConjointReportViewProps) {
@@ -520,10 +524,14 @@ export default function ConjointReportView({
     <div className={styles.root}>
       <header className={styles.header}>
         <div className={styles.headerRow}>
-          <Link href={reportsHref} className={styles.backLink}>
-            ← Reports
-          </Link>
-          <div className={styles.divider} />
+          {!embedded ? (
+            <>
+              <Link href={reportsHref} className={styles.backLink}>
+                ← Reports
+              </Link>
+              <div className={styles.divider} />
+            </>
+          ) : null}
           <div className={styles.titleBlock}>
             <h1 className={styles.title}>{reportName || 'Conjoint analysis'}</h1>
             <span className={styles.subtitle}>{questionLabel}</span>

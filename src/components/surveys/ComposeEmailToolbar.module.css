@@ -39,6 +39,11 @@
   color: #1b87e6;
 }
 
+.toolbarBtnActive {
+  background: #eef6ff;
+  color: #1b87e6;
+}
+
 .toolbarBtn span {
   font-size: 1rem;
   line-height: 1;

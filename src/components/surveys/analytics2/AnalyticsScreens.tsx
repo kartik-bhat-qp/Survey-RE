@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import ConjointReportView from '@/components/reports/conjoint/ConjointReportView';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
   ANALYTICS_2_CORR_COLS,
@@ -10,7 +11,6 @@ import {
   ANALYTICS_2_CT_COL_LABELS,
   ANALYTICS_2_CT_ROWS,
   ANALYTICS_2_CT_TOTALS,
-  ANALYTICS_2_CJ_IMPORTANCE,
   ANALYTICS_2_DEVICE_AUDIT,
   ANALYTICS_2_DOWNLOAD_JOBS,
   ANALYTICS_2_EXPORT_SECTIONS,
@@ -23,6 +23,7 @@ import {
   ANALYTICS_2_WORD_CLOUDS,
   type Analytics2ToolDef,
 } from '@/data/mock-analytics-2';
+import { MOCK_CONJOINT_REPORT } from '@/data/mock-conjoint-report';
 import styles from './SurveyAnalyticsHub.module.css';
 
 const WuToggle = dynamic(
@@ -520,133 +521,20 @@ export function AnalyticsToolScreen({
   );
 }
 
-export function AnalyticsConjoint({ onAction }: ActionProps) {
-  const [tab, setTab] = useState('importance');
-  const tabs = [
-    { id: 'importance', label: 'Attribute Importance' },
-    { id: 'profiles', label: 'Profiles' },
-    { id: 'sim', label: 'Market Share Simulation' },
-    { id: 'premium', label: 'Brand Premium' },
-  ];
-
+export function AnalyticsConjoint({
+  onAction,
+  surveyName,
+}: ActionProps & { surveyName?: string }) {
   return (
-    <div className={styles.screen}>
-      <ScreenHeader title="Conjoint Analysis">
-        <button type="button" className={styles.ghostBtn} onClick={() => onAction('Conjoint exported')}>
-          Export
-        </button>
-      </ScreenHeader>
-      <div className={styles.rangeGroup}>
-        {tabs.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={tab === item.id ? styles.rangeBtnActive : styles.rangeBtn}
-            onClick={() => setTab(item.id)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-      {tab === 'importance' ? (
-        <div className={styles.card}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col">Attribute</th>
-                <th scope="col">Importance</th>
-                <th scope="col">Level</th>
-                <th scope="col">Utility</th>
-                <th scope="col" />
-              </tr>
-            </thead>
-            <tbody>
-              {ANALYTICS_2_CJ_IMPORTANCE.map((row, index) => (
-                <tr key={`${row.level}-${index}`}>
-                  <td style={{ fontWeight: row.attr ? 600 : 400 }}>{row.attr}</td>
-                  <td>{row.importance}</td>
-                  <td>{row.level}</td>
-                  <td>
-                    {row.utility > 0 ? '+' : ''}
-                    {row.utility.toFixed(2)}
-                  </td>
-                  <td>
-                    <div className={styles.utilBar}>
-                      {row.utility < 0 ? (
-                        <div className={styles.utilNeg} style={{ width: `${Math.abs(row.utility) * 160}px` }} />
-                      ) : (
-                        <div className={styles.utilPos} style={{ width: `${row.utility * 160}px` }} />
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : tab === 'sim' ? (
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h2 className={styles.cardTitle}>Market share</h2>
-            <button
-              type="button"
-              className={styles.primaryBtn}
-              onClick={() => onAction('Simulation updated')}
-            >
-              Run simulation
-            </button>
-          </div>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col">Concept</th>
-                <th scope="col">Spec</th>
-                <th scope="col" className={styles.right}>
-                  Votes
-                </th>
-                <th scope="col" className={styles.right}>
-                  Share
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Concept - 1</td>
-                <td>5ft 7 inches · 86 KG · 9/10 · 8/10</td>
-                <td className={styles.right}>816.5</td>
-                <td className={styles.right}>49.45%</td>
-              </tr>
-              <tr>
-                <td>Concept - 2</td>
-                <td>6 ft · 76 Kg · 7/10 · 9/10</td>
-                <td className={styles.right}>834.5</td>
-                <td className={styles.right}>50.55%</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className={styles.splitEqual}>
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>Best profile</h2>
-            </div>
-            <div className={styles.cardBody}>
-              <p>6ft 3 inches · 86 KG · 10/10 · 10/10</p>
-              <p className={styles.muted}>+186% vs average</p>
-            </div>
-          </div>
-          <div className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>Worst profile</h2>
-            </div>
-            <div className={styles.cardBody}>
-              <p>5ft 7 inches · 66 Kg · 7/10 · 7/10</p>
-              <p className={styles.muted}>−100% vs average</p>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className={styles.conjointEmbed}>
+      <ConjointReportView
+        reportName={MOCK_CONJOINT_REPORT.name}
+        questionLabel={MOCK_CONJOINT_REPORT.questionLabel}
+        surveyName={surveyName ?? MOCK_CONJOINT_REPORT.surveyName}
+        embedded
+        onExport={() => onAction('Conjoint exported')}
+        onShare={() => onAction('Share link copied')}
+      />
     </div>
   );
 }

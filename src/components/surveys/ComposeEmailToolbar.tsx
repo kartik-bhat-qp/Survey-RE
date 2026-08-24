@@ -18,8 +18,10 @@ const WuTooltip = dynamic(
 interface ComposeEmailToolbarProps {
   helpMeWriteOpen: boolean;
   helpMeWriteDisabled?: boolean;
+  sourceEditorOpen?: boolean;
   onHelpMeWriteToggle: () => void;
   onAction: (label: string) => void;
+  onSourceClick?: () => void;
   onMicTranscript?: (text: string) => void;
   micDisabled?: boolean;
 }
@@ -27,9 +29,13 @@ interface ComposeEmailToolbarProps {
 function ToolbarActionButton({
   action,
   onAction,
+  onSourceClick,
+  sourceEditorOpen = false,
 }: {
   action: EmailToolbarAction;
   onAction: (label: string) => void;
+  onSourceClick?: () => void;
+  sourceEditorOpen?: boolean;
 }) {
   let button: React.ReactNode;
 
@@ -46,14 +52,16 @@ function ToolbarActionButton({
       </button>
     );
   } else if (action.type === 'text') {
+    const isSource = action.id === 'source';
     button = (
       <button
         type="button"
         className={`${styles.toolbarBtn} ${
           action.text === 'Source' ? styles.toolbarTextBtn : styles.toolbarLetterBtn
-        }`}
+        } ${isSource && sourceEditorOpen ? styles.toolbarBtnActive : ''}`}
         aria-label={action.label}
-        onClick={() => onAction(action.label)}
+        aria-pressed={isSource ? sourceEditorOpen : undefined}
+        onClick={() => (isSource && onSourceClick ? onSourceClick() : onAction(action.label))}
       >
         {action.text}
       </button>
@@ -81,8 +89,10 @@ function ToolbarActionButton({
 export function ComposeEmailToolbar({
   helpMeWriteOpen,
   helpMeWriteDisabled = false,
+  sourceEditorOpen = false,
   onHelpMeWriteToggle,
   onAction,
+  onSourceClick,
   onMicTranscript,
   micDisabled = false,
 }: ComposeEmailToolbarProps) {
@@ -114,7 +124,13 @@ export function ComposeEmailToolbar({
 
       <div className={styles.toolbarGroup}>
         {EMAIL_COMPOSE_FORMAT_TOOLBAR_ACTIONS.map((action) => (
-          <ToolbarActionButton key={action.id} action={action} onAction={onAction} />
+          <ToolbarActionButton
+            key={action.id}
+            action={action}
+            onAction={onAction}
+            onSourceClick={onSourceClick}
+            sourceEditorOpen={sourceEditorOpen}
+          />
         ))}
       </div>
     </div>

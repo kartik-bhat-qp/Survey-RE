@@ -701,3 +701,107 @@ export function getDefaultEmailSidebarItem(): EmailSidebarId {
 export function getDefaultDistributeChannel(): DistributeChannelId {
   return 'email';
 }
+
+const COMPOSE_HTML_TAG_PATTERN = /<\/?[a-z][\s\S]*?>/i;
+const COMPOSE_RENDERABLE_HTML_PATTERN =
+  /<\/?(?:p|br|div|span|img|table|tr|td|th|a|h[1-6]|ul|ol|li|hr|strong|em|b|i|u|style|center)\b/i;
+
+export function composeBodyLooksLikeHtml(text: string): boolean {
+  return COMPOSE_HTML_TAG_PATTERN.test(text);
+}
+
+export function composeBodyHasRenderableHtml(text: string): boolean {
+  return COMPOSE_RENDERABLE_HTML_PATTERN.test(text);
+}
+
+export function composePlainTextToHtml(text: string): string {
+  if (composeBodyLooksLikeHtml(text)) {
+    return text;
+  }
+
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  const paragraphs = escaped.split(/\n\n+/);
+  if (paragraphs.length === 1) {
+    return escaped
+      .split('\n')
+      .map((line) => (line ? line : '<br>'))
+      .join('<br>\n');
+  }
+
+  return paragraphs.map((paragraph) => `<p>${paragraph.split('\n').join('<br>')}</p>`).join('\n');
+}
+
+export function insertTextAtComposeHtmlCursor(
+  currentHtml: string,
+  insertion: string,
+  selectionStart: number,
+  selectionEnd: number
+): { nextHtml: string; nextCursor: number } {
+  const nextHtml =
+    currentHtml.slice(0, selectionStart) + insertion + currentHtml.slice(selectionEnd);
+  const nextCursor = selectionStart + insertion.length;
+  return { nextHtml, nextCursor };
+}
+
+export const COMPOSE_HTML_INSERT_SNIPPETS = [
+  { id: 'survey-link', label: 'Survey link', snippet: '<SURVEY_LINK>' },
+  {
+    id: 'paragraph',
+    label: 'Paragraph',
+    snippet: '<p>Your text here</p>',
+  },
+  {
+    id: 'link',
+    label: 'Link',
+    snippet: '<a href="https://example.com">Link text</a>',
+  },
+  {
+    id: 'table',
+    label: 'Table',
+    snippet:
+      '<table border="1" cellpadding="8" cellspacing="0">\n  <tr><th>Header</th></tr>\n  <tr><td>Cell</td></tr>\n</table>',
+  },
+  {
+    id: 'divider',
+    label: 'Divider',
+    snippet: '<hr />',
+  },
+] as const;
+
+export function buildComposeHtmlPreviewDocument(html: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        color: #0f172a;
+        font-family: 'Fira Sans', sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        margin: 0;
+        padding: 0;
+      }
+      img {
+        border: 1px dashed #cbd5e1;
+        display: inline-block;
+        height: auto;
+        max-width: 100%;
+        min-height: 32px;
+        min-width: 32px;
+        object-fit: contain;
+        vertical-align: middle;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>${html}</body>
+</html>`;
+}

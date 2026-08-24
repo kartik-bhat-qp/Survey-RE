@@ -115,7 +115,9 @@ export function SurveyAnalyticsHub({ detail }: SurveyAnalyticsHubProps) {
     if (screen === 'trend') return <AnalyticsTrend onAction={toast} />;
     if (screen === 'comparison') return <AnalyticsComparison onAction={toast} />;
     if (screen === 'consolidate') return <AnalyticsConsolidate onAction={toast} />;
-    if (screen === 'conjoint') return <AnalyticsConjoint onAction={toast} />;
+    if (screen === 'conjoint') {
+      return <AnalyticsConjoint onAction={toast} surveyName={detail.survey.name} />;
+    }
     if (screen === 'correlation') return <AnalyticsCorrelation onAction={toast} />;
     if (isAnalytics2ToolScreen(screen)) {
       return <AnalyticsToolScreen key={screen} tool={ANALYTICS_2_TOOLS[screen]} onAction={toast} />;
@@ -202,7 +204,9 @@ export function SurveyAnalyticsHub({ detail }: SurveyAnalyticsHubProps) {
           ))}
         </nav>
       </aside>
-      <main className={styles.main}>{renderScreen()}</main>
+      <main className={screen === 'conjoint' ? `${styles.main} ${styles.mainConjoint}` : styles.main}>
+        {renderScreen()}
+      </main>
       <AnalyticsFilterModal
         open={filterModalOpen}
         onClose={() => setFilterModalOpen(false)}
