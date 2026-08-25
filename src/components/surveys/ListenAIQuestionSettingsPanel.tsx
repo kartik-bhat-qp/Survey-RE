@@ -1,25 +1,18 @@
 'use client';
 
 import {
-  listListenAiSourceQuestions,
   normalizeListenAiMaxFollowUps,
-  setListenAiConversationMode,
   type ListenAiQuestionConfig,
 } from '@/data/mock-listenai-question';
 import {
-  isListenAiIndependentConversation,
   LISTENAI_MAX_FOLLOW_UP_LIMIT,
-  normalizeListenAiConversationMode,
   type ListenAiStudy,
 } from '@/data/mock-listenai-studies';
-import type { SurveySection } from '@/data/mock-survey-detail';
 import panelStyles from './QuestionSettingsPanel.module.css';
 import styles from './ListenAIQuestionSettingsPanel.module.css';
 
 export interface ListenAIQuestionSettingsPanelProps {
   config: ListenAiQuestionConfig;
-  sections: SurveySection[];
-  questionId: string;
   onChange: (config: ListenAiQuestionConfig) => void;
   onClose: () => void;
 }
@@ -33,8 +26,6 @@ function patchStudy(config: ListenAiQuestionConfig, study: ListenAiStudy): Liste
 
 export function ListenAIQuestionSettingsPanel({
   config,
-  sections,
-  questionId,
   onChange,
   onClose,
 }: ListenAIQuestionSettingsPanelProps) {
@@ -46,21 +37,6 @@ export function ListenAIQuestionSettingsPanel({
   } satisfies ListenAiStudy;
   const objectivesText = study.objectives.join('\n');
   const objectivesMissing = objectivesText.trim().length === 0;
-  const conversationMode = normalizeListenAiConversationMode(study);
-  const isIndependent = isListenAiIndependentConversation(study);
-  const sourceQuestion = listListenAiSourceQuestions(sections, questionId).find(
-    (option) => option.questionId === study.sourceQuestionId
-  );
-  const modeLabel = isIndependent
-    ? 'Independent'
-    : sourceQuestion?.code
-      ? `Follow-up on ${sourceQuestion.code}`
-      : 'Follow-up';
-
-  function patchConversationMode(): void {
-    const nextMode = conversationMode === 'independent' ? 'followup' : 'independent';
-    onChange(patchStudy(config, setListenAiConversationMode(study, nextMode)));
-  }
 
   function patchMaxFollowUps(maxFollowUps: number): void {
     const next = normalizeListenAiMaxFollowUps(maxFollowUps);
@@ -117,20 +93,6 @@ export function ListenAIQuestionSettingsPanel({
       </header>
 
       <div className={styles.body}>
-        <div className={panelStyles.field}>
-          <span className={panelStyles.fieldLabel}>Mode</span>
-          <div className={styles.modeCard}>
-            <span
-              className={`${isIndependent ? 'wm-forum' : 'wm-reply'} ${styles.modeIcon}`}
-              aria-hidden
-            />
-            <span className={styles.modeValue}>{modeLabel}</span>
-            <button type="button" className={styles.modeChangeBtn} onClick={patchConversationMode}>
-              Change
-            </button>
-          </div>
-        </div>
-
         <div className={panelStyles.field}>
           <span className={panelStyles.fieldLabel}>Follow Ups</span>
           <div className={styles.stepper}>

@@ -5314,8 +5314,6 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         ) : isListenAiConfigQuestion(settingsQuestion) && settingsListenAiConfig && settingsTarget ? (
           <ListenAIQuestionSettingsPanel
             config={settingsListenAiConfig}
-            sections={sections}
-            questionId={settingsTarget.questionId}
             onChange={(next) => handleListenAiConfigChange(settingsTarget.questionId, next)}
             onClose={() => setSettingsTarget(null)}
           />

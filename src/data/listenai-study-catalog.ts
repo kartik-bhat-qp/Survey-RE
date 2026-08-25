@@ -207,7 +207,7 @@ export function createListenAiStudyDraft(input: CreateListenAiStudyInput): Liste
     title,
     description: goal,
     interviewType: 'conversation',
-    conversationMode: input.sourceQuestionId ? 'followup' : 'independent',
+    conversationMode: 'followup',
     maxFollowUps: 3,
     tone: 'curious',
     primaryLanguage: 'en',

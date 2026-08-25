@@ -134,46 +134,6 @@
   margin: 0.375rem 0 0;
 }
 
-.modeCard {
-  align-items: center;
-  background: #f8fafc;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.25rem;
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.5rem 0.625rem;
-}
-
-.modeIcon {
-  color: #1b87e6;
-  flex-shrink: 0;
-  font-size: 1.125rem;
-}
-
-.modeValue {
-  color: #1e293b;
-  flex: 1;
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  min-width: 0;
-}
-
-.modeChangeBtn {
-  background: none;
-  border: none;
-  color: #1b87e6;
-  cursor: pointer;
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  padding: 0;
-}
-
-.modeChangeBtn:hover {
-  text-decoration: underline;
-}
-
 .stepper {
   align-items: center;
   border: 1px solid #d5dde6;

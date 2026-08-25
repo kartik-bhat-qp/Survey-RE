@@ -27,6 +27,10 @@ export const LISTENAI_PLACE_NOT_FIRST_TOAST =
 export const LISTENAI_PLACE_NOT_LAST_TOAST =
   'Conversation cannot be the last question in the survey';
 
+/** Credits shown on the Conversation question workspace footer. */
+export const LISTENAI_CREDITS_PER_CONVERSATION = 0.4;
+export const LISTENAI_CREDITS_REMAINING = 4820;
+
 export interface ListenAiQuestionConfig {
   studyId: string;
   study: ListenAiStudy;
@@ -225,10 +229,10 @@ export function updateListenAiFirstQuestion(
   };
 }
 
-/** Default survey binding after connecting a study: independent mode, no source, empty opener. */
+/** Default survey binding after connecting a study: follow-up mode, no source, empty opener. */
 export function resetListenAiSurveyBinding(study: ListenAiStudy): ListenAiStudy {
   return updateListenAiFirstQuestion(
-    setListenAiConversationMode(updateListenAiSourceQuestion(study, null), 'independent'),
+    setListenAiConversationMode(updateListenAiSourceQuestion(study, null), 'followup'),
     ''
   );
 }
@@ -284,7 +288,14 @@ export function createListenAiQuestion(
   questionNumber: number,
   partial?: Partial<ListenAiQuestionConfig>
 ): SurveyQuestion {
-  const config = resolveListenAiConfig(partial);
+  const resolved = resolveListenAiConfig(partial);
+  const defaultStudy = getDefaultListenAiStudy();
+  const config = isListenAiStudySelected(resolved)
+    ? resolved
+    : {
+        studyId: defaultStudy.id,
+        study: resetListenAiSurveyBinding(defaultStudy),
+      };
   return {
     id: questionId,
     code: `Q${questionNumber}`,

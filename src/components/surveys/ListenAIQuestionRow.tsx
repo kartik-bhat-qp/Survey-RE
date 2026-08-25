@@ -1,7 +1,10 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
+import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { CREDITS_WALLET_PATH } from '@/data/mock-credits-wallet';
 import type { SurveyQuestion, SurveySection } from '@/data/mock-survey-detail';
 import {
   getListenAiFirstQuestion,
@@ -9,6 +12,8 @@ import {
   isListenAiStudySelected,
   getListenAiResponseFieldToken,
   listListenAiSourceQuestions,
+  LISTENAI_CREDITS_PER_CONVERSATION,
+  LISTENAI_CREDITS_REMAINING,
   resetListenAiSurveyBinding,
   setListenAiConversationMode,
   updateListenAiFirstQuestion,
@@ -21,8 +26,9 @@ import {
   type ListenAiConversationMode,
   type ListenAiStudy,
 } from '@/data/mock-listenai-studies';
+import { formatNumber } from '@/data/mock-utils';
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
-import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
+import { ShowHideOptionsAppliedIcon } from '@/components/surveys/ShowHideOptionsAppliedIcon';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
 import styles from './ListenAIQuestionRow.module.css';
 
@@ -112,6 +118,7 @@ export function ListenAIQuestionRow({
   onOpenSettings,
   onConfigChange,
 }: ListenAIQuestionRowProps) {
+  const { showToast } = useWuShowToast();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerCreateMode, setPickerCreateMode] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
@@ -403,10 +410,37 @@ export function ListenAIQuestionRow({
           )}
         </div>
 
-        <QuestionWorkspaceFooter
-          showHideOptionsApplied={showHideOptionsApplied}
-          className={styles.footer}
-        />
+        <div
+          className={styles.creditsFooter}
+          onPointerDown={stopQuestionEvent}
+          onClick={(event) => event.stopPropagation()}
+          aria-label="Conversation credits"
+        >
+          {showHideOptionsApplied ? <ShowHideOptionsAppliedIcon /> : null}
+          <div className={styles.creditsRate}>
+            <span className={`wc-ai ${styles.creditsAiIcon}`} aria-hidden />
+            <p className={styles.creditsRateText}>
+              <strong>{LISTENAI_CREDITS_PER_CONVERSATION} credits</strong>
+              {' per conversation'}
+            </p>
+          </div>
+          <Link
+            href={CREDITS_WALLET_PATH}
+            className={styles.creditsBalance}
+            aria-label={`${formatNumber(LISTENAI_CREDITS_REMAINING)} credits left`}
+          >
+            <span className={styles.creditsBalanceText}>
+              {formatNumber(LISTENAI_CREDITS_REMAINING)} credits left
+            </span>
+          </Link>
+          <button
+            type="button"
+            className={styles.buyCreditsBtn}
+            onClick={() => showToast({ message: 'Buy credits', variant: 'info' })}
+          >
+            Buy credits
+          </button>
+        </div>
       </div>
 
       {pickerOpen ? (

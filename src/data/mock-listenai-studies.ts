@@ -66,7 +66,7 @@ export function normalizeListenAiConversationMode(
   if (study.conversationMode === 'followup' || study.conversationMode === 'independent') {
     return study.conversationMode;
   }
-  return study.sourceQuestionId?.trim() ? 'followup' : 'independent';
+  return 'followup';
 }
 
 export function isListenAiIndependentConversation(
@@ -124,7 +124,7 @@ export const MOCK_LISTENAI_STUDIES: ListenAiStudy[] = [
     description:
       'This interview explores why people prefer a particular fast food chain and what factors could influence their next visit. The focus is on understanding the reasons behind current preference, the role of convenience, value, food, service, and experience, and what might encourage or discourage a return visit.',
     interviewType: 'conversation',
-    conversationMode: 'independent',
+    conversationMode: 'followup',
     maxFollowUps: 3,
     tone: 'curious',
     primaryLanguage: 'en',
