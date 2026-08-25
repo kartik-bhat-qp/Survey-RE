@@ -216,7 +216,7 @@ export function CreditsWalletPage() {
               <h1 className={styles.placeholderTitle}>{placeholder.title}</h1>
               <p className={styles.placeholderCopy}>{placeholder.description}</p>
               <WuButton
-                variant="outlined"
+                variant="outline"
                 onClick={() => showToast({ message: `${placeholder.title} coming soon`, variant: 'info' })}
               >
                 View details
