@@ -11,6 +11,15 @@
   overflow: hidden;
 }
 
+.canvasWithSettings .canvasMain {
+  scrollbar-width: none;
+}
+
+.canvasWithSettings .canvasMain::-webkit-scrollbar {
+  height: 0;
+  width: 0;
+}
+
 .canvasMain {
   flex: 1;
   min-height: 0;

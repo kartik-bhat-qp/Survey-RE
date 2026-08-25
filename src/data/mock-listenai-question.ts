@@ -5,12 +5,15 @@ import {
   getListenAiStudyById,
   LISTENAI_ADD_QUESTION_TYPE_ID,
   LISTENAI_MAX_FOLLOW_UP_LIMIT,
+  normalizeListenAiConversationMode,
   normalizeListenAiTone,
+  type ListenAiConversationMode,
   type ListenAiStudy,
 } from '@/data/mock-listenai-studies';
 import { findListenAiStudyInCatalog } from '@/data/listenai-study-catalog';
 
 export { LISTENAI_ADD_QUESTION_TYPE_ID };
+export type { ListenAiConversationMode };
 
 /** ListenAI is available from Add Question on every survey. */
 export function isListenAiEnabledSurvey(_surveyId?: number): boolean {
@@ -155,6 +158,25 @@ export function getListenAiResponseFieldToken(sourceQuestionCode?: string): stri
   return sourceQuestionCode?.trim() ? `{${sourceQuestionCode.trim()}}` : LISTENAI_RESPONSE_FIELD_TOKEN;
 }
 
+export function getListenAiIndependentOpenerSuggestion(objectives: string[]): string {
+  const text = objectives.join(' ').trim().replace(/\.$/, '');
+  if (!text) return 'What would you like to tell us in your own words?';
+  return 'To start, tell me about the last time this came up for you.';
+}
+
+export function setListenAiConversationMode(
+  study: ListenAiStudy,
+  conversationMode: ListenAiConversationMode
+): ListenAiStudy {
+  return {
+    ...study,
+    conversationMode: normalizeListenAiConversationMode({
+      ...study,
+      conversationMode,
+    }),
+  };
+}
+
 export function getListenAiFirstQuestion(study: ListenAiStudy): string {
   return study.discussionGuide[0]?.text ?? '';
 }
@@ -203,9 +225,12 @@ export function updateListenAiFirstQuestion(
   };
 }
 
-/** Default survey binding after connecting a study: no source, empty first question. */
+/** Default survey binding after connecting a study: independent mode, no source, empty opener. */
 export function resetListenAiSurveyBinding(study: ListenAiStudy): ListenAiStudy {
-  return updateListenAiFirstQuestion(updateListenAiSourceQuestion(study, null), '');
+  return updateListenAiFirstQuestion(
+    setListenAiConversationMode(updateListenAiSourceQuestion(study, null), 'independent'),
+    ''
+  );
 }
 
 export function appendListenAiResponseField(text: string): string {
@@ -239,6 +264,7 @@ export function resolveListenAiConfig(
     studyId,
     study: {
       ...base,
+      conversationMode: normalizeListenAiConversationMode(base),
       maxFollowUps: normalizeListenAiMaxFollowUps(base.maxFollowUps),
       tone: normalizeListenAiTone(base.tone),
       discussionGuide: base.discussionGuide.map((question) => ({

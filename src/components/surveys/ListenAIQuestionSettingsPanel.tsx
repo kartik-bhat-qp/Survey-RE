@@ -1,22 +1,20 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-import type { ListenAiQuestionConfig } from '@/data/mock-listenai-question';
-import { normalizeListenAiMaxFollowUps } from '@/data/mock-listenai-question';
 import {
+  listListenAiSourceQuestions,
+  normalizeListenAiMaxFollowUps,
+  setListenAiConversationMode,
+  type ListenAiQuestionConfig,
+} from '@/data/mock-listenai-question';
+import {
+  isListenAiIndependentConversation,
   LISTENAI_MAX_FOLLOW_UP_LIMIT,
-  LISTENAI_TONE_OPTIONS,
+  normalizeListenAiConversationMode,
   type ListenAiStudy,
-  type ListenAiTone,
 } from '@/data/mock-listenai-studies';
 import type { SurveySection } from '@/data/mock-survey-detail';
 import panelStyles from './QuestionSettingsPanel.module.css';
 import styles from './ListenAIQuestionSettingsPanel.module.css';
-
-const WuSelect = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
-  { ssr: false }
-);
 
 export interface ListenAIQuestionSettingsPanelProps {
   config: ListenAiQuestionConfig;
@@ -35,6 +33,8 @@ function patchStudy(config: ListenAiQuestionConfig, study: ListenAiStudy): Liste
 
 export function ListenAIQuestionSettingsPanel({
   config,
+  sections,
+  questionId,
   onChange,
   onClose,
 }: ListenAIQuestionSettingsPanelProps) {
@@ -44,12 +44,23 @@ export function ListenAIQuestionSettingsPanel({
     maxFollowUps: normalizeListenAiMaxFollowUps(config.study.maxFollowUps),
     tone: config.study.tone ?? 'curious',
   } satisfies ListenAiStudy;
-  const selectedTone =
-    LISTENAI_TONE_OPTIONS.find((item) => item.value === study.tone) ??
-    LISTENAI_TONE_OPTIONS[4] ??
-    null;
   const objectivesText = study.objectives.join('\n');
   const objectivesMissing = objectivesText.trim().length === 0;
+  const conversationMode = normalizeListenAiConversationMode(study);
+  const isIndependent = isListenAiIndependentConversation(study);
+  const sourceQuestion = listListenAiSourceQuestions(sections, questionId).find(
+    (option) => option.questionId === study.sourceQuestionId
+  );
+  const modeLabel = isIndependent
+    ? 'Independent'
+    : sourceQuestion?.code
+      ? `Follow-up on ${sourceQuestion.code}`
+      : 'Follow-up';
+
+  function patchConversationMode(): void {
+    const nextMode = conversationMode === 'independent' ? 'followup' : 'independent';
+    onChange(patchStudy(config, setListenAiConversationMode(study, nextMode)));
+  }
 
   function patchMaxFollowUps(maxFollowUps: number): void {
     const next = normalizeListenAiMaxFollowUps(maxFollowUps);
@@ -91,11 +102,11 @@ export function ListenAIQuestionSettingsPanel({
               Powered by{' '}
               <a
                 className={styles.headerTaglineLink}
-                href="https://staging.listenai.questionpro.com/ui/interviews/create/ai"
+                href="https://www.questionpro.com/research-suite/listen-ai/"
                 target="_blank"
                 rel="noreferrer"
               >
-                QuestionProAI Interviews
+                Interviews
               </a>
             </p>
           </div>
@@ -106,56 +117,48 @@ export function ListenAIQuestionSettingsPanel({
       </header>
 
       <div className={styles.body}>
-        <div className={styles.twoColumnRow}>
-          <div className={panelStyles.field}>
-            <span className={panelStyles.fieldLabel}>Follow Ups</span>
-            <div className={styles.stepper}>
-              <button
-                type="button"
-                className={styles.stepperBtn}
-                aria-label="Decrease follow-ups"
-                disabled={study.maxFollowUps <= 1}
-                onClick={() => patchMaxFollowUps(study.maxFollowUps - 1)}
-              >
-                −
-              </button>
-              <span className={styles.stepperValue}>{study.maxFollowUps}</span>
-              <button
-                type="button"
-                className={styles.stepperBtn}
-                aria-label="Increase follow-ups"
-                disabled={study.maxFollowUps >= LISTENAI_MAX_FOLLOW_UP_LIMIT}
-                onClick={() => patchMaxFollowUps(study.maxFollowUps + 1)}
-              >
-                +
-              </button>
-            </div>
-            {study.maxFollowUps >= LISTENAI_MAX_FOLLOW_UP_LIMIT ? (
-              <p className={styles.fieldHelper}>
-                Maximum {LISTENAI_MAX_FOLLOW_UP_LIMIT} follow-ups are allowed
-              </p>
-            ) : null}
+        <div className={panelStyles.field}>
+          <span className={panelStyles.fieldLabel}>Mode</span>
+          <div className={styles.modeCard}>
+            <span
+              className={`${isIndependent ? 'wm-forum' : 'wm-reply'} ${styles.modeIcon}`}
+              aria-hidden
+            />
+            <span className={styles.modeValue}>{modeLabel}</span>
+            <button type="button" className={styles.modeChangeBtn} onClick={patchConversationMode}>
+              Change
+            </button>
           </div>
+        </div>
 
-          <div className={panelStyles.field}>
-            <span className={panelStyles.fieldLabel}>Tone</span>
-            <div className={panelStyles.selectWrap}>
-              <WuSelect
-                data={LISTENAI_TONE_OPTIONS}
-                accessorKey={{ value: 'value', label: 'label' }}
-                value={selectedTone}
-                onSelect={(item) =>
-                  onChange(
-                    patchStudy(config, {
-                      ...study,
-                      tone: (item as { value: ListenAiTone }).value,
-                    })
-                  )
-                }
-                variant="outlined"
-              />
-            </div>
+        <div className={panelStyles.field}>
+          <span className={panelStyles.fieldLabel}>Follow Ups</span>
+          <div className={styles.stepper}>
+            <button
+              type="button"
+              className={styles.stepperBtn}
+              aria-label="Decrease follow-ups"
+              disabled={study.maxFollowUps <= 1}
+              onClick={() => patchMaxFollowUps(study.maxFollowUps - 1)}
+            >
+              −
+            </button>
+            <span className={styles.stepperValue}>{study.maxFollowUps}</span>
+            <button
+              type="button"
+              className={styles.stepperBtn}
+              aria-label="Increase follow-ups"
+              disabled={study.maxFollowUps >= LISTENAI_MAX_FOLLOW_UP_LIMIT}
+              onClick={() => patchMaxFollowUps(study.maxFollowUps + 1)}
+            >
+              +
+            </button>
           </div>
+          {study.maxFollowUps >= LISTENAI_MAX_FOLLOW_UP_LIMIT ? (
+            <p className={styles.fieldHelper}>
+              Maximum {LISTENAI_MAX_FOLLOW_UP_LIMIT} follow-ups are allowed
+            </p>
+          ) : null}
         </div>
 
         <div className={panelStyles.field}>
@@ -178,7 +181,7 @@ export function ListenAIQuestionSettingsPanel({
         </div>
 
         <div className={panelStyles.field}>
-          <span className={panelStyles.fieldLabel}>AI moderator instructions (optional)</span>
+          <span className={panelStyles.fieldLabel}>Moderator instructions (optional)</span>
           <textarea
             className={styles.textarea}
             rows={3}
@@ -193,9 +196,8 @@ export function ListenAIQuestionSettingsPanel({
             i
           </span>
           <p className={styles.constraintText}>
-            Conversation uses the same placement rules as Platform Connect: it cannot be the first
-            question on a page, cannot be the last question in the survey, and is not compatible
-            with question or block randomization or Respondent Anonymity Assurance.
+            This question cannot be the first or last question of the survey, and is not compatible
+            with question or block randomization.
           </p>
         </div>
       </div>

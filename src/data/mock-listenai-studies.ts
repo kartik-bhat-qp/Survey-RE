@@ -3,6 +3,8 @@ export const LISTENAI_MAX_FOLLOW_UP_LIMIT = 5;
 
 export type ListenAiInterviewType = 'conversation' | 'video';
 
+export type ListenAiConversationMode = 'followup' | 'independent';
+
 export type ListenAiTone =
   | 'neutral'
   | 'friendly'
@@ -24,6 +26,7 @@ export interface ListenAiStudy {
   title: string;
   description: string;
   interviewType: ListenAiInterviewType;
+  conversationMode?: ListenAiConversationMode;
   maxFollowUps: number;
   tone: ListenAiTone;
   primaryLanguage: string;
@@ -56,6 +59,21 @@ export const LISTENAI_TONE_OPTIONS: { value: ListenAiTone; label: string }[] = [
   { value: 'empathetic', label: 'Empathetic' },
   { value: 'curious', label: 'Curious' },
 ];
+
+export function normalizeListenAiConversationMode(
+  study: Pick<ListenAiStudy, 'conversationMode' | 'sourceQuestionId'>
+): ListenAiConversationMode {
+  if (study.conversationMode === 'followup' || study.conversationMode === 'independent') {
+    return study.conversationMode;
+  }
+  return study.sourceQuestionId?.trim() ? 'followup' : 'independent';
+}
+
+export function isListenAiIndependentConversation(
+  study: Pick<ListenAiStudy, 'conversationMode' | 'sourceQuestionId'>
+): boolean {
+  return normalizeListenAiConversationMode(study) === 'independent';
+}
 
 export function normalizeListenAiTone(value: unknown): ListenAiTone {
   if (
@@ -106,6 +124,7 @@ export const MOCK_LISTENAI_STUDIES: ListenAiStudy[] = [
     description:
       'This interview explores why people prefer a particular fast food chain and what factors could influence their next visit. The focus is on understanding the reasons behind current preference, the role of convenience, value, food, service, and experience, and what might encourage or discourage a return visit.',
     interviewType: 'conversation',
+    conversationMode: 'independent',
     maxFollowUps: 3,
     tone: 'curious',
     primaryLanguage: 'en',

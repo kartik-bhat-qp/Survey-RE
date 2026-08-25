@@ -118,6 +118,15 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
     ],
   },
   {
+    id: 'questionpro-ai',
+    title: 'QuestionProAI',
+    tier: 'advanced',
+    types: [
+      { id: 'listenai', label: 'Conversation', icon: 'wm-chat' },
+      { id: 'video-ai', label: 'VideoAI', icon: 'wm-videocam' },
+    ],
+  },
+  {
     id: 'health-care',
     title: 'Health Care',
     tier: 'advanced',
@@ -180,7 +189,6 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
     types: [
       { id: 'upload-file', label: 'Attach/Upload File', icon: 'wm-attach-file' },
       { id: 'signature', label: 'Signature', icon: 'wm-gesture' },
-      { id: 'video-ai', label: 'VideoAI', icon: 'wm-videocam' },
     ],
   },
   {
@@ -219,7 +227,6 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
         label: 'Platform Connect',
         icon: 'wm-lightbulb',
       },
-      { id: 'listenai', label: 'Conversation', icon: 'wm-chat' },
       { id: 'community-recruitment', label: 'Community Recruitment', icon: 'wm-groups' },
     ],
   },

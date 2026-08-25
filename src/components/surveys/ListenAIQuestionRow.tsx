@@ -5,15 +5,22 @@ import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react
 import type { SurveyQuestion, SurveySection } from '@/data/mock-survey-detail';
 import {
   getListenAiFirstQuestion,
+  getListenAiIndependentOpenerSuggestion,
   isListenAiStudySelected,
   getListenAiResponseFieldToken,
   listListenAiSourceQuestions,
   resetListenAiSurveyBinding,
+  setListenAiConversationMode,
   updateListenAiFirstQuestion,
   updateListenAiSourceQuestion,
   type ListenAiQuestionConfig,
 } from '@/data/mock-listenai-question';
-import type { ListenAiStudy } from '@/data/mock-listenai-studies';
+import {
+  isListenAiIndependentConversation,
+  normalizeListenAiConversationMode,
+  type ListenAiConversationMode,
+  type ListenAiStudy,
+} from '@/data/mock-listenai-studies';
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
@@ -110,6 +117,8 @@ export function ListenAIQuestionRow({
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const firstQuestionRef = useRef<HTMLTextAreaElement | null>(null);
   const hasStudy = isListenAiStudySelected(config);
+  const conversationMode = normalizeListenAiConversationMode(config.study);
+  const isIndependent = isListenAiIndependentConversation(config.study);
   const sourceQuestions = useMemo(
     () => listListenAiSourceQuestions(sections, question.id),
     [question.id, sections]
@@ -129,6 +138,11 @@ export function ListenAIQuestionRow({
     suggestedFirstQuestions.length > 0
       ? suggestedFirstQuestions[suggestionIndex % suggestedFirstQuestions.length]
       : null;
+
+  const independentSuggestion = useMemo(
+    () => getListenAiIndependentOpenerSuggestion(config.study.objectives),
+    [config.study.objectives]
+  );
 
   useEffect(() => {
     setSuggestionIndex(0);
@@ -153,12 +167,23 @@ export function ListenAIQuestionRow({
     setPickerOpen(true);
   }
 
+  function handleConversationModeChange(nextMode: ListenAiConversationMode): void {
+    if (nextMode === conversationMode) return;
+    onConfigChange({
+      ...config,
+      study: setListenAiConversationMode(config.study, nextMode),
+    });
+  }
+
   function handleSourceQuestionChange(value: string): void {
     const selected = sourceQuestions.find((option) => option.value === value);
     const nextStudy = updateListenAiSourceQuestion(config.study, selected ?? null);
     onConfigChange({
       ...config,
-      study: updateListenAiFirstQuestion(nextStudy, ''),
+      study: updateListenAiFirstQuestion(
+        setListenAiConversationMode(nextStudy, 'followup'),
+        ''
+      ),
     });
   }
 
@@ -225,69 +250,140 @@ export function ListenAIQuestionRow({
               onPointerDown={stopQuestionEvent}
               onClick={(event) => event.stopPropagation()}
             >
-              <label className={styles.formRow}>
-                <span className={styles.fieldLabel}>
-                  Select the survey question you want to follow-up on
-                </span>
-                <select
-                  className={styles.nativeSelect}
-                  value={selectedSourceValue}
-                  onChange={(event) => handleSourceQuestionChange(event.target.value)}
-                  aria-label="Select the survey question you want to follow-up on"
-                >
-                  <option value={UNSET_STUDY_VALUE}>Select a question</option>
-                  {sourceQuestions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className={styles.formRow}>
-                <span className={styles.fieldLabel}>Enter the follow-up question you want to start with</span>
-                <div className={styles.firstQuestionInputWrap}>
+              <div className={styles.formRow}>
+                <span className={styles.fieldLabel}>Conversation mode</span>
+                <div className={styles.modeToggle} role="group" aria-label="Conversation mode">
                   <button
                     type="button"
-                    className={styles.inlineInsertBtn}
-                    onClick={insertResponseFieldAtCursor}
-                  >
-                    Insert Response
-                  </button>
-                  <textarea
-                    ref={firstQuestionRef}
-                    className={styles.firstQuestionInput}
-                    rows={3}
-                    value={getListenAiFirstQuestion(config.study)}
-                    onChange={(event) =>
-                      onConfigChange({
-                        ...config,
-                        study: updateListenAiFirstQuestion(config.study, event.target.value),
-                      })
+                    className={
+                      !isIndependent ? styles.modeToggleActive : styles.modeToggleInactive
                     }
-                    placeholder="Enter the follow-up question you want to start with"
-                  />
+                    aria-pressed={!isIndependent}
+                    onClick={() => handleConversationModeChange('followup')}
+                  >
+                    Follow-up
+                  </button>
+                  <button
+                    type="button"
+                    className={
+                      isIndependent ? styles.modeToggleActive : styles.modeToggleInactive
+                    }
+                    aria-pressed={isIndependent}
+                    onClick={() => handleConversationModeChange('independent')}
+                  >
+                    Independent
+                  </button>
                 </div>
-                {activeSuggestion ? (
-                  <p className={styles.firstQuestionHelper} aria-live="polite">
-                    <span className={styles.firstQuestionHelperPrefix}>
-                      Suggested for this source question:
+                <p className={styles.modeHelper}>
+                  {isIndependent
+                    ? 'The conversation stands on its own. Respondents answer your opening question, then the AI probes toward your objectives.'
+                    : 'The conversation starts from an answer the respondent already gave in this survey.'}
+                </p>
+              </div>
+
+              {isIndependent ? (
+                <>
+                  <label className={styles.formRow}>
+                    <span className={styles.fieldLabel}>
+                      Enter the opening question of the conversation
                     </span>
-                    <button
-                      type="button"
-                      className={styles.firstQuestionExample}
-                      title="Double-click to use this suggestion"
-                      onDoubleClick={() => applySuggestedFirstQuestion(activeSuggestion)}
+                    <textarea
+                      ref={firstQuestionRef}
+                      className={`${styles.firstQuestionInput} ${styles.firstQuestionInputBare}`}
+                      rows={3}
+                      value={getListenAiFirstQuestion(config.study)}
+                      onChange={(event) =>
+                        onConfigChange({
+                          ...config,
+                          study: updateListenAiFirstQuestion(config.study, event.target.value),
+                        })
+                      }
+                      placeholder="Enter the question the AI interviewer opens with"
+                    />
+                    <p className={styles.firstQuestionHelper} aria-live="polite">
+                      <span className={styles.firstQuestionHelperPrefix}>
+                        Suggested from your objectives:
+                      </span>
+                      <button
+                        type="button"
+                        className={styles.firstQuestionExample}
+                        title="Click to use this suggestion"
+                        onClick={() => applySuggestedFirstQuestion(independentSuggestion)}
+                      >
+                        {independentSuggestion}
+                      </button>
+                    </p>
+                  </label>
+                </>
+              ) : (
+                <>
+                  <label className={styles.formRow}>
+                    <span className={styles.fieldLabel}>
+                      Select the survey question you want to follow-up on
+                    </span>
+                    <select
+                      className={styles.nativeSelect}
+                      value={selectedSourceValue}
+                      onChange={(event) => handleSourceQuestionChange(event.target.value)}
+                      aria-label="Select the survey question you want to follow-up on"
                     >
-                      {activeSuggestion}
-                    </button>
-                  </p>
-                ) : (
-                  <p className={styles.firstQuestionHelper}>
-                    Use Insert Response to reference the selected answer in your prompt.
-                  </p>
-                )}
-              </label>
+                      <option value={UNSET_STUDY_VALUE}>Select a question</option>
+                      {sourceQuestions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className={styles.formRow}>
+                    <span className={styles.fieldLabel}>
+                      Enter the follow-up question you want to start with
+                    </span>
+                    <div className={styles.firstQuestionInputWrap}>
+                      <button
+                        type="button"
+                        className={styles.inlineInsertBtn}
+                        onClick={insertResponseFieldAtCursor}
+                      >
+                        Insert Response
+                      </button>
+                      <textarea
+                        ref={firstQuestionRef}
+                        className={styles.firstQuestionInput}
+                        rows={3}
+                        value={getListenAiFirstQuestion(config.study)}
+                        onChange={(event) =>
+                          onConfigChange({
+                            ...config,
+                            study: updateListenAiFirstQuestion(config.study, event.target.value),
+                          })
+                        }
+                        placeholder="Enter the follow-up question you want to start with"
+                      />
+                    </div>
+                    {activeSuggestion ? (
+                      <p className={styles.firstQuestionHelper} aria-live="polite">
+                        <span className={styles.firstQuestionHelperPrefix}>
+                          Suggested for this source question:
+                        </span>
+                        <button
+                          type="button"
+                          className={styles.firstQuestionExample}
+                          title="Double-click to use this suggestion"
+                          onDoubleClick={() => applySuggestedFirstQuestion(activeSuggestion)}
+                        >
+                          {activeSuggestion}
+                        </button>
+                      </p>
+                    ) : (
+                      <p className={styles.firstQuestionHelper}>
+                        Use Insert Response to reference the selected answer in your prompt.
+                      </p>
+                    )}
+                  </label>
+                </>
+              )}
             </div>
           ) : (
             <div

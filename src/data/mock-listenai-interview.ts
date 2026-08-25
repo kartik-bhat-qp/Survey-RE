@@ -1,4 +1,8 @@
-import { cloneListenAiStudy, type ListenAiStudy } from '@/data/mock-listenai-studies';
+import {
+  cloneListenAiStudy,
+  isListenAiIndependentConversation,
+  type ListenAiStudy,
+} from '@/data/mock-listenai-studies';
 import { LISTENAI_RESPONSE_FIELD_TOKEN } from '@/data/mock-listenai-question';
 
 export interface ListenAiCreateExampleBrief {
@@ -204,6 +208,10 @@ function getListenAiOpeningQuestion(study: ListenAiStudy): string {
   const configured = study.discussionGuide.find((question) => question.text.trim())?.text.trim();
   if (configured) return configured;
 
+  if (isListenAiIndependentConversation(study)) {
+    return 'What would you like to tell us in your own words?';
+  }
+
   const sourceText = study.sourceQuestionText?.trim();
   if (sourceText) {
     return generateListenAiFirstQuestionFromSource(sourceText);
@@ -220,7 +228,9 @@ export function getResolvedListenAiOpeningMessages(
   study: ListenAiStudy,
   selectedAnswerLabel: string
 ): string[] {
-  return getListenAiOpeningMessages(study).map((message) =>
+  const messages = getListenAiOpeningMessages(study);
+  if (isListenAiIndependentConversation(study)) return messages;
+  return messages.map((message) =>
     resolveListenAiTemplate(message, selectedAnswerLabel, study.sourceQuestionCode)
   );
 }
@@ -231,7 +241,10 @@ export function buildListenAiFollowUp(
   followUpIndex: number,
   selectedAnswerLabel: string
 ): string {
-  const reply = userReply.trim() || selectedAnswerLabel.trim() || 'that';
+  const reply =
+    userReply.trim() ||
+    (isListenAiIndependentConversation(study) ? '' : selectedAnswerLabel.trim()) ||
+    'that';
   const instructions = study.discussionGuide[0]?.followUpInstructions.trim() ?? '';
   const templates = [
     `You said ${reply} — can you tell me more about what specifically makes you choose ${reply} (e.g., taste, price, convenience, menu variety, location, speed)?`,

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Fira Sans', sans-serif; background: #eef2f6; }
+  a { color: #1b87e6; text-decoration: none; }
+  a:hover { color: #1570c2; text-decoration: underline; }
+  .ms { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; direction: ltr; }
+  input, textarea, select, button { font-family: 'Fira Sans', sans-serif; }
+</style>
+</helmet>
+
+<div style="width: 1440px; height: 900px; display: flex; flex-direction: column; overflow: hidden; background: #eef2f6; color: #1e293b;">
+
+  <div style="display: flex; align-items: stretch; height: 44px; background: #16295c; flex-shrink: 0;">
+    <div style="width: 232px; background: #1b87e6; display: flex; align-items: center; gap: 8px; padding: 0 12px;">
+      <span class="ms" style="font-size: 20px; color: #fff;">deployed_code</span>
+      <span style="color: #fff; font-size: 15px; font-weight: 600; flex: 1;">Surveys</span>
+      <span class="ms" style="font-size: 20px; color: #fff;">expand_more</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; padding: 0 16px; color: #fff; font-size: 13px; font-weight: 600;">
+      <a href="#" style="color: #fff; font-weight: 600;">My Surveys</a>
+      <span class="ms" style="font-size: 16px; opacity: 0.6;">chevron_right</span>
+      <span>Conversation</span>
+    </div>
+    <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 0 16px;">
+      <div style="position: relative; width: 100%; max-width: 320px;">
+        <span class="ms" style="position: absolute; left: 10px; top: 6px; font-size: 18px; color: #64748b;">search</span>
+        <input type="text" placeholder="Global search for users, surveys, tickets" style="width: 100%; height: 30px; border: none; border-radius: 999px; padding: 0 12px 0 34px; font-size: 12px; color: #334155; box-sizing: border-box;" />
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 0 12px;">
+      <button type="button" style="display: inline-flex; align-items: center; gap: 2px; background: transparent; border: none; color: #fff; font-size: 13px; cursor: pointer; padding: 6px 8px;">Admin<span class="ms" style="font-size: 18px;">expand_more</span></button>
+      <button type="button" style="background: #f5a623; border: none; border-radius: 4px; color: #fff; font-size: 13px; font-weight: 600; padding: 6px 12px; cursor: pointer;">Upgrade Now</button>
+      <span class="ms" style="font-size: 22px; color: #fff; opacity: 0.85;">help</span>
+      <span style="width: 26px; height: 26px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.5); color: #fff; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center;">KB</span>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; background: #fff; border-bottom: 1px solid #d5dde6; padding: 0 12px; flex-shrink: 0;">
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <a href="#" style="font-size: 13px; font-weight: 600; color: #1b87e6; border-bottom: 2px solid #1b87e6; padding: 10px 2px;">Edit</a>
+      <a href="#" style="font-size: 13px; color: #334155; padding: 10px 2px;">Distribute</a>
+      <a href="#" style="font-size: 13px; color: #334155; padding: 10px 2px;">Analytics</a>
+      <a href="#" style="font-size: 13px; color: #334155; padding: 10px 2px;">Analytics 2.0</a>
+      <a href="#" style="font-size: 13px; color: #334155; padding: 10px 2px;">Integration</a>
+    </div>
+    <div style="display: inline-flex; align-items: center; gap: 2px;">
+      <button type="button" style="display: inline-flex; align-items: center; justify-content: center; background: transparent; border: none; color: #334155; cursor: pointer; padding: 6px 8px;"><span class="ms" style="font-size: 18px;">sync</span></button>
+      <button type="button" style="display: inline-flex; align-items: center; justify-content: center; background: transparent; border: none; color: #334155; cursor: pointer; padding: 6px 8px;"><span class="ms" style="font-size: 18px;">download</span></button>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; color: #334155; font-size: 13px; cursor: pointer; padding: 6px 8px;">Tools<span class="ms" style="font-size: 18px;">expand_more</span></button>
+      <button type="button" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; color: #334155; font-size: 13px; padding: 5px 10px; margin-inline: 2px; cursor: pointer;">Test Responses</button>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; color: #334155; font-size: 13px; cursor: pointer; padding: 6px 8px;"><span class="ms" style="font-size: 18px;">group</span>1.8K</button>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; background: #fff; border-bottom: 1px solid #d5dde6; padding: 0 12px; flex-shrink: 0;">
+    <div style="display: flex; align-items: stretch; gap: 4px;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 14px; background: #eef2f6; color: #334155;">
+        <span class="ms" style="font-size: 18px;">dashboard</span>
+        <span style="font-size: 12px; font-weight: 600;">Workspace</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 14px; color: #334155;">
+        <span class="ms" style="font-size: 18px;">brush</span>
+        <span style="font-size: 12px;">Design</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 14px; color: #334155;">
+        <span class="ms" style="font-size: 18px;">perm_media</span>
+        <span style="font-size: 12px;">Media Library</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 14px; color: #334155;">
+        <span class="ms" style="font-size: 18px;">language</span>
+        <span style="font-size: 12px;">Languages</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 14px; color: #334155;">
+        <span class="ms" style="font-size: 18px;">flag</span>
+        <span style="font-size: 12px;">Finish Options</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 14px; color: #334155;">
+        <span style="display: inline-flex; align-items: center; gap: 4px; line-height: 1;"><span class="ms" style="font-size: 18px;">link</span><span style="background: #fff2e6; border: 1px solid #ffd5ad; border-radius: 999px; color: #c05621; font-size: 9px; font-weight: 600; line-height: 1; padding: 2px 5px; text-transform: uppercase;">Legacy</span></span>
+        <span style="font-size: 12px;">Advanced Quota</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 14px; color: #334155;">
+        <span style="display: inline-flex; align-items: center; gap: 4px; line-height: 1;"><span class="ms" style="font-size: 18px;">pie_chart</span><span style="background: #e8f4fd; border: 1px solid #b6daf8; border-radius: 999px; color: #1b87e6; font-size: 9px; font-weight: 600; line-height: 1; padding: 2px 5px; text-transform: uppercase;">New</span></span>
+        <span style="font-size: 12px;">Quota Management</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 14px; color: #334155;">
+        <span class="ms" style="font-size: 18px;">code</span>
+        <span style="font-size: 12px;">Variables</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 14px; color: #334155;">
+        <span class="ms" style="font-size: 18px;">settings</span>
+        <span style="font-size: 12px;">Settings</span>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px; padding-right: 12px;">
+      <button type="button" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: transparent; border: none; color: #64748b; cursor: pointer;"><span class="ms" style="font-size: 18px;">history</span></button>
+      <div style="display: inline-flex; align-items: center; background: #e8edf2; border-radius: 9999px; padding: 2px;">
+        <button type="button" style="background: #1b87e6; border: none; border-radius: 9999px; color: #fff; font-size: 13px; font-weight: 500; line-height: 1.25; padding: 5px 16px; cursor: pointer;">Draft</button>
+        <button type="button" style="background: transparent; border: none; border-radius: 9999px; color: #64748b; font-size: 13px; font-weight: 400; line-height: 1.25; padding: 5px 16px; cursor: pointer;">Publish</button>
+      </div>
+      <button type="button" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #1b87e6; border: none; border-radius: 6px; color: #fff; cursor: pointer;"><span class="ms" style="font-size: 18px;">visibility</span></button>
+    </div>
+  </div>
+
+  <div style="display: flex; flex: 1; min-height: 0; background: #eef2f6; position: relative;">
+    <div style="flex: 1; min-width: 0; overflow: auto; position: relative;">
+      <div style="max-width: 1000px; margin: 0 auto; padding: 16px 12px 80px;">
+        <div style="background: #fff; border: 1px solid #d5dde6; border-radius: 2px;">
+
+          <div style="display: grid; grid-template-columns: 3.25rem minmax(0, 1fr); gap: 0.5rem; border-left: 4px solid transparent; box-sizing: border-box;">
+            <div style="align-self: start; display: flex; flex-direction: column; gap: 0.5rem; padding: 2.75rem 0.5rem 0.75rem;">
+              <span style="color: #64748b; font-size: 13px; font-weight: 500; line-height: 1.25; padding: 0.375rem 0.35rem 0.375rem 0.375rem;">Q17</span>
+            </div>
+            <div style="min-width: 0; padding: 0.75rem 1rem 1rem;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="flex: 1;"></span>
+                <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                  <button type="button" style="background: none; border: none; color: #1b87e6; font-size: 12px; font-weight: 500; line-height: 18px; padding: 0; cursor: pointer;">Validation</button>
+                  <button type="button" style="background: none; border: none; color: #1b87e6; font-size: 12px; font-weight: 500; line-height: 18px; padding: 0; cursor: pointer;">Logic</button>
+                  <button type="button" style="background: none; border: none; color: #1b87e6; font-size: 12px; font-weight: 500; line-height: 18px; padding: 0; cursor: pointer;">Settings</button>
+                  <button type="button" style="display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; background: transparent; border: none; color: #64748b; cursor: pointer; margin-top: -6px;"><span class="ms" style="font-size: 18px;">more_vert</span></button>
+                </div>
+              </div>
+              <div style="margin: 0 0 0.75rem; padding-left: 1.5rem; color: #1e293b; font-size: 15px; font-weight: 500; line-height: 1.45;">Which fast-food chain you like the most?</div>
+              <ul style="display: flex; flex-direction: column; gap: 0.375rem; list-style: none; margin: 0 0 0.75rem; padding: 0 0 0 1.5rem;">
+                <li style="display: grid; grid-template-columns: 1rem minmax(0,1fr); gap: 0 0.5rem; align-items: start;">
+                  <span style="display: inline-flex; align-items: center; justify-content: center; height: 1.45rem; width: 1rem;"><input type="radio" name="q17" style="accent-color: #1b87e6; height: 1rem; width: 1rem; margin: 0;" /></span>
+                  <span style="color: #334155; font-size: 13px; padding: 0.125rem 0.25rem;">Taco Bell</span>
+                </li>
+                <li style="display: grid; grid-template-columns: 1rem minmax(0,1fr); gap: 0 0.5rem; align-items: start;">
+                  <span style="display: inline-flex; align-items: center; justify-content: center; height: 1.45rem; width: 1rem;"><input type="radio" name="q17" style="accent-color: #1b87e6; height: 1rem; width: 1rem; margin: 0;" /></span>
+                  <span style="color: #334155; font-size: 13px; padding: 0.125rem 0.25rem;">KFC</span>
+                </li>
+                <li style="display: grid; grid-template-columns: 1rem minmax(0,1fr); gap: 0 0.5rem; align-items: start;">
+                  <span style="display: inline-flex; align-items: center; justify-content: center; height: 1.45rem; width: 1rem;"><input type="radio" name="q17" style="accent-color: #1b87e6; height: 1rem; width: 1rem; margin: 0;" /></span>
+                  <span style="color: #334155; font-size: 13px; padding: 0.125rem 0.25rem;">McD</span>
+                </li>
+                <li style="display: grid; grid-template-columns: 1rem minmax(0,1fr); gap: 0 0.5rem; align-items: start;">
+                  <span style="display: inline-flex; align-items: center; justify-content: center; height: 1.45rem; width: 1rem;"><input type="radio" name="q17" style="accent-color: #1b87e6; height: 1rem; width: 1rem; margin: 0;" /></span>
+                  <span style="color: #334155; font-size: 13px; padding: 0.125rem 0.25rem;">Burger King</span>
+                </li>
+              </ul>
+              <div style="display: flex; align-items: center; gap: 0.5rem; padding-left: 1.5rem;">
+                <button type="button" style="display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; background: #fff; border: 1px solid #d5dde6; border-radius: 0.25rem; color: #64748b; cursor: pointer; padding: 0;"><span class="ms" style="font-size: 16px;">add</span></button>
+                <span style="flex: 1;"></span>
+                <button type="button" style="background: none; border: none; color: #1b87e6; font-size: 12px; font-weight: 500; padding: 0.25rem 0; cursor: pointer;">Bulk Edit</button>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem 0.5rem 4.25rem;">
+            <span class="ms" style="color: #94a3b8; font-size: 18px;">check_circle</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.5rem 1rem; align-items: center; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; padding: 0.75rem 1rem;">
+            <span></span>
+            <div style="grid-column: 2; justify-self: center;">
+              <button type="button" style="display: inline-flex; align-items: center; gap: 6px; background: #1b87e6; border: none; border-radius: 4px; color: #fff; font-size: 13px; font-weight: 500; padding: 8px 14px; cursor: pointer;">Add Question<span class="ms" style="font-size: 18px;">expand_more</span></button>
+            </div>
+            <div style="grid-column: 3; justify-self: end; display: flex; flex-wrap: wrap; gap: 0.375rem; justify-content: flex-end;">
+              <button type="button" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; color: #334155; font-size: 13px; padding: 5px 10px; cursor: pointer;">Remove Page Break</button>
+              <button type="button" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; color: #334155; font-size: 13px; padding: 5px 10px; cursor: pointer;">Remove Separator</button>
+              <button type="button" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; color: #334155; font-size: 13px; padding: 5px 10px; cursor: pointer;">Split Block</button>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 3.25rem minmax(0, 1fr); gap: 0.5rem; border-left: 4px solid #1b87e6; box-sizing: border-box; background: #fff;">
+            <div style="align-self: start; display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem 0.5rem 0.75rem;">
+              <span style="color: #64748b; font-size: 13px; font-weight: 500; line-height: 1.25; padding: 0.375rem 0.35rem 0.375rem 0.375rem;">Q18</span>
+            </div>
+            <div style="min-width: 0; padding: 0.75rem 1rem 0.5rem;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="flex: 1;"></span>
+                <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                  <button type="button" style="background: none; border: none; color: #1b87e6; font-size: 12px; font-weight: 500; line-height: 18px; padding: 0; cursor: pointer;">Logic</button>
+                  <button type="button" style="background: none; border: none; color: #1b87e6; font-size: 12px; font-weight: 500; line-height: 18px; padding: 0; cursor: pointer;">Settings</button>
+                  <button type="button" style="display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; background: transparent; border: none; color: #64748b; cursor: pointer; margin-top: -6px;"><span class="ms" style="font-size: 18px;">more_vert</span></button>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 0.75rem; max-width: 42rem; padding: 0 0 0.25rem 1.5rem; width: 100%;">
+
+                <div style="display: flex; flex-direction: column; gap: 0.375rem;">
+                  <span style="color: #475569; font-size: 13px; font-weight: 600;">Conversation mode</span>
+                  <div style="display: inline-flex; align-items: center; background: #e8edf2; border-radius: 9999px; padding: 2px; width: fit-content;">
+                    <button type="button" onClick="{{ selectFollowUp }}" style="{{ followUpTabStyle }}">Follow-up</button>
+                    <button type="button" onClick="{{ selectIndependent }}" style="{{ independentTabStyle }}">Independent</button>
+                  </div>
+                  <p style="color: #64748b; font-size: 12px; line-height: 1.45; margin: 0;">{{ modeHelper }}</p>
+                </div>
+
+                <sc-if value="{{ isFollowUp }}" hint-placeholder-val="{{ true }}">
+                  <label style="display: flex; flex-direction: column; gap: 0.375rem;">
+                    <span style="color: #475569; font-size: 13px; font-weight: 600;">Select the survey question you want to follow-up on</span>
+                    <select style="appearance: none; background-color: #fff; background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E&quot;); background-position: right 8px center; background-repeat: no-repeat; background-size: 16px; border: 1.5px solid #d1d5db; border-radius: 6px; color: #374151; cursor: pointer; font-size: 13px; height: 34px; padding: 0 30px 0 10px; width: 100%;">
+                      <option>Q17 — Which fast-food chain you like the most?</option>
+                      <option>Select a question</option>
+                    </select>
+                  </label>
+                  <label style="display: flex; flex-direction: column; gap: 0.375rem;">
+                    <span style="color: #475569; font-size: 13px; font-weight: 600;">Enter the follow-up question you want to start with</span>
+                    <div style="position: relative;">
+                      <button type="button" style="background: rgba(255,255,255,0.92); border: 1px solid #dbe4ee; border-radius: 999px; color: #1b87e6; cursor: pointer; font-size: 11px; font-weight: 600; padding: 2px 8px; position: absolute; right: 0.5rem; top: 0.45rem; white-space: nowrap; z-index: 1;">Insert Response</button>
+                      <textarea rows="3" style="border: 1.5px solid #d1d5db; border-radius: 6px; color: #374151; font-size: 13px; line-height: 1.4; min-height: 4.75rem; padding: 0.5rem 7.25rem 0.5rem 0.625rem; resize: vertical; width: 100%; box-sizing: border-box;">What do you like the most about {Q17}?</textarea>
+                    </div>
+                    <p style="align-items: baseline; color: #64748b; display: flex; font-size: 12px; gap: 0.25rem; line-height: 1.45; margin: 0; white-space: nowrap; overflow: hidden;">
+                      <span style="flex-shrink: 0;">Suggested for this source question:</span>
+                      <span style="color: #334155; font-weight: 600; overflow: hidden; text-overflow: ellipsis;">What do you like the most about {Q17}?</span>
+                    </p>
+                  </label>
+                </sc-if>
+
+                <sc-if value="{{ isIndependent }}" hint-placeholder-val="{{ false }}">
+                  <label style="display: flex; flex-direction: column; gap: 0.375rem;">
+                    <span style="color: #475569; font-size: 13px; font-weight: 600;">Enter the opening question of the conversation</span>
+                    <textarea rows="3" value="{{ opener }}" onChange="{{ onOpenerChange }}" placeholder="Enter the question the AI interviewer opens with" style="border: 1.5px solid #d1d5db; border-radius: 6px; color: #374151; font-size: 13px; line-height: 1.4; min-height: 4.75rem; padding: 0.5rem 0.625rem; resize: vertical; width: 100%; box-sizing: border-box;"></textarea>
+                    <p style="align-items: baseline; color: #64748b; display: flex; font-size: 12px; gap: 0.25rem; line-height: 1.45; margin: 0; white-space: nowrap; overflow: hidden;">
+                      <span style="flex-shrink: 0;">Suggested from your objectives:</span>
+                      <button type="button" onClick="{{ useSuggestion }}" title="Click to use this suggestion" style="background: none; border: none; color: #334155; cursor: pointer; flex: 1; font-family: inherit; font-size: inherit; font-weight: 600; line-height: inherit; min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap;">{{ suggestion }}</button>
+                    </p>
+                  </label>
+                  <div style="align-items: flex-start; background: #f8fbff; border: 1px solid #d7e9fb; border-radius: 0.5rem; display: flex; gap: 0.625rem; margin: 0; padding: 0.75rem;">
+                    <span style="align-items: center; background: #1b87e6; border-radius: 999px; color: #fff; display: inline-flex; flex-shrink: 0; font-size: 12px; font-weight: 700; height: 1rem; justify-content: center; line-height: 1; margin-top: 0.125rem; width: 1rem;">i</span>
+                    <p style="color: #64748b; font-size: 12px; line-height: 1.45; margin: 0;">Independent conversations don't reference an earlier answer, so response piping ({Q17}) is unavailable here. The AI interviewer asks your opening question, then generates up to <strong style="color: #334155; font-weight: 600;">{{ followUps }}</strong> follow-ups from the key learning objectives in Settings.</p>
+                  </div>
+                </sc-if>
+
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem 0.5rem 4.25rem;">
+            <span class="ms" style="color: #94a3b8; font-size: 18px;">check_circle</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.5rem 1rem; align-items: center; border-top: 1px solid #e5e7eb; padding: 0.75rem 1rem;">
+            <span></span>
+            <div style="grid-column: 2; justify-self: center;">
+              <button type="button" style="display: inline-flex; align-items: center; gap: 6px; background: #1b87e6; border: none; border-radius: 4px; color: #fff; font-size: 13px; font-weight: 500; padding: 8px 14px; cursor: pointer;">Add Question<span class="ms" style="font-size: 18px;">expand_more</span></button>
+            </div>
+            <div style="grid-column: 3; justify-self: end; display: flex; flex-wrap: wrap; gap: 0.375rem; justify-content: flex-end;">
+              <button type="button" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; color: #334155; font-size: 13px; padding: 5px 10px; cursor: pointer;">Remove Page Break</button>
+              <button type="button" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; color: #334155; font-size: 13px; padding: 5px 10px; cursor: pointer;">Remove Separator</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <button type="button" style="align-items: center; background: #1b87e6; border: none; border-radius: 50%; bottom: 1.5rem; box-shadow: 0 4px 12px rgb(27 135 230 / 45%); color: #fff; cursor: pointer; display: flex; height: 3.25rem; justify-content: center; left: 1.5rem; position: absolute; width: 3.25rem;"><span class="ms" style="font-size: 22px;">auto_awesome</span></button>
+    </div>
+
+    <aside style="background: #fff; border-left: 1px solid #d5dde6; display: flex; flex-direction: column; flex-shrink: 0; height: 100%; min-height: 0; overflow: hidden; width: 22rem;">
+      <header style="align-items: center; border-bottom: 1px solid #e8edf2; display: flex; flex-shrink: 0; justify-content: space-between; padding: 0.875rem 1rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.125rem;">
+          <h3 style="align-items: flex-start; color: #1b3380; display: inline-flex; font-size: 16px; font-weight: 600; margin: 0;">Conversation<span class="ms" style="color: #e6a700; font-size: 12px; line-height: 1; margin-left: 0.2rem; margin-top: -0.15rem;">auto_awesome</span></h3>
+          <p style="color: #64748b; font-size: 12px; line-height: 1.3; margin: 0;">Powered by <a href="#" style="color: #1b87e6; font-weight: 600;">QuestionProAI Interviews</a></p>
+        </div>
+        <button type="button" style="align-items: center; background: transparent; border: none; border-radius: 0.25rem; color: #64748b; cursor: pointer; display: inline-flex; height: 2rem; justify-content: center; width: 2rem;"><span class="ms" style="font-size: 18px;">close</span></button>
+      </header>
+      <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 1rem;">
+
+        <div style="margin-bottom: 1rem;">
+          <span style="color: #334155; display: block; font-size: 13px; font-weight: 500; margin: 0 0 0.5rem;">Mode</span>
+          <div style="align-items: center; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 0.25rem; display: flex; gap: 0.5rem; padding: 0.5rem 0.625rem;">
+            <span class="ms" style="color: #1b87e6; font-size: 18px;">{{ modeIcon }}</span>
+            <span style="color: #1e293b; font-size: 13px; font-weight: 500; flex: 1;">{{ modeLabel }}</span>
+            <button type="button" onClick="{{ toggleMode }}" style="background: none; border: none; color: #1b87e6; cursor: pointer; font-size: 13px; font-weight: 600; padding: 0;">Change</button>
+          </div>
+        </div>
+
+        <div style="display: grid; gap: 0.75rem; grid-template-columns: repeat(2, minmax(0, 1fr));">
+          <div style="margin-bottom: 1rem;">
+            <span style="color: #334155; display: block; font-size: 13px; font-weight: 500; margin: 0 0 0.5rem;">Follow Ups</span>
+            <div style="align-items: center; border: 1px solid #d5dde6; border-radius: 0.25rem; display: inline-flex; overflow: hidden;">
+              <button type="button" onClick="{{ decFollowUps }}" style="align-items: center; background: #fff; border: none; color: #64748b; cursor: pointer; display: inline-flex; font-size: 16px; height: 2rem; justify-content: center; width: 2rem;">−</button>
+              <span style="border-left: 1px solid #d5dde6; border-right: 1px solid #d5dde6; color: #1e293b; font-size: 13px; min-width: 2.5rem; padding: 0 0.5rem; text-align: center;">{{ followUps }}</span>
+              <button type="button" onClick="{{ incFollowUps }}" style="align-items: center; background: #fff; border: none; color: #64748b; cursor: pointer; display: inline-flex; font-size: 16px; height: 2rem; justify-content: center; width: 2rem;">+</button>
+            </div>
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <span style="color: #334155; display: block; font-size: 13px; font-weight: 500; margin: 0 0 0.5rem;">Tone</span>
+            <select style="appearance: none; background-color: #fff; background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E&quot;); background-position: right 8px center; background-repeat: no-repeat; background-size: 16px; border: 1.5px solid #d1d5db; border-radius: 6px; color: #374151; cursor: pointer; font-size: 13px; height: 34px; padding: 0 30px 0 10px; width: 100%; box-sizing: border-box;">
+              <option>Neutral</option>
+              <option>Friendly</option>
+              <option>Professional</option>
+              <option>Empathetic</option>
+              <option>Curious</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <span style="color: #334155; display: block; font-size: 13px; font-weight: 500; margin: 0 0 0.5rem;">Key learning objectives <span style="color: #dc2626;">*</span></span>
+          <textarea rows="4" value="{{ objectives }}" onChange="{{ onObjectivesChange }}" style="border: 1.5px solid #d1d5db; border-radius: 6px; color: #374151; font-size: 13px; line-height: 1.45; padding: 0.5rem 0.625rem; resize: vertical; width: 100%; box-sizing: border-box;"></textarea>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <span style="color: #334155; display: block; font-size: 13px; font-weight: 500; margin: 0 0 0.5rem;">AI moderator instructions (optional)</span>
+          <textarea rows="3" style="border: 1.5px solid #d1d5db; border-radius: 6px; color: #374151; font-size: 13px; line-height: 1.45; padding: 0.5rem 0.625rem; resize: vertical; width: 100%; box-sizing: border-box;">Stay curious
+Probe on a recent visit before moving on</textarea>
+        </div>
+
+        <div style="align-items: flex-start; background: #f8fbff; border: 1px solid #d7e9fb; border-radius: 0.5rem; display: flex; gap: 0.625rem; margin: 0.5rem 0 0; padding: 0.75rem;">
+          <span style="align-items: center; background: #1b87e6; border-radius: 999px; color: #fff; display: inline-flex; flex-shrink: 0; font-size: 12px; font-weight: 700; height: 1rem; justify-content: center; line-height: 1; margin-top: 0.125rem; width: 1rem;">i</span>
+          <p style="color: #64748b; font-size: 12px; line-height: 1.45; margin: 0;">Conversation uses the same placement rules as Platform Connect: it cannot be the first question on a page, cannot be the last question in the survey, and is not compatible with question or block randomization or Respondent Anonymity Assurance.</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;independent&quot;,&quot;followup&quot;],&quot;default&quot;:&quot;independent&quot;,&quot;tsType&quot;:&quot;'independent' | 'followup'&quot;}}">
+const TAB_BASE = 'border: none; border-radius: 9999px; cursor: pointer; font-size: 13px; line-height: 1.25; padding: 5px 16px; white-space: nowrap;';
+const TAB_ON = TAB_BASE + ' background: #1b87e6; color: #fff; font-weight: 500;';
+const TAB_OFF = TAB_BASE + ' background: transparent; color: #64748b; font-weight: 400;';
+
+class Component extends DCLogic {
+  state = {
+    mode: this.props.mode === 'independent' || this.props.mode === undefined ? 'independent' : 'followup',
+    opener: '',
+    objectives: 'Understand why respondents prefer a brand and what would change a return visit',
+    followUps: 3,
+  };
+
+  suggestionFor(objectives) {
+    const text = (objectives || '').trim().replace(/\.$/, '');
+    if (!text) return 'What would you like to tell us in your own words?';
+    return 'To start, tell me about the last time this came up for you.';
+  }
+
+  renderVals() {
+    const s = this.state;
+    const independent = s.mode === 'independent';
+    return {
+      isFollowUp: !independent,
+      isIndependent: independent,
+      followUpTabStyle: independent ? TAB_OFF : TAB_ON,
+      independentTabStyle: independent ? TAB_ON : TAB_OFF,
+      modeHelper: independent
+        ? 'The conversation stands on its own. Respondents answer your opening question, then the AI probes toward your objectives.'
+        : 'The conversation starts from an answer the respondent already gave in this survey.',
+      modeLabel: independent ? 'Independent' : 'Follow-up on Q17',
+      modeIcon: independent ? 'forum' : 'reply',
+      opener: s.opener,
+      objectives: s.objectives,
+      followUps: s.followUps,
+      suggestion: this.suggestionFor(s.objectives),
+      selectFollowUp: () => this.setState({ mode: 'followup' }),
+      selectIndependent: () => this.setState({ mode: 'independent' }),
+      toggleMode: () => this.setState((p) => ({ mode: p.mode === 'independent' ? 'followup' : 'independent' })),
+      onOpenerChange: (e) => this.setState({ opener: e.target.value }),
+      onObjectivesChange: (e) => this.setState({ objectives: e.target.value }),
+      useSuggestion: () => this.setState((p) => ({ opener: this.suggestionFor(p.objectives) })),
+      incFollowUps: () => this.setState((p) => ({ followUps: Math.min(5, p.followUps + 1) })),
+      decFollowUps: () => this.setState((p) => ({ followUps: Math.max(1, p.followUps - 1) })),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

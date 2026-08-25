@@ -79,6 +79,10 @@ function normalizeStoredStudy(raw: unknown): ListenAiStudy | null {
     title,
     description: typeof record.description === 'string' ? record.description : '',
     interviewType: record.interviewType === 'video' ? 'video' : 'conversation',
+    conversationMode:
+      record.conversationMode === 'followup' || record.conversationMode === 'independent'
+        ? record.conversationMode
+        : undefined,
     maxFollowUps:
       typeof record.maxFollowUps === 'number' && Number.isFinite(record.maxFollowUps)
         ? Math.min(5, Math.max(1, record.maxFollowUps))
@@ -203,6 +207,7 @@ export function createListenAiStudyDraft(input: CreateListenAiStudyInput): Liste
     title,
     description: goal,
     interviewType: 'conversation',
+    conversationMode: input.sourceQuestionId ? 'followup' : 'independent',
     maxFollowUps: 3,
     tone: 'curious',
     primaryLanguage: 'en',

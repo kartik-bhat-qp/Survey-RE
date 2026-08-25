@@ -210,11 +210,11 @@ export function ListenAIConversationScreen({
           Powered by{' '}
           <a
             className={styles.brandLink}
-            href="https://staging.listenai.questionpro.com/ui/interviews/create/ai"
+            href="https://www.questionpro.com/research-suite/listen-ai/"
             target="_blank"
             rel="noreferrer"
           >
-            QuestionProAI Interviews
+            Interviews
           </a>
         </span>
         <span>Enter to send · Shift+Enter for new line</span>

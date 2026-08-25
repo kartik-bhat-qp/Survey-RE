@@ -184,6 +184,7 @@ import {
   updateListenAiConfig,
   type ListenAiQuestionConfig,
 } from '@/data/mock-listenai-question';
+import { isListenAiIndependentConversation } from '@/data/mock-listenai-studies';
 import { upsertListenAiStudyInCatalog } from '@/data/listenai-study-catalog';
 import { AUDIO_INPUT_SURVEY_ID } from '@/data/mock-audio-input-survey';
 import {
@@ -2777,9 +2778,11 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
               return;
             }
 
-            const sourceEntry = listenAiConfig.study.sourceQuestionId
-              ? findSurveyQuestionAcrossSections(sections, listenAiConfig.study.sourceQuestionId)
-              : null;
+            const sourceEntry =
+              !isListenAiIndependentConversation(listenAiConfig.study) &&
+              listenAiConfig.study.sourceQuestionId
+                ? findSurveyQuestionAcrossSections(sections, listenAiConfig.study.sourceQuestionId)
+                : null;
 
             if (sourceEntry) {
               const sourceKey = `${sourceEntry.sectionId}:${sourceEntry.question.id}`;

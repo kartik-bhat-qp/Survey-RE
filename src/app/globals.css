@@ -210,9 +210,14 @@
 /*
  * WuSelect already scrolls its own option list, so the surrounding panel must
  * not scroll as well — otherwise the dropdown shows two scrollbars.
+ * Size the menu to the options so short labels (e.g. Tone) are not stretched
+ * to the trigger width with a reserved scrollbar gutter.
  */
 [data-radix-popper-content-wrapper] .wu-select-content {
+  min-width: max-content !important;
   overflow: hidden !important;
+  scrollbar-gutter: auto !important;
+  width: max-content !important;
 }
 
 [data-radix-popper-content-wrapper] .wu-select-list {
@@ -220,7 +225,7 @@
   overflow-x: hidden !important;
   overflow-y: auto !important;
   scrollbar-color: #c1c7d0 transparent;
-  scrollbar-gutter: stable;
+  scrollbar-gutter: auto;
   scrollbar-width: thin;
 }
 

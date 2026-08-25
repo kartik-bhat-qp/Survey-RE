@@ -482,7 +482,16 @@ function CategoryBlock({
 }) {
   return (
     <div className={styles.categoryBlock}>
-      <h4 className={styles.categoryTitle}>{category.title}</h4>
+      <h4 className={styles.categoryTitle}>
+        {category.title}
+        {category.id === 'questionpro-ai' ? (
+          <span
+            className={`wc-ai ${styles.categoryAiMark}`}
+            title="QuestionPro AI"
+            aria-label="QuestionPro AI"
+          />
+        ) : null}
+      </h4>
       <ul className={styles.typeList}>
         {category.types.map((type) => (
           <li key={type.id}>
@@ -501,16 +510,7 @@ function CategoryBlock({
                 }`}
                 aria-hidden
               />
-              <span className={styles.typeLabel}>
-                {type.label}
-                {type.id === 'listenai' ? (
-                  <span
-                    className={`wc-ai ${styles.typeAiMark}`}
-                    title="AI feature"
-                    aria-label="AI feature"
-                  />
-                ) : null}
-              </span>
+              <span className={styles.typeLabel}>{type.label}</span>
               {tier === 'advanced' && showLicenseDiamonds ? (
                 <BiDiamondIcon
                   tooltip={getAddQuestionAdvancedLicenseTooltip(type.id)}

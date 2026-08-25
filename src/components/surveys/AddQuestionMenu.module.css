@@ -696,12 +696,21 @@
 }
 
 .categoryTitle {
+  align-items: center;
   color: #9aa5b1;
+  display: inline-flex;
   font-family: 'Fira Sans', sans-serif;
   font-size: 0.75rem;
   font-weight: 500;
+  gap: 0.25rem;
   letter-spacing: 0.02em;
   margin: 0 0 0.375rem;
+}
+
+.categoryAiMark {
+  color: #e6a700;
+  font-size: 0.6875rem;
+  line-height: 1;
 }
 
 .typeList {
@@ -763,18 +772,8 @@
 }
 
 .typeLabel {
-  align-items: flex-start;
-  display: inline-flex;
   flex: 1;
   min-width: 0;
-}
-
-.typeAiMark {
-  color: #e6a700;
-  font-size: 0.6875rem;
-  line-height: 1;
-  margin-left: 0.125rem;
-  margin-top: -0.2rem;
 }
 
 .emptyState {

@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import type { ListenAiPreviewPayload } from '@/data/mock-listenai-question';
+import { isListenAiIndependentConversation } from '@/data/mock-listenai-studies';
 import { ListenAIConversationScreen } from '@/components/surveys/ListenAIConversationScreen';
 import { ListenAIHandoffScreen } from '@/components/surveys/ListenAIHandoffScreen';
 import { SurveyPreviewRespondentFooter } from '@/components/surveys/SurveyPreviewRespondentFooter';
@@ -29,6 +30,9 @@ export function resolveListenAiAnswerLabel(
   answersByCode: Record<string, SurveyPreviewAnswer>
 ): string {
   const sourceCode = payload?.study.sourceQuestionCode;
+  if (payload && isListenAiIndependentConversation(payload.study)) {
+    return '';
+  }
   if (sourceCode && answersByCode[sourceCode]?.selectedLabels[0]) {
     return answersByCode[sourceCode].selectedLabels[0];
   }
