@@ -30,7 +30,6 @@ import {
 import {
   getTextAiDashboardWidgets,
   type TextAiAnalysisWidget,
-  type TextAiThemeStatusFilter,
 } from '@/data/mock-text-ai-widget-data';
 import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import type { TextAiThemePreferences } from '@/data/text-ai-theme-preferences';
@@ -66,7 +65,6 @@ interface TextAiDashboardCanvasProps {
   dashboardId: number;
   selectedQuestion: TextAiDashboardQuestion;
   questionIndex: number;
-  themeStatus: TextAiThemeStatusFilter;
   /** Widgets added via Add widget (e.g. comparative chart). Shown above default widgets. */
   addedTopicSegmentWidgets?: TextAiTopicSegmentWidget[];
   /** KPI correlation widgets added through the TextAI widget gallery. */
@@ -259,34 +257,26 @@ function adaptAnalysisWidgets(
   ];
 }
 
-function filterTopicRowsByStatus(
+function filterTopicRowsForDashboard(
   rows: TextAiTopicSegmentRow[],
-  status: TextAiThemeStatusFilter,
-  canShowEmerging: (name: string) => boolean,
+  isApproved: (name: string, candidate: boolean) => boolean,
   isEmerging: (name: string, candidate: boolean | undefined) => boolean,
-  parentEmerging = false
+  parentCandidate = false
 ): TextAiTopicSegmentRow[] {
   return rows.flatMap((row) => {
-    const rowEmerging =
-      parentEmerging || isEmerging(row.topic, row.emerging);
+    const rowCandidate = parentCandidate || Boolean(row.emerging);
+    const rowApproved = isApproved(row.topic, rowCandidate);
+    const rowEmerging = rowApproved && isEmerging(row.topic, rowCandidate);
     const subtopics = row.subtopics
-      ? filterTopicRowsByStatus(
+      ? filterTopicRowsForDashboard(
           row.subtopics,
-          status,
-          canShowEmerging,
+          isApproved,
           isEmerging,
-          rowEmerging
+          rowCandidate
         )
       : undefined;
-    const rowApproved = !rowEmerging || canShowEmerging(row.topic);
-    const rowMatches =
-      status === 'all'
-        ? rowApproved
-        : status === 'emerging'
-          ? rowEmerging && rowApproved
-          : !rowEmerging;
 
-    if (!rowMatches && !subtopics?.length) return [];
+    if (!rowApproved && !subtopics?.length) return [];
 
     return [
       {
@@ -298,30 +288,23 @@ function filterTopicRowsByStatus(
   });
 }
 
-function filterAnalysisWidgetsByStatus(
+function filterAnalysisWidgetsForDashboard(
   widgets: TextAiAnalysisWidget[],
-  status: TextAiThemeStatusFilter,
-  canShowEmerging: (name: string) => boolean,
+  isApproved: (name: string, candidate: boolean) => boolean,
   isEmerging: (name: string, candidate: boolean | undefined) => boolean
 ): TextAiAnalysisWidget[] {
   return widgets.map((widget) => ({
     ...widget,
     rows: widget.rows.flatMap((row) => {
-      const topicEmerging = isEmerging(row.topic, row.topicEmerging);
-      const subtopicEmerging = Boolean(
-        topicEmerging || isEmerging(row.subtopic, row.subtopicEmerging)
-      );
-      const emerging = Boolean(topicEmerging || subtopicEmerging);
-      const approved =
-        !emerging ||
-        (topicEmerging && canShowEmerging(row.topic)) ||
-        (subtopicEmerging && canShowEmerging(row.subtopic));
-      const visible =
-        status === 'all'
-          ? approved
-          : status === 'emerging'
-            ? emerging && approved
-            : !emerging;
+      const topicCandidate = Boolean(row.topicEmerging);
+      const subtopicCandidate = topicCandidate || Boolean(row.subtopicEmerging);
+      const topicApproved = isApproved(row.topic, topicCandidate);
+      const subtopicApproved = isApproved(row.subtopic, subtopicCandidate);
+      const topicEmerging =
+        topicApproved && isEmerging(row.topic, topicCandidate);
+      const subtopicEmerging =
+        subtopicApproved && isEmerging(row.subtopic, subtopicCandidate);
+      const visible = topicApproved && subtopicApproved;
 
       return visible
         ? [{ ...row, subtopicEmerging, topicEmerging }]
@@ -334,7 +317,6 @@ export function TextAiDashboardCanvas({
   dashboardId,
   selectedQuestion,
   questionIndex,
-  themeStatus,
   addedTopicSegmentWidgets = [],
   addedKpiWidgets = [],
   themePreferences,
@@ -342,14 +324,14 @@ export function TextAiDashboardCanvas({
   const isMobile = useIsMobile();
   const [isPositioning, setIsPositioning] = useState(false);
   const [removedWidgetIds, setRemovedWidgetIds] = useState<Set<string>>(() => new Set());
-  const canShowEmerging = (name: string) =>
-    themePreferences.autoApproveEmergingThemes ||
-    themePreferences.approvedEmergingNames.includes(name);
+  const isApproved = (name: string, candidate: boolean) =>
+    !candidate || themePreferences.approvedEmergingNames.includes(name);
   const isEmerging = (name: string, candidate: boolean | undefined) =>
     isTextAiItemEmerging(
       name,
       candidate,
-      themePreferences.emergingThemeValidityDays
+      themePreferences.emergingThemeValidityDays,
+      themePreferences.emergingApprovedAtByName[name]
     );
   const questionFactor = getQuestionFactor(questionIndex);
   const summaryWidgets = adaptSummaryWidgets(
@@ -370,26 +352,23 @@ export function TextAiDashboardCanvas({
   );
   const visibleAddedTopicSegmentWidgets = addedTopicSegmentWidgets.map((widget) => ({
     ...widget,
-    rows: filterTopicRowsByStatus(
+    rows: filterTopicRowsForDashboard(
       widget.rows,
-      themeStatus,
-      canShowEmerging,
+      isApproved,
       isEmerging
     ),
   }));
   const visibleTopicSegmentWidgets = topicSegmentWidgets.map((widget) => ({
     ...widget,
-    rows: filterTopicRowsByStatus(
+    rows: filterTopicRowsForDashboard(
       widget.rows,
-      themeStatus,
-      canShowEmerging,
+      isApproved,
       isEmerging
     ),
   }));
-  const visibleAnalysisWidgets = filterAnalysisWidgetsByStatus(
+  const visibleAnalysisWidgets = filterAnalysisWidgetsForDashboard(
     analysisWidgets,
-    themeStatus,
-    canShowEmerging,
+    isApproved,
     isEmerging
   );
 
@@ -450,7 +429,6 @@ export function TextAiDashboardCanvas({
       content: (
         <TextAiSubthemeStackbarWidget
           question={selectedQuestion.text}
-          themeStatus={themeStatus}
           onDelete={() => removeWidget('subtheme-stackbar')}
           themePreferences={themePreferences}
         />
@@ -462,7 +440,6 @@ export function TextAiDashboardCanvas({
       content: (
         <TextAiThemeStackbarWidget
           question={selectedQuestion.text}
-          themeStatus={themeStatus}
           onDelete={() => removeWidget('theme-stackbar')}
           themePreferences={themePreferences}
         />

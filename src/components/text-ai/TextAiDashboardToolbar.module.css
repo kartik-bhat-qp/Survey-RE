@@ -153,11 +153,6 @@
   width: min(34vw, 28rem);
 }
 
-.statusSelect {
-  min-width: 15.5rem;
-  width: min(100%, 17rem);
-}
-
 .newCommentsBanner {
   align-items: center;
   background-color: #fff8f8;

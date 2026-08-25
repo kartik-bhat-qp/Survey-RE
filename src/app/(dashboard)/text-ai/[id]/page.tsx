@@ -25,7 +25,6 @@ import {
   createTextAiComparativeChartWidget,
   type TextAiTopicSegmentWidget,
 } from '@/data/mock-text-ai-topic-segment-widget';
-import type { TextAiThemeStatusFilter } from '@/data/mock-text-ai-widget-data';
 import type { TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
 import {
   getTextAiThemePreferences,
@@ -62,8 +61,6 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
-  const [themeStatus, setThemeStatus] =
-    useState<TextAiThemeStatusFilter>('all');
   const [addedTopicSegmentWidgets, setAddedTopicSegmentWidgets] = useState<
     TextAiTopicSegmentWidget[]
   >([]);
@@ -72,7 +69,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   >([]);
   const [themePreferences, setThemePreferences] = useState<TextAiThemePreferences>({
     approvedEmergingNames: [],
-    autoApproveEmergingThemes: true,
+    emergingApprovedAtByName: {},
     emergingThemeValidityDays: 30,
     showThemesWithNoResponses: true,
   });
@@ -180,8 +177,6 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         questions={availableQuestions}
         selectedQuestion={selectedQuestion}
         onQuestionChange={setSelectedQuestion}
-        themeStatus={themeStatus}
-        onThemeStatusChange={setThemeStatus}
         segmentFilters={segmentFilters}
         onSegmentFiltersChange={handleSegmentFiltersChange}
       />
@@ -191,7 +186,6 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         questionIndex={availableQuestions.findIndex(
           (question) => question.id === selectedQuestion.id
         )}
-        themeStatus={themeStatus}
         addedTopicSegmentWidgets={addedTopicSegmentWidgets}
         addedKpiWidgets={addedKpiWidgets}
         themePreferences={themePreferences}

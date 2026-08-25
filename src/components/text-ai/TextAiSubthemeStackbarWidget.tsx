@@ -10,7 +10,6 @@ import {
   type TextAiSentimentBucket,
   type TextAiSentimentDistribution,
 } from '@/data/mock-text-ai-subtheme-stackbar';
-import type { TextAiThemeStatusFilter } from '@/data/mock-text-ai-widget-data';
 import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import {
   DEFAULT_TEXT_AI_WIDGET_TOP_N,
@@ -35,7 +34,6 @@ const SENTIMENT_BUCKETS: {
 
 interface TextAiSubthemeStackbarWidgetProps {
   question: string;
-  themeStatus: TextAiThemeStatusFilter;
   onDelete?: () => void;
   themePreferences: TextAiThemePreferences;
 }
@@ -108,7 +106,6 @@ function SentimentStackbar({
 
 export function TextAiSubthemeStackbarWidget({
   question,
-  themeStatus,
   onDelete,
   themePreferences,
 }: TextAiSubthemeStackbarWidgetProps) {
@@ -122,63 +119,53 @@ export function TextAiSubthemeStackbarWidget({
   >(() => new Set(SENTIMENT_BUCKETS.map((bucket) => bucket.key)));
   const visibleThemes = useMemo(() => {
     const filtered = TEXT_AI_SUBTHEME_STACKBAR_ROWS.flatMap((theme) => {
-      const themeEmerging = isTextAiItemEmerging(
-        theme.label,
-        theme.emerging,
-        themePreferences.emergingThemeValidityDays
-      );
+      const themeCandidate = Boolean(theme.emerging);
       const themeApproved =
-        !themeEmerging ||
-        themePreferences.autoApproveEmergingThemes ||
+        !themeCandidate ||
         themePreferences.approvedEmergingNames.includes(theme.label);
-      const effectiveSubthemes = theme.subthemes.map((subtheme) => ({
-        ...subtheme,
-        emerging: Boolean(
-          themeEmerging ||
-            isTextAiItemEmerging(
-              subtheme.label,
-              subtheme.emerging,
-              themePreferences.emergingThemeValidityDays
-            )
-        ),
-      }));
-      const approvedSubthemes = effectiveSubthemes.filter(
-        (subtheme) =>
-          !subtheme.emerging ||
-          themePreferences.autoApproveEmergingThemes ||
-          themePreferences.approvedEmergingNames.includes(subtheme.label)
-      );
+      if (!themeApproved) return [];
 
-      if (themeStatus === 'all') {
-        if (!themeApproved) return [];
-        return [
-          { ...theme, emerging: themeEmerging, subthemes: approvedSubthemes },
-        ];
-      }
-
-      if (themeStatus === 'emerging') {
-        const subthemes = approvedSubthemes.filter(
-          (subtheme) =>
-            subtheme.emerging &&
-            (themeApproved ||
-              themePreferences.approvedEmergingNames.includes(subtheme.label))
+      const themeEmerging =
+        themeCandidate &&
+        isTextAiItemEmerging(
+          theme.label,
+          themeCandidate,
+          themePreferences.emergingThemeValidityDays,
+          themePreferences.emergingApprovedAtByName[theme.label]
         );
-        if ((!themeEmerging || !themeApproved) && subthemes.length === 0) return [];
-        return [{ ...theme, emerging: themeEmerging, subthemes }];
-      }
+      const approvedSubthemes = theme.subthemes.flatMap((subtheme) => {
+        const subthemeCandidate = themeCandidate || Boolean(subtheme.emerging);
+        const subthemeApproved =
+          !subthemeCandidate ||
+          themePreferences.approvedEmergingNames.includes(subtheme.label);
+        if (!subthemeApproved) return [];
 
-      if (themeEmerging) return [];
+        return [
+          {
+            ...subtheme,
+            emerging:
+              subthemeCandidate &&
+              isTextAiItemEmerging(
+                subtheme.label,
+                subthemeCandidate,
+                themePreferences.emergingThemeValidityDays,
+                themePreferences.emergingApprovedAtByName[subtheme.label]
+              ),
+          },
+        ];
+      });
+
       return [
         {
           ...theme,
-          emerging: false,
-          subthemes: effectiveSubthemes.filter((subtheme) => !subtheme.emerging),
+          emerging: themeEmerging,
+          subthemes: approvedSubthemes,
         },
       ];
     });
 
     return limitTextAiWidgetItems(filtered, topN);
-  }, [themePreferences, themeStatus, topN]);
+  }, [themePreferences, topN]);
 
   function toggleTheme(themeId: string): void {
     setExpandedThemeIds((current) => {

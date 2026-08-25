@@ -1,9 +1,6 @@
 import type { TextAiEmergingValidityDays } from '@/data/text-ai-theme-preferences';
 
-/**
- * Mock ages keep each validity preset demonstrable without relying on a fixed
- * calendar date. Production data would supply the theme's detected-at date.
- */
+/** Mock ages preserve previously approved prototype data that has no timestamp. */
 const EMERGING_AGE_DAYS_BY_NAME: Record<string, number> = {
   'Customer App Engagement and Feedback': 4,
   'Customer Experience Differentiation': 10,
@@ -32,9 +29,16 @@ function getFallbackAgeDays(name: string): number {
 export function isTextAiItemEmerging(
   name: string,
   emergingCandidate: boolean | undefined,
-  validityDays: TextAiEmergingValidityDays
+  validityDays: TextAiEmergingValidityDays,
+  approvedAt?: string
 ): boolean {
   if (!emergingCandidate) return false;
+
+  const approvedAtTime = approvedAt ? new Date(approvedAt).getTime() : Number.NaN;
+  if (Number.isFinite(approvedAtTime)) {
+    const elapsedMilliseconds = Math.max(0, Date.now() - approvedAtTime);
+    return elapsedMilliseconds < validityDays * 24 * 60 * 60 * 1000;
+  }
 
   const ageDays =
     EMERGING_AGE_DAYS_BY_NAME[name] ?? getFallbackAgeDays(name);

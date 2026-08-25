@@ -7,17 +7,13 @@ import { Title as DialogTitle } from '@radix-ui/react-dialog';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
+import { TextAiPendingApprovalBadge } from '@/components/text-ai/TextAiPendingApprovalBadge';
 import { TextAiThemeLogs } from '@/components/text-ai/TextAiThemeLogs';
 import { getTextAiDashboardById } from '@/data/get-text-ai-dashboard-by-id';
 import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
 import { MOCK_TEXT_AI_ANALYSIS_QUESTIONS } from '@/data/mock-text-ai-questions';
 import { appendTextAiRecodeLog } from '@/data/text-ai-activity-logs';
 import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
-import {
-  TEXT_AI_THEME_STATUS_FILTER_OPTIONS,
-  type TextAiFilterOption,
-  type TextAiThemeStatusFilter,
-} from '@/data/mock-text-ai-widget-data';
 import {
   getTextAiThemePreferences,
   saveTextAiThemePreferences,
@@ -69,6 +65,7 @@ interface SubTheme {
   description?: string;
   id: string;
   emerging?: boolean;
+  pendingApproval?: boolean;
   name: string;
   percentage: string;
 }
@@ -90,6 +87,7 @@ interface ThemeGroup {
   emerging?: boolean;
   id: string;
   name: string;
+  pendingApproval?: boolean;
   percentage: string;
   tone: ThemeTone;
   subThemes: SubTheme[];
@@ -582,7 +580,11 @@ function ThemeGroupCard({
           />
           <span className={styles.themeGroupLabel}>
             <span className={styles.themeGroupName}>{group.name}</span>
-            {group.emerging && <TextAiEmergingBadge />}
+            {group.pendingApproval ? (
+              <TextAiPendingApprovalBadge />
+            ) : group.emerging ? (
+              <TextAiEmergingBadge />
+            ) : null}
           </span>
           <span className={styles.themeGroupMeta}>
             <span className={styles.subThemeCount}>
@@ -620,7 +622,11 @@ function ThemeGroupCard({
                 >
                   <div className={styles.subThemeMain}>
                     <span title={subTheme.description}>{subTheme.name}</span>
-                    {subTheme.emerging && <TextAiEmergingBadge />}
+                    {subTheme.pendingApproval ? (
+                      <TextAiPendingApprovalBadge />
+                    ) : subTheme.emerging ? (
+                      <TextAiEmergingBadge />
+                    ) : null}
                   </div>
                   <span className={styles.subThemePercentage}>
                     {subTheme.percentage}
@@ -670,10 +676,9 @@ export default function TextAiThemeConfigurationPage({
   const [settingsTab, setSettingsTab] = useState<'preferences' | 'logs'>(
     'preferences'
   );
-  const [themeStatus, setThemeStatus] = useState<TextAiThemeStatusFilter>('all');
   const [themePreferences, setThemePreferences] = useState<TextAiThemePreferences>({
     approvedEmergingNames: [],
-    autoApproveEmergingThemes: true,
+    emergingApprovedAtByName: {},
     emergingThemeValidityDays: 30,
     showThemesWithNoResponses: true,
   });
@@ -746,15 +751,23 @@ export default function TextAiThemeConfigurationPage({
   const themeGroups = useMemo(
     () =>
       THEME_GROUPS.map((group, groupIndex) => {
-        const groupEmerging = isTextAiItemEmerging(
-          group.name,
-          group.emerging,
-          themePreferences.emergingThemeValidityDays
-        );
+        const groupCandidate = Boolean(group.emerging);
+        const groupApproved =
+          !groupCandidate ||
+          themePreferences.approvedEmergingNames.includes(group.name);
+        const groupEmerging =
+          groupApproved &&
+          isTextAiItemEmerging(
+            group.name,
+            groupCandidate,
+            themePreferences.emergingThemeValidityDays,
+            themePreferences.emergingApprovedAtByName[group.name]
+          );
 
         return {
           ...group,
           emerging: groupEmerging,
+          pendingApproval: groupCandidate && !groupApproved,
           percentage: formatPercentage(questionVariant.groupPercentages[groupIndex]),
           subThemes: group.subThemes
             .slice(0, appliedGranularityOption.subThemeCounts[groupIndex])
@@ -767,16 +780,22 @@ export default function TextAiThemeConfigurationPage({
                   getSubThemeEditKey(selectedQuestionId, group.id, subTheme.id)
                 ];
               const name = edit?.name ?? subTheme.name;
+              const subThemeCandidate =
+                groupCandidate || Boolean(subTheme.emerging);
+              const subThemeApproved =
+                !subThemeCandidate ||
+                themePreferences.approvedEmergingNames.includes(name);
               return {
                 ...subTheme,
-                emerging: Boolean(
-                  groupEmerging ||
-                    isTextAiItemEmerging(
-                      name,
-                      subTheme.emerging,
-                      themePreferences.emergingThemeValidityDays
-                    )
-                ),
+                emerging:
+                  subThemeApproved &&
+                  isTextAiItemEmerging(
+                    name,
+                    subThemeCandidate,
+                    themePreferences.emergingThemeValidityDays,
+                    themePreferences.emergingApprovedAtByName[name]
+                  ),
+                pendingApproval: subThemeCandidate && !subThemeApproved,
                 description:
                   edit?.description ??
                   subTheme.description ??
@@ -798,19 +817,17 @@ export default function TextAiThemeConfigurationPage({
       selectedQuestionId,
       selectedQuestionIndex,
       subThemeEdits,
+      themePreferences.approvedEmergingNames,
+      themePreferences.emergingApprovedAtByName,
       themePreferences.emergingThemeValidityDays,
     ]
   );
 
   const pendingApprovalTargets = useMemo(() => {
-    if (themePreferences.autoApproveEmergingThemes) return [];
     return themeGroups.flatMap((group): ApproveTarget[] => {
       const targets: ApproveTarget[] = [];
       group.subThemes.forEach((subTheme) => {
-        if (
-          subTheme.emerging &&
-          !themePreferences.approvedEmergingNames.includes(subTheme.name)
-        ) {
+        if (subTheme.pendingApproval) {
           targets.push({
             kind: 'sub-theme',
             name: subTheme.name,
@@ -821,7 +838,7 @@ export default function TextAiThemeConfigurationPage({
       });
       return targets;
     });
-  }, [themeGroups, themePreferences]);
+  }, [themeGroups]);
 
   const codeFrameTargets = useMemo(
     () =>
@@ -866,13 +883,6 @@ export default function TextAiThemeConfigurationPage({
   const visibleThemeGroups = useMemo(
     () =>
       themeGroups
-        .filter((group) =>
-          themeStatus === 'all'
-            ? true
-            : themeStatus === 'emerging'
-              ? Boolean(group.emerging || group.subThemes.some((item) => item.emerging))
-              : !group.emerging
-        )
         .flatMap((group) => {
           if (
             !themePreferences.showThemesWithNoResponses &&
@@ -884,18 +894,13 @@ export default function TextAiThemeConfigurationPage({
           const subThemes = group.subThemes.filter(
             (subTheme) =>
               (themePreferences.showThemesWithNoResponses ||
-                hasResponses(subTheme.percentage)) &&
-              (themeStatus === 'all' ||
-                (themeStatus === 'emerging'
-                  ? Boolean(group.emerging || subTheme.emerging)
-                  : !subTheme.emerging))
+                hasResponses(subTheme.percentage))
           );
 
           return [{ ...group, subThemes }];
         }),
     [
       themePreferences.showThemesWithNoResponses,
-      themeStatus,
       themeGroups,
     ]
   );
@@ -988,7 +993,7 @@ export default function TextAiThemeConfigurationPage({
         const parentTheme = themeGroups.find(
           (group) => group.id === target.themeId
         );
-        if (parentTheme?.emerging) {
+        if (parentTheme?.pendingApproval) {
           automaticallyApprovedParentNames.add(parentTheme.name);
           return [target.name, parentTheme.name];
         }
@@ -1000,18 +1005,30 @@ export default function TextAiThemeConfigurationPage({
           ?.subThemes.map((subTheme) => subTheme.name) ?? [];
       return [target.name, ...childNames];
     });
+    const approvedNames = [...new Set(names)];
+    const approvedAt = new Date().toISOString();
 
     updateThemePreferences((current) => ({
       ...current,
       approvedEmergingNames: [
-        ...new Set([...current.approvedEmergingNames, ...names]),
+        ...new Set([...current.approvedEmergingNames, ...approvedNames]),
       ],
+      emergingApprovedAtByName: {
+        ...current.emergingApprovedAtByName,
+        ...Object.fromEntries(
+          approvedNames.map((name) => [
+            name,
+            current.emergingApprovedAtByName[name] ?? approvedAt,
+          ])
+        ),
+      },
     }));
     if (targets.length === 1) {
       const target = targets[0];
       const automaticallyApprovedParentName =
         target.kind === 'sub-theme'
-          ? themeGroups.find((group) => group.id === target.themeId)?.emerging
+          ? themeGroups.find((group) => group.id === target.themeId)
+              ?.pendingApproval
             ? themeGroups.find((group) => group.id === target.themeId)?.name
             : undefined
           : undefined;
@@ -1021,25 +1038,25 @@ export default function TextAiThemeConfigurationPage({
         dashboardId: numericDashboardId,
         details:
           target.kind === 'theme'
-            ? `Approved the emerging theme “${target.name}” and its sub-themes.`
+            ? `Approved the pending theme “${target.name}” and its sub-themes. They now appear on the dashboard as Emerging.`
             : automaticallyApprovedParentName
-              ? `Approved the emerging sub-theme “${target.name}” and its emerging parent theme “${automaticallyApprovedParentName}”.`
-              : `Approved the emerging sub-theme “${target.name}”.`,
+              ? `Approved the pending sub-theme “${target.name}” and its pending parent theme “${automaticallyApprovedParentName}”. They now appear on the dashboard as Emerging.`
+              : `Approved the pending sub-theme “${target.name}”. It now appears on the dashboard as Emerging.`,
         question: selectedQuestion?.text ?? 'Selected question',
         title:
           target.kind === 'theme'
-            ? 'Emerging theme approved'
-            : 'Emerging sub-theme approved',
+            ? 'Pending theme approved'
+            : 'Pending sub-theme approved',
       });
     } else {
       const themeCount = targets.filter((target) => target.kind === 'theme').length;
       const subThemeCount = targets.length - themeCount;
       appendTextAiRecodeLog({
-        action: 'selected-emerging-approved',
+        action: 'selected-pending-approved',
         dashboardId: numericDashboardId,
-        details: `Approved ${targets.length} selected emerging items (${themeCount} themes and ${subThemeCount} sub-themes), plus ${automaticallyApprovedParentNames.size} emerging parent theme${automaticallyApprovedParentNames.size === 1 ? '' : 's'} automatically.`,
+        details: `Approved ${targets.length} selected pending items (${themeCount} themes and ${subThemeCount} sub-themes), plus ${automaticallyApprovedParentNames.size} pending parent theme${automaticallyApprovedParentNames.size === 1 ? '' : 's'} automatically. The emerging-status duration starts now.`,
         question: selectedQuestion?.text ?? 'Selected question',
-        title: 'Selected emerging items approved',
+        title: 'Selected pending items approved',
       });
     }
     setSelectedCodeFrameKeys(new Set());
@@ -1133,28 +1150,6 @@ export default function TextAiThemeConfigurationPage({
                 noDataContent="No questions found"
                 className={styles.questionSelect}
                 aria-label="Question"
-              />
-            </div>
-            <div className={styles.questionFilter}>
-              <span className={styles.filterLabel}>Theme status</span>
-              <WuSelect
-                data={TEXT_AI_THEME_STATUS_FILTER_OPTIONS}
-                accessorKey={{ value: 'value', label: 'label' }}
-                value={
-                  TEXT_AI_THEME_STATUS_FILTER_OPTIONS.find(
-                    (option) => option.value === themeStatus
-                  ) ?? TEXT_AI_THEME_STATUS_FILTER_OPTIONS[0]
-                }
-                onSelect={(option) => {
-                  if (!option || Array.isArray(option)) return;
-                  setThemeStatus(
-                    (option as TextAiFilterOption)
-                      .value as TextAiThemeStatusFilter
-                  );
-                }}
-                variant="outlined"
-                className={styles.statusSelect}
-                aria-label="Theme status"
               />
             </div>
           </div>
@@ -1757,35 +1752,12 @@ export default function TextAiThemeConfigurationPage({
                     aria-label="Show themes with no responses"
                   />
                 </label>
-                <label className={styles.settingsPreference}>
-                  <span>
-                    <strong>Auto approve emerging themes</strong>
-                    <small>
-                      Show new emerging themes and sub-themes on the dashboard
-                      without manual approval.
-                    </small>
-                  </span>
-                  <WuToggle
-                    checked={themePreferences.autoApproveEmergingThemes}
-                    onChange={(checked) => {
-                      setSelectedCodeFrameKeys(new Set());
-                      updateThemePreferences((current) => ({
-                        ...current,
-                        approvedEmergingNames: checked
-                          ? current.approvedEmergingNames
-                          : [],
-                        autoApproveEmergingThemes: checked,
-                      }));
-                    }}
-                    aria-label="Auto approve emerging themes"
-                  />
-                </label>
                 <div className={styles.settingsPreference}>
                   <span>
-                    <strong>Emerging theme validity</strong>
+                    <strong>Emerging status duration</strong>
                     <small>
-                      Choose how long a new theme or sub-theme remains Emerging
-                      before it becomes Established.
+                      Choose how long an approved theme or sub-theme is shown as
+                      Emerging. The duration begins on its approval date.
                     </small>
                   </span>
                   <WuSelect
@@ -1809,7 +1781,7 @@ export default function TextAiThemeConfigurationPage({
                     }}
                     variant="outlined"
                     className={styles.validitySelect}
-                    aria-label="Emerging theme validity"
+                    aria-label="Emerging status duration"
                   />
                 </div>
               </div>

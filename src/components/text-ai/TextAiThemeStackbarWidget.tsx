@@ -10,7 +10,6 @@ import {
   type TextAiSentimentBucket,
   type TextAiSentimentDistribution,
 } from '@/data/mock-text-ai-subtheme-stackbar';
-import type { TextAiThemeStatusFilter } from '@/data/mock-text-ai-widget-data';
 import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import {
   DEFAULT_TEXT_AI_WIDGET_TOP_N,
@@ -36,7 +35,6 @@ const SENTIMENT_BUCKETS: {
 
 interface TextAiThemeStackbarWidgetProps {
   question: string;
-  themeStatus: TextAiThemeStatusFilter;
   onDelete?: () => void;
   themePreferences: TextAiThemePreferences;
 }
@@ -109,7 +107,6 @@ function SentimentStackbar({
 
 export function TextAiThemeStackbarWidget({
   question,
-  themeStatus,
   onDelete,
   themePreferences,
 }: TextAiThemeStackbarWidgetProps) {
@@ -120,27 +117,24 @@ export function TextAiThemeStackbarWidget({
   >(() => new Set(SENTIMENT_BUCKETS.map((bucket) => bucket.key)));
   const visibleThemes = useMemo(() => {
     const filtered = TEXT_AI_SUBTHEME_STACKBAR_ROWS.flatMap((theme) => {
-      const emerging = isTextAiItemEmerging(
-        theme.label,
-        theme.emerging,
-        themePreferences.emergingThemeValidityDays
-      );
+      const candidate = Boolean(theme.emerging);
       const approved =
-        !emerging ||
-        themePreferences.autoApproveEmergingThemes ||
+        !candidate ||
         themePreferences.approvedEmergingNames.includes(theme.label);
-      const visible =
-        themeStatus === 'all'
-          ? approved
-          : themeStatus === 'emerging'
-            ? emerging && approved
-            : !emerging;
+      const emerging =
+        approved &&
+        isTextAiItemEmerging(
+          theme.label,
+          candidate,
+          themePreferences.emergingThemeValidityDays,
+          themePreferences.emergingApprovedAtByName[theme.label]
+        );
 
-      return visible ? [{ ...theme, emerging }] : [];
+      return approved ? [{ ...theme, emerging }] : [];
     });
 
     return limitTextAiWidgetItems(filtered, topN);
-  }, [themePreferences, themeStatus, topN]);
+  }, [themePreferences, topN]);
 
   function toggleSentiment(bucket: TextAiSentimentBucket): void {
     setActiveSentimentBuckets((current) => {

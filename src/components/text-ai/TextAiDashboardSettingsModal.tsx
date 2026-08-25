@@ -120,18 +120,6 @@ export function TextAiDashboardSettingsModal({
     saveTextAiThemePreferences(dashboard.id, nextPreferences);
   }
 
-  function setAutoApproveEmergingThemes(checked: boolean): void {
-    const nextPreferences = {
-      ...themePreferences,
-      approvedEmergingNames: checked
-        ? themePreferences.approvedEmergingNames
-        : [],
-      autoApproveEmergingThemes: checked,
-    };
-    setThemePreferences(nextPreferences);
-    saveTextAiThemePreferences(dashboard.id, nextPreferences);
-  }
-
   function setEmergingThemeValidity(
     option: TextAiEmergingValidityOption
   ): void {
@@ -236,26 +224,12 @@ export function TextAiDashboardSettingsModal({
                   aria-label="Show themes with no responses"
                 />
               </label>
-              <label className={styles.preferenceRow}>
-                <span>
-                  <strong>Auto approve emerging themes</strong>
-                  <small>
-                    Show new emerging themes and sub-themes on the dashboard
-                    without manual approval.
-                  </small>
-                </span>
-                <WuToggle
-                  checked={themePreferences.autoApproveEmergingThemes}
-                  onChange={setAutoApproveEmergingThemes}
-                  aria-label="Auto approve emerging themes"
-                />
-              </label>
               <div className={styles.preferenceRow}>
                 <span>
-                  <strong>Emerging theme validity</strong>
+                  <strong>Emerging status duration</strong>
                   <small>
-                    Choose how long a new theme or sub-theme remains Emerging
-                    before it becomes Established.
+                    Choose how long an approved theme or sub-theme is shown as
+                    Emerging. The duration begins on its approval date.
                   </small>
                 </span>
                 <WuSelect
@@ -276,7 +250,7 @@ export function TextAiDashboardSettingsModal({
                   }}
                   variant="outlined"
                   className={styles.validitySelect}
-                  aria-label="Emerging theme validity"
+                  aria-label="Emerging status duration"
                 />
               </div>
             </div>

@@ -13,7 +13,7 @@ export const TEXT_AI_EMERGING_VALIDITY_OPTIONS: TextAiEmergingValidityOption[] =
 
 export interface TextAiThemePreferences {
   approvedEmergingNames: string[];
-  autoApproveEmergingThemes: boolean;
+  emergingApprovedAtByName: Record<string, string>;
   emergingThemeValidityDays: TextAiEmergingValidityDays;
   showThemesWithNoResponses: boolean;
 }
@@ -23,7 +23,7 @@ export const TEXT_AI_THEME_PREFERENCES_EVENT = 'text-ai-theme-preferences-change
 
 const DEFAULT_PREFERENCES: TextAiThemePreferences = {
   approvedEmergingNames: [],
-  autoApproveEmergingThemes: true,
+  emergingApprovedAtByName: {},
   emergingThemeValidityDays: 30,
   showThemesWithNoResponses: true,
 };
@@ -44,6 +44,7 @@ export function getTextAiThemePreferences(
       Partial<TextAiThemePreferences>,
       'emergingThemeValidityDays'
     > & {
+      autoApproveEmergingThemes?: boolean;
       emergingThemeValidityDays?: number;
     };
     const storedValidity =
@@ -54,10 +55,31 @@ export function getTextAiThemePreferences(
       storedValidity === 7 || storedValidity === 14 || storedValidity === 30
         ? storedValidity
         : DEFAULT_PREFERENCES.emergingThemeValidityDays;
+    const approvedEmergingNames = Array.isArray(parsed.approvedEmergingNames)
+      ? parsed.approvedEmergingNames.filter(
+          (name): name is string => typeof name === 'string'
+        )
+      : DEFAULT_PREFERENCES.approvedEmergingNames;
+    const emergingApprovedAtByName =
+      parsed.emergingApprovedAtByName &&
+      typeof parsed.emergingApprovedAtByName === 'object'
+        ? Object.fromEntries(
+            Object.entries(parsed.emergingApprovedAtByName).filter(
+              (entry): entry is [string, string] =>
+                typeof entry[1] === 'string' &&
+                Number.isFinite(new Date(entry[1]).getTime())
+            )
+          )
+        : DEFAULT_PREFERENCES.emergingApprovedAtByName;
+
     return {
-      ...DEFAULT_PREFERENCES,
-      ...parsed,
+      approvedEmergingNames,
+      emergingApprovedAtByName,
       emergingThemeValidityDays,
+      showThemesWithNoResponses:
+        typeof parsed.showThemesWithNoResponses === 'boolean'
+          ? parsed.showThemesWithNoResponses
+          : DEFAULT_PREFERENCES.showThemesWithNoResponses,
     };
   } catch {
     return DEFAULT_PREFERENCES;

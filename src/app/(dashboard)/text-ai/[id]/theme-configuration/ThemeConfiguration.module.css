@@ -51,11 +51,6 @@
   width: min(28vw, 24rem);
 }
 
-.statusSelect {
-  min-width: 15rem;
-  width: min(25vw, 18rem);
-}
-
 .themeVisibilityControls {
   align-items: center;
   display: flex;

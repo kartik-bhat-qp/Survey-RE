@@ -27,15 +27,7 @@ export interface TextAiFilterOption {
   label: string;
 }
 
-export type TextAiThemeStatusFilter = 'all' | 'established' | 'emerging';
-
 export type TextAiFilterSelectOption = IWuSelectOption<TextAiFilterOption>;
-
-export const TEXT_AI_THEME_STATUS_FILTER_OPTIONS: TextAiFilterOption[] = [
-  { value: 'all', label: 'All themes & sub-themes' },
-  { value: 'established', label: 'Established themes & sub-themes' },
-  { value: 'emerging', label: 'Emerging themes & sub-themes' },
-];
 
 export const TEXT_AI_THEME_FILTER_OPTIONS: TextAiFilterSelectOption[] = [
   { value: 'top-3-themes', label: 'Top 3 themes' },

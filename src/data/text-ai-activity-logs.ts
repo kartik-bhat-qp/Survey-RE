@@ -20,7 +20,7 @@ export type TextAiRecodeAction =
   | 'sub-theme-rejected'
   | 'theme-approved'
   | 'sub-theme-approved'
-  | 'selected-emerging-approved'
+  | 'selected-pending-approved'
   | 'all-emerging-approved';
 
 export interface TextAiRecodeLogEntry {
