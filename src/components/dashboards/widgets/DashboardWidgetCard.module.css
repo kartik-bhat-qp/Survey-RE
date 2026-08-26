@@ -56,3 +56,7 @@
   overflow: hidden;
   padding: 12px 14px 12px;
 }
+
+.shared { border-color: #ccc; border-radius: 8px; }
+.shared .header { border-color: #ddd; margin: 0 8px; padding: 10px 8px; min-height: 44px; }
+.shared .title { color: #1b3380; font-size: 18px; font-weight: 500; }

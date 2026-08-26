@@ -36,6 +36,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const productName = getBiHeaderProductName(pathname);
   const { showToast } = useWuShowToast();
 
+  // Shared viewers have no author navigation or editing controls.
+  if (/^\/dashboards\/[^/]+\/shared$/.test(pathname)) return <>{children}</>;
+
   return (
     <div className={styles.shell}>
       {mounted ? <WuToast /> : null}

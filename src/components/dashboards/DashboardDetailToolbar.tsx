@@ -30,6 +30,7 @@ interface DashboardDetailToolbarProps {
   showPresentation?: boolean;
   onAddWidget?: () => void;
   onOpenSettings?: () => void;
+  onOpenShare?: () => void;
   onExportPowerPoint?: () => void;
   onOpenPresentation?: () => void;
 }
@@ -40,6 +41,7 @@ export function DashboardDetailToolbar({
   showPresentation = true,
   onAddWidget,
   onOpenSettings,
+  onOpenShare,
   onExportPowerPoint,
   onOpenPresentation,
 }: DashboardDetailToolbarProps) {
@@ -141,7 +143,7 @@ export function DashboardDetailToolbar({
           variant="iconOnly"
           size="sm"
           aria-label="Share dashboard"
-          onClick={() => showToast({ message: 'Share dashboard', variant: 'success' })}
+          onClick={() => onOpenShare?.()}
           Icon={<span className="wm-share" />}
         />
         <WuTooltip content={DASHBOARD_SETTINGS_TOOLTIP} position="bottom">

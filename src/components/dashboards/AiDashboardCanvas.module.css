@@ -80,6 +80,9 @@
   padding-bottom: 5.5rem;
 }
 
+.readOnly { background: #fafafa; padding: 20px; }
+.readOnly.canvasMobile { padding: 12px; }
+
 @media (max-width: 767px) {
   .gridItem {
     max-width: 100%;

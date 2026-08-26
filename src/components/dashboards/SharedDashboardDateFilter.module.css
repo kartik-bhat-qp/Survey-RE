@@ -1,0 +1,33 @@
+.trigger { align-items: center; background: white; border: 1px solid #ddd; border-radius: 3px; color: #545e6b; cursor: pointer; display: flex; font: inherit; font-size: 12px; gap: 8px; height: 32px; min-width: 176px; padding: 0 10px; }
+.trigger > span:last-child { margin-left: auto; }
+.popover { background: white; border: 1px solid #4688d5; border-radius: 0 16px 16px 16px; box-shadow: 0 4px 12px #0002; color: #545e6b; max-height: calc(100dvh - 80px) !important; max-width: calc(100vw - 24px); overflow: auto; padding: 16px !important; width: 530px !important; }
+/* The app's global menu cap also targets popovers; a two-month calendar needs its full height. */
+:global([data-radix-popper-content-wrapper]):has(> .popover) { max-height: none !important; overflow: visible !important; }
+.calendar { background: white; box-shadow: none; margin-top: 12px; padding: 0 !important; position: relative; }
+.months { display: flex; gap: 16px; position: relative; }
+.month { flex: 1; min-width: 0; }
+.monthCaption { align-items: center; display: flex; height: 32px; justify-content: center; }
+.captionLabel { display: none; }
+.dropdowns { align-items: center; display: flex; gap: 8px; justify-content: center; }
+.dropdown { appearance: none; background: white; border: 0; color: #545e6b; cursor: pointer; font: inherit; font-size: 13px; max-width: 100px; padding: 0; }
+.monthGrid { border-collapse: collapse; table-layout: fixed; width: 100%; }
+.weekdays { border: none; }
+.weekday { color: #888; font-size: 12px; font-weight: 400; height: 32px; text-align: center; width: 14.285%; }
+.day { height: 34px; padding: 1px; text-align: center; }
+.dayButton { background: transparent; border: 1px solid transparent; border-radius: 3px; color: #545e6b; cursor: pointer; font: inherit; font-size: 12px; height: 32px; padding: 0; width: 32px; }
+.dayButton:hover { background: #eef5fc; }
+.dayButton:focus-visible { outline: 2px solid #4688d5; outline-offset: -2px; }
+.today .dayButton { border-color: #4688d5; }
+.selected .dayButton { background: #e4effb; }
+.rangeEdge .dayButton { background: #4688d5; color: white; }
+.rangeMiddle { background: #eef5fc; }
+.navigation { display: flex; inset: 0 0 auto; justify-content: space-between; pointer-events: none; position: absolute; z-index: 1; }
+.previous, .next { align-items: center; background: white; border: 0; color: #545e6b; cursor: pointer; display: flex; height: 32px; justify-content: center; pointer-events: auto; width: 24px; }
+.previous { transform: rotate(180deg); }
+.footer { align-items: center; display: flex; gap: 12px; margin-top: 16px; }
+.dateInputs { display: flex; flex: 1; gap: 8px; }
+.dateInputs input { border: 1px solid #ddd; border-radius: 3px; color: #545e6b; font: inherit; font-size: 11px; height: 26px; min-width: 0; padding: 2px 4px; width: 120px; }
+.reset { align-items: center; background: none; border: 0; color: #4688d5; cursor: pointer; display: flex; font: inherit; font-size: 12px; gap: 6px; }
+.footer > button:last-child { height: 26px; min-width: 80px; }
+.error { color: #b42318; font-size: 12px; margin-top: 8px; }
+@media (max-width: 600px) { .popover { width: 330px !important; } .footer { flex-wrap: wrap; justify-content: flex-end; } .dateInputs { flex-basis: 100%; } .dateInputs input { flex: 1; } }

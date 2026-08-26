@@ -16,6 +16,8 @@ interface DashboardWidgetCardProps {
   children: React.ReactNode;
   dragHandleClassName?: string;
   showDiamond?: boolean;
+  actions?: React.ReactNode;
+  shared?: boolean;
 }
 
 export function DashboardWidgetCard({
@@ -23,12 +25,14 @@ export function DashboardWidgetCard({
   children,
   dragHandleClassName,
   showDiamond = false,
+  actions,
+  shared = false,
 }: DashboardWidgetCardProps) {
   return (
-    <article className={styles.card}>
+    <article className={`${styles.card} ${shared ? styles.shared : ''}`}>
       <header className={`${styles.header} ${dragHandleClassName ?? ''}`.trim()}>
         <h3 className={styles.title}>{title}</h3>
-        <div className={styles.actions}>
+        <div className={styles.actions}>{actions !== undefined ? actions : <>
           <button type="button" className={styles.actionBtn} aria-label="Insights">
             <span className="wm-lightbulb-outline" />
           </button>
@@ -46,7 +50,7 @@ export function DashboardWidgetCard({
           <button type="button" className={styles.actionBtn} aria-label="Widget menu">
             <span className="wm-more-vert" />
           </button>
-        </div>
+        </>}</div>
       </header>
       <div className={styles.body}>{children}</div>
     </article>

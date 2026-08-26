@@ -1035,7 +1035,7 @@ function createPictorialChart(root: am5.Root, data: ChartDataPoint[]): void {
 
 function createMapChart(
   root: am5.Root,
-  points: { id: string; name: string; value: number }[]
+  points: AiWidgetChartPayload['mapPoints']
 ): void {
   const chart = root.container.children.push(
     am5map.MapChart.new(root, {
@@ -1098,7 +1098,7 @@ function createMapChart(
       id: point.id,
       name: point.name,
       value: point.value,
-      geometry: { type: 'Point' as const, coordinates: [longitude, latitude] },
+      geometry: { type: 'Point' as const, coordinates: [point.longitude ?? longitude, point.latitude ?? latitude] },
     };
   });
 

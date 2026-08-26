@@ -232,3 +232,22 @@
     padding: 16px 32px !important;
   }
 }
+
+/* Shared Links follows the production settings shell, including its fixed form footer. */
+.sharedLinksModal {
+  overflow: visible;
+  height: min(685px, calc(100dvh - 64px));
+  max-width: 1250px !important;
+  width: 100%;
+}
+.sharedLinksModal .header { border-bottom: 0; min-height: 56px; padding: 0 16px !important; }
+.sharedLinksModal .modalTitle :global(h2) { font-size: 24px; font-weight: 400; line-height: 24px; }
+.sharedLinksModal .content { display: flex !important; max-height: none; overflow: hidden !important; padding: 32px !important; scrollbar-gutter: auto; }
+.sharedLinksModal .tabRoot { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.sharedLinksModal .tabRoot > div { display: flex; flex: 1; flex-direction: column; min-height: 0; }
+.sharedLinksModal .tabRoot :global([role='tablist']) { flex-shrink: 0; min-height: 33px; padding: 0; position: relative; }
+.sharedLinksModal .tabRoot :global([role='tab']) { font-size: 12px; font-weight: 400; padding: 8px 16px; }
+.sharedLinksModal .tabRoot :global([role='tabpanel']) { flex: 1; min-height: 0; overflow: hidden; padding: 0; }
+.sharedLinksModal .tabRoot :global([role='tabpanel'][data-state='active']) { display: flex; }
+.sharedLinksModal .tabRoot :global([role='tabpanel'] .dashboard-settings-shared-url-panel) { display: flex; }
+@media (max-width: 720px) { .sharedLinksModal .content { padding: 16px !important; } }

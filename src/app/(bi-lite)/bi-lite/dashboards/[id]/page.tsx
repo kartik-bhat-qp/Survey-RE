@@ -10,6 +10,7 @@ import { DashboardDetailToolbar } from '@/components/dashboards/DashboardDetailT
 import { DashboardFocusedPreview } from '@/components/dashboards/DashboardFocusedPreview';
 import { DashboardPowerPointExportModal } from '@/components/dashboards/DashboardPowerPointExportModal';
 import { DashboardSettingsModal } from '@/components/dashboards/DashboardSettingsModal';
+import { DashboardShareModal } from '@/components/dashboards/DashboardShareModal';
 import { AdvancedWidgetModal } from '@/components/dashboards/AdvancedWidgetModal';
 import { QuestionBasedWidgetModal } from '@/components/dashboards/QuestionBasedWidgetModal';
 import { SelectWidgetModal } from '@/components/dashboards/SelectWidgetModal';
@@ -20,6 +21,7 @@ import {
   type DesignTypographyOptions,
 } from '@/components/dashboards/DashboardDesignSettingsTab';
 import { getDashboardById } from '@/data/get-dashboard-by-id';
+import { useDashboardSharing } from '@/hooks/useDashboardSharing';
 import { biLitePath } from '@/lib/bi-lite-paths';
 import {
   resolveDashboardSurvey,
@@ -37,6 +39,9 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
   const dashboard = getDashboardById(numericId);
   const [name, setName] = useState(dashboard?.name ?? 'Untitled');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState('general');
+  const [shareOpen, setShareOpen] = useState(false);
+  const [sharing, setSharing] = useDashboardSharing(numericId);
   const [powerPointExportOpen, setPowerPointExportOpen] = useState(false);
   const [focusedPreviewOpen, setFocusedPreviewOpen] = useState(false);
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
@@ -76,7 +81,8 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         onNameChange={setName}
         showPresentation
         onAddWidget={() => setAddWidgetOpen(true)}
-        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenSettings={() => { setSettingsTab('general'); setSettingsOpen(true); }}
+        onOpenShare={() => setShareOpen(true)}
         onExportPowerPoint={() => setPowerPointExportOpen(true)}
         onOpenPresentation={() => setFocusedPreviewOpen(true)}
       />
@@ -96,10 +102,21 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         designTypography={designTypography}
       />
 
+      <DashboardShareModal open={shareOpen} onOpenChange={setShareOpen} dashboardId={numericId}
+        dashboardName={name} settings={sharing.settings}
+        enabled={sharing.enabled} onEnabledChange={(enabled) => setSharing((previous) => ({ ...previous, enabled }))}
+        onSettingsChange={(settings) => setSharing((previous) => ({ ...previous, settings }))}
+        onOpenSharedLinks={() => { setShareOpen(false); setSettingsTab('shared-url'); setSettingsOpen(true); }} />
+
       <DashboardSettingsModal
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         dashboardName={name}
+        activeTab={settingsTab}
+        onTabChange={setSettingsTab}
+        dashboardId={numericId}
+        sharedLinks={sharing.links}
+        onSharedLinksChange={(links) => setSharing((previous) => ({ ...previous, links }))}
         onNameChange={setName}
         appliedDesignTypography={designTypography}
         onDesignTypographyChange={setDesignTypography}

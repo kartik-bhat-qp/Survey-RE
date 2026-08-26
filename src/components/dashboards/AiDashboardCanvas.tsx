@@ -16,6 +16,7 @@ import {
   AI_DASHBOARD_GRID_COLS,
   AI_DASHBOARD_LAYOUT,
   AI_DASHBOARD_WIDGETS,
+  type AiWidgetConfig,
 } from '@/data/mock-ai-widgets';
 import {
   DEFAULT_DESIGN_TYPOGRAPHY,
@@ -60,10 +61,18 @@ function renderResizeHandle(
 
 interface AiDashboardCanvasProps {
   designTypography?: DesignTypographyOptions;
+  readOnly?: boolean;
+  renderWidget?: (widget: AiWidgetConfig) => React.ReactNode;
+  renderWidgetActions?: (widget: AiWidgetConfig) => React.ReactNode;
+  footer?: React.ReactNode;
 }
 
 export function AiDashboardCanvas({
   designTypography = DEFAULT_DESIGN_TYPOGRAPHY,
+  readOnly = false,
+  renderWidget,
+  renderWidgetActions,
+  footer,
 }: AiDashboardCanvasProps) {
   const isMobile = useIsMobile();
   const showLicenseRestrictions = useBiLicenseRestrictions();
@@ -128,7 +137,7 @@ export function AiDashboardCanvas({
   return (
     <div
       ref={canvasRef}
-      className={`${styles.canvas} ${isMobile ? styles.canvasMobile : ''}`}
+      className={`${styles.canvas} ${isMobile ? styles.canvasMobile : ''} ${readOnly ? styles.readOnly : ''}`}
       style={typographyStyle}
     >
       <GridLayoutWithWidth
@@ -140,14 +149,14 @@ export function AiDashboardCanvas({
         margin={margin}
         containerPadding={[0, 0]}
         compactType="vertical"
-        onLayoutChange={handleLayoutChange}
+        onLayoutChange={readOnly ? undefined : handleLayoutChange}
         onResize={notifyChartsResize}
         onResizeStop={notifyChartsResize}
-        isDraggable={!isMobile}
-        isResizable={!isMobile}
-        resizeHandles={isMobile ? [] : ['se']}
-        resizeHandle={isMobile ? undefined : renderResizeHandle}
-        draggableHandle={isMobile ? undefined : `.${styles.dragHandle}`}
+        isDraggable={!isMobile && !readOnly}
+        isResizable={!isMobile && !readOnly}
+        resizeHandles={isMobile || readOnly ? [] : ['se']}
+        resizeHandle={isMobile || readOnly ? undefined : renderResizeHandle}
+        draggableHandle={isMobile || readOnly ? undefined : `.${styles.dragHandle}`}
         draggableCancel={`.${styles.resizeHandle}`}
       >
         {displayLayout.map((item) => {
@@ -158,7 +167,9 @@ export function AiDashboardCanvas({
             <div key={widget.id} className={styles.gridItem}>
               <DashboardWidgetCard
                 title={widget.title}
-                dragHandleClassName={isMobile ? undefined : styles.dragHandle}
+                dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle}
+                shared={readOnly}
+                actions={renderWidgetActions?.(widget) ?? (readOnly ? null : undefined)}
                 showDiamond={
                   showLicenseRestrictions &&
                   (widget.id === 'w-nps-benchmark' ||
@@ -167,19 +178,20 @@ export function AiDashboardCanvas({
                     widget.id === 'w-segment-trend')
                 }
               >
-                <AiWidgetRenderer
+                {renderWidget ? renderWidget(widget) : <AiWidgetRenderer
                   widgetId={widget.id}
                   type={widget.type}
                   typography={chartTypography}
-                />
+                />}
               </DashboardWidgetCard>
             </div>
           );
         })}
       </GridLayoutWithWidth>
-      <button type="button" className={styles.aiFab} aria-label="AI assistant">
+      {footer}
+      {!readOnly && <button type="button" className={styles.aiFab} aria-label="AI assistant">
         <span className="wc-ai" />
-      </button>
+      </button>}
     </div>
   );
 }

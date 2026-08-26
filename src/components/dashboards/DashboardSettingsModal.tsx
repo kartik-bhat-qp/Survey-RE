@@ -19,6 +19,7 @@ import {
 } from '@/components/dashboards/DashboardDesignSettingsTab';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useWickUILib } from '@/components/ui/useWickUILib';
+import type { SharedUrlLink } from '@/data/mock-shared-urls';
 import styles from './DashboardSettingsModal.module.css';
 
 const WuTab = dynamic(
@@ -51,6 +52,11 @@ interface DashboardSettingsModalProps {
   onDelete?: () => void;
   appliedDesignTypography?: DesignTypographyOptions;
   onDesignTypographyChange?: (typography: DesignTypographyOptions) => void;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  dashboardId: number;
+  sharedLinks: SharedUrlLink[];
+  onSharedLinksChange: (links: SharedUrlLink[]) => void;
 }
 
 function SettingsPlaceholder({ label }: { label: string }) {
@@ -179,11 +185,15 @@ export function DashboardSettingsModal({
   onDelete,
   appliedDesignTypography = DEFAULT_DESIGN_TYPOGRAPHY,
   onDesignTypographyChange,
+  activeTab,
+  onTabChange,
+  dashboardId,
+  sharedLinks,
+  onSharedLinksChange,
 }: DashboardSettingsModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('general');
   const [accessibilityShortcutsEnabled, setAccessibilityShortcutsEnabled] = useState(true);
   const [designTheme, setDesignTheme] = useState(DESIGN_THEME_OPTIONS[0]);
   const [designPalette, setDesignPalette] = useState(DESIGN_PALETTE_OPTIONS[0]);
@@ -197,11 +207,11 @@ export function DashboardSettingsModal({
     (nextOpen: boolean) => {
       if (!nextOpen) {
         setDeleteConfirmOpen(false);
-        setActiveTab('general');
+        onTabChange('general');
       }
       onOpenChange(nextOpen);
     },
-    [onOpenChange]
+    [onOpenChange, onTabChange]
   );
 
   const handleApplyGlobalSettings = useCallback(() => {
@@ -361,13 +371,16 @@ export function DashboardSettingsModal({
       },
       {
         value: 'shared-url',
-        Trigger: 'Shared URL',
-        Content: <DashboardSharedUrlTab dashboardName={dashboardName} />,
+        Trigger: 'Shared Links',
+        Content: <DashboardSharedUrlTab dashboardId={dashboardId} dashboardName={dashboardName} links={sharedLinks} onLinksChange={onSharedLinksChange} />,
       },
     ],
     [
       accessibilityShortcutsEnabled,
       dashboardName,
+      dashboardId,
+      sharedLinks,
+      onSharedLinksChange,
       designFontFamily,
       designFontSize,
       designFontStyle,
@@ -392,9 +405,10 @@ export function DashboardSettingsModal({
         <WuModal
           open
           onOpenChange={handleOpenChange}
-          className={styles.modal}
+          className={`${styles.modal} ${activeTab === 'shared-url' ? styles.sharedLinksModal : ''}`}
           variant="action"
-          maxHeight="min(90dvh, calc(100dvh - 2rem))"
+          maxWidth={activeTab === 'shared-url' ? '1250px' : undefined}
+          maxHeight={activeTab === 'shared-url' ? 'min(685px, calc(100dvh - 64px))' : 'min(90dvh, calc(100dvh - 2rem))'}
         >
           <WuModalHeader className={`${styles.header} ${styles.modalTitle}`}>
             Dashboard settings
@@ -405,7 +419,7 @@ export function DashboardSettingsModal({
               <WuTab
                 items={tabs}
                 value={activeTab}
-                onValueChange={setActiveTab}
+                onValueChange={onTabChange}
               />
             </div>
           </WuModalContent>

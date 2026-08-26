@@ -4,52 +4,72 @@ export interface SharedUrlLink {
   url: string;
   createdAt: string;
   status: boolean;
+  settings: SharedLinkCreateDraft;
 }
 
 export type SharedLinkTitleAlignment = 'left' | 'center' | 'right';
 
-export interface SharedLinkCreateDraft {
-  name: string;
-  viewSettingsEnabled: boolean;
+export interface SharedLinkSettings {
   shareTitle: string;
+  showTitle: boolean;
   titleAlignment: SharedLinkTitleAlignment;
   showInsights: boolean;
   allowComments: boolean;
   enablePassword: boolean;
+  password: string;
   baseFilter: boolean;
-  dynamicFilters: boolean;
+  baseFilterId: string | null;
+  savedFiltersEnabled: boolean;
+  selectedSavedFilterIds: string[];
+  allowInteractivity: boolean;
+  dateFilter: boolean;
+  responseStatus: boolean;
   language: string;
-  textAiSettingsEnabled: boolean;
-  showThemes: boolean;
-  showTopics: boolean;
-  showSentiment: boolean;
-  showEmergingThemes: boolean;
 }
+
+export interface SharedLinkCreateDraft extends SharedLinkSettings {
+  name: string;
+}
+
+/** Synthetic saved filters for the local prototype; no production data is copied. */
+export const DASHBOARD_SAVED_FILTER_OPTIONS = [
+  { value: 'gender', label: 'Gender' },
+  { value: 'country', label: 'Country' },
+  { value: 'fy-2025-2026', label: 'FY 2025–2026' },
+] as const;
 
 export const SHARED_LINK_LANGUAGE_OPTIONS = [
   { value: 'en', label: 'English' },
-  { value: 'es', label: 'Spanish' },
-  { value: 'fr', label: 'French' },
-  { value: 'de', label: 'German' },
-  { value: 'pt', label: 'Portuguese' },
+  { value: 'pt', label: 'Português' },
+  { value: 'ar', label: 'العربية' },
+  { value: 'es', label: 'Español' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'ja', label: '日本語' },
+  { value: 'fr', label: 'Français' },
+  { value: 'ru', label: 'Русский' },
 ] as const;
 
-export const DEFAULT_SHARED_LINK_CREATE_DRAFT: SharedLinkCreateDraft = {
-  name: '',
-  viewSettingsEnabled: false,
+export const DEFAULT_SHARED_LINK_SETTINGS: SharedLinkSettings = {
   shareTitle: '',
+  showTitle: true,
   titleAlignment: 'left',
   showInsights: false,
   allowComments: false,
   enablePassword: false,
+  password: '',
   baseFilter: false,
-  dynamicFilters: false,
+  baseFilterId: null,
+  savedFiltersEnabled: false,
+  selectedSavedFilterIds: [],
+  allowInteractivity: false,
+  dateFilter: false,
+  responseStatus: false,
   language: 'en',
-  textAiSettingsEnabled: false,
-  showThemes: true,
-  showTopics: true,
-  showSentiment: true,
-  showEmergingThemes: false,
+};
+
+export const DEFAULT_SHARED_LINK_CREATE_DRAFT: SharedLinkCreateDraft = {
+  name: '',
+  ...DEFAULT_SHARED_LINK_SETTINGS,
 };
 
 /** Maximum shared links allowed on the current license. */
@@ -69,77 +89,133 @@ export const SHARED_URL_UPSELL = {
   exploreToast: 'A QuestionPro specialist will reach out about BI licensing.',
 } as const;
 
-export const MOCK_SHARED_URLS: SharedUrlLink[] = [
-  {
-    id: 1,
-    name: 'India data',
-    url: 'https://bi.questionpro.com/sd/2a36f8c1-9e4b-4d2a-b7c1-8f3e2a1d9c0e',
-    createdAt: '2026-05-21',
-    status: true,
-  },
-  {
-    id: 2,
-    name: 'Q1 executive summary',
-    url: 'https://bi.questionpro.com/sd/7b12e4a0-1f3c-4a8d-9e2b-5c4d6f8a0b1c',
-    createdAt: '2026-05-18',
-    status: true,
-  },
-  {
-    id: 3,
-    name: 'Retail panel — West region weekly pulse dashboard external share for franchise partners',
-    url: 'https://bi.questionpro.com/sd/c9d8e7f6-a5b4-4c3d-9e2f-1a0b9c8d7e6f',
-    createdAt: '2026-05-10',
-    status: false,
-  },
-  {
-    id: 4,
-    name: 'NPS tracker',
-    url: 'https://bi.questionpro.com/sd/3f4e5d6c-7b8a-9c0d-8e1f-2a3b4c5d6e7f',
-    createdAt: '2026-04-28',
-    status: true,
-  },
-  {
-    id: 5,
-    name: 'Brand health 2026',
-    url: 'https://bi.questionpro.com/sd/1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d',
-    createdAt: '2026-04-15',
-    status: false,
-  },
-  {
-    id: 6,
-    name: 'CX post-purchase',
-    url: 'https://bi.questionpro.com/sd/8e7d6c5b-4a3f-2e1d-9c0b-8a7f6e5d4c3b',
-    createdAt: '2026-03-22',
-    status: true,
-  },
-  {
-    id: 7,
-    name: 'Employee engagement',
-    url: 'https://bi.questionpro.com/sd/5c6d7e8f-9a0b-1c2d-3e4f-5a6b7c8d9e0f',
-    createdAt: '2026-02-14',
-    status: true,
-  },
-  {
-    id: 8,
-    name: 'Ad hoc — board meeting',
-    url: 'https://bi.questionpro.com/sd/2d3e4f5a-6b7c-8d9e-0f1a-2b3c4d5e6f7a',
-    createdAt: '2026-01-30',
-    status: false,
-  },
-  {
-    id: 9,
-    name: 'APAC stakeholder review',
-    url: 'https://bi.questionpro.com/sd/9f8e7d6c-5b4a-3f2e-1d0c-9b8a7f6e5d4c',
-    createdAt: '2026-01-12',
-    status: true,
-  },
-  {
-    id: 10,
-    name: 'Product launch — read-only',
-    url: 'https://bi.questionpro.com/sd/0a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d',
-    createdAt: '2025-12-08',
-    status: false,
-  },
+/** Additional profiles start empty, as in the production Shared Links tab. */
+export const MOCK_SHARED_URLS: SharedUrlLink[] = [];
+
+export interface DashboardSharingState {
+  enabled: boolean;
+  settings: SharedLinkSettings;
+  links: SharedUrlLink[];
+}
+
+export const DEFAULT_DASHBOARD_SHARING: DashboardSharingState = {
+  enabled: true,
+  settings: DEFAULT_SHARED_LINK_SETTINGS,
+  links: MOCK_SHARED_URLS,
+};
+
+export const dashboardSharingStorageKey = (dashboardId: number) => `dashboard-sharing-v2-${dashboardId}`;
+
+export function sharedDashboardPath(dashboardId: number, profile: string | number = 'default'): string {
+  return `/dashboards/${dashboardId}/shared?profile=${encodeURIComponent(profile)}`;
+}
+
+export function shareSettingsError(settings: SharedLinkSettings): string | null {
+  if (settings.enablePassword && !settings.password.trim()) return 'Enter a password or turn off password protection.';
+  if (settings.baseFilter && !settings.baseFilterId) return 'Select a base filter.';
+  if (settings.savedFiltersEnabled && !settings.selectedSavedFilterIds.some((id) =>
+    DASHBOARD_SAVED_FILTER_OPTIONS.some((option) => option.value === id) &&
+    (!settings.baseFilter || id !== settings.baseFilterId)
+  )) return 'Select at least one saved filter.';
+  return null;
+}
+
+export interface SharedFilterDefinition {
+  id: string;
+  label: string;
+  field: 'gender' | 'country' | 'fiscalYear';
+  values: string[];
+  presetValues: string[];
+}
+
+/** Sample saved definitions and responses used only to exercise viewer filtering. */
+export const SHARED_FILTER_DEFINITIONS: SharedFilterDefinition[] = [
+  { id: 'gender', label: 'Gender', field: 'gender', values: ['Female', 'Male', 'Other'], presetValues: ['Female'] },
+  { id: 'country', label: 'Country', field: 'country', values: ['India', 'United States', 'United Kingdom', 'Germany'], presetValues: ['India'] },
+  { id: 'fy-2025-2026', label: 'FY 2025–2026', field: 'fiscalYear', values: ['2025–2026', '2026–2027'], presetValues: ['2025–2026'] },
 ];
 
-export const SHARED_URLS_PER_PAGE = 10;
+export interface SharedDashboardResponse {
+  id: number;
+  gender: string;
+  country: string;
+  fiscalYear: string;
+  respondedAt: string;
+  status: SharedResponseStatus;
+  satisfaction: number;
+  age: string;
+  recommendation: number;
+  durationSeconds: number;
+}
+
+export type SharedResponseStatus = 'Completed' | 'Partial' | 'Terminates';
+export const SHARED_RESPONSE_STATUS_OPTIONS: { value: SharedResponseStatus; label: string }[] = [
+  { value: 'Completed', label: 'Completed' },
+  { value: 'Partial', label: 'Started But Not Completed' },
+  { value: 'Terminates', label: 'Terminates' },
+];
+
+export const SHARED_DASHBOARD_RESPONSES: SharedDashboardResponse[] = SHARED_FILTER_DEFINITIONS[0].values.flatMap((gender, genderIndex) =>
+  SHARED_FILTER_DEFINITIONS[1].values.flatMap((country, countryIndex) =>
+    SHARED_FILTER_DEFINITIONS[2].values.flatMap((fiscalYear, yearIndex) =>
+      Array.from({ length: 5 }, (_, index) => ({
+        id: genderIndex * 40 + countryIndex * 10 + yearIndex * 5 + index + 1,
+        gender, country, fiscalYear,
+        respondedAt: `${2025 + yearIndex}-${String(index + 4).padStart(2, '0')}-15`,
+        status: index === 0 ? (countryIndex === 3 ? 'Terminates' as const : 'Partial' as const) : 'Completed' as const,
+        satisfaction: 1 + ((genderIndex + countryIndex + index) % 5),
+        age: ['18-24', '25-34', '35-44', '45-54', '55-64', 'Above 64'][(genderIndex + countryIndex + index) % 6],
+        recommendation: (genderIndex * 3 + countryIndex + index * 2) % 11,
+        durationSeconds: 90 + (genderIndex + countryIndex + index) * 30,
+      }))
+    )
+  )
+);
+
+export interface SharedViewerFilters {
+  activeSavedFilterId: string | null;
+  valuesByFilter: Record<string, string[]>;
+  startDate: string;
+  endDate: string;
+  responseStatuses: SharedResponseStatus[];
+}
+
+export function availableSharedFilters(settings: SharedLinkSettings): SharedFilterDefinition[] {
+  if (!settings.savedFiltersEnabled) return [];
+  return SHARED_FILTER_DEFINITIONS.filter((filter) => settings.selectedSavedFilterIds.includes(filter.id) &&
+    (!settings.baseFilter || settings.baseFilterId !== filter.id));
+}
+
+export function initialSharedViewerFilters(settings: SharedLinkSettings): SharedViewerFilters {
+  const filters = availableSharedFilters(settings);
+  return {
+    // Production saved-only links start without a selected preset.
+    activeSavedFilterId: null,
+    valuesByFilter: Object.fromEntries(filters.map((filter) => [filter.id, [...filter.presetValues]])),
+    startDate: '', endDate: '', responseStatuses: SHARED_RESPONSE_STATUS_OPTIONS.map((option) => option.value),
+  };
+}
+
+export function filterSharedResponses(settings: SharedLinkSettings, viewer: SharedViewerFilters,
+  responses: SharedDashboardResponse[] = SHARED_DASHBOARD_RESPONSES): SharedDashboardResponse[] {
+  if (shareSettingsError(settings)) return [];
+  const filters = availableSharedFilters(settings);
+  const base = settings.baseFilter ? SHARED_FILTER_DEFINITIONS.find((filter) => filter.id === settings.baseFilterId) : undefined;
+  // An unknown base filter must not silently broaden the shared data.
+  if (settings.baseFilter && !base) return [];
+  return responses.filter((response) => {
+    if (base && !base.presetValues.includes(response[base.field])) return false;
+    if (settings.savedFiltersEnabled) {
+      if (settings.allowInteractivity) {
+        if (!filters.every((filter) => (viewer.valuesByFilter[filter.id] ?? filter.presetValues).includes(response[filter.field]))) return false;
+      } else {
+        const active = filters.find((filter) => filter.id === viewer.activeSavedFilterId);
+        if (viewer.activeSavedFilterId && !active) return false;
+        if (active && !active.presetValues.includes(response[active.field])) return false;
+      }
+      if (settings.dateFilter && ((viewer.startDate && response.respondedAt < viewer.startDate) || (viewer.endDate && response.respondedAt > viewer.endDate))) return false;
+      if (settings.responseStatus && !viewer.responseStatuses.includes(response.status)) return false;
+    }
+    return true;
+  });
+}

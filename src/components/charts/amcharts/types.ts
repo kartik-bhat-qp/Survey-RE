@@ -26,6 +26,8 @@ export interface MapChartPoint {
   id: string;
   name: string;
   value: number;
+  longitude?: number;
+  latitude?: number;
 }
 
 export interface MatrixStackBarSeriesConfig {

@@ -61,6 +61,8 @@ interface AiWidgetRendererProps {
   type: AiWidgetType;
   typography?: AmChartTypography;
   chartInstanceId?: string;
+  data?: AiWidgetChartPayload;
+  meanValue?: string;
 }
 
 function buildChartPayload(widgetId: string): AiWidgetChartPayload {
@@ -173,15 +175,17 @@ export function AiWidgetRenderer({
   type,
   typography,
   chartInstanceId,
+  data,
+  meanValue,
 }: AiWidgetRendererProps) {
-  const chartPayload = useMemo(() => buildChartPayload(widgetId), [widgetId]);
+  const chartPayload = useMemo(() => data ?? buildChartPayload(widgetId), [data, widgetId]);
 
   if (type === 'benchmark') {
-    return <NpsBenchmarkWidget widgetId={widgetId} chartPayload={chartPayload} />;
+    return <NpsBenchmarkWidget widgetId={chartInstanceId ?? widgetId} chartPayload={chartPayload} />;
   }
 
   if (type === 'stat-metric') {
-    return <MeanStatWidget />;
+    return <MeanStatWidget value={meanValue} />;
   }
 
   if (isAmChartType(type)) {

@@ -4,298 +4,114 @@ import { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { CreateSharedLinkForm } from '@/components/dashboards/CreateSharedLinkForm';
-import { SharedUrlLicenseUpsellModal } from '@/components/dashboards/SharedUrlLicenseUpsellModal';
-import {
-  MOCK_SHARED_URLS,
-  SHARED_URL_LICENSE_LIMIT,
-  SHARED_URL_UPSELL,
-  type SharedLinkCreateDraft,
-  type SharedUrlLink,
-} from '@/data/mock-shared-urls';
-import { formatShortDate, truncate } from '@/data/mock-utils';
+import { CreateSharedLinkForm } from './CreateSharedLinkForm';
+import { SharedUrlLicenseUpsellModal } from './SharedUrlLicenseUpsellModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { SHARED_URL_LICENSE_LIMIT, SHARED_URL_UPSELL, sharedDashboardPath, type SharedLinkCreateDraft, type SharedUrlLink } from '@/data/mock-shared-urls';
+import { formatShortDate } from '@/data/mock-utils';
 import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
 import styles from './DashboardSharedUrlTab.module.css';
 
-const WuTable = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTable })),
-  { ssr: false }
-);
-const WuButton = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
-  { ssr: false }
-);
-const WuInput = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
-  { ssr: false }
-);
-const WuToggle = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
-  { ssr: false }
-);
+const WuTable = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTable })), { ssr: false });
+const WuButton = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })), { ssr: false });
+const WuInput = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })), { ssr: false });
+const WuToggle = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })), { ssr: false });
+const WuPopover = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuPopover })), { ssr: false });
 
-const URL_DISPLAY_MAX = 36;
-
-interface DashboardSharedUrlTabProps {
-  dashboardName?: string;
+interface Props {
+  dashboardId: number;
+  dashboardName: string;
+  links: SharedUrlLink[];
+  onLinksChange: (links: SharedUrlLink[]) => void;
 }
 
-export function DashboardSharedUrlTab({
-  dashboardName = 'Untitled',
-}: DashboardSharedUrlTabProps) {
+export function DashboardSharedUrlTab({ dashboardId, dashboardName, links, onLinksChange }: Props) {
   const { showToast } = useWuShowToast();
-  const showLicenseRestrictions = useBiLicenseRestrictions();
-  const [links, setLinks] = useState<SharedUrlLink[]>(MOCK_SHARED_URLS);
+  const restricted = useBiLicenseRestrictions();
   const [search, setSearch] = useState('');
   const [upsellOpen, setUpsellOpen] = useState(false);
-  const [view, setView] = useState<'list' | 'create'>('list');
+  const [view, setView] = useState<'list' | 'create' | 'edit'>('list');
+  const [editingLink, setEditingLink] = useState<SharedUrlLink | null>(null);
+  const [deletingLink, setDeletingLink] = useState<SharedUrlLink | null>(null);
+  const atLinkLimit = restricted && links.length >= SHARED_URL_LICENSE_LIMIT;
+  const filteredLinks = links.filter((link) => link.name.toLowerCase().includes(search.trim().toLowerCase()));
 
-  const atLinkLimit =
-    showLicenseRestrictions && links.length >= SHARED_URL_LICENSE_LIMIT;
+  function cancelForm() { setEditingLink(null); setView('list'); }
 
-  const filteredLinks = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return links;
-    return links.filter((link) => link.name.toLowerCase().includes(term));
-  }, [links, search]);
-
-  const visibleLinks = useMemo(
-    () =>
-      showLicenseRestrictions
-        ? filteredLinks.slice(0, SHARED_URL_LICENSE_LIMIT)
-        : filteredLinks,
-    [filteredLinks, showLicenseRestrictions]
-  );
-
-  const handleOpenCreate = useCallback(() => {
-    if (atLinkLimit) {
-      setUpsellOpen(true);
-      return;
+  function saveLink(draft: SharedLinkCreateDraft) {
+    if (editingLink) {
+      onLinksChange(links.map((link) => link.id === editingLink.id ? { ...link, name: draft.name, settings: draft } : link));
+    } else {
+      if (atLinkLimit) { setUpsellOpen(true); return; }
+      const id = Date.now();
+      onLinksChange([...links, {
+        id, name: draft.name,
+        url: new URL(sharedDashboardPath(dashboardId, id), window.location.origin).href,
+        createdAt: new Date().toISOString(), status: true, settings: draft,
+      }]);
     }
-    setView('create');
-  }, [atLinkLimit]);
+    showToast({ message: `Shared link '${draft.name}' ${editingLink ? 'updated' : 'created'}`, variant: 'success' });
+    setSearch('');
+    cancelForm();
+  }
 
-  const handleCreateLink = useCallback(
-    (draft: SharedLinkCreateDraft) => {
-      const nextId = links.reduce((max, link) => Math.max(max, link.id), 0) + 1;
-      const newLink: SharedUrlLink = {
-        id: nextId,
-        name: draft.name,
-        url: `https://bi.questionpro.com/sd/${crypto.randomUUID()}`,
-        createdAt: new Date().toISOString().slice(0, 10),
-        status: true,
-      };
-
-      setLinks((prev) => [...prev, newLink]);
-      setView('list');
-      showToast({ message: `Shared link '${draft.name}' created`, variant: 'success' });
-    },
-    [links, showToast]
-  );
-
-  const handleExploreBi = useCallback(() => {
-    setUpsellOpen(false);
-    showToast({ message: SHARED_URL_UPSELL.exploreToast, variant: 'success' });
+  const copyUrl = useCallback(async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast({ message: 'Link copied to clipboard', variant: 'success' });
+    } catch { showToast({ message: 'Could not copy link', variant: 'error' }); }
   }, [showToast]);
 
-  const handleCopyUrl = useCallback(
-    async (url: string) => {
-      try {
-        await navigator.clipboard.writeText(url);
-        showToast({ message: 'Link copied to clipboard', variant: 'success' });
-      } catch {
-        showToast({ message: 'Could not copy link', variant: 'error' });
-      }
-    },
-    [showToast]
-  );
+  const columns: IWuTableColumnDef<SharedUrlLink>[] = useMemo(() => [
+    { accessorKey: 'name', header: 'Name', cell: ({ row }) => <span className={styles.linkName}>{row.original.name}</span> },
+    { accessorKey: 'url', header: 'Link', cell: ({ row }) => <div className={styles.shareUrlCell}>
+      <span className={`wm-link ${styles.linkIcon}`} aria-hidden />
+      <a href={row.original.url} target="_blank" rel="noreferrer" title={row.original.url} className={styles.urlText}>{row.original.url}</a>
+      <button type="button" className={styles.copyBtn} aria-label={`Copy ${row.original.name} link`} onClick={() => void copyUrl(row.original.url)}>
+        <span className="wm-content-copy" aria-hidden />
+      </button>
+    </div> },
+    { accessorKey: 'createdAt', header: 'Created on', enableSorting: true, cell: ({ row }) => formatShortDate(row.original.createdAt) },
+    { accessorKey: 'status', header: 'Status', headerAlign: 'center', cellAlign: 'center', cell: ({ row }) => <div className={styles.statusCell}>
+      <WuToggle checked={row.original.status} aria-label={`Toggle status for ${row.original.name}`}
+        onChange={(checked) => onLinksChange(links.map((link) => link.id === row.original.id ? { ...link, status: checked } : link))} />
+    </div> },
+    { id: 'linkActions', accessorKey: 'id', header: 'Actions', headerAlign: 'center', cellAlign: 'center', cell: ({ row }) => <div className={styles.rowActions}>
+      <WuButton variant="iconOnly" size="sm" aria-label={`Edit ${row.original.name}`} Icon={<span className="wm-edit" />}
+        onClick={() => { setEditingLink(row.original); setView('edit'); }} />
+      <WuButton variant="iconOnly" size="sm" aria-label={`Delete ${row.original.name}`} Icon={<span className="wm-delete" />}
+        onClick={() => setDeletingLink(row.original)} />
+    </div> },
+  ], [copyUrl, links, onLinksChange]);
 
-  const columns: IWuTableColumnDef<SharedUrlLink>[] = useMemo(
-    () => [
-      {
-        accessorKey: 'name',
-        header: 'Name',
-        cell: ({ row }) => (
-          <span className={styles.linkName}>{row.original.name}</span>
-        ),
-      },
-      {
-        id: 'shareUrl',
-        accessorKey: 'url',
-        header: 'Share URL',
-        cell: ({ row }) => {
-          const { url } = row.original;
-          const displayUrl = truncate(url, URL_DISPLAY_MAX);
-          return (
-            <div className={styles.shareUrlCell}>
-              <span className={`wm-link ${styles.linkIcon}`} aria-hidden />
-              <span className={styles.urlText} title={url}>
-                {displayUrl}
-              </span>
-              <button
-                type="button"
-                className={styles.copyBtn}
-                aria-label="Copy link"
-                onClick={() => void handleCopyUrl(url)}
-              >
-                <span className="wm-content-copy" aria-hidden />
-              </button>
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: 'createdAt',
-        header: 'Created on',
-        enableSorting: true,
-        cell: ({ row }) => formatShortDate(row.original.createdAt),
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        headerAlign: 'center',
-        cellAlign: 'center',
-        cell: ({ row }) => (
-          <div className={styles.statusCell}>
-            <WuToggle
-              checked={row.original.status}
-              onChange={(checked) => {
-                setLinks((prev) =>
-                  prev.map((link) =>
-                    link.id === row.original.id ? { ...link, status: checked } : link
-                  )
-                );
-                showToast({
-                  message: checked
-                    ? `'${row.original.name}' is now active`
-                    : `'${row.original.name}' is now inactive`,
-                  variant: 'success',
-                });
-              }}
-              aria-label={`Toggle status for ${row.original.name}`}
-            />
-          </div>
-        ),
-      },
-      {
-        id: 'actions',
-        accessorKey: 'id',
-        header: 'Actions',
-        headerAlign: 'center',
-        cellAlign: 'center',
-        cell: ({ row }) => (
-          <div className={styles.rowActions}>
-            <WuButton
-              variant="iconOnly"
-              size="sm"
-              aria-label={`Edit ${row.original.name}`}
-              Icon={<span className="wm-edit" />}
-              onClick={() =>
-                showToast({
-                  message: `Edit '${row.original.name}'`,
-                  variant: 'success',
-                })
-              }
-            />
-            <WuButton
-              variant="iconOnly"
-              size="sm"
-              aria-label={`Delete ${row.original.name}`}
-              Icon={<span className="wm-delete" />}
-              onClick={() =>
-                showToast({
-                  message: `Delete '${row.original.name}'`,
-                  variant: 'success',
-                })
-              }
-            />
-          </div>
-        ),
-      },
-    ],
-    [handleCopyUrl, showToast]
-  );
-
-  return (
-    <div className={`${styles.panel} dashboard-settings-shared-url-panel`}>
-      {view === 'create' ? (
-        <CreateSharedLinkForm
-          dashboardName={dashboardName}
-          onCancel={() => setView('list')}
-          onCreate={handleCreateLink}
-        />
-      ) : (
-        <>
-          <div className={styles.toolbarRow}>
-            <WuButton Icon={<span className="wm-add" />} onClick={handleOpenCreate}>
-              Create
-            </WuButton>
-            <div className={styles.searchWrap}>
-              <WuInput
-                variant="outlined"
-                placeholder="Search by link name..."
-                Icon={<span className="wm-search" />}
-                iconPosition="left"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {atLinkLimit ? (
-            <div className={styles.upsellBanner}>
-              <div className={styles.upsellCopy}>
-                <span className={`wm-diamond ${styles.upsellIcon}`} aria-hidden />
-                <div>
-                  <p className={styles.upsellTitle}>{SHARED_URL_UPSELL.title}</p>
-                  <p className={styles.upsellText}>
-                    You&apos;re using all {SHARED_URL_LICENSE_LIMIT} shared links on your
-                    current plan. Upgrade to BI for unlimited external sharing.
-                  </p>
-                </div>
-              </div>
-              <WuButton variant="secondary" size="sm" onClick={() => setUpsellOpen(true)}>
-                {SHARED_URL_UPSELL.primaryCta}
-              </WuButton>
-            </div>
-          ) : null}
-
-          <div className={styles.tableWrap}>
-            <WuTable
-              data={visibleLinks as unknown[]}
-              columns={columns as unknown as IWuTableColumnDef<unknown>[]}
-              variant="unstyled"
-              sort={{ enabled: true }}
-              filterText=""
-              NoDataContent={
-                <EmptyState
-                  icon="wm-search-off"
-                  title="No shared links found"
-                  description={
-                    search.trim()
-                      ? 'Try adjusting your search'
-                      : 'Create a link to share this dashboard externally'
-                  }
-                  action={
-                    !search.trim() ? (
-                      <WuButton Icon={<span className="wm-add" />} onClick={handleOpenCreate}>
-                        Create
-                      </WuButton>
-                    ) : undefined
-                  }
-                />
-              }
-            />
-          </div>
-        </>
-      )}
-
-      <SharedUrlLicenseUpsellModal
-        open={upsellOpen}
-        onOpenChange={setUpsellOpen}
-        onExplore={handleExploreBi}
-      />
-    </div>
-  );
+  return <div className={`${styles.panel} dashboard-settings-shared-url-panel`}>
+    {view !== 'list' ? <CreateSharedLinkForm key={editingLink?.id ?? 'new'} dashboardName={dashboardName} initialDraft={editingLink?.settings}
+      onCancel={cancelForm} onCreate={saveLink} /> : <>
+      <div className={styles.toolbarRow}>
+        <div className={styles.createActions}>
+          <WuButton Icon={<span className="wm-add" />} onClick={() => atLinkLimit ? setUpsellOpen(true) : setView('create')}>Create</WuButton>
+          <WuPopover side="bottom" align="start" Trigger={<WuButton variant="iconOnly" aria-label="About shared links" className={styles.helpButton} Icon={<span className="wm-help" />} />}>
+            <p className={styles.helpText}>Create additional sharing profiles with their own titles, saved filters, and viewer permissions.</p>
+          </WuPopover>
+        </div>
+        <div className={styles.searchWrap}>
+          <WuInput aria-label="Search by link name" variant="flat" placeholder="Search by link name..." Icon={<span className="wm-search" />} iconPosition="left"
+            value={search} onInput={(event) => setSearch(event.currentTarget.value)} />
+        </div>
+      </div>
+      {atLinkLimit && <div className={styles.upsellBanner}>
+        <p>You&apos;re using all {SHARED_URL_LICENSE_LIMIT} shared links on your current plan.</p>
+        <WuButton variant="secondary" size="sm" onClick={() => setUpsellOpen(true)}>{SHARED_URL_UPSELL.primaryCta}</WuButton>
+      </div>}
+      <div className={styles.tableWrap}>
+        <WuTable data={filteredLinks as unknown[]} columns={columns as unknown as IWuTableColumnDef<unknown>[]} variant="unstyled"
+          sort={{ enabled: true }} NoDataContent={<div className={styles.noData}>No data to display</div>} />
+      </div>
+    </>}
+    <ConfirmModal open={!!deletingLink} onOpenChange={(open) => { if (!open) setDeletingLink(null); }} title="Delete shared link"
+      description={`Delete '${deletingLink?.name ?? ''}'? Its shared dashboard will no longer be available.`} confirmLabel="Delete" variant="critical"
+      onConfirm={() => onLinksChange(links.filter((link) => link.id !== deletingLink?.id))} />
+    <SharedUrlLicenseUpsellModal open={upsellOpen} onOpenChange={setUpsellOpen}
+      onExplore={() => { setUpsellOpen(false); showToast({ message: SHARED_URL_UPSELL.exploreToast, variant: 'success' }); }} />
+  </div>;
 }
