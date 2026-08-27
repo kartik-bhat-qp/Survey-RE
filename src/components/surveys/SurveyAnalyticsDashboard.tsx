@@ -7,6 +7,7 @@ import { SurveyAnalyticsWorldMap } from '@/components/surveys/analytics/SurveyAn
 import { useSurveyAnalyticsView } from '@/components/surveys/SurveyAnalyticsViewContext';
 import { VideoAiAnalysis } from '@/components/surveys/VideoAiAnalysis';
 import { SurveyDeepDiveAnalysis } from '@/components/surveys/SurveyDeepDiveAnalysis';
+import { SurveyTurfAnalysis } from '@/components/surveys/SurveyTurfAnalysis';
 import { consumeVideoAiRestoreState } from '@/components/video-ai/videoAiNavigation';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SurveyAnalyticsResponses } from '@/components/surveys/SurveyAnalyticsResponses';
@@ -128,6 +129,7 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
   const showParticipantStatistics =
     activeTab === 'dashboard' && activeSubView === 'participant-statistics';
   const showDeepDiveAnalysis = activeTab === 'analysis' && activeSubView === 'deepdive-analysis';
+  const showTurfAnalysis = activeTab === 'analysis' && activeSubView === 'turf-analysis';
   const showVideoAiAnalysis = activeTab === 'analysis' && activeSubView === 'video-ai-analysis';
 
   useEffect(() => {
@@ -158,6 +160,10 @@ export function SurveyAnalyticsDashboard({ detail }: SurveyAnalyticsDashboardPro
 
   if (showDeepDiveAnalysis) {
     return <SurveyDeepDiveAnalysis detail={detail} />;
+  }
+
+  if (showTurfAnalysis) {
+    return <SurveyTurfAnalysis />;
   }
 
   if (showResponsesContent) {

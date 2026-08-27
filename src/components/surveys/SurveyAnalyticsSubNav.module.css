@@ -37,7 +37,7 @@
 }
 
 .tabLinkWrap {
-  align-items: center;
+  align-items: flex-end;
   display: flex;
   height: 100%;
   justify-content: center;
@@ -49,6 +49,16 @@
   z-index: 1;
 }
 
+.slotIcon {
+  display: none !important;
+}
+
+.navbar nav :global(.wu-secondary-nav-link-container) > *:has(.slotIcon) {
+  display: none !important;
+  height: 0;
+  overflow: hidden;
+}
+
 .tabIcon {
   font-size: 1.125rem;
   line-height: 1;
@@ -56,7 +66,7 @@
 }
 
 .tabTrigger {
-  align-items: center;
+  align-items: flex-end;
   background: transparent;
   border: none;
   color: inherit;
@@ -65,19 +75,31 @@
   font: inherit;
   gap: 0.125rem;
   justify-content: center;
-  padding: 0 0.5rem;
+  padding: 0.125rem 0.5rem 0;
   position: relative;
   z-index: 2;
 }
 
-/* Stretch the hit target over the icon so the whole tab opens the menu. */
+.tabMain {
+  align-items: center;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.tabTriggerOpen {
+  color: #1b87e6;
+}
+
+/* Stretch the hit target over the full tab. */
 .tabTrigger::before {
+  bottom: 0;
   content: '';
   left: 0;
   position: absolute;
   right: 0;
-  top: -2.25rem;
-  bottom: 0;
+  top: 0;
 }
 
 .tabTrigger:hover {
@@ -92,11 +114,22 @@
   flex-shrink: 0;
   font-size: 1.125rem;
   line-height: 1;
+  margin-bottom: -0.0625rem;
 }
 
 .tabMenu {
-  min-width: 12.5rem;
+  min-width: 14rem;
   z-index: 40;
+}
+
+/*
+ * Global WuMenu cap is 18rem (~9 items). Analysis has 20 options;
+ * use the remaining viewport so the full list is visible.
+ */
+:global([data-radix-popper-content-wrapper]:has(.analytics-subnav-menu)),
+:global([data-radix-popper-content-wrapper]:has(.analytics-subnav-menu) > *),
+:global([data-radix-popper-content-wrapper]:has(.analytics-subnav-menu) [role='menu']) {
+  max-height: var(--radix-popper-available-height, 70vh) !important;
 }
 
 .tabMenuItem,

@@ -26,25 +26,6 @@ const WuMenuItem = dynamic(
   { ssr: false }
 );
 
-function AnalyticsTabNavIcon({
-  tabId,
-  defaultIcon,
-  items,
-}: {
-  tabId: AnalyticsTabId;
-  defaultIcon: string;
-  items: AnalyticsNavItem[];
-}) {
-  const { activeTab, activeSubView } = useSurveyAnalyticsView();
-  const isActiveTab = activeTab === tabId;
-  const icon =
-    isActiveTab
-      ? (items.find((item) => item.id === activeSubView)?.icon ?? defaultIcon)
-      : defaultIcon;
-
-  return <span className={`${icon} ${styles.tabIcon}`} aria-hidden />;
-}
-
 function AnalyticsTabLink({
   tabId,
   className,
@@ -72,10 +53,12 @@ function AnalyticsTabNavMenu({
   tabId,
   label,
   items,
+  defaultIcon,
 }: {
   tabId: AnalyticsTabId;
   label: string;
   items: AnalyticsNavItem[];
+  defaultIcon: string;
 }) {
   const { activeTab, activeSubView, setAnalyticsSelection } = useSurveyAnalyticsView();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -84,6 +67,9 @@ function AnalyticsTabNavMenu({
   const displayLabel = isActiveTab
     ? (items.find((item) => item.id === activeSubView)?.label ?? label)
     : label;
+  const iconClass = isActiveTab
+    ? (items.find((item) => item.id === activeSubView)?.icon ?? defaultIcon)
+    : defaultIcon;
 
   function handleSelectView(item: AnalyticsNavItem) {
     if (item.openInNewTab) {
@@ -107,13 +93,16 @@ function AnalyticsTabNavMenu({
           aria-expanded={menuOpen}
           aria-label={displayLabel}
         >
-          <span className={styles.tabLabel}>{displayLabel}</span>
+          <span className={styles.tabMain}>
+            <span className={`${iconClass} ${styles.tabIcon}`} aria-hidden />
+            <span className={styles.tabLabel}>{displayLabel}</span>
+          </span>
           <span className={`wm-arrow-drop-down ${styles.tabChevron}`} aria-hidden />
         </button>
       }
       align="start"
       side="bottom"
-      className={styles.tabMenu}
+      className={`${styles.tabMenu} analytics-subnav-menu`}
     >
       {items.map((item) => (
         <WuMenuItem
@@ -164,16 +153,15 @@ export function SurveyAnalyticsSubNav() {
         return {
           link: (
             <AnalyticsTabLink tabId={tabId}>
-              <AnalyticsTabNavMenu tabId={tabId} label={tab.label} items={tab.items} />
+              <AnalyticsTabNavMenu
+                tabId={tabId}
+                label={tab.label}
+                items={tab.items}
+                defaultIcon={tab.icon}
+              />
             </AnalyticsTabLink>
           ),
-          imgOrIcon: (
-            <AnalyticsTabNavIcon
-              tabId={tabId}
-              defaultIcon={tab.icon}
-              items={tab.items}
-            />
-          ),
+          imgOrIcon: <span className={styles.slotIcon} aria-hidden />,
         };
       }),
     []

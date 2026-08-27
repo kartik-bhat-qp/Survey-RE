@@ -207,6 +207,13 @@
   scrollbar-width: thin;
 }
 
+/* Analytics Analysis menu has 20 items; don't clip it to 9. */
+[data-radix-popper-content-wrapper]:has(.analytics-subnav-menu),
+[data-radix-popper-content-wrapper]:has(.analytics-subnav-menu) > *,
+[data-radix-popper-content-wrapper]:has(.analytics-subnav-menu) [role="menu"] {
+  max-height: var(--radix-popper-available-height, 70vh) !important;
+}
+
 /*
  * WuSelect already scrolls its own option list, so the surrounding panel must
  * not scroll as well — otherwise the dropdown shows two scrollbars.

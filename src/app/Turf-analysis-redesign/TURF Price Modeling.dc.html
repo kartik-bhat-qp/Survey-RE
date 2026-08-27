@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  @font-face{font-family:'Fira Sans';src:url('public/fonts/fira-sans/FiraSans-Light.ttf') format('truetype');font-weight:300;}
+  @font-face{font-family:'Fira Sans';src:url('public/fonts/fira-sans/FiraSans-Regular.ttf') format('truetype');font-weight:400;}
+  @font-face{font-family:'Fira Sans';src:url('public/fonts/fira-sans/FiraSans-Medium.ttf') format('truetype');font-weight:500;}
+  @font-face{font-family:'Fira Sans';src:url('public/fonts/fira-sans/FiraSans-SemiBold.ttf') format('truetype');font-weight:600;}
+  html,body{margin:0;padding:0;height:100%;background:#fff;}
+  a{color:#1b87e6;text-decoration:none;} a:hover{color:#1570c2;text-decoration:underline;}
+  .msi{font-family:'Material Symbols Outlined';font-weight:normal;font-style:normal;line-height:1;letter-spacing:normal;text-transform:none;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;user-select:none;}
+  input::placeholder{color:#94a3b8;font-weight:300;}
+  ::selection{background:#cfe6fb;}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..500,0..1,0">
+</helmet>
+<div style="display:flex;flex-direction:column;height:100vh;min-height:560px;background:#f1f5f9;font-family:'Fira Sans',sans-serif;font-weight:300;color:#334155;overflow:hidden" data-screen-label="Analytics">
+
+  <header style="display:flex;align-items:center;gap:14px;height:44px;background:#06182f;padding:0 12px 0 0;flex-shrink:0">
+    <button type="button" style="display:flex;align-items:center;gap:10px;height:44px;padding:0 12px 0 14px;background:#1b87e6;border:none;cursor:pointer;font-family:inherit">
+      <img src="public/questionpro-logo-nw.svg" alt="QuestionPro" style="height:18px;width:18px;filter:brightness(0) invert(1)">
+      <span style="font-size:14px;font-weight:500;color:#fff">Surveys</span>
+      <span class="msi" style="font-size:18px;color:#fff">arrow_drop_down</span>
+    </button>
+    <nav style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:#e2e8f0">
+      <a href="#" onClick="{{ noopLink }}" style="color:#e2e8f0;font-weight:500">Demo 2026</a>
+      <span class="msi" style="font-size:13px;color:#64748b">chevron_right</span>
+      <span style="font-weight:500;color:#fff">Demo survey 2026</span>
+    </nav>
+    <div style="flex:1"></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="position:relative;width:250px">
+        <span class="msi" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:16px;color:#94a3b8">search</span>
+        <input type="text" placeholder="Global search for users, surveys, tickets" style="width:100%;box-sizing:border-box;height:28px;padding:0 8px 0 28px;border:1px solid #26436a;border-radius:5px;font-family:inherit;font-size:11.5px;color:#e2e8f0;background:#0d2440;outline:none" style-focus="border-color:#1b87e6">
+      </div>
+      <button type="button" style="height:26px;padding:0 12px;background:#f5a623;border:none;border-radius:999px;font-family:inherit;font-size:11.5px;font-weight:600;color:#1e293b;cursor:pointer" style-hover="background:#ffb84d">Upgrade Now</button>
+      <button type="button" title="Help" style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:transparent;border:1px solid #3b5a80;border-radius:50%;color:#cbd5e1;cursor:pointer"><span class="msi" style="font-size:15px">question_mark</span></button>
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;background:#fff;border-radius:50%;font-size:11px;font-weight:600;color:#06182f">KB</div>
+    </div>
+  </header>
+
+  <div style="display:flex;align-items:center;background:#fff;border-bottom:1px solid #e5e9ef;padding:0 16px;flex-shrink:0">
+    <sc-for list="{{ phaseTabs }}" as="pt" hint-placeholder-count="4">
+      <button type="button" onClick="{{ pt.onSelect }}" style="position:relative;height:38px;padding:0 14px;background:transparent;border:none;cursor:pointer;font-family:inherit;font-size:13.5px;color:{{ pt.color }};font-weight:{{ pt.weight }}">
+        {{ pt.label }}
+        <sc-if value="{{ pt.active }}" hint-placeholder-val="{{ false }}">
+          <span style="position:absolute;left:10px;right:10px;bottom:0;height:2.5px;background:#1b87e6;border-radius:2px 2px 0 0"></span>
+        </sc-if>
+      </button>
+    </sc-for>
+    <div style="flex:1"></div>
+    <span style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:#64748b"><span class="msi" style="font-size:16px">group</span>1K</span>
+  </div>
+
+  <div style="position:relative;display:flex;align-items:stretch;background:#fff;border-bottom:1px solid #e5e9ef;padding:0 8px;flex-shrink:0;z-index:20">
+    <sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="4">
+      <button type="button" onClick="{{ g.onToggle }}" style="position:relative;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:140px;box-sizing:border-box;padding:8px 10px 7px 10px;background:{{ g.bg }};border:none;border-bottom:2px solid {{ g.underline }};cursor:pointer;font-family:inherit" style-hover="background:#f4f7fa">
+        <span class="msi" style="font-size:20px;color:{{ g.iconColor }}">{{ g.icon }}</span>
+        <span style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap;font-size:12.5px;color:{{ g.color }};font-weight:{{ g.weight }}">{{ g.label }}<span class="msi" style="font-size:16px;color:#94a3b8">arrow_drop_down</span></span>
+      </button>
+    </sc-for>
+    <sc-if value="{{ openGroup }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeGroup }}" style="position:fixed;inset:0;z-index:10"></div>
+      <div style="position:absolute;top:100%;left:{{ menuLeft }};min-width:230px;padding:5px 0;background:#fff;border:1px solid #e2e8f0;border-radius:0 0 8px 8px;box-shadow:0 12px 28px rgba(15,23,42,0.14);z-index:20">
+        <sc-for list="{{ menuItems }}" as="it" hint-placeholder-count="5">
+          <button type="button" onClick="{{ it.onSelect }}" style="position:relative;display:flex;align-items:center;gap:10px;width:100%;padding:8px 16px;background:{{ it.bg }};border:none;cursor:pointer;font-family:inherit;font-size:13px;text-align:left;color:{{ it.color }};font-weight:{{ it.weight }}" style-hover="background:#f1f5f9">
+            <span class="msi" style="font-size:17px;color:{{ it.iconColor }}">{{ it.icon }}</span>
+            <span style="flex:1">{{ it.label }}</span>
+            <sc-if value="{{ it.active }}" hint-placeholder-val="{{ false }}">
+              <span class="msi" style="font-size:16px;color:#1b87e6">check</span>
+            </sc-if>
+          </button>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="display:flex;flex:1;min-height:0">
+
+    <main style="flex:1;min-width:0;min-height:0;overflow-y:auto;position:relative">
+
+      <sc-if value="{{ sTurf }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:18px 22px 28px 22px;display:flex;flex-direction:column;gap:14px" data-screen-label="TURF — Price Modeling">
+
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 1px 2px rgba(15,23,42,0.04);overflow:hidden">
+
+            <div style="display:flex;align-items:center;gap:2px;border-bottom:1px solid #e5e9ef;padding:0 8px">
+              <sc-for list="{{ turfTabs }}" as="tt" hint-placeholder-count="5">
+                <button type="button" onClick="{{ tt.onSelect }}" style="position:relative;height:42px;padding:0 14px;background:transparent;border:none;cursor:pointer;font-family:inherit;font-size:13px;color:{{ tt.color }};font-weight:{{ tt.weight }}" style-hover="color:#1b87e6">
+                  {{ tt.label }}
+                  <sc-if value="{{ tt.active }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:absolute;left:8px;right:8px;bottom:-1px;height:2.5px;background:#1b87e6;border-radius:2px 2px 0 0"></span>
+                  </sc-if>
+                </button>
+              </sc-for>
+            </div>
+
+            <div style="padding:22px 24px 28px 24px;display:flex;flex-direction:column;gap:22px;max-width:720px">
+
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+                <h2 style="margin:0;font-size:13px;font-weight:500;color:#1e293b">Price Modeling</h2>
+                <button type="button" onClick="{{ toastExport }}" style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;background:#fff;border:1px solid #d5dde6;border-radius:6px;font-family:inherit;font-size:12.5px;color:#475569;cursor:pointer" style-hover="border-color:#1b87e6;color:#1b87e6"><span class="msi" style="font-size:16px">download</span>XLS</button>
+              </div>
+
+              <label style="display:flex;flex-direction:column;gap:6px">
+                <span style="font-size:12.5px;font-weight:400;color:#475569">Estimated Budget</span>
+                <input type="text" value="{{ budget }}" onChange="{{ onBudget }}" style="width:100%;box-sizing:border-box;height:34px;padding:0 10px;border:1px solid #d5dde6;border-radius:6px;font-family:inherit;font-size:13px;color:#1e293b;background:#fff;outline:none" style-focus="border-color:#1b87e6;box-shadow:0 0 0 3px rgba(27,135,230,0.12)">
+              </label>
+
+              <label style="display:flex;flex-direction:column;gap:6px">
+                <span style="font-size:12.5px;font-weight:400;color:#475569">Tolerance %</span>
+                <span style="display:flex;align-items:center;height:34px;border:1px solid #d5dde6;border-radius:6px;background:#fff;overflow:hidden" style-focus-within="border-color:#1b87e6">
+                  <input type="text" value="{{ tolerance }}" onChange="{{ onTolerance }}" style="flex:1;min-width:0;height:100%;padding:0 10px;border:none;font-family:inherit;font-size:13px;color:#1e293b;background:transparent;outline:none">
+                  <span style="display:flex;flex-direction:column;border-left:1px solid #e5e9ef">
+                    <button type="button" onClick="{{ tolUp }}" style="display:flex;align-items:center;justify-content:center;width:26px;height:17px;background:#f8fafc;border:none;border-bottom:1px solid #e5e9ef;color:#64748b;cursor:pointer" style-hover="background:#eef7ff;color:#1b87e6"><span class="msi" style="font-size:14px">arrow_drop_up</span></button>
+                    <button type="button" onClick="{{ tolDown }}" style="display:flex;align-items:center;justify-content:center;width:26px;height:17px;background:#f8fafc;border:none;color:#64748b;cursor:pointer" style-hover="background:#eef7ff;color:#1b87e6"><span class="msi" style="font-size:14px">arrow_drop_down</span></button>
+                  </span>
+                </span>
+              </label>
+
+              <label style="display:flex;flex-direction:column;gap:6px">
+                <span style="font-size:12.5px;font-weight:400;color:#475569">Simulation Count</span>
+                <span style="position:relative;display:block">
+                  <select value="{{ simCount }}" onChange="{{ onSimCount }}" style="width:100%;box-sizing:border-box;height:34px;padding:0 30px 0 10px;border:1px solid #d5dde6;border-radius:6px;font-family:inherit;font-size:13px;color:#1e293b;background:#fff;outline:none;appearance:none;cursor:pointer" style-focus="border-color:#1b87e6;box-shadow:0 0 0 3px rgba(27,135,230,0.12)">
+                    <sc-for list="{{ simOptions }}" as="so" hint-placeholder-count="5">
+                      <option value="{{ so.value }}">{{ so.label }}</option>
+                    </sc-for>
+                  </select>
+                  <span class="msi" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:18px;color:#94a3b8;pointer-events:none">arrow_drop_down</span>
+                </span>
+              </label>
+
+              <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <h2 style="margin:0;font-size:13px;font-weight:500;color:#1e293b">Weight/Cost</h2>
+                  <p style="margin:0;font-size:12px;color:#94a3b8">Per-answer cost. 0 means no cost.</p>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:14px" data-cost-list>
+                  <sc-for list="{{ costRows }}" as="cr" hint-placeholder-count="10">
+                    <label style="display:flex;flex-direction:column;gap:6px">
+                      <span style="font-size:12.5px;font-weight:400;color:#475569">{{ cr.label }}</span>
+                      <input type="text" value="{{ cr.value }}" onChange="{{ cr.onChange }}" style="width:100%;box-sizing:border-box;height:34px;padding:0 10px;border:1px solid {{ cr.border }};border-radius:6px;font-family:inherit;font-size:13px;color:{{ cr.textColor }};background:#fff;outline:none" style-focus="border-color:#1b87e6;box-shadow:0 0 0 3px rgba(27,135,230,0.12)">
+                    </label>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:12px;padding-top:4px">
+                <button type="button" onClick="{{ runModel }}" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;height:36px;padding:0 18px;background:#1b87e6;border:none;border-radius:6px;font-family:inherit;font-size:13px;font-weight:500;color:#fff;cursor:pointer" style-hover="background:#1570c2">Simulate price model</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ sEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px 22px 28px 22px;display:flex;flex-direction:column;gap:14px" data-screen-label="No report available">
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <div style="min-width:0">
+              <h1 style="margin:0;font-size:18px;font-weight:500;color:#1e293b">{{ emptyScreenTitle }}</h1>
+              <p style="margin:3px 0 0 0;font-size:12.5px;color:#94a3b8">Demo survey 2026 · 1,024 responses</p>
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px dashed #d5dde6;border-radius:8px;padding:64px 32px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px">
+            <span style="position:relative;display:block;width:190px;height:140px;margin-bottom:8px">
+              <span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:150px;height:150px;border-radius:50%;background:#f1f5fa"></span>
+              <span style="position:absolute;left:52px;top:6px;width:106px;height:118px;border:1px solid #dbe3ec;border-radius:10px;background:#fff;box-shadow:0 12px 26px rgba(15,23,42,0.07)"></span>
+              <span style="position:absolute;left:68px;top:22px;width:56px;height:7px;border-radius:999px;background:#e8eef4"></span>
+              <span style="position:absolute;left:68px;top:39px;width:74px;height:7px;border-radius:999px;background:#eef2f7"></span>
+              <span style="position:absolute;left:68px;top:56px;width:40px;height:7px;border-radius:999px;background:#eef2f7"></span>
+              <span style="position:absolute;left:14px;bottom:8px;width:62px;height:62px;border:3px solid #a7c2dd;border-radius:50%;background:rgba(255,255,255,0.94)"></span>
+              <span style="position:absolute;left:66px;bottom:16px;width:30px;height:8px;border-radius:999px;background:#a7c2dd;transform:rotate(45deg);transform-origin:left center"></span>
+            </span>
+            <h2 style="margin:0;font-size:17px;font-weight:500;color:#475569">{{ emptyTitle }}</h2>
+            <p style="margin:0;max-width:520px;font-size:13px;line-height:1.6;color:#94a3b8;text-wrap:pretty">{{ emptyBody }}</p>
+          </div>
+        </div>
+      </sc-if>
+
+    </main>
+  </div>
+
+  <footer style="display:flex;align-items:center;justify-content:space-between;background:#fff;border-top:1px solid #e5e9ef;padding:8px 16px;flex-shrink:0">
+    <span style="font-size:11px;color:#9aa5b1">QuestionPro Admin&nbsp;&nbsp;·&nbsp;&nbsp;<a href="#" onClick="{{ noopLink }}" style="color:#9aa5b1;text-decoration:underline">#Surveys v2.0</a></span>
+    <span style="display:inline-flex;gap:10px;color:#9aa5b1"><span class="msi" style="font-size:15px">thumb_up</span><span class="msi" style="font-size:15px">chat_bubble</span></span>
+  </footer>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:50%;bottom:26px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:9px 16px;background:#0f172a;border-radius:6px;font-size:12.5px;color:#f8fafc;box-shadow:0 8px 24px rgba(15,23,42,0.25);z-index:50">
+      <span class="msi" style="font-size:16px;color:#4ade80">check_circle</span>{{ toast }}
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const OPTIONS = ['Albania','Andorra','Armenia','Austria','Azerbaijan','Belarus','Belgium','Bosnia and Herzegovina','Bulgaria','Croatia','Cyprus','Czechia','Denmark','Estonia','Finland','France','Georgia','Germany','Greece','Hungary','Iceland','Ireland','Italy','Kazakhstan','Kosovo','Latvia','Liechtenstein','Lithuania','Luxembourg','Malta','Moldova','Monaco','Montenegro','Netherlands','North Macedonia','Norway','Poland','Portugal','Romania','Russia','San Marino','Serbia','Slovakia','Slovenia','Spain','Sweden','Switzerland','Turkey','Ukraine','United Kingdom','Vatican City'];
+
+const NAV = [
+  { label: 'Reports', icon: 'monitoring', items: [
+    { id: 'overview', label: 'Overview', icon: 'monitoring' },
+    { id: 'responses', label: 'Responses', icon: 'format_list_bulleted' },
+    { id: 'crosstab', label: 'Cross-Tabulation', icon: 'pivot_table_chart' },
+    { id: 'trend', label: 'Trend Analysis', icon: 'timeline' },
+    { id: 'comparison', label: 'Survey Comparison', icon: 'compare_arrows' },
+    { id: 'consolidate', label: 'Consolidated Report', icon: 'library_books' },
+  ]},
+  { label: 'Advanced Analysis', icon: 'stacked_bar_chart', items: [
+    { id: 'turf', label: 'TURF', icon: 'stacked_bar_chart' },
+    { id: 'conjoint', label: 'Conjoint', icon: 'account_tree' },
+    { id: 'maxdiff', label: 'MaxDiff', icon: 'swap_vert' },
+    { id: 'correlation', label: 'Correlation', icon: 'scatter_plot' },
+    { id: 'gap', label: 'GAP Analysis', icon: 'align_space_between' },
+    { id: 'heatmap', label: 'Heatmap', icon: 'apps' },
+    { id: 'hotspot', label: 'HotSpot', icon: 'my_location' },
+  ]},
+  { label: 'Text Analysis', icon: 'article', items: [
+    { id: 'wordcloud', label: 'Word Cloud', icon: 'cloud' },
+    { id: 'searchtext', label: 'Search Text', icon: 'manage_search' },
+    { id: 'videoai', label: 'VideoAI Analysis', icon: 'movie' },
+    { id: 'tubepulse', label: 'TubePulse', icon: 'smart_display' },
+  ]},
+  { label: 'Manage Data', icon: 'database', items: [
+    { id: 'filters', label: 'Data Filters', icon: 'filter_alt' },
+    { id: 'weighting', label: 'Weighting & Balancing', icon: 'balance' },
+    { id: 'quality', label: 'Data Quality', icon: 'verified' },
+    { id: 'deviceaudit', label: 'Device Audit', icon: 'devices' },
+  ]},
+];
+
+const EMPTY = {
+  wordcloud: { title: 'Word Cloud', icon: 'cloud', h: 'No open-ended questions', b: 'There are no open-ended/text questions in this survey — please choose a survey that has at least 1 open-ended/text question.' },
+  searchtext: { title: 'Search Text', icon: 'manage_search', h: 'No open-ended questions', b: 'There are no open-ended/text questions in this survey — please choose a survey that has at least 1 open-ended/text question.' },
+  conjoint: { title: 'Conjoint', icon: 'account_tree', h: 'No conjoint questions', b: 'There are no conjoint questions in this survey — please choose a survey that has at least 1 conjoint question.' },
+  maxdiff: { title: 'MaxDiff', icon: 'swap_vert', h: 'No MaxDiff questions', b: 'There are no MaxDiff questions in this survey — please choose a survey that has at least 1 MaxDiff question.' },
+  heatmap: { title: 'Heatmap', icon: 'apps', h: 'No heatmap questions', b: 'There are no heatmap questions in this survey — please choose a survey that has at least 1 heatmap question.' },
+  hotspot: { title: 'HotSpot', icon: 'my_location', h: 'No hotspot questions', b: 'There are no hotspot questions in this survey — please choose a survey that has at least 1 hotspot question.' },
+  gap: { title: 'GAP Analysis', icon: 'align_space_between', h: 'No matrix questions', b: 'There are no matrix/rating questions in this survey — please choose a survey that has at least 1 matrix question.' },
+  videoai: { title: 'VideoAI Analysis', icon: 'movie', h: 'No video questions', b: 'There are no video-response questions in this survey — please choose a survey that has at least 1 video question.' },
+  tubepulse: { title: 'TubePulse', icon: 'smart_display', h: 'No video stimuli', b: 'There are no video stimuli in this survey — please choose a survey that has at least 1 video question.' },
+  correlation: { title: 'Correlation', icon: 'scatter_plot', h: 'No numeric questions', b: 'There are no numeric/scale questions in this survey — please choose a survey that has at least 2 numeric questions.' },
+};
+
+class Component extends DCLogic {
+  state = { screen: 'turf', tab: 'price', costSearch: '', costs: {}, budget: '0', tolerance: '0', simCount: '1', navCollapsed: {}, navSearch: '', toast: '' };
+
+  flash(msg) {
+    clearTimeout(this._t);
+    this.setState({ toast: msg });
+    this._t = setTimeout(() => this.setState({ toast: '' }), 2200);
+  }
+
+  costOf(name) {
+    const c = this.state.costs;
+    if (name in c) return c[name];
+    return name === 'Albania' ? '-1' : '0';
+  }
+
+  renderVals() {
+    const s = this.state;
+    const screen = s.screen;
+    const emptyDef = EMPTY[screen] || null;
+
+    const openGroup = s.openGroup ?? '';
+    const navGroups = NAV.map((sec) => {
+      const owns = sec.items.some((it) => it.id === screen);
+      const open = openGroup === sec.label;
+      return {
+        label: sec.label, icon: sec.icon,
+        bg: open ? '#f1f5f9' : 'transparent',
+        underline: owns ? '#1b87e6' : 'transparent',
+        color: owns ? '#1e293b' : '#475569',
+        weight: owns ? 500 : 400,
+        iconColor: owns ? '#1b87e6' : '#64748b',
+        onToggle: () => this.setState({ openGroup: open ? '' : sec.label }),
+      };
+    });
+    const openIndex = NAV.findIndex((sec) => sec.label === openGroup);
+    const openSection = openIndex >= 0 ? NAV[openIndex] : null;
+    const menuItems = (openSection ? openSection.items : []).map((it) => {
+      const active = screen === it.id;
+      return {
+        ...it, active,
+        bg: active ? '#eef7ff' : 'transparent',
+        color: active ? '#1e293b' : '#475569',
+        weight: active ? 500 : 400,
+        iconColor: active ? '#1b87e6' : '#94a3b8',
+        onSelect: () => this.setState({ screen: it.id, openGroup: '' }),
+      };
+    });
+
+    const phaseTabs = ['Edit', 'Distribute', 'Analytics', 'Integration'].map((label) => ({
+      label,
+      active: label === 'Analytics',
+      color: label === 'Analytics' ? '#1e293b' : '#64748b',
+      weight: label === 'Analytics' ? 500 : 400,
+      onSelect: () => this.flash(label + ' is out of scope in this prototype'),
+    }));
+
+    const turfTabs = [
+      { id: 'topdown', label: 'Top/Down Reach' },
+      { id: 'unduplicated', label: 'Unduplicated Reach' },
+      { id: 'simulator', label: 'Simulator' },
+      { id: 'price', label: 'Price Modeling' },
+      { id: 'line', label: 'Line Optimization' },
+    ].map((t) => ({
+      ...t,
+      active: t.id === s.tab,
+      color: t.id === s.tab ? '#1b87e6' : '#64748b',
+      weight: t.id === s.tab ? 500 : 400,
+      onSelect: () => (t.id === 'price' ? this.setState({ tab: t.id }) : this.flash(t.label + ' is not part of this redesign')),
+    }));
+
+    const costRows = OPTIONS.map((name) => {
+      const value = this.costOf(name);
+      const neg = parseFloat(value) < 0;
+      const zero = !neg && parseFloat(value) === 0;
+      return {
+        label: name, value,
+        border: neg ? '#e8b4b4' : '#d5dde6',
+        textColor: neg ? '#b4453f' : (zero ? '#94a3b8' : '#1e293b'),
+        onChange: (e) => this.setState({ costs: { ...s.costs, [name]: e.target.value } }),
+      };
+    });
+
+    return {
+      navGroups, phaseTabs, turfTabs, costRows, menuItems,
+      openGroup,
+      menuLeft: (8 + Math.max(0, openIndex) * 140) + 'px',
+      closeGroup: () => this.setState({ openGroup: '' }),
+      sTurf: screen === 'turf',
+      sEmpty: !!emptyDef,
+      emptyScreenTitle: emptyDef ? emptyDef.title : '',
+      emptyIcon: emptyDef ? emptyDef.icon : 'info',
+      emptyTitle: emptyDef ? emptyDef.h : '',
+      emptyBody: emptyDef ? emptyDef.b : '',
+      budget: s.budget, onBudget: (e) => this.setState({ budget: e.target.value }),
+      tolerance: s.tolerance, onTolerance: (e) => this.setState({ tolerance: e.target.value }),
+      tolUp: () => this.setState({ tolerance: String((parseFloat(s.tolerance) || 0) + 1) }),
+      tolDown: () => this.setState({ tolerance: String(Math.max(0, (parseFloat(s.tolerance) || 0) - 1)) }),
+      simCount: s.simCount, onSimCount: (e) => this.setState({ simCount: e.target.value }),
+      simOptions: ['1', '2', '3', '4', '5', '10'].map((v) => ({ value: v, label: v })),
+      runModel: () => this.flash('Simulating price model…'),
+      toastExport: () => this.flash('XLS export started'),
+      toastNoop: () => this.flash('Not wired up in this prototype'),
+      noopLink: (e) => e.preventDefault(),
+      toast: s.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>
