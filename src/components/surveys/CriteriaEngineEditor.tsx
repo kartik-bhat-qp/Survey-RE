@@ -55,6 +55,10 @@ const WuInput = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
   { ssr: false }
 );
+const WuSelect = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
+  { ssr: false }
+);
 const WuMenu = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
   { ssr: false }
@@ -292,10 +296,20 @@ export interface CriteriaEngineEditorProps {
   minCriteria?: number;
   /** Quota flow: numbered criteria blocks, no name/mode fields, OR semantics between blocks. */
   variant?: CriteriaEngineEditorVariant;
+  /**
+   * How users pick New vs Existing criteria.
+   * `dropdown` matches Compound Branching ("New Criteria" / "Use Existing").
+   */
+  modeControl?: 'toggle' | 'dropdown';
   addCriteriaLabel?: string;
   /** Override available condition sources. Defaults to CONDITION_SOURCES; Quota is excluded for the quota variant. */
   sources?: readonly ConditionSource[];
 }
+
+const CRITERIA_MODE_SELECT_OPTIONS = [
+  { value: 'new', label: 'New Criteria' },
+  { value: 'existing', label: 'Use Existing' },
+] as const;
 
 export function CriteriaEngineEditor({
   criteria,
@@ -306,10 +320,12 @@ export function CriteriaEngineEditor({
   showAddCriteria,
   minCriteria = 1,
   variant = 'default',
+  modeControl = 'toggle',
   addCriteriaLabel = 'Criteria',
   sources,
 }: CriteriaEngineEditorProps) {
   const isQuotaVariant = variant === 'quota';
+  const useModeDropdown = !isQuotaVariant && modeControl === 'dropdown';
   const availableSources =
     sources ??
     (isQuotaVariant
@@ -417,6 +433,7 @@ export function CriteriaEngineEditor({
           existingCriteriaId: null,
           existingConditionsSnapshot: null,
           requiresRename: false,
+          name: c.name.trim() || `Criteria ${criteria.findIndex((item) => item.id === critId) + 1}`,
           conditions: c.conditions.length > 0 ? c.conditions : [newCondition()],
         };
       }),
@@ -482,25 +499,93 @@ export function CriteriaEngineEditor({
               <section className={styles.criterionCard}>
               <header className={styles.criterionHeader}>
                 <div className={styles.criterionHeaderLeft}>
-                  <span className={styles.criterionTag}>
-                    <span className={styles.criterionTagLabel}>
-                      {criterionDisplayLabel(criterion, critIdx)}
-                    </span>
-                  </span>
-                  {!isQuotaVariant ? (
-                    <WuInput
-                      variant="outlined"
-                      placeholder="Criteria name"
-                      value={criterion.name}
-                      onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                        handleUpdateCriterionName(criterion.id, event.target.value)
-                      }
-                      disabled={criterion.mode === 'existing'}
-                      className={`${styles.criterionNameInput} ${
-                        criterion.mode === 'existing' ? styles.criterionNameInputReadOnly : ''
-                      }`}
-                    />
-                  ) : null}
+                  {useModeDropdown ? (
+                    <>
+                      <div className={styles.criteriaModeSelect}>
+                        <WuSelect
+                          data={[...CRITERIA_MODE_SELECT_OPTIONS]}
+                          accessorKey={{ value: 'value', label: 'label' }}
+                          value={
+                            CRITERIA_MODE_SELECT_OPTIONS.find(
+                              (option) => option.value === criterion.mode
+                            ) ?? CRITERIA_MODE_SELECT_OPTIONS[0]
+                          }
+                          onSelect={(item) => {
+                            const next = item as { value: string; label: string } | null;
+                            if (!next) return;
+                            if (next.value !== 'new' && next.value !== 'existing') return;
+                            handleCriterionModeChange(criterion.id, next.value);
+                          }}
+                          variant="outlined"
+                          aria-label="Criteria mode"
+                        />
+                      </div>
+                      {criterion.mode === 'new' ? (
+                        <WuInput
+                          variant="outlined"
+                          placeholder="Criteria name"
+                          value={criterion.name}
+                          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                            handleUpdateCriterionName(criterion.id, event.target.value)
+                          }
+                          className={styles.criterionNameInput}
+                        />
+                      ) : (
+                        <WuMenu
+                          Trigger={
+                            <button
+                              type="button"
+                              className={`${styles.menuTrigger} ${styles.existingCriteriaHeaderTrigger}`}
+                            >
+                              <span className={styles.menuTriggerLabel}>
+                                {selectedExistingTemplate
+                                  ? selectedExistingTemplate.name
+                                  : '- Select -'}
+                              </span>
+                              <span
+                                className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                                aria-hidden
+                              />
+                            </button>
+                          }
+                          align="start"
+                        >
+                          {MOCK_EXISTING_CRITERIA.map((template) => (
+                            <WuMenuItem
+                              key={template.id}
+                              onSelect={() =>
+                                handleExistingCriteriaSelect(criterion.id, template.id)
+                              }
+                            >
+                              {template.name}
+                            </WuMenuItem>
+                          ))}
+                        </WuMenu>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <span className={styles.criterionTag}>
+                        <span className={styles.criterionTagLabel}>
+                          {criterionDisplayLabel(criterion, critIdx)}
+                        </span>
+                      </span>
+                      {!isQuotaVariant ? (
+                        <WuInput
+                          variant="outlined"
+                          placeholder="Criteria name"
+                          value={criterion.name}
+                          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                            handleUpdateCriterionName(criterion.id, event.target.value)
+                          }
+                          disabled={criterion.mode === 'existing'}
+                          className={`${styles.criterionNameInput} ${
+                            criterion.mode === 'existing' ? styles.criterionNameInputReadOnly : ''
+                          }`}
+                        />
+                      ) : null}
+                    </>
+                  )}
                 </div>
                 <div className={styles.criterionHeaderRight}>
                   <button
@@ -532,7 +617,7 @@ export function CriteriaEngineEditor({
 
               {!collapsed ? (
                 <div className={styles.criterionBody}>
-                  {!isQuotaVariant ? (
+                  {!isQuotaVariant && !useModeDropdown ? (
                     <div className={styles.criteriaModeRow}>
                       <span className={styles.label}>Use</span>
                       <div
@@ -559,7 +644,7 @@ export function CriteriaEngineEditor({
                     </div>
                   ) : null}
 
-                  {!isQuotaVariant && criterion.mode === 'existing' ? (
+                  {!isQuotaVariant && !useModeDropdown && criterion.mode === 'existing' ? (
                     <div className={styles.existingCriteriaPanel}>
                       <div className={styles.field}>
                         <label className={styles.label}>Select criteria</label>
@@ -600,6 +685,14 @@ export function CriteriaEngineEditor({
                         </p>
                       ) : null}
                     </div>
+                  ) : null}
+
+                  {useModeDropdown &&
+                  criterion.mode === 'existing' &&
+                  !criterion.existingCriteriaId ? (
+                    <p className={styles.existingCriteriaHint}>
+                      Choose a saved criteria set from your survey library.
+                    </p>
                   ) : null}
 
                   {(criterion.mode === 'new' || criterion.existingCriteriaId) &&

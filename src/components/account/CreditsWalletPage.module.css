@@ -334,30 +334,60 @@
 
 .usagePositive {
   color: #16a34a;
+  display: inline-block;
   font-weight: 600;
+  min-width: 5.5rem;
+  text-align: right;
   white-space: nowrap;
 }
 
 .usageNegative {
   color: #dc2626;
+  display: inline-block;
   font-weight: 600;
+  min-width: 5.5rem;
+  text-align: right;
   white-space: nowrap;
 }
 
 .detailsCell {
   color: #334155;
-  max-width: 22rem;
+  display: block;
+  max-width: 16rem;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .userCell {
   color: #334155;
-  white-space: nowrap;
+  display: block;
+  max-width: 15rem;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .timestampCell,
 .balanceCell {
   color: #334155;
+  display: inline-block;
   white-space: nowrap;
+}
+
+.tableWrap {
+  min-width: 0;
+}
+
+.tableWrap :global(table) {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.tableWrap :global(th),
+.tableWrap :global(td) {
+  overflow: hidden;
+  vertical-align: top;
 }
 
 .pageFooter {

@@ -11,6 +11,7 @@ import {
   mergeQuestionLogicState,
   findBranchTargetOption,
   hasDynamicTextCommentsChanges,
+  isCompoundBranchingLogicComplete,
   isShowHideOptionsLogicApplied,
   isShowHideOptionsLogicComplete,
   isQuotaControlLogicApplied,
@@ -21,6 +22,7 @@ import {
   type QuestionLogicTypeOption,
 } from '@/data/mock-question-logic';
 import { HelpFileLink } from '@/components/surveys/HelpFileLink';
+import { CompoundBranchingLogicPanel } from '@/components/surveys/CompoundBranchingLogicPanel';
 import { DynamicTextCommentsLogicPanel } from '@/components/surveys/DynamicTextCommentsLogicPanel';
 import { ExtractionLogicPanel } from '@/components/surveys/ExtractionLogicPanel';
 import { QuotaControlAppliedIcon } from '@/components/surveys/QuotaControlAppliedIcon';
@@ -66,11 +68,16 @@ export function QuestionLogicModal({
   );
 
   const isShowHideOptions = state.logicType === 'show-hide-options';
+  const isCompoundBranching = state.logicType === 'compound-branching';
   const isQuotaControl = state.logicType === 'quota-control';
   const isDynamicTextComments = state.logicType === 'dynamic-text';
   const isExtraction = state.logicType === 'extraction';
   const isAlternateLogicPanel =
-    isShowHideOptions || isQuotaControl || isDynamicTextComments || isExtraction;
+    isShowHideOptions ||
+    isCompoundBranching ||
+    isQuotaControl ||
+    isDynamicTextComments ||
+    isExtraction;
   const optionIds = useMemo(
     () => question.options.map((option) => option.id),
     [question.options]
@@ -127,7 +134,9 @@ export function QuestionLogicModal({
 
   const canSave = isShowHideOptions
     ? isShowHideOptionsLogicComplete(state.showHideOptions, optionIds)
-    : true;
+    : isCompoundBranching
+      ? isCompoundBranchingLogicComplete(state.compoundBranching)
+      : true;
 
   function handleSave() {
     if (!canSave) return;
@@ -225,6 +234,15 @@ export function QuestionLogicModal({
             question={question}
             surveyId={surveyId}
             onChange={(showHideOptions) => setState((prev) => ({ ...prev, showHideOptions }))}
+          />
+        ) : isCompoundBranching ? (
+          <CompoundBranchingLogicPanel
+            state={state.compoundBranching}
+            question={question}
+            surveyId={surveyId}
+            onChange={(compoundBranching) =>
+              setState((prev) => ({ ...prev, compoundBranching }))
+            }
           />
         ) : isQuotaControl ? (
           <div className={styles.quotaControlRedirectPanel}>

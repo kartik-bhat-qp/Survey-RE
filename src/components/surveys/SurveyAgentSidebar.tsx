@@ -41,10 +41,12 @@ import {
   type ResearchAgentChatSession,
   type ResearchAgentContext,
   type ResearchAgentProgressStep,
+  type ResearchAgentReplyPayload,
   type SurveyAiGenerationResult,
 } from '@/data/mock-survey-ai-agent';
 import { formatRelativeDate, truncate } from '@/data/mock-utils';
 import { ResearchAgentContextUsage } from '@/components/surveys/ResearchAgentContextUsage';
+import { ResearchAgentReplyCard } from '@/components/surveys/ResearchAgentReplyCard';
 import { SurveyAgentThinkingOverlay } from '@/components/surveys/SurveyAgentThinkingOverlay';
 import styles from './SurveyAgentSidebar.module.css';
 
@@ -132,6 +134,8 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
   const [isGenerating, setIsGenerating] = useState(false);
   const [progressSteps, setProgressSteps] = useState<ResearchAgentProgressStep[]>([]);
   const [useInChatProgress, setUseInChatProgress] = useState(false);
+  const [generatingStartedAt, setGeneratingStartedAt] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [sessions, setSessions] = useState<ResearchAgentChatSession[]>(() =>
     cloneHistorySessions(getResearchAgentHistorySeed(agentContext))
@@ -145,8 +149,22 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
   const attachmentsRef = useRef<ResearchAgentAttachment[]>(attachments);
   const seedPromptHandledRef = useRef<string | null>(null);
   const activeSessionIdRef = useRef<string | null>(activeSessionId);
+  const cancelledRef = useRef(false);
   attachmentsRef.current = attachments;
   activeSessionIdRef.current = activeSessionId;
+
+  useEffect(() => {
+    if (!isGenerating || generatingStartedAt === null) {
+      setElapsedSeconds(0);
+      return;
+    }
+    const tick = () => {
+      setElapsedSeconds(Math.max(0, Math.round((Date.now() - generatingStartedAt) / 1000)));
+    };
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [generatingStartedAt, isGenerating]);
 
   const openImportFromAttachment = useCallback((kind: ResearchAgentAttachKind = 'any') => {
     setPrompt(RESEARCH_AGENT_IMPORT_FROM_ATTACHED_PROMPT);
@@ -254,13 +272,14 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
   }, []);
 
   const appendAssistantMessage = useCallback(
-    (sessionId: string, assistantContent: string): void => {
+    (sessionId: string, assistantContent: string, reply?: ResearchAgentReplyPayload): void => {
       const createdAt = new Date().toISOString();
       const assistantMessage: ResearchAgentChatMessage = {
         id: createResearchAgentMessageId(),
         role: 'assistant',
         content: assistantContent,
         createdAt,
+        reply,
       };
       setSessions((current) =>
         current.map((session) =>
@@ -289,6 +308,7 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
     clearAttachments();
     setProgressSteps([]);
     setUseInChatProgress(false);
+    setGeneratingStartedAt(null);
     setHistoryOpen(false);
     onClose();
   }
@@ -301,8 +321,19 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
     clearAttachments();
     setProgressSteps([]);
     setUseInChatProgress(false);
+    setGeneratingStartedAt(null);
     setHistoryOpen(false);
     showToast({ message: 'Started a new research agent chat', variant: 'info' });
+  }
+
+  function handleStopRun(): void {
+    if (!isGenerating) return;
+    cancelledRef.current = true;
+    setIsGenerating(false);
+    setProgressSteps([]);
+    setUseInChatProgress(false);
+    setGeneratingStartedAt(null);
+    showToast({ message: 'Run stopped. Nothing was applied.', variant: 'info' });
   }
 
   function handleToggleHistory(): void {
@@ -317,6 +348,7 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
     resetPrompt();
     setProgressSteps([]);
     setUseInChatProgress(false);
+    setGeneratingStartedAt(null);
     setHistoryOpen(false);
   }
 
@@ -325,11 +357,14 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
     if (isGenerating || (!submittedPrompt && attachments.length === 0)) return;
 
     const userContent = buildResearchAgentUserContent(submittedPrompt, attachments);
-    const showCreateProgress = Boolean(onSubmit);
+    const showCreateProgress = agentContext === 'workspace' || Boolean(onSubmit);
     const sessionId = beginUserTurn(userContent);
     resetPrompt();
     clearAttachments();
+    cancelledRef.current = false;
     setIsGenerating(true);
+    setGeneratingStartedAt(Date.now());
+    setElapsedSeconds(0);
     setUseInChatProgress(showCreateProgress);
     if (showCreateProgress) {
       setProgressSteps(
@@ -345,33 +380,43 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
         ? await onSubmit(submittedPrompt || userContent)
         : await generateSurveyChangesFromAiPrompt(submittedPrompt || userContent, surveyId);
 
+      if (cancelledRef.current) return;
+
       if (result.createSurveyProgress) {
         setUseInChatProgress(true);
         await runResearchAgentCreateSurveyProgress(
           result.createSurveyProgress.blockCount,
           result.createSurveyProgress.questionCount,
           (steps) => {
+            if (cancelledRef.current) return;
             setProgressSteps(steps);
             scrollBodyToBottom();
           }
         );
       }
 
+      if (cancelledRef.current) return;
+
       onGenerated?.(result);
-      appendAssistantMessage(sessionId, result.summary);
+      appendAssistantMessage(sessionId, result.summary, result.reply);
       setProgressSteps([]);
       setUseInChatProgress(false);
+      setGeneratingStartedAt(null);
       showToast({ message: result.summary, variant: 'success' });
       scrollBodyToBottom();
     } catch (error) {
+      if (cancelledRef.current) return;
       setProgressSteps([]);
       setUseInChatProgress(false);
+      setGeneratingStartedAt(null);
       showToast({
         message: error instanceof Error ? error.message : 'Unable to update survey',
         variant: 'error',
       });
     } finally {
-      setIsGenerating(false);
+      if (!cancelledRef.current) {
+        setIsGenerating(false);
+      }
     }
   }
 
@@ -617,13 +662,27 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
                         KB
                       </span>
                     </div>
+                  ) : message.reply ? (
+                    <ResearchAgentReplyCard
+                      key={message.id}
+                      reply={message.reply}
+                      onNextStep={(action) => void handleSubmit(action)}
+                    />
                   ) : (
                     <div key={message.id} className={styles.assistantMessage}>
                       <p className={styles.messageText}>{message.content}</p>
                     </div>
                   )
                 )}
-                {progressSteps.length > 0 ? (
+                {isGenerating && useInChatProgress ? (
+                  <ResearchAgentReplyCard
+                    working
+                    workingHeadline="Building your survey…"
+                    workingSubline={`Started ${elapsedSeconds}s ago · you can keep editing while I work`}
+                    liveSteps={progressSteps}
+                    onStop={handleStopRun}
+                  />
+                ) : progressSteps.length > 0 ? (
                   <ul className={styles.progressList} aria-live="polite" aria-busy={isGenerating}>
                     {progressSteps.map((step) => (
                       <li

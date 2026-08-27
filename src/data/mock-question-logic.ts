@@ -103,6 +103,22 @@ export interface ShowHideOptionsState {
   useLegacyMethod: boolean;
 }
 
+export interface CompoundBranchingCriterion extends Criterion {
+  /** Question id to jump to, or `none` for No Branching. */
+  jumpTargetId: string;
+  /** System custom variable to update, e.g. Custom 1. */
+  customVariable: string;
+  /** Value/token written into the custom variable. */
+  customVariableValue: string;
+}
+
+export interface CompoundBranchingState {
+  criteria: CompoundBranchingCriterion[];
+  collapsedCriterionIds: Set<string>;
+  /** Question id to jump to when no criteria match, or `none`. */
+  defaultJumpTargetId: string;
+}
+
 export type QuotaOverLimitAction =
   | 'none'
   | 'terminate-survey'
@@ -322,6 +338,7 @@ export interface QuestionLogicState {
   defaultBranching: string;
   randomizerLimit: string;
   showHideOptions: ShowHideOptionsState;
+  compoundBranching: CompoundBranchingState;
   quotaControl: QuotaControlState;
   dynamicTextComments: DynamicTextCommentsState;
   extraction: ExtractionLogicState;
@@ -331,6 +348,49 @@ export const SELECT_PLACEHOLDER: BranchTargetOption = {
   value: '',
   label: '- Select -',
 };
+
+export type CompoundBranchJumpType =
+  | 'none'
+  | 'question'
+  | 'terminate-survey'
+  | 'goto-thank-you';
+
+export const COMPOUND_BRANCH_JUMP_TYPE_OPTIONS: BranchTargetOption[] = [
+  { value: 'none', label: 'No Branching' },
+  { value: 'question', label: 'Question' },
+  { value: 'terminate-survey', label: 'Terminate Survey' },
+  { value: 'goto-thank-you', label: 'Thank You Page' },
+];
+
+export function isCompoundBranchJumpType(value: string): value is CompoundBranchJumpType {
+  return COMPOUND_BRANCH_JUMP_TYPE_OPTIONS.some((option) => option.value === value);
+}
+
+export const COMPOUND_BRANCH_CUSTOM_VARIABLE_OPTIONS: BranchTargetOption[] = Array.from(
+  { length: 20 },
+  (_, index) => ({
+    value: `Custom ${index + 1}`,
+    label: `Custom ${index + 1}`,
+  })
+);
+
+export const COMPOUND_BRANCH_CUSTOM_VARIABLE_VALUE_OPTIONS: BranchTargetOption[] = [
+  SELECT_PLACEHOLDER,
+  { value: 'email-address', label: 'Email Address' },
+  { value: 'auto-generated-number', label: 'Auto Generated Number' },
+  { value: 'date', label: 'Date' },
+  { value: 'day', label: 'Day' },
+  { value: 'time', label: 'Time' },
+  { value: 'ip-address', label: 'IP Address' },
+  { value: 'country', label: 'Country' },
+  { value: 'region', label: 'Region' },
+  { value: 'city', label: 'City' },
+  { value: 'device-type', label: 'Device Type' },
+  { value: 'browser', label: 'Browser' },
+  { value: 'os', label: 'Operating System' },
+  { value: 'language', label: 'Language' },
+  { value: 'response-id', label: 'Response ID' },
+];
 
 export const SHOW_HIDE_CRITERIA_ACTION_OPTIONS: BranchTargetOption[] = [
   { value: 'hide-option', label: 'If criteria is met, hide option' },
@@ -379,6 +439,40 @@ export function createDefaultShowHideOptionsState(): ShowHideOptionsState {
     uncoveredOptionsAction: '',
     useLegacyMethod: false,
   };
+}
+
+function createDefaultCompoundBranchingCriterion(
+  index: number
+): CompoundBranchingCriterion {
+  return {
+    ...newCriterion(),
+    name: `Criteria ${index}`,
+    jumpTargetId: NO_BRANCHING_OPTION.value,
+    customVariable: COMPOUND_BRANCH_CUSTOM_VARIABLE_OPTIONS[0].value,
+    customVariableValue: '',
+  };
+}
+
+export function createDefaultCompoundBranchingState(): CompoundBranchingState {
+  return {
+    criteria: [createDefaultCompoundBranchingCriterion(1)],
+    collapsedCriterionIds: new Set(),
+    defaultJumpTargetId: NO_BRANCHING_OPTION.value,
+  };
+}
+
+export function isCompoundBranchingLogicComplete(state: CompoundBranchingState): boolean {
+  return state.criteria.every((criterion) => hasCompleteConditions(criterion));
+}
+
+/** True once IF conditions are complete and at least one criterion jumps to a question. */
+export function isCompoundBranchingLogicApplied(state: CompoundBranchingState): boolean {
+  if (!isCompoundBranchingLogicComplete(state)) return false;
+  return state.criteria.some(
+    (criterion) =>
+      criterion.jumpTargetId.trim().length > 0 &&
+      criterion.jumpTargetId !== NO_BRANCHING_OPTION.value
+  );
 }
 
 export function createDefaultQuotaControlState(optionIds: string[]): QuotaControlState {
@@ -573,6 +667,7 @@ export function createDefaultQuestionLogicState(
     defaultBranching: NO_BRANCHING_OPTION.value,
     randomizerLimit: '0',
     showHideOptions: createDefaultShowHideOptionsState(),
+    compoundBranching: createDefaultCompoundBranchingState(),
     quotaControl: createDefaultQuotaControlState(optionIds),
     dynamicTextComments: createDefaultDynamicTextCommentsState(optionIds),
     extraction: createDefaultExtractionLogicState(),
@@ -591,6 +686,28 @@ export function mergeQuestionLogicState(
     ...initial,
     branchByOptionId: { ...defaults.branchByOptionId, ...initial.branchByOptionId },
     showHideOptions: initial.showHideOptions ?? defaults.showHideOptions,
+    compoundBranching: {
+      ...defaults.compoundBranching,
+      ...(initial.compoundBranching ?? {}),
+      criteria:
+        initial.compoundBranching?.criteria?.map((criterion, index) => ({
+          ...createDefaultCompoundBranchingCriterion(index + 1),
+          ...criterion,
+          jumpTargetId:
+            criterion.jumpTargetId?.trim() ||
+            NO_BRANCHING_OPTION.value,
+          customVariable:
+            criterion.customVariable?.trim() ||
+            COMPOUND_BRANCH_CUSTOM_VARIABLE_OPTIONS[0].value,
+          customVariableValue: criterion.customVariableValue ?? '',
+        })) ?? defaults.compoundBranching.criteria,
+      collapsedCriterionIds:
+        initial.compoundBranching?.collapsedCriterionIds ??
+        defaults.compoundBranching.collapsedCriterionIds,
+      defaultJumpTargetId:
+        initial.compoundBranching?.defaultJumpTargetId?.trim() ||
+        defaults.compoundBranching.defaultJumpTargetId,
+    },
     quotaControl: {
       byOptionId: {
         ...defaults.quotaControl.byOptionId,

@@ -104,11 +104,52 @@ export const SURVEY_AI_THINKING_STEPS = [
 
 export type ResearchAgentContext = 'workspace' | 'distribute-email';
 
+export type ResearchAgentReplyCountTone = 'green' | 'blue' | 'gray';
+
+export interface ResearchAgentReplyCount {
+  value: string;
+  label: string;
+  tone: ResearchAgentReplyCountTone;
+}
+
+export interface ResearchAgentReplyChange {
+  marker: '+' | '~';
+  type: string;
+  text: string;
+}
+
+export interface ResearchAgentReplyPayload {
+  headline: string;
+  subline: string;
+  counts: ResearchAgentReplyCount[];
+  changes: ResearchAgentReplyChange[];
+  changesTotal: number;
+  steps: string[];
+  nextSteps: string[];
+}
+
+export interface ResearchAgentReplyQuestionInput {
+  blockTitle?: string;
+  type: string;
+  text: string;
+  optionLabels?: string[];
+}
+
+export const RESEARCH_AGENT_DEFAULT_NEXT_STEPS = [
+  'Make every question required',
+  'Randomize the opinion items',
+  'Add a page break every 10 questions',
+  'Add an N/A answer option',
+  'Add skip logic for non-drinkers',
+  'Reword a question',
+] as const;
+
 export interface ResearchAgentChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
+  reply?: ResearchAgentReplyPayload;
 }
 
 export interface ResearchAgentChatSession {
@@ -137,6 +178,28 @@ const MOCK_WORKSPACE_RESEARCH_AGENT_HISTORY: ResearchAgentChatSession[] = [
         role: 'assistant',
         content: 'Added an NPS question at the end of Block 1.',
         createdAt: '2026-07-04T10:15:00.000Z',
+        reply: {
+          headline: 'Added 1 NPS question in Block 1.',
+          subline: '1 question · 1 block · applied 10:15',
+          counts: [
+            { value: '+1', label: 'question', tone: 'green' },
+            { value: '+1', label: 'NPS', tone: 'blue' },
+          ],
+          changes: [
+            {
+              marker: '+',
+              type: 'NPS',
+              text: 'How likely are you to recommend us to a friend or colleague?',
+            },
+          ],
+          changesTotal: 1,
+          steps: [
+            'Reviewing Block 1…',
+            'Drafting an NPS question…',
+            'Question created successfully.',
+          ],
+          nextSteps: [...RESEARCH_AGENT_DEFAULT_NEXT_STEPS],
+        },
       },
     ],
   },
@@ -396,6 +459,8 @@ export interface SurveyAiGenerationResult {
     blockCount: number;
     questionCount: number;
   };
+  /** Structured workspace reply card. */
+  reply?: ResearchAgentReplyPayload;
 }
 
 export type ResearchAgentProgressStepStatus = 'done' | 'active';
@@ -410,6 +475,121 @@ export function formatResearchAgentMessageTime(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function optionSignature(labels: string[] | undefined): string {
+  return (labels ?? []).map((label) => label.trim().toLowerCase()).join(' | ');
+}
+
+export function buildCreateSurveyAgentReply(params: {
+  blockCount: number;
+  questionCount: number;
+  appliedAt: string;
+  questions: ResearchAgentReplyQuestionInput[];
+  nextSteps?: string[];
+}): ResearchAgentReplyPayload {
+  const { blockCount, questionCount, appliedAt, questions } = params;
+  const appliedLabel = formatResearchAgentMessageTime(appliedAt);
+  const questionWord = questionCount === 1 ? 'question' : 'questions';
+  const blockWord = blockCount === 1 ? 'block' : 'blocks';
+  const headline =
+    blockCount <= 1
+      ? `Created ${questionCount} ${questionWord} in 1 block.`
+      : `Created ${questionCount} ${questionWord} across ${blockCount} ${blockWord}.`;
+
+  const scaleCounts = new Map<string, { count: number; labels: string[] }>();
+  for (const question of questions) {
+    const labels = question.optionLabels ?? [];
+    if (labels.length < 2) continue;
+    const key = optionSignature(labels);
+    const existing = scaleCounts.get(key);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      scaleCounts.set(key, { count: 1, labels });
+    }
+  }
+  const sharedScale = Array.from(scaleCounts.values()).sort((a, b) => b.count - a.count)[0];
+
+  const changes: ResearchAgentReplyChange[] = questions.map((question) => ({
+    marker: '+',
+    type:
+      blockCount > 1 && question.blockTitle
+        ? `${question.blockTitle} · ${question.type}`
+        : question.type,
+    text: question.text,
+  }));
+
+  if (sharedScale && sharedScale.count >= 3) {
+    changes.push({
+      marker: '~',
+      type: 'Answers',
+      text: `${sharedScale.labels.join(' / ')} on ${sharedScale.count} items`,
+    });
+  }
+
+  const counts: ResearchAgentReplyCount[] = [
+    {
+      value: `+${questionCount}`,
+      label: questionWord,
+      tone: 'green',
+    },
+    {
+      value: `+${blockCount}`,
+      label: blockWord,
+      tone: 'blue',
+    },
+  ];
+  if (sharedScale && sharedScale.count >= 3) {
+    counts.push({
+      value: String(sharedScale.count),
+      label: 'share one scale',
+      tone: 'gray',
+    });
+  }
+
+  return {
+    headline,
+    subline: `${questionCount} ${questionWord} · ${blockCount} ${blockWord} · applied ${appliedLabel}`,
+    counts,
+    changes,
+    changesTotal: questionCount,
+    steps: [
+      blockCount === 1 ? 'Creating 1 block...' : `Creating ${blockCount} block(s)...`,
+      'Blocks created successfully.',
+      questionCount === 1
+        ? 'Generating 1 question...'
+        : `Generating ${questionCount} question(s)...`,
+      'Questions created successfully.',
+    ],
+    nextSteps: params.nextSteps ?? [...RESEARCH_AGENT_DEFAULT_NEXT_STEPS],
+  };
+}
+
+export function buildSimpleAgentReply(
+  summary: string,
+  appliedAt: string,
+  extras?: Partial<ResearchAgentReplyPayload>
+): ResearchAgentReplyPayload {
+  return {
+    headline: summary,
+    subline: `Applied ${formatResearchAgentMessageTime(appliedAt)}`,
+    counts: [],
+    changes: [],
+    changesTotal: 0,
+    steps: ['Reviewing your survey…', 'Understanding your request…', 'Applying updates…'],
+    nextSteps: [...RESEARCH_AGENT_DEFAULT_NEXT_STEPS],
+    ...extras,
+  };
+}
+
+export function filterVisibleProgressSteps(
+  steps: ResearchAgentProgressStep[]
+): ResearchAgentProgressStep[] {
+  return steps.filter((step) => {
+    const label = step.label.trim().toLowerCase();
+    return label !== 'working' && label !== 'working...';
+  });
 }
 
 /** Build progressive create-survey status lines shown while the agent works. */
@@ -507,29 +687,93 @@ export async function generateSurveyChangesFromAiPrompt(
   });
 
   const lower = trimmed.toLowerCase();
+  const appliedAt = new Date().toISOString();
+
   if (lower.includes('[attached:')) {
     return {
       summary: 'Reviewed your attached file and applied updates to this survey.',
+      reply: buildSimpleAgentReply(
+        'Reviewed your attached file and applied updates.',
+        appliedAt
+      ),
     };
   }
   if (lower.includes('word') || lower.includes('import from word')) {
-    return { summary: 'Imported survey questions from your Word document into Block 1.' };
+    return {
+      summary: 'Imported survey questions from your Word document into Block 1.',
+      reply: buildSimpleAgentReply(
+        'Imported questions from your Word document into Block 1.',
+        appliedAt,
+        {
+          counts: [
+            { value: '+', label: 'imported', tone: 'green' },
+            { value: '1', label: 'block', tone: 'blue' },
+          ],
+        }
+      ),
+    };
   }
   if (lower.includes('pdf')) {
-    return { summary: 'Imported survey questions from your PDF into Block 1.' };
+    return {
+      summary: 'Imported survey questions from your PDF into Block 1.',
+      reply: buildSimpleAgentReply(
+        'Imported questions from your PDF into Block 1.',
+        appliedAt
+      ),
+    };
   }
   if (lower.includes('nps')) {
-    return { summary: 'Added an NPS question at the end of Block 1.' };
+    return {
+      summary: 'Added an NPS question at the end of Block 1.',
+      reply: buildSimpleAgentReply('Added 1 NPS question in Block 1.', appliedAt, {
+        counts: [
+          { value: '+1', label: 'question', tone: 'green' },
+          { value: '+1', label: 'NPS', tone: 'blue' },
+        ],
+        changes: [
+          {
+            marker: '+',
+            type: 'NPS',
+            text: 'How likely are you to recommend us to a friend or colleague?',
+          },
+        ],
+        changesTotal: 1,
+      }),
+    };
   }
   if (lower.includes('logic') || lower.includes('skip')) {
-    return { summary: 'Drafted skip logic for your survey — review it in the Logic panel.' };
+    return {
+      summary: 'Drafted skip logic for your survey — review it in the Logic panel.',
+      reply: buildSimpleAgentReply(
+        'Drafted skip logic — review it in the Logic panel.',
+        appliedAt
+      ),
+    };
   }
   if (lower.includes('wording') || lower.includes('improve')) {
-    return { summary: 'Suggested clearer wording for your demographic questions.' };
+    return {
+      summary: 'Suggested clearer wording for your demographic questions.',
+      reply: buildSimpleAgentReply(
+        'Suggested clearer wording for demographic questions.',
+        appliedAt,
+        {
+          changes: [
+            { marker: '~', type: 'Wording', text: 'What is your age?' },
+            { marker: '~', type: 'Wording', text: 'What is your gender?' },
+            { marker: '~', type: 'Wording', text: 'What is your highest level of education?' },
+          ],
+          changesTotal: 3,
+        }
+      ),
+    };
   }
 
   return {
     summary: 'Your research agent request has been applied to this prototype workspace.',
+    reply: buildSimpleAgentReply(
+      'Applied your request to this prototype workspace.',
+      appliedAt
+    ),
   };
 }
 

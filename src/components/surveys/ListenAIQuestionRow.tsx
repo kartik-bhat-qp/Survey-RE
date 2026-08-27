@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
+import { useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { CREDITS_WALLET_PATH } from '@/data/mock-credits-wallet';
 import type { SurveyQuestion, SurveySection } from '@/data/mock-survey-detail';
@@ -13,7 +13,9 @@ import {
   getListenAiResponseFieldToken,
   listListenAiSourceQuestions,
   LISTENAI_CREDITS_PER_CONVERSATION,
-  LISTENAI_CREDITS_REMAINING,
+  formatListenAiConversationsCompact,
+  getListenAiConversationsRemaining,
+  getListenAiCreditsBalanceTone,
   resetListenAiSurveyBinding,
   setListenAiConversationMode,
   updateListenAiFirstQuestion,
@@ -26,7 +28,6 @@ import {
   type ListenAiConversationMode,
   type ListenAiStudy,
 } from '@/data/mock-listenai-studies';
-import { formatNumber } from '@/data/mock-utils';
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import { ShowHideOptionsAppliedIcon } from '@/components/surveys/ShowHideOptionsAppliedIcon';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
@@ -46,50 +47,30 @@ const WuButton = dynamic(
 );
 
 const UNSET_STUDY_VALUE = '';
-const SUGGESTION_ROTATE_MS = 3000;
-const MAX_SUGGESTIONS = 3;
 
 function stopQuestionEvent(event: SyntheticEvent): void {
   event.stopPropagation();
 }
 
-function buildSuggestedFirstQuestions(
+function getSuggestedFirstQuestion(
   sourceQuestionText: string | undefined,
   responseFieldToken: string
-): string[] {
+): string | null {
   const source = sourceQuestionText?.trim().replace(/\?+$/, '');
-  if (!source) return [];
+  if (!source) return null;
 
   const lower = source.toLowerCase();
-  const suggestions: string[] = [];
 
   if (lower.includes('like the most')) {
-    suggestions.push(
-      `What do you like the most about ${responseFieldToken}?`,
-      `What stands out most when you think about ${responseFieldToken}?`,
-      `Can you share a recent experience that made you choose ${responseFieldToken}?`
-    );
-  } else if (lower.startsWith('which ')) {
-    suggestions.push(
-      `What made you choose ${responseFieldToken}?`,
-      `What do you like the most about ${responseFieldToken}?`,
-      `Can you tell me more about why ${responseFieldToken} stood out?`
-    );
-  } else if (lower.startsWith('what ')) {
-    suggestions.push(
-      `Can you tell me more about why you answered ${responseFieldToken}?`,
-      `What do you like the most about ${responseFieldToken}?`,
-      `What usually drives you toward ${responseFieldToken}?`
-    );
-  } else {
-    suggestions.push(
-      `Can you tell me more about ${responseFieldToken}?`,
-      `What do you like the most about ${responseFieldToken}?`,
-      `What made ${responseFieldToken} the right choice for you?`
-    );
+    return `What do you like the most about ${responseFieldToken}?`;
   }
-
-  return suggestions.slice(0, MAX_SUGGESTIONS);
+  if (lower.startsWith('which ')) {
+    return `What made you choose ${responseFieldToken}?`;
+  }
+  if (lower.startsWith('what ')) {
+    return `Can you tell me more about why you answered ${responseFieldToken}?`;
+  }
+  return `Can you tell me more about ${responseFieldToken}?`;
 }
 
 export interface ListenAIQuestionRowProps {
@@ -121,7 +102,6 @@ export function ListenAIQuestionRow({
   const { showToast } = useWuShowToast();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerCreateMode, setPickerCreateMode] = useState(false);
-  const [suggestionIndex, setSuggestionIndex] = useState(0);
   const firstQuestionRef = useRef<HTMLTextAreaElement | null>(null);
   const hasStudy = isListenAiStudySelected(config);
   const conversationMode = normalizeListenAiConversationMode(config.study);
@@ -136,31 +116,18 @@ export function ListenAIQuestionRow({
   const selectedSourceQuestion =
     sourceQuestions.find((option) => option.questionId === config.study.sourceQuestionId) ?? null;
   const responseFieldToken = getListenAiResponseFieldToken(config.study.sourceQuestionCode);
-  const suggestedFirstQuestions = useMemo(
-    () =>
-      buildSuggestedFirstQuestions(selectedSourceQuestion?.text, responseFieldToken),
+  const suggestedFirstQuestion = useMemo(
+    () => getSuggestedFirstQuestion(selectedSourceQuestion?.text, responseFieldToken),
     [responseFieldToken, selectedSourceQuestion?.text]
   );
-  const activeSuggestion =
-    suggestedFirstQuestions.length > 0
-      ? suggestedFirstQuestions[suggestionIndex % suggestedFirstQuestions.length]
-      : null;
 
   const independentSuggestion = useMemo(
     () => getListenAiIndependentOpenerSuggestion(config.study.objectives),
     [config.study.objectives]
   );
-
-  useEffect(() => {
-    setSuggestionIndex(0);
-    if (suggestedFirstQuestions.length <= 1) return;
-
-    const intervalId = window.setInterval(() => {
-      setSuggestionIndex((current) => (current + 1) % suggestedFirstQuestions.length);
-    }, SUGGESTION_ROTATE_MS);
-
-    return () => window.clearInterval(intervalId);
-  }, [suggestedFirstQuestions]);
+  const conversationsRemaining = getListenAiConversationsRemaining();
+  const conversationsRemainingLabel = formatListenAiConversationsCompact(conversationsRemaining);
+  const creditsBalanceTone = getListenAiCreditsBalanceTone(conversationsRemaining);
 
   function handleSelectStudy(nextStudy: ListenAiStudy): void {
     onConfigChange({
@@ -176,31 +143,33 @@ export function ListenAIQuestionRow({
 
   function handleConversationModeChange(nextMode: ListenAiConversationMode): void {
     if (nextMode === conversationMode) return;
+    const withMode = setListenAiConversationMode(config.study, nextMode);
+    const nextOpener =
+      nextMode === 'independent'
+        ? getListenAiFirstQuestion(withMode).trim() ||
+          getListenAiIndependentOpenerSuggestion(withMode.objectives)
+        : getListenAiFirstQuestion(withMode);
     onConfigChange({
       ...config,
-      study: setListenAiConversationMode(config.study, nextMode),
+      study: updateListenAiFirstQuestion(withMode, nextOpener),
     });
   }
 
   function handleSourceQuestionChange(value: string): void {
     const selected = sourceQuestions.find((option) => option.value === value);
     const nextStudy = updateListenAiSourceQuestion(config.study, selected ?? null);
+    const suggestion = selected
+      ? getSuggestedFirstQuestion(
+          selected.text,
+          getListenAiResponseFieldToken(selected.code)
+        )
+      : null;
     onConfigChange({
       ...config,
       study: updateListenAiFirstQuestion(
         setListenAiConversationMode(nextStudy, 'followup'),
-        ''
+        suggestion ?? ''
       ),
-    });
-  }
-
-  function applySuggestedFirstQuestion(suggestion: string): void {
-    onConfigChange({
-      ...config,
-      study: updateListenAiFirstQuestion(config.study, suggestion),
-    });
-    queueMicrotask(() => {
-      firstQuestionRef.current?.focus();
     });
   }
 
@@ -305,21 +274,8 @@ export function ListenAIQuestionRow({
                           study: updateListenAiFirstQuestion(config.study, event.target.value),
                         })
                       }
-                      placeholder="Enter the question the AI interviewer opens with"
+                      placeholder={independentSuggestion}
                     />
-                    <p className={styles.firstQuestionHelper} aria-live="polite">
-                      <span className={styles.firstQuestionHelperPrefix}>
-                        Suggested from your objectives:
-                      </span>
-                      <button
-                        type="button"
-                        className={styles.firstQuestionExample}
-                        title="Click to use this suggestion"
-                        onClick={() => applySuggestedFirstQuestion(independentSuggestion)}
-                      >
-                        {independentSuggestion}
-                      </button>
-                    </p>
                   </label>
                 </>
               ) : (
@@ -366,28 +322,12 @@ export function ListenAIQuestionRow({
                             study: updateListenAiFirstQuestion(config.study, event.target.value),
                           })
                         }
-                        placeholder="Enter the follow-up question you want to start with"
+                        placeholder={
+                          suggestedFirstQuestion ??
+                          'Enter the follow-up question you want to start with'
+                        }
                       />
                     </div>
-                    {activeSuggestion ? (
-                      <p className={styles.firstQuestionHelper} aria-live="polite">
-                        <span className={styles.firstQuestionHelperPrefix}>
-                          Suggested for this source question:
-                        </span>
-                        <button
-                          type="button"
-                          className={styles.firstQuestionExample}
-                          title="Double-click to use this suggestion"
-                          onDoubleClick={() => applySuggestedFirstQuestion(activeSuggestion)}
-                        >
-                          {activeSuggestion}
-                        </button>
-                      </p>
-                    ) : (
-                      <p className={styles.firstQuestionHelper}>
-                        Use Insert Response to reference the selected answer in your prompt.
-                      </p>
-                    )}
                   </label>
                 </>
               )}
@@ -424,22 +364,34 @@ export function ListenAIQuestionRow({
               {' per conversation'}
             </p>
           </div>
-          <Link
-            href={CREDITS_WALLET_PATH}
-            className={styles.creditsBalance}
-            aria-label={`${formatNumber(LISTENAI_CREDITS_REMAINING)} credits left`}
-          >
-            <span className={styles.creditsBalanceText}>
-              {formatNumber(LISTENAI_CREDITS_REMAINING)} credits left
-            </span>
-          </Link>
-          <button
-            type="button"
-            className={styles.buyCreditsBtn}
-            onClick={() => showToast({ message: 'Buy credits', variant: 'info' })}
-          >
-            Buy credits
-          </button>
+          <div className={styles.creditsStatus}>
+            <Link
+              href={CREDITS_WALLET_PATH}
+              className={styles.creditsBalance}
+              aria-label={`Balance covers about ${conversationsRemainingLabel} conversations more`}
+            >
+              <span
+                className={`${styles.creditsStatusDot} ${
+                  creditsBalanceTone === 'critical'
+                    ? styles.creditsStatusDotCritical
+                    : creditsBalanceTone === 'warning'
+                      ? styles.creditsStatusDotWarning
+                      : styles.creditsStatusDotHealthy
+                }`}
+                aria-hidden
+              />
+              <span className={styles.creditsBalanceText}>
+                Balance covers ~{conversationsRemainingLabel} conversations more
+              </span>
+            </Link>
+            <button
+              type="button"
+              className={styles.buyCreditsBtn}
+              onClick={() => showToast({ message: 'Buy credits', variant: 'info' })}
+            >
+              Buy credits
+            </button>
+          </div>
         </div>
       </div>
 

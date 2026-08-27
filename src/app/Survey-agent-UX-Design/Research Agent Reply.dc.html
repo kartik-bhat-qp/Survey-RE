@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0..1,0" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+  body { font-family: 'Fira Sans', sans-serif; font-weight: 300; background: #eef2f6; color: #334155; }
+  a { color: #1b87e6; text-decoration: none; }
+  a:hover { color: #1570c2; text-decoration: underline; }
+  input, textarea, button { font-family: 'Fira Sans', sans-serif; }
+  .ms { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; direction: ltr; }
+  @keyframes raSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes raSlide { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
+  @keyframes raIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+</style>
+</helmet>
+
+<div style="display: flex; flex-direction: column; height: 100vh; overflow: hidden;">
+
+  <header style="align-items: center; background: #1b3380; color: #fff; display: flex; flex-shrink: 0; gap: 16px; height: 48px; padding: 0 12px 0 0;">
+    <div style="align-items: center; background: #16296b; display: flex; gap: 8px; height: 48px; padding: 0 14px; min-width: 236px;">
+      <span style="align-items: center; background: #fff; border-radius: 3px; color: #1b3380; display: inline-flex; font-size: 12px; font-weight: 700; height: 18px; justify-content: center; width: 18px;">P</span>
+      <span style="font-size: 15px; font-weight: 500;">Surveys</span>
+      <span class="ms" style="font-size: 20px; margin-left: auto; opacity: 0.9;">arrow_drop_down</span>
+    </div>
+    <nav style="align-items: center; display: flex; flex-shrink: 1; font-size: 13px; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap;">
+      <span style="opacity: 0.85;">Demo 2026</span>
+      <span class="ms" style="font-size: 16px; opacity: 0.6;">chevron_right</span>
+      <span style="font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Unpopular Opinions</span>
+    </nav>
+    <div style="align-items: center; display: flex; gap: 10px; margin-left: auto; min-width: 0;">
+      <div style="align-items: center; background: rgb(255 255 255 / 10%); border-radius: 4px; display: flex; flex-shrink: 1; gap: 8px; height: 30px; min-width: 0; overflow: hidden; padding: 0 10px; width: 320px;">
+        <span class="ms" style="font-size: 17px; opacity: 0.7;">search</span>
+        <span style="font-size: 12.5px; opacity: 0.65;">Global search for users, surveys, tickets</span>
+      </div>
+      <span style="font-size: 12.5px; opacity: 0.9;">Admin</span>
+      <span class="ms" style="align-items: center; background: rgb(255 255 255 / 10%); border-radius: 4px; display: inline-flex; font-size: 18px; height: 26px; justify-content: center; width: 26px;">search</span>
+      <button type="button" style="background: #f8991d; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 12.5px; font-weight: 500; height: 28px; padding: 0 12px;" style-hover="background: #e28a12;">Upgrade Now</button>
+      <span class="ms" style="align-items: center; border: 1px solid rgb(255 255 255 / 45%); border-radius: 50%; display: inline-flex; font-size: 16px; height: 22px; justify-content: center; width: 22px;">help</span>
+      <span style="align-items: center; background: #1b87e6; border-radius: 50%; display: inline-flex; font-size: 11px; font-weight: 600; height: 26px; justify-content: center; width: 26px;">KB</span>
+    </div>
+  </header>
+
+  <div style="align-items: center; background: #fff; border-bottom: 1px solid #e5e9ef; display: flex; flex-shrink: 0; gap: 4px; height: 40px; padding: 0 12px;">
+    <div style="align-items: center; display: flex; gap: 2px;">
+      <a href="#edit" style="border-bottom: 2px solid #1b87e6; color: #1b87e6; font-size: 13px; font-weight: 500; line-height: 38px; padding: 0 10px; text-decoration: none;">Edit</a>
+      <a href="#distribute" style="color: #334155; font-size: 13px; line-height: 38px; padding: 0 10px; text-decoration: none;" style-hover="color: #1b87e6;">Distribute</a>
+      <a href="#analytics" style="color: #334155; font-size: 13px; line-height: 38px; padding: 0 10px; text-decoration: none;" style-hover="color: #1b87e6;">Analytics</a>
+      <a href="#analytics2" style="color: #334155; font-size: 13px; line-height: 38px; padding: 0 10px; text-decoration: none;" style-hover="color: #1b87e6;">Analytics 2.0</a>
+      <a href="#integration" style="color: #334155; font-size: 13px; line-height: 38px; padding: 0 10px; text-decoration: none;" style-hover="color: #1b87e6;">Integration</a>
+    </div>
+    <div style="align-items: center; display: flex; gap: 2px; margin-left: auto;">
+      <span style="color: #64748b; font-size: 12px; padding-right: 6px;">Last updated 2 mins ago</span>
+      <button type="button" style="align-items: center; background: transparent; border: none; color: #334155; cursor: pointer; display: inline-flex; height: 28px; justify-content: center; width: 28px;" style-hover="color: #1b87e6;"><span class="ms" style="font-size: 16px;">find_replace</span></button>
+      <button type="button" style="align-items: center; background: transparent; border: none; color: #334155; cursor: pointer; display: inline-flex; height: 28px; justify-content: center; width: 28px;" style-hover="color: #1b87e6;"><span class="ms" style="font-size: 16px;">download</span></button>
+      <button type="button" style="align-items: center; background: transparent; border: none; color: #334155; cursor: pointer; display: inline-flex; font-size: 13px; gap: 2px; padding: 6px 8px;" style-hover="color: #1b87e6;">Tools<span class="ms" style="font-size: 18px;">arrow_drop_down</span></button>
+      <button type="button" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; color: #334155; cursor: pointer; font-size: 13px; margin-inline: 2px; padding: 5px 10px;" style-hover="border-color: #1b87e6; color: #1b87e6;">Test Responses</button>
+      <button type="button" style="align-items: center; background: transparent; border: none; color: #334155; cursor: pointer; display: inline-flex; font-size: 13px; gap: 4px; padding: 6px 8px;" style-hover="color: #1b87e6;"><span class="ms" style="font-size: 16px;">group</span>1.8K</button>
+    </div>
+  </div>
+
+  <div style="align-items: center; background: #fff; border-bottom: 1px solid #e5e9ef; display: flex; flex-shrink: 0; gap: 2px; height: 58px; padding: 0 8px;">
+    <sc-for list="{{ tools }}" as="tool" hint-placeholder-count="9">
+      <a href="#tool" style="align-items: center; color: #64748b; display: flex; flex-direction: column; flex-shrink: 1; font-size: 11.5px; gap: 3px; min-width: 0; padding: 6px 8px; text-align: center; text-decoration: none; white-space: nowrap;" style-hover="color: #1b87e6;">
+        <span class="ms" style="font-size: 20px;">{{ tool.icon }}</span>
+        {{ tool.label }}
+      </a>
+    </sc-for>
+    <div style="align-items: center; display: flex; flex-shrink: 0; gap: 6px; margin-left: auto; padding-right: 12px;">
+      <button type="button" style="align-items: center; background: transparent; border: none; color: #64748b; cursor: pointer; display: inline-flex; height: 32px; justify-content: center; width: 32px;" style-hover="color: #1b87e6;"><span class="ms" style="font-size: 18px;">history</span></button>
+      <div style="align-items: center; background: #e8edf2; border-radius: 9999px; display: inline-flex; padding: 2px;">
+        <button type="button" style="background: #1b87e6; border: none; border-radius: 9999px; color: #fff; cursor: pointer; font-size: 13px; font-weight: 500; padding: 5px 16px;">Draft</button>
+        <button type="button" style="background: transparent; border: none; border-radius: 9999px; color: #64748b; cursor: pointer; font-size: 13px; padding: 5px 16px;" style-hover="color: #334155;">Publish</button>
+      </div>
+      <button type="button" style="align-items: center; background: #1b87e6; border: none; border-radius: 6px; color: #fff; cursor: pointer; display: inline-flex; height: 32px; justify-content: center; width: 32px;" style-hover="background: #1570c2;"><span class="ms" style="font-size: 18px;">visibility</span></button>
+    </div>
+  </div>
+
+  <div style="display: flex; flex: 1; min-height: 0; overflow: hidden;">
+
+    <div style="display: flex; flex-shrink: 0; min-height: 0;">
+      <sc-if value="{{ historyOpen }}" hint-placeholder-val="{{ false }}">
+        <aside style="background: #eef6fd; border-right: 1px solid #bfdbfe; display: flex; flex-direction: column; min-width: 184px; overflow-y: auto; width: 184px;">
+          <ul style="display: flex; flex-direction: column; list-style: none; margin: 0; padding: 6px 0;">
+            <sc-for list="{{ sessions }}" as="session" hint-placeholder-count="3">
+              <li>
+                <button type="button" onClick="{{ noop }}" style="background: transparent; border: none; cursor: pointer; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; text-align: left; width: 100%;" style-hover="background: rgb(255 255 255 / 55%);">
+                  <span style="color: #1e3a5f; font-size: 12px; font-weight: 500; line-height: 1.35;">{{ session.title }}</span>
+                  <span style="color: #64748b; font-size: 11px;">{{ session.meta }}</span>
+                </button>
+              </li>
+            </sc-for>
+          </ul>
+        </aside>
+      </sc-if>
+
+      <aside style="background: #f4f6f8; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; min-height: 0; width: 432px;">
+
+        <header style="align-items: center; background: #1b87e6; color: #fff; display: flex; flex-shrink: 0; gap: 8px; justify-content: space-between; min-height: 48px; padding: 10px 12px;">
+          <div style="align-items: center; display: flex; gap: 6px; min-width: 0;">
+            <button type="button" onClick="{{ toggleHistory }}" title="Chat history" style="align-items: center; background: transparent; border: none; border-radius: 4px; color: #fff; cursor: pointer; display: inline-flex; height: 28px; justify-content: center; width: 28px;" style-hover="background: rgb(255 255 255 / 16%);"><span class="ms" style="font-size: 18px;">history</span></button>
+            <div style="align-items: center; display: flex; gap: 8px; min-width: 0;">
+              <h2 style="font-size: 15px; font-weight: 600; margin: 0; white-space: nowrap;">Research Agent</h2>
+              <span class="wc-ai ms" style="font-size: 16px;">auto_awesome</span>
+            </div>
+          </div>
+          <div style="align-items: center; display: flex; flex-shrink: 0; gap: 2px;">
+            <button type="button" title="About research agent" style="align-items: center; background: transparent; border: none; border-radius: 50%; color: #fff; cursor: pointer; display: inline-flex; height: 26px; justify-content: center; width: 26px;" style-hover="background: rgb(255 255 255 / 12%);"><span class="ms" style="font-size: 18px;">help_outline</span></button>
+            <button type="button" title="New chat" style="align-items: center; background: transparent; border: none; border-radius: 4px; color: #fff; cursor: pointer; display: inline-flex; height: 28px; justify-content: center; width: 28px;" style-hover="background: rgb(255 255 255 / 16%);"><span class="ms" style="font-size: 18px;">add</span></button>
+            <button type="button" title="Close" style="align-items: center; background: transparent; border: none; border-radius: 4px; color: #fff; cursor: pointer; display: inline-flex; height: 28px; justify-content: center; width: 28px;" style-hover="background: rgb(255 255 255 / 16%);"><span class="ms" style="font-size: 18px;">close</span></button>
+          </div>
+        </header>
+
+        <div style="display: flex; flex: 1; flex-direction: column; gap: 12px; min-height: 0; overflow-y: auto; padding: 16px 14px;">
+
+          <div style="align-items: flex-start; align-self: flex-end; display: flex; flex-shrink: 0; gap: 8px; max-width: 100%;">
+            <div style="background: #1b87e6; border-radius: 12px 12px 4px 12px; max-width: 288px; padding: 10px 12px 8px;">
+              <p style="color: #fff; font-size: 13px; line-height: 1.45; margin: 0; white-space: pre-wrap;">{{ userPrompt }}</p>
+              <span style="color: rgb(255 255 255 / 75%); display: block; font-size: 10px; line-height: 1.3; margin-top: 4px;">12:52</span>
+            </div>
+            <span style="align-items: center; background: #1b3380; border-radius: 999px; color: #fff; display: inline-flex; flex-shrink: 0; font-size: 10px; font-weight: 600; height: 28px; justify-content: center; letter-spacing: 0.02em; margin-top: 2px; width: 28px;">KB</span>
+          </div>
+
+          <section style="animation: raIn 0.25s ease both; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; flex-shrink: 0;">
+
+            <div style="align-items: flex-start; display: flex; gap: 10px; padding: 12px 12px 0;">
+              <span style="align-items: center; border-radius: 50%; display: inline-flex; flex-shrink: 0; height: 22px; justify-content: center; margin-top: 1px; width: 22px; background: {{ statusBg }};">
+                <span class="ms" style="font-size: 15px; color: {{ statusColor }}; animation: {{ statusSpin }};">{{ statusIcon }}</span>
+              </span>
+              <div style="min-width: 0;">
+                <p style="color: #1e293b; font-size: 13.5px; font-weight: 600; line-height: 1.4; margin: 0;">{{ headline }}</p>
+                <p style="color: #64748b; font-size: 11.5px; line-height: 1.4; margin: 3px 0 0;">{{ subline }}</p>
+              </div>
+            </div>
+
+            <sc-if value="{{ isWorking }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 10px 12px 12px 44px;">
+                <div style="background: #e2e8f0; border-radius: 9999px; height: 3px; margin-bottom: 10px; overflow: hidden; width: 100%;">
+                  <div style="animation: raSlide 1.6s ease-in-out infinite; background: linear-gradient(90deg, #1b87e6, #60a5fa); border-radius: 9999px; height: 100%; width: 40%;"></div>
+                </div>
+                <ul style="display: flex; flex-direction: column; gap: 6px; list-style: none; margin: 0; padding: 0;">
+                  <sc-for list="{{ liveSteps }}" as="step" hint-placeholder-count="3">
+                    <li style="align-items: flex-start; display: flex; font-size: 12.5px; gap: 8px; line-height: 1.4; color: {{ step.color }};">
+                      <span class="ms" style="flex-shrink: 0; font-size: 14px; line-height: 1.4; animation: {{ step.spin }};">{{ step.icon }}</span>
+                      <span style="min-width: 0;">{{ step.label }}</span>
+                    </li>
+                  </sc-for>
+                </ul>
+                <button type="button" onClick="{{ stopRun }}" style="align-items: center; background: #fff; border: 1px solid #dbe3ec; border-radius: 6px; color: #64748b; cursor: pointer; display: inline-flex; font-size: 12px; gap: 4px; margin-top: 12px; padding: 5px 10px;" style-hover="border-color: #dc2626; color: #dc2626;">
+                  <span class="ms" style="font-size: 14px;">stop_circle</span>Stop
+                </button>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isDone }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px 0 44px;">
+                  <sc-for list="{{ counts }}" as="count" hint-placeholder-count="3">
+                    <span style="align-items: center; border-radius: 4px; display: inline-flex; font-size: 11.5px; font-weight: 500; gap: 5px; padding: 3px 8px; background: {{ count.bg }}; color: {{ count.color }};">
+                      <span style="font-weight: 700;">{{ count.value }}</span>{{ count.label }}
+                    </span>
+                  </sc-for>
+                </div>
+
+                <div style="margin: 12px 12px 0; border: 1px solid #e8edf2; border-radius: 8px; overflow: hidden;">
+                  <button type="button" onClick="{{ toggleChanges }}" style="align-items: center; background: #f8fafc; border: none; border-bottom: 1px solid #e8edf2; color: #334155; cursor: pointer; display: flex; font-size: 12.5px; font-weight: 500; gap: 6px; padding: 8px 10px; text-align: left; width: 100%;" style-hover="background: #f1f5f9;">
+                    <span class="ms" style="color: #94a3b8; font-size: 16px; transform: rotate({{ changesArrow }});">expand_more</span>
+                    Changes
+                    <span style="color: #94a3b8; font-weight: 400;">{{ changesTotalLabel }}</span>
+                  </button>
+                  <ul style="display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0;">
+                    <sc-for list="{{ visibleChanges }}" as="change" hint-placeholder-count="3">
+                      <li style="align-items: baseline; border-bottom: 1px solid #f1f5f9; display: grid; gap: 8px; grid-template-columns: 12px auto minmax(0, 1fr); padding: 7px 10px;">
+                        <span style="font-size: 13px; font-weight: 700; line-height: 1.3; color: {{ change.markerColor }};">{{ change.marker }}</span>
+                        <span style="background: #f1f5f9; border-radius: 3px; color: #64748b; font-size: 10.5px; line-height: 1.4; padding: 2px 5px; white-space: nowrap;">{{ change.type }}</span>
+                        <span style="color: #334155; font-size: 12.5px; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ change.text }}</span>
+                      </li>
+                    </sc-for>
+                  </ul>
+                  <button type="button" onClick="{{ toggleChanges }}" style="background: #fff; border: none; color: #1b87e6; cursor: pointer; font-size: 12px; font-weight: 500; padding: 8px 10px; text-align: left; width: 100%;" style-hover="background: #f8fafc;">{{ changesToggleLabel }}</button>
+                </div>
+
+                <div style="margin: 8px 12px 0;">
+                  <button type="button" onClick="{{ toggleSteps }}" style="align-items: center; background: transparent; border: none; color: #64748b; cursor: pointer; display: flex; font-size: 12px; gap: 4px; padding: 4px 0;" style-hover="color: #1b87e6;">
+                    <span class="ms" style="font-size: 15px; transform: rotate({{ stepsArrow }});">expand_more</span>{{ stepsLabel }}
+                  </button>
+                  <sc-if value="{{ stepsOpen }}" hint-placeholder-val="{{ false }}">
+                    <ul style="display: flex; flex-direction: column; gap: 5px; list-style: none; margin: 2px 0 4px; padding: 0 0 0 19px;">
+                      <sc-for list="{{ doneSteps }}" as="step" hint-placeholder-count="4">
+                        <li style="align-items: flex-start; color: #94a3b8; display: flex; font-size: 12px; gap: 8px; line-height: 1.4;">
+                          <span class="ms" style="flex-shrink: 0; font-size: 13px; line-height: 1.4;">check_circle</span>
+                          <span style="min-width: 0;">{{ step }}</span>
+                        </li>
+                      </sc-for>
+                    </ul>
+                  </sc-if>
+                </div>
+
+                <div style="border-top: 1px solid #eef2f6; margin-top: 10px; padding: 10px 12px 12px;">
+                  <p style="color: #64748b; font-size: 11.5px; font-weight: 500; margin: 0 0 7px;">Next steps</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <sc-for list="{{ visibleNextSteps }}" as="action" hint-placeholder-count="3">
+                      <button type="button" onClick="{{ runAction }}" style="align-items: center; background: #fff; border: 1px solid #dbe3ec; border-radius: 9999px; color: #475569; cursor: pointer; display: inline-flex; font-size: 12px; gap: 4px; line-height: 1.3; padding: 6px 11px 6px 8px;" style-hover="border-color: #93c5fd; color: #1b3380;">
+                        <span class="ms" style="color: #1b87e6; font-size: 14px;">play_arrow</span>{{ action }}
+                      </button>
+                    </sc-for>
+                    <button type="button" onClick="{{ toggleMore }}" style="align-items: center; background: transparent; border: 1px solid transparent; border-radius: 9999px; color: #1b87e6; cursor: pointer; display: inline-flex; font-size: 12px; gap: 2px; padding: 6px 8px;" style-hover="border-color: #dbe3ec;">
+                      {{ moreLabel }}<span class="ms" style="font-size: 15px; transform: rotate({{ moreArrow }});">expand_more</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+          </section>
+
+          <sc-if value="{{ toastVisible }}" hint-placeholder-val="{{ false }}">
+            <p style="color: #64748b; font-size: 12px; margin: 0; text-align: center;">{{ toastText }}</p>
+          </sc-if>
+        </div>
+
+        <footer style="background: #f4f6f8; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; flex-shrink: 0; gap: 8px; padding: 12px 14px 14px;">
+          <div style="align-items: flex-end; background: #fff; border: 1px solid #dbe3ec; border-radius: 8px; display: flex; gap: 6px; padding: 8px 8px 8px 6px;">
+            <button type="button" title="Attach file" style="align-items: center; background: transparent; border: none; border-radius: 4px; color: #64748b; cursor: pointer; display: inline-flex; flex-shrink: 0; height: 32px; justify-content: center; width: 32px;" style-hover="background: #f1f5f9; color: #1b87e6;"><span class="ms" style="font-size: 18px;">attach_file</span></button>
+            <textarea rows="2" placeholder="Describe what you'd like to do..." style="background: transparent; border: none; color: #0f172a; flex: 1; font-size: 14px; line-height: 1.45; min-height: 40px; outline: none; resize: none;"></textarea>
+            <span title="Context used" style="align-items: center; display: inline-flex; flex-shrink: 0; height: 32px; justify-content: center; width: 20px;">
+              <svg viewBox="0 0 20 20" width="20" height="20" style="display: block;">
+                <circle cx="10" cy="10" r="8" fill="none" stroke="#e2e8f0" stroke-width="2"></circle>
+                <circle cx="10" cy="10" r="8" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-dasharray="50.27" stroke-dashoffset="44" transform="rotate(-90 10 10)"></circle>
+              </svg>
+            </span>
+            <button type="button" title="Send" style="align-items: center; background: transparent; border: none; border-radius: 4px; color: #64748b; cursor: not-allowed; display: inline-flex; flex-shrink: 0; height: 32px; justify-content: center; opacity: 0.4; width: 32px;"><span class="ms" style="font-size: 18px;">send</span></button>
+          </div>
+        </footer>
+      </aside>
+    </div>
+
+    <div style="background: #eef2f6; flex: 1; min-width: 0; overflow: auto; position: relative;">
+      <div style="margin: 0 auto; max-width: 1632px; padding: 16px 12px 80px;">
+        <div style="background: #fff; border: 1px solid #d5dde6; border-radius: 2px;">
+          <div style="align-items: center; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; padding: 10px 16px;">
+            <h3 style="color: #334155; font-size: 15px; font-weight: 500; margin: 0;">Block 1</h3>
+            <span style="color: #64748b; font-size: 11px;">18 questions</span>
+          </div>
+          <sc-for list="{{ canvasQuestions }}" as="q" hint-placeholder-count="3">
+            <div>
+              <div style="display: grid; gap: 8px; grid-template-columns: 52px minmax(0, 1fr); border-left: 4px solid transparent; width: 100%;">
+                <div style="align-self: start; color: #64748b; font-size: 13px; font-weight: 500; padding: 44px 8px 12px 6px;">{{ q.code }}</div>
+                <div style="min-width: 0; padding: 16px 16px 16px 0;">
+                  <div style="align-items: flex-start; display: flex; gap: 12px; justify-content: space-between;">
+                    <div style="min-width: 0;">
+                      <p style="color: #1e293b; font-size: 15px; font-weight: 500; line-height: 1.45; margin: 0 0 12px;"><span style="color: #dc2626; margin-right: 6px;">*</span>{{ q.text }}</p>
+                      <ul style="display: flex; flex-direction: column; gap: 6px; list-style: none; margin: 0; padding: 0;">
+                        <sc-for list="{{ q.options }}" as="opt" hint-placeholder-count="3">
+                          <li style="align-items: center; display: grid; gap: 8px; grid-template-columns: 16px minmax(0, 1fr);">
+                            <span style="border: 1.5px solid #94a3b8; border-radius: 50%; height: 16px; width: 16px;"></span>
+                            <span style="color: #334155; font-size: 13px;">{{ opt }}</span>
+                          </li>
+                        </sc-for>
+                      </ul>
+                    </div>
+                    <div style="align-items: center; display: flex; flex-shrink: 0; gap: 12px; padding-top: 2px;">
+                      <span style="color: #64748b; font-size: 11px;">Validation</span>
+                      <span style="color: #64748b; font-size: 11px;">Logic</span>
+                      <span style="color: #64748b; font-size: 11px;">Settings</span>
+                      <span class="ms" style="color: #64748b; font-size: 16px;">more_vert</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="align-items: center; border-bottom: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb; display: grid; gap: 8px 16px; grid-template-columns: 1fr auto 1fr; padding: 12px 16px;">
+                <div style="grid-column: 2; justify-self: center;">
+                  <button type="button" style="background: #1b87e6; border: none; border-radius: 4px; color: #fff; cursor: pointer; font-size: 12.5px; padding: 5px 12px;" style-hover="background: #1570c2;">Add Question</button>
+                </div>
+                <div style="display: flex; gap: 6px; grid-column: 3; justify-self: end;">
+                  <button type="button" style="background: #fff; border: 1px solid #d5dde6; border-radius: 4px; color: #64748b; cursor: pointer; font-size: 11px; padding: 2px 6px;" style-hover="border-color: #1b87e6; color: #1b87e6;">Page Break</button>
+                  <button type="button" style="background: #fff; border: 1px solid #d5dde6; border-radius: 4px; color: #64748b; cursor: pointer; font-size: 11px; padding: 2px 6px;" style-hover="border-color: #1b87e6; color: #1b87e6;">Remove Separator</button>
+                  <button type="button" style="background: #fff; border: 1px solid #d5dde6; border-radius: 4px; color: #64748b; cursor: pointer; font-size: 11px; padding: 2px 6px;" style-hover="border-color: #1b87e6; color: #1b87e6;">Split Block</button>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;runState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;working&quot;,&quot;summary&quot;,&quot;large&quot;],&quot;default&quot;:&quot;summary&quot;,&quot;tsType&quot;:&quot;'working' | 'summary' | 'large'&quot;,&quot;section&quot;:&quot;Agent reply&quot;},&quot;showHistory&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Agent reply&quot;}}">
+const SMALL_CHANGES = [
+  { marker: '+', type: 'Select One', text: 'Pineapple belongs on pizza.' },
+  { marker: '+', type: 'Select One', text: 'Chocolate belongs in savory dishes.' },
+  { marker: '+', type: 'Select One', text: 'Cats are better than dogs.' },
+  { marker: '+', type: 'Select One', text: 'Superhero movies are overrated.' },
+  { marker: '+', type: 'Select One', text: 'Coffee is overrated; I prefer tea.' },
+  { marker: '+', type: 'Select One', text: 'Social media does more good than harm.' },
+  { marker: '+', type: 'Select One', text: 'Subtitles ruin the movie-watching experience.' },
+  { marker: '+', type: 'Select One', text: 'Video games are a waste of time.' },
+  { marker: '+', type: 'Select One', text: 'Breakfast is the least important meal of the day.' },
+  { marker: '~', type: 'Answers', text: 'Agree / Neutral / It depends / Disagree on 9 items' },
+  { marker: '+', type: 'Demographics', text: 'What is your age? (number)' },
+  { marker: '+', type: 'Demographics', text: 'What is your gender?' },
+  { marker: '+', type: 'Demographics', text: 'What is your highest level of education?' },
+];
+
+const LARGE_CHANGES = [
+  { marker: '+', type: 'Block 1 · Select One', text: 'Pineapple belongs on pizza.' },
+  { marker: '+', type: 'Block 1 · Select One', text: 'Chocolate belongs in savory dishes.' },
+  { marker: '+', type: 'Block 1 · Select One', text: 'Cats are better than dogs.' },
+  { marker: '+', type: 'Block 1 · Select One', text: 'Dogs are overrated.' },
+  { marker: '+', type: 'Block 2 · Select One', text: 'Superhero movies are overrated.' },
+  { marker: '+', type: 'Block 2 · Select One', text: 'The original Star Wars movies are overrated.' },
+  { marker: '+', type: 'Block 2 · Select One', text: 'Subtitles ruin the movie-watching experience.' },
+  { marker: '+', type: 'Block 2 · Select One', text: 'Video games are a waste of time.' },
+  { marker: '+', type: 'Block 3 · Select One', text: 'I prefer working from the office.' },
+  { marker: '+', type: 'Block 3 · Select One', text: 'I prefer winter to summer.' },
+  { marker: '+', type: 'Block 3 · Select One', text: 'Avocado toast is overrated.' },
+  { marker: '~', type: 'Answers', text: 'Agree / Neutral / It depends / Disagree on 30 items' },
+  { marker: '+', type: 'Block 4 · Demographics', text: 'What is your age? (number)' },
+  { marker: '+', type: 'Block 4 · Demographics', text: 'What is your gender?' },
+  { marker: '+', type: 'Block 4 · Demographics', text: 'What is your highest level of education?' },
+  { marker: '+', type: 'Block 4 · Comment Box', text: 'Anything else you want to tell us? (optional)' },
+];
+
+const NEXT_STEPS = [
+  'Make every question required',
+  'Randomize the opinion items',
+  'Add a page break every 10 questions',
+  'Add an N/A answer option',
+  'Add skip logic for non-drinkers',
+  'Reword a question',
+];
+
+class Component extends DCLogic {
+  state = { changesOpen: false, stepsOpen: false, moreOpen: false, history: null, toast: '' };
+
+  get runState() {
+    return this.props.runState ?? 'summary';
+  }
+
+  toggle(key) {
+    this.setState((s) => ({ [key]: !s[key] }));
+  }
+
+  renderVals() {
+    const run = this.runState;
+    const working = run === 'working';
+    const large = run === 'large';
+    const changes = large ? LARGE_CHANGES : SMALL_CHANGES;
+    const total = large ? 34 : 18;
+    const shown = this.state.changesOpen ? changes : changes.slice(0, 3);
+    const hidden = changes.length - shown.length;
+    const nextShown = this.state.moreOpen ? NEXT_STEPS : NEXT_STEPS.slice(0, 3);
+    const historyOpen =
+      this.state.history === null ? Boolean(this.props.showHistory) : this.state.history;
+
+    const liveSteps = [
+      { label: 'Creating 4 block(s)...', done: true },
+      { label: 'Blocks created successfully.', done: true },
+      { label: 'Generating 34 question(s)...', done: false },
+    ].map((s) => ({
+      label: s.label,
+      icon: s.done ? 'check_circle' : 'autorenew',
+      color: s.done ? '#94a3b8' : '#475569',
+      spin: s.done ? 'none' : 'raSpin 1s linear infinite',
+    }));
+
+    return {
+      tools: [
+        { label: 'Workspace', icon: 'dashboard' },
+        { label: 'Design', icon: 'brush' },
+        { label: 'Media Library', icon: 'perm_media' },
+        { label: 'Languages', icon: 'language' },
+        { label: 'Finish Options', icon: 'flag' },
+        { label: 'Advanced Quota', icon: 'link' },
+        { label: 'Quota Management', icon: 'pie_chart' },
+        { label: 'Variables', icon: 'code' },
+        { label: 'Settings', icon: 'settings' },
+      ],
+      sessions: [
+        { title: 'Create a survey on unpopular opinions', meta: 'Just now' },
+        { title: 'Add an NPS question about customer satisfaction', meta: '2 months ago' },
+        { title: 'Improve demographic question wording', meta: '2 months ago' },
+      ],
+      canvasQuestions: [
+        { code: 'Q15', text: 'Subtitles ruin the movie-watching experience.', options: ['Agree', 'Neutral / It depends', 'Disagree'] },
+        { code: 'Q16', text: 'Video games are a waste of time.', options: ['Agree', 'Neutral / It depends', 'Disagree'] },
+        { code: 'Q17', text: 'Breakfast is the least important meal of the day.', options: ['Agree', 'Neutral / It depends', 'Disagree'] },
+      ],
+      userPrompt: large
+        ? 'Create a 34-question survey on unpopular opinions, split into blocks, with demographics at the end'
+        : 'Create a survey on unpopular opinions with an agree / neutral / disagree scale, plus demographics',
+
+      isWorking: working,
+      isDone: !working,
+      statusIcon: working ? 'autorenew' : 'check',
+      statusColor: working ? '#1b87e6' : '#15803d',
+      statusBg: working ? '#e8f4fd' : '#e7f6ec',
+      statusSpin: working ? 'raSpin 1s linear infinite' : 'none',
+      headline: working
+        ? 'Building your survey…'
+        : large
+          ? 'Created 34 questions across 4 blocks.'
+          : 'Created 18 questions in 1 block.',
+      subline: working
+        ? 'Started 6s ago · you can keep editing while I work'
+        : large
+          ? '34 questions · 4 blocks · applied 12:52'
+          : '18 questions · 1 block · applied 12:52',
+      liveSteps,
+      counts: large
+        ? [
+            { value: '+34', label: 'questions', bg: '#e7f6ec', color: '#15803d' },
+            { value: '+4', label: 'blocks', bg: '#e8f4fd', color: '#1570c2' },
+            { value: '30', label: 'share one scale', bg: '#f1f5f9', color: '#64748b' },
+          ]
+        : [
+            { value: '+18', label: 'questions', bg: '#e7f6ec', color: '#15803d' },
+            { value: '+1', label: 'block', bg: '#e8f4fd', color: '#1570c2' },
+            { value: '15', label: 'share one scale', bg: '#f1f5f9', color: '#64748b' },
+          ],
+      changesTotalLabel: `· ${total}`,
+      visibleChanges: shown.map((c) => ({
+        ...c,
+        markerColor: c.marker === '+' ? '#15803d' : '#b45309',
+      })),
+      changesToggleLabel: this.state.changesOpen
+        ? 'Show less'
+        : `Show all ${total} changes`,
+      changesArrow: this.state.changesOpen ? '0deg' : '-90deg',
+      toggleChanges: () => this.toggle('changesOpen'),
+
+      stepsOpen: this.state.stepsOpen,
+      stepsArrow: this.state.stepsOpen ? '0deg' : '-90deg',
+      stepsLabel: this.state.stepsOpen ? 'Hide steps' : 'How I did it',
+      doneSteps: large
+        ? ['Creating 4 block(s)...', 'Blocks created successfully.', 'Generating 34 question(s)...', 'Questions created successfully.']
+        : ['Creating 1 block...', 'Blocks created successfully.', 'Generating 18 question(s)...', 'Questions created successfully.'],
+      toggleSteps: () => this.toggle('stepsOpen'),
+
+      visibleNextSteps: nextShown,
+      moreLabel: this.state.moreOpen ? 'Less' : `More (${NEXT_STEPS.length - 3})`,
+      moreArrow: this.state.moreOpen ? '180deg' : '0deg',
+      toggleMore: () => this.toggle('moreOpen'),
+      runAction: () => this.setState({ toast: 'Applying — I will report back here.' }),
+
+      historyOpen,
+      toggleHistory: () => this.setState({ history: !historyOpen }),
+      stopRun: () => this.setState({ toast: 'Run stopped. Nothing was applied.' }),
+      noop: () => {},
+      toastVisible: Boolean(this.state.toast),
+      toastText: this.state.toast,
+      hiddenCount: hidden,
+    };
+  }
+}
+</script>
+</body>
+</html>

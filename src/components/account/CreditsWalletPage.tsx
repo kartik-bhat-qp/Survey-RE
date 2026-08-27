@@ -127,20 +127,24 @@ export function CreditsWalletPage() {
       {
         accessorKey: 'timestampLabel',
         header: 'Timestamp',
+        size: 200,
         cell: ({ row }) => <span className={styles.timestampCell}>{row.original.timestampLabel}</span>,
       },
       {
         accessorKey: 'creditTypeLabel',
         header: 'Credit Type',
+        size: 110,
       },
       {
         accessorKey: 'details',
         header: 'Details',
+        size: 260,
         cell: ({ row }) => <span className={styles.detailsCell}>{row.original.details}</span>,
       },
       {
         accessorKey: 'userEmail',
         header: 'User (Role)',
+        size: 240,
         cell: ({ row }) => (
           <span className={styles.userCell}>
             {row.original.userEmail} ({row.original.userRole})
@@ -150,6 +154,7 @@ export function CreditsWalletPage() {
       {
         accessorKey: 'usage',
         header: 'Usage',
+        size: 120,
         headerAlign: 'right',
         cellAlign: 'right',
         cell: ({ row }) => (
@@ -161,6 +166,7 @@ export function CreditsWalletPage() {
       {
         accessorKey: 'balance',
         header: 'Balance',
+        size: 120,
         headerAlign: 'right',
         cellAlign: 'right',
         cell: ({ row }) => (
@@ -365,7 +371,7 @@ export function CreditsWalletPage() {
                   {filteredTransactions.length} {filteredTransactions.length === 1 ? 'item' : 'items'}
                 </p>
 
-                <TableScrollWrap>
+                <TableScrollWrap className={styles.tableWrap}>
                   <WuTable
                     data={filteredTransactions as unknown[]}
                     columns={columns as unknown as IWuTableColumnDef<unknown>[]}

@@ -514,6 +514,19 @@
   margin-bottom: 0.25rem;
 }
 
+.criteriaModeSelect {
+  flex: 0 0 auto;
+  min-width: 10.5rem;
+  width: 10.5rem;
+}
+
+.existingCriteriaHeaderTrigger {
+  flex: 0 1 16rem;
+  max-width: 16rem;
+  min-width: 12rem;
+  width: 16rem;
+}
+
 .criteriaModeToggle {
   align-items: center;
   background: #e8edf2;

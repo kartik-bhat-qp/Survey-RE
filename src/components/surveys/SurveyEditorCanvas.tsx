@@ -73,6 +73,7 @@ import { isClientOnlySurveyId } from '@/lib/client-only-survey-ids';
 import { generatedSurveyToSections } from '@/lib/ai-survey-generation';
 import { requestAiSurveyGeneration } from '@/lib/request-ai-survey-generation';
 import {
+  buildCreateSurveyAgentReply,
   normalizeResearchAgentSurveyPrompt,
   type SurveyAiGenerationResult,
 } from '@/data/mock-survey-ai-agent';
@@ -1429,6 +1430,26 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           blockCount: Math.max(1, blockCount),
           questionCount: Math.max(1, questionCount),
         },
+        reply: buildCreateSurveyAgentReply({
+          blockCount: Math.max(1, blockCount),
+          questionCount: Math.max(1, questionCount),
+          appliedAt: new Date().toISOString(),
+          questions: nextSections.flatMap((section) =>
+            section.questions.map((question) => ({
+              blockTitle: section.title,
+              type:
+                question.kind === 'nps'
+                  ? 'NPS'
+                  : question.inputKind === 'checkbox'
+                    ? 'Select Many'
+                    : 'Select One',
+              text: plainTextFromRichValue(question.text) || question.text,
+              optionLabels: question.options.map((option) =>
+                plainTextFromRichValue(option.label)
+              ),
+            }))
+          ),
+        }),
       };
     },
     []

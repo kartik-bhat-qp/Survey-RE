@@ -31,6 +31,34 @@ export const LISTENAI_PLACE_NOT_LAST_TOAST =
 export const LISTENAI_CREDITS_PER_CONVERSATION = 0.4;
 export const LISTENAI_CREDITS_REMAINING = 4820;
 
+/** Approx. conversations remaining from credit balance (floored). */
+export function getListenAiConversationsRemaining(
+  creditsRemaining = LISTENAI_CREDITS_REMAINING,
+  creditsPerConversation = LISTENAI_CREDITS_PER_CONVERSATION
+): number {
+  if (creditsPerConversation <= 0) return 0;
+  return Math.floor(creditsRemaining / creditsPerConversation);
+}
+
+/** e.g. 12050 → "12.1K", 850 → "850" */
+export function formatListenAiConversationsCompact(value: number): string {
+  if (value < 1000) return value.toLocaleString('en-US');
+  const thousands = value / 1000;
+  const rounded = Math.round(thousands * 10) / 10;
+  return Number.isInteger(rounded) ? `${rounded}K` : `${rounded.toFixed(1)}K`;
+}
+
+export type ListenAiCreditsBalanceTone = 'critical' | 'warning' | 'healthy';
+
+/** Dot tone from approx. conversations remaining: <200 red, 200–1k yellow, >1k green. */
+export function getListenAiCreditsBalanceTone(
+  conversationsRemaining: number
+): ListenAiCreditsBalanceTone {
+  if (conversationsRemaining < 200) return 'critical';
+  if (conversationsRemaining <= 1000) return 'warning';
+  return 'healthy';
+}
+
 export interface ListenAiQuestionConfig {
   studyId: string;
   study: ListenAiStudy;
