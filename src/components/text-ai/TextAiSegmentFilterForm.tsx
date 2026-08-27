@@ -98,7 +98,7 @@ function FilterSelect({ label, options, selected, onSelect, multiple = false, di
         enableSearch
         isEllipse
         disabled={disabled}
-        variant="flat"
+        variant="outlined"
         placeholder={multiple ? 'Select value(s)' : '-Select-'}
         className={styles.selectTrigger}
         maxContentWidth="min(420px, calc(100vw - 32px))"
@@ -244,62 +244,72 @@ export function TextAiSegmentFilterForm({ values, onChange, responses }: TextAiS
       </section>
       <section className={styles.topArea} aria-labelledby={`${modeId}-filters-title`}>
         <h3 id={`${modeId}-filters-title`}>Filter Responses</h3>
-        <div className={styles.topFilters}>
-          <div className={styles.inlineField}>
-            <span className={styles.fieldLabel}>Response status</span>
-            <WuMenu align="start" Trigger={<MenuSelectTrigger label={getResponseStatusLabel(values.responseStatuses)} className={styles.topTrigger} />}>
-              {TEXT_AI_RESPONSE_STATUS_OPTIONS.map((option) => (
-                <WuMenuCheckboxItem key={option.value}
-                  checked={values.responseStatuses.includes('all') ? option.value === 'all' : values.responseStatuses.includes(option.value)}
-                  onSelect={() => patch({ responseStatuses: toggleTextAiResponseStatus(values.responseStatuses, option.value) })}
-                  preventCloseOnSelect>
-                  <span className={styles.menuItem}>{option.label}</span>
-                </WuMenuCheckboxItem>
-              ))}
-            </WuMenu>
+        <div className={styles.filterControlsRow}>
+          <div className={styles.topFilters}>
+            <div className={styles.inlineField}>
+              <span className={styles.fieldLabel}>Response status</span>
+              <WuMenu align="start" Trigger={<MenuSelectTrigger label={getResponseStatusLabel(values.responseStatuses)} className={styles.topTrigger} />}>
+                {TEXT_AI_RESPONSE_STATUS_OPTIONS.map((option) => (
+                  <WuMenuCheckboxItem key={option.value}
+                    checked={values.responseStatuses.includes('all') ? option.value === 'all' : values.responseStatuses.includes(option.value)}
+                    onSelect={() => patch({ responseStatuses: toggleTextAiResponseStatus(values.responseStatuses, option.value) })}
+                    preventCloseOnSelect>
+                    <span className={styles.menuItem}>{option.label}</span>
+                  </WuMenuCheckboxItem>
+                ))}
+              </WuMenu>
+            </div>
+            <div className={styles.inlineField}>
+              <span className={styles.fieldLabel}>Filter by date</span>
+              <SharedDashboardDateFilter {...dateRange} onChange={({ startDate, endDate }) => patch({
+                dateRangeStart: startDate, dateRangeEnd: endDate,
+                dateRangeLabel: startDate && endDate ? `${startDate} – ${endDate}` : null,
+              })} />
+            </div>
           </div>
-          <div className={styles.inlineField}>
-            <span className={styles.fieldLabel}>Filter by date</span>
-            <SharedDashboardDateFilter {...dateRange} onChange={({ startDate, endDate }) => patch({
-              dateRangeStart: startDate, dateRangeEnd: endDate,
-              dateRangeLabel: startDate && endDate ? `${startDate} – ${endDate}` : null,
-            })} />
-          </div>
-        </div>
-        <div className={styles.criteriaToolbar}>
-          {values.criteriaGroups.length === 0 ? (
-            <button type="button" className={styles.addCriteriaButton}
-              onClick={() => { setMode('extended'); updateGroups([newSegmentCriteriaGroup()]); }}>
-              <span className={`wm-add ${styles.addCriteriaIcon}`} aria-hidden />Add criteria
-            </button>
-          ) : <span />}
           <div className={styles.modeSelector} role="radiogroup" aria-label="Filter display mode">
-            <label><input type="radio" name={modeId} value="extended" checked={mode === 'extended'} onChange={() => setMode('extended')} />Extended mode</label>
-            <label><input type="radio" name={modeId} value="compact" checked={mode === 'compact'} onChange={() => setMode('compact')} />Compact mode</label>
+            <label className={`${styles.modeOption} ${mode === 'extended' ? styles.modeOptionActive : ''}`}>
+              <input className={styles.modeInput} type="radio" name={modeId} value="extended"
+                checked={mode === 'extended'} onChange={() => setMode('extended')} />
+              <span>Extended mode</span>
+            </label>
+            <label className={`${styles.modeOption} ${mode === 'compact' ? styles.modeOptionActive : ''}`}>
+              <input className={styles.modeInput} type="radio" name={modeId} value="compact"
+                checked={mode === 'compact'} onChange={() => setMode('compact')} />
+              <span>Compact mode</span>
+            </label>
           </div>
         </div>
+        {values.criteriaGroups.length === 0 && (
+          <button type="button" className={styles.addCriteriaButton}
+            onClick={() => { setMode('extended'); updateGroups([newSegmentCriteriaGroup()]); }}>
+            <span className={`wm-add ${styles.addCriteriaIcon}`} aria-hidden />Add criteria
+          </button>
+        )}
       </section>
 
       <div className={styles.criteriaGroups}>
         {values.criteriaGroups.map((group, groupIndex) => {
           const collapsed = collapsedGroups.includes(group.id);
           const bodyId = `${modeId}-${group.id}`;
+          const compactGroup = mode === 'compact' && group.conditions.every((condition) =>
+            condition.criteriaType === 'question' ? condition.surveyQuestionId !== null : !!condition.attribute
+          );
           return <div key={group.id}>
             {groupIndex > 0 && <div className={styles.orDivider}>OR</div>}
-            <section className={styles.criteriaGroup} aria-label={`Block ${groupIndex + 1}`}>
-              <button type="button" className={styles.blockHeader} aria-label={`${collapsed ? 'Expand' : 'Collapse'} filter block ${groupIndex + 1}`}
+            <section className={compactGroup ? styles.compactGroup : styles.criteriaGroup} aria-label={`Block ${groupIndex + 1}`}>
+              {!compactGroup && <button type="button" className={styles.blockHeader} aria-label={`${collapsed ? 'Expand' : 'Collapse'} filter block ${groupIndex + 1}`}
                 aria-expanded={!collapsed} aria-controls={bodyId}
                 onClick={() => setCollapsedGroups((current) => collapsed ? current.filter((id) => id !== group.id) : [...current, group.id])}>
+                <span className={`wm-keyboard-arrow-${collapsed ? 'down' : 'up'} ${styles.blockChevron}`} aria-hidden />
                 <span>Block {groupIndex + 1}</span>
                 <span className={styles.conditionCount}>{group.conditions.length} {group.conditions.length === 1 ? 'condition' : 'conditions'}</span>
-                <span className={collapsed ? 'wm-keyboard-arrow-down' : 'wm-keyboard-arrow-up'} aria-hidden />
-              </button>
-              <div id={bodyId} hidden={collapsed}>
+              </button>}
+              <div id={bodyId} hidden={!compactGroup && collapsed} className={compactGroup ? styles.compactConditions : undefined}>
                 {group.conditions.map((condition, conditionIndex) => {
                   const secondary = getSecondaryField(condition.criteriaType);
                   const hasField = condition.criteriaType === 'question' ? condition.surveyQuestionId !== null : !!condition.attribute;
-                  // An unfinished condition stays editable even while other rows are compact.
-                  const compact = mode === 'compact' && hasField;
+                  const compact = compactGroup && hasField;
                   return <div key={condition.id} className={`${styles.conditionRow} ${compact ? styles.compactRow : ''}`}>
                     <span className={styles.conditionLabel}>{conditionIndex === 0 ? 'IF' : 'AND'}</span>
                     {!compact && <>
@@ -331,13 +341,13 @@ export function TextAiSegmentFilterForm({ values, onChange, responses }: TextAiS
                     </div>
                   </div>;
                 })}
-                {mode === 'extended' && <div className={styles.addOrButtonWrap}>
-                  <button type="button" className={styles.addOrButton} onClick={() => updateGroups([...values.criteriaGroups, newSegmentCriteriaGroup()])}>
-                    <span className="wm-add" aria-hidden />Add OR condition
-                  </button>
-                </div>}
               </div>
             </section>
+            {!compactGroup && mode === 'extended' && <div className={styles.addOrButtonWrap}>
+              <button type="button" className={styles.addOrButton} onClick={() => updateGroups([...values.criteriaGroups, newSegmentCriteriaGroup()])}>
+                <span className="wm-add" aria-hidden />Add OR condition
+              </button>
+            </div>}
           </div>;
         })}
       </div>

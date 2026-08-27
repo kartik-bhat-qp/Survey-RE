@@ -13,7 +13,7 @@
 }
 
 .topArea {
-  padding: 4px 0 10px;
+  padding: 4px 0 0;
 }
 
 .topArea h3 {
@@ -26,8 +26,17 @@
 .topFilters {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
-  gap: 18px 28px;
+  flex: 1;
+  flex-wrap: nowrap;
+  gap: 18px;
+  min-width: 0;
+}
+
+.filterControlsRow {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
 }
 
 .inlineField {
@@ -39,7 +48,7 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -54,8 +63,8 @@
 
 .menuTrigger {
   align-items: center;
-  background: #f5f7fb;
-  border: 1px solid #eef1f6;
+  background: #ffffff;
+  border: 1px solid #b7c0cd;
   color: #4b5563;
   cursor: pointer;
   display: flex;
@@ -73,7 +82,7 @@
 }
 
 .topTrigger {
-  width: 240px;
+  width: 200px;
 }
 
 .menuTriggerLabel {
@@ -100,6 +109,7 @@
   font: inherit;
   font-size: 13px;
   gap: 6px;
+  margin-top: 18px;
   padding: 0;
   width: fit-content;
 }
@@ -143,8 +153,8 @@
 }
 
 .criteriaGroup {
-  border: 1px solid #cfe6ff;
-  border-radius: 3px;
+  border: 1px solid #4a97df;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -156,8 +166,8 @@
   display: grid;
   gap: 12px;
   grid-template-columns: 30px minmax(100px, 1fr) minmax(150px, 1.6fr) minmax(80px, .7fr) minmax(130px, 1.2fr) 62px;
-  min-height: 72px;
-  padding: 10px 12px;
+  min-height: 74px;
+  padding: 8px 12px;
   position: relative;
 }
 
@@ -178,27 +188,29 @@
   display: flex;
   font-size: 12px;
   font-weight: 600;
-  min-height: 58px;
+  min-height: 56px;
   padding-left: 4px;
 }
 
 .conditionActions {
+  align-self: end;
   display: flex;
   gap: 6px;
   grid-column: -2 / -1;
   justify-content: flex-end;
-  padding-top: 20px;
+  padding: 0 0 5px;
 }
 
 .conditionActionBtn {
   align-items: center;
-  background: #f3f4f6;
-  border: 1px solid #eef1f6;
-  border-radius: 50%;
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
   color: #536277;
   cursor: pointer;
   display: grid;
-  height: 28px;
+  font-size: 16px;
+  height: 32px;
   place-items: center;
   width: 28px;
 }
@@ -208,27 +220,26 @@
 }
 
 .addOrButtonWrap {
-  border-top: 1px solid #eef1f6;
-  padding: 10px 12px;
+  padding: 12px 0 20px;
 }
 
 .addOrButton {
   align-items: center;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: transparent;
+  border: 0;
   color: #6b7280;
   cursor: pointer;
   display: flex;
   font: inherit;
   font-size: 13px;
   gap: 8px;
-  height: 36px;
+  height: 32px;
   justify-content: center;
   width: 100%;
 }
 
 .addOrButton:hover {
-  background: #f8fafc;
+  color: #253449;
 }
 
 .valueInput {
@@ -263,40 +274,50 @@
   width: 100%;
 }
 
-.criteriaToolbar {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  justify-content: space-between;
-  margin-top: 22px;
-}
-
 .modeSelector {
+  background: #eeeeef;
+  border-radius: 18px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
   color: #5f6b7a;
+  flex: 0 0 auto;
   font-size: 13px;
+  height: 32px;
+  overflow: hidden;
 }
 
-.modeSelector label {
+.modeOption {
   align-items: center;
   cursor: pointer;
   display: flex;
-  gap: 7px;
+  height: 32px;
+  justify-content: center;
+  min-width: 112px;
+  padding: 0 14px;
+  transition: background-color 120ms ease, color 120ms ease;
+  white-space: nowrap;
 }
 
-.modeSelector input {
-  accent-color: #1b87e6;
-  height: 15px;
-  margin: 0;
-  width: 15px;
+.modeOptionActive {
+  background: #438fda;
+  color: #ffffff;
+}
+
+.modeInput {
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 1px;
+}
+
+.modeInput:focus-visible + span {
+  outline: 2px solid #0b63b6;
+  outline-offset: 3px;
 }
 
 .blockHeader {
   align-items: center;
-  background: #f8fafc;
+  background: #ffffff;
   border: 0;
   color: #536277;
   cursor: pointer;
@@ -304,13 +325,14 @@
   font: inherit;
   font-size: 13px;
   gap: 12px;
-  padding: 10px 14px;
+  height: 44px;
+  padding: 0 14px;
   text-align: left;
   width: 100%;
 }
 
-.blockHeader > span:last-child {
-  margin-left: auto;
+.blockChevron {
+  font-size: 16px;
 }
 
 .conditionCount {
@@ -318,12 +340,55 @@
   font-size: 12px;
 }
 
+.compactGroup {
+  min-height: 100px;
+}
+
+.compactConditions {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-height: 100px;
+  padding-bottom: 20px;
+}
+
 .compactRow {
-  grid-template-columns: 30px minmax(0, 1fr) 32px;
+  border: 1px solid #8ab9e5;
+  display: grid;
+  flex: 0 0 202px;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  height: 80px;
+  min-height: 80px;
+  padding: 8px 9px;
+}
+
+.compactRow::before,
+.compactRow .conditionLabel {
+  display: none;
+}
+
+.compactRow .conditionActions {
+  align-self: start;
+  grid-column: 2;
+  grid-row: 1;
+  padding: 0;
+}
+
+.compactRow .conditionActionBtn {
+  color: #438fda;
+  height: 22px;
+  width: 22px;
+}
+
+.compactRow .field {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  padding-right: 22px;
 }
 
 .form button:focus-visible,
-.modeSelector input:focus-visible {
+.modeInput:focus-visible + span {
   outline: 2px solid #1b87e6;
   outline-offset: 2px;
 }
@@ -370,23 +435,31 @@
 .emptyResults { color: #6b7280; font-size: 12px; margin: 0; text-align: right; }
 
 @media (max-width: 960px) {
+  .filterControlsRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .topFilters {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .conditionRow,
-  .compactRow {
+  .modeSelector {
+    align-self: flex-end;
+  }
+
+  .conditionRow:not(.compactRow) {
     grid-template-columns: minmax(0, 1fr);
     padding-left: 16px;
   }
 
-  .conditionLabel {
+  .conditionRow:not(.compactRow) .conditionLabel {
     min-height: auto;
     padding-left: 0;
   }
 
-  .conditionActions {
+  .conditionRow:not(.compactRow) .conditionActions {
     grid-column: auto;
     justify-content: flex-end;
     padding-top: 0;
@@ -406,5 +479,6 @@
     width: 100%;
   }
   .topTrigger { width: 100%; }
-  .modeSelector { gap: 12px; }
+  .modeSelector { align-self: stretch; }
+  .modeOption { flex: 1; min-width: 0; }
 }
