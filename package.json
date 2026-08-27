@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:sharing": "node --test tests/dashboard-sharing.test.mjs",
+    "test:text-ai": "node --test tests/text-ai-segment-filters.test.mjs",
     "postinstall": "node scripts/patch-wick-ui-editor.cjs"
   },
   "dependencies": {

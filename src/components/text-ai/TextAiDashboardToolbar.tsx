@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { StandardLoader } from '@/components/ui/StandardLoader';
@@ -8,6 +8,10 @@ import { useWickUILib } from '@/components/ui/useWickUILib';
 import { TextAiSegmentFilterForm } from '@/components/text-ai/TextAiSegmentFilterForm';
 import {
   createDefaultSegmentFilterState,
+  getTextAiExclusionValidationError,
+  getTextAiSegmentResponseSummary,
+  MOCK_TEXT_AI_FILTER_RESPONSES,
+  normalizeTextAiSegmentFilters,
   type TextAiSegmentFilterState,
 } from '@/data/mock-text-ai-segment-filters';
 import {
@@ -31,6 +35,9 @@ const WuMenuItem = dynamic(
   { ssr: false }
 );
 
+const MOCK_PENDING_RESPONSES = MOCK_TEXT_AI_FILTER_RESPONSES.slice(0, TEXT_AI_PENDING_NEW_COMMENTS)
+  .map((response) => ({ ...response, id: `pending-${response.id}` }));
+
 interface TextAiDashboardToolbarProps {
   name: string;
   onNameChange: (name: string) => void;
@@ -41,7 +48,8 @@ interface TextAiDashboardToolbarProps {
   selectedQuestion: TextAiDashboardQuestion;
   onQuestionChange: (question: TextAiDashboardQuestion) => void;
   segmentFilters?: TextAiSegmentFilterState;
-  onSegmentFiltersChange?: (filters: TextAiSegmentFilterState) => void;
+  processedResponseIds?: string[];
+  onProcessResponses?: (filters: TextAiSegmentFilterState, responseIds: string[]) => void;
 }
 
 export function TextAiDashboardToolbar({
@@ -54,20 +62,25 @@ export function TextAiDashboardToolbar({
   selectedQuestion,
   onQuestionChange,
   segmentFilters,
-  onSegmentFiltersChange,
+  processedResponseIds,
+  onProcessResponses,
 }: TextAiDashboardToolbarProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
   const [nameState, setNameState] = useState(name);
   const [theme, setTheme] = useState<TextAiFilterOption | null>(null);
   const [subtheme, setSubtheme] = useState<TextAiFilterOption | null>(null);
-  const [newCommentsCount, setNewCommentsCount] = useState(TEXT_AI_PENDING_NEW_COMMENTS);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [processModalOpen, setProcessModalOpen] = useState(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
   const [draftSegmentFilters, setDraftSegmentFilters] = useState<TextAiSegmentFilterState>(
     () => segmentFilters ?? createDefaultSegmentFilterState()
   );
+  const pendingResponses = useMemo(() => {
+    const processed = new Set(processedResponseIds ?? []);
+    return MOCK_PENDING_RESPONSES.filter((response) => !processed.has(response.id));
+  }, [processedResponseIds]);
+  const processingSummary = useMemo(() => getTextAiSegmentResponseSummary(draftSegmentFilters, pendingResponses), [draftSegmentFilters, pendingResponses]);
+  const filterError = getTextAiExclusionValidationError(draftSegmentFilters);
   function handleNameBlur(): void {
     const trimmed = nameState.trim();
     if (!trimmed) {
@@ -84,17 +97,16 @@ export function TextAiDashboardToolbar({
   }
 
   function handleSync(): void {
-    if (isSyncing) return;
+    if (!pendingResponses.length) return;
     setDraftSegmentFilters(segmentFilters ?? createDefaultSegmentFilterState());
     setProcessModalOpen(true);
   }
 
   function handleProcessConfirm(): void {
-    if (isSyncing) return;
-    onSegmentFiltersChange?.(draftSegmentFilters);
+    if (filterError || !processingSummary.includedResponses.length) return;
+    onProcessResponses?.(normalizeTextAiSegmentFilters(draftSegmentFilters), processingSummary.includedResponses.map((response) => response.id));
     setProcessModalOpen(false);
-    setNewCommentsCount(0);
-    setIsSyncing(true);
+    showToast({ message: `Prototype processing complete: ${processingSummary.includedResponses.length.toLocaleString()} responses included.`, variant: 'success' });
   }
 
   function isFilterOption(
@@ -274,30 +286,21 @@ export function TextAiDashboardToolbar({
             </div>
           </div>
 
-          {newCommentsCount > 0 || isSyncing ? (
-            <div
+          <div
               className={styles.newCommentsBanner}
               role="status"
-              aria-busy={isSyncing}
               aria-live="polite"
             >
-              {!isSyncing ? (
-                <>
-                  <span className={`wm-error-outline ${styles.newCommentsIcon}`} aria-hidden />
-                  <span className={styles.newCommentsText}>{newCommentsCount} new comments</span>
-                </>
-              ) : (
-                <span className={styles.newCommentsText}>Process in progress</span>
-              )}
+              <span className={styles.newCommentsText}>{pendingResponses.length ? `${pendingResponses.length} new comments` : 'No new comments'}</span>
               <WuButton
                 variant="secondary"
                 size="sm"
                 className={styles.syncBtn}
-                disabled={isSyncing}
+                disabled={!pendingResponses.length}
                 onClick={handleSync}
                 Icon={
                   <span
-                    className={`wm-sync ${isSyncing ? styles.syncIconSpinning : ''}`}
+                    className="wm-sync"
                     aria-hidden
                   />
                 }
@@ -305,7 +308,6 @@ export function TextAiDashboardToolbar({
                 Process now
               </WuButton>
             </div>
-          ) : null}
         </div>
       </header>
 
@@ -316,12 +318,13 @@ export function TextAiDashboardToolbar({
         variant="action"
       >
         <WuModalHeader className={modalStyles.modalTitle}>
-          Filter responses to process
+          Filter and Exclude Responses
         </WuModalHeader>
         <WuModalContent className={createModalStyles.segmentFilterContent}>
           <TextAiSegmentFilterForm
             values={draftSegmentFilters}
             onChange={setDraftSegmentFilters}
+            responses={pendingResponses}
           />
         </WuModalContent>
         <WuModalFooter>
@@ -335,6 +338,7 @@ export function TextAiDashboardToolbar({
             </WuButton>
             <WuButton
               onClick={handleProcessConfirm}
+              disabled={!!filterError || !processingSummary.includedResponses.length}
               Icon={<span className="wm-sync" aria-hidden />}
             >
               Process responses

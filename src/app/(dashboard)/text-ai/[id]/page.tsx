@@ -59,6 +59,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const [segmentFilters, setSegmentFilters] = useState<TextAiSegmentFilterState>(
     () => dashboard?.segmentFilters ?? createDefaultSegmentFilterState()
   );
+  const [processedResponseIds, setProcessedResponseIds] = useState<string[]>(() => dashboard?.processedResponseIds ?? []);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
   const [addedTopicSegmentWidgets, setAddedTopicSegmentWidgets] = useState<
@@ -118,12 +119,15 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
 
   const currentDashboard = dashboard;
 
-  function handleSegmentFiltersChange(nextFilters: TextAiSegmentFilterState): void {
+  function handleProcessResponses(nextFilters: TextAiSegmentFilterState, responseIds: string[]): void {
+    const nextProcessedIds = [...new Set([...processedResponseIds, ...responseIds])];
     setSegmentFilters(nextFilters);
+    setProcessedResponseIds(nextProcessedIds);
     saveRuntimeTextAiDashboard({
       ...currentDashboard,
       name,
       segmentFilters: nextFilters,
+      processedResponseIds: nextProcessedIds,
     });
   }
 
@@ -178,7 +182,8 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         selectedQuestion={selectedQuestion}
         onQuestionChange={setSelectedQuestion}
         segmentFilters={segmentFilters}
-        onSegmentFiltersChange={handleSegmentFiltersChange}
+        processedResponseIds={processedResponseIds}
+        onProcessResponses={handleProcessResponses}
       />
       <TextAiDashboardCanvas
         dashboardId={numericId}

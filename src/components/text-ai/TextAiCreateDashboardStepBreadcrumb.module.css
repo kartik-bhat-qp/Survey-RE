@@ -2,8 +2,8 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  font-size: 14px;
-  gap: 0.25rem;
+  font-size: 13px;
+  gap: 0;
   min-width: 0;
 }
 
@@ -15,7 +15,7 @@
 .separator {
   color: #d1d5db;
   font-size: 12px;
-  margin: 0 2px;
+  margin: 0;
 }
 
 .stepButton {
@@ -25,8 +25,8 @@
   cursor: default;
   display: inline-flex;
   font: inherit;
-  gap: 6px;
-  padding: 2px 4px;
+  gap: 4px;
+  padding: 2px 3px;
 }
 
 .stepActive {
@@ -50,4 +50,10 @@
 
 .stepLabel {
   white-space: nowrap;
+}
+
+@media (min-width: 1000px) {
+  .nav {
+    flex-wrap: nowrap;
+  }
 }

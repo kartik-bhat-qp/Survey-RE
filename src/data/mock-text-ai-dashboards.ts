@@ -37,6 +37,8 @@ export interface TextAiDashboard {
   questions?: TextAiDashboardQuestion[];
   /** Current response filters used for TextAI processing. */
   segmentFilters?: TextAiSegmentFilterState;
+  /** Records already handled by the local Process Now simulation. */
+  processedResponseIds?: string[];
   /** Preferences captured when the dashboard was created. */
   creationPreferences?: TextAiDashboardCreationPreferences;
 }

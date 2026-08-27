@@ -13,7 +13,7 @@ const STEPS: { id: TextAiCreateStep; label: string; icon: string }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: 'wm-dashboard' },
   { id: 'survey', label: 'Survey', icon: 'wm-description' },
   { id: 'model-setup', label: 'Model set up', icon: 'wm-settings' },
-  { id: 'segment', label: 'Segment', icon: 'wm-filter-list' },
+  { id: 'segment', label: 'Filter and Exclude Responses', icon: 'wm-filter-list' },
   { id: 'select-questions', label: 'Select questions', icon: 'wm-chat' },
 ];
 

@@ -19,6 +19,9 @@ import { useWickUILib } from '@/components/ui/useWickUILib';
 import { getDefaultSelectedTextAiQuestionIds } from '@/data/mock-text-ai-questions';
 import {
   createDefaultSegmentFilterState,
+  calculateTextAiSegmentResponseCount,
+  getTextAiExclusionValidationError,
+  normalizeTextAiSegmentFilters,
   type TextAiSegmentFilterState,
 } from '@/data/mock-text-ai-segment-filters';
 import type { TextAiDashboardCreatePayload } from '@/data/text-ai-dashboard-create';
@@ -67,6 +70,8 @@ export function CreateTextAiDashboardModal({
   const [segmentFilters, setSegmentFilters] = useState<TextAiSegmentFilterState>(() =>
     createDefaultSegmentFilterState()
   );
+  const filterError = getTextAiExclusionValidationError(segmentFilters);
+  const eligibleResponseCount = calculateTextAiSegmentResponseCount(segmentFilters);
 
   const resetWizard = useCallback(() => {
     setStep('survey');
@@ -102,11 +107,13 @@ export function CreateTextAiDashboardModal({
   }
 
   function handleSegmentNext(): void {
+    if (filterError || eligibleResponseCount === 0) return;
+    setSegmentFilters(normalizeTextAiSegmentFilters(segmentFilters));
     setStep('select-questions');
   }
 
   function handleFinish(): void {
-    if (!selectedSurvey || !getTrimmedName()) return;
+    if (!selectedSurvey || !getTrimmedName() || filterError || eligibleResponseCount === 0) return;
     if (selectedQuestionIds.length === 0) {
       showToast({ message: 'Select at least one question', variant: 'error' });
       return;
@@ -125,7 +132,7 @@ export function CreateTextAiDashboardModal({
       separateDashboardPerQuestion:
         separateDashboardPerQuestion && selectedQuestionIds.length > 1,
       expertReviewRequested: modelSetup.expertReviewRequested,
-      segmentFilters,
+      segmentFilters: normalizeTextAiSegmentFilters(segmentFilters),
     });
     handleOpenChange(false);
   }
@@ -178,7 +185,7 @@ export function CreateTextAiDashboardModal({
   const { WuModal, WuModalHeader, WuModalContent, WuModalFooter } = wick;
   const modalTitle =
     step === 'segment'
-      ? 'Filter the data you want to analyze'
+      ? 'Filter and Exclude Responses'
       : step === 'model-setup' || step === 'select-questions'
         ? 'Create TextAI dashboard'
         : 'Create dashboard';
@@ -259,7 +266,7 @@ export function CreateTextAiDashboardModal({
                   <WuButton onClick={handleModelSetupNext}>Next</WuButton>
                 )}
                 {step === 'segment' && (
-                  <WuButton onClick={handleSegmentNext}>Next</WuButton>
+                  <WuButton onClick={handleSegmentNext} disabled={!!filterError || eligibleResponseCount === 0}>Next</WuButton>
                 )}
                 {step === 'select-questions' && (
                   <WuButton onClick={handleFinish}>{createButtonLabel}</WuButton>

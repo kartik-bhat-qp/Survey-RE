@@ -16,6 +16,7 @@ import {
 import { saveRuntimeTextAiDashboard } from '@/data/text-ai-dashboard-runtime';
 import type { TextAiDashboardCreatePayload } from '@/data/text-ai-dashboard-create';
 import { getTextAiQuestionById } from '@/data/mock-text-ai-questions';
+import { getTextAiResponseExclusions } from '@/data/mock-text-ai-segment-filters';
 import { formatSmartDate, formatTextAiCredits } from '@/data/mock-utils';
 import styles from './TextAiDashboards.module.css';
 
@@ -258,7 +259,8 @@ export default function TextAiPage() {
     }
 
     const appliedSegmentFilters =
-      segmentFilters.criteriaGroups.length > 0 || segmentFilters.dateRangeLabel;
+      segmentFilters.criteriaGroups.length > 0 || segmentFilters.dateRangeLabel ||
+      getTextAiResponseExclusions(segmentFilters).minimumCharactersEnabled || getTextAiResponseExclusions(segmentFilters).exactResponsesEnabled;
     if (appliedSegmentFilters) {
       showToast({
         message: 'Segment filters applied to the selected responses',
