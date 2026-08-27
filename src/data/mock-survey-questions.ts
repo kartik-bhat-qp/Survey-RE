@@ -2,6 +2,7 @@ export type SurveyQuestionType =
   | 'Single Select'
   | 'Multiple Select'
   | 'Matrix Uni choice'
+  | 'Flex Matrix'
   | 'Text'
   | 'NPS'
   | 'Rank order';
@@ -118,6 +119,13 @@ const DEMO_QUESTIONS: Omit<SurveyQuestion, 'id' | 'surveyId'>[] = [
     type: 'Single Select',
     options: ['Maharashtra', 'Karnataka', 'Delhi', 'Tamil Nadu', 'West Bengal'],
   },
+  {
+    code: 'Q13',
+    text: 'How would you rate the following product attributes?',
+    type: 'Flex Matrix',
+    matrixRows: ['Product Packaging', 'On-Time Arrival', 'Price'],
+    options: ['Column 1', 'Column 2'],
+  },
 ];
 
 function buildQuestionsForSurvey(surveyId: number): SurveyQuestion[] {
@@ -195,4 +203,155 @@ export function resolvePickerSelection(question: SurveyQuestion): {
     question: parent,
     rowLabel: question.text,
   };
+}
+
+const SKIP_EDITOR_KINDS = new Set([
+  'presentation',
+  'section-heading',
+  'section-subheading',
+]);
+
+const TEXT_EDITOR_TYPE_IDS = new Set([
+  'comment-box',
+  'single-row',
+  'email',
+  'contact',
+]);
+
+const CLOSED_ENDED_FLEX_COLUMN_TYPES = new Set([
+  'radio',
+  'checkbox',
+  'dropdown',
+  'rating-scale',
+  'rank-order',
+]);
+
+/** Minimal editor-question shape used when mapping workspace questions into criteria. */
+export interface EditorQuestionForCriteria {
+  id: string;
+  code: string;
+  text: string;
+  kind?: string;
+  addQuestionTypeId?: string;
+  inputKind?: string;
+  options: { label: string }[];
+  matrix?: {
+    rows: { label: string }[];
+    columns: { label: string; cellType?: string; options?: string[] }[];
+  };
+}
+
+function toPlainLabel(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function stableNumericId(id: string, fallback: number): number {
+  let hash = 2166136261;
+  for (let i = 0; i < id.length; i += 1) {
+    hash ^= id.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  const numeric = hash >>> 0;
+  return numeric === 0 ? fallback : numeric;
+}
+
+function criteriaTypeFromEditor(question: EditorQuestionForCriteria): SurveyQuestionType {
+  const typeId = question.addQuestionTypeId;
+  if (question.kind === 'flex-matrix' || typeId === 'flex-matrix') return 'Flex Matrix';
+  if (
+    question.kind === 'multi-point-scales' ||
+    question.kind === 'matrix-multi-select' ||
+    question.kind === 'matrix-spreadsheet' ||
+    question.kind === 'image-chooser-rating'
+  ) {
+    return 'Matrix Uni choice';
+  }
+  if (question.kind === 'nps' || typeId === 'nps') return 'NPS';
+  if (question.kind === 'rank-order' || typeId === 'rank-order') return 'Rank order';
+  if (
+    question.kind === 'multi-select' ||
+    question.inputKind === 'checkbox' ||
+    typeId === 'select-many' ||
+    typeId === 'image-select-many'
+  ) {
+    return 'Multiple Select';
+  }
+  if (TEXT_EDITOR_TYPE_IDS.has(typeId ?? '')) return 'Text';
+  return 'Single Select';
+}
+
+function criteriaOptionsFromEditor(
+  question: EditorQuestionForCriteria,
+  type: SurveyQuestionType
+): string[] | undefined {
+  if (type === 'Flex Matrix') {
+    const columns = question.matrix?.columns ?? [];
+    const closedEnded = columns.filter((column) =>
+      CLOSED_ENDED_FLEX_COLUMN_TYPES.has(column.cellType ?? 'text')
+    );
+    const labels = closedEnded
+      .map((column) => toPlainLabel(column.label))
+      .filter(Boolean);
+    if (labels.length > 0) return labels;
+    const rowLabels = (question.matrix?.rows ?? [])
+      .map((row) => toPlainLabel(row.label))
+      .filter(Boolean);
+    return rowLabels.length > 0 ? rowLabels : undefined;
+  }
+
+  if (type === 'Matrix Uni choice') {
+    const columnLabels = (question.matrix?.columns ?? [])
+      .map((column) => toPlainLabel(column.label))
+      .filter(Boolean);
+    if (columnLabels.length > 0) return columnLabels;
+  }
+
+  if (type === 'NPS') {
+    return ['0-6 (Detractors)', '7-8 (Passives)', '9-10 (Promoters)'];
+  }
+
+  const optionLabels = question.options.map((option) => toPlainLabel(option.label)).filter(Boolean);
+  return optionLabels.length > 0 ? optionLabels : undefined;
+}
+
+function isCriteriaEligibleEditorQuestion(question: EditorQuestionForCriteria): boolean {
+  return !SKIP_EDITOR_KINDS.has(question.kind ?? '');
+}
+
+export function isEditorQuestionForCriteria(
+  question: EditorQuestionForCriteria
+): boolean {
+  return isCriteriaEligibleEditorQuestion(question);
+}
+
+/**
+ * Map workspace editor questions into the criteria-engine question catalog
+ * so types like Flex Matrix appear when creating criteria.
+ */
+export function toCriteriaQuestionsFromEditor(
+  surveyId: number,
+  questions: EditorQuestionForCriteria[]
+): SurveyQuestion[] {
+  return questions.filter(isCriteriaEligibleEditorQuestion).map((question, index) => {
+    const type = criteriaTypeFromEditor(question);
+    const matrixRows = (question.matrix?.rows ?? [])
+      .map((row) => toPlainLabel(row.label))
+      .filter(Boolean);
+    return {
+      id: stableNumericId(question.id, index + 1),
+      surveyId,
+      code: question.code,
+      text: toPlainLabel(question.text) || question.code,
+      type,
+      ...(matrixRows.length > 0 ? { matrixRows } : {}),
+      options: criteriaOptionsFromEditor(question, type),
+    };
+  });
 }

@@ -232,6 +232,7 @@ export function QuestionLogicModal({
           <ShowHideOptionsLogicPanel
             state={state.showHideOptions}
             question={question}
+            allQuestions={allQuestions}
             surveyId={surveyId}
             onChange={(showHideOptions) => setState((prev) => ({ ...prev, showHideOptions }))}
           />
@@ -239,6 +240,7 @@ export function QuestionLogicModal({
           <CompoundBranchingLogicPanel
             state={state.compoundBranching}
             question={question}
+            allQuestions={allQuestions}
             surveyId={surveyId}
             onChange={(compoundBranching) =>
               setState((prev) => ({ ...prev, compoundBranching }))

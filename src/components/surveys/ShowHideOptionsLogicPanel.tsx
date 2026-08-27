@@ -3,7 +3,10 @@
 import { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import type { SurveyQuestion as EditorSurveyQuestion } from '@/data/mock-survey-detail';
-import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
+import {
+  getQuestionsBySurvey,
+  toCriteriaQuestionsFromEditor,
+} from '@/data/mock-survey-questions';
 import {
   findBranchTargetOption,
   getUncoveredOptionIds,
@@ -39,6 +42,7 @@ const DEFAULT_VISIBILITY_DEPRECATION_TOOLTIP =
 interface ShowHideOptionsLogicPanelProps {
   state: ShowHideOptionsState;
   question: EditorSurveyQuestion;
+  allQuestions: EditorSurveyQuestion[];
   surveyId: number;
   onChange: (next: ShowHideOptionsState) => void;
 }
@@ -50,13 +54,15 @@ function isShowHideCriterion(criterion: Criterion): criterion is ShowHideOptions
 export function ShowHideOptionsLogicPanel({
   state,
   question,
+  allQuestions,
   surveyId,
   onChange,
 }: ShowHideOptionsLogicPanelProps) {
-  const surveyQuestions = useMemo(
-    () => getQuestionsBySurvey(surveyId).filter((q) => q.parentQuestionId === undefined),
-    [surveyId]
-  );
+  const surveyQuestions = useMemo(() => {
+    const fromEditor = toCriteriaQuestionsFromEditor(surveyId, allQuestions);
+    const catalog = fromEditor.length > 0 ? fromEditor : getQuestionsBySurvey(surveyId);
+    return catalog.filter((item) => item.parentQuestionId === undefined);
+  }, [allQuestions, surveyId]);
   const optionTargets = useMemo(
     () =>
       question.options.map((option) => ({

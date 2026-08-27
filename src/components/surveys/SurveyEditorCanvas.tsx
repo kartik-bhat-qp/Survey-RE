@@ -2484,6 +2484,26 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     [updateQuestionMatrix]
   );
 
+  const handleToggleFlexMatrixColumnExcludeFromValidation = useCallback(
+    (sectionId: string, questionId: string, columnId: string) => {
+      const column = sections
+        .find((section) => section.id === sectionId)
+        ?.questions.find((item) => item.id === questionId)
+        ?.matrix?.columns.find((item) => item.id === columnId);
+      const nextExcluded = !column?.excludeFromValidation;
+      updateQuestionMatrix(sectionId, questionId, (matrix) => ({
+        ...matrix,
+        columns: matrix.columns.map((item) =>
+          item.id === columnId ? { ...item, excludeFromValidation: nextExcluded } : item
+        ),
+      }));
+      toast(
+        nextExcluded ? 'Column excluded from validation' : 'Column included in validation'
+      );
+    },
+    [sections, toast, updateQuestionMatrix]
+  );
+
   const handleBulkEditMatrixSave = useCallback(
     (lines: string[]) => {
       if (!bulkEditMatrixTarget) return;
@@ -5013,6 +5033,12 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 matrix={question.matrix}
                                 sectionId={section.id}
                                 showHideOptionsApplied={showHideOptionsApplied}
+                                forceResponseValidation={
+                                  getQuestionValidation(
+                                    question,
+                                    `${section.id}:${question.id}`
+                                  ).validationType === 'force-response'
+                                }
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -5033,6 +5059,9 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 onAddColumn={handleAddFlexMatrixColumn}
                                 onRemoveColumn={handleRemoveFlexMatrixColumn}
                                 onColumnOptionsChange={handleFlexMatrixColumnOptionsChange}
+                                onToggleExcludeFromValidation={
+                                  handleToggleFlexMatrixColumnExcludeFromValidation
+                                }
                                 onBulkEditRows={(secId, qId) =>
                                   setBulkEditMatrixTarget({
                                     sectionId: secId,

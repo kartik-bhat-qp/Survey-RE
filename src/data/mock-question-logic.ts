@@ -366,13 +366,13 @@ export function isCompoundBranchJumpType(value: string): value is CompoundBranch
   return COMPOUND_BRANCH_JUMP_TYPE_OPTIONS.some((option) => option.value === value);
 }
 
-export const COMPOUND_BRANCH_CUSTOM_VARIABLE_OPTIONS: BranchTargetOption[] = Array.from(
-  { length: 20 },
-  (_, index) => ({
+export const COMPOUND_BRANCH_CUSTOM_VARIABLE_OPTIONS: BranchTargetOption[] = [
+  SELECT_PLACEHOLDER,
+  ...Array.from({ length: 20 }, (_, index) => ({
     value: `Custom ${index + 1}`,
     label: `Custom ${index + 1}`,
-  })
-);
+  })),
+];
 
 export const COMPOUND_BRANCH_CUSTOM_VARIABLE_VALUE_OPTIONS: BranchTargetOption[] = [
   SELECT_PLACEHOLDER,

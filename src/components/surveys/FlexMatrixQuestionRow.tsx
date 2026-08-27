@@ -15,6 +15,7 @@ import {
   FLEX_MATRIX_NUMERIC_SLIDER_MIN,
   FLEX_MATRIX_TEXT_PLACEHOLDER,
   RANK_ORDER_SELECT_PLACEHOLDER,
+  flexMatrixColumnSupportsValidationExclusion,
   resolveFlexMatrixCellType,
   resolveFlexMatrixColumnOptions,
 } from '@/data/mock-survey-detail';
@@ -270,6 +271,8 @@ export interface FlexMatrixQuestionRowProps {
   matrix: SurveyMatrix;
   sectionId: string;
   showHideOptionsApplied?: boolean;
+  /** Column exclude option is only available when validation is Force Response. */
+  forceResponseValidation?: boolean;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -297,6 +300,11 @@ export interface FlexMatrixQuestionRowProps {
     columnId: string,
     options: string[]
   ) => void;
+  onToggleExcludeFromValidation: (
+    sectionId: string,
+    questionId: string,
+    columnId: string
+  ) => void;
   onBulkEditRows: (sectionId: string, questionId: string) => void;
 }
 
@@ -305,6 +313,7 @@ export function FlexMatrixQuestionRow({
   matrix,
   sectionId,
   showHideOptionsApplied = false,
+  forceResponseValidation = false,
   onAction,
   onMenuAction,
   onOpenLogic,
@@ -317,6 +326,7 @@ export function FlexMatrixQuestionRow({
   onAddColumn,
   onRemoveColumn,
   onColumnOptionsChange,
+  onToggleExcludeFromValidation,
   onBulkEditRows,
 }: FlexMatrixQuestionRowProps) {
   const matrixGridStyle = {
@@ -374,7 +384,11 @@ export function FlexMatrixQuestionRow({
             <div className={`${styles.matrixRowLine} ${styles.matrixHeaderRow}`}>
               <span className={styles.rowLabelSpacer} aria-hidden />
               {matrix.columns.map((column) => {
-                const isRatingScale = resolveFlexMatrixCellType(column) === 'rating-scale';
+                const cellType = resolveFlexMatrixCellType(column);
+                const isRatingScale = cellType === 'rating-scale';
+                const canExcludeFromValidation =
+                  forceResponseValidation &&
+                  flexMatrixColumnSupportsValidationExclusion(cellType);
                 const scaleOptions = isRatingScale
                   ? resolveFlexMatrixColumnOptions(column)
                   : [];
@@ -408,16 +422,43 @@ export function FlexMatrixQuestionRow({
                         align="start"
                         modal={false}
                       >
+                        {canExcludeFromValidation ? (
+                          <WuMenuItem
+                            onSelect={(event) => {
+                              event.preventDefault();
+                              onToggleExcludeFromValidation(
+                                sectionId,
+                                question.id,
+                                column.id
+                              );
+                            }}
+                          >
+                            <span className={styles.columnMenuItem}>
+                              <span
+                                className={
+                                  column.excludeFromValidation
+                                    ? 'wm-check-box'
+                                    : 'wm-check-box-outline-blank'
+                                }
+                                aria-hidden
+                              />
+                              Exclude for validation
+                            </span>
+                          </WuMenuItem>
+                        ) : null}
                         <WuMenuItem
                           onSelect={() => onRemoveColumn(sectionId, question.id, column.id)}
                         >
-                          <span className={styles.removeColumnItem}>
+                          <span className={styles.columnMenuItem}>
                             <span className="wm-delete" aria-hidden />
                             Remove Column
                           </span>
                         </WuMenuItem>
                       </WuMenu>
                     </div>
+                    {column.excludeFromValidation && canExcludeFromValidation ? (
+                      <span className={styles.excludedHint}>Excluded from validation</span>
+                    ) : null}
                     {isRatingScale ? (
                       <div
                         className={styles.ratingScalePoints}

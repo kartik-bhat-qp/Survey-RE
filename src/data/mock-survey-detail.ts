@@ -378,6 +378,8 @@ export interface SurveyMatrixColumn {
   cellType?: FlexMatrixCellType;
   /** Answer choices for Drop-down Menu (and similar) columns. */
   options?: string[];
+  /** Text/numeric columns can skip force/request response validation. */
+  excludeFromValidation?: boolean;
 }
 
 export interface SurveyMatrixRow {
@@ -782,6 +784,12 @@ const DEFAULT_FLEX_MATRIX_COLUMNS: { label: string; cellType: FlexMatrixCellType
 
 export function resolveFlexMatrixCellType(column: SurveyMatrixColumn): FlexMatrixCellType {
   return column.cellType ?? 'text';
+}
+
+export function flexMatrixColumnSupportsValidationExclusion(
+  cellType: FlexMatrixCellType
+): boolean {
+  return cellType === 'text' || cellType === 'numeric';
 }
 
 export function defaultFlexMatrixColumnLabel(

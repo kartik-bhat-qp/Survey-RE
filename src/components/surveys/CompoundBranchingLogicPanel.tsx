@@ -3,7 +3,11 @@
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { SurveyQuestion as EditorSurveyQuestion } from '@/data/mock-survey-detail';
-import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
+import {
+  getQuestionsBySurvey,
+  isEditorQuestionForCriteria,
+  toCriteriaQuestionsFromEditor,
+} from '@/data/mock-survey-questions';
 import {
   COMPOUND_BRANCH_CUSTOM_VARIABLE_OPTIONS,
   COMPOUND_BRANCH_CUSTOM_VARIABLE_VALUE_OPTIONS,
@@ -34,6 +38,7 @@ const WuMenuItem = dynamic(
 interface CompoundBranchingLogicPanelProps {
   state: CompoundBranchingState;
   question: EditorSurveyQuestion;
+  allQuestions: EditorSurveyQuestion[];
   surveyId: number;
   onChange: (next: CompoundBranchingState) => void;
 }
@@ -98,25 +103,27 @@ function CustomVariableValueMenu({
 export function CompoundBranchingLogicPanel({
   state,
   question,
+  allQuestions,
   surveyId,
   onChange,
 }: CompoundBranchingLogicPanelProps) {
-  const surveyQuestions = useMemo(
-    () => getQuestionsBySurvey(surveyId).filter((q) => q.parentQuestionId === undefined),
-    [surveyId]
-  );
+  const surveyQuestions = useMemo(() => {
+    const fromEditor = toCriteriaQuestionsFromEditor(surveyId, allQuestions);
+    const catalog = fromEditor.length > 0 ? fromEditor : getQuestionsBySurvey(surveyId);
+    return catalog.filter((item) => item.parentQuestionId === undefined);
+  }, [allQuestions, surveyId]);
 
   const questionJumpTargets = useMemo(
     () => [
       NO_BRANCHING_OPTION,
-      ...surveyQuestions
-        .filter((item) => String(item.id) !== question.id && item.code !== question.code)
+      ...allQuestions
+        .filter((item) => item.id !== question.id && isEditorQuestionForCriteria(item))
         .map((item, index) => ({
-          value: String(item.id),
+          value: item.id,
           label: `${index + 1}. [${item.code}] ${plainTextFromRichValue(item.text)}`,
         })),
     ],
-    [surveyQuestions, question.id, question.code]
+    [allQuestions, question.id]
   );
 
   const selectedDefaultJump =

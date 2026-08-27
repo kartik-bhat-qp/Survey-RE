@@ -130,16 +130,14 @@
   font-size: 1rem;
   height: 1.25rem;
   justify-content: center;
-  opacity: 0;
   padding: 0;
-  pointer-events: none;
   width: 1.25rem;
 }
 
+.columnHeaderTop:hover .columnMenuBtn,
 .columnHeaderTop:focus-within .columnMenuBtn,
 .columnMenuBtn[data-state='open'] {
-  opacity: 1;
-  pointer-events: auto;
+  color: #64748b;
 }
 
 .columnMenuBtn:hover {
@@ -147,15 +145,26 @@
   color: #475569;
 }
 
-.removeColumnItem {
+.columnMenuItem {
   align-items: center;
   display: inline-flex;
   gap: 0.5rem;
 }
 
-.removeColumnItem :global(.wm-delete) {
+.columnMenuItem :global(.wm-delete),
+.columnMenuItem :global(.wm-check-box),
+.columnMenuItem :global(.wm-check-box-outline-blank) {
   font-size: 1rem;
   line-height: 1;
+}
+
+.excludedHint {
+  color: #64748b;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .cell {

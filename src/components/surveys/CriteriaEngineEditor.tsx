@@ -528,7 +528,7 @@ export function CriteriaEngineEditor({
                           onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                             handleUpdateCriterionName(criterion.id, event.target.value)
                           }
-                          className={styles.criterionNameInput}
+                          className={`${styles.criterionNameInput} ${styles.criterionNameInputCompact}`}
                         />
                       ) : (
                         <WuMenu
