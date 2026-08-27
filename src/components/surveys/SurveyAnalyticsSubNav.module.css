@@ -122,16 +122,6 @@
   z-index: 40;
 }
 
-/*
- * Global WuMenu cap is 18rem (~9 items). Analysis has 20 options;
- * use the remaining viewport so the full list is visible.
- */
-:global([data-radix-popper-content-wrapper]:has(.analytics-subnav-menu)),
-:global([data-radix-popper-content-wrapper]:has(.analytics-subnav-menu) > *),
-:global([data-radix-popper-content-wrapper]:has(.analytics-subnav-menu) [role='menu']) {
-  max-height: var(--radix-popper-available-height, 70vh) !important;
-}
-
 .tabMenuItem,
 .tabMenuItemActive {
   font-family: 'Fira Sans', sans-serif;
