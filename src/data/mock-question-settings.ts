@@ -116,7 +116,7 @@ export function normalizeRandomizeAnswerCount(
 export const QUESTION_DISPLAY_OPTIONS = [
   { value: 'show-question' as const, label: 'Show Question' },
   { value: 'hide-question' as const, label: 'Hide Question' },
-  { value: 'hide-after-answering' as const, label: 'Hide after answering' },
+  { value: 'hide-after-answering' as const, label: 'Hide question and auto submit' },
 ];
 
 export function getQuestionDisplayOptions(
