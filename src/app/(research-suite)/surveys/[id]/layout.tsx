@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { SurveyAnalyticsSubNav } from '@/components/surveys/SurveyAnalyticsSubNav';
 import { SurveyAnalyticsViewProvider } from '@/components/surveys/SurveyAnalyticsViewContext';
@@ -18,6 +18,14 @@ import { readVideoAiReturnState } from '@/components/video-ai/videoAiNavigation'
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useSurveyById } from '@/hooks/useSurveyById';
 import styles from './SurveyEditorPage.module.css';
+
+function SurveyEditorPhaseTabsSlot() {
+  return (
+    <Suspense fallback={null}>
+      <SurveyEditorPhaseTabs />
+    </Suspense>
+  );
+}
 
 function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
   const params = useParams();
@@ -70,7 +78,7 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
   if (!ready) {
     return (
       <div className={styles.page}>
-        <SurveyEditorPhaseTabs />
+        <SurveyEditorPhaseTabsSlot />
         <SurveyEditorWorkspaceToolbar surveyId={surveyId} />
         <div className={styles.loadingShell} aria-busy="true" aria-hidden />
       </div>
@@ -95,7 +103,7 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={styles.page}>
-      <SurveyEditorPhaseTabs />
+      <SurveyEditorPhaseTabsSlot />
       {showAnalytics ? (
         <SurveyAnalyticsSubNav />
       ) : showAnalytics2 ? null : showDistribute ? (

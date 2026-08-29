@@ -1,6 +1,6 @@
 'use client';
 
-import type { SyntheticEvent } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import type { SurveyQuestion } from '@/data/mock-survey-detail';
 import { DEFAULT_COMMENT_BOX_ANSWER_PLACEHOLDER } from '@/data/mock-survey-detail';
 import { CommentBoxQuestionPreview } from '@/components/surveys/CommentBoxQuestionPreview';
@@ -8,6 +8,8 @@ import { QuestionRichTextField } from '@/components/surveys/QuestionRichTextFiel
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
+import { VoiceAnswerField } from '@/components/ui/VoiceAnswerField';
+import { emptyVoiceAnswer, type VoiceAnswerValue } from '@/data/mock-voice-answer';
 import styles from './CommentBoxQuestionRow.module.css';
 
 function stopQuestionEvent(event: SyntheticEvent): void {
@@ -21,6 +23,8 @@ export interface CommentBoxQuestionRowProps {
   dynamicTextCommentsApplied?: boolean;
   extractionApplied?: boolean;
   quotaControlApplied?: boolean;
+  /** Live speech-to-text into the answer field (Audio Input survey). */
+  enableLiveDictation?: boolean;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -37,6 +41,7 @@ export function CommentBoxQuestionRow({
   dynamicTextCommentsApplied = false,
   extractionApplied = false,
   quotaControlApplied = false,
+  enableLiveDictation = false,
   onAction,
   onMenuAction,
   onOpenLogic,
@@ -45,6 +50,8 @@ export function CommentBoxQuestionRow({
   onAddAnswerRow,
   onQuestionTextChange,
 }: CommentBoxQuestionRowProps) {
+  const [dictationValue, setDictationValue] = useState<VoiceAnswerValue>(emptyVoiceAnswer());
+
   return (
     <article className={styles.root}>
       <div className="commentBoxCard">
@@ -71,8 +78,17 @@ export function CommentBoxQuestionRow({
               onPointerDown={stopQuestionEvent}
             />
           </div>
-          <div className={styles.answerWrap}>
-            <CommentBoxQuestionPreview placeholder={DEFAULT_COMMENT_BOX_ANSWER_PLACEHOLDER} />
+          <div className={styles.answerWrap} onPointerDown={stopQuestionEvent}>
+            {enableLiveDictation ? (
+              <VoiceAnswerField
+                mode="dictation"
+                value={dictationValue}
+                onChange={setDictationValue}
+                placeholder="Type your answer here…"
+              />
+            ) : (
+              <CommentBoxQuestionPreview placeholder={DEFAULT_COMMENT_BOX_ANSWER_PLACEHOLDER} />
+            )}
             <button
               type="button"
               className={styles.addRowBtn}

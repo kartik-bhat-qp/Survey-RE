@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
+import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
   buildWaveformBars,
   deriveVoiceAnswerInputType,
@@ -24,6 +25,8 @@ const LIVE_BAR_COUNT = 24;
 
 type FieldPhase = 'empty' | 'recording' | 'recorded';
 
+export type VoiceAnswerFieldMode = 'voice-clip' | 'dictation';
+
 export interface VoiceAnswerFieldProps {
   value?: VoiceAnswerValue;
   onChange?: (value: VoiceAnswerValue) => void;
@@ -39,6 +42,307 @@ export interface VoiceAnswerFieldProps {
   compact?: boolean;
   /** Hide field border when nested inside another bordered card. */
   embedded?: boolean;
+  /**
+   * `voice-clip` — record, store audio, then batch-transcribe (default).
+   * `dictation` — live speech-to-text into the text field (no audio file).
+   */
+  mode?: VoiceAnswerFieldMode;
+}
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: { error?: string }) => void) | null;
+  onend: (() => void) | null;
+};
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: ArrayLike<{
+    isFinal: boolean;
+    0: { transcript: string };
+  }>;
+};
+
+function getSpeechRecognitionConstructor():
+  | (new () => SpeechRecognitionLike)
+  | null {
+  if (typeof window === 'undefined') return null;
+  const w = window as Window & {
+    SpeechRecognition?: new () => SpeechRecognitionLike;
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+  };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+}
+
+function DictationAnswerField({
+  value,
+  onChange,
+  placeholder = 'Type your answer here…',
+  onSubmit,
+  disabled = false,
+  className = '',
+  compact = false,
+  embedded = false,
+}: Omit<VoiceAnswerFieldProps, 'mode' | 'captionPlaceholder'>) {
+  const { showToast } = useWuShowToast();
+  const [focused, setFocused] = useState(false);
+  const [text, setText] = useState(value?.textResponse ?? '');
+  const [listening, setListening] = useState(false);
+  const [interim, setInterim] = useState('');
+
+  const textRef = useRef<HTMLTextAreaElement>(null);
+  const prefixRef = useRef(value?.textResponse ?? '');
+  const finalsRef = useRef('');
+  const interimRef = useRef('');
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const listeningRef = useRef(false);
+
+  function joinParts(...parts: string[]): string {
+    return parts
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .join(' ');
+  }
+
+  function publish(finalized: string, interimText: string): void {
+    const committed = joinParts(prefixRef.current, finalized);
+    const visible = joinParts(committed, interimText);
+    interimRef.current = interimText;
+    setText(committed);
+    setInterim(interimText);
+    onChange?.({
+      ...emptyVoiceAnswer(),
+      textResponse: visible || undefined,
+      inputType: visible.trim() ? 'text' : 'empty',
+    });
+    requestAnimationFrame(() => {
+      const el = textRef.current;
+      if (!el) return;
+      if (!compact) {
+        el.style.height = 'auto';
+        el.style.height = `${Math.max(el.scrollHeight, 96)}px`;
+      }
+      el.scrollTop = el.scrollHeight;
+    });
+  }
+
+  function setTypedText(next: string): void {
+    prefixRef.current = next;
+    finalsRef.current = '';
+    interimRef.current = '';
+    setText(next);
+    setInterim('');
+    onChange?.({
+      ...emptyVoiceAnswer(),
+      textResponse: next || undefined,
+      inputType: next.trim() ? 'text' : 'empty',
+    });
+  }
+
+  function stopRecognition(): void {
+    const recognition = recognitionRef.current;
+    recognitionRef.current = null;
+    if (!recognition) return;
+    recognition.onresult = null;
+    recognition.onerror = null;
+    recognition.onend = null;
+    try {
+      recognition.stop();
+    } catch {
+      try {
+        recognition.abort();
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  function endListening(): void {
+    const committed = joinParts(prefixRef.current, finalsRef.current, interimRef.current);
+    prefixRef.current = committed;
+    finalsRef.current = '';
+    interimRef.current = '';
+    listeningRef.current = false;
+    stopRecognition();
+    setListening(false);
+    setInterim('');
+    setText(committed);
+    onChange?.({
+      ...emptyVoiceAnswer(),
+      textResponse: committed || undefined,
+      inputType: committed.trim() ? 'text' : 'empty',
+    });
+  }
+
+  useEffect(() => {
+    return () => {
+      listeningRef.current = false;
+      stopRecognition();
+    };
+  }, []);
+
+  function startDictation(): void {
+    if (disabled || listeningRef.current) return;
+
+    const Ctor = getSpeechRecognitionConstructor();
+    if (!Ctor) {
+      showToast({
+        message: 'Speech recognition is not supported in this browser',
+        variant: 'error',
+      });
+      return;
+    }
+
+    // MDN-style: start recognition immediately — words stream into the field.
+    prefixRef.current = text;
+    finalsRef.current = '';
+    interimRef.current = '';
+    setInterim('');
+    listeningRef.current = true;
+    setListening(true);
+
+    const recognition = new Ctor();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang =
+      typeof navigator !== 'undefined' ? navigator.language || 'en-US' : 'en-US';
+    recognitionRef.current = recognition;
+
+    recognition.onresult = (event) => {
+      if (!listeningRef.current) return;
+
+      let nextFinals = finalsRef.current;
+      let interimTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        const piece = result[0]?.transcript ?? '';
+        if (!piece) continue;
+        if (result.isFinal) nextFinals += `${piece} `;
+        else interimTranscript += piece;
+      }
+
+      finalsRef.current = nextFinals;
+      publish(nextFinals, interimTranscript);
+    };
+
+    recognition.onerror = (event) => {
+      if (!listeningRef.current) return;
+      const code = event.error ?? '';
+      if (code === 'no-speech' || code === 'aborted' || code === 'audio-capture') return;
+      endListening();
+    };
+
+    recognition.onend = () => {
+      if (!listeningRef.current) return;
+      prefixRef.current = joinParts(prefixRef.current, finalsRef.current);
+      finalsRef.current = '';
+      interimRef.current = '';
+      setText(prefixRef.current);
+      setInterim('');
+      try {
+        recognition.start();
+      } catch {
+        endListening();
+      }
+    };
+
+    try {
+      recognition.start();
+    } catch {
+      listeningRef.current = false;
+      setListening(false);
+    }
+  }
+
+  function stopDictation(): void {
+    if (!listeningRef.current) return;
+    endListening();
+  }
+
+  function handleTextChange(next: string): void {
+    if (listening) stopDictation();
+    setTypedText(next);
+  }
+
+  function handleSubmit(): void {
+    const visible = joinParts(text, interim);
+    const payload: VoiceAnswerValue = {
+      ...emptyVoiceAnswer(),
+      textResponse: visible || undefined,
+    };
+    payload.inputType = deriveVoiceAnswerInputType(payload);
+    if (!isVoiceAnswerSubmittable(payload)) return;
+    onSubmit?.(payload);
+  }
+
+  const displayText = interim ? joinParts(text, interim) : text;
+
+  const rootClass = [
+    styles.field,
+    embedded ? styles.fieldEmbedded : '',
+    focused && !embedded ? styles.fieldFocused : '',
+    disabled ? styles.fieldDisabled : '',
+    listening ? styles.fieldDictating : '',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return (
+    <div className={rootClass} data-phase={listening ? 'dictating' : 'empty'}>
+      <div className={styles.emptyRow}>
+        <textarea
+          ref={textRef}
+          className={styles.textInput}
+          value={displayText}
+          placeholder={listening ? '' : placeholder}
+          rows={compact ? 1 : 4}
+          disabled={disabled}
+          readOnly={listening}
+          aria-label="Your answer"
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          onChange={(e) => handleTextChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (compact && e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
+        />
+        <WuTooltip content={listening ? 'Stop listening' : 'Start voice typing'}>
+          <button
+            type="button"
+            className={[styles.micBtn, listening ? styles.micBtnListening : '']
+              .filter(Boolean)
+              .join(' ')}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (listening) stopDictation();
+              else startDictation();
+            }}
+            disabled={disabled}
+            aria-label={listening ? 'Stop listening' : 'Start voice typing'}
+            aria-pressed={listening}
+          >
+            <span className={listening ? 'wm-stop-circle' : 'wm-mic'} aria-hidden />
+          </button>
+        </WuTooltip>
+      </div>
+      {listening ? (
+        <p className={styles.dictationHint} aria-live="polite">
+          Listening…
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 export function VoiceAnswerField({
@@ -51,10 +355,50 @@ export function VoiceAnswerField({
   className = '',
   compact = false,
   embedded = false,
+  mode = 'voice-clip',
 }: VoiceAnswerFieldProps) {
-  const [phase, setPhase] = useState<FieldPhase>(
-    value?.audioUrl ? 'recorded' : 'empty'
+  if (mode === 'dictation') {
+    return (
+      <DictationAnswerField
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        onSubmit={onSubmit}
+        disabled={disabled}
+        className={className}
+        compact={compact}
+        embedded={embedded}
+      />
+    );
+  }
+
+  return (
+    <VoiceClipAnswerField
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      captionPlaceholder={captionPlaceholder}
+      onSubmit={onSubmit}
+      disabled={disabled}
+      className={className}
+      compact={compact}
+      embedded={embedded}
+    />
   );
+}
+
+function VoiceClipAnswerField({
+  value,
+  onChange,
+  placeholder = 'Type your answer here…',
+  captionPlaceholder = 'Add a note, or tap send',
+  onSubmit,
+  disabled = false,
+  className = '',
+  compact = false,
+  embedded = false,
+}: Omit<VoiceAnswerFieldProps, 'mode'>) {
+  const [phase, setPhase] = useState<FieldPhase>(value?.audioUrl ? 'recorded' : 'empty');
   const [focused, setFocused] = useState(false);
   const [text, setText] = useState(value?.textResponse ?? '');
   const [caption, setCaption] = useState(value?.captionText ?? '');
@@ -106,10 +450,8 @@ export function VoiceAnswerField({
           ? patch.audioDuration || undefined
           : duration || undefined,
       waveformBars: patch.waveformBars ?? (bars.length ? bars : undefined),
-      captionText:
-        patch.captionText !== undefined ? patch.captionText : caption || undefined,
-      textResponse:
-        patch.textResponse !== undefined ? patch.textResponse : text || undefined,
+      captionText: patch.captionText !== undefined ? patch.captionText : caption || undefined,
+      textResponse: patch.textResponse !== undefined ? patch.textResponse : text || undefined,
       transcriptText:
         patch.transcriptText !== undefined ? patch.transcriptText : transcriptText,
       transcriptConfidence:
@@ -483,9 +825,7 @@ export function VoiceAnswerField({
             </button>
           ) : null}
 
-          {transcriptPending ? (
-            <p className={styles.uploadHint}>Transcribing…</p>
-          ) : null}
+          {transcriptPending ? <p className={styles.uploadHint}>Transcribing…</p> : null}
 
           {showTranscriptToggle ? (
             <div className={styles.transcriptSection}>

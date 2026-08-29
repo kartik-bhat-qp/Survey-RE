@@ -30,6 +30,9 @@ const WuButton = dynamic(
 
 interface SurveyReviewerViewProps {
   survey: Survey;
+  /** Compact layout for the survey-page Review modal. */
+  compact?: boolean;
+  onClose?: () => void;
 }
 
 function loadReviewSections(survey: Survey): SurveySection[] {
@@ -50,7 +53,11 @@ function questionOptions(question: SurveyQuestion): string[] {
   return [];
 }
 
-export function SurveyReviewerView({ survey }: SurveyReviewerViewProps) {
+export function SurveyReviewerView({
+  survey,
+  compact = false,
+  onClose,
+}: SurveyReviewerViewProps) {
   const { showToast } = useWuShowToast();
   const [state, setState] = useState<SurveyApprovalState>(DEFAULT_SURVEY_APPROVAL_STATE);
   const [comments, setComments] = useState('');
@@ -85,9 +92,11 @@ export function SurveyReviewerView({ survey }: SurveyReviewerViewProps) {
     });
   }
 
+  const rootClass = compact ? `${styles.root} ${styles.rootCompact}` : styles.root;
+
   if (!surveyHasApprovalTab(survey.id)) {
     return (
-      <div className={styles.root}>
+      <div className={rootClass}>
         <div className={styles.empty}>
           <EmptyState
             icon="wm-assignment-turned-in"
@@ -102,15 +111,17 @@ export function SurveyReviewerView({ survey }: SurveyReviewerViewProps) {
   if (state.status === 'approved' || state.status === 'rejected') {
     const approved = state.status === 'approved';
     return (
-      <div className={styles.root}>
-        <header className={styles.header}>
-          <div className={styles.brand}>
-            <p className={styles.eyebrow}>Survey review</p>
-            <h1 className={styles.title}>{surveyName}</h1>
-          </div>
-          <span className={styles.reviewerChip}>Reviewed as {reviewerName}</span>
-        </header>
-        <div className={styles.body}>
+      <div className={rootClass}>
+        {!compact ? (
+          <header className={styles.header}>
+            <div className={styles.brand}>
+              <p className={styles.eyebrow}>Survey review</p>
+              <h1 className={styles.title}>{surveyName}</h1>
+            </div>
+            <span className={styles.reviewerChip}>Reviewed as {reviewerName}</span>
+          </header>
+        ) : null}
+        <div className={compact ? styles.bodyCompact : styles.body}>
           <section className={styles.panel}>
             <div className={styles.result}>
               <h2 className={styles.resultTitle}>
@@ -118,11 +129,16 @@ export function SurveyReviewerView({ survey }: SurveyReviewerViewProps) {
               </h2>
               <p className={styles.resultCopy}>
                 {approved
-                  ? 'The survey owner can now collect responses. You can close this page.'
+                  ? 'The survey owner can now collect responses. You can close this modal.'
                   : 'The survey owner has been notified and can send it for review again after making changes.'}
               </p>
               {state.reviewerFeedback ? (
                 <p className={styles.notes}>{state.reviewerFeedback}</p>
+              ) : null}
+              {compact && onClose ? (
+                <div className={styles.actions}>
+                  <WuButton onClick={onClose}>Close</WuButton>
+                </div>
               ) : null}
             </div>
           </section>
@@ -133,13 +149,15 @@ export function SurveyReviewerView({ survey }: SurveyReviewerViewProps) {
 
   if (!canDecide) {
     return (
-      <div className={styles.root}>
-        <header className={styles.header}>
-          <div className={styles.brand}>
-            <p className={styles.eyebrow}>Survey review</p>
-            <h1 className={styles.title}>{surveyName}</h1>
-          </div>
-        </header>
+      <div className={rootClass}>
+        {!compact ? (
+          <header className={styles.header}>
+            <div className={styles.brand}>
+              <p className={styles.eyebrow}>Survey review</p>
+              <h1 className={styles.title}>{surveyName}</h1>
+            </div>
+          </header>
+        ) : null}
         <div className={styles.empty}>
           <EmptyState
             icon="wm-assignment-turned-in"
@@ -152,24 +170,87 @@ export function SurveyReviewerView({ survey }: SurveyReviewerViewProps) {
   }
 
   return (
-    <div className={styles.root}>
-      <header className={styles.header}>
-        <div className={styles.brand}>
-          <p className={styles.eyebrow}>Survey review</p>
-          <h1 className={styles.title}>{surveyName}</h1>
-        </div>
-        <span className={styles.reviewerChip}>Reviewing as {reviewerName}</span>
-      </header>
-
-      <div className={styles.body}>
-        <section className={styles.panel} aria-label="Survey content">
-          <div>
-            <h2 className={styles.surveyName}>{surveyName}</h2>
-            <p className={styles.hint}>
-              {questionCount} question{questionCount === 1 ? '' : 's'} · Review the entire survey
-              before you approve or reject it.
-            </p>
+    <div className={rootClass}>
+      {!compact ? (
+        <header className={styles.header}>
+          <div className={styles.brand}>
+            <p className={styles.eyebrow}>Survey review</p>
+            <h1 className={styles.title}>{surveyName}</h1>
           </div>
+          <span className={styles.reviewerChip}>Reviewing as {reviewerName}</span>
+        </header>
+      ) : (
+        <p className={styles.compactHint}>
+          {questionCount} question{questionCount === 1 ? '' : 's'} · Review the survey, then approve
+          or reject it.
+        </p>
+      )}
+
+      <div className={compact ? styles.bodyCompact : styles.body}>
+        {compact ? (
+          <aside className={`${styles.decision} ${styles.decisionHorizontal}`} aria-label="Review decision">
+            <div className={styles.decisionTop}>
+              <h2 className={styles.sectionTitle}>Your decision</h2>
+              <span className={styles.hint}>
+                Status: {getSurveyApprovalStatusLabel(state.status)}
+              </span>
+            </div>
+            <div className={styles.decisionRow}>
+              <div className={styles.decisionMetaCol}>
+                <dl className={styles.metaListHorizontal}>
+                  <div>
+                    <dt>Requested by</dt>
+                    <dd>{state.currentRequest?.submittedBy}</dd>
+                  </div>
+                  <div>
+                    <dt>Requested</dt>
+                    <dd>
+                      {state.currentRequest
+                        ? formatSmartDate(state.currentRequest.submittedAt)
+                        : '—'}
+                    </dd>
+                  </div>
+                </dl>
+                {state.currentRequest?.notes ? (
+                  <p className={styles.notes}>{state.currentRequest.notes}</p>
+                ) : (
+                  <p className={styles.hint}>No additional comments were included.</p>
+                )}
+              </div>
+              <label className={`${styles.field} ${styles.decisionCommentsCol}`}>
+                <span className={styles.fieldLabel}>Comments</span>
+                <textarea
+                  className={styles.textarea}
+                  value={comments}
+                  onChange={(event) => setComments(event.target.value)}
+                  placeholder="Add comments for the survey owner. Required if you reject the survey."
+                />
+                <p className={styles.hint}>Optional for approve. Required for reject.</p>
+              </label>
+              <div className={styles.decisionActionsCol}>
+                <WuButton
+                  color="error"
+                  disabled={!comments.trim()}
+                  onClick={() => handleDecision('rejected')}
+                >
+                  Reject
+                </WuButton>
+                <WuButton onClick={() => handleDecision('approved')}>Approve</WuButton>
+              </div>
+            </div>
+          </aside>
+        ) : null}
+
+        <section className={styles.panel} aria-label="Survey content">
+          {!compact ? (
+            <div>
+              <h2 className={styles.surveyName}>{surveyName}</h2>
+              <p className={styles.hint}>
+                {questionCount} question{questionCount === 1 ? '' : 's'} · Review the entire survey
+                before you approve or reject it.
+              </p>
+            </div>
+          ) : null}
 
           {sections.map((section) => (
             <div key={section.id} className={styles.block}>
@@ -199,53 +280,55 @@ export function SurveyReviewerView({ survey }: SurveyReviewerViewProps) {
           ))}
         </section>
 
-        <aside className={styles.decision} aria-label="Review decision">
-          <h2 className={styles.sectionTitle}>Your decision</h2>
-          <span className={styles.hint}>
-            Status: {getSurveyApprovalStatusLabel(state.status)}
-          </span>
-          <dl className={styles.metaList}>
-            <div>
-              <dt>Requested by</dt>
-              <dd>{state.currentRequest?.submittedBy}</dd>
-            </div>
-            <div>
-              <dt>Requested</dt>
-              <dd>
-                {state.currentRequest
-                  ? formatSmartDate(state.currentRequest.submittedAt)
-                  : '—'}
-              </dd>
-            </div>
-          </dl>
-          {state.currentRequest?.notes ? (
-            <p className={styles.notes}>{state.currentRequest.notes}</p>
-          ) : (
-            <p className={styles.hint}>No additional notes were included.</p>
-          )}
+        {!compact ? (
+          <aside className={styles.decision} aria-label="Review decision">
+            <h2 className={styles.sectionTitle}>Your decision</h2>
+            <span className={styles.hint}>
+              Status: {getSurveyApprovalStatusLabel(state.status)}
+            </span>
+            <dl className={styles.metaList}>
+              <div>
+                <dt>Requested by</dt>
+                <dd>{state.currentRequest?.submittedBy}</dd>
+              </div>
+              <div>
+                <dt>Requested</dt>
+                <dd>
+                  {state.currentRequest
+                    ? formatSmartDate(state.currentRequest.submittedAt)
+                    : '—'}
+                </dd>
+              </div>
+            </dl>
+            {state.currentRequest?.notes ? (
+              <p className={styles.notes}>{state.currentRequest.notes}</p>
+            ) : (
+              <p className={styles.hint}>No additional comments were included.</p>
+            )}
 
-          <label className={styles.field}>
-            <span className={styles.fieldLabel}>Comments</span>
-            <textarea
-              className={styles.textarea}
-              value={comments}
-              onChange={(event) => setComments(event.target.value)}
-              placeholder="Add comments for the survey owner. Required if you reject the survey."
-            />
-            <p className={styles.hint}>Optional for approve. Required for reject.</p>
-          </label>
+            <label className={styles.field}>
+              <span className={styles.fieldLabel}>Comments</span>
+              <textarea
+                className={styles.textarea}
+                value={comments}
+                onChange={(event) => setComments(event.target.value)}
+                placeholder="Add comments for the survey owner. Required if you reject the survey."
+              />
+              <p className={styles.hint}>Optional for approve. Required for reject.</p>
+            </label>
 
-          <div className={styles.actions}>
-            <WuButton
-              color="error"
-              disabled={!comments.trim()}
-              onClick={() => handleDecision('rejected')}
-            >
-              Reject
-            </WuButton>
-            <WuButton onClick={() => handleDecision('approved')}>Approve</WuButton>
-          </div>
-        </aside>
+            <div className={styles.actions}>
+              <WuButton
+                color="error"
+                disabled={!comments.trim()}
+                onClick={() => handleDecision('rejected')}
+              >
+                Reject
+              </WuButton>
+              <WuButton onClick={() => handleDecision('approved')}>Approve</WuButton>
+            </div>
+          </aside>
+        ) : null}
       </div>
     </div>
   );

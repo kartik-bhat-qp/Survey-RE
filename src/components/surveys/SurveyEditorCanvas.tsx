@@ -4543,6 +4543,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 dynamicTextCommentsApplied={dynamicTextCommentsApplied}
                                 extractionApplied={extractionApplied}
                                 quotaControlApplied={quotaControlApplied}
+                                enableLiveDictation={detail.survey.id === AUDIO_INPUT_SURVEY_ID}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -4567,6 +4568,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 dynamicTextCommentsApplied={dynamicTextCommentsApplied}
                                 extractionApplied={extractionApplied}
                                 quotaControlApplied={quotaControlApplied}
+                                enableLiveDictation={detail.survey.id === AUDIO_INPUT_SURVEY_ID}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -4591,6 +4593,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 dynamicTextCommentsApplied={dynamicTextCommentsApplied}
                                 extractionApplied={extractionApplied}
                                 quotaControlApplied={quotaControlApplied}
+                                enableLiveDictation={detail.survey.id === AUDIO_INPUT_SURVEY_ID}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }
@@ -4615,6 +4618,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                                 dynamicTextCommentsApplied={dynamicTextCommentsApplied}
                                 extractionApplied={extractionApplied}
                                 quotaControlApplied={quotaControlApplied}
+                                enableLiveDictation={detail.survey.id === AUDIO_INPUT_SURVEY_ID}
                                 onAction={(label) =>
                                   toast(`${label}: ${plainTextFromRichValue(question.text)}`)
                                 }

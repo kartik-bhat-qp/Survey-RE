@@ -5,6 +5,35 @@
   min-height: 100dvh;
 }
 
+.rootCompact {
+  background: #fff;
+  min-height: 0;
+}
+
+.compactMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem 0;
+}
+
+.compactHint {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  margin: 0;
+  padding: 1rem 1.25rem 0;
+}
+
+.bodyCompact {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.25rem 1.25rem;
+  width: 100%;
+}
+
 .header {
   align-items: center;
   background: #fff;
@@ -83,6 +112,96 @@
   align-self: start;
   position: sticky;
   top: 1rem;
+}
+
+.rootCompact .decision {
+  position: static;
+}
+
+.decisionHorizontal {
+  gap: 0.875rem;
+  width: 100%;
+}
+
+.decisionTop {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.decisionRow {
+  align-items: stretch;
+  display: grid;
+  gap: 1rem 1.25rem;
+  grid-template-columns: minmax(12rem, 0.9fr) minmax(0, 1.6fr) auto;
+  width: 100%;
+}
+
+@media (max-width: 800px) {
+  .decisionRow {
+    grid-template-columns: 1fr;
+  }
+
+  .decisionActionsCol {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+.decisionMetaCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.decisionCommentsCol {
+  min-width: 0;
+  width: 100%;
+}
+
+.decisionActionsCol {
+  align-items: stretch;
+  align-self: end;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding-bottom: 1.25rem;
+}
+
+.metaListHorizontal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin: 0;
+}
+
+.metaListHorizontal > div {
+  min-width: 7rem;
+}
+
+.metaListHorizontal dt {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+.metaListHorizontal dd {
+  color: #1e293b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.decisionHorizontal .textarea {
+  min-height: 5.5rem;
 }
 
 .sectionTitle {

@@ -1,6 +1,6 @@
 'use client';
 
-import type { SyntheticEvent } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import type { SurveyQuestion } from '@/data/mock-survey-detail';
 import { DEFAULT_EMAIL_ADDRESS_FIELD_LABEL } from '@/data/mock-survey-detail';
 import { EmailAddressQuestionPreview } from '@/components/surveys/EmailAddressQuestionPreview';
@@ -8,6 +8,8 @@ import { QuestionRichTextField } from '@/components/surveys/QuestionRichTextFiel
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
+import { VoiceAnswerField } from '@/components/ui/VoiceAnswerField';
+import { emptyVoiceAnswer, type VoiceAnswerValue } from '@/data/mock-voice-answer';
 import styles from './EmailAddressQuestionRow.module.css';
 
 function stopQuestionEvent(event: SyntheticEvent): void {
@@ -21,6 +23,8 @@ export interface EmailAddressQuestionRowProps {
   dynamicTextCommentsApplied?: boolean;
   extractionApplied?: boolean;
   quotaControlApplied?: boolean;
+  /** Live speech-to-text into the answer field (Audio Input survey). */
+  enableLiveDictation?: boolean;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -37,6 +41,7 @@ export function EmailAddressQuestionRow({
   dynamicTextCommentsApplied = false,
   extractionApplied = false,
   quotaControlApplied = false,
+  enableLiveDictation = false,
   onAction,
   onMenuAction,
   onOpenLogic,
@@ -45,6 +50,8 @@ export function EmailAddressQuestionRow({
   onAddAnswerRow,
   onQuestionTextChange,
 }: EmailAddressQuestionRowProps) {
+  const [dictationValue, setDictationValue] = useState<VoiceAnswerValue>(emptyVoiceAnswer());
+
   return (
     <article className={styles.root}>
       <div className="emailAddressCard">
@@ -71,8 +78,21 @@ export function EmailAddressQuestionRow({
               onPointerDown={stopQuestionEvent}
             />
           </div>
-          <div className={styles.answerWrap}>
-            <EmailAddressQuestionPreview fieldLabel={DEFAULT_EMAIL_ADDRESS_FIELD_LABEL} />
+          <div className={styles.answerWrap} onPointerDown={stopQuestionEvent}>
+            {enableLiveDictation ? (
+              <>
+                <p className={styles.fieldLabel}>{DEFAULT_EMAIL_ADDRESS_FIELD_LABEL}</p>
+                <VoiceAnswerField
+                  mode="dictation"
+                  value={dictationValue}
+                  onChange={setDictationValue}
+                  placeholder="your@email.com"
+                  compact
+                />
+              </>
+            ) : (
+              <EmailAddressQuestionPreview fieldLabel={DEFAULT_EMAIL_ADDRESS_FIELD_LABEL} />
+            )}
             <button
               type="button"
               className={styles.addRowBtn}

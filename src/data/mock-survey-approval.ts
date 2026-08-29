@@ -12,7 +12,8 @@ export type SurveyApprovalActivityType =
   | 'approved'
   | 'rejected'
   | 'changes-requested'
-  | 'cancelled';
+  | 'cancelled'
+  | 'reminder';
 
 export interface SurveyReviewer {
   id: string;
@@ -29,6 +30,10 @@ export interface SurveyApprovalRequest {
   notes: string;
   submittedAt: string;
   submittedBy: string;
+  /** Optional review deadline. Overdue UX only applies when set. */
+  dueDate?: string | null;
+  /** Last manual reminder; null until the owner sends one. */
+  lastReminderSentAt?: string | null;
 }
 
 export interface SurveyApprovalActivity {
@@ -37,6 +42,7 @@ export interface SurveyApprovalActivity {
   actorName: string;
   message: string;
   createdAt: string;
+  targetLabel?: string;
 }
 
 export interface SurveyApprovalState {
@@ -136,7 +142,7 @@ export function surveyApprovalStorageKey(surveyId: number): string {
 export function getSurveyApprovalStatusLabel(status: SurveyApprovalStatus): string {
   switch (status) {
     case 'pending':
-      return 'In review';
+      return 'Pending';
     case 'approved':
       return 'Approved';
     case 'rejected':
@@ -178,6 +184,8 @@ export function normalizeSurveyApprovalState(
           stored.currentRequest.reviewerEmail ||
           findSurveyReviewerByEmail(stored.currentRequest.reviewerName)?.email ||
           stored.currentRequest.reviewerName,
+        dueDate: stored.currentRequest.dueDate ?? null,
+        lastReminderSentAt: stored.currentRequest.lastReminderSentAt ?? null,
       }
     : null;
 
@@ -252,12 +260,19 @@ export function subscribeSurveyApprovalState(
 }
 
 export function getSurveyReviewerPagePath(surveyId: number): string {
-  return `/review/${surveyId}`;
+  return `/surveys/${surveyId}?mode=review`;
 }
 
 export function openSurveyReviewerPage(surveyId: number): Window | null {
   if (typeof window === 'undefined') return null;
   return window.open(getSurveyReviewerPagePath(surveyId), `survey-review-${surveyId}`);
+}
+
+export const SURVEY_REVIEW_MODE_QUERY = 'mode';
+export const SURVEY_REVIEW_MODE_VALUE = 'review';
+
+export function isSurveyReviewModeQuery(value: string | null | undefined): boolean {
+  return value === SURVEY_REVIEW_MODE_VALUE;
 }
 
 export function applySurveyReviewDecision(
@@ -323,7 +338,8 @@ export function getSurveyReviewerSelectOptions(): {
 export function createApprovalActivity(
   type: SurveyApprovalActivityType,
   actorName: string,
-  message: string
+  message: string,
+  targetLabel?: string
 ): SurveyApprovalActivity {
   return {
     id: `activity-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -331,5 +347,81 @@ export function createApprovalActivity(
     actorName,
     message,
     createdAt: new Date().toISOString(),
+    targetLabel,
+  };
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const REMINDER_COOLDOWN_MS = DAY_MS;
+
+/** Prototype default: new requests are already 2 days past due so overdue UX is visible. */
+export function getPrototypeSurveyApprovalDueDate(from = new Date()): string {
+  return new Date(from.getTime() - 2 * DAY_MS).toISOString();
+}
+
+export function isSurveyApprovalRequestOverdue(
+  request: SurveyApprovalRequest | null | undefined,
+  now = Date.now()
+): boolean {
+  if (!request?.dueDate) return false;
+  return new Date(request.dueDate).getTime() < now;
+}
+
+export function getSurveyApprovalOverdueDayCount(
+  dueDate: string,
+  now = Date.now()
+): number {
+  const elapsed = now - new Date(dueDate).getTime();
+  return Math.max(1, Math.round(elapsed / DAY_MS));
+}
+
+export function getSurveyApprovalPendingStatusLabel(
+  status: SurveyApprovalStatus,
+  request: SurveyApprovalRequest | null | undefined
+): string {
+  if (status === 'pending') return 'Pending';
+  return getSurveyApprovalStatusLabel(status);
+}
+
+export function getSurveyApprovalPendingStatusCopy(
+  status: SurveyApprovalStatus,
+  published: boolean,
+  request: SurveyApprovalRequest | null | undefined
+): string {
+  if (status === 'pending' && request?.dueDate) {
+    if (isSurveyApprovalRequestOverdue(request)) {
+      const days = getSurveyApprovalOverdueDayCount(request.dueDate);
+      return `Due ${days} day${days === 1 ? '' : 's'} ago. ${request.reviewerName} hasn't responded yet.`;
+    }
+    return `Due ${formatApprovalDueDate(request.dueDate)}.`;
+  }
+  return getSurveyApprovalStatusCopy(status, published);
+}
+
+function formatApprovalDueDate(dueDate: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(dueDate));
+}
+
+export function getSurveyApprovalReminderCooldown(
+  request: SurveyApprovalRequest | null | undefined,
+  now = Date.now()
+): { blocked: boolean; hoursAgo: number; message: string | null } {
+  const last = request?.lastReminderSentAt;
+  if (!last) {
+    return { blocked: false, hoursAgo: 0, message: null };
+  }
+  const elapsed = now - new Date(last).getTime();
+  if (elapsed >= REMINDER_COOLDOWN_MS) {
+    return { blocked: false, hoursAgo: 0, message: null };
+  }
+  const hoursAgo = Math.max(1, Math.round(elapsed / (60 * 60 * 1000)));
+  return {
+    blocked: true,
+    hoursAgo,
+    message: `Reminded ${hoursAgo} hour${hoursAgo === 1 ? '' : 's'} ago — try again later`,
   };
 }

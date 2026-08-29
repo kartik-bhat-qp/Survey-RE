@@ -91,6 +91,13 @@
   color: #1b87e6;
 }
 
+.fieldLabel {
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0 0 0.375rem;
+}
+
 .footer {
   align-items: center;
   background: transparent;

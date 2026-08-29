@@ -5,9 +5,40 @@
 }
 
 .header {
+  position: relative;
+  padding-right: 7.5rem !important;
+}
+
+.inboxLink {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
   font-family: 'Fira Sans', sans-serif;
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  gap: 0.25rem;
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  right: 2.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.inboxLink:hover {
+  color: #1b87e6;
+  text-decoration: underline;
+}
+
+.inboxLinkIcon {
+  color: inherit;
+  font-size: 0.75rem;
+  line-height: 1;
 }
 
 .content {

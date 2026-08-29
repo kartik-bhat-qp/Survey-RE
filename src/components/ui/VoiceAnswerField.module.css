@@ -93,8 +93,32 @@
   outline-offset: 2px;
 }
 
-.micBtn :global(.wm-mic) {
+.micBtn :global(.wm-mic),
+.micBtn :global(.wm-stop-circle) {
   font-size: 1.125rem;
+}
+
+.micBtnListening {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.micBtnListening:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.fieldDictating {
+  border-color: #f87171;
+  box-shadow: 0 0 0 3px rgb(248 113 113 / 14%);
+}
+
+.dictationHint {
+  color: #dc2626;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin: 0;
+  padding: 0 0.75rem 0.5rem;
 }
 
 .micPlaceholder {

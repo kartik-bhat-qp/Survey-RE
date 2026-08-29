@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { NavLink } from '@/components/surveys/NavLink';
 import { SearchReplaceModal } from '@/components/surveys/SearchReplaceModal';
@@ -19,8 +19,13 @@ import {
 import { getSurveyEditorPhasePath } from '@/components/surveys/survey-editor-navigation';
 import { useSurveyEditorBulkEdit } from '@/components/surveys/SurveyEditorBulkEditContext';
 import { DEFAULT_SURVEY_CUSTOM_JS } from '@/data/mock-survey-custom-js';
-import { surveyHasApprovalTab } from '@/data/mock-survey-approval';
+import {
+  isSurveyReviewModeQuery,
+  SURVEY_REVIEW_MODE_QUERY,
+  surveyHasApprovalTab,
+} from '@/data/mock-survey-approval';
 import { SurveyApprovalsModal } from '@/components/surveys/SurveyApprovalsModal';
+import { SurveyReviewModal } from '@/components/surveys/SurveyReviewModal';
 import styles from './SurveyEditorPhaseTabs.module.css';
 
 const WuPrimaryNavbar = dynamic(
@@ -63,6 +68,8 @@ function deferOpenChange(setOpen: (open: boolean) => void, open: boolean) {
 export function SurveyEditorPhaseTabs() {
   const params = useParams();
   const pathname = usePathname() ?? '';
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const surveyId = Number(params.id);
   const { showToast } = useWuShowToast();
   const showApprovals = surveyHasApprovalTab(surveyId);
@@ -78,10 +85,36 @@ export function SurveyEditorPhaseTabs() {
   const [customJsOpen, setCustomJsOpen] = useState(false);
   const [removeAllLogicOpen, setRemoveAllLogicOpen] = useState(false);
   const [approvalsModalOpen, setApprovalsModalOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [customJs, setCustomJs] = useState(DEFAULT_SURVEY_CUSTOM_JS);
   const isWorkspaceView =
     activePhase === 'edit' &&
     (pathname === `/surveys/${surveyId}` || pathname === `/surveys/${surveyId}/`);
+  const reviewModeRequested = isSurveyReviewModeQuery(
+    searchParams.get(SURVEY_REVIEW_MODE_QUERY)
+  );
+
+  useEffect(() => {
+    if (!showApprovals || !reviewModeRequested) return;
+    setApprovalsModalOpen(false);
+    setReviewModalOpen(true);
+  }, [reviewModeRequested, showApprovals]);
+
+  const clearReviewModeQuery = useCallback(() => {
+    if (!reviewModeRequested) return;
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete(SURVEY_REVIEW_MODE_QUERY);
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }, [pathname, reviewModeRequested, router, searchParams]);
+
+  const handleReviewModalOpenChange = useCallback(
+    (open: boolean) => {
+      setReviewModalOpen(open);
+      if (!open) clearReviewModeQuery();
+    },
+    [clearReviewModeQuery]
+  );
 
   const handleToolsMenuOpenChange = useCallback((open: boolean) => {
     deferOpenChange(setToolsMenuOpen, open);
@@ -417,6 +450,13 @@ export function SurveyEditorPhaseTabs() {
         <SurveyApprovalsModal
           open
           onOpenChange={setApprovalsModalOpen}
+          surveyId={surveyId}
+        />
+      ) : null}
+      {reviewModalOpen ? (
+        <SurveyReviewModal
+          open
+          onOpenChange={handleReviewModalOpenChange}
           surveyId={surveyId}
         />
       ) : null}

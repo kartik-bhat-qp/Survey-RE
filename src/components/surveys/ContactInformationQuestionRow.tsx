@@ -1,13 +1,15 @@
 'use client';
 
-import type { SyntheticEvent } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import type { SurveyQuestion } from '@/data/mock-survey-detail';
 import { createDefaultContactInformationOptions } from '@/data/mock-survey-detail';
 import { ContactInformationQuestionPreview } from '@/components/surveys/ContactInformationQuestionPreview';
-import { QuestionRichTextField } from '@/components/surveys/QuestionRichTextField';
+import { QuestionRichTextField, plainTextFromRichValue } from '@/components/surveys/QuestionRichTextField';
 import { QuestionWorkspaceActions } from '@/components/surveys/QuestionWorkspaceActions';
 import { QuestionWorkspaceFooter } from '@/components/surveys/QuestionWorkspaceFooter';
 import type { QuestionMenuAction } from '@/components/surveys/QuestionOptionsMenu';
+import { VoiceAnswerField } from '@/components/ui/VoiceAnswerField';
+import { emptyVoiceAnswer, type VoiceAnswerValue } from '@/data/mock-voice-answer';
 import styles from './ContactInformationQuestionRow.module.css';
 
 function stopQuestionEvent(event: SyntheticEvent): void {
@@ -21,6 +23,8 @@ export interface ContactInformationQuestionRowProps {
   dynamicTextCommentsApplied?: boolean;
   extractionApplied?: boolean;
   quotaControlApplied?: boolean;
+  /** Live speech-to-text into the answer field (Audio Input survey). */
+  enableLiveDictation?: boolean;
   onAction: (label: string) => void;
   onMenuAction: (action: QuestionMenuAction) => void;
   onOpenLogic: () => void;
@@ -37,6 +41,7 @@ export function ContactInformationQuestionRow({
   dynamicTextCommentsApplied = false,
   extractionApplied = false,
   quotaControlApplied = false,
+  enableLiveDictation = false,
   onAction,
   onMenuAction,
   onOpenLogic,
@@ -52,6 +57,8 @@ export function ContactInformationQuestionRow({
           id: option.id,
           label: option.label,
         }));
+
+  const [contactAnswers, setContactAnswers] = useState<Record<string, VoiceAnswerValue>>({});
 
   return (
     <article className={styles.root}>
@@ -79,8 +86,29 @@ export function ContactInformationQuestionRow({
               onPointerDown={stopQuestionEvent}
             />
           </div>
-          <div className={styles.answerWrap}>
-            <ContactInformationQuestionPreview fields={fields} />
+          <div className={styles.answerWrap} onPointerDown={stopQuestionEvent}>
+            {enableLiveDictation ? (
+              <ul className={styles.dictationFieldList}>
+                {fields.map((field) => (
+                  <li key={field.id} className={styles.dictationFieldItem}>
+                    <label className={styles.dictationFieldLabel}>
+                      {plainTextFromRichValue(field.label)}
+                    </label>
+                    <VoiceAnswerField
+                      mode="dictation"
+                      value={contactAnswers[field.id] ?? emptyVoiceAnswer()}
+                      onChange={(next) =>
+                        setContactAnswers((prev) => ({ ...prev, [field.id]: next }))
+                      }
+                      placeholder={`Enter ${plainTextFromRichValue(field.label)}`}
+                      compact
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <ContactInformationQuestionPreview fields={fields} />
+            )}
             <button
               type="button"
               className={styles.addFieldBtn}

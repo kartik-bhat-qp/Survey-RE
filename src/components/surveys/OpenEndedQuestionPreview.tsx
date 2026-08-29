@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { VoiceAnswerField } from '@/components/ui/VoiceAnswerField';
+import { AUDIO_INPUT_SURVEY_ID } from '@/data/mock-audio-input-survey';
 import {
   emptyVoiceAnswer,
   isVoiceAnswerSubmittable,
@@ -52,6 +53,8 @@ export function OpenEndedQuestionPreview({ session, onClose }: OpenEndedQuestion
   const { showToast } = useWuShowToast();
   const { surveyTitle, questionCode, questionText, required, questionType, contactFields } =
     session;
+  const voiceMode =
+    session.surveyId === AUDIO_INPUT_SURVEY_ID ? 'dictation' : 'voice-clip';
 
   const [answer, setAnswer] = useState<VoiceAnswerValue>(emptyVoiceAnswer());
   const [contactAnswers, setContactAnswers] = useState<Record<string, VoiceAnswerValue>>({});
@@ -98,12 +101,23 @@ export function OpenEndedQuestionPreview({ session, onClose }: OpenEndedQuestion
     }
 
     if (!isVoiceAnswerSubmittable(answer) && !answer.audioUrl && !voiceAnswerSummary(answer)) {
-      showToast({ message: 'Enter an answer or record a voice response', variant: 'error' });
+      showToast({
+        message:
+          voiceMode === 'dictation'
+            ? 'Enter an answer or dictate with the mic'
+            : 'Enter an answer or record a voice response',
+        variant: 'error',
+      });
       return;
     }
 
     showToast({
-      message: answer.audioUrl ? 'Voice answer submitted' : 'Answer submitted',
+      message:
+        voiceMode === 'dictation'
+          ? 'Answer submitted'
+          : answer.audioUrl
+            ? 'Voice answer submitted'
+            : 'Answer submitted',
       variant: 'success',
     });
     onClose();
@@ -126,6 +140,7 @@ export function OpenEndedQuestionPreview({ session, onClose }: OpenEndedQuestion
 
         {questionType === 'comment-box' && (
           <VoiceAnswerField
+            mode={voiceMode}
             value={answer}
             onChange={setAnswer}
             placeholder="Type your answer here…"
@@ -134,6 +149,7 @@ export function OpenEndedQuestionPreview({ session, onClose }: OpenEndedQuestion
 
         {questionType === 'single-row' && (
           <VoiceAnswerField
+            mode={voiceMode}
             value={answer}
             onChange={setAnswer}
             placeholder="Your answer…"
@@ -143,6 +159,7 @@ export function OpenEndedQuestionPreview({ session, onClose }: OpenEndedQuestion
 
         {questionType === 'email' && (
           <VoiceAnswerField
+            mode={voiceMode}
             value={answer}
             onChange={setAnswer}
             placeholder="your@email.com"
@@ -158,6 +175,7 @@ export function OpenEndedQuestionPreview({ session, onClose }: OpenEndedQuestion
                   {field.label}
                 </label>
                 <VoiceAnswerField
+                  mode={voiceMode}
                   value={contactAnswers[field.id] ?? emptyVoiceAnswer()}
                   onChange={(next) =>
                     setContactAnswers((prev) => ({ ...prev, [field.id]: next }))
