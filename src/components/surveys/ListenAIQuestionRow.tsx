@@ -3,7 +3,6 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useMemo, useRef, useState, type SyntheticEvent } from 'react';
-import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { CREDITS_WALLET_PATH } from '@/data/mock-credits-wallet';
 import type { SurveyQuestion, SurveySection } from '@/data/mock-survey-detail';
 import {
@@ -99,7 +98,6 @@ export function ListenAIQuestionRow({
   onOpenSettings,
   onConfigChange,
 }: ListenAIQuestionRowProps) {
-  const { showToast } = useWuShowToast();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerCreateMode, setPickerCreateMode] = useState(false);
   const firstQuestionRef = useRef<HTMLTextAreaElement | null>(null);
@@ -360,13 +358,13 @@ export function ListenAIQuestionRow({
           <div className={styles.creditsRate}>
             <span className={`wc-ai ${styles.creditsAiIcon}`} aria-hidden />
             <p className={styles.creditsRateText}>
-              <strong>{LISTENAI_CREDITS_PER_CONVERSATION} credits</strong>
-              {' per conversation'}
+              <strong>
+                {LISTENAI_CREDITS_PER_CONVERSATION} QuestionPro AI credits per conversation
+              </strong>
             </p>
           </div>
           <div className={styles.creditsStatus}>
-            <Link
-              href={CREDITS_WALLET_PATH}
+            <div
               className={styles.creditsBalance}
               aria-label={`Balance covers about ${conversationsRemainingLabel} conversations more`}
             >
@@ -383,14 +381,10 @@ export function ListenAIQuestionRow({
               <span className={styles.creditsBalanceText}>
                 Balance covers ~{conversationsRemainingLabel} conversations more
               </span>
-            </Link>
-            <button
-              type="button"
-              className={styles.buyCreditsBtn}
-              onClick={() => showToast({ message: 'Buy credits', variant: 'info' })}
-            >
+            </div>
+            <Link href={CREDITS_WALLET_PATH} className={styles.buyCreditsBtn}>
               Buy credits
-            </button>
+            </Link>
           </div>
         </div>
       </div>

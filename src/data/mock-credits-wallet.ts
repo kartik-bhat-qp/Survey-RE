@@ -78,7 +78,7 @@ export const MOCK_CREDIT_TRANSACTIONS: CreditTransaction[] = [
     timestampLabel: '2026-08-20 16:42:11 GMT+05:30',
     creditType: 'ai',
     creditTypeLabel: 'AI',
-    details: 'Conversation study usage, amount: 180 - org: 10938',
+    details: 'Conversation question | Survey id 16 | QID Q17',
     userEmail: 'pratik.dhulubulu+kartik@questionpro.com',
     userRole: 'User',
     usage: -180,
