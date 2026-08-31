@@ -7,7 +7,6 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { NavLink } from '@/components/surveys/NavLink';
 import { SearchReplaceModal } from '@/components/surveys/SearchReplaceModal';
 import { SearchReplaceIcon } from '@/components/surveys/SearchReplaceIcon';
-import { TestResponsesModal } from '@/components/surveys/TestResponsesModal';
 import { RemoveAllLogicModal } from '@/components/surveys/RemoveAllLogicModal';
 import { CustomJsModal } from '@/components/surveys/CustomJsModal';
 import { PreDefinedLogicCriteriaModal } from '@/components/surveys/PreDefinedLogicCriteriaModal';
@@ -79,7 +78,6 @@ export function SurveyEditorPhaseTabs() {
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
   const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
   const [searchReplaceOpen, setSearchReplaceOpen] = useState(false);
-  const [testResponsesOpen, setTestResponsesOpen] = useState(false);
   const [updateQuestionCodesOpen, setUpdateQuestionCodesOpen] = useState(false);
   const [logicCriteriaOpen, setLogicCriteriaOpen] = useState(false);
   const [customJsOpen, setCustomJsOpen] = useState(false);
@@ -126,10 +124,6 @@ export function SurveyEditorPhaseTabs() {
 
   const handleSearchReplaceOpenChange = useCallback((open: boolean) => {
     deferOpenChange(setSearchReplaceOpen, open);
-  }, []);
-
-  const handleTestResponsesOpenChange = useCallback((open: boolean) => {
-    deferOpenChange(setTestResponsesOpen, open);
   }, []);
 
   const handleUpdateQuestionCodesOpenChange = useCallback((open: boolean) => {
@@ -392,15 +386,6 @@ export function SurveyEditorPhaseTabs() {
                   </WuMenuItem>
                 </WuMenuItemGroup>
               </WuMenu>
-              <WuTooltip content="Test Responses" position="bottom">
-                <button
-                  type="button"
-                  className={styles.testResponsesBtn}
-                  onClick={() => setTestResponsesOpen(true)}
-                >
-                  Test Responses
-                </button>
-              </WuTooltip>
             </>
           ) : null}
           <button
@@ -415,9 +400,6 @@ export function SurveyEditorPhaseTabs() {
       </WuPrimaryNavbar>
       {searchReplaceOpen ? (
         <SearchReplaceModal open onOpenChange={handleSearchReplaceOpenChange} />
-      ) : null}
-      {testResponsesOpen ? (
-        <TestResponsesModal open onOpenChange={handleTestResponsesOpenChange} />
       ) : null}
       {updateQuestionCodesOpen ? (
         <UpdateQuestionCodesModal

@@ -6,6 +6,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { NavLink } from '@/components/surveys/NavLink';
+import { TestResponsesIcon } from '@/components/surveys/TestResponsesIcon';
+import { TestResponsesModal } from '@/components/surveys/TestResponsesModal';
 import {
   PublishLicenseConflictModal,
   type PublishLicenseModalView,
@@ -41,6 +43,7 @@ const WuTooltip = dynamic(
 );
 
 const SURVEY_VERSION_TOOLTIP = 'Survey Version';
+const TEST_RESPONSES_TOOLTIP = 'Test Responses';
 
 type PublishMode = 'draft' | 'publish';
 
@@ -87,6 +90,7 @@ export function SurveyEditorWorkspaceToolbar({
     useState<PublishLicenseModalView>('conflicts');
   const [licenseConflicts, setLicenseConflicts] = useState<SurveyLicenseConflict[]>([]);
   const [draftConfirmOpen, setDraftConfirmOpen] = useState(false);
+  const [testResponsesOpen, setTestResponsesOpen] = useState(false);
   const requiresApproval = surveyHasApprovalTab(surveyId);
 
   useEffect(() => {
@@ -255,13 +259,23 @@ export function SurveyEditorWorkspaceToolbar({
             <WuTooltip content={SURVEY_VERSION_TOOLTIP} position="bottom">
               <button
                 type="button"
-                className={styles.surveyVersionBtn}
+                className={styles.toolbarIconBtn}
                 aria-label={SURVEY_VERSION_TOOLTIP}
                 onClick={() =>
                   showToast({ message: SURVEY_VERSION_TOOLTIP, variant: 'success' })
                 }
               >
                 <span className="wm-history" aria-hidden />
+              </button>
+            </WuTooltip>
+            <WuTooltip content={TEST_RESPONSES_TOOLTIP} position="bottom">
+              <button
+                type="button"
+                className={styles.toolbarIconBtn}
+                aria-label={TEST_RESPONSES_TOOLTIP}
+                onClick={() => setTestResponsesOpen(true)}
+              >
+                <TestResponsesIcon />
               </button>
             </WuTooltip>
             <div className={styles.statusToggle} role="group" aria-label="Survey status">
@@ -329,6 +343,9 @@ export function SurveyEditorWorkspaceToolbar({
         confirmLabel="Draft"
         onConfirm={handleConfirmDraft}
       />
+      {testResponsesOpen ? (
+        <TestResponsesModal open onOpenChange={setTestResponsesOpen} />
+      ) : null}
     </>
   );
 }

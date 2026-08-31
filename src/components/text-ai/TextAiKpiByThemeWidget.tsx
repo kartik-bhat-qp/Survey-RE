@@ -1,18 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
-  TEXT_AI_KPI_DEFINITIONS,
   formatTextAiKpiAnswer,
   formatTextAiKpiDelta,
   formatTextAiKpiScore,
   getDefaultTextAiKpiId,
   getTextAiKpiAnalysis,
   type TextAiKpiDefinition,
-  type TextAiKpiId,
   type TextAiKpiSentiment,
   type TextAiKpiThemeResult,
 } from '@/data/mock-text-ai-kpi-by-theme';
@@ -22,14 +19,6 @@ import {
   type TextAiWidgetTopN,
 } from '@/data/mock-text-ai-widget-settings';
 import styles from './TextAiKpiByThemeWidget.module.css';
-
-const WuCombobox = dynamic(
-  () =>
-    import('@npm-questionpro/wick-ui-lib').then((module) => ({
-      default: module.WuCombobox,
-    })),
-  { ssr: false }
-);
 
 interface TextAiKpiByThemeWidgetProps {
   question: string;
@@ -378,20 +367,13 @@ export function TextAiKpiByThemeWidget({
   question,
   onDelete,
 }: TextAiKpiByThemeWidgetProps) {
-  const [selectedKpiId, setSelectedKpiId] = useState<TextAiKpiId>(
-    getDefaultTextAiKpiId
-  );
   const [expandedThemeIds, setExpandedThemeIds] = useState<Set<string>>(
     () => new Set(['theme-0'])
   );
   const [drilldown, setDrilldown] = useState<DrilldownContext | null>(null);
   const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
   const [sortState, setSortState] = useState<KpiSortState | null>(null);
-  const analysis = useMemo(() => getTextAiKpiAnalysis(selectedKpiId), [selectedKpiId]);
-  const selectedKpiDefinition =
-    TEXT_AI_KPI_DEFINITIONS.find((definition) => definition.id === selectedKpiId) ??
-    TEXT_AI_KPI_DEFINITIONS[0];
-  const kpiQuestionOptions = useMemo(() => [...TEXT_AI_KPI_DEFINITIONS], []);
+  const analysis = useMemo(() => getTextAiKpiAnalysis(getDefaultTextAiKpiId()), []);
   const sortedThemeRows = sortKpiRows(analysis.rows, sortState);
   const visibleRows = limitTextAiWidgetItems(sortedThemeRows, topN);
 
@@ -431,38 +413,6 @@ export function TextAiKpiByThemeWidget({
             onDelete={onDelete}
           />
         </header>
-
-        <section className={styles.summaryBand} aria-label="KPI summary">
-          <div className={styles.summaryMetric}>
-            <span>Overall {analysis.definition.label}</span>
-            <strong>{formatTextAiKpiScore(analysis.definition, analysis.overallScore)}</strong>
-          </div>
-          <div className={styles.summaryMetric}>
-            <span>Paired responses</span>
-            <strong>{analysis.pairedResponseCount.toLocaleString('en-US')}</strong>
-          </div>
-          <div className={styles.summaryQuestion}>
-            <span>KPI question</span>
-            <div className={styles.kpiSelectWrap}>
-              <WuCombobox
-                data={kpiQuestionOptions}
-                accessorKey={{ value: 'id', label: 'question' }}
-                value={selectedKpiDefinition}
-                onSelect={(option) => {
-                  if (!option || Array.isArray(option)) return;
-                  setSelectedKpiId((option as TextAiKpiDefinition).id);
-                }}
-                enableSearch
-                isEllipse
-                maxHeight={280}
-                noDataContent="No KPI questions found"
-                variant="outlined"
-                className={styles.kpiSelect}
-                aria-label="KPI question"
-              />
-            </div>
-          </div>
-        </section>
 
         <div className={styles.tableWrap}>
           <table className={styles.table}>

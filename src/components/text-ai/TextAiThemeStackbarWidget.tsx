@@ -6,10 +6,13 @@ import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
 import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
-  TEXT_AI_SUBTHEME_STACKBAR_ROWS,
-  type TextAiSentimentBucket,
-  type TextAiSentimentDistribution,
-} from '@/data/mock-text-ai-subtheme-stackbar';
+  TEXT_AI_THEME_IMPACT_AXIS_MAX,
+  TEXT_AI_THEME_IMPACT_FOOTNOTE,
+  TEXT_AI_THEME_IMPACT_ROWS,
+  formatThemeImpactCoefficient,
+  formatThemeNetImpact,
+  type TextAiThemeImpactRow,
+} from '@/data/mock-text-ai-theme-impact';
 import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import {
   DEFAULT_TEXT_AI_WIDGET_TOP_N,
@@ -19,88 +22,44 @@ import {
 import type { TextAiThemePreferences } from '@/data/text-ai-theme-preferences';
 import styles from './TextAiThemeStackbarWidget.module.css';
 
-
-const SENTIMENT_BUCKETS: {
-  key: TextAiSentimentBucket;
-  label: string;
-  color: string;
-}[] = [
-  { key: 'veryNegative', label: 'Very negative', color: '#f42638' },
-  { key: 'negative', label: 'Negative', color: '#ff963f' },
-  { key: 'mixed', label: 'Mixed', color: '#ffc94b' },
-  { key: 'neutral', label: 'Neutral', color: '#ecece1' },
-  { key: 'positive', label: 'Positive', color: '#a8d52a' },
-  { key: 'veryPositive', label: 'Very positive', color: '#31964a' },
-];
-
 interface TextAiThemeStackbarWidgetProps {
   question: string;
   onDelete?: () => void;
   themePreferences: TextAiThemePreferences;
 }
 
-function formatThemeLabel(label: string): string {
-  return `${label.charAt(0)}${label.slice(1).toLowerCase()}`;
+const AXIS_TICKS = [-0.8, -0.4, 0, 0.4, 0.8] as const;
+
+function barWidthPercent(value: number): number {
+  return Math.min(100, (Math.abs(value) / TEXT_AI_THEME_IMPACT_AXIS_MAX) * 100);
 }
 
-function SentimentStackbar({
-  distribution,
-  label,
-  activeBuckets,
-}: {
-  distribution: TextAiSentimentDistribution;
-  label: string;
-  activeBuckets: Set<TextAiSentimentBucket>;
-}) {
-  const visibleBuckets = SENTIMENT_BUCKETS.filter((bucket) =>
-    activeBuckets.has(bucket.key)
-  );
-  const visibleTotal = visibleBuckets.reduce(
-    (total, bucket) => total + distribution[bucket.key],
-    0
-  );
-  const ariaSummary = visibleBuckets.map(
-    (bucket) => `${bucket.label} ${distribution[bucket.key]}%`
-  ).join(', ');
-
-  if (visibleTotal <= 0) {
-    return (
-      <div
-        className={`${styles.stackbar} ${styles.emptyStackbar}`}
-        role="img"
-        aria-label={`${label} sentiment: no selected sentiment data`}
-      >
-        No selected sentiment
-      </div>
-    );
-  }
-
+function ImpactPerMention({ row }: { row: TextAiThemeImpactRow }) {
   return (
     <div
-      className={styles.stackbar}
+      className={styles.impactTrack}
       role="img"
-      aria-label={`${label} sentiment: ${ariaSummary}`}
+      aria-label={`${row.label} impact per mention: ${formatThemeImpactCoefficient(row.negativeImpact)} negative, ${formatThemeImpactCoefficient(row.positiveImpact)} positive`}
     >
-      {visibleBuckets.map((bucket) => {
-        const value = distribution[bucket.key];
-        if (value <= 0) return null;
-
-        return (
-          <span
-            key={bucket.key}
-            className={`${styles.segment} ${
-              bucket.key === 'neutral' ? styles.neutralSegment : ''
-            }`}
-            style={{
-              backgroundColor: bucket.color,
-              width: `${(value / visibleTotal) * 100}%`,
-            }}
-            title={`${bucket.label}: ${value}%`}
-          >
-            {value >= 5 ? `${value}%` : null}
-          </span>
-        );
-      })}
+      <div className={styles.impactNegative}>
+        <span className={styles.coeffLabel}>
+          {formatThemeImpactCoefficient(row.negativeImpact)}
+        </span>
+        <span
+          className={styles.negativeBar}
+          style={{ width: `${barWidthPercent(row.negativeImpact)}%` }}
+        />
+      </div>
+      <span className={styles.impactAxis} aria-hidden />
+      <div className={styles.impactPositive}>
+        <span
+          className={styles.positiveBar}
+          style={{ width: `${barWidthPercent(row.positiveImpact)}%` }}
+        />
+        <span className={styles.coeffLabel}>
+          {formatThemeImpactCoefficient(row.positiveImpact)}
+        </span>
+      </div>
     </div>
   );
 }
@@ -112,11 +71,8 @@ export function TextAiThemeStackbarWidget({
 }: TextAiThemeStackbarWidgetProps) {
   const wick = useWickUILib();
   const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
-  const [activeSentimentBuckets, setActiveSentimentBuckets] = useState<
-    Set<TextAiSentimentBucket>
-  >(() => new Set(SENTIMENT_BUCKETS.map((bucket) => bucket.key)));
   const visibleThemes = useMemo(() => {
-    const filtered = TEXT_AI_SUBTHEME_STACKBAR_ROWS.flatMap((theme) => {
+    const filtered = TEXT_AI_THEME_IMPACT_ROWS.flatMap((theme) => {
       const candidate = Boolean(theme.emerging);
       const approved =
         !candidate ||
@@ -136,15 +92,6 @@ export function TextAiThemeStackbarWidget({
     return limitTextAiWidgetItems(filtered, topN);
   }, [themePreferences, topN]);
 
-  function toggleSentiment(bucket: TextAiSentimentBucket): void {
-    setActiveSentimentBuckets((current) => {
-      const next = new Set(current);
-      if (next.has(bucket)) next.delete(bucket);
-      else next.add(bucket);
-      return next;
-    });
-  }
-
   if (!wick) {
     return (
       <article className={styles.card}>
@@ -156,7 +103,10 @@ export function TextAiThemeStackbarWidget({
   return (
     <article className={styles.card}>
       <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
-        <h2 className={styles.cardTitle}>{question}</h2>
+        <div className={styles.titleBlock}>
+          <h2 className={styles.cardTitle}>{question}</h2>
+          <span className={styles.widgetLabel}>Theme</span>
+        </div>
         <TextAiWidgetMenu
           widgetTitle={question}
           topN={topN}
@@ -165,47 +115,58 @@ export function TextAiThemeStackbarWidget({
         />
       </header>
 
-      <div className={styles.rows}>
-        {visibleThemes.map((theme) => (
-          <div className={styles.themeRow} key={theme.id}>
-            <span className={styles.themeLabel}>
-              <span>{formatThemeLabel(theme.label)}</span>
-              {theme.emerging ? <TextAiEmergingBadge /> : null}
-            </span>
-            <SentimentStackbar
-              distribution={theme.sentiment}
-              label={theme.label}
-              activeBuckets={activeSentimentBuckets}
-            />
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th className={styles.themeHeading}>Theme</th>
+              <th className={styles.impactHeading}>Impact per mention</th>
+              <th className={styles.netHeading}>Net impact</th>
+              <th className={styles.countHeading}>n</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleThemes.map((theme) => (
+              <tr key={theme.id}>
+                <td className={styles.themeCell}>
+                  <span className={styles.themeLabel}>
+                    <span>{theme.label}</span>
+                    {theme.emerging ? <TextAiEmergingBadge /> : null}
+                  </span>
+                </td>
+                <td className={styles.impactCell}>
+                  <ImpactPerMention row={theme} />
+                </td>
+                <td
+                  className={`${styles.netCell} ${
+                    theme.netImpact > 0
+                      ? styles.netPositive
+                      : theme.netImpact < 0
+                        ? styles.netNegative
+                        : ''
+                  }`}
+                >
+                  {formatThemeNetImpact(theme.netImpact)}
+                </td>
+                <td className={styles.countCell}>
+                  {theme.mentionCount.toLocaleString('en-US')}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className={styles.axisRow} aria-hidden>
+          <span className={styles.axisSpacer} />
+          <div className={styles.axisScale}>
+            {AXIS_TICKS.map((tick) => (
+              <span key={tick}>{tick === 0 ? '0' : tick.toFixed(1)}</span>
+            ))}
           </div>
-        ))}
+          <span className={styles.axisEndSpacer} />
+        </div>
       </div>
 
-      <footer className={styles.legend} aria-label="Theme sentiment legend">
-        {SENTIMENT_BUCKETS.map((bucket) => {
-          const selected = activeSentimentBuckets.has(bucket.key);
-
-          return (
-            <button
-              type="button"
-              className={`${styles.legendItem} ${
-                selected ? '' : styles.legendItemDeselected
-              }`}
-              key={bucket.key}
-              aria-label={`${selected ? 'Hide' : 'Show'} ${bucket.label} sentiment`}
-              aria-pressed={selected}
-              onClick={() => toggleSentiment(bucket.key)}
-            >
-              <span
-                className={styles.legendSwatch}
-                style={{ backgroundColor: bucket.color }}
-                aria-hidden
-              />
-              {bucket.label}
-            </button>
-          );
-        })}
-      </footer>
+      <footer className={styles.footnote}>{TEXT_AI_THEME_IMPACT_FOOTNOTE}</footer>
     </article>
   );
 }

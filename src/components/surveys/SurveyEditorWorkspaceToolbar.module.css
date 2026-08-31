@@ -50,7 +50,7 @@
   padding-right: 0.75rem;
 }
 
-.surveyVersionBtn {
+.toolbarIconBtn {
   align-items: center;
   background: transparent;
   border: none;
@@ -64,12 +64,15 @@
   width: 2rem;
 }
 
-.surveyVersionBtn span {
+.toolbarIconBtn span,
+.toolbarIconBtn svg {
   font-size: 1.125rem;
+  height: 1.125rem;
   line-height: 1;
+  width: 1.125rem;
 }
 
-.surveyVersionBtn:hover {
+.toolbarIconBtn:hover {
   color: #1b87e6;
 }
 
