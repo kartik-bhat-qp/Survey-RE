@@ -36,13 +36,52 @@
 }
 
 .actionBtn {
+  align-items: center;
   background: none;
   border: none;
+  border-radius: 4px;
   color: #9b9b9b;
   cursor: pointer;
+  display: inline-flex;
   font-size: 18px;
+  height: 28px;
+  justify-content: center;
   line-height: 1;
   padding: 0;
+  width: 28px;
+}
+
+.actionBtn:hover,
+.actionBtn:focus-visible {
+  background: #eef4fb;
+  color: #31559b;
+}
+
+.actionBtn:focus-visible {
+  outline: 2px solid #1b87e6;
+  outline-offset: 1px;
+}
+
+.insightButton {
+  position: relative;
+}
+
+.insightBadge {
+  align-items: center;
+  background: #36559d;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  color: #fff;
+  display: inline-flex;
+  font-size: 9px;
+  font-weight: 600;
+  height: 16px;
+  justify-content: center;
+  min-width: 16px;
+  padding: 0 3px;
+  position: absolute;
+  right: -8px;
+  top: -9px;
 }
 
 .diamondBtn {
@@ -55,6 +94,23 @@
   min-height: 0;
   overflow: hidden;
   padding: 12px 14px 12px;
+}
+
+.widgetMenu {
+  background: #fff;
+  border: 1px solid #dbe3f0;
+  border-radius: 4px;
+  box-shadow: 0 8px 22px rgb(15 23 42 / 14%);
+  min-width: 180px;
+  padding: 5px;
+  z-index: 80;
+}
+
+.widgetMenu :global([role='menuitem']) {
+  border-radius: 3px;
+  color: #3f4d61;
+  font-size: 12px;
+  padding: 8px 10px;
 }
 
 .shared { border-color: #ccc; border-radius: 8px; }

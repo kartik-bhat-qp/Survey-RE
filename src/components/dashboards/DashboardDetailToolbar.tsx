@@ -33,6 +33,8 @@ interface DashboardDetailToolbarProps {
   onOpenShare?: () => void;
   onExportPowerPoint?: () => void;
   onOpenPresentation?: () => void;
+  onToggleFilters?: () => void;
+  filtersOpen?: boolean;
 }
 
 export function DashboardDetailToolbar({
@@ -44,6 +46,8 @@ export function DashboardDetailToolbar({
   onOpenShare,
   onExportPowerPoint,
   onOpenPresentation,
+  onToggleFilters,
+  filtersOpen = false,
 }: DashboardDetailToolbarProps) {
   const { showToast } = useWuShowToast();
   const [nameState, setNameState] = useState(name);
@@ -96,8 +100,10 @@ export function DashboardDetailToolbar({
         )}
         <WuButton
           variant="secondary"
-          className={styles.filterButton}
-          onClick={() => showToast({ message: 'Filter', variant: 'success' })}
+          className={`${styles.filterButton} ${filtersOpen ? styles.filterButtonActive : ''}`}
+          onClick={onToggleFilters}
+          aria-expanded={filtersOpen}
+          aria-controls="dashboard-filter-panel"
           Icon={<span className="wm-filter-alt" />}
         >
           Filter

@@ -1,0 +1,14 @@
+.content { min-height: 360px; padding: 0 !important; }
+.tabs { border-bottom: 1px solid #e2e7ee; display: flex; padding: 0 20px; }
+.tabs button { background: transparent; border: 0; border-bottom: 2px solid transparent; color: #677386; cursor: pointer; font-size: 13px; padding: 12px 10px 10px; text-transform: capitalize; }
+.tabs button[aria-selected='true'] { border-color: #1b87e6; color: #1769aa; }
+.general { display: grid; gap: 20px; max-width: 520px; padding: 24px; }
+.general > label { display: grid; gap: 6px; }
+.general label > span, .toggleRow > span, .filterOptions label > span { color: #657184; font-size: 12px; }
+.nameRow, .toggleRow { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
+.nameRow input, .filterOptions select { border: 1px solid #cfd7e3; border-radius: 2px; color: #455468; font: 400 13px/1.2 'Fira Sans', sans-serif; height: 34px; padding: 0 10px; width: 100%; }
+.filterOptions { border-top: 1px solid #e4e8ee; display: grid; gap: 10px; padding-top: 18px; }
+.filterOptions h3 { color: #344258; font-size: 14px; font-weight: 500; margin: 0; }
+.filterOptions label { display: grid; gap: 6px; max-width: 320px; }
+.filterOptions p, .placeholder { color: #7b8796; font-size: 12px; line-height: 1.45; margin: 0; }
+.placeholder { padding: 24px; }

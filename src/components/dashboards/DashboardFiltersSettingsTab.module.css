@@ -1,0 +1,17 @@
+.panel { display: grid; gap: 24px; }
+.switcher { display: flex; width: fit-content; }
+.switcher button { background: #fff; border: 1px solid #cfd7e3; color: #5d6877; cursor: pointer; font-size: 13px; min-width: 132px; padding: 8px 14px; }
+.switcher button + button { border-left: 0; }
+.switcher .active { background: #eef6ff; border-color: #1b87e6; color: #1769aa; font-weight: 500; }
+.list { border: 1px solid #dfe5ee; }
+.row { align-items: center; display: flex; justify-content: space-between; padding: 14px 16px; }
+.row + .row { border-top: 1px solid #e5e9ef; }
+.nameRow { align-items: center; display: flex; gap: 8px; }
+.nameRow h3 { color: #344258; font-size: 14px; font-weight: 500; margin: 0; }
+.nameRow span { background: #e8f6ed; border-radius: 12px; color: #2c7a45; font-size: 10px; padding: 3px 7px; }
+.row p { color: #768294; font-size: 12px; margin: 4px 0 0; }
+.row button { background: transparent; border: 0; color: #667386; cursor: pointer; font-size: 18px; }
+.empty { align-items: center; color: #7b8796; display: flex; flex-direction: column; min-height: 180px; padding: 32px; text-align: center; }
+.empty > span { font-size: 28px; }
+.empty h3 { color: #566274; font-size: 14px; font-weight: 500; margin: 12px 0 4px; }
+.empty p { font-size: 12px; margin: 0; max-width: 420px; }

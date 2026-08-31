@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { DashboardDetailTabBar } from '@/components/dashboards/DashboardDetailTabBar';
 import { DashboardDetailToolbar } from '@/components/dashboards/DashboardDetailToolbar';
+import { DashboardFiltersPanel } from '@/components/dashboards/DashboardFiltersPanel';
 import { DashboardFocusedPreview } from '@/components/dashboards/DashboardFocusedPreview';
 import { DashboardPowerPointExportModal } from '@/components/dashboards/DashboardPowerPointExportModal';
 import { DashboardSettingsModal } from '@/components/dashboards/DashboardSettingsModal';
@@ -27,6 +28,14 @@ import {
   resolveDashboardSurvey,
   type SurveyListItem,
 } from '@/data/mock-survey-folders';
+import {
+  DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY,
+  type AiInsightRefreshFrequency,
+} from '@/data/mock-dashboard-ai-insights';
+import {
+  INITIAL_DASHBOARD_SAVED_FILTERS,
+  type DashboardSavedFilter,
+} from '@/data/mock-dashboard-filters';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
@@ -43,6 +52,10 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState('general');
   const [shareOpen, setShareOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [savedFilters, setSavedFilters] = useState<DashboardSavedFilter[]>(
+    INITIAL_DASHBOARD_SAVED_FILTERS
+  );
   const [sharing, setSharing] = useDashboardSharing(numericId);
   const [powerPointExportOpen, setPowerPointExportOpen] = useState(false);
   const [focusedPreviewOpen, setFocusedPreviewOpen] = useState(false);
@@ -55,6 +68,12 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
   const [designTypography, setDesignTypography] = useState<DesignTypographyOptions>(
     DEFAULT_DESIGN_TYPOGRAPHY
   );
+  const [insightRefreshFrequency, setInsightRefreshFrequency] =
+    useState<AiInsightRefreshFrequency>(DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY);
+  const [lastAiInsightsRefreshAt, setLastAiInsightsRefreshAt] = useState(
+    '2026-08-27T06:30:00.000Z'
+  );
+  const [globalInsightRefreshVersion, setGlobalInsightRefreshVersion] = useState(0);
   if (!dashboard) {
     return (
       <PageContainer>
@@ -86,7 +105,26 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         onOpenShare={() => setShareOpen(true)}
         onExportPowerPoint={() => setPowerPointExportOpen(true)}
         onOpenPresentation={() => setFocusedPreviewOpen(true)}
+        onToggleFilters={() => setFiltersOpen((current) => !current)}
+        filtersOpen={filtersOpen}
       />
+
+      <div id="dashboard-filter-panel">
+        <DashboardFiltersPanel
+          open={filtersOpen}
+          onManageFilters={() => {
+            setFiltersOpen(false);
+            setSettingsTab('filters');
+            setSettingsOpen(true);
+          }}
+          onSaveFilter={(filter) => {
+            setSavedFilters((current) => [
+              ...current.map((item) => filter.isDefault ? { ...item, isDefault: false } : item),
+              filter,
+            ]);
+          }}
+        />
+      </div>
 
       {focusedPreviewOpen ? (
         <DashboardFocusedPreview
@@ -121,6 +159,15 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         onNameChange={setName}
         appliedDesignTypography={designTypography}
         onDesignTypographyChange={setDesignTypography}
+        insightRefreshFrequency={insightRefreshFrequency}
+        onInsightRefreshFrequencyChange={setInsightRefreshFrequency}
+        lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
+        onRegenerateInsights={() => {
+          const refreshedAt = new Date().toISOString();
+          setLastAiInsightsRefreshAt(refreshedAt);
+          setGlobalInsightRefreshVersion((current) => current + 1);
+        }}
+        savedFilters={savedFilters}
         onDelete={() => {
           showToast({
             message: `Dashboard '${name}' deleted successfully`,
@@ -168,7 +215,13 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         onAddWidget={() => setHasAddedWidget(true)}
       />
 
-      <DashboardDetailTabBar designTypography={designTypography} />
+      <DashboardDetailTabBar
+        designTypography={designTypography}
+        insightRefreshFrequency={insightRefreshFrequency}
+        globalInsightRefreshVersion={globalInsightRefreshVersion}
+        lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
+        onInsightsRefreshed={setLastAiInsightsRefreshAt}
+      />
     </div>
   );
 }

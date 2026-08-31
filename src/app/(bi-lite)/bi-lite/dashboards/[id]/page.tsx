@@ -27,6 +27,10 @@ import {
   resolveDashboardSurvey,
   type SurveyListItem,
 } from '@/data/mock-survey-folders';
+import {
+  DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY,
+  type AiInsightRefreshFrequency,
+} from '@/data/mock-dashboard-ai-insights';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
@@ -53,6 +57,12 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
   const [designTypography, setDesignTypography] = useState<DesignTypographyOptions>(
     DEFAULT_DESIGN_TYPOGRAPHY
   );
+  const [insightRefreshFrequency, setInsightRefreshFrequency] =
+    useState<AiInsightRefreshFrequency>(DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY);
+  const [lastAiInsightsRefreshAt, setLastAiInsightsRefreshAt] = useState(
+    '2026-08-27T06:30:00.000Z'
+  );
+  const [globalInsightRefreshVersion, setGlobalInsightRefreshVersion] = useState(0);
 
   if (!dashboard) {
     return (
@@ -120,6 +130,14 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         onNameChange={setName}
         appliedDesignTypography={designTypography}
         onDesignTypographyChange={setDesignTypography}
+        insightRefreshFrequency={insightRefreshFrequency}
+        onInsightRefreshFrequencyChange={setInsightRefreshFrequency}
+        lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
+        onRegenerateInsights={() => {
+          const refreshedAt = new Date().toISOString();
+          setLastAiInsightsRefreshAt(refreshedAt);
+          setGlobalInsightRefreshVersion((current) => current + 1);
+        }}
         onDelete={() => {
           showToast({
             message: `Dashboard '${name}' deleted successfully`,
@@ -167,7 +185,13 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         onAddWidget={() => setHasAddedWidget(true)}
       />
 
-      <DashboardDetailTabBar designTypography={designTypography} />
+      <DashboardDetailTabBar
+        designTypography={designTypography}
+        insightRefreshFrequency={insightRefreshFrequency}
+        globalInsightRefreshVersion={globalInsightRefreshVersion}
+        lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
+        onInsightsRefreshed={setLastAiInsightsRefreshAt}
+      />
     </div>
   );
 }

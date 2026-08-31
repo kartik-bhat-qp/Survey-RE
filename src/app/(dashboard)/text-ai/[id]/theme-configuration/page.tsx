@@ -9,6 +9,14 @@ import { PageContainer } from '@/components/ui/PageContainer';
 import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
 import { TextAiPendingApprovalBadge } from '@/components/text-ai/TextAiPendingApprovalBadge';
 import { TextAiThemeLogs } from '@/components/text-ai/TextAiThemeLogs';
+import {
+  getSentimentIcon,
+  getSentimentLabel,
+  TextAiUpdateSentimentModal,
+  type TextAiAssignedSentiment,
+  type TextAiSentimentDraft,
+  type TextAiSentimentEditableResponse,
+} from '@/components/text-ai/TextAiUpdateSentimentModal';
 import { getTextAiDashboardById } from '@/data/get-text-ai-dashboard-by-id';
 import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
 import { MOCK_TEXT_AI_ANALYSIS_QUESTIONS } from '@/data/mock-text-ai-questions';
@@ -136,6 +144,7 @@ interface GranularityOption {
 interface ResponseClassification {
   tag: string;
   tone: Exclude<ThemeTone, 'red'>;
+  sentiment: TextAiAssignedSentiment;
 }
 
 const GRANULARITY_OPTIONS: GranularityOption[] = [
@@ -164,6 +173,7 @@ const GRANULARITY_OPTIONS: GranularityOption[] = [
 
 const GRANULARITY_CHANGE_LIMIT = 2;
 const RECODE_RUN_LIMIT = 2;
+const RAW_RESPONSE_PAGE_SIZE = 100;
 
 const THEME_GROUPS: ThemeGroup[] = [
   {
@@ -402,29 +412,49 @@ const RESPONSE_CLASSIFICATIONS: Record<
   Array<ResponseClassification | null>
 > = {
   high: [
-    { tag: 'Staff Hygiene and Presentation Concerns', tone: 'green' },
-    { tag: 'Emergency Visit Convenience and Practical Value', tone: 'blue' },
-    { tag: 'Condiment Stock Availability and Communication', tone: 'green' },
-    { tag: 'Distinctive Location Atmosphere and Character', tone: 'blue' },
-    { tag: 'Any-size Beverage Promotion Value', tone: 'green' },
-    { tag: 'Rapid Order Fulfilment and Service Speed', tone: 'green' },
+    { tag: 'Staff Hygiene and Presentation Concerns', tone: 'green', sentiment: 'negative' },
+    { tag: 'Emergency Visit Convenience and Practical Value', tone: 'blue', sentiment: 'positive' },
+    { tag: 'Condiment Stock Availability and Communication', tone: 'green', sentiment: 'negative' },
+    { tag: 'Distinctive Location Atmosphere and Character', tone: 'blue', sentiment: 'positive' },
+    { tag: 'Any-size Beverage Promotion Value', tone: 'green', sentiment: 'very-positive' },
+    { tag: 'Rapid Order Fulfilment and Service Speed', tone: 'green', sentiment: 'very-positive' },
   ],
   medium: [
     null,
-    { tag: 'Customer Experience Differentiation', tone: 'blue' },
-    { tag: 'Customer Experience and Condiment Misrepresentation', tone: 'green' },
-    { tag: 'Customer Experience Differentiation', tone: 'blue' },
-    { tag: 'Pricing Concerns and Customer Feedback', tone: 'green' },
-    { tag: 'Service Speed and Efficiency', tone: 'green' },
+    { tag: 'Customer Experience Differentiation', tone: 'blue', sentiment: 'positive' },
+    { tag: 'Customer Experience and Condiment Misrepresentation', tone: 'green', sentiment: 'negative' },
+    { tag: 'Customer Experience Differentiation', tone: 'blue', sentiment: 'positive' },
+    { tag: 'Pricing Concerns and Customer Feedback', tone: 'green', sentiment: 'very-positive' },
+    { tag: 'Service Speed and Efficiency', tone: 'green', sentiment: 'very-positive' },
   ],
   low: [
-    { tag: 'Staff Service', tone: 'green' },
-    { tag: 'Overall Experience', tone: 'blue' },
-    { tag: 'Overall Experience', tone: 'green' },
-    { tag: 'Customer Experience', tone: 'blue' },
-    { tag: 'Customer Experience', tone: 'green' },
-    { tag: 'Staff Service', tone: 'green' },
+    { tag: 'Staff Service', tone: 'green', sentiment: 'negative' },
+    { tag: 'Overall Experience', tone: 'blue', sentiment: 'positive' },
+    { tag: 'Overall Experience', tone: 'green', sentiment: 'negative' },
+    { tag: 'Customer Experience', tone: 'blue', sentiment: 'positive' },
+    { tag: 'Customer Experience', tone: 'green', sentiment: 'very-positive' },
+    { tag: 'Staff Service', tone: 'green', sentiment: 'very-positive' },
   ],
+};
+
+const SECONDARY_RESPONSE_CLASSIFICATIONS: Partial<
+  Record<number, ResponseClassification>
+> = {
+  1: {
+    tag: 'Visit Convenience and Accessibility',
+    tone: 'green',
+    sentiment: 'neutral',
+  },
+  2: {
+    tag: 'Customer Service Interactions',
+    tone: 'blue',
+    sentiment: 'positive',
+  },
+  4: {
+    tag: 'Overall Experience Value',
+    tone: 'blue',
+    sentiment: 'positive',
+  },
 };
 
 const COVERAGE_CATEGORIES = [
@@ -523,6 +553,16 @@ function formatPercentage(value: number): string {
 
 function hasResponses(percentage: string): boolean {
   return Number.parseFloat(percentage) > 0;
+}
+
+function getResponseTagSentimentClass(
+  sentiment: TextAiAssignedSentiment
+): string {
+  if (sentiment === 'very-negative') return styles.responseTagVeryNegative;
+  if (sentiment === 'negative') return styles.responseTagNegative;
+  if (sentiment === 'positive') return styles.responseTagPositive;
+  if (sentiment === 'very-positive') return styles.responseTagVeryPositive;
+  return styles.responseTagNeutral;
 }
 
 function getSubThemeEditKey(
@@ -702,6 +742,15 @@ export default function TextAiThemeConfigurationPage({
     useState<EditSubThemeTarget | null>(null);
   const [draftSubThemeName, setDraftSubThemeName] = useState('');
   const [draftSubThemeDescription, setDraftSubThemeDescription] = useState('');
+  const [selectedResponseIds, setSelectedResponseIds] = useState<Set<number>>(
+    () => new Set()
+  );
+  const [rawDataPage, setRawDataPage] = useState(0);
+  const [sentimentEditorOpen, setSentimentEditorOpen] = useState(false);
+  const [responseSentimentEdits, setResponseSentimentEdits] = useState<
+    Record<string, TextAiSentimentDraft>
+  >(() => ({}));
+  const [sentimentUpdateMessage, setSentimentUpdateMessage] = useState('');
 
   useEffect(() => {
     const refreshPreferences = () =>
@@ -924,23 +973,61 @@ export default function TextAiThemeConfigurationPage({
     [appliedGranularity, questionVariant]
   );
 
-  const questionResponses = useMemo(
+  const questionResponses = useMemo<TextAiSentimentEditableResponse[]>(
     () =>
-      RAW_RESPONSES.map((response, index) => {
-        const classification = RESPONSE_CLASSIFICATIONS[appliedGranularity][index];
-        const renamedClassification = Object.entries(subThemeEdits).find(
-          ([editKey, edit]) =>
-            editKey.startsWith(`${selectedQuestionId}:`) &&
-            edit.originalName === classification?.tag
-        )?.[1];
+      Array.from({ length: questionVariant.responseCount }, (_, index) => {
+        const sampleIndex = index % RAW_RESPONSES.length;
+        const response = RAW_RESPONSES[sampleIndex];
+        const responseId = index + 1;
+        const classification =
+          RESPONSE_CLASSIFICATIONS[appliedGranularity][sampleIndex];
+        const classifications = classification
+          ? [
+              classification,
+              ...(SECONDARY_RESPONSE_CLASSIFICATIONS[sampleIndex]
+                ? [SECONDARY_RESPONSE_CLASSIFICATIONS[sampleIndex]]
+                : []),
+            ]
+          : [];
+        const subthemes = classifications.map((item, subthemeIndex) => {
+          const renamedClassification = Object.entries(subThemeEdits).find(
+            ([editKey, edit]) =>
+              editKey.startsWith(`${selectedQuestionId}:`) &&
+              edit.originalName === item.tag
+          )?.[1];
+          return {
+            id: `${responseId}-${subthemeIndex}`,
+            label: renamedClassification?.name ?? item.tag,
+            sentiment: item.sentiment,
+            tone: item.tone,
+          };
+        });
+        const edit =
+          responseSentimentEdits[`${selectedQuestionId}:${responseId}`];
+        const editedSubthemes = subthemes.map((subtheme) => ({
+          ...subtheme,
+          sentiment:
+            edit?.subthemeSentiments[subtheme.id] ?? subtheme.sentiment,
+        }));
         return {
-          ...response,
-          text: questionVariant.responseTexts[index] ?? response.text,
-          tag: renamedClassification?.name ?? classification?.tag,
-          tone: classification?.tone,
+          id: responseId,
+          text: questionVariant.responseTexts[sampleIndex] ?? response.text,
+          responseSentimentOverride: edit?.responseSentiment ?? null,
+          responseSentiment:
+            edit?.responseSentiment ??
+            (editedSubthemes.length === 1
+              ? editedSubthemes[0].sentiment
+              : 'neutral'),
+          subthemes: editedSubthemes,
         };
       }),
-    [appliedGranularity, questionVariant, selectedQuestionId, subThemeEdits]
+    [
+      appliedGranularity,
+      questionVariant,
+      responseSentimentEdits,
+      selectedQuestionId,
+      subThemeEdits,
+    ]
   );
 
   const visibleResponses = useMemo(() => {
@@ -949,9 +1036,44 @@ export default function TextAiThemeConfigurationPage({
     return questionResponses.filter(
       (response) =>
         response.text.toLowerCase().includes(query) ||
-        response.tag?.toLowerCase().includes(query)
+        response.subthemes.some((subtheme) =>
+          subtheme.label.toLowerCase().includes(query)
+        )
     );
   }, [questionResponses, search]);
+
+  const rawDataPageCount = Math.max(
+    1,
+    Math.ceil(visibleResponses.length / RAW_RESPONSE_PAGE_SIZE)
+  );
+  const safeRawDataPage = Math.min(rawDataPage, rawDataPageCount - 1);
+  const currentPageResponses = useMemo(
+    () =>
+      visibleResponses.slice(
+        safeRawDataPage * RAW_RESPONSE_PAGE_SIZE,
+        (safeRawDataPage + 1) * RAW_RESPONSE_PAGE_SIZE
+      ),
+    [safeRawDataPage, visibleResponses]
+  );
+  const rawDataRangeStart =
+    visibleResponses.length === 0
+      ? 0
+      : safeRawDataPage * RAW_RESPONSE_PAGE_SIZE + 1;
+  const rawDataRangeEnd = Math.min(
+    (safeRawDataPage + 1) * RAW_RESPONSE_PAGE_SIZE,
+    visibleResponses.length
+  );
+  const selectedResponses = useMemo(
+    () =>
+      questionResponses.filter((response) => selectedResponseIds.has(response.id)),
+    [questionResponses, selectedResponseIds]
+  );
+  const allVisibleResponsesSelected =
+    visibleResponses.length > 0 &&
+    visibleResponses.every((response) => selectedResponseIds.has(response.id));
+  const someVisibleResponsesSelected =
+    !allVisibleResponsesSelected &&
+    visibleResponses.some((response) => selectedResponseIds.has(response.id));
 
   if (!dashboard) {
     return (
@@ -973,6 +1095,49 @@ export default function TextAiThemeConfigurationPage({
       else next.add(groupId);
       return next;
     });
+  }
+
+  function toggleResponseSelection(responseId: number, checked: boolean): void {
+    setSentimentUpdateMessage('');
+    setSelectedResponseIds((current) => {
+      const next = new Set(current);
+      if (checked) next.add(responseId);
+      else next.delete(responseId);
+      return next;
+    });
+  }
+
+  function toggleAllVisibleResponses(checked: boolean): void {
+    setSentimentUpdateMessage('');
+    setSelectedResponseIds((current) => {
+      const next = new Set(current);
+      visibleResponses.forEach((response) => {
+        if (checked) next.add(response.id);
+        else next.delete(response.id);
+      });
+      return next;
+    });
+  }
+
+  function saveResponseSentiments(
+    drafts: Record<number, TextAiSentimentDraft>
+  ): void {
+    setResponseSentimentEdits((current) => ({
+      ...current,
+      ...Object.fromEntries(
+        Object.entries(drafts).map(([responseId, draft]) => [
+          `${selectedQuestionId}:${responseId}`,
+          draft,
+        ])
+      ),
+    }));
+    setSentimentEditorOpen(false);
+    setSelectedResponseIds(new Set());
+    setSentimentUpdateMessage(
+      `Sentiment updated for ${selectedResponses.length.toLocaleString()} ${
+        selectedResponses.length === 1 ? 'response' : 'responses'
+      }.`
+    );
   }
 
   function toggleCodeFrameSelection(target: ApproveTarget): void {
@@ -1141,6 +1306,9 @@ export default function TextAiThemeConfigurationPage({
                   setSelectedQuestionId((option as TextAiDashboardQuestion).id);
                   setSearch('');
                   setSelectedCodeFrameKeys(new Set());
+                  setSelectedResponseIds(new Set());
+                  setRawDataPage(0);
+                  setSentimentUpdateMessage('');
                   setEditSubThemeTarget(null);
                 }}
                 variant="outlined"
@@ -1159,7 +1327,10 @@ export default function TextAiThemeConfigurationPage({
               <span className={styles.srOnly}>Search themes or responses</span>
               <input
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setRawDataPage(0);
+                }}
                 placeholder="Search themes or responses..."
               />
             </label>
@@ -1315,33 +1486,129 @@ export default function TextAiThemeConfigurationPage({
             </div>
           </div>
 
+          <div className={styles.responseSelectionToolbar}>
+            <label className={styles.selectAllResponses}>
+              <input
+                type="checkbox"
+                ref={(input) => {
+                  if (input) input.indeterminate = someVisibleResponsesSelected;
+                }}
+                checked={allVisibleResponsesSelected}
+                onChange={(event) =>
+                  toggleAllVisibleResponses(event.target.checked)
+                }
+                disabled={visibleResponses.length === 0}
+              />
+              <span>
+                Select all ({visibleResponses.length.toLocaleString()} responses)
+              </span>
+            </label>
+            <div className={styles.responseSelectionActions} aria-live="polite">
+              {sentimentUpdateMessage ? (
+                <span className={styles.sentimentUpdateMessage} role="status">
+                  <span className="wm-check" aria-hidden />
+                  {sentimentUpdateMessage}
+                </span>
+              ) : null}
+              <span className={styles.selectedResponseCount}>
+                {selectedResponses.length.toLocaleString()} selected
+              </span>
+              {selectedResponses.length > 0 ? (
+                <button
+                  type="button"
+                  className={styles.clearResponseSelection}
+                  onClick={() => setSelectedResponseIds(new Set())}
+                >
+                  Clear
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className={styles.updateSentimentButton}
+                disabled={selectedResponses.length === 0}
+                onClick={() => setSentimentEditorOpen(true)}
+              >
+                Update sentiment
+              </button>
+            </div>
+          </div>
+
           <div className={styles.pagination}>
-            <button type="button" aria-label="Previous page" disabled>
+            <button
+              type="button"
+              aria-label="Previous page"
+              disabled={safeRawDataPage === 0}
+              onClick={() =>
+                setRawDataPage((current) => Math.max(0, current - 1))
+              }
+            >
               <span className="wm-chevron-left" aria-hidden />
             </button>
-            <span>1 - 100</span>
+            <span>
+              {rawDataRangeStart.toLocaleString()} -{' '}
+              {rawDataRangeEnd.toLocaleString()}
+            </span>
             <span className="wm-arrow-drop-down" aria-hidden />
-            <button type="button" aria-label="Next page">
+            <button
+              type="button"
+              aria-label="Next page"
+              disabled={safeRawDataPage >= rawDataPageCount - 1}
+              onClick={() =>
+                setRawDataPage((current) =>
+                  Math.min(rawDataPageCount - 1, current + 1)
+                )
+              }
+            >
               <span className="wm-chevron-right" aria-hidden />
             </button>
-            <span className={styles.itemCount}>{questionVariant.responseCount} items</span>
+            <span className={styles.itemCount}>
+              {visibleResponses.length.toLocaleString()} items
+            </span>
           </div>
 
           <div className={styles.responses}>
-            {visibleResponses.map((response) => (
+            {currentPageResponses.map((response) => (
               <article className={styles.responseCard} key={response.id}>
                 <label className={styles.responseText}>
-                  <input type="checkbox" aria-label={`Select response: ${response.text}`} />
+                  <input
+                    type="checkbox"
+                    aria-label={`Select response: ${response.text}`}
+                    checked={selectedResponseIds.has(response.id)}
+                    onChange={(event) =>
+                      toggleResponseSelection(response.id, event.target.checked)
+                    }
+                  />
                   <span>{response.text}</span>
                 </label>
-                {response.tag && response.tone && (
-                  <span className={`${styles.responseTag} ${styles[`responseTag${response.tone}`]}`}>
-                    {response.tag}
-                    <button type="button" aria-label={`Remove ${response.tag}`}>
-                      <span className="wm-close" aria-hidden />
-                    </button>
-                  </span>
-                )}
+                {response.subthemes.length > 0 ? (
+                  <div className={styles.responseTags}>
+                    {response.subthemes.map((subtheme) => (
+                      <span
+                        className={`${styles.responseTag} ${getResponseTagSentimentClass(
+                          subtheme.sentiment
+                        )}`}
+                        title={`${subtheme.label}: ${getSentimentLabel(
+                          subtheme.sentiment
+                        )}`}
+                        key={subtheme.id}
+                      >
+                        <span
+                          className={getSentimentIcon(subtheme.sentiment)}
+                          aria-label={`${getSentimentLabel(
+                            subtheme.sentiment
+                          )} sentiment`}
+                        />
+                        <span>{subtheme.label}</span>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${subtheme.label}`}
+                        >
+                          <span className="wm-close" aria-hidden />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </article>
             ))}
             {visibleResponses.length === 0 && (
@@ -1400,6 +1667,15 @@ export default function TextAiThemeConfigurationPage({
             Delete
           </button>
         </div>
+      ) : null}
+
+      {sentimentEditorOpen ? (
+        <TextAiUpdateSentimentModal
+          open
+          onOpenChange={setSentimentEditorOpen}
+          responses={selectedResponses}
+          onSave={saveResponseSentiments}
+        />
       ) : null}
 
       <WuModal

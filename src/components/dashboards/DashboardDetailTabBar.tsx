@@ -8,6 +8,7 @@ import { DashboardExternalReportPanel } from '@/components/dashboards/DashboardE
 import { NewReportTabModal } from '@/components/dashboards/NewReportTabModal';
 import type { DesignTypographyOptions } from '@/components/dashboards/DashboardDesignSettingsTab';
 import type { DashboardReportPickItem } from '@/data/mock-dashboard-report-tabs';
+import type { AiInsightRefreshFrequency } from '@/data/mock-dashboard-ai-insights';
 import styles from './DashboardDetailTabBar.module.css';
 
 const WuButton = dynamic(
@@ -52,9 +53,19 @@ const MENU_ITEM_CLASS =
 
 interface DashboardDetailTabBarProps {
   designTypography: DesignTypographyOptions;
+  insightRefreshFrequency: AiInsightRefreshFrequency;
+  globalInsightRefreshVersion: number;
+  lastAiInsightsRefreshAt: string;
+  onInsightsRefreshed: (refreshedAt: string) => void;
 }
 
-export function DashboardDetailTabBar({ designTypography }: DashboardDetailTabBarProps) {
+export function DashboardDetailTabBar({
+  designTypography,
+  insightRefreshFrequency,
+  globalInsightRefreshVersion,
+  lastAiInsightsRefreshAt,
+  onInsightsRefreshed,
+}: DashboardDetailTabBarProps) {
   const { showToast } = useWuShowToast();
   const [tabs, setTabs] = useState<DashboardTab[]>(INITIAL_TABS);
   const [activeTabId, setActiveTabId] = useState(INITIAL_TABS[0].id);
@@ -126,7 +137,13 @@ export function DashboardDetailTabBar({ designTypography }: DashboardDetailTabBa
             category={activeTab.reportCategory}
           />
         ) : (
-          <AiDashboardCanvas designTypography={designTypography} />
+          <AiDashboardCanvas
+            designTypography={designTypography}
+            insightRefreshFrequency={insightRefreshFrequency}
+            globalInsightRefreshVersion={globalInsightRefreshVersion}
+            lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
+            onInsightsRefreshed={onInsightsRefreshed}
+          />
         )}
       </div>
 
