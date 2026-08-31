@@ -117,3 +117,115 @@ export function mockTranscribeVoiceAnswer(
     }, delayMs);
   });
 }
+
+const MOCK_DICTATION_SENTENCES = [
+  ...MOCK_TRANSCRIPTS,
+  'The checkout flow was smooth and I had no trouble completing my purchase.',
+  'I found the mobile experience a bit slow, but the desktop version worked perfectly.',
+  'What stood out most was how quickly the support team responded to my questions.',
+  'I would happily use this product again and have already told a few colleagues about it.',
+];
+
+const MOCK_EMAIL_SENTENCES = [
+  'You can reach me at sarah.johnson@gmail.com if you have any follow-up questions.',
+  'Please feel free to email me at michael.chen@outlook.com anytime this week.',
+  'My preferred contact email is sofia.morales@icloud.com for survey follow-ups.',
+];
+
+const MOCK_PHONE_SENTENCES = [
+  'My phone number is plus one four one five five five five zero one nine two.',
+  'You can call me at plus one three one two eight six seven five three zero nine.',
+  'The best number to reach me is plus four four two zero seven nine four six zero nine five eight.',
+];
+
+const MOCK_NAME_SENTENCES = [
+  'My first name is Sarah and my last name is Johnson.',
+  'I go by Michael Chen — that is M I C H A E L C H E N.',
+  'My name is Priya Patel, spelled P R I Y A P A T E L.',
+];
+
+function pickRandom<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+/** Pick a complete demo dictation sentence based on field context. */
+export function pickMockDictationPhrase(contextHint = ''): string {
+  const hint = contextHint.toLowerCase();
+  if (hint.includes('email') || hint.includes('@')) {
+    return pickRandom(MOCK_EMAIL_SENTENCES);
+  }
+  if (hint.includes('phone') || hint.includes('mobile') || hint.includes('cell')) {
+    return pickRandom(MOCK_PHONE_SENTENCES);
+  }
+  if (
+    hint.includes('first') ||
+    hint.includes('last') ||
+    hint.includes('name') ||
+    hint.includes('sarah') ||
+    hint.includes('johnson')
+  ) {
+    return pickRandom(MOCK_NAME_SENTENCES);
+  }
+  return pickRandom(MOCK_DICTATION_SENTENCES);
+}
+
+export interface MockDictationStream {
+  stop: () => void;
+}
+
+/**
+ * Prototype live dictation — streams words into the field to demo speech-to-text UX.
+ */
+export function startMockDictationStream(
+  phrase: string,
+  onUpdate: (committed: string, interim: string) => void,
+  onActivity: () => void
+): MockDictationStream {
+  const words = phrase.trim().split(/\s+/).filter(Boolean);
+  let wordIndex = 0;
+  let charIndex = 0;
+  let committed = '';
+  let stopped = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  function clearTimer(): void {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  }
+
+  function tick(): void {
+    if (stopped) return;
+
+    if (wordIndex >= words.length) {
+      onUpdate(committed, '');
+      return;
+    }
+
+    const word = words[wordIndex];
+    charIndex += 1;
+    const partial = word.slice(0, charIndex);
+    onUpdate(committed, partial);
+    onActivity();
+
+    if (charIndex >= word.length) {
+      committed = committed ? `${committed} ${word}` : word;
+      wordIndex += 1;
+      charIndex = 0;
+      timer = setTimeout(tick, 180 + Math.floor(Math.random() * 120));
+      return;
+    }
+
+    timer = setTimeout(tick, 45 + Math.floor(Math.random() * 35));
+  }
+
+  timer = setTimeout(tick, 200);
+
+  return {
+    stop: () => {
+      stopped = true;
+      clearTimer();
+    },
+  };
+}

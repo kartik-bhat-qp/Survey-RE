@@ -2,7 +2,6 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
-import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
   buildWaveformBars,
   deriveVoiceAnswerInputType,
@@ -10,6 +9,9 @@ import {
   formatVoiceDuration,
   isVoiceAnswerSubmittable,
   mockTranscribeVoiceAnswer,
+  pickMockDictationPhrase,
+  startMockDictationStream,
+  type MockDictationStream,
   type VoiceAnswerUploadStatus,
   type VoiceAnswerValue,
 } from '@/data/mock-voice-answer';
@@ -22,6 +24,8 @@ const WuTooltip = dynamic(
 
 const CHIP_BARS = 28;
 const LIVE_BAR_COUNT = 24;
+/** Auto-stop dictation after this many ms without new speech. */
+const DICTATION_SILENCE_MS = 3000;
 
 type FieldPhase = 'empty' | 'recording' | 'recorded';
 
@@ -49,37 +53,6 @@ export interface VoiceAnswerFieldProps {
   mode?: VoiceAnswerFieldMode;
 }
 
-type SpeechRecognitionLike = {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onerror: ((event: { error?: string }) => void) | null;
-  onend: (() => void) | null;
-};
-
-type SpeechRecognitionEventLike = {
-  resultIndex: number;
-  results: ArrayLike<{
-    isFinal: boolean;
-    0: { transcript: string };
-  }>;
-};
-
-function getSpeechRecognitionConstructor():
-  | (new () => SpeechRecognitionLike)
-  | null {
-  if (typeof window === 'undefined') return null;
-  const w = window as Window & {
-    SpeechRecognition?: new () => SpeechRecognitionLike;
-    webkitSpeechRecognition?: new () => SpeechRecognitionLike;
-  };
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
-}
-
 function DictationAnswerField({
   value,
   onChange,
@@ -90,7 +63,6 @@ function DictationAnswerField({
   compact = false,
   embedded = false,
 }: Omit<VoiceAnswerFieldProps, 'mode' | 'captionPlaceholder'>) {
-  const { showToast } = useWuShowToast();
   const [focused, setFocused] = useState(false);
   const [text, setText] = useState(value?.textResponse ?? '');
   const [listening, setListening] = useState(false);
@@ -98,10 +70,11 @@ function DictationAnswerField({
 
   const textRef = useRef<HTMLTextAreaElement>(null);
   const prefixRef = useRef(value?.textResponse ?? '');
-  const finalsRef = useRef('');
+  const sessionCommittedRef = useRef('');
   const interimRef = useRef('');
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const mockStreamRef = useRef<MockDictationStream | null>(null);
   const listeningRef = useRef(false);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function joinParts(...parts: string[]): string {
     return parts
@@ -110,11 +83,11 @@ function DictationAnswerField({
       .join(' ');
   }
 
-  function publish(finalized: string, interimText: string): void {
-    const committed = joinParts(prefixRef.current, finalized);
-    const visible = joinParts(committed, interimText);
+  function publishSession(committed: string, interimText: string): void {
+    const visible = joinParts(prefixRef.current, committed, interimText);
+    sessionCommittedRef.current = committed;
     interimRef.current = interimText;
-    setText(committed);
+    setText(joinParts(prefixRef.current, committed));
     setInterim(interimText);
     onChange?.({
       ...emptyVoiceAnswer(),
@@ -134,8 +107,7 @@ function DictationAnswerField({
 
   function setTypedText(next: string): void {
     prefixRef.current = next;
-    finalsRef.current = '';
-    interimRef.current = '';
+    sessionCommittedRef.current = '';
     setText(next);
     setInterim('');
     onChange?.({
@@ -145,31 +117,38 @@ function DictationAnswerField({
     });
   }
 
-  function stopRecognition(): void {
-    const recognition = recognitionRef.current;
-    recognitionRef.current = null;
-    if (!recognition) return;
-    recognition.onresult = null;
-    recognition.onerror = null;
-    recognition.onend = null;
-    try {
-      recognition.stop();
-    } catch {
-      try {
-        recognition.abort();
-      } catch {
-        /* ignore */
-      }
+  function clearSilenceTimer(): void {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
     }
   }
 
+  function resetSilenceTimer(): void {
+    clearSilenceTimer();
+    if (!listeningRef.current) return;
+    silenceTimerRef.current = setTimeout(() => {
+      if (listeningRef.current) endListening();
+    }, DICTATION_SILENCE_MS);
+  }
+
+  function stopMockStream(): void {
+    mockStreamRef.current?.stop();
+    mockStreamRef.current = null;
+  }
+
   function endListening(): void {
-    const committed = joinParts(prefixRef.current, finalsRef.current, interimRef.current);
+    const committed = joinParts(
+      prefixRef.current,
+      sessionCommittedRef.current,
+      interimRef.current
+    );
     prefixRef.current = committed;
-    finalsRef.current = '';
+    sessionCommittedRef.current = '';
     interimRef.current = '';
     listeningRef.current = false;
-    stopRecognition();
+    clearSilenceTimer();
+    stopMockStream();
     setListening(false);
     setInterim('');
     setText(committed);
@@ -183,91 +162,38 @@ function DictationAnswerField({
   useEffect(() => {
     return () => {
       listeningRef.current = false;
-      stopRecognition();
+      clearSilenceTimer();
+      stopMockStream();
     };
   }, []);
 
   function startDictation(): void {
     if (disabled || listeningRef.current) return;
 
-    const Ctor = getSpeechRecognitionConstructor();
-    if (!Ctor) {
-      showToast({
-        message: 'Speech recognition is not supported in this browser',
-        variant: 'error',
-      });
-      return;
-    }
-
-    // MDN-style: start recognition immediately — words stream into the field.
     prefixRef.current = text;
-    finalsRef.current = '';
-    interimRef.current = '';
+    sessionCommittedRef.current = '';
     setInterim('');
     listeningRef.current = true;
     setListening(true);
+    resetSilenceTimer();
 
-    const recognition = new Ctor();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang =
-      typeof navigator !== 'undefined' ? navigator.language || 'en-US' : 'en-US';
-    recognitionRef.current = recognition;
-
-    recognition.onresult = (event) => {
-      if (!listeningRef.current) return;
-
-      let nextFinals = finalsRef.current;
-      let interimTranscript = '';
-
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        const result = event.results[i];
-        const piece = result[0]?.transcript ?? '';
-        if (!piece) continue;
-        if (result.isFinal) nextFinals += `${piece} `;
-        else interimTranscript += piece;
+    const phrase = pickMockDictationPhrase(placeholder);
+    mockStreamRef.current = startMockDictationStream(
+      phrase,
+      (committed, interimText) => {
+        if (!listeningRef.current) return;
+        publishSession(committed, interimText);
+        resetSilenceTimer();
+      },
+      () => {
+        if (!listeningRef.current) return;
+        resetSilenceTimer();
       }
-
-      finalsRef.current = nextFinals;
-      publish(nextFinals, interimTranscript);
-    };
-
-    recognition.onerror = (event) => {
-      if (!listeningRef.current) return;
-      const code = event.error ?? '';
-      if (code === 'no-speech' || code === 'aborted' || code === 'audio-capture') return;
-      endListening();
-    };
-
-    recognition.onend = () => {
-      if (!listeningRef.current) return;
-      prefixRef.current = joinParts(prefixRef.current, finalsRef.current);
-      finalsRef.current = '';
-      interimRef.current = '';
-      setText(prefixRef.current);
-      setInterim('');
-      try {
-        recognition.start();
-      } catch {
-        endListening();
-      }
-    };
-
-    try {
-      recognition.start();
-    } catch {
-      listeningRef.current = false;
-      setListening(false);
-    }
-  }
-
-  function stopDictation(): void {
-    if (!listeningRef.current) return;
-    endListening();
+    );
   }
 
   function handleTextChange(next: string): void {
-    if (listening) stopDictation();
+    if (listening) return;
     setTypedText(next);
   }
 
@@ -287,9 +213,8 @@ function DictationAnswerField({
   const rootClass = [
     styles.field,
     embedded ? styles.fieldEmbedded : '',
-    focused && !embedded ? styles.fieldFocused : '',
+    (focused || listening) && !embedded ? styles.fieldFocused : '',
     disabled ? styles.fieldDisabled : '',
-    listening ? styles.fieldDictating : '',
     className,
   ]
     .filter(Boolean)
@@ -302,7 +227,7 @@ function DictationAnswerField({
           ref={textRef}
           className={styles.textInput}
           value={displayText}
-          placeholder={listening ? '' : placeholder}
+          placeholder={placeholder}
           rows={compact ? 1 : 4}
           disabled={disabled}
           readOnly={listening}
@@ -317,7 +242,7 @@ function DictationAnswerField({
             }
           }}
         />
-        <WuTooltip content={listening ? 'Stop listening' : 'Start voice typing'}>
+        <WuTooltip content="Dictation">
           <button
             type="button"
             className={[styles.micBtn, listening ? styles.micBtnListening : '']
@@ -325,22 +250,19 @@ function DictationAnswerField({
               .join(' ')}
             onClick={(e) => {
               e.stopPropagation();
-              if (listening) stopDictation();
-              else startDictation();
+              startDictation();
             }}
-            disabled={disabled}
-            aria-label={listening ? 'Stop listening' : 'Start voice typing'}
+            disabled={disabled || listening}
+            aria-label="Dictation"
             aria-pressed={listening}
           >
-            <span className={listening ? 'wm-stop-circle' : 'wm-mic'} aria-hidden />
+            <span className="wm-mic" aria-hidden />
           </button>
         </WuTooltip>
       </div>
-      {listening ? (
-        <p className={styles.dictationHint} aria-live="polite">
-          Listening…
-        </p>
-      ) : null}
+      <span className={styles.srOnly} aria-live="polite">
+        {listening ? 'Dictation active' : ''}
+      </span>
     </div>
   );
 }
