@@ -10,7 +10,8 @@ export type TextAiWidgetChartTypeId =
   | 'comparative-chart'
   | 'subtheme-comparative-chart'
   | 'text-summary'
-  | 'kpi-by-theme';
+  | 'kpi-by-theme'
+  | 'subtheme-trend';
 
 export interface TextAiWidgetChartType {
   id: TextAiWidgetChartTypeId;
@@ -52,6 +53,11 @@ export const TEXT_AI_WIDGET_CHART_TYPES: TextAiWidgetChartType[] = [
     id: 'kpi-by-theme',
     label: 'KPI by Theme',
     imageSrc: ADVANCED.driverAnalysis,
+  },
+  {
+    id: 'subtheme-trend',
+    label: 'Sub-theme trend',
+    imageSrc: ADVANCED.segmentTrendLine,
   },
 ];
 

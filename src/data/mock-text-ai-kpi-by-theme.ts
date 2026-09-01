@@ -36,8 +36,10 @@ export interface TextAiKpiSentimentDistribution {
 export interface TextAiKpiThemeResult {
   id: string;
   label: string;
+  parentTheme?: string;
   responseCount: number;
   score: number;
+  netImpact: number;
   delta: number;
   tone: TextAiKpiDeltaTone;
   lowSample: boolean;
@@ -319,28 +321,38 @@ function resolveDeltaTone(
   return 'neutral';
 }
 
+function calculateNetImpact(delta: number, responseCount: number): number {
+  return Math.round(delta * responseCount * 0.08 * 10) / 10;
+}
+
 function createResult(
   id: string,
   label: string,
   definition: TextAiKpiDefinition,
   overallScore: number,
   responses: readonly TextAiKpiResponse[],
-  subthemes?: TextAiKpiThemeResult[]
+  options?: {
+    parentTheme?: string;
+    subthemes?: TextAiKpiThemeResult[];
+  }
 ): TextAiKpiThemeResult {
   const deduplicated = uniqueResponses(responses);
   const score = calculateScore(definition, deduplicated);
   const delta = score - overallScore;
+  const netImpact = calculateNetImpact(delta, deduplicated.length);
   return {
     id,
     label,
+    parentTheme: options?.parentTheme,
     responseCount: deduplicated.length,
     score,
+    netImpact,
     delta,
     tone: resolveDeltaTone(definition, delta, deduplicated.length),
     lowSample: deduplicated.length < LOW_SAMPLE_THRESHOLD,
     sentiment: calculateSentiment(deduplicated),
     responses: deduplicated,
-    subthemes,
+    subthemes: options?.subthemes,
   };
 }
 
@@ -368,7 +380,8 @@ export function getTextAiKpiAnalysis(kpiId: TextAiKpiId): TextAiKpiAnalysis {
         subtheme,
         definition,
         overallScore,
-        responses
+        responses,
+        { parentTheme: theme.name }
       );
     });
     return createResult(
@@ -377,7 +390,7 @@ export function getTextAiKpiAnalysis(kpiId: TextAiKpiId): TextAiKpiAnalysis {
       definition,
       overallScore,
       themeResponses,
-      subthemes
+      { subthemes }
     );
   });
 

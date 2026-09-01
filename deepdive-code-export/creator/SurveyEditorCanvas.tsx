@@ -70,7 +70,7 @@ import {
   type SurveyAiGenerationResult,
 } from '@/data/mock-survey-ai-agent';
 import { getQuestionTypePreview } from '@/data/mock-add-question-previews';
-import { SectionBlockOptionsButton } from '@/components/surveys/SectionBlockOptionsButton';
+import { SectionBlockOptionsButton, type SectionBlockMenuAction } from '@/components/surveys/SectionBlockOptionsButton';
 import { BlockFlowModal } from '@/components/surveys/BlockFlowModal';
 import { ReorderQuestionsModal } from '@/components/surveys/ReorderQuestionsModal';
 import { LookupTableBulkConversionModal } from '@/components/surveys/LookupTableBulkConversionModal';
@@ -2392,6 +2392,37 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     []
   );
 
+  const handleSectionBlockMenuAction = useCallback(
+    (sectionId: string, action: SectionBlockMenuAction) => {
+      const section = sections.find((item) => item.id === sectionId);
+      if (!section) return;
+
+      switch (action) {
+        case 'preview':
+          showToast({ message: `Preview ${section.title}`, variant: 'success' });
+          return;
+        case 'copy':
+          showToast({ message: `${section.title} copied`, variant: 'success' });
+          return;
+        case 'reorder':
+          showToast({ message: `Reorder ${section.title}`, variant: 'info' });
+          return;
+        case 'randomize-questions':
+          showToast({ message: `Randomize questions in ${section.title}`, variant: 'success' });
+          return;
+        case 'looping':
+          showToast({ message: `Looping for ${section.title}`, variant: 'success' });
+          return;
+        case 'block-flow':
+          setBlockFlowOpen(true);
+          return;
+        case 'delete':
+          showToast({ message: `${section.title} deleted`, variant: 'success' });
+      }
+    },
+    [sections, setBlockFlowOpen, showToast]
+  );
+
   const handleQuestionMenuAction = useCallback(
     (sectionId: string, questionId: string, action: QuestionMenuAction) => {
       const section = sections.find((sec) => sec.id === sectionId);
@@ -3852,9 +3883,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                 {detail.survey.id !== AUDIO_INPUT_SURVEY_ID ? (
                   <SectionBlockOptionsButton
                     sectionTitle={section.title}
-                    showBlockFlowHint={sectionIndex === 0}
-                    onBlockFlowSelect={() => setBlockFlowOpen(true)}
-                    onLearnMore={() => setBlockFlowOpen(true)}
+                    onAction={(action) => handleSectionBlockMenuAction(section.id, action)}
                   />
                 ) : null}
               </header>

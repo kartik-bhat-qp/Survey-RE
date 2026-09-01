@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import styles from './SectionBlockOptionsButton.module.css';
 
@@ -14,87 +13,50 @@ const WuMenuItem = dynamic(
   { ssr: false }
 );
 
-const BLOCK_FLOW_HINT_DISMISSED_KEY = 'survey-block-flow-hint-dismissed';
+const WuMenuSeparatorItem = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuSeparatorItem })),
+  { ssr: false }
+);
+
+export type SectionBlockMenuAction =
+  | 'preview'
+  | 'copy'
+  | 'reorder'
+  | 'randomize-questions'
+  | 'looping'
+  | 'block-flow'
+  | 'delete';
 
 interface SectionBlockOptionsButtonProps {
   sectionTitle: string;
-  showBlockFlowHint?: boolean;
-  onBlockFlowSelect: () => void;
-  onLearnMore?: () => void;
+  onAction: (action: SectionBlockMenuAction) => void;
+}
+
+function MenuItemWithIcon({
+  iconClass,
+  label,
+  onSelect,
+}: {
+  iconClass: string;
+  label: string;
+  onSelect: (event: Event) => void;
+}) {
+  return (
+    <WuMenuItem className={styles.menuItem} onSelect={onSelect}>
+      <span className={styles.menuItemContent}>
+        <span className={`${iconClass} ${styles.menuItemIcon}`} aria-hidden />
+        <span>{label}</span>
+      </span>
+    </WuMenuItem>
+  );
 }
 
 export function SectionBlockOptionsButton({
   sectionTitle,
-  showBlockFlowHint = false,
-  onBlockFlowSelect,
-  onLearnMore,
+  onAction,
 }: SectionBlockOptionsButtonProps) {
-  const [hintVisible, setHintVisible] = useState(false);
-  const [hintDismissed, setHintDismissed] = useState(true);
-
-  useEffect(() => {
-    setHintDismissed(
-      window.sessionStorage.getItem(BLOCK_FLOW_HINT_DISMISSED_KEY) === 'true'
-    );
-  }, []);
-
-  const canShowHint = showBlockFlowHint && !hintDismissed;
-
-  const handleDismiss = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    window.sessionStorage.setItem(BLOCK_FLOW_HINT_DISMISSED_KEY, 'true');
-    setHintDismissed(true);
-    setHintVisible(false);
-  }, []);
-
-  const handleLearnMore = useCallback(
-    (event: React.MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      onLearnMore?.();
-    },
-    [onLearnMore]
-  );
-
-  const handleBlockFlowSelect = useCallback(() => {
-    queueMicrotask(() => onBlockFlowSelect());
-  }, [onBlockFlowSelect]);
-
   return (
-    <div
-      className={styles.blockOptionsWrap}
-      onMouseEnter={() => {
-        if (canShowHint) setHintVisible(true);
-      }}
-      onMouseLeave={() => setHintVisible(false)}
-    >
-      {hintVisible && canShowHint ? (
-        <div className={styles.hint} role="tooltip">
-          <div className={styles.hintHeader}>
-            <div className={styles.hintTitleRow}>
-              <span className={styles.hintTitle}>Block flow</span>
-              <span className={styles.hintBadge}>New</span>
-            </div>
-            <button
-              type="button"
-              className={styles.dismissBtn}
-              aria-label="Dismiss Block flow hint"
-              onClick={handleDismiss}
-            >
-              <span className="wm-close" aria-hidden />
-            </button>
-          </div>
-          <p className={styles.hintBody}>
-            Now you can reorder your survey blocks from here.
-          </p>
-          <div className={styles.hintFooter}>
-            <button type="button" className={styles.learnMoreBtn} onClick={handleLearnMore}>
-              Learn more
-            </button>
-          </div>
-        </div>
-      ) : null}
+    <div className={styles.blockOptionsWrap}>
       <WuMenu
         align="end"
         Trigger={
@@ -107,9 +69,46 @@ export function SectionBlockOptionsButton({
           </button>
         }
       >
-        <WuMenuItem className={styles.menuItem} onSelect={handleBlockFlowSelect}>
-          Block Flow
-        </WuMenuItem>
+        <MenuItemWithIcon
+          iconClass="wm-visibility"
+          label="Preview"
+          onSelect={(event) => {
+            event.preventDefault();
+            onAction('preview');
+          }}
+        />
+        <MenuItemWithIcon
+          iconClass="wm-content-copy"
+          label="Copy"
+          onSelect={() => onAction('copy')}
+        />
+        <MenuItemWithIcon
+          iconClass="wm-drag-indicator"
+          label="Reorder"
+          onSelect={() => onAction('reorder')}
+        />
+        <WuMenuSeparatorItem />
+        <MenuItemWithIcon
+          iconClass="wm-compare-arrows"
+          label="Randomize Questions"
+          onSelect={() => onAction('randomize-questions')}
+        />
+        <MenuItemWithIcon
+          iconClass="wm-autorenew"
+          label="Looping"
+          onSelect={() => onAction('looping')}
+        />
+        <MenuItemWithIcon
+          iconClass="wm-layers"
+          label="Block Flow"
+          onSelect={() => onAction('block-flow')}
+        />
+        <WuMenuSeparatorItem />
+        <MenuItemWithIcon
+          iconClass="wm-delete"
+          label="Delete"
+          onSelect={() => onAction('delete')}
+        />
       </WuMenu>
     </div>
   );

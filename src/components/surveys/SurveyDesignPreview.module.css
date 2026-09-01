@@ -1,5 +1,5 @@
 .previewPane {
-  background: #eef2f6;
+  background: #e8edf2;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -12,17 +12,16 @@
   display: flex;
   flex-shrink: 0;
   justify-content: flex-end;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.25rem 0.35rem;
 }
 
 .deviceToggleGroup {
   align-items: center;
-  background: #fff;
-  border: 1px solid #dbe3ea;
+  background: #3a414c;
   border-radius: 999px;
   display: inline-flex;
-  gap: 0.125rem;
-  padding: 0.125rem;
+  gap: 0.05rem;
+  padding: 0.2rem 0.28rem;
 }
 
 .deviceToggleBtn,
@@ -31,25 +30,23 @@
   background: transparent;
   border: none;
   border-radius: 999px;
-  color: #64748b;
+  color: #c5cad3;
   cursor: pointer;
   display: inline-flex;
-  font-size: 1rem;
-  height: 2rem;
+  font-size: 1.05rem;
+  height: 1.75rem;
   justify-content: center;
-  width: 2rem;
+  width: 1.85rem;
 }
 
 .deviceToggleBtn:hover,
 .deviceToggleBtn:focus-visible {
-  background: #f1f5f9;
-  color: #1b87e6;
+  color: #fff;
   outline: none;
 }
 
 .deviceToggleBtnActive {
-  background: #e8f4fd;
-  color: #1b87e6;
+  color: #3b9aed;
 }
 
 .previewStage {
@@ -59,37 +56,41 @@
   justify-content: center;
   min-height: 0;
   overflow: auto;
-  padding: 0 1.5rem 1.5rem;
+  padding: 0.35rem 1.5rem 1.5rem;
 }
 
 .monitorShell {
-  background: #111827;
-  border-radius: 1rem 1rem 0.75rem 0.75rem;
-  box-shadow: 0 18px 40px rgb(15 23 42 / 18%);
+  background: #1c1f24;
+  border-radius: 1.15rem;
+  box-shadow: 0 18px 40px rgb(15 23 42 / 22%);
   display: flex;
   flex-direction: column;
   max-height: 100%;
   max-width: 100%;
   overflow: hidden;
-  padding: 0.75rem 0.75rem 1rem;
+  padding: 0.7rem 0.7rem 1.05rem;
   width: min(100%, 52rem);
 }
 
 .monitorShellTablet {
-  width: min(100%, 38rem);
+  border-radius: 1.35rem;
+  padding: 0.85rem 0.7rem 0.85rem;
+  width: min(100%, 34rem);
 }
 
 .monitorShellMobile {
-  width: min(100%, 20rem);
+  border-radius: 1.6rem;
+  padding: 0.95rem 0.55rem 1.15rem;
+  width: min(100%, 22rem);
 }
 
 .monitorBezel {
   background: #000;
-  border-radius: 0.35rem;
+  border-radius: 0.28rem;
   display: flex;
   flex: 1;
   flex-direction: column;
-  min-height: 22rem;
+  min-height: 26rem;
   overflow: hidden;
 }
 
@@ -102,19 +103,30 @@
   min-height: 0;
 }
 
+.surveyShellAccessible {
+  font-size: 1.0625rem;
+}
+
+.topBar {
+  background: var(--survey-design-topbar, #8ecaf0);
+  flex-shrink: 0;
+  height: 0.28rem;
+  width: 100%;
+}
+
 .surveyHeader {
   align-items: center;
-  background: #fff;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--survey-design-header, #fff);
+  border-bottom: 1px solid rgb(148 163 184 / 22%);
   display: flex;
   flex-shrink: 0;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
+  padding: 0.8rem 1.25rem;
 }
 
 .surveyHeaderTitle {
   color: var(--survey-design-accent, #1b87e6);
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
   font-weight: 500;
 }
 
@@ -122,41 +134,51 @@
   align-items: center;
   background: transparent;
   border: none;
-  color: #64748b;
+  color: var(--survey-design-muted, #64748b);
   cursor: default;
   display: inline-flex;
-  font-size: 1rem;
+  font-size: 1.125rem;
   height: 1.75rem;
   justify-content: center;
   width: 1.75rem;
 }
 
 .progressBar {
-  background: rgb(255 255 255 / 20%);
+  background: rgb(15 23 42 / 12%);
   flex-shrink: 0;
   height: 0.25rem;
   width: 100%;
 }
 
 .progressBarFill {
-  background: #fff;
+  background: var(--survey-design-button, #1b87e6);
   height: 100%;
   width: 35%;
 }
 
+.visualHero {
+  flex-shrink: 0;
+  height: 5.5rem;
+  width: 100%;
+}
+
 .surveyBody {
-  background: var(--survey-design-bg, #fff);
   display: flex;
   flex: 1;
   flex-direction: column;
   min-height: 0;
 }
 
-.surveyCanvas {
+.surveyCanvas,
+.surveyCanvasFocus {
   display: flex;
   flex: 1;
   justify-content: center;
-  padding: 1.5rem 1.25rem 0;
+  padding: 1.75rem 2.25rem 0;
+}
+
+.surveyCanvasFocus {
+  padding-top: 2.75rem;
 }
 
 .questionCard {
@@ -167,25 +189,29 @@
 }
 
 .requiredNote {
-  color: #64748b;
+  color: var(--survey-design-muted, #64748b);
   font-size: 0.75rem;
-  margin: 0 0 1rem;
+  margin: 0 0 1.35rem;
   text-align: center;
 }
 
 .questionTitleRow {
   align-items: flex-start;
   display: flex;
-  gap: 0.375rem;
+  gap: 0.4rem;
   margin-bottom: 1.25rem;
 }
 
 .questionTitle {
-  color: #1e293b;
+  color: var(--survey-design-text, #1e293b);
   font-size: 1.0625rem;
   font-weight: 500;
   line-height: 1.45;
   margin: 0;
+}
+
+.surveyShellAccessible .questionTitle {
+  font-size: 1.25rem;
 }
 
 .requiredMark {
@@ -194,36 +220,65 @@
 }
 
 .helpIcon {
-  color: #94a3b8;
+  color: #1b87e6;
   flex-shrink: 0;
   font-size: 1rem;
-  margin-top: 0.125rem;
+  margin-top: 0.15rem;
 }
 
 .optionList {
   display: flex;
   flex-direction: column;
-  gap: 0.875rem;
+  gap: 0.9rem;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .optionLabel {
-  align-items: flex-start;
-  color: #334155;
+  align-items: center;
+  color: var(--survey-design-text, #334155);
+  cursor: default;
   display: flex;
   font-size: 0.9375rem;
   gap: 0.625rem;
   line-height: 1.4;
+  position: relative;
 }
 
-.optionRadio {
-  accent-color: var(--survey-design-accent, #1b87e6);
+.optionRadioInput {
+  height: 1px;
+  left: 0;
+  margin: 0;
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  width: 1px;
+}
+
+.radio,
+.radioChecked {
+  align-items: center;
+  background: #fff;
+  border: 1.5px solid #94a3b8;
+  border-radius: 50%;
+  display: inline-flex;
   flex-shrink: 0;
-  height: 1rem;
-  margin: 0.125rem 0 0;
-  width: 1rem;
+  height: 1.05rem;
+  justify-content: center;
+  width: 1.05rem;
+}
+
+.radioChecked {
+  border-color: var(--survey-design-accent, #1b87e6);
+}
+
+.radioDot {
+  background: var(--survey-design-accent, #1b87e6);
+  border-radius: 50%;
+  display: block;
+  height: 0.5rem;
+  width: 0.5rem;
 }
 
 .focusFooter {
@@ -231,7 +286,7 @@
   display: flex;
   gap: 0.75rem;
   margin-top: auto;
-  padding: 1.25rem 1rem 1.5rem;
+  padding: 1.25rem 1.25rem 1.5rem;
 }
 
 .backBtn {
@@ -263,8 +318,4 @@
   font-size: 0.9375rem;
   font-weight: 500;
   height: 2.75rem;
-}
-
-.layoutBadge {
-  display: none;
 }

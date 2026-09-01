@@ -6,7 +6,7 @@ import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigat
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { NavLink } from '@/components/surveys/NavLink';
 import { SearchReplaceModal } from '@/components/surveys/SearchReplaceModal';
-import { SearchReplaceIcon } from '@/components/surveys/SearchReplaceIcon';
+import { BlockFlowModal } from '@/components/surveys/BlockFlowModal';
 import { RemoveAllLogicModal } from '@/components/surveys/RemoveAllLogicModal';
 import { CustomJsModal } from '@/components/surveys/CustomJsModal';
 import { PreDefinedLogicCriteriaModal } from '@/components/surveys/PreDefinedLogicCriteriaModal';
@@ -42,13 +42,14 @@ const WuMenuItem = dynamic(
   { ssr: false }
 );
 
-const WuMenuItemGroup = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItemGroup })),
+const WuMenuCheckboxItem = dynamic(
+  () =>
+    import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuCheckboxItem })),
   { ssr: false }
 );
 
-const WuTooltip = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+const WuMenuItemGroup = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItemGroup })),
   { ssr: false }
 );
 
@@ -76,12 +77,12 @@ export function SurveyEditorPhaseTabs() {
   const { bulkEditModeEnabled, enableBulkEditMode, disableBulkEditMode } =
     useSurveyEditorBulkEdit();
   const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
-  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
   const [searchReplaceOpen, setSearchReplaceOpen] = useState(false);
   const [updateQuestionCodesOpen, setUpdateQuestionCodesOpen] = useState(false);
   const [logicCriteriaOpen, setLogicCriteriaOpen] = useState(false);
   const [customJsOpen, setCustomJsOpen] = useState(false);
   const [removeAllLogicOpen, setRemoveAllLogicOpen] = useState(false);
+  const [blockFlowOpen, setBlockFlowOpen] = useState(false);
   const [approvalsModalOpen, setApprovalsModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [customJs, setCustomJs] = useState(DEFAULT_SURVEY_CUSTOM_JS);
@@ -118,10 +119,6 @@ export function SurveyEditorPhaseTabs() {
     deferOpenChange(setToolsMenuOpen, open);
   }, []);
 
-  const handleDownloadMenuOpenChange = useCallback((open: boolean) => {
-    deferOpenChange(setDownloadMenuOpen, open);
-  }, []);
-
   const handleSearchReplaceOpenChange = useCallback((open: boolean) => {
     deferOpenChange(setSearchReplaceOpen, open);
   }, []);
@@ -141,6 +138,15 @@ export function SurveyEditorPhaseTabs() {
   const handleRemoveAllLogicOpenChange = useCallback((open: boolean) => {
     deferOpenChange(setRemoveAllLogicOpen, open);
   }, []);
+
+  const handleBlockFlowOpenChange = useCallback((open: boolean) => {
+    deferOpenChange(setBlockFlowOpen, open);
+  }, []);
+
+  function handleOpenSearchReplace() {
+    deferOpenChange(setToolsMenuOpen, false);
+    deferOpenChange(setSearchReplaceOpen, true);
+  }
 
   function handleOpenUpdateQuestionCodes() {
     deferOpenChange(setToolsMenuOpen, false);
@@ -162,6 +168,16 @@ export function SurveyEditorPhaseTabs() {
     deferOpenChange(setRemoveAllLogicOpen, true);
   }
 
+  function handleOpenBlockFlow() {
+    deferOpenChange(setToolsMenuOpen, false);
+    deferOpenChange(setBlockFlowOpen, true);
+  }
+
+  function handleOpenApprovals() {
+    deferOpenChange(setToolsMenuOpen, false);
+    setApprovalsModalOpen(true);
+  }
+
   function handleClearCustomJs() {
     setCustomJs('');
   }
@@ -169,16 +185,6 @@ export function SurveyEditorPhaseTabs() {
   function handleToolsAction(label: string) {
     showToast({ message: label, variant: 'success' });
     deferOpenChange(setToolsMenuOpen, false);
-  }
-
-  function handleOpenStaleCookiesPreview() {
-    deferOpenChange(setToolsMenuOpen, false);
-    window.open('/stale-cookies', '_blank', 'noopener,noreferrer');
-  }
-
-  function handleDownloadAction(label: string) {
-    showToast({ message: label, variant: 'success' });
-    deferOpenChange(setDownloadMenuOpen, false);
   }
 
   function handleBulkEditModeToggle() {
@@ -189,7 +195,6 @@ export function SurveyEditorPhaseTabs() {
       enableBulkEditMode();
       showToast({ message: 'Bulk Edit Mode enabled', variant: 'success' });
     }
-    deferOpenChange(setToolsMenuOpen, false);
   }
 
   const links = useMemo(
@@ -232,76 +237,12 @@ export function SurveyEditorPhaseTabs() {
         <div className={styles.actions}>
           {isWorkspaceView ? (
             <>
-              <WuTooltip content="Search and Replace" position="bottom">
-                <button
-                  type="button"
-                  className={`${styles.iconBtn} ${searchReplaceOpen ? styles.iconBtnActive : ''}`}
-                  aria-label="Search and replace"
-                  onClick={() => setSearchReplaceOpen(true)}
-                >
-                  <SearchReplaceIcon className={styles.actionIcon} />
-                </button>
-              </WuTooltip>
-              <WuMenu
-                open={downloadMenuOpen}
-                onOpenChange={handleDownloadMenuOpenChange}
-                align="end"
-                variant="outlined"
-                className={styles.toolsMenu}
-                Trigger={
-                  <button
-                    type="button"
-                    className={`${styles.iconBtn} ${downloadMenuOpen ? styles.iconBtnActive : ''}`}
-                    aria-label="Download"
-                    aria-haspopup="menu"
-                    aria-expanded={downloadMenuOpen}
-                    title="Download"
-                  >
-                    <span className={`wm-download ${styles.actionIcon}`} aria-hidden />
-                  </button>
-                }
-              >
-                <WuMenuItemGroup
-                  className={styles.toolsMenuGroup}
-                  Label={
-                    <div className={styles.toolsMenuSectionLabel}>
-                      <span className={styles.toolsMenuSectionHeading}>Download</span>
-                      <div className={styles.toolsMenuSectionDivider} aria-hidden />
-                    </div>
-                  }
-                >
-                  <WuMenuItem
-                    className={styles.toolsMenuItem}
-                    onSelect={() => handleDownloadAction('Download PDF V3')}
-                  >
-                    PDF V3
-                  </WuMenuItem>
-                  <WuMenuItem
-                    className={styles.toolsMenuItem}
-                    onSelect={() => handleDownloadAction('Download Microsoft Word')}
-                  >
-                    Microsoft Word
-                  </WuMenuItem>
-                  <WuMenuItem
-                    className={styles.toolsMenuItem}
-                    onSelect={() => handleDownloadAction('Download PDF')}
-                  >
-                    PDF
-                  </WuMenuItem>
-                  <WuMenuItem
-                    className={styles.toolsMenuItem}
-                    onSelect={() => handleDownloadAction('Print')}
-                  >
-                    Print
-                  </WuMenuItem>
-                </WuMenuItemGroup>
-              </WuMenu>
               <WuMenu
                 open={toolsMenuOpen}
                 onOpenChange={handleToolsMenuOpenChange}
                 align="end"
                 variant="outlined"
-                className={styles.toolsMenu}
+                className={`${styles.toolsMenu} survey-editor-tools-menu`}
                 Trigger={
                   <button
                     type="button"
@@ -314,49 +255,38 @@ export function SurveyEditorPhaseTabs() {
                   </button>
                 }
               >
-                <WuMenuItemGroup
-                  className={styles.toolsMenuGroup}
-                  Label={
-                    <div className={styles.toolsMenuSectionLabel}>
-                      <span className={styles.toolsMenuSectionHeading}>Survey Options</span>
-                      <div className={styles.toolsMenuSectionDivider} aria-hidden />
-                    </div>
-                  }
+                <WuMenuCheckboxItem
+                  checked={bulkEditModeEnabled}
+                  onSelect={handleBulkEditModeToggle}
+                  preventCloseOnSelect
                 >
-                  <WuMenuItem
-                    className={
-                      bulkEditModeEnabled ? styles.toolsMenuItemExit : styles.toolsMenuItem
-                    }
-                    onSelect={handleBulkEditModeToggle}
-                  >
-                    {bulkEditModeEnabled ? 'Exit Bulk Edit Mode' : 'Bulk Edit Mode'}
-                  </WuMenuItem>
+                  <span className={styles.toolsMenuCheckboxLabel}>Bulk Edit Mode</span>
+                </WuMenuCheckboxItem>
+                <WuMenuItem
+                  className={styles.toolsMenuItem}
+                  onSelect={handleOpenSearchReplace}
+                >
+                  Search &amp; Replace
+                </WuMenuItem>
+                <WuMenuItem
+                  className={styles.toolsMenuItem}
+                  onSelect={handleOpenUpdateQuestionCodes}
+                >
+                  Update Question Codes
+                </WuMenuItem>
+                {showApprovals ? (
                   <WuMenuItem
                     className={styles.toolsMenuItem}
-                    onSelect={handleOpenUpdateQuestionCodes}
+                    onSelect={handleOpenApprovals}
                   >
-                    Update Question Codes
-                  </WuMenuItem>
-                  <WuMenuItem
-                    className={styles.toolsMenuItem}
-                    onSelect={handleOpenStaleCookiesPreview}
-                  >
-                    Stale Cookies
-                  </WuMenuItem>
-                  {showApprovals ? (
-                    <WuMenuItem
-                      className={styles.toolsMenuItem}
-                      onSelect={() => setApprovalsModalOpen(true)}
-                    >
-                      <span className={styles.toolsMenuItemWithBadge}>
-                        Approvals
-                        <span className={styles.newBadge} aria-label="New feature">
-                          New
-                        </span>
+                    <span className={styles.toolsMenuItemWithBadge}>
+                      Approvals
+                      <span className={styles.newBadge} aria-label="New feature">
+                        New
                       </span>
-                    </WuMenuItem>
-                  ) : null}
-                </WuMenuItemGroup>
+                    </span>
+                  </WuMenuItem>
+                ) : null}
                 <WuMenuItemGroup
                   className={styles.toolsMenuGroup}
                   Label={
@@ -374,6 +304,12 @@ export function SurveyEditorPhaseTabs() {
                   </WuMenuItem>
                   <WuMenuItem
                     className={styles.toolsMenuItem}
+                    onSelect={handleOpenBlockFlow}
+                  >
+                    Block Flow
+                  </WuMenuItem>
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
                     onSelect={handleOpenCustomJs}
                   >
                     Custom JS
@@ -383,6 +319,43 @@ export function SurveyEditorPhaseTabs() {
                     onSelect={handleOpenRemoveAllLogic}
                   >
                     Remove All Logic
+                  </WuMenuItem>
+                </WuMenuItemGroup>
+                <WuMenuItemGroup
+                  className={styles.toolsMenuGroup}
+                  Label={
+                    <div className={styles.toolsMenuSectionLabel}>
+                      <span className={styles.toolsMenuSectionHeading}>Download</span>
+                      <div className={styles.toolsMenuSectionDivider} aria-hidden />
+                    </div>
+                  }
+                >
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
+                    onSelect={() => handleToolsAction('Download PDF V3')}
+                  >
+                    <span className={styles.toolsMenuItemWithBadge}>
+                      PDF
+                      <span className={styles.versionBadge}>V3</span>
+                    </span>
+                  </WuMenuItem>
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
+                    onSelect={() => handleToolsAction('Download Microsoft Word')}
+                  >
+                    Microsoft Word
+                  </WuMenuItem>
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
+                    onSelect={() => handleToolsAction('Download PDF')}
+                  >
+                    PDF
+                  </WuMenuItem>
+                  <WuMenuItem
+                    className={styles.toolsMenuItem}
+                    onSelect={() => handleToolsAction('Print')}
+                  >
+                    Print
                   </WuMenuItem>
                 </WuMenuItemGroup>
               </WuMenu>
@@ -441,6 +414,9 @@ export function SurveyEditorPhaseTabs() {
           onOpenChange={handleReviewModalOpenChange}
           surveyId={surveyId}
         />
+      ) : null}
+      {blockFlowOpen ? (
+        <BlockFlowModal open onOpenChange={handleBlockFlowOpenChange} />
       ) : null}
     </>
   );

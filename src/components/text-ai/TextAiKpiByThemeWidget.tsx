@@ -6,15 +6,14 @@ import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
   formatTextAiKpiAnswer,
   formatTextAiKpiDelta,
-  formatTextAiKpiScore,
   getDefaultTextAiKpiId,
   getTextAiKpiAnalysis,
   type TextAiKpiDefinition,
   type TextAiKpiSentiment,
   type TextAiKpiThemeResult,
 } from '@/data/mock-text-ai-kpi-by-theme';
+import { formatThemeNetImpact } from '@/data/mock-text-ai-theme-impact';
 import {
-  DEFAULT_TEXT_AI_WIDGET_TOP_N,
   limitTextAiWidgetItems,
   type TextAiWidgetTopN,
 } from '@/data/mock-text-ai-widget-settings';
@@ -32,7 +31,7 @@ interface DrilldownContext {
 
 type KpiSortKey =
   | 'responses'
-  | 'score'
+  | 'netImpact'
   | 'delta'
   | 'sentiment';
 
@@ -49,7 +48,7 @@ const SENTIMENT_LABELS: Record<TextAiKpiSentiment, string> = {
 
 function getSortValue(row: TextAiKpiThemeResult, key: KpiSortKey): string | number {
   if (key === 'responses') return row.responseCount;
-  if (key === 'score') return row.score;
+  if (key === 'netImpact') return row.netImpact;
   if (key === 'delta') return row.delta;
   return row.sentiment.positive;
 }
@@ -72,19 +71,29 @@ function SortableHeader({
   sortKey,
   sortState,
   onSort,
+  className,
+  align = 'left',
 }: {
   label: string;
   sortKey: KpiSortKey;
   sortState: KpiSortState | null;
   onSort: (key: KpiSortKey) => void;
+  className?: string;
+  align?: 'left' | 'right';
 }) {
   const active = sortState?.key === sortKey;
   const ariaSort = active ? sortState.direction : 'none';
   return (
-    <th aria-sort={ariaSort}>
+    <th
+      className={className}
+      aria-sort={ariaSort}
+      style={align === 'right' ? { textAlign: 'right' } : undefined}
+    >
       <button
         type="button"
-        className={`${styles.sortButton} ${active ? styles.sortButtonActive : ''}`}
+        className={`${styles.sortButton} ${active ? styles.sortButtonActive : ''} ${
+          align === 'right' ? styles.sortButtonRight : ''
+        }`}
         onClick={() => onSort(sortKey)}
       >
         <span>{label}</span>
@@ -137,29 +146,37 @@ function DeltaVisual({
       : definition.kind === 'nps'
         ? 200
         : 100;
-  const width = Math.min(50, (Math.abs(row.delta) / maximumDelta) * 100);
-  const toneClass =
-    row.tone === 'positive'
-      ? styles.deltaPositive
-      : row.tone === 'negative'
-        ? styles.deltaNegative
-        : styles.deltaNeutral;
+  const width = Math.min(100, (Math.abs(row.delta) / maximumDelta) * 100);
+  const formatted = formatTextAiKpiDelta(definition, row.delta);
+  const isPositive = row.delta > 0;
+  const isNegative = row.delta < 0;
 
   return (
-    <div className={styles.deltaCell}>
-      <span className={`${styles.deltaValue} ${toneClass}`}>
-        {formatTextAiKpiDelta(definition, row.delta)}
-      </span>
-      <div className={styles.deltaTrack} aria-hidden>
-        <span className={styles.deltaCenter} />
-        <span
-          className={`${styles.deltaFill} ${toneClass}`}
-          style={
-            row.delta >= 0
-              ? { left: '50%', width: `${width}%` }
-              : { right: '50%', width: `${width}%` }
-          }
-        />
+    <div
+      className={styles.deltaTrack}
+      role="img"
+      aria-label={`${row.label} impact per mention: ${formatted}`}
+    >
+      <div className={styles.deltaNegative}>
+        {isNegative ? (
+          <>
+            <span className={`${styles.coeffLabel} ${styles.deltaNegative}`}>
+              {formatted}
+            </span>
+            <span className={styles.negativeBar} style={{ width: `${width}%` }} />
+          </>
+        ) : null}
+      </div>
+      <span className={styles.deltaAxis} aria-hidden />
+      <div className={styles.deltaPositive}>
+        {isPositive ? (
+          <>
+            <span className={styles.positiveBar} style={{ width: `${width}%` }} />
+            <span className={`${styles.coeffLabel} ${styles.deltaPositive}`}>
+              {formatted}
+            </span>
+          </>
+        ) : null}
       </div>
     </div>
   );
@@ -168,62 +185,31 @@ function DeltaVisual({
 function KpiResultRow({
   row,
   definition,
-  isSubtheme = false,
-  expanded = false,
-  onToggle,
   onDrilldown,
 }: {
   row: TextAiKpiThemeResult;
   definition: TextAiKpiDefinition;
-  isSubtheme?: boolean;
-  expanded?: boolean;
-  onToggle?: () => void;
   onDrilldown: (row: TextAiKpiThemeResult) => void;
 }) {
-  const hasSubthemes = Boolean(row.subthemes?.length);
   return (
-    <tr className={isSubtheme ? styles.subthemeRow : undefined}>
+    <tr>
       <td className={styles.themeCell}>
-        {hasSubthemes ? (
-          <div className={styles.themeControl}>
-            <button
-              type="button"
-              className={styles.chevronButton}
-              onClick={onToggle}
-              aria-expanded={expanded}
-              aria-label={`${expanded ? 'Collapse' : 'Expand'} ${row.label}`}
-            >
-              <span
-                className={`wm-chevron-right ${styles.chevron} ${
-                  expanded ? styles.chevronExpanded : ''
-                }`}
-                aria-hidden
-              />
-            </button>
-            <button
-              type="button"
-              className={styles.themeLink}
-              onClick={() => onDrilldown(row)}
-              aria-label={`View responses for theme ${row.label}`}
-            >
-              {row.label}
-            </button>
-          </div>
-        ) : isSubtheme ? (
-          <button
-            type="button"
-            className={styles.subthemeLink}
-            onClick={() => onDrilldown(row)}
-            aria-label={`View responses for sub-theme ${row.label}`}
-          >
-            {row.label}
-          </button>
-        ) : null}
-      </td>
-      <td className={styles.responseCell}>
         <button
           type="button"
-          className={styles.responseLink}
+          className={styles.subthemeLink}
+          onClick={() => onDrilldown(row)}
+          aria-label={`View responses for sub-theme ${row.label}`}
+        >
+          <span className={styles.subthemeName}>{row.label}</span>
+          {row.parentTheme ? (
+            <span className={styles.parentTheme}>{row.parentTheme}</span>
+          ) : null}
+        </button>
+      </td>
+      <td className={styles.countCell}>
+        <button
+          type="button"
+          className={styles.countLink}
           onClick={() => onDrilldown(row)}
           aria-label={`View ${row.responseCount} matched responses for ${row.label}`}
         >
@@ -231,13 +217,21 @@ function KpiResultRow({
         </button>
         {row.lowSample ? <span className={styles.lowSample}>Low sample</span> : null}
       </td>
-      <td className={styles.scoreCell}>
-        {formatTextAiKpiScore(definition, row.score)}
+      <td
+        className={`${styles.netCell} ${
+          row.netImpact > 0
+            ? styles.netPositive
+            : row.netImpact < 0
+              ? styles.netNegative
+              : ''
+        }`}
+      >
+        {formatThemeNetImpact(row.netImpact)}
       </td>
-      <td>
+      <td className={styles.deltaCell}>
         <DeltaVisual row={row} definition={definition} />
       </td>
-      <td>
+      <td className={styles.sentimentCellWrap}>
         <SentimentBar row={row} />
       </td>
     </tr>
@@ -283,12 +277,15 @@ function TextAiKpiResponsesModal({
       <WuModalContent className={styles.modalContent}>
         <div className={styles.modalContext}>
           <div>
-            <span className={styles.modalEyebrow}>Theme or sub-theme</span>
+            <span className={styles.modalEyebrow}>Sub-theme</span>
             <strong>{context.row.label}</strong>
+            {context.row.parentTheme ? (
+              <span className={styles.modalParentTheme}>{context.row.parentTheme}</span>
+            ) : null}
           </div>
           <div>
-            <span className={styles.modalEyebrow}>{context.definition.label}</span>
-            <strong>{formatTextAiKpiScore(context.definition, context.row.score)}</strong>
+            <span className={styles.modalEyebrow}>Net impact</span>
+            <strong>{formatThemeNetImpact(context.row.netImpact)}</strong>
           </div>
           <div>
             <span className={styles.modalEyebrow}>Matched responses</span>
@@ -367,24 +364,19 @@ export function TextAiKpiByThemeWidget({
   question,
   onDelete,
 }: TextAiKpiByThemeWidgetProps) {
-  const [expandedThemeIds, setExpandedThemeIds] = useState<Set<string>>(
-    () => new Set(['theme-0'])
-  );
   const [drilldown, setDrilldown] = useState<DrilldownContext | null>(null);
-  const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
-  const [sortState, setSortState] = useState<KpiSortState | null>(null);
+  const [topN, setTopN] = useState<TextAiWidgetTopN>(10);
+  const [sortState, setSortState] = useState<KpiSortState>({
+    key: 'responses',
+    direction: 'descending',
+  });
   const analysis = useMemo(() => getTextAiKpiAnalysis(getDefaultTextAiKpiId()), []);
-  const sortedThemeRows = sortKpiRows(analysis.rows, sortState);
-  const visibleRows = limitTextAiWidgetItems(sortedThemeRows, topN);
-
-  function toggleTheme(themeId: string): void {
-    setExpandedThemeIds((current) => {
-      const next = new Set(current);
-      if (next.has(themeId)) next.delete(themeId);
-      else next.add(themeId);
-      return next;
-    });
-  }
+  const subthemeRows = useMemo(
+    () => analysis.rows.flatMap((row) => row.subthemes ?? []),
+    [analysis.rows]
+  );
+  const sortedRows = sortKpiRows(subthemeRows, sortState);
+  const visibleRows = limitTextAiWidgetItems(sortedRows, topN);
 
   function handleSort(key: KpiSortKey): void {
     setSortState((current) => ({
@@ -418,73 +410,54 @@ export function TextAiKpiByThemeWidget({
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Theme / sub-theme</th>
+                <th className={styles.subthemeHeading}>Sub-theme</th>
                 <SortableHeader
-                  label="Matched responses"
+                  label="n"
                   sortKey="responses"
                   sortState={sortState}
                   onSort={handleSort}
+                  className={styles.countHeading}
+                  align="right"
                 />
                 <SortableHeader
-                  label="KPI score"
-                  sortKey="score"
+                  label="Net impact"
+                  sortKey="netImpact"
                   sortState={sortState}
                   onSort={handleSort}
+                  className={styles.netHeading}
+                  align="right"
                 />
                 <SortableHeader
-                  label="Δ vs overall"
+                  label="Impact per mention"
                   sortKey="delta"
                   sortState={sortState}
                   onSort={handleSort}
+                  className={styles.deltaHeading}
                 />
                 <SortableHeader
-                  label="Sentiment distribution"
+                  label="Sentiment"
                   sortKey="sentiment"
                   sortState={sortState}
                   onSort={handleSort}
+                  className={styles.sentimentHeading}
+                  align="right"
                 />
               </tr>
             </thead>
             <tbody>
-              {visibleRows.flatMap((row) => {
-                const expanded = expandedThemeIds.has(row.id);
-                return [
-                  <KpiResultRow
-                    key={row.id}
-                    row={row}
-                    definition={analysis.definition}
-                    expanded={expanded}
-                    onToggle={() => toggleTheme(row.id)}
-                    onDrilldown={(selectedRow) =>
-                      setDrilldown({ row: selectedRow, definition: analysis.definition })
-                    }
-                  />,
-                  ...(expanded
-                    ? sortKpiRows(row.subthemes ?? [], sortState).map((subtheme) => (
-                        <KpiResultRow
-                          key={subtheme.id}
-                          row={subtheme}
-                          definition={analysis.definition}
-                          isSubtheme
-                          onDrilldown={(selectedRow) =>
-                            setDrilldown({
-                              row: selectedRow,
-                              definition: analysis.definition,
-                            })
-                          }
-                        />
-                      ))
-                    : []),
-                ];
-              })}
+              {visibleRows.map((row) => (
+                <KpiResultRow
+                  key={row.id}
+                  row={row}
+                  definition={analysis.definition}
+                  onDrilldown={(selectedRow) =>
+                    setDrilldown({ row: selectedRow, definition: analysis.definition })
+                  }
+                />
+              ))}
             </tbody>
           </table>
         </div>
-        <footer className={styles.footerNote}>
-          Scores use each KPI’s native calculation. Responses tagged to more than one theme
-          appear in each applicable row; every response is counted once within a row. Samples
-          below 30 are marked low sample.
-        </footer>
       </article>
 
       <TextAiKpiResponsesModal

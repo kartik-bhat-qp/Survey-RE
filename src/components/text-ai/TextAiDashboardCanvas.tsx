@@ -10,6 +10,7 @@ import ReactGridLayout, {
 import { TextAiAnalysisWidgetCard } from '@/components/text-ai/TextAiAnalysisWidget';
 import { TextAiKpiByThemeWidget } from '@/components/text-ai/TextAiKpiByThemeWidget';
 import { TextAiSubthemeStackbarWidget } from '@/components/text-ai/TextAiSubthemeStackbarWidget';
+import { TextAiSubthemeTrendWidget } from '@/components/text-ai/TextAiSubthemeTrendWidget';
 import { TextAiSummaryWidgetCard } from '@/components/text-ai/TextAiSummaryWidget';
 import { TextAiThemeStackbarWidget } from '@/components/text-ai/TextAiThemeStackbarWidget';
 import { TextAiTopicSegmentWidgetCard } from '@/components/text-ai/TextAiTopicSegmentWidget';
@@ -34,6 +35,7 @@ import {
 import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import type { TextAiThemePreferences } from '@/data/text-ai-theme-preferences';
 import type { TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
+import type { TextAiSubthemeTrendWidgetInstance } from '@/data/mock-text-ai-subtheme-trend';
 import styles from './TextAiDashboardCanvas.module.css';
 
 import 'react-grid-layout/css/styles.css';
@@ -49,6 +51,7 @@ const TEXT_AI_WIDGET_DRAG_HANDLE_CLASS = 'text-ai-widget-drag-handle';
 
 type TextAiCanvasWidgetKind =
   | 'kpi-by-theme'
+  | 'subtheme-trend'
   | 'topic-segment'
   | 'subtheme-stackbar'
   | 'theme-stackbar'
@@ -69,11 +72,14 @@ interface TextAiDashboardCanvasProps {
   addedTopicSegmentWidgets?: TextAiTopicSegmentWidget[];
   /** KPI correlation widgets added through the TextAI widget gallery. */
   addedKpiWidgets?: TextAiKpiWidgetInstance[];
+  /** Sub-theme trend widgets added through the TextAI widget gallery. */
+  addedSubthemeTrendWidgets?: TextAiSubthemeTrendWidgetInstance[];
   themePreferences: TextAiThemePreferences;
 }
 
 const INITIAL_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
   'kpi-by-theme': 14,
+  'subtheme-trend': 13,
   'topic-segment': 9,
   'subtheme-stackbar': 8,
   'theme-stackbar': 11,
@@ -83,6 +89,7 @@ const INITIAL_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
 
 const MIN_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
   'kpi-by-theme': 8,
+  'subtheme-trend': 8,
   'topic-segment': 5,
   'subtheme-stackbar': 6,
   'theme-stackbar': 6,
@@ -319,6 +326,7 @@ export function TextAiDashboardCanvas({
   questionIndex,
   addedTopicSegmentWidgets = [],
   addedKpiWidgets = [],
+  addedSubthemeTrendWidgets = [],
   themePreferences,
 }: TextAiDashboardCanvasProps) {
   const isMobile = useIsMobile();
@@ -388,6 +396,20 @@ export function TextAiDashboardCanvas({
         kind: 'kpi-by-theme' as const,
         content: (
           <TextAiKpiByThemeWidget
+            key={widget.id}
+            question={widget.question}
+            onDelete={() => removeWidget(id)}
+          />
+        ),
+      };
+    }),
+    ...addedSubthemeTrendWidgets.map((widget) => {
+      const id = `subtheme-trend-${widget.id}`;
+      return {
+        id,
+        kind: 'subtheme-trend' as const,
+        content: (
+          <TextAiSubthemeTrendWidget
             key={widget.id}
             question={widget.question}
             onDelete={() => removeWidget(id)}

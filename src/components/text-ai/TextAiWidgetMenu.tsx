@@ -6,8 +6,11 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { TextAiWidgetSettingsModal } from '@/components/text-ai/TextAiWidgetSettingsModal';
 import {
+  createTextAiWidgetDisplayState,
   DEFAULT_TEXT_AI_WIDGET_TOP_N,
-  formatTextAiWidgetTopNToast,
+  formatTextAiWidgetDisplayToast,
+  type TextAiWidgetDisplayState,
+  type TextAiWidgetSelectionItem,
   type TextAiWidgetTopN,
 } from '@/data/mock-text-ai-widget-settings';
 
@@ -28,6 +31,9 @@ interface TextAiWidgetMenuProps {
   widgetTitle?: string;
   topN?: TextAiWidgetTopN;
   onTopNChange?: (topN: TextAiWidgetTopN) => void;
+  displayState?: TextAiWidgetDisplayState;
+  customItems?: TextAiWidgetSelectionItem[];
+  onDisplayChange?: (display: TextAiWidgetDisplayState) => void;
   onDelete?: () => void;
 }
 
@@ -38,6 +44,9 @@ export function TextAiWidgetMenu({
   widgetTitle = 'this widget',
   topN = DEFAULT_TEXT_AI_WIDGET_TOP_N,
   onTopNChange,
+  displayState,
+  customItems,
+  onDisplayChange,
   onDelete,
 }: TextAiWidgetMenuProps) {
   const { showToast } = useWuShowToast();
@@ -50,9 +59,12 @@ export function TextAiWidgetMenu({
     setSettingsOpen(true);
   }
 
-  function handleSaveSettings(nextTopN: TextAiWidgetTopN): void {
-    onTopNChange?.(nextTopN);
-    showToast({ message: formatTextAiWidgetTopNToast(nextTopN), variant: 'success' });
+  function handleSaveSettings(next: TextAiWidgetDisplayState): void {
+    onDisplayChange?.(next);
+    if (next.value !== 'custom') {
+      onTopNChange?.(next.value);
+    }
+    showToast({ message: formatTextAiWidgetDisplayToast(next), variant: 'success' });
   }
 
   function handleDeleteRequest(): void {
@@ -103,6 +115,8 @@ export function TextAiWidgetMenu({
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         topN={topN}
+        displayState={displayState ?? createTextAiWidgetDisplayState(topN)}
+        customItems={customItems}
         onSave={handleSaveSettings}
       />
 

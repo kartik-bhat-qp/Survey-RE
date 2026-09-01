@@ -26,6 +26,7 @@ import {
   type TextAiTopicSegmentWidget,
 } from '@/data/mock-text-ai-topic-segment-widget';
 import type { TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
+import type { TextAiSubthemeTrendWidgetInstance } from '@/data/mock-text-ai-subtheme-trend';
 import {
   getTextAiThemePreferences,
   TEXT_AI_THEME_PREFERENCES_EVENT,
@@ -67,6 +68,9 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   >([]);
   const [addedKpiWidgets, setAddedKpiWidgets] = useState<
     TextAiKpiWidgetInstance[]
+  >([]);
+  const [addedSubthemeTrendWidgets, setAddedSubthemeTrendWidgets] = useState<
+    TextAiSubthemeTrendWidgetInstance[]
   >([]);
   const [themePreferences, setThemePreferences] = useState<TextAiThemePreferences>({
     approvedEmergingNames: [],
@@ -165,6 +169,16 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         ...prev,
       ]);
     }
+
+    if (chartTypeId === 'subtheme-trend') {
+      setAddedSubthemeTrendWidgets((prev) => [
+        {
+          id: `subtheme-trend-${question.code}-${Date.now()}`,
+          question: question.text,
+        },
+        ...prev,
+      ]);
+    }
   }
 
   return (
@@ -193,6 +207,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         )}
         addedTopicSegmentWidgets={addedTopicSegmentWidgets}
         addedKpiWidgets={addedKpiWidgets}
+        addedSubthemeTrendWidgets={addedSubthemeTrendWidgets}
         themePreferences={themePreferences}
       />
       <TextAiDashboardSettingsModal

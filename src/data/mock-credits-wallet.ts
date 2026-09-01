@@ -73,6 +73,18 @@ export const CREDIT_USER_FILTER_OPTIONS: CreditsFilterOption[] = [
 
 export const MOCK_CREDIT_TRANSACTIONS: CreditTransaction[] = [
   {
+    id: 'txn-00',
+    occurredAt: '2026-08-22T14:18:36+05:30',
+    timestampLabel: '2026-08-22 14:18:36 GMT+05:30',
+    creditType: 'ai',
+    creditTypeLabel: 'AI',
+    details: 'Synthetic responses | Survey id 43434',
+    userEmail: 'pratik.dhulubulu+kartik@questionpro.com',
+    userRole: 'User',
+    usage: -50,
+    balance: LISTENAI_CREDITS_REMAINING - 50,
+  },
+  {
     id: 'txn-01',
     occurredAt: '2026-08-20T16:42:11+05:30',
     timestampLabel: '2026-08-20 16:42:11 GMT+05:30',

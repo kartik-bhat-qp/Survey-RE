@@ -7,7 +7,11 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { NavLink } from '@/components/surveys/NavLink';
 import { TestResponsesIcon } from '@/components/surveys/TestResponsesIcon';
-import { TestResponsesModal } from '@/components/surveys/TestResponsesModal';
+import {
+  TestResponsesModal,
+  type SyntheticTestGenerationRequest,
+} from '@/components/surveys/TestResponsesModal';
+import { useSyntheticTestGeneration } from '@/components/surveys/useSyntheticTestGeneration';
 import {
   PublishLicenseConflictModal,
   type PublishLicenseModalView,
@@ -23,7 +27,6 @@ import {
   SURVEY_WORKSPACE_TOOLS,
   type SurveyWorkspaceTool,
 } from '@/components/surveys/survey-workspace-tools';
-import { surveyHasDesignTab } from '@/data/mock-survey-design';
 import {
   readSurveyApprovalState,
   subscribeSurveyApprovalState,
@@ -49,7 +52,7 @@ type PublishMode = 'draft' | 'publish';
 
 function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null {
   if (tool === 'workspace') return `/surveys/${surveyId}`;
-  if (tool === 'design' && surveyHasDesignTab(surveyId)) return `/surveys/${surveyId}/design`;
+  if (tool === 'design') return `/surveys/${surveyId}/design`;
   if (tool === 'media-library') return `/surveys/${surveyId}/media-library`;
   if (tool === 'languages') return `/surveys/${surveyId}/languages`;
   if (tool === 'finish-options') return `/surveys/${surveyId}/finish-options`;
@@ -91,6 +94,8 @@ export function SurveyEditorWorkspaceToolbar({
   const [licenseConflicts, setLicenseConflicts] = useState<SurveyLicenseConflict[]>([]);
   const [draftConfirmOpen, setDraftConfirmOpen] = useState(false);
   const [testResponsesOpen, setTestResponsesOpen] = useState(false);
+  const [syntheticGeneration, setSyntheticGeneration] =
+    useState<SyntheticTestGenerationRequest | null>(null);
   const requiresApproval = surveyHasApprovalTab(surveyId);
 
   useEffect(() => {
@@ -123,6 +128,51 @@ export function SurveyEditorWorkspaceToolbar({
       setLicenseModalView('conflicts');
     }
   }, []);
+
+  const handleStartSyntheticGeneration = useCallback(
+    (request: SyntheticTestGenerationRequest) => {
+      if (syntheticGeneration) {
+        showToast({
+          message: 'Synthetic responses are already generating in the background',
+          variant: 'info',
+        });
+        return;
+      }
+      setSyntheticGeneration(request);
+    },
+    [showToast, syntheticGeneration]
+  );
+
+  const handleSyntheticGenerationComplete = useCallback(
+    (count: string) => {
+      setSyntheticGeneration(null);
+      showToast({
+        message: `Generated ${count} synthetic test response${count === '1' ? '' : 's'}`,
+        variant: 'success',
+      });
+    },
+    [showToast]
+  );
+
+  const generationProgress = useSyntheticTestGeneration(
+    syntheticGeneration,
+    handleSyntheticGenerationComplete
+  );
+
+  const testResponsesTooltip = generationProgress && syntheticGeneration ? (
+    <div className={styles.generationTooltip}>
+      <p className={styles.generationTooltipTitle}>Generating synthetic responses</p>
+      <p className={styles.generationTooltipMeta}>{syntheticGeneration.panelLabel}</p>
+      <p className={styles.generationTooltipStats}>
+        {generationProgress.generatedCount} of {generationProgress.total} generated ·{' '}
+        {generationProgress.progress}%
+      </p>
+      <p className={styles.generationTooltipStep}>{generationProgress.step}</p>
+      <p className={styles.generationTooltipEta}>{generationProgress.eta}</p>
+    </div>
+  ) : (
+    TEST_RESPONSES_TOOLTIP
+  );
 
   const handleConfirmPublish = useCallback(() => {
     setMode('publish');
@@ -250,6 +300,18 @@ export function SurveyEditorWorkspaceToolbar({
     activeTool !== 'finish-options' &&
     activeTool !== 'variables' &&
     activeTool !== 'design';
+  const showDesignPreview = activeTool === 'design';
+
+  const previewButton = (
+    <button
+      type="button"
+      className={styles.previewBtn}
+      aria-label="Preview survey"
+      onClick={() => showToast({ message: 'Preview survey', variant: 'success' })}
+    >
+      <span className="wm-visibility" />
+    </button>
+  );
 
   return (
     <>
@@ -268,14 +330,19 @@ export function SurveyEditorWorkspaceToolbar({
                 <span className="wm-history" aria-hidden />
               </button>
             </WuTooltip>
-            <WuTooltip content={TEST_RESPONSES_TOOLTIP} position="bottom">
+            <WuTooltip content={testResponsesTooltip} position="bottom">
               <button
                 type="button"
-                className={styles.toolbarIconBtn}
-                aria-label={TEST_RESPONSES_TOOLTIP}
+                className={`${styles.toolbarIconBtn} ${generationProgress ? styles.toolbarIconBtnBusy : ''}`}
+                aria-label={
+                  generationProgress
+                    ? `Generating synthetic responses, ${generationProgress.progress}% complete`
+                    : TEST_RESPONSES_TOOLTIP
+                }
+                aria-busy={generationProgress ? true : undefined}
                 onClick={() => setTestResponsesOpen(true)}
               >
-                <TestResponsesIcon />
+                <TestResponsesIcon progress={generationProgress?.progress} />
               </button>
             </WuTooltip>
             <div className={styles.statusToggle} role="group" aria-label="Survey status">
@@ -315,15 +382,10 @@ export function SurveyEditorWorkspaceToolbar({
                 </button>
               )}
             </div>
-            <button
-              type="button"
-              className={styles.previewBtn}
-              aria-label="Preview survey"
-              onClick={() => showToast({ message: 'Preview survey', variant: 'success' })}
-            >
-              <span className="wm-visibility" />
-            </button>
+            {previewButton}
           </div>
+        ) : showDesignPreview ? (
+          <div className={styles.publishArea}>{previewButton}</div>
         ) : null}
       </WuSecondaryNavbar>
       <PublishLicenseConflictModal
@@ -344,7 +406,11 @@ export function SurveyEditorWorkspaceToolbar({
         onConfirm={handleConfirmDraft}
       />
       {testResponsesOpen ? (
-        <TestResponsesModal open onOpenChange={setTestResponsesOpen} />
+        <TestResponsesModal
+          open
+          onOpenChange={setTestResponsesOpen}
+          onStartSynthetic={handleStartSyntheticGeneration}
+        />
       ) : null}
     </>
   );

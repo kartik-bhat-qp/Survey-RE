@@ -214,6 +214,15 @@
   max-height: var(--radix-popper-available-height, 70vh) !important;
 }
 
+/* Survey editor Tools menu has grouped sections; allow full list without clipping. */
+[data-radix-popper-content-wrapper]:has(.survey-editor-tools-menu),
+[data-radix-popper-content-wrapper]:has(.survey-editor-tools-menu) > *,
+[data-radix-popper-content-wrapper]:has(.survey-editor-tools-menu) [role="menu"] {
+  max-height: var(--radix-popper-available-height, 80vh) !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: auto;
+}
+
 /*
  * WuSelect already scrolls its own option list, so the surrounding panel must
  * not scroll as well — otherwise the dropdown shows two scrollbars.
