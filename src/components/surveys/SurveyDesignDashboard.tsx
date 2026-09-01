@@ -140,15 +140,36 @@ function LayoutSunsetBadge() {
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => event.stopPropagation()}
       >
-        <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden>
-          <circle cx="12" cy="11" r="3.35" fill="currentColor" />
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden>
+          <g
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="10.2" cy="10.2" r="7.35" />
+            <path d="M10.2 10.2 7.15 6.35M10.2 10.2 7.55 13.85" />
+          </g>
+          <circle cx="10.2" cy="4.05" r="0.85" fill="currentColor" />
+          <circle cx="16.35" cy="10.2" r="0.85" fill="currentColor" />
+          <circle cx="10.2" cy="16.35" r="0.85" fill="currentColor" />
+          <circle cx="4.05" cy="10.2" r="0.85" fill="currentColor" />
+          <path
+            fill="#fff"
+            stroke="currentColor"
+            strokeLinejoin="round"
+            strokeWidth="1.8"
+            d="M16.55 12.15 21.7 21.15H11.4Z"
+          />
           <path
             fill="none"
             stroke="currentColor"
             strokeLinecap="round"
             strokeWidth="1.7"
-            d="M12 4.2v1.4M7.2 6.3l1 1M16.8 6.3l-1 1M4.4 11h1.4M18.2 11h1.4M5 15.6h14M7.2 18.4h9.6"
+            d="M16.55 15.05v3.15"
           />
+          <rect x="15.8" y="19.25" width="1.5" height="1.5" rx="0.25" fill="currentColor" />
         </svg>
       </span>
     </WuTooltip>

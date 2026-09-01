@@ -151,7 +151,7 @@ export function TestResponsesModal({
           <span className={styles.fieldLabel} id="test-response-count-label">
             Number Of Test Responses
           </span>
-          <div className={`${styles.countSelect} test-response-count-select`}>
+          <div className={styles.countSelect}>
             <WuSelect
               data={TEST_RESPONSE_COUNT_OPTIONS}
               accessorKey={{ value: 'value', label: 'label' }}

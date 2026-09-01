@@ -85,8 +85,8 @@ export const SURVEY_LAYOUT_OPTIONS: SurveyLayoutOption[] = [
 ];
 
 export const SURVEY_LAYOUT_RETIRING_NOTICE = {
-  title: 'Retiring after 12/31/2026',
-  body: 'These modes will not be available after 12/31/2026. Existing surveys will not be impacted with this change.',
+  title: 'Depricating after 12/31/2026',
+  body: 'This mode will not be available after 12/31/2026. Existing surveys will not be impacted with this change.',
 };
 
 export const SURVEY_DESIGN_PANEL_TABS: { id: SurveyDesignPanelTabId; label: string }[] = [
