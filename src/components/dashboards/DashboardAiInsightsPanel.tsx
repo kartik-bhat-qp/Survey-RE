@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { AiWidgetRenderer } from '@/components/dashboards/widgets/AiWidgetRenderer';
 import type { AiWidgetConfig } from '@/data/mock-ai-widgets';
@@ -18,14 +18,20 @@ const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((module) => ({ default: module.WuButton })),
   { ssr: false }
 );
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((module) => ({ default: module.WuTooltip })),
+  { ssr: false }
+);
 
 interface DashboardAiInsightsPanelProps {
   widget: AiWidgetConfig;
   thread: DashboardWidgetInsightThread;
   refreshFrequency: AiInsightRefreshFrequency;
+  dashboardRefreshAnchorAt: string;
   refreshing: boolean;
   onClose: () => void;
   onRefresh: () => void;
+  onToggleLike: (insightId: string) => void;
   onAddInsight: (text: string) => void;
   onAddComment: (insightId: string, text: string) => void;
 }
@@ -55,9 +61,11 @@ export function DashboardAiInsightsPanel({
   widget,
   thread,
   refreshFrequency,
+  dashboardRefreshAnchorAt,
   refreshing,
   onClose,
   onRefresh,
+  onToggleLike,
   onAddInsight,
   onAddComment,
 }: DashboardAiInsightsPanelProps) {
@@ -67,14 +75,18 @@ export function DashboardAiInsightsPanel({
   const confirmDialogRef = useRef<HTMLElement>(null);
   const wasRefreshConfirmOpenRef = useRef(false);
   const [refreshConfirmOpen, setRefreshConfirmOpen] = useState(false);
+  const [pastRunsOpen, setPastRunsOpen] = useState(false);
   const [newInsight, setNewInsight] = useState('');
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
 
   const refreshLabel = getAiInsightRefreshOption(refreshFrequency).label;
   const nextRefreshAt = useMemo(
-    () => getNextAiInsightRefreshAt(thread.lastRefreshedAt, refreshFrequency),
-    [refreshFrequency, thread.lastRefreshedAt]
+    () => getNextAiInsightRefreshAt(dashboardRefreshAnchorAt, refreshFrequency),
+    [dashboardRefreshAnchorAt, refreshFrequency]
   );
+  const refreshTooltip = `${refreshLabel} · Last refreshed ${formatAiInsightDateTime(
+    thread.lastRefreshedAt
+  )} · Next scheduled ${formatAiInsightDateTime(nextRefreshAt)}`;
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -188,17 +200,19 @@ export function DashboardAiInsightsPanel({
               <p>AI and user insights for this widget</p>
             </div>
             <div className={styles.headerActions}>
-              <button
-                ref={refreshButtonRef}
-                type="button"
-                className={styles.iconButton}
-                aria-label="Refresh AI insight"
-                title="Refresh AI insight"
-                disabled={refreshing}
-                onClick={() => setRefreshConfirmOpen(true)}
-              >
-                <span className={refreshing ? 'wm-autorenew' : 'wm-refresh'} aria-hidden="true" />
-              </button>
+              <WuTooltip content={refreshTooltip} position="bottom">
+                <button
+                  ref={refreshButtonRef}
+                  type="button"
+                  className={styles.iconButton}
+                  aria-label="Refresh AI insight"
+                  title={refreshTooltip}
+                  disabled={refreshing}
+                  onClick={() => setRefreshConfirmOpen(true)}
+                >
+                  <span className={refreshing ? 'wm-autorenew' : 'wm-refresh'} aria-hidden="true" />
+                </button>
+              </WuTooltip>
               <button
                 ref={closeButtonRef}
                 type="button"
@@ -211,71 +225,131 @@ export function DashboardAiInsightsPanel({
             </div>
           </header>
 
-          <div className={styles.refreshStatus}>
-            <span className="wm-schedule" aria-hidden="true" />
-            <div>
-              <strong>{refreshLabel}</strong>
-              <span>
-                Last refreshed {formatAiInsightDateTime(thread.lastRefreshedAt)} · Next scheduled{' '}
-                {formatAiInsightDateTime(nextRefreshAt)}
-              </span>
+          {thread.lastRefreshError ? (
+            <div className={styles.refreshError} role="alert">
+              <span className="wm-error-outline" aria-hidden="true" />
+              <div>
+                <strong>Refresh failed</strong>
+                <span>{thread.lastRefreshError}</span>
+              </div>
+              <button type="button" onClick={() => setRefreshConfirmOpen(true)}>
+                Retry
+              </button>
             </div>
-          </div>
+          ) : null}
 
           <div className={styles.insightList}>
             {thread.items.map((item) => {
               const isAi = item.kind === 'ai';
               const commentDraft = commentDrafts[item.id] ?? '';
               return (
-                <article key={item.id} className={styles.insightCard}>
-                  <div className={styles.insightMeta}>
-                    <span className={isAi ? styles.aiAvatar : styles.avatar}>
-                      {isAi ? <span className="wc-ai" aria-hidden="true" /> : item.initials}
-                    </span>
-                    <div>
-                      <strong>{isAi ? 'AI insight' : item.author}</strong>
-                      <span>{item.createdAtLabel}</span>
+                <Fragment key={item.id}>
+                  <article className={styles.insightCard}>
+                    <div className={styles.insightMeta}>
+                      <span className={isAi ? styles.aiAvatar : styles.avatar}>
+                        {isAi ? <span className="wc-ai" aria-hidden="true" /> : item.initials}
+                      </span>
+                      <div>
+                        <strong>{isAi ? 'AI insight' : item.author}</strong>
+                        <span>{item.createdAtLabel}</span>
+                      </div>
+                      <span className={isAi ? styles.aiBadge : styles.userBadge}>
+                        {isAi ? 'Current' : 'User insight'}
+                      </span>
                     </div>
-                    <span className={isAi ? styles.aiBadge : styles.userBadge}>
-                      {isAi ? 'Generated' : 'User insight'}
-                    </span>
-                  </div>
 
-                  <p className={styles.insightText}>{item.text}</p>
+                    <p className={styles.insightText}>{item.text}</p>
 
-                  <div className={styles.insightStats}>
-                    <span><span className="wm-thumb-up" aria-hidden="true" /> {item.likes}</span>
-                    <span>{item.comments.length} {item.comments.length === 1 ? 'comment' : 'comments'}</span>
-                  </div>
+                    <div className={styles.insightStats}>
+                      <button
+                        type="button"
+                        className={item.likedByViewer ? styles.likeButtonActive : styles.likeButton}
+                        aria-label={item.likedByViewer ? 'Unlike insight' : 'Like insight'}
+                        aria-pressed={item.likedByViewer ?? false}
+                        onClick={() => onToggleLike(item.id)}
+                      >
+                        <span className="wm-thumb-up" aria-hidden="true" /> {item.likes}
+                      </button>
+                      <span>{item.comments.length} {item.comments.length === 1 ? 'comment' : 'comments'}</span>
+                    </div>
 
-                  <InsightComments item={item} />
+                    <InsightComments item={item} />
 
-                  <div className={styles.composer}>
-                    <input
-                      type="text"
-                      value={commentDraft}
-                      placeholder="Add a comment"
-                      aria-label={`Comment on ${isAi ? 'AI insight' : `${item.author}'s insight`}`}
-                      onChange={(event) =>
-                        setCommentDrafts((current) => ({
-                          ...current,
-                          [item.id]: event.target.value,
-                        }))
-                      }
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') submitComment(item.id);
-                      }}
-                    />
-                    <button
-                      type="button"
-                      aria-label="Post comment"
-                      disabled={!commentDraft.trim()}
-                      onClick={() => submitComment(item.id)}
-                    >
-                      <span className="wm-send" aria-hidden="true" />
-                    </button>
-                  </div>
-                </article>
+                    <div className={styles.composer}>
+                      <input
+                        type="text"
+                        value={commentDraft}
+                        placeholder="Add a comment"
+                        aria-label={`Comment on ${isAi ? 'AI insight' : `${item.author}'s insight`}`}
+                        onChange={(event) =>
+                          setCommentDrafts((current) => ({
+                            ...current,
+                            [item.id]: event.target.value,
+                          }))
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') submitComment(item.id);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        aria-label="Post comment"
+                        disabled={!commentDraft.trim()}
+                        onClick={() => submitComment(item.id)}
+                      >
+                        <span className="wm-send" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </article>
+
+                  {isAi && thread.pastAiRuns.length > 0 ? (
+                    <section className={styles.pastRuns} aria-label="Past AI insight runs">
+                      <button
+                        type="button"
+                        className={styles.pastRunsToggle}
+                        aria-expanded={pastRunsOpen}
+                        onClick={() => setPastRunsOpen((open) => !open)}
+                      >
+                        <span>Past runs</span>
+                        <span className={styles.pastRunsCount}>{thread.pastAiRuns.length}</span>
+                        <span
+                          className={pastRunsOpen ? 'wm-expand-less' : 'wm-expand-more'}
+                          aria-hidden="true"
+                        />
+                      </button>
+                      {pastRunsOpen ? (
+                        <div className={styles.pastRunList}>
+                          {thread.pastAiRuns.map((run, runIndex) => (
+                            <article key={run.id} className={styles.pastRunCard}>
+                              <div className={styles.pastRunMeta}>
+                                <div>
+                                  <strong>AI insight</strong>
+                                  <span>
+                                    {run.refreshTrigger === 'dashboard'
+                                      ? 'Dashboard refresh'
+                                      : run.refreshTrigger === 'widget'
+                                        ? 'Widget refresh'
+                                        : 'Scheduled refresh'}
+                                    {run.generatedAt
+                                      ? ` · ${formatAiInsightDateTime(run.generatedAt)}`
+                                      : ''}
+                                  </span>
+                                </div>
+                                <span>Run {thread.pastAiRuns.length - runIndex}</span>
+                              </div>
+                              <p className={styles.insightText}>{run.text}</p>
+                              <div className={styles.pastRunStats}>
+                                <span><span className="wm-thumb-up" aria-hidden="true" /> {run.likes}</span>
+                                <span>{run.comments.length} {run.comments.length === 1 ? 'comment' : 'comments'}</span>
+                              </div>
+                              <InsightComments item={run} />
+                            </article>
+                          ))}
+                        </div>
+                      ) : null}
+                    </section>
+                  ) : null}
+                </Fragment>
               );
             })}
           </div>
@@ -294,6 +368,7 @@ export function DashboardAiInsightsPanel({
             <WuButton
               type="button"
               size="sm"
+              className={styles.addInsightButton}
               disabled={!newInsight.trim()}
               onClick={submitInsight}
             >
@@ -323,8 +398,9 @@ export function DashboardAiInsightsPanel({
                 </button>
               </header>
               <p id="refresh-insight-confirm-description">
-                The AI-generated insight will be replaced using the latest widget data.
-                User-submitted insights and every comment will be preserved.
+                A new AI insight will be generated using the latest widget data. The current
+                AI insight, its comments, and its likes will move to Past runs. User-submitted
+                insights will remain unchanged.
               </p>
               <footer>
                 <button

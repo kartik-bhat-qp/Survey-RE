@@ -14,6 +14,8 @@ export interface DashboardInsightComment {
   createdAtLabel: string;
 }
 
+export type DashboardInsightRefreshTrigger = 'automatic' | 'widget' | 'dashboard';
+
 export interface DashboardInsightItem {
   id: string;
   kind: 'ai' | 'user';
@@ -21,7 +23,10 @@ export interface DashboardInsightItem {
   author?: string;
   initials?: string;
   createdAtLabel: string;
+  generatedAt?: string;
+  refreshTrigger?: DashboardInsightRefreshTrigger;
   likes: number;
+  likedByViewer?: boolean;
   comments: DashboardInsightComment[];
 }
 
@@ -29,7 +34,18 @@ export interface DashboardWidgetInsightThread {
   widgetId: string;
   generation: number;
   lastRefreshedAt: string;
+  lastRefreshAttemptAt?: string;
+  lastRefreshError?: string;
   items: DashboardInsightItem[];
+  pastAiRuns: DashboardInsightItem[];
+}
+
+export interface DashboardInsightRegenerationResult {
+  attemptedCount: number;
+  refreshedCount: number;
+  failedWidgetIds: string[];
+  failedWidgetTitles: string[];
+  completedAt: string;
 }
 
 export const AI_INSIGHT_REFRESH_OPTIONS: AiInsightRefreshOption[] = [
@@ -39,6 +55,12 @@ export const AI_INSIGHT_REFRESH_OPTIONS: AiInsightRefreshOption[] = [
 ];
 
 export const DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY: AiInsightRefreshFrequency = '24-hours';
+
+export function isAiInsightRefreshFrequency(
+  value: string | null
+): value is AiInsightRefreshFrequency {
+  return AI_INSIGHT_REFRESH_OPTIONS.some((option) => option.value === value);
+}
 
 const AI_INSIGHT_COPY: Record<string, string[]> = {
   'w-map': [
@@ -109,18 +131,21 @@ function getGeneratedInsightText(widgetId: string, generation: number): string {
 
 export function createDashboardWidgetInsightThread(
   widgetId: string,
-  refreshedAt = '2026-08-27T06:30:00.000Z'
+  refreshedAt = '2026-09-01T06:30:00.000Z'
 ): DashboardWidgetInsightThread {
   return {
     widgetId,
     generation: 0,
     lastRefreshedAt: refreshedAt,
+    pastAiRuns: [],
     items: [
       {
         id: `${widgetId}-ai`,
         kind: 'ai',
         text: getGeneratedInsightText(widgetId, 0),
         createdAtLabel: 'Last automatic refresh',
+        generatedAt: refreshedAt,
+        refreshTrigger: 'automatic',
         likes: 3,
         comments: [
           {
@@ -156,21 +181,46 @@ export function createDashboardWidgetInsightThread(
 
 export function refreshDashboardWidgetInsightThread(
   thread: DashboardWidgetInsightThread,
-  refreshedAt: string
+  refreshedAt: string,
+  refreshTrigger: DashboardInsightRefreshTrigger = 'widget'
 ): DashboardWidgetInsightThread {
   const nextGeneration = thread.generation + 1;
+  const currentAiInsight = thread.items.find((item) => item.kind === 'ai');
+  const userInsights = thread.items.filter((item) => item.kind === 'user');
   return {
     ...thread,
     generation: nextGeneration,
     lastRefreshedAt: refreshedAt,
-    items: thread.items.map((item) =>
-      item.kind === 'ai'
-        ? {
-            ...item,
-            text: getGeneratedInsightText(thread.widgetId, nextGeneration),
-            createdAtLabel: 'Refreshed just now',
-          }
-        : item
-    ),
+    lastRefreshAttemptAt: refreshedAt,
+    lastRefreshError: undefined,
+    pastAiRuns: currentAiInsight
+      ? [currentAiInsight, ...thread.pastAiRuns]
+      : thread.pastAiRuns,
+    items: [
+      {
+        id: `${thread.widgetId}-ai-${nextGeneration}`,
+        kind: 'ai',
+        text: getGeneratedInsightText(thread.widgetId, nextGeneration),
+        createdAtLabel: 'Refreshed just now',
+        generatedAt: refreshedAt,
+        refreshTrigger,
+        likes: 0,
+        likedByViewer: false,
+        comments: [],
+      },
+      ...userInsights,
+    ],
+  };
+}
+
+export function failDashboardWidgetInsightRefresh(
+  thread: DashboardWidgetInsightThread,
+  attemptedAt: string,
+  message = 'We could not refresh this insight. The previous AI insight is still available.'
+): DashboardWidgetInsightThread {
+  return {
+    ...thread,
+    lastRefreshAttemptAt: attemptedAt,
+    lastRefreshError: message,
   };
 }

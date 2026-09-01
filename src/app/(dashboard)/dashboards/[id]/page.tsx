@@ -30,8 +30,11 @@ import {
 } from '@/data/mock-survey-folders';
 import {
   DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY,
+  isAiInsightRefreshFrequency,
   type AiInsightRefreshFrequency,
+  type DashboardInsightRegenerationResult,
 } from '@/data/mock-dashboard-ai-insights';
+import { AI_DASHBOARD_WIDGETS } from '@/data/mock-ai-widgets';
 import {
   INITIAL_DASHBOARD_SAVED_FILTERS,
   type DashboardSavedFilter,
@@ -48,6 +51,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
   const dashboardsPath = withBiProductBasePath(basePath, '/dashboards');
   const { showToast } = useWuShowToast();
   const dashboard = getDashboardById(numericId);
+  const refreshFrequencyStorageKey = `survey-re:dashboard:${numericId}:ai-insight-refresh-frequency`;
   const [name, setName] = useState(dashboard?.name ?? 'Untitled');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState('general');
@@ -69,11 +73,47 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
     DEFAULT_DESIGN_TYPOGRAPHY
   );
   const [insightRefreshFrequency, setInsightRefreshFrequency] =
-    useState<AiInsightRefreshFrequency>(DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY);
+    useState<AiInsightRefreshFrequency>(() => {
+      if (typeof window === 'undefined') return DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY;
+      const storedFrequency = window.localStorage.getItem(refreshFrequencyStorageKey);
+      return isAiInsightRefreshFrequency(storedFrequency)
+        ? storedFrequency
+        : DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY;
+    });
   const [lastAiInsightsRefreshAt, setLastAiInsightsRefreshAt] = useState(
-    '2026-08-27T06:30:00.000Z'
+    '2026-09-01T06:30:00.000Z'
   );
   const [globalInsightRefreshVersion, setGlobalInsightRefreshVersion] = useState(0);
+  const [globalInsightRefreshTargetWidgetIds, setGlobalInsightRefreshTargetWidgetIds] =
+    useState<string[]>();
+  const [globalInsightRefreshFailedWidgetIds, setGlobalInsightRefreshFailedWidgetIds] =
+    useState<string[]>([]);
+  const [hasSimulatedPartialRefresh, setHasSimulatedPartialRefresh] = useState(false);
+
+  const updateInsightRefreshFrequency = (frequency: AiInsightRefreshFrequency): void => {
+    setInsightRefreshFrequency(frequency);
+    window.localStorage.setItem(refreshFrequencyStorageKey, frequency);
+  };
+
+  const runDashboardInsightRefresh = (
+    targetWidgetIds: string[],
+    failedWidgetIds: string[]
+  ): DashboardInsightRegenerationResult => {
+    const completedAt = new Date().toISOString();
+    setGlobalInsightRefreshTargetWidgetIds(targetWidgetIds);
+    setGlobalInsightRefreshFailedWidgetIds(failedWidgetIds);
+    setLastAiInsightsRefreshAt(completedAt);
+    setGlobalInsightRefreshVersion((current) => current + 1);
+    return {
+      attemptedCount: targetWidgetIds.length,
+      refreshedCount: targetWidgetIds.length - failedWidgetIds.length,
+      failedWidgetIds,
+      failedWidgetTitles: failedWidgetIds.map(
+        (widgetId) => AI_DASHBOARD_WIDGETS.find((widget) => widget.id === widgetId)?.title ?? widgetId
+      ),
+      completedAt,
+    };
+  };
   if (!dashboard) {
     return (
       <PageContainer>
@@ -160,13 +200,18 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         appliedDesignTypography={designTypography}
         onDesignTypographyChange={setDesignTypography}
         insightRefreshFrequency={insightRefreshFrequency}
-        onInsightRefreshFrequencyChange={setInsightRefreshFrequency}
+        onInsightRefreshFrequencyChange={updateInsightRefreshFrequency}
         lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
+        failedInsightWidgetIds={globalInsightRefreshFailedWidgetIds}
         onRegenerateInsights={() => {
-          const refreshedAt = new Date().toISOString();
-          setLastAiInsightsRefreshAt(refreshedAt);
-          setGlobalInsightRefreshVersion((current) => current + 1);
+          const failedWidgetIds = hasSimulatedPartialRefresh ? [] : ['w-segment-trend'];
+          setHasSimulatedPartialRefresh(true);
+          return runDashboardInsightRefresh(
+            AI_DASHBOARD_WIDGETS.map((widget) => widget.id),
+            failedWidgetIds
+          );
         }}
+        onRetryFailedInsights={(widgetIds) => runDashboardInsightRefresh(widgetIds, [])}
         savedFilters={savedFilters}
         onDelete={() => {
           showToast({
@@ -219,8 +264,14 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         designTypography={designTypography}
         insightRefreshFrequency={insightRefreshFrequency}
         globalInsightRefreshVersion={globalInsightRefreshVersion}
+        globalInsightRefreshTargetWidgetIds={globalInsightRefreshTargetWidgetIds}
+        globalInsightRefreshFailedWidgetIds={globalInsightRefreshFailedWidgetIds}
         lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
-        onInsightsRefreshed={setLastAiInsightsRefreshAt}
+        onInsightsRefreshed={(widgetId) =>
+          setGlobalInsightRefreshFailedWidgetIds((current) =>
+            current.filter((failedWidgetId) => failedWidgetId !== widgetId)
+          )
+        }
       />
     </div>
   );

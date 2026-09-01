@@ -55,14 +55,18 @@ interface DashboardDetailTabBarProps {
   designTypography: DesignTypographyOptions;
   insightRefreshFrequency: AiInsightRefreshFrequency;
   globalInsightRefreshVersion: number;
+  globalInsightRefreshTargetWidgetIds?: string[];
+  globalInsightRefreshFailedWidgetIds?: string[];
   lastAiInsightsRefreshAt: string;
-  onInsightsRefreshed: (refreshedAt: string) => void;
+  onInsightsRefreshed?: (widgetId: string, refreshedAt: string) => void;
 }
 
 export function DashboardDetailTabBar({
   designTypography,
   insightRefreshFrequency,
   globalInsightRefreshVersion,
+  globalInsightRefreshTargetWidgetIds,
+  globalInsightRefreshFailedWidgetIds,
   lastAiInsightsRefreshAt,
   onInsightsRefreshed,
 }: DashboardDetailTabBarProps) {
@@ -141,6 +145,8 @@ export function DashboardDetailTabBar({
             designTypography={designTypography}
             insightRefreshFrequency={insightRefreshFrequency}
             globalInsightRefreshVersion={globalInsightRefreshVersion}
+            globalInsightRefreshTargetWidgetIds={globalInsightRefreshTargetWidgetIds}
+            globalInsightRefreshFailedWidgetIds={globalInsightRefreshFailedWidgetIds}
             lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
             onInsightsRefreshed={onInsightsRefreshed}
           />

@@ -356,6 +356,64 @@
   font-size: 16px;
 }
 
+.regenerationResultWarning,
+.regenerationResultSuccess {
+  align-items: flex-start;
+  border: 1px solid;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 12px 13px;
+}
+
+.regenerationResultWarning {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #7c4a14;
+}
+
+.regenerationResultSuccess {
+  background: #edf9f2;
+  border-color: #ccebd8;
+  color: #24623e;
+}
+
+.regenerationResultWarning > span,
+.regenerationResultSuccess > span {
+  font-size: 17px;
+  margin-top: 1px;
+}
+
+.regenerationResultWarning > div,
+.regenerationResultSuccess > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.regenerationResultWarning strong,
+.regenerationResultSuccess strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.regenerationResultWarning div span,
+.regenerationResultSuccess div span {
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.regenerationResultWarning button {
+  background: transparent;
+  border: 0;
+  color: #a9480c;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 0;
+}
+
 @media (max-width: 720px) {
   .refreshFrequencySection {
     grid-template-columns: 1fr;
@@ -378,6 +436,16 @@
   .refreshMetadata div {
     border-right: 0;
     padding: 0;
+  }
+
+  .regenerationResultWarning,
+  .regenerationResultSuccess {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .regenerationResultWarning button {
+    grid-column: 2;
+    justify-self: start;
   }
 }
 

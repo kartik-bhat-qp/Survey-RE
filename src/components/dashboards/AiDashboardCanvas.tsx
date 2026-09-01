@@ -34,6 +34,7 @@ import { AiWidgetRenderer } from '@/components/dashboards/widgets/AiWidgetRender
 import {
   createDashboardWidgetInsightThread,
   DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY,
+  failDashboardWidgetInsightRefresh,
   refreshDashboardWidgetInsightThread,
   type AiInsightRefreshFrequency,
   type DashboardWidgetInsightThread,
@@ -72,8 +73,10 @@ interface AiDashboardCanvasProps {
   designTypography?: DesignTypographyOptions;
   insightRefreshFrequency?: AiInsightRefreshFrequency;
   globalInsightRefreshVersion?: number;
+  globalInsightRefreshTargetWidgetIds?: string[];
+  globalInsightRefreshFailedWidgetIds?: string[];
   lastAiInsightsRefreshAt?: string;
-  onInsightsRefreshed?: (refreshedAt: string) => void;
+  onInsightsRefreshed?: (widgetId: string, refreshedAt: string) => void;
   readOnly?: boolean;
   renderWidget?: (widget: AiWidgetConfig) => React.ReactNode;
   renderWidgetActions?: (widget: AiWidgetConfig) => React.ReactNode;
@@ -84,7 +87,9 @@ export function AiDashboardCanvas({
   designTypography = DEFAULT_DESIGN_TYPOGRAPHY,
   insightRefreshFrequency = DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY,
   globalInsightRefreshVersion = 0,
-  lastAiInsightsRefreshAt = '2026-08-27T06:30:00.000Z',
+  globalInsightRefreshTargetWidgetIds,
+  globalInsightRefreshFailedWidgetIds = [],
+  lastAiInsightsRefreshAt = '2026-09-01T06:30:00.000Z',
   onInsightsRefreshed,
   readOnly = false,
   renderWidget,
@@ -149,15 +154,33 @@ export function AiDashboardCanvas({
   useEffect(() => {
     if (previousGlobalRefreshVersion.current === globalInsightRefreshVersion) return;
     previousGlobalRefreshVersion.current = globalInsightRefreshVersion;
+    const targetWidgetIds = new Set(
+      globalInsightRefreshTargetWidgetIds ?? AI_DASHBOARD_WIDGETS.map((widget) => widget.id)
+    );
+    const failedWidgetIds = new Set(globalInsightRefreshFailedWidgetIds);
     setInsightThreads((current) =>
       Object.fromEntries(
-        Object.entries(current).map(([widgetId, thread]) => [
-          widgetId,
-          refreshDashboardWidgetInsightThread(thread, lastAiInsightsRefreshAt),
-        ])
+        Object.entries(current).map(([widgetId, thread]) => {
+          if (!targetWidgetIds.has(widgetId)) return [widgetId, thread];
+          return [
+            widgetId,
+            failedWidgetIds.has(widgetId)
+              ? failDashboardWidgetInsightRefresh(thread, lastAiInsightsRefreshAt)
+              : refreshDashboardWidgetInsightThread(
+                  thread,
+                  lastAiInsightsRefreshAt,
+                  'dashboard'
+                ),
+          ];
+        })
       )
     );
-  }, [globalInsightRefreshVersion, lastAiInsightsRefreshAt]);
+  }, [
+    globalInsightRefreshFailedWidgetIds,
+    globalInsightRefreshTargetWidgetIds,
+    globalInsightRefreshVersion,
+    lastAiInsightsRefreshAt,
+  ]);
 
   const refreshWidgetInsight = useCallback(
     (widgetId: string) => {
@@ -170,9 +193,9 @@ export function AiDashboardCanvas({
           [widgetId]: refreshDashboardWidgetInsightThread(current[widgetId], refreshedAt),
         }));
         setRefreshingWidgetId(null);
-        onInsightsRefreshed?.(refreshedAt);
+        onInsightsRefreshed?.(widgetId, refreshedAt);
         showToast({
-          message: 'AI insight refreshed. User insights and comments were preserved.',
+          message: 'AI insight refreshed. The previous AI insight moved to Past runs.',
           variant: 'success',
         });
       }, 700);
@@ -229,6 +252,27 @@ export function AiDashboardCanvas({
                 }
               : item
           ),
+        },
+      };
+    });
+  }, []);
+
+  const toggleInsightLike = useCallback((widgetId: string, insightId: string) => {
+    setInsightThreads((current) => {
+      const thread = current[widgetId];
+      return {
+        ...current,
+        [widgetId]: {
+          ...thread,
+          items: thread.items.map((item) => {
+            if (item.id !== insightId) return item;
+            const likedByViewer = !(item.likedByViewer ?? false);
+            return {
+              ...item,
+              likedByViewer,
+              likes: Math.max(0, item.likes + (likedByViewer ? 1 : -1)),
+            };
+          }),
         },
       };
     });
@@ -322,9 +366,13 @@ export function AiDashboardCanvas({
             widget={activeWidget}
             thread={activeThread}
             refreshFrequency={insightRefreshFrequency}
+            dashboardRefreshAnchorAt={lastAiInsightsRefreshAt}
             refreshing={refreshingWidgetId === activeInsightWidgetId}
             onClose={() => setActiveInsightWidgetId(null)}
             onRefresh={() => refreshWidgetInsight(activeInsightWidgetId)}
+            onToggleLike={(insightId) =>
+              toggleInsightLike(activeInsightWidgetId, insightId)
+            }
             onAddInsight={(text) => addUserInsight(activeInsightWidgetId, text)}
             onAddComment={(insightId, text) =>
               addInsightComment(activeInsightWidgetId, insightId, text)

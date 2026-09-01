@@ -32,6 +32,7 @@ import {
   getNextAiInsightRefreshAt,
   type AiInsightRefreshFrequency,
   type AiInsightRefreshOption,
+  type DashboardInsightRegenerationResult,
 } from '@/data/mock-dashboard-ai-insights';
 import styles from './DashboardSettingsModal.module.css';
 
@@ -77,7 +78,9 @@ interface DashboardSettingsModalProps {
   insightRefreshFrequency: AiInsightRefreshFrequency;
   onInsightRefreshFrequencyChange: (frequency: AiInsightRefreshFrequency) => void;
   lastAiInsightsRefreshAt: string;
-  onRegenerateInsights: () => void;
+  failedInsightWidgetIds?: string[];
+  onRegenerateInsights: () => DashboardInsightRegenerationResult;
+  onRetryFailedInsights?: (widgetIds: string[]) => DashboardInsightRegenerationResult;
   savedFilters?: DashboardSavedFilter[];
 }
 
@@ -150,10 +153,10 @@ function GeneralTab({
           <h3 id="ai-insight-refresh-title">AI insight refresh frequency</h3>
           <p>
             Automatically refresh AI-generated widget insights using the latest dashboard data.
-            User-submitted insights and all comments are preserved.
+            Previous AI runs and user-submitted insights remain available.
           </p>
           <span>
-            Last refreshed {formatAiInsightDateTime(lastAiInsightsRefreshAt)} · Next scheduled{' '}
+            Last dashboard run {formatAiInsightDateTime(lastAiInsightsRefreshAt)} · Next scheduled{' '}
             {formatAiInsightDateTime(nextRefreshAt)}
           </span>
         </div>
@@ -243,10 +246,14 @@ function AiSettingsTab({
   insightRefreshFrequency,
   lastAiInsightsRefreshAt,
   regenerating,
+  regenerationResult,
+  onRetryFailedInsights,
 }: {
   insightRefreshFrequency: AiInsightRefreshFrequency;
   lastAiInsightsRefreshAt: string;
   regenerating: boolean;
+  regenerationResult: DashboardInsightRegenerationResult | null;
+  onRetryFailedInsights: () => void;
 }) {
   const refreshOption = getAiInsightRefreshOption(insightRefreshFrequency);
   const nextRefreshAt = getNextAiInsightRefreshAt(
@@ -262,10 +269,11 @@ function AiSettingsTab({
             <h3>Regenerate insights</h3>
             <p>
               Refresh every AI-generated insight in this dashboard using the latest widget data.
-              User-submitted insights and every comment will be preserved.
+              Each current AI insight and its engagement will move to Past runs. User-submitted
+              insights remain unchanged.
             </p>
           </div>
-          <span className={styles.preservationBadge}>Preserves user content</span>
+          <span className={styles.preservationBadge}>Keeps past runs</span>
         </div>
         <dl className={styles.refreshMetadata}>
           <div>
@@ -273,7 +281,7 @@ function AiSettingsTab({
             <dd>{refreshOption.label}</dd>
           </div>
           <div>
-            <dt>Last refreshed</dt>
+            <dt>Last dashboard run</dt>
             <dd>{formatAiInsightDateTime(lastAiInsightsRefreshAt)}</dd>
           </div>
           <div>
@@ -286,6 +294,41 @@ function AiSettingsTab({
         <div className={styles.regeneratingNotice} role="status">
           <span className="wm-autorenew" aria-hidden="true" />
           Generating fresh insights. Existing insights remain visible until the refresh succeeds.
+        </div>
+      ) : null}
+      {!regenerating && regenerationResult ? (
+        <div
+          className={
+            regenerationResult.failedWidgetIds.length > 0
+              ? styles.regenerationResultWarning
+              : styles.regenerationResultSuccess
+          }
+          role="status"
+        >
+          <span
+            className={
+              regenerationResult.failedWidgetIds.length > 0
+                ? 'wm-warning'
+                : 'wm-check-circle'
+            }
+            aria-hidden="true"
+          />
+          <div>
+            <strong>
+              {regenerationResult.refreshedCount} of {regenerationResult.attemptedCount}{' '}
+              {regenerationResult.attemptedCount === 1 ? 'insight' : 'insights'} refreshed
+            </strong>
+            <span>
+              {regenerationResult.failedWidgetIds.length > 0
+                ? `${regenerationResult.failedWidgetTitles.join(', ')} kept its previous AI insight and can be retried.`
+                : 'The latest AI content is available. Previous AI runs and user insights remain available.'}
+            </span>
+          </div>
+          {regenerationResult.failedWidgetIds.length > 0 ? (
+            <button type="button" onClick={onRetryFailedInsights}>
+              Retry failed
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -309,7 +352,9 @@ export function DashboardSettingsModal({
   insightRefreshFrequency,
   onInsightRefreshFrequencyChange,
   lastAiInsightsRefreshAt,
+  failedInsightWidgetIds = [],
   onRegenerateInsights,
+  onRetryFailedInsights,
   savedFilters = INITIAL_DASHBOARD_SAVED_FILTERS,
 }: DashboardSettingsModalProps) {
   const wick = useWickUILib();
@@ -317,6 +362,27 @@ export function DashboardSettingsModal({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [regenerateConfirmOpen, setRegenerateConfirmOpen] = useState(false);
   const [regeneratingInsights, setRegeneratingInsights] = useState(false);
+  const [regenerationResult, setRegenerationResult] =
+    useState<DashboardInsightRegenerationResult | null>(null);
+  const displayedRegenerationResult = useMemo(() => {
+    if (!regenerationResult) return null;
+    const unresolvedWidgetIds = new Set(failedInsightWidgetIds);
+    const remainingFailedWidgetIds = regenerationResult.failedWidgetIds.filter((widgetId) =>
+      unresolvedWidgetIds.has(widgetId)
+    );
+    if (remainingFailedWidgetIds.length === regenerationResult.failedWidgetIds.length) {
+      return regenerationResult;
+    }
+    return {
+      ...regenerationResult,
+      refreshedCount:
+        regenerationResult.attemptedCount - remainingFailedWidgetIds.length,
+      failedWidgetIds: remainingFailedWidgetIds,
+      failedWidgetTitles: regenerationResult.failedWidgetTitles.filter((_, index) =>
+        remainingFailedWidgetIds.includes(regenerationResult.failedWidgetIds[index])
+      ),
+    };
+  }, [failedInsightWidgetIds, regenerationResult]);
   const [accessibilityShortcutsEnabled, setAccessibilityShortcutsEnabled] = useState(true);
   const [designTheme, setDesignTheme] = useState(DESIGN_THEME_OPTIONS[0]);
   const [designPalette, setDesignPalette] = useState(DESIGN_PALETTE_OPTIONS[0]);
@@ -433,14 +499,32 @@ export function DashboardSettingsModal({
   const handleRegenerateInsights = useCallback(() => {
     setRegeneratingInsights(true);
     window.setTimeout(() => {
-      onRegenerateInsights();
+      const result = onRegenerateInsights();
+      setRegenerationResult(result);
       setRegeneratingInsights(false);
       showToast({
-        message: 'AI insights regenerated. User insights and comments were preserved.',
-        variant: 'success',
+        message:
+          result.failedWidgetIds.length > 0
+            ? `${result.refreshedCount} insights refreshed. ${result.failedWidgetIds.length} ${result.failedWidgetIds.length === 1 ? 'insight kept its' : 'insights kept their'} previous content.`
+            : 'AI insights regenerated. Previous AI insights moved to Past runs.',
+        variant: result.failedWidgetIds.length > 0 ? 'error' : 'success',
       });
     }, 900);
   }, [onRegenerateInsights, showToast]);
+
+  const handleRetryFailedInsights = useCallback(() => {
+    if (!displayedRegenerationResult?.failedWidgetIds.length || !onRetryFailedInsights) return;
+    setRegeneratingInsights(true);
+    window.setTimeout(() => {
+      const result = onRetryFailedInsights(displayedRegenerationResult.failedWidgetIds);
+      setRegenerationResult(result);
+      setRegeneratingInsights(false);
+      showToast({
+        message: 'The failed insight refreshed. Its previous AI insight moved to Past runs.',
+        variant: 'success',
+      });
+    }, 700);
+  }, [displayedRegenerationResult, onRetryFailedInsights, showToast]);
 
   const tabs: IWuTabItem[] = useMemo(
     () => [
@@ -505,6 +589,8 @@ export function DashboardSettingsModal({
             insightRefreshFrequency={insightRefreshFrequency}
             lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
             regenerating={regeneratingInsights}
+            regenerationResult={displayedRegenerationResult}
+            onRetryFailedInsights={handleRetryFailedInsights}
           />
         ),
       },
@@ -534,6 +620,8 @@ export function DashboardSettingsModal({
       handleDuplicate,
       insightRefreshFrequency,
       lastAiInsightsRefreshAt,
+      displayedRegenerationResult,
+      handleRetryFailedInsights,
       onNameChange,
       onInsightRefreshFrequencyChange,
       regeneratingInsights,
@@ -614,7 +702,7 @@ export function DashboardSettingsModal({
         open={regenerateConfirmOpen}
         onOpenChange={setRegenerateConfirmOpen}
         title="Regenerate dashboard insights"
-        description="All AI-generated insights will be refreshed using the latest dashboard data. User-submitted insights and every comment will be preserved, and existing AI insights will remain visible if regeneration fails."
+        description="All AI-generated insights will be refreshed using the latest dashboard data. Each current AI insight, its comments, and its likes will move to Past runs. User-submitted insights remain unchanged, and failed widgets keep their current AI insight."
         confirmLabel="Regenerate insights"
         onConfirm={handleRegenerateInsights}
       />
