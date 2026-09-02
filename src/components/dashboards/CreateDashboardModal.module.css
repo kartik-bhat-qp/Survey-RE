@@ -198,6 +198,23 @@
   color: #566173;
 }
 
+.themeReferenceRadio {
+  accent-color: #1e63d7;
+  cursor: pointer;
+  height: 16px;
+  margin: 0;
+  width: 16px;
+}
+
+.themeReferenceRadio:disabled {
+  cursor: not-allowed;
+}
+
+.themeReferenceRadio:focus-visible {
+  outline: 2px solid #1e88e5;
+  outline-offset: 2px;
+}
+
 .promptSplit {
   align-items: stretch;
   display: grid;

@@ -11,6 +11,11 @@ import { CreateDashboardStepBreadcrumb } from '@/components/dashboards/CreateDas
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import { WuLoaderWrapper } from '@/components/ui/WuLoaderWrapper';
 import type { SurveyListItem } from '@/data/mock-survey-folders';
+import {
+  selectThemeReference,
+  toggleDashboardReference,
+  type DashboardReferenceSelection,
+} from '@/data/ai-dashboard-references';
 import { PUBLIC_IMAGES } from '@/lib/public-images';
 import cardStyles from './DashboardTypeCard.module.css';
 import styles from './CreateDashboardModal.module.css';
@@ -64,11 +69,24 @@ export interface CreateDashboardSurvey {
   name: string;
 }
 
+export interface AiDashboardCreationOptions {
+  method: AiMethod;
+  referenceDashboardIds?: number[];
+  themeReferenceDashboardId?: number;
+  prompt?: string;
+  letAiDecide?: boolean;
+}
+
 interface CreateDashboardModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultName: string;
-  onCreate: (name: string, type: DashboardType, survey?: CreateDashboardSurvey) => void;
+  onCreate: (
+    name: string,
+    type: DashboardType,
+    survey?: CreateDashboardSurvey,
+    aiOptions?: AiDashboardCreationOptions
+  ) => void;
 }
 
 interface DashboardTypeCardProps {
@@ -219,10 +237,14 @@ function AiMethodSelection({
 
 function AiLearnFromDashboards({
   selectedReferences,
+  themeReferenceDashboardId,
   onToggleReference,
+  onSelectThemeReference,
 }: {
   selectedReferences: number[];
+  themeReferenceDashboardId: number | null;
   onToggleReference: (id: number) => void;
+  onSelectThemeReference: (id: number) => void;
 }) {
   const [search, setSearch] = useState('');
 
@@ -287,6 +309,27 @@ function AiLearnFromDashboards({
       size: 152,
       cell: ({ row }) => row.original.updated,
     },
+    {
+      accessorKey: 'themeReference',
+      header: 'Theme reference',
+      size: 132,
+      cellAlign: 'center',
+      cell: ({ row }) => {
+        const isSelected = selectedReferences.includes(row.original.id);
+
+        return (
+          <input
+            type="radio"
+            name="theme-reference-dashboard"
+            checked={themeReferenceDashboardId === row.original.id}
+            disabled={!isSelected}
+            onChange={() => onSelectThemeReference(row.original.id)}
+            aria-label={`Use ${row.original.name} as the theme reference`}
+            className={styles.themeReferenceRadio}
+          />
+        );
+      },
+    },
   ];
 
   return (
@@ -295,7 +338,8 @@ function AiLearnFromDashboards({
         <div>
           <h3 className={styles.aiStepTitle}>Learn from existing dashboards</h3>
           <p className={styles.aiStepDescription}>
-            Select up to 5 dashboards for AI to learn layout, widgets, and styling.
+            Select up to 5 dashboards for AI to learn layout and widgets. Choose one selected
+            dashboard as the reference for the theme, color palette, and sentiment colors.
           </p>
         </div>
         <span className={styles.referenceCount}>{selectedReferences.length}/5 selected</span>
@@ -419,7 +463,10 @@ export function CreateDashboardModal({
   const [isNameError, setIsNameError] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedSurvey, setSelectedSurvey] = useState<SurveyListItem | null>(null);
-  const [selectedReferences, setSelectedReferences] = useState<number[]>([]);
+  const [referenceSelection, setReferenceSelection] = useState<DashboardReferenceSelection>({
+    dashboardIds: [],
+    themeReferenceDashboardId: null,
+  });
   const [prompt, setPrompt] = useState('');
   const [letAiDecide, setLetAiDecide] = useState(false);
 
@@ -430,7 +477,7 @@ export function CreateDashboardModal({
     setAiMethod('learn');
     setIsNameError(false);
     setSelectedSurvey(null);
-    setSelectedReferences([]);
+    setReferenceSelection({ dashboardIds: [], themeReferenceDashboardId: null });
     setPrompt('');
     setLetAiDecide(false);
   }, []);
@@ -487,7 +534,7 @@ export function CreateDashboardModal({
   }
 
   function handleAiDetailNext() {
-    if (step === 'learn' && selectedReferences.length === 0) {
+    if (step === 'learn' && referenceSelection.dashboardIds.length === 0) {
       showToast({
         message: 'Select at least one dashboard to continue',
         variant: 'error',
@@ -514,26 +561,34 @@ export function CreateDashboardModal({
   async function handleCreate() {
     if (!selectedSurvey) return;
     setIsSaving(true);
-    onCreate(getTrimmedName(), 'ai', {
-      id: selectedSurvey.id,
-      name: selectedSurvey.name,
-    });
+    onCreate(
+      getTrimmedName(),
+      'ai',
+      {
+        id: selectedSurvey.id,
+        name: selectedSurvey.name,
+      },
+      aiMethod === 'learn'
+        ? {
+            method: 'learn',
+            referenceDashboardIds: referenceSelection.dashboardIds,
+            themeReferenceDashboardId:
+              referenceSelection.themeReferenceDashboardId ?? undefined,
+          }
+        : {
+            method: 'prompt',
+            prompt: prompt.trim() || undefined,
+            letAiDecide,
+          }
+    );
     setIsSaving(false);
     handleClose();
   }
 
   function toggleReference(id: number) {
-    setSelectedReferences((currentSelection) => {
-      if (currentSelection.includes(id)) {
-        return currentSelection.filter((selectedId) => selectedId !== id);
-      }
-
-      if (currentSelection.length >= 5) {
-        return currentSelection;
-      }
-
-      return [...currentSelection, id];
-    });
+    setReferenceSelection((currentSelection) =>
+      toggleDashboardReference(currentSelection, id)
+    );
   }
 
   const modalClassName = step === 'type' ? styles.modal : styles.modalWide;
@@ -634,8 +689,14 @@ export function CreateDashboardModal({
       {step === 'learn' && (
         <WuModalContent className={styles.aiStepContent}>
           <AiLearnFromDashboards
-            selectedReferences={selectedReferences}
+            selectedReferences={referenceSelection.dashboardIds}
+            themeReferenceDashboardId={referenceSelection.themeReferenceDashboardId}
             onToggleReference={toggleReference}
+            onSelectThemeReference={(id) =>
+              setReferenceSelection((currentSelection) =>
+                selectThemeReference(currentSelection, id)
+              )
+            }
           />
         </WuModalContent>
       )}
@@ -653,7 +714,17 @@ export function CreateDashboardModal({
 
       {step === 'confirmation' && selectedSurvey && (
         <WuModalContent className="!overflow-hidden !min-h-0">
-          <AiDashboardConfirmation surveyName={selectedSurvey.name} />
+          <AiDashboardConfirmation
+            surveyName={selectedSurvey.name}
+            themeReferenceName={
+              aiMethod === 'learn'
+                ? REFERENCE_DASHBOARDS.find(
+                    (dashboard) =>
+                      dashboard.id === referenceSelection.themeReferenceDashboardId
+                  )?.name
+                : undefined
+            }
+          />
         </WuModalContent>
       )}
       </WuLoaderWrapper>
