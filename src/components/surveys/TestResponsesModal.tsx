@@ -121,6 +121,7 @@ export function TestResponsesModal({
     [responseCount]
   );
   const showBuyNow = isSynthetic && !hasSufficientCredits;
+  const creditsShortfall = Math.max(0, creditCost - TEST_RESPONSE_CREDIT_BALANCE);
 
   function handleStartTest(): void {
     if (isSynthetic && !hasSufficientCredits) {
@@ -227,7 +228,7 @@ export function TestResponsesModal({
                   />
                 </div>
               </div>
-              <div className={styles.inlineFieldRow}>
+              <div className={styles.responsesRow}>
                 <span className={styles.inlineFieldLabel} id="test-response-synthetic-count-label">
                   Responses
                 </span>
@@ -291,7 +292,9 @@ export function TestResponsesModal({
           <span
             className={`${styles.footerBalance} ${showBuyNow ? styles.footerBalanceInsufficient : ''}`}
           >
-            Balance {formatNumber(TEST_RESPONSE_CREDIT_BALANCE)} credits
+            {showBuyNow
+              ? `Need ${formatNumber(creditsShortfall)} more credits`
+              : `Balance ${formatNumber(TEST_RESPONSE_CREDIT_BALANCE)} credits`}
           </span>
           {showBuyNow ? (
             <Link href={CREDITS_WALLET_PATH} className={styles.buyNowBtn}>

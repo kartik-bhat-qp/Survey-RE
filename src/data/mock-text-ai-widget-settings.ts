@@ -7,6 +7,8 @@ export type TextAiWidgetCustomMode = 'manual' | 'variance';
 
 /** First option: show all themes/topics. */
 export const DEFAULT_TEXT_AI_WIDGET_TOP_N: TextAiWidgetTopN = 'all';
+/** Default for sub-theme trend widgets. */
+export const DEFAULT_TEXT_AI_TREND_WIDGET_TOP_N: TextAiWidgetTopN = 10;
 export const DEFAULT_TEXT_AI_WIDGET_VARIANCE_PERCENT = 10;
 export const TEXT_AI_WIDGET_CUSTOM_SELECTION_MAX = 20;
 
@@ -62,6 +64,10 @@ export function createTextAiWidgetDisplayState(
     selectedIds: itemIds.slice(0, TEXT_AI_WIDGET_CUSTOM_SELECTION_MAX),
     variancePercent: DEFAULT_TEXT_AI_WIDGET_VARIANCE_PERCENT,
   };
+}
+
+export function createTextAiTrendWidgetDisplayState(): TextAiWidgetDisplayState {
+  return createTextAiWidgetDisplayState(DEFAULT_TEXT_AI_TREND_WIDGET_TOP_N);
 }
 
 export function parseTextAiWidgetDisplayChoice(value: string): TextAiWidgetDisplayChoice {

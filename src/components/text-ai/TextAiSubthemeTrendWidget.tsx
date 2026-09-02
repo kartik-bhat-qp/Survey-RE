@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
 import {
   TEXT_AI_SUBTHEME_TREND_PERIODS,
@@ -9,7 +9,8 @@ import {
 } from '@/data/mock-text-ai-subtheme-trend';
 import {
   applyTextAiWidgetDisplay,
-  createTextAiWidgetDisplayState,
+  createTextAiTrendWidgetDisplayState,
+  DEFAULT_TEXT_AI_TREND_WIDGET_TOP_N,
   type TextAiWidgetDisplayState,
 } from '@/data/mock-text-ai-widget-settings';
 import styles from './TextAiSubthemeTrendWidget.module.css';
@@ -67,12 +68,10 @@ export function TextAiSubthemeTrendWidget({
   onDelete,
 }: TextAiSubthemeTrendWidgetProps) {
   const [display, setDisplay] = useState<TextAiWidgetDisplayState>(() =>
-    createTextAiWidgetDisplayState(
-      10,
-      TEXT_AI_SUBTHEME_TREND_SERIES.map((series) => series.id)
-    )
+    createTextAiTrendWidgetDisplayState()
   );
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [hiddenSeriesIds, setHiddenSeriesIds] = useState<Set<string>>(() => new Set());
   const customItems = useMemo(
     () =>
       TEXT_AI_SUBTHEME_TREND_SERIES.map((series) => ({
@@ -87,13 +86,39 @@ export function TextAiSubthemeTrendWidget({
     () => applyTextAiWidgetDisplay(TEXT_AI_SUBTHEME_TREND_SERIES, display),
     [display]
   );
+  const chartSeries = useMemo(
+    () => visibleSeries.filter((series) => !hiddenSeriesIds.has(series.id)),
+    [hiddenSeriesIds, visibleSeries]
+  );
+
+  useEffect(() => {
+    setHiddenSeriesIds((current) => {
+      const validIds = new Set(visibleSeries.map((series) => series.id));
+      const next = new Set([...current].filter((id) => validIds.has(id)));
+      return next.size === current.size ? current : next;
+    });
+  }, [visibleSeries]);
+
+  function toggleSeriesVisibility(seriesId: string): void {
+    setHiddenSeriesIds((current) => {
+      const next = new Set(current);
+      if (next.has(seriesId)) {
+        next.delete(seriesId);
+      } else {
+        next.add(seriesId);
+      }
+      return next;
+    });
+    setHoveredId(null);
+  }
+
   const maxValue = useMemo(() => {
-    const peak = visibleSeries.reduce(
+    const peak = chartSeries.reduce(
       (highest, series) => Math.max(highest, ...series.values),
       0
     );
     return niceMax(Math.max(10, Math.ceil(peak * 1.1)));
-  }, [visibleSeries]);
+  }, [chartSeries]);
   const yTicks = [0, maxValue / 2, maxValue];
   const plotWidth = CHART_WIDTH - PAD_LEFT - PAD_RIGHT;
   const plotHeight = CHART_HEIGHT - PAD_TOP - PAD_BOTTOM;
@@ -107,7 +132,7 @@ export function TextAiSubthemeTrendWidget({
         </div>
         <TextAiWidgetMenu
           widgetTitle={`${question} Sub-theme trend`}
-          topN={display.value === 'custom' ? 'all' : display.value}
+          topN={display.value === 'custom' ? DEFAULT_TEXT_AI_TREND_WIDGET_TOP_N : display.value}
           displayState={display}
           customItems={customItems}
           onDisplayChange={setDisplay}
@@ -121,6 +146,11 @@ export function TextAiSubthemeTrendWidget({
         ) : (
           <>
             <div className={styles.chartWrap}>
+              {chartSeries.length === 0 ? (
+                <p className={styles.emptyState}>
+                  All sub-themes are hidden. Click a legend item to show it again.
+                </p>
+              ) : (
               <svg
                 className={styles.chart}
                 viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
@@ -167,7 +197,7 @@ export function TextAiSubthemeTrendWidget({
                     </text>
                   );
                 })}
-                {visibleSeries.map((series) => {
+                {chartSeries.map((series) => {
                   const muted = hoveredId !== null && hoveredId !== series.id;
                   return (
                     <g
@@ -205,26 +235,38 @@ export function TextAiSubthemeTrendWidget({
                   );
                 })}
               </svg>
+              )}
             </div>
             <div className={styles.legend}>
-              {visibleSeries.map((series) => (
+              {visibleSeries.map((series) => {
+                const hidden = hiddenSeriesIds.has(series.id);
+                const highlighted = !hidden && hoveredId === series.id;
+                const muted =
+                  !hidden && hoveredId !== null && hoveredId !== series.id;
+                return (
                 <button
                   key={series.id}
                   type="button"
                   className={`${styles.legendItem} ${
-                    hoveredId !== null && hoveredId !== series.id
-                      ? styles.legendItemMuted
-                      : ''
+                    hidden ? styles.legendItemDisabled : ''
+                  } ${muted ? styles.legendItemMuted : ''} ${
+                    highlighted ? styles.legendItemActive : ''
                   }`}
-                  onMouseEnter={() => setHoveredId(series.id)}
+                  aria-pressed={!hidden}
+                  onClick={() => toggleSeriesVisibility(series.id)}
+                  onMouseEnter={() => {
+                    if (!hidden) setHoveredId(series.id);
+                  }}
                   onMouseLeave={() => setHoveredId(null)}
-                  onFocus={() => setHoveredId(series.id)}
+                  onFocus={() => {
+                    if (!hidden) setHoveredId(series.id);
+                  }}
                   onBlur={() => setHoveredId(null)}
-                  aria-label={`${series.label}, ${series.parentTheme}, ${series.total.toLocaleString('en-US')} mentions`}
+                  aria-label={`${series.label}, ${series.parentTheme}, ${series.total.toLocaleString('en-US')} mentions${hidden ? ', hidden from chart' : ''}`}
                 >
                   <span
-                    className={styles.swatch}
-                    style={{ background: series.color }}
+                    className={`${styles.swatch} ${hidden ? styles.swatchDisabled : ''}`}
+                    style={{ background: hidden ? undefined : series.color }}
                     aria-hidden
                   />
                   <span className={styles.legendCopy}>
@@ -232,7 +274,8 @@ export function TextAiSubthemeTrendWidget({
                     <span className={styles.legendParent}>{series.parentTheme}</span>
                   </span>
                 </button>
-              ))}
+              );
+              })}
             </div>
           </>
         )}

@@ -10,10 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useWickUILib } from '@/components/ui/useWickUILib';
-import {
-  CreateDashboardModal,
-  type AiDashboardCreationOptions,
-} from '@/components/dashboards/CreateDashboardModal';
+import { CreateDashboardModal } from '@/components/dashboards/CreateDashboardModal';
 import { saveRuntimeDashboard } from '@/data/dashboard-runtime';
 import {
   DASHBOARDS_PER_PAGE,
@@ -196,8 +193,7 @@ export default function DashboardsPage() {
   function handleCreate(
     name: string,
     type: 'blank' | 'ai',
-    survey?: { id: number; name: string },
-    aiOptions?: AiDashboardCreationOptions
+    survey?: { id: number; name: string }
   ) {
     const newDashboard: Dashboard = {
       id: Date.now(),
@@ -205,7 +201,6 @@ export default function DashboardsPage() {
       creationDate: new Date().toISOString(),
       type,
       ...(survey ? { surveyId: survey.id, surveyName: survey.name } : {}),
-      ...(aiOptions ?? {}),
     };
     saveRuntimeDashboard(newDashboard);
     setDashboards((prev) => [newDashboard, ...prev]);
