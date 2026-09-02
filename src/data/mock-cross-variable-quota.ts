@@ -58,6 +58,9 @@ export function formatCrossVariableQuotaScope(scope: QuestionQuotaScope | undefi
 
 export const CROSS_VARIABLE_OVERALL_COLUMN_KEY = '__overall__';
 
+/** ASCII separator for primary combination labels (Excel-safe in CSV exports). */
+export const CROSS_VARIABLE_COMBINATION_SEPARATOR = ' | ';
+
 export const CROSS_VARIABLE_DEFAULT_OVERALL = 100;
 
 export interface CrossVariablePrimaryDimension {
@@ -107,7 +110,7 @@ function getDimensionValues(question: SurveyQuestion, rowLabel?: string): string
   const options = resolveOptionsFor(question);
   if (options.length === 0) return [];
   if (rowLabel) {
-    return options.map((option) => `${rowLabel} · ${option}`);
+    return options.map((option) => `${rowLabel}${CROSS_VARIABLE_COMBINATION_SEPARATOR}${option}`);
   }
   return options;
 }
@@ -167,7 +170,7 @@ export function buildCombinationRows(
     labels: string[]
   ): void {
     if (index >= dimensions.length) {
-      const label = labels.join(' · ');
+      const label = labels.join(CROSS_VARIABLE_COMBINATION_SEPARATOR);
       rows.push({
         id: segments.map((s) => `${s.questionId}-${slugForId(s.value)}`).join('__'),
         label,
@@ -665,19 +668,21 @@ export function getCrossVariableOptionForColumn(
   });
 }
 
-const PRIMARY_COMBINATION_SEPARATOR = ' · ';
+function splitPrimaryCombinationLabel(label: string): string[] {
+  return label.split(/\s*(?:\||·)\s*/);
+}
 
-/** First segment of a primary combination label (e.g. "Sedan" from "Sedan · Maruti Suzuki"). */
+/** First segment of a primary combination label (e.g. "Sedan" from "Sedan | Maruti Suzuki"). */
 export function getCrossVariablePrimaryGroupKey(rowLabel: string): string {
-  const parts = rowLabel.split(PRIMARY_COMBINATION_SEPARATOR);
+  const parts = splitPrimaryCombinationLabel(rowLabel);
   return parts[0]?.trim() || rowLabel;
 }
 
 /** Remaining segments after the group key, if any. */
 export function getCrossVariablePrimaryDetailLabel(rowLabel: string): string {
-  const parts = rowLabel.split(PRIMARY_COMBINATION_SEPARATOR);
+  const parts = splitPrimaryCombinationLabel(rowLabel);
   if (parts.length <= 1) return rowLabel;
-  return parts.slice(1).join(PRIMARY_COMBINATION_SEPARATOR).trim();
+  return parts.slice(1).join(CROSS_VARIABLE_COMBINATION_SEPARATOR).trim();
 }
 
 export interface CrossVariablePrimaryRowGroup {

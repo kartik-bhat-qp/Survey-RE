@@ -66,7 +66,18 @@ function parseNumericCell(raw: string): number | null {
 }
 
 function normalizeLabel(label: string): string {
-  return label.trim().toLowerCase();
+  return label
+    .trim()
+    .toLowerCase()
+    .replace(/\s*·\s*/g, ' | ')
+    .replace(/\s+/g, ' ');
+}
+
+function escapeCsvCell(value: string): string {
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
 }
 
 function findColumnIndex(headers: string[], column: CrossVariableColumn): number {
@@ -85,12 +96,11 @@ export function buildCrossVariableExcelTemplate(
 ): string {
   const headers = ['Primary combination', 'Overall', ...columns.map((c) => c.optionLabel)];
   const dataRows = combinationRows.map((row) => {
-    const values = ['', '100', ...columns.map(() => '0')];
-    values[0] = row.label;
+    const values = [escapeCsvCell(row.label), '100', ...columns.map(() => '0')];
     return values.join(',');
   });
 
-  return [headers.join(','), ...dataRows].join('\n');
+  return [headers.map(escapeCsvCell).join(','), ...dataRows].join('\n');
 }
 
 export function downloadCrossVariableTemplate(
@@ -98,7 +108,7 @@ export function downloadCrossVariableTemplate(
   columns: CrossVariableColumn[],
   filename = 'cross-variable-quota-template.csv'
 ): void {
-  const csv = buildCrossVariableExcelTemplate(combinationRows, columns);
+  const csv = `\uFEFF${buildCrossVariableExcelTemplate(combinationRows, columns)}`;
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');

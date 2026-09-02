@@ -25,6 +25,7 @@ import {
 } from '@/data/mock-survey-approval';
 import { SurveyApprovalsModal } from '@/components/surveys/SurveyApprovalsModal';
 import { SurveyReviewModal } from '@/components/surveys/SurveyReviewModal';
+import { TestResponsesTrigger } from '@/components/surveys/TestResponsesTrigger';
 import styles from './SurveyEditorPhaseTabs.module.css';
 
 const WuPrimaryNavbar = dynamic(
@@ -86,6 +87,7 @@ export function SurveyEditorPhaseTabs() {
   const [approvalsModalOpen, setApprovalsModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [customJs, setCustomJs] = useState(DEFAULT_SURVEY_CUSTOM_JS);
+  const isEditPhase = activePhase === 'edit';
   const isWorkspaceView =
     activePhase === 'edit' &&
     (pathname === `/surveys/${surveyId}` || pathname === `/surveys/${surveyId}/`);
@@ -359,7 +361,13 @@ export function SurveyEditorPhaseTabs() {
                   </WuMenuItem>
                 </WuMenuItemGroup>
               </WuMenu>
+              <TestResponsesTrigger
+                variant="text"
+                className={styles.testResponsesBtn}
+              />
             </>
+          ) : isEditPhase ? (
+            <TestResponsesTrigger variant="text" className={styles.testResponsesBtn} />
           ) : null}
           <button
             type="button"

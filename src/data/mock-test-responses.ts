@@ -20,7 +20,7 @@ export const DEFAULT_TEST_RESPONSE_MODE: TestResponseMode = 'synthetic';
 
 export const TEST_RESPONSE_CREDITS_PER_RESPONSE = 5;
 
-export const TEST_RESPONSE_CREDIT_BALANCE = 1240;
+export const TEST_RESPONSE_CREDIT_BALANCE = 400;
 
 export interface TestResponsePanelOption {
   value: string;
@@ -28,17 +28,11 @@ export interface TestResponsePanelOption {
 }
 
 export const TEST_RESPONSE_PANEL_OPTIONS: TestResponsePanelOption[] = [
-  { value: 'usa-general-population', label: 'USA General Population' },
-  { value: 'india-general-population', label: 'India General Population' },
-  { value: 'south-africa-general-population', label: 'South Africa General Population' },
-  {
-    value: 'mexico-general-population-que-piensas',
-    label: 'Mexico General Population / Qué Piensas México',
-  },
-  {
-    value: 'brazil-general-population-o-que-pensas',
-    label: 'Brazil General Population / O que pensas',
-  },
+  { value: 'general-population-us', label: 'General Population — US' },
+  { value: 'b2b-decision-makers', label: 'B2B Decision Makers' },
+  { value: 'healthcare-professionals', label: 'Healthcare Professionals' },
+  { value: 'employees-internal', label: 'Employees — Internal' },
+  { value: 'students-gen-z', label: 'Students & Gen Z' },
 ];
 
 export const DEFAULT_TEST_RESPONSE_PANEL = TEST_RESPONSE_PANEL_OPTIONS[0].value;
@@ -64,6 +58,13 @@ export function parseTestResponseCount(count: string): number {
 
 export function getTestResponseCreditCost(count: string): number {
   return parseTestResponseCount(count) * TEST_RESPONSE_CREDITS_PER_RESPONSE;
+}
+
+export function hasSufficientTestResponseCredits(
+  count: string,
+  balance: number = TEST_RESPONSE_CREDIT_BALANCE
+): boolean {
+  return balance >= getTestResponseCreditCost(count);
 }
 
 /** Prototype wait: about 20 seconds, regardless of response count. */

@@ -2,14 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useWickUILib } from '@/components/ui/useWickUILib';
+import { CREDITS_WALLET_PATH } from '@/data/mock-credits-wallet';
 import { formatNumber } from '@/data/mock-utils';
 import {
   DEFAULT_TEST_RESPONSE_COUNT,
   DEFAULT_TEST_RESPONSE_MODE,
   DEFAULT_TEST_RESPONSE_PANEL,
   getTestResponseCreditCost,
+  hasSufficientTestResponseCredits,
   TEST_RESPONSE_COUNT_OPTIONS,
   TEST_RESPONSE_CREDIT_BALANCE,
   TEST_RESPONSE_CREDITS_PER_RESPONSE,
@@ -25,6 +28,9 @@ const WuSelect = dynamic(
   { ssr: false }
 );
 
+export const TEST_RESPONSES_HELP_TEXT =
+  'Generate mock survey responses for testing logic, quotas, and reporting.';
+
 export interface SyntheticTestGenerationRequest {
   count: string;
   panelLabel: string;
@@ -34,6 +40,39 @@ interface TestResponsesModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onStartSynthetic: (request: SyntheticTestGenerationRequest) => void;
+}
+
+function ResponseCountSelect({
+  id,
+  labelledBy,
+  value,
+  onChange,
+}: {
+  id?: string;
+  labelledBy?: string;
+  value: TestResponseCountOption;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className={styles.countSelect}>
+      <WuSelect
+        id={id}
+        data={TEST_RESPONSE_COUNT_OPTIONS}
+        accessorKey={{ value: 'value', label: 'label' }}
+        value={value}
+        onSelect={(next) => onChange((next as TestResponseCountOption).value)}
+        variant="outlined"
+        aria-labelledby={labelledBy}
+        maxContentWidth="5.5rem"
+        CustomTrigger={
+          <span className={styles.countTrigger}>
+            <span className={styles.countValue}>{value.label}</span>
+            <span className={`wm-keyboard-arrow-down ${styles.countCaret}`} aria-hidden />
+          </span>
+        }
+      />
+    </div>
+  );
 }
 
 export function TestResponsesModal({
@@ -77,11 +116,21 @@ export function TestResponsesModal({
 
   const creditCost = useMemo(() => getTestResponseCreditCost(responseCount), [responseCount]);
   const isSynthetic = mode === 'synthetic';
-  const startTestLabel = isSynthetic
-    ? `Start Test — ${formatNumber(creditCost)} credits`
-    : 'Start Test';
+  const hasSufficientCredits = useMemo(
+    () => hasSufficientTestResponseCredits(responseCount),
+    [responseCount]
+  );
+  const showBuyNow = isSynthetic && !hasSufficientCredits;
 
   function handleStartTest(): void {
+    if (isSynthetic && !hasSufficientCredits) {
+      showToast({
+        message: 'Add credits to generate synthetic responses',
+        variant: 'error',
+      });
+      return;
+    }
+
     if (isSynthetic) {
       onStartSynthetic({
         count: responseCount,
@@ -115,68 +164,59 @@ export function TestResponsesModal({
     >
       <WuModalHeader className={styles.header}>
         <span className={styles.headerTitle}>Generate Test Responses</span>
+        <button
+          type="button"
+          className={styles.helpBtn}
+          aria-label="Help"
+          title={TEST_RESPONSES_HELP_TEXT}
+        >
+          <span className="wm-help-outline" aria-hidden />
+        </button>
       </WuModalHeader>
       <WuModalContent className={styles.content}>
-        <div className={styles.modeSwitch} role="group" aria-label="Test response mode">
+        <div
+          className={`${styles.syntheticHero} ${isSynthetic ? styles.syntheticHeroActive : ''}`}
+        >
           <button
             type="button"
-            className={`${styles.modeOption} ${mode === 'random' ? styles.modeOptionActive : ''}`}
-            aria-pressed={mode === 'random'}
-            onClick={() => setMode('random')}
-          >
-            <span className={styles.modeTitle}>Random</span>
-            <span className={styles.modeDescription}>Fills every question at random</span>
-            <span className={`${styles.modeMeta} ${styles.modeMetaFree}`}>Free</span>
-          </button>
-          <button
-            type="button"
-            className={`${styles.modeOption} ${mode === 'synthetic' ? styles.modeOptionActive : ''}`}
-            aria-pressed={mode === 'synthetic'}
+            className={styles.syntheticHeroButton}
+            aria-pressed={isSynthetic}
             onClick={() => setMode('synthetic')}
           >
-            <span className={styles.modeTitle}>
-              Synthetic
-              <span className={styles.modeBadge}>New</span>
+            <span
+              className={`${styles.modeRadio} ${isSynthetic ? styles.modeRadioActive : ''}`}
+              aria-hidden
+            />
+            <span className={styles.syntheticHeroBody}>
+              <span className={styles.syntheticHeroTitleRow}>
+                <span className={styles.syntheticHeroTitle}>Synthetic Responses</span>
+                <span className={styles.recommendedBadge}>Recommended</span>
+              </span>
+              <span className={styles.syntheticHeroDescription}>
+                Simulated respondents from a real panel profile answer like people do —
+                consistent across the whole survey, with believable open text and realistic
+                distributions.
+              </span>
+              <span className={styles.featureList}>
+                <span className={styles.featureItem}>✓ Report-ready data</span>
+                <span className={styles.featureItem}>✓ Realistic open text</span>
+                <span className={styles.featureItem}>✓ Consistent personas</span>
+              </span>
             </span>
-            <span className={styles.modeDescription}>
-              Realistic answers from simulated respondents
-            </span>
-            <span className={styles.modeMeta}>
-              {TEST_RESPONSE_CREDITS_PER_RESPONSE} credits / response
+            <span className={styles.syntheticHeroPrice}>
+              <span className={styles.syntheticHeroPriceAmount}>
+                {TEST_RESPONSE_CREDITS_PER_RESPONSE}
+              </span>
+              <span className={styles.syntheticHeroPriceLabel}>credits / response</span>
             </span>
           </button>
-        </div>
 
-        <div className={styles.fieldRow}>
-          <span className={styles.fieldLabel} id="test-response-count-label">
-            Number Of Test Responses
-          </span>
-          <div className={styles.countSelect}>
-            <WuSelect
-              data={TEST_RESPONSE_COUNT_OPTIONS}
-              accessorKey={{ value: 'value', label: 'label' }}
-              value={selectedCount}
-              onSelect={(value) => setResponseCount((value as TestResponseCountOption).value)}
-              variant="outlined"
-              aria-labelledby="test-response-count-label"
-              maxContentWidth="5.5rem"
-              CustomTrigger={
-                <span className={styles.countTrigger}>
-                  <span className={styles.countValue}>{selectedCount.label}</span>
-                  <span className={`wm-keyboard-arrow-down ${styles.countCaret}`} aria-hidden />
-                </span>
-              }
-            />
-          </div>
-        </div>
-
-        {isSynthetic ? (
-          <div className={styles.syntheticSection}>
-            <div className={styles.panelRow}>
-              <label className={styles.fieldLabel} htmlFor="test-response-panel">
-                Panel
-              </label>
-              <div className={styles.panelField}>
+          {isSynthetic ? (
+            <div className={styles.syntheticHeroExpanded}>
+              <div className={styles.inlineFieldRow}>
+                <label className={styles.inlineFieldLabel} htmlFor="test-response-panel">
+                  Panel
+                </label>
                 <div id="test-response-panel" className={styles.panelSelect}>
                   <WuSelect
                     data={TEST_RESPONSE_PANEL_OPTIONS}
@@ -186,32 +226,85 @@ export function TestResponsesModal({
                     variant="outlined"
                   />
                 </div>
-                <p className={styles.panelHelp}>
-                  Simulated respondents are drawn from this profile, so answers stay consistent
-                  across questions.
-                </p>
+              </div>
+              <div className={styles.inlineFieldRow}>
+                <span className={styles.inlineFieldLabel} id="test-response-synthetic-count-label">
+                  Responses
+                </span>
+                <ResponseCountSelect
+                  labelledBy="test-response-synthetic-count-label"
+                  value={selectedCount}
+                  onChange={setResponseCount}
+                />
+                <span className={styles.inlineFieldNote}>
+                  {formatNumber(creditCost)} credits total
+                </span>
               </div>
             </div>
+          ) : null}
+        </div>
 
-            <div className={styles.costSummary}>
-              <span className={styles.costSummaryLine}>
-                {responseCount} responses &times; {TEST_RESPONSE_CREDITS_PER_RESPONSE} credits
+        <div className={styles.modeDivider} aria-hidden>
+          <span className={styles.modeDividerLine} />
+          <span className={styles.modeDividerLabel}>or</span>
+          <span className={styles.modeDividerLine} />
+        </div>
+
+        <div className={styles.randomSection}>
+          <button
+            type="button"
+            className={`${styles.randomCard} ${!isSynthetic ? styles.randomCardActive : ''}`}
+            aria-pressed={!isSynthetic}
+            onClick={() => setMode('random')}
+          >
+            <span
+              className={`${styles.modeRadio} ${!isSynthetic ? styles.modeRadioActive : ''}`}
+              aria-hidden
+            />
+            <span className={styles.randomCardBody}>
+              <span className={styles.randomCardTitle}>Random Responses</span>
+              <span className={styles.randomCardDescription}>
+                Answers picked at random. Fine for checking logic, piping and quotas — not for
+                reviewing results.
               </span>
-              <span className={styles.costSummaryTotal}>
-                <span className={styles.costSummaryAmount}>
-                  {formatNumber(creditCost)} credits
-                </span>
-                <span className={styles.costSummaryBalance}>
-                  Balance {formatNumber(TEST_RESPONSE_CREDIT_BALANCE)}
-                </span>
+            </span>
+            <span className={styles.randomCardPrice}>Free</span>
+          </button>
+
+          {!isSynthetic ? (
+            <div className={styles.randomExpanded}>
+              <span className={styles.inlineFieldLabel} id="test-response-random-count-label">
+                Responses
               </span>
+              <ResponseCountSelect
+                labelledBy="test-response-random-count-label"
+                value={selectedCount}
+                onChange={setResponseCount}
+              />
+              <span className={styles.inlineFieldNote}>No credits used</span>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </WuModalContent>
-      <WuModalFooter>
-        <WuModalClose variant="secondary">Cancel</WuModalClose>
-        <WuButton onClick={handleStartTest}>{startTestLabel}</WuButton>
+      <WuModalFooter className={styles.footer}>
+        <span className={styles.footerBalanceGroup}>
+          <span
+            className={`${styles.footerBalance} ${showBuyNow ? styles.footerBalanceInsufficient : ''}`}
+          >
+            Balance {formatNumber(TEST_RESPONSE_CREDIT_BALANCE)} credits
+          </span>
+          {showBuyNow ? (
+            <Link href={CREDITS_WALLET_PATH} className={styles.buyNowBtn}>
+              Buy Now
+            </Link>
+          ) : null}
+        </span>
+        <span className={styles.footerActions}>
+          <WuModalClose variant="secondary">Cancel</WuModalClose>
+          <WuButton onClick={handleStartTest} disabled={showBuyNow}>
+            Generate
+          </WuButton>
+        </span>
       </WuModalFooter>
     </WuModal>
   );

@@ -6,12 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { NavLink } from '@/components/surveys/NavLink';
-import { TestResponsesIcon } from '@/components/surveys/TestResponsesIcon';
-import {
-  TestResponsesModal,
-  type SyntheticTestGenerationRequest,
-} from '@/components/surveys/TestResponsesModal';
-import { useSyntheticTestGeneration } from '@/components/surveys/useSyntheticTestGeneration';
+import { TestResponsesTrigger } from '@/components/surveys/TestResponsesTrigger';
 import {
   PublishLicenseConflictModal,
   type PublishLicenseModalView,
@@ -46,7 +41,6 @@ const WuTooltip = dynamic(
 );
 
 const SURVEY_VERSION_TOOLTIP = 'Survey Version';
-const TEST_RESPONSES_TOOLTIP = 'Test Responses';
 
 type PublishMode = 'draft' | 'publish';
 
@@ -93,9 +87,6 @@ export function SurveyEditorWorkspaceToolbar({
     useState<PublishLicenseModalView>('conflicts');
   const [licenseConflicts, setLicenseConflicts] = useState<SurveyLicenseConflict[]>([]);
   const [draftConfirmOpen, setDraftConfirmOpen] = useState(false);
-  const [testResponsesOpen, setTestResponsesOpen] = useState(false);
-  const [syntheticGeneration, setSyntheticGeneration] =
-    useState<SyntheticTestGenerationRequest | null>(null);
   const requiresApproval = surveyHasApprovalTab(surveyId);
 
   useEffect(() => {
@@ -128,51 +119,6 @@ export function SurveyEditorWorkspaceToolbar({
       setLicenseModalView('conflicts');
     }
   }, []);
-
-  const handleStartSyntheticGeneration = useCallback(
-    (request: SyntheticTestGenerationRequest) => {
-      if (syntheticGeneration) {
-        showToast({
-          message: 'Synthetic responses are already generating in the background',
-          variant: 'info',
-        });
-        return;
-      }
-      setSyntheticGeneration(request);
-    },
-    [showToast, syntheticGeneration]
-  );
-
-  const handleSyntheticGenerationComplete = useCallback(
-    (count: string) => {
-      setSyntheticGeneration(null);
-      showToast({
-        message: `Generated ${count} synthetic test response${count === '1' ? '' : 's'}`,
-        variant: 'success',
-      });
-    },
-    [showToast]
-  );
-
-  const generationProgress = useSyntheticTestGeneration(
-    syntheticGeneration,
-    handleSyntheticGenerationComplete
-  );
-
-  const testResponsesTooltip = generationProgress && syntheticGeneration ? (
-    <div className={styles.generationTooltip}>
-      <p className={styles.generationTooltipTitle}>Generating synthetic responses</p>
-      <p className={styles.generationTooltipMeta}>{syntheticGeneration.panelLabel}</p>
-      <p className={styles.generationTooltipStats}>
-        {generationProgress.generatedCount} of {generationProgress.total} generated ·{' '}
-        {generationProgress.progress}%
-      </p>
-      <p className={styles.generationTooltipStep}>{generationProgress.step}</p>
-      <p className={styles.generationTooltipEta}>{generationProgress.eta}</p>
-    </div>
-  ) : (
-    TEST_RESPONSES_TOOLTIP
-  );
 
   const handleConfirmPublish = useCallback(() => {
     setMode('publish');
@@ -330,21 +276,7 @@ export function SurveyEditorWorkspaceToolbar({
                 <span className="wm-history" aria-hidden />
               </button>
             </WuTooltip>
-            <WuTooltip content={testResponsesTooltip} position="bottom">
-              <button
-                type="button"
-                className={`${styles.toolbarIconBtn} ${generationProgress ? styles.toolbarIconBtnBusy : ''}`}
-                aria-label={
-                  generationProgress
-                    ? `Generating synthetic responses, ${generationProgress.progress}% complete`
-                    : TEST_RESPONSES_TOOLTIP
-                }
-                aria-busy={generationProgress ? true : undefined}
-                onClick={() => setTestResponsesOpen(true)}
-              >
-                <TestResponsesIcon progress={generationProgress?.progress} />
-              </button>
-            </WuTooltip>
+            <TestResponsesTrigger />
             <div className={styles.statusToggle} role="group" aria-label="Survey status">
               <button
                 type="button"
@@ -385,7 +317,10 @@ export function SurveyEditorWorkspaceToolbar({
             {previewButton}
           </div>
         ) : showDesignPreview ? (
-          <div className={styles.publishArea}>{previewButton}</div>
+          <div className={styles.publishArea}>
+            <TestResponsesTrigger />
+            {previewButton}
+          </div>
         ) : null}
       </WuSecondaryNavbar>
       <PublishLicenseConflictModal
@@ -405,13 +340,6 @@ export function SurveyEditorWorkspaceToolbar({
         confirmLabel="Draft"
         onConfirm={handleConfirmDraft}
       />
-      {testResponsesOpen ? (
-        <TestResponsesModal
-          open
-          onOpenChange={setTestResponsesOpen}
-          onStartSynthetic={handleStartSyntheticGeneration}
-        />
-      ) : null}
     </>
   );
 }

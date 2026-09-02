@@ -1,4 +1,5 @@
 import type { IWuAppHeaderAccount } from '@npm-questionpro/wick-ui-lib';
+import { CREDITS_WALLET_PATH } from '@/data/mock-credits-wallet';
 
 export const MOCK_HEADER_USER: IWuAppHeaderAccount = {
   profile: {
@@ -26,7 +27,7 @@ export const MOCK_HEADER_USER: IWuAppHeaderAccount = {
   usage: {
     title: 'Usage',
     collectedResponseCount: '101K',
-    url: '#',
+    url: CREDITS_WALLET_PATH,
   },
   invoice: {
     title: 'Billing & Invoices',
