@@ -80,6 +80,7 @@ import {
 import { getQuestionTypePreview } from '@/data/mock-add-question-previews';
 import { SectionBlockOptionsButton, type SectionBlockMenuAction } from '@/components/surveys/SectionBlockOptionsButton';
 import { BlockFlowModal } from '@/components/surveys/BlockFlowModal';
+import { SurveyWorkspaceQuickTools } from '@/components/surveys/SurveyWorkspaceQuickTools';
 import { ReorderQuestionsModal } from '@/components/surveys/ReorderQuestionsModal';
 import { LookupTableBulkConversionModal } from '@/components/surveys/LookupTableBulkConversionModal';
 import { LookupTableQuestionRow } from '@/components/surveys/LookupTableQuestionRow';
@@ -4232,10 +4233,14 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         ) : null}
 
         <div className={styles.addBlockRow}>
-          <WuButton size="sm" variant="secondary" onClick={() => toast('Add block')}>
-            <span className="wm-add" />
-            Add Block
-          </WuButton>
+          {bulkEditModeEnabled ? (
+            <WuButton size="sm" variant="secondary" onClick={() => toast('Add block')}>
+              <span className="wm-add" />
+              Add Block
+            </WuButton>
+          ) : (
+            <SurveyWorkspaceQuickTools onAddBlock={() => toast('Add block')} />
+          )}
         </div>
 
         {sections.map((section, sectionIndex) => (

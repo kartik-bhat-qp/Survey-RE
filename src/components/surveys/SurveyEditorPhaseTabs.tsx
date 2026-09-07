@@ -26,6 +26,7 @@ import {
 import { SurveyApprovalsModal } from '@/components/surveys/SurveyApprovalsModal';
 import { SurveyReviewModal } from '@/components/surveys/SurveyReviewModal';
 import { TestResponsesTrigger } from '@/components/surveys/TestResponsesTrigger';
+import { SURVEY_DOWNLOAD_RETIRING_NOTICE } from '@/data/mock-survey-design';
 import styles from './SurveyEditorPhaseTabs.module.css';
 
 const WuPrimaryNavbar = dynamic(
@@ -51,6 +52,11 @@ const WuMenuCheckboxItem = dynamic(
 
 const WuMenuItemGroup = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItemGroup })),
+  { ssr: false }
+);
+
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
 
@@ -327,7 +333,68 @@ export function SurveyEditorPhaseTabs() {
                   className={styles.toolsMenuGroup}
                   Label={
                     <div className={styles.toolsMenuSectionLabel}>
-                      <span className={styles.toolsMenuSectionHeading}>Download</span>
+                      <span className={styles.toolsMenuSectionHeadingRow}>
+                        <span className={styles.toolsMenuSectionHeading}>Download</span>
+                        <WuTooltip
+                          content={
+                            <div className={styles.sunsetTooltip}>
+                              <p className={styles.sunsetTooltipTitle}>
+                                {SURVEY_DOWNLOAD_RETIRING_NOTICE.title}
+                              </p>
+                              <p className={styles.sunsetTooltipBody}>
+                                {SURVEY_DOWNLOAD_RETIRING_NOTICE.body}
+                              </p>
+                            </div>
+                          }
+                          position="bottom"
+                        >
+                          <span
+                            className={styles.sunsetBadge}
+                            aria-label={SURVEY_DOWNLOAD_RETIRING_NOTICE.body}
+                            onClick={(event) => event.stopPropagation()}
+                            onKeyDown={(event) => event.stopPropagation()}
+                          >
+                            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden>
+                              <g
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <circle cx="10.2" cy="10.2" r="7.35" />
+                                <path d="M10.2 10.2 7.15 6.35M10.2 10.2 7.55 13.85" />
+                              </g>
+                              <circle cx="10.2" cy="4.05" r="0.85" fill="currentColor" />
+                              <circle cx="16.35" cy="10.2" r="0.85" fill="currentColor" />
+                              <circle cx="10.2" cy="16.35" r="0.85" fill="currentColor" />
+                              <circle cx="4.05" cy="10.2" r="0.85" fill="currentColor" />
+                              <path
+                                fill="#fff"
+                                stroke="currentColor"
+                                strokeLinejoin="round"
+                                strokeWidth="1.8"
+                                d="M16.55 12.15 21.7 21.15H11.4Z"
+                              />
+                              <path
+                                fill="none"
+                                stroke="currentColor"
+                                strokeLinecap="round"
+                                strokeWidth="1.7"
+                                d="M16.55 15.05v3.15"
+                              />
+                              <rect
+                                x="15.8"
+                                y="19.25"
+                                width="1.5"
+                                height="1.5"
+                                rx="0.25"
+                                fill="currentColor"
+                              />
+                            </svg>
+                          </span>
+                        </WuTooltip>
+                      </span>
                       <div className={styles.toolsMenuSectionDivider} aria-hidden />
                     </div>
                   }
