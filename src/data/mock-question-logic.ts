@@ -103,6 +103,14 @@ export interface ShowHideOptionsState {
   useLegacyMethod: boolean;
 }
 
+export interface ShowHideQuestionState {
+  /** When true, the question is shown unless criteria are met (then hide). */
+  showQuestionByDefault: boolean;
+  dynamicOnPageLogic: boolean;
+  criteria: Criterion[];
+  collapsedCriterionIds: Set<string>;
+}
+
 export interface CompoundBranchingCriterion extends Criterion {
   /** Question id to jump to, or `none` for No Branching. */
   jumpTargetId: string;
@@ -337,6 +345,7 @@ export interface QuestionLogicState {
   branchByOptionId: Record<string, string>;
   defaultBranching: string;
   randomizerLimit: string;
+  showHideQuestion: ShowHideQuestionState;
   showHideOptions: ShowHideOptionsState;
   compoundBranching: CompoundBranchingState;
   quotaControl: QuotaControlState;
@@ -439,6 +448,28 @@ export function createDefaultShowHideOptionsState(): ShowHideOptionsState {
     uncoveredOptionsAction: '',
     useLegacyMethod: false,
   };
+}
+
+export function createDefaultShowHideQuestionState(): ShowHideQuestionState {
+  return {
+    showQuestionByDefault: true,
+    dynamicOnPageLogic: false,
+    criteria: [
+      {
+        ...newCriterion(),
+        name: 'Criteria 1',
+      },
+    ],
+    collapsedCriterionIds: new Set(),
+  };
+}
+
+export function isShowHideQuestionLogicComplete(state: ShowHideQuestionState): boolean {
+  return state.criteria.every((criterion) => hasCompleteConditions(criterion));
+}
+
+export function isShowHideQuestionLogicApplied(state: ShowHideQuestionState): boolean {
+  return isShowHideQuestionLogicComplete(state);
 }
 
 function createDefaultCompoundBranchingCriterion(
@@ -666,6 +697,7 @@ export function createDefaultQuestionLogicState(
     branchByOptionId,
     defaultBranching: NO_BRANCHING_OPTION.value,
     randomizerLimit: '0',
+    showHideQuestion: createDefaultShowHideQuestionState(),
     showHideOptions: createDefaultShowHideOptionsState(),
     compoundBranching: createDefaultCompoundBranchingState(),
     quotaControl: createDefaultQuotaControlState(optionIds),
@@ -685,6 +717,19 @@ export function mergeQuestionLogicState(
     ...defaults,
     ...initial,
     branchByOptionId: { ...defaults.branchByOptionId, ...initial.branchByOptionId },
+    showHideQuestion: {
+      ...defaults.showHideQuestion,
+      ...(initial.showHideQuestion ?? {}),
+      criteria:
+        initial.showHideQuestion?.criteria?.map((criterion, index) => ({
+          ...newCriterion(),
+          ...criterion,
+          name: criterion.name?.trim() || `Criteria ${index + 1}`,
+        })) ?? defaults.showHideQuestion.criteria,
+      collapsedCriterionIds:
+        initial.showHideQuestion?.collapsedCriterionIds ??
+        defaults.showHideQuestion.collapsedCriterionIds,
+    },
     showHideOptions: initial.showHideOptions ?? defaults.showHideOptions,
     compoundBranching: {
       ...defaults.compoundBranching,

@@ -14,6 +14,7 @@ import {
   isCompoundBranchingLogicComplete,
   isShowHideOptionsLogicApplied,
   isShowHideOptionsLogicComplete,
+  isShowHideQuestionLogicComplete,
   isQuotaControlLogicApplied,
   getQuestionLogicTypeOptions,
   resolveLogicTypeForQuestion,
@@ -28,6 +29,7 @@ import { ExtractionLogicPanel } from '@/components/surveys/ExtractionLogicPanel'
 import { QuotaControlAppliedIcon } from '@/components/surveys/QuotaControlAppliedIcon';
 import { ShowHideOptionsAppliedIcon } from '@/components/surveys/ShowHideOptionsAppliedIcon';
 import { ShowHideOptionsLogicPanel } from '@/components/surveys/ShowHideOptionsLogicPanel';
+import { ShowHideQuestionLogicPanel } from '@/components/surveys/ShowHideQuestionLogicPanel';
 import { plainTextFromRichValue } from '@/components/surveys/QuestionRichTextField';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import styles from './QuestionLogicModal.module.css';
@@ -67,12 +69,14 @@ export function QuestionLogicModal({
     createDefaultQuestionLogicState(question.options.map((option) => option.id))
   );
 
+  const isShowHideQuestion = state.logicType === 'show-hide-question';
   const isShowHideOptions = state.logicType === 'show-hide-options';
   const isCompoundBranching = state.logicType === 'compound-branching';
   const isQuotaControl = state.logicType === 'quota-control';
   const isDynamicTextComments = state.logicType === 'dynamic-text';
   const isExtraction = state.logicType === 'extraction';
   const isAlternateLogicPanel =
+    isShowHideQuestion ||
     isShowHideOptions ||
     isCompoundBranching ||
     isQuotaControl ||
@@ -132,11 +136,13 @@ export function QuestionLogicModal({
     RANDOMIZER_LIMIT_OPTIONS.find((option) => option.value === state.randomizerLimit) ??
     RANDOMIZER_LIMIT_OPTIONS[0];
 
-  const canSave = isShowHideOptions
-    ? isShowHideOptionsLogicComplete(state.showHideOptions, optionIds)
-    : isCompoundBranching
-      ? isCompoundBranchingLogicComplete(state.compoundBranching)
-      : true;
+  const canSave = isShowHideQuestion
+    ? isShowHideQuestionLogicComplete(state.showHideQuestion)
+    : isShowHideOptions
+      ? isShowHideOptionsLogicComplete(state.showHideOptions, optionIds)
+      : isCompoundBranching
+        ? isCompoundBranchingLogicComplete(state.compoundBranching)
+        : true;
 
   function handleSave() {
     if (!canSave) return;
@@ -228,7 +234,15 @@ export function QuestionLogicModal({
           ) : null}
         </div>
 
-        {isShowHideOptions ? (
+        {isShowHideQuestion ? (
+          <ShowHideQuestionLogicPanel
+            state={state.showHideQuestion}
+            question={question}
+            allQuestions={allQuestions}
+            surveyId={surveyId}
+            onChange={(showHideQuestion) => setState((prev) => ({ ...prev, showHideQuestion }))}
+          />
+        ) : isShowHideOptions ? (
           <ShowHideOptionsLogicPanel
             state={state.showHideOptions}
             question={question}

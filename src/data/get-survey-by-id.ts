@@ -9,6 +9,7 @@ import {
   NEW_BLANK_SURVEY_ID,
   readBlankSurveyDraft,
 } from '@/data/mock-survey-creation-flow';
+import { FLEX_LOGIC_SURVEY_ID, FLEX_LOGIC_SURVEY_NAME } from '@/data/mock-flex-logic-survey';
 
 export function getSurveyById(id: number): Survey | undefined {
   if (id === NEW_AI_SURVEY_ID) {
@@ -46,6 +47,9 @@ export function getSurveyFolderById(folderId: string): SurveyFolder | undefined 
 }
 
 export function getSurveyEditorTitle(survey: Survey): string {
+  if (survey.id === FLEX_LOGIC_SURVEY_ID) {
+    return FLEX_LOGIC_SURVEY_NAME;
+  }
   if (survey.folderId === 'demo-2026') {
     return 'Demo Survey 2025';
   }
