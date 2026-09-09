@@ -35,6 +35,8 @@ import {
   SURVEY_AI_CAPABILITY_PILLS,
   SURVEY_AI_EXAMPLE_PROMPTS,
   SURVEY_AI_GREETING,
+  SURVEY_AI_GREETING_BODY,
+  SURVEY_AI_GREETING_TITLE,
   validateResearchAgentAttachment,
   type ResearchAgentAttachment,
   type ResearchAgentChatMessage,
@@ -73,7 +75,7 @@ interface SurveyAgentSidebarProps {
   onGenerated?: (result: SurveyAiGenerationResult) => void;
   onSubmit?: (prompt: string) => Promise<SurveyAiGenerationResult>;
   greeting?: string;
-  examplePrompts?: ReadonlyArray<{ id: string; text: string }>;
+  examplePrompts?: ReadonlyArray<{ id: string; text: string; icon?: string }>;
   capabilityPills?: typeof SURVEY_AI_CAPABILITY_PILLS;
   aboutMessage?: string;
   baseContextTokens?: number;
@@ -603,11 +605,12 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
                   <span className="wm-history" aria-hidden />
                 </button>
               </WuTooltip>
+              <span className={styles.headerAvatar} aria-hidden>
+                <span className={`wc-ai ${styles.headerAvatarIcon}`} />
+              </span>
               <div className={styles.headerTitleRow}>
                 <h2 className={styles.headerTitle}>Research Agent</h2>
-                <span className={styles.headerAvatar} aria-hidden>
-                  <span className={`wc-ai ${styles.headerAvatarIcon}`} />
-                </span>
+                <span className={styles.headerBetaBadge}>BETA</span>
               </div>
             </div>
             <div className={styles.headerActions}>
@@ -707,7 +710,16 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
               </div>
             ) : (
               <>
-                <p className={styles.greeting}>{greeting}</p>
+                <div className={styles.greetingBlock}>
+                  {greeting === SURVEY_AI_GREETING ? (
+                    <>
+                      <p className={styles.greetingTitle}>{SURVEY_AI_GREETING_TITLE}</p>
+                      <p className={styles.greetingBody}>{SURVEY_AI_GREETING_BODY}</p>
+                    </>
+                  ) : (
+                    <p className={styles.greeting}>{greeting}</p>
+                  )}
+                </div>
 
                 <div className={styles.exampleList}>
                   {examplePrompts.map((example) => (
@@ -717,47 +729,98 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
                       className={styles.exampleCard}
                       onClick={() => applyPrompt(example.text)}
                     >
-                      {example.text}
+                      <span
+                        className={`${example.icon ?? 'wm-chat'} ${styles.exampleCardIcon}`}
+                        aria-hidden
+                      />
+                      <span className={styles.exampleCardText}>{example.text}</span>
                     </button>
                   ))}
                 </div>
 
                 <div className={styles.capabilities}>
-                  <p className={styles.capabilitiesLabel}>I can also:</p>
-                  <div className={styles.capabilityPills}>
-                    {capabilityPills.map((pill) => (
-                      <button
-                        key={pill.id}
-                        type="button"
-                        className={styles.capabilityPill}
-                        onClick={() => {
-                          if (pill.id === 'import-word') {
-                            openImportFromAttachment('word');
-                            return;
-                          }
-                          if (pill.id === 'import-pdf') {
-                            openImportFromAttachment('pdf');
-                            return;
-                          }
-                          applyPrompt(pill.prompt ?? pill.label);
-                        }}
-                      >
-                        {pill.icon ? (
-                          <span
-                            className={`${pill.icon} ${styles.capabilityPillIcon} ${
-                              pill.id === 'import-word'
-                                ? styles.capabilityPillIconWord
-                                : pill.id === 'import-pdf'
-                                  ? styles.capabilityPillIconPdf
-                                  : ''
-                            }`}
-                            aria-hidden
-                          />
-                        ) : null}
-                        {pill.label}
-                      </button>
-                    ))}
+                  <div className={styles.capabilitiesDivider} role="presentation">
+                    <span className={styles.capabilitiesLabel}>I can also:</span>
                   </div>
+                  {capabilityPills.some(
+                    (pill) => pill.id === 'import-word' || pill.id === 'import-pdf'
+                  ) ? (
+                    <div className={styles.capabilityPills}>
+                      <div className={styles.capabilityImportRow}>
+                        {capabilityPills
+                          .filter((pill) => pill.id === 'import-word' || pill.id === 'import-pdf')
+                          .map((pill) => (
+                            <button
+                              key={pill.id}
+                              type="button"
+                              className={styles.capabilityPill}
+                              onClick={() => {
+                                if (pill.id === 'import-word') {
+                                  openImportFromAttachment('word');
+                                  return;
+                                }
+                                openImportFromAttachment('pdf');
+                              }}
+                            >
+                              {pill.icon ? (
+                                <span
+                                  className={`${pill.icon} ${styles.capabilityPillIcon} ${
+                                    pill.iconTone === 'word'
+                                      ? styles.capabilityPillIconWord
+                                      : styles.capabilityPillIconPdf
+                                  }`}
+                                  aria-hidden
+                                />
+                              ) : null}
+                              {pill.label}
+                            </button>
+                          ))}
+                      </div>
+                      {capabilityPills
+                        .filter((pill) => pill.id !== 'import-word' && pill.id !== 'import-pdf')
+                        .map((pill) => (
+                          <button
+                            key={pill.id}
+                            type="button"
+                            className={`${styles.capabilityPill} ${styles.capabilityPillCentered}`}
+                            onClick={() => applyPrompt(pill.prompt ?? pill.label)}
+                          >
+                            {pill.icon ? (
+                              <span
+                                className={`${pill.icon} ${styles.capabilityPillIcon} ${
+                                  pill.iconTone === 'questions'
+                                    ? styles.capabilityPillIconQuestions
+                                    : pill.iconTone === 'logic'
+                                      ? styles.capabilityPillIconLogic
+                                      : ''
+                                }`}
+                                aria-hidden
+                              />
+                            ) : null}
+                            {pill.label}
+                          </button>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className={styles.capabilityPills}>
+                      {capabilityPills.map((pill) => (
+                        <button
+                          key={pill.id}
+                          type="button"
+                          className={styles.capabilityPill}
+                          onClick={() => applyPrompt(pill.prompt ?? pill.label)}
+                        >
+                          {pill.icon ? (
+                            <span
+                              className={`${pill.icon} ${styles.capabilityPillIcon}`}
+                              aria-hidden
+                            />
+                          ) : null}
+                          {pill.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -863,20 +926,22 @@ export const SurveyAgentSidebar = forwardRef<SurveyAgentSidebarHandle, SurveyAge
                 onKeyDown={handlePromptKeyDown}
                 onPaste={handlePromptPaste}
               />
-              <ResearchAgentContextUsage
-                usedTokens={contextUsageTokens}
-                maxTokens={RESEARCH_AGENT_CONTEXT_MAX_TOKENS}
-              />
-              <button
-                type="button"
-                className={styles.sendBtn}
-                aria-label="Send"
-                title="Send"
-                disabled={isGenerating || (!prompt.trim() && attachments.length === 0)}
-                onClick={() => void handleSubmit()}
-              >
-                <span className="wm-send" aria-hidden />
-              </button>
+              <span className={styles.inputTrailing}>
+                <ResearchAgentContextUsage
+                  usedTokens={contextUsageTokens}
+                  maxTokens={RESEARCH_AGENT_CONTEXT_MAX_TOKENS}
+                />
+                <button
+                  type="button"
+                  className={styles.sendBtn}
+                  aria-label="Send"
+                  title="Send"
+                  disabled={isGenerating || (!prompt.trim() && attachments.length === 0)}
+                  onClick={() => void handleSubmit()}
+                >
+                  <span className="wm-send" aria-hidden />
+                </button>
+              </span>
             </div>
           </footer>
         </aside>

@@ -834,7 +834,6 @@ export function AddQuestionMenu({ onSelect, excludeTypeIds }: AddQuestionMenuPro
         aria-haspopup="dialog"
       >
         Add Question
-        <span className="wm-arrow-drop-down" aria-hidden />
       </WuButton>
       {drawer && typeof document !== 'undefined'
         ? createPortal(drawer, document.body)

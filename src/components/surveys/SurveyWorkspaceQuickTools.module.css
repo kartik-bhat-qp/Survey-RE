@@ -50,6 +50,7 @@
 }
 
 .toolBtn {
+  --quick-tool-bg: #fff;
   align-items: center;
   background: transparent;
   border: none;
@@ -91,8 +92,66 @@
   width: 1.3125rem;
 }
 
+.menuItem {
+  min-width: 12rem;
+}
+
+.menuItemContent {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+  min-width: 11rem;
+}
+
+.menuItemIcon {
+  --quick-tool-bg: #fff;
+  color: #64748b;
+  flex-shrink: 0;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.removeLogicIcon {
+  align-items: center;
+  display: inline-flex;
+  height: 1.125rem;
+  justify-content: center;
+  position: relative;
+  width: 1.125rem;
+}
+
+.removeLogicIcon span {
+  font-size: 1.125rem;
+  height: 1.125rem;
+  line-height: 1;
+  width: 1.125rem;
+}
+
+.removeLogicIcon::before,
+.removeLogicIcon::after {
+  border-radius: 999px;
+  content: '';
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  width: 1.35rem;
+}
+
+/* Knockout so the slash stays readable over the logic glyph. */
+.removeLogicIcon::before {
+  background: var(--quick-tool-bg, #fff);
+  height: 4px;
+}
+
+.removeLogicIcon::after {
+  background: currentColor;
+  height: 1.75px;
+}
+
 .toolBtn:hover,
 .toolBtn:focus-visible {
+  --quick-tool-bg: #eef4fa;
   background: #eef4fa;
   color: #1b87e6;
   outline: none;
@@ -101,6 +160,7 @@
 .toolBtnActive,
 .toolBtnActive:hover,
 .toolBtnActive:focus-visible {
+  --quick-tool-bg: #e8f4fd;
   background: #e8f4fd;
   color: #1b87e6;
 }

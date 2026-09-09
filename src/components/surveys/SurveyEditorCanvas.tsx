@@ -707,6 +707,89 @@ function QuestionCodeField({
   );
 }
 
+function SectionBlockBar({
+  title,
+  bulkEditModeEnabled,
+  sectionChecked,
+  onSectionCheckChange,
+  showOptions,
+  onAction,
+  heading = false,
+}: {
+  title: string;
+  bulkEditModeEnabled: boolean;
+  sectionChecked: boolean;
+  onSectionCheckChange: (checked: boolean) => void;
+  showOptions: boolean;
+  onAction: (action: SectionBlockMenuAction) => void;
+  heading?: boolean;
+}) {
+  return (
+    <div className={styles.sectionBar}>
+      <div className={styles.sectionHeaderMain}>
+        {bulkEditModeEnabled ? (
+          <WuCheckbox
+            checked={sectionChecked}
+            onChange={onSectionCheckChange}
+            aria-label={`Select ${title}`}
+          />
+        ) : null}
+        {heading ? (
+          <h2 className={styles.sectionTitle}>{title}</h2>
+        ) : (
+          <span className={styles.sectionTitle}>{title}</span>
+        )}
+      </div>
+      {showOptions ? (
+        <div className={styles.sectionBarActions}>
+          <button
+            type="button"
+            className={styles.sectionCollapseBtn}
+            aria-label={`Reorder ${title}`}
+            onClick={() => onAction('reorder')}
+          >
+            <span className="wm-unfold-more" aria-hidden />
+          </button>
+          <SectionBlockOptionsButton sectionTitle={title} onAction={onAction} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function BlockEmptyState({
+  sectionId,
+  excludeTypeIds,
+  onSelect,
+  onBuildWithAi,
+}: {
+  sectionId: string;
+  excludeTypeIds?: string[];
+  onSelect: (
+    sectionId: string,
+    insertIndex: number,
+    category: string,
+    typeLabel: string,
+    typeId: string
+  ) => void;
+  onBuildWithAi: () => void;
+}) {
+  return (
+    <div className={styles.blockEmptyState}>
+      <p className={styles.blockEmptyMessage}>This block doesn&apos;t have any questions yet</p>
+      <AddQuestionMenu
+        excludeTypeIds={excludeTypeIds}
+        onSelect={(category, typeLabel, typeId) =>
+          onSelect(sectionId, 0, category, typeLabel, typeId)
+        }
+      />
+      <button type="button" className={styles.blockEmptyAiBtn} onClick={onBuildWithAi}>
+        Build with QuestionPro AI
+      </button>
+    </div>
+  );
+}
+
 function AddQuestionToolbar({
   sectionId,
   insertIndex,
@@ -2553,6 +2636,17 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     []
   );
 
+  const handleAddBlock = useCallback(() => {
+    const nextNumber = sections.length + 1;
+    const newSection: SurveySection = {
+      id: `section-block-${Date.now()}`,
+      title: `Block ${nextNumber}`,
+      questions: [],
+    };
+    setSections((prev) => [...prev, newSection]);
+    showToast({ message: `${newSection.title} added`, variant: 'success' });
+  }, [sections.length, setSections, showToast]);
+
   const handleSectionBlockMenuAction = useCallback(
     (sectionId: string, action: SectionBlockMenuAction) => {
       const section = sections.find((item) => item.id === sectionId);
@@ -2577,11 +2671,21 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         case 'block-flow':
           setBlockFlowOpen(true);
           return;
-        case 'delete':
+        case 'delete': {
+          if (sections.length <= 1) {
+            showToast({
+              message: 'A survey must have at least one block',
+              variant: 'error',
+            });
+            return;
+          }
+          setSections((prev) => prev.filter((item) => item.id !== sectionId));
           showToast({ message: `${section.title} deleted`, variant: 'success' });
+          return;
+        }
       }
     },
-    [sections, setBlockFlowOpen, showToast]
+    [sections, setBlockFlowOpen, setSections, showToast]
   );
 
   const handleQuestionMenuAction = useCallback(
@@ -4234,38 +4338,52 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
 
         <div className={styles.addBlockRow}>
           {bulkEditModeEnabled ? (
-            <WuButton size="sm" variant="secondary" onClick={() => toast('Add block')}>
+            <WuButton size="sm" variant="secondary" onClick={handleAddBlock}>
               <span className="wm-add" />
               Add Block
             </WuButton>
           ) : (
-            <SurveyWorkspaceQuickTools onAddBlock={() => toast('Add block')} />
+            <SurveyWorkspaceQuickTools onAddBlock={handleAddBlock} />
           )}
         </div>
 
-        {sections.map((section, sectionIndex) => (
+        {sections.map((section) => {
+          const isEmptyBlock = section.questions.length === 0;
+          const showBlockOptions = detail.survey.id !== AUDIO_INPUT_SURVEY_ID;
+
+          return (
           <section key={section.id} className={styles.sectionCard}>
             <div className={styles.sectionBlockSurface}>
               <header className={styles.sectionHeader}>
-                <div className={styles.sectionHeaderMain}>
-                  {bulkEditModeEnabled ? (
-                    <WuCheckbox
-                      checked={isSectionChecked(section)}
-                      onChange={(checked) => handleSectionCheckChange(section.id, checked)}
-                      aria-label={`Select ${section.title}`}
-                    />
-                  ) : null}
-                  <h2 className={styles.sectionTitle}>{section.title}</h2>
-                </div>
-                {detail.survey.id !== AUDIO_INPUT_SURVEY_ID ? (
-                  <SectionBlockOptionsButton
-                    sectionTitle={section.title}
-                    onAction={(action) => handleSectionBlockMenuAction(section.id, action)}
-                  />
-                ) : null}
+                <SectionBlockBar
+                  title={section.title}
+                  bulkEditModeEnabled={bulkEditModeEnabled}
+                  sectionChecked={isSectionChecked(section)}
+                  onSectionCheckChange={(checked) =>
+                    handleSectionCheckChange(section.id, checked)
+                  }
+                  showOptions={showBlockOptions}
+                  onAction={(action) => handleSectionBlockMenuAction(section.id, action)}
+                  heading
+                />
               </header>
 
-              <div className={styles.sectionQuestionCanvas}>
+              <div
+                className={`${styles.sectionQuestionCanvas} ${
+                  isEmptyBlock ? styles.sectionQuestionCanvasEmpty : ''
+                }`}
+              >
+                {isEmptyBlock ? (
+                  <BlockEmptyState
+                    sectionId={section.id}
+                    excludeTypeIds={getAddQuestionExcludeTypeIds(section.id, 0)}
+                    onSelect={handleAddQuestionSelect}
+                    onBuildWithAi={() => {
+                      setSettingsTarget(null);
+                      setSurveyAgentOpen(true);
+                    }}
+                  />
+                ) : (
                 <div className={styles.sectionQuestionSheet}>
                   <AddQuestionToolbar
                     sectionId={section.id}
@@ -5338,35 +5456,54 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     );
                   })}
                 </div>
+                )}
               </div>
+
+              {isEmptyBlock ? (
+                <footer className={styles.sectionFooter}>
+                  <SectionBlockBar
+                    title={section.title}
+                    bulkEditModeEnabled={bulkEditModeEnabled}
+                    sectionChecked={isSectionChecked(section)}
+                    onSectionCheckChange={(checked) =>
+                      handleSectionCheckChange(section.id, checked)
+                    }
+                    showOptions={showBlockOptions}
+                    onAction={(action) => handleSectionBlockMenuAction(section.id, action)}
+                  />
+                </footer>
+              ) : null}
             </div>
           </section>
-        ))}
+          );
+        })}
 
         <div className={styles.addBlockRow}>
-          <WuButton size="sm" variant="secondary" onClick={() => toast('Add block')}>
-            <span className="wm-add" />
-            Add Block
-          </WuButton>
+          {bulkEditModeEnabled ? (
+            <WuButton size="sm" variant="secondary" onClick={handleAddBlock}>
+              <span className="wm-add" />
+              Add Block
+            </WuButton>
+          ) : (
+            <SurveyWorkspaceQuickTools onAddBlock={handleAddBlock} />
+          )}
         </div>
 
-        <div className={styles.workspaceFooter} aria-label="Survey footer and thank you page">
-          <WuButton
-            size="sm"
-            variant="secondary"
-            className={styles.workspaceFooterBtn}
+        <div className={styles.workspaceFooterBar} aria-label="Survey footer and thank you page">
+          <button
+            type="button"
+            className={styles.workspaceFooterLink}
             onClick={() => toast('Edit Footer')}
           >
             Edit Footer
-          </WuButton>
-          <WuButton
-            size="sm"
-            variant="secondary"
-            className={styles.workspaceFooterBtn}
+          </button>
+          <button
+            type="button"
+            className={styles.workspaceFooterLink}
             onClick={() => toast('Thank You Page')}
           >
             Thank You Page
-          </WuButton>
+          </button>
         </div>
       </div>
       </div>

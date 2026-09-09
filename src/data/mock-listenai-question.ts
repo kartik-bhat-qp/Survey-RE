@@ -414,10 +414,6 @@ export function getListenAiInsertError(
   sectionId: string,
   insertIndex: number
 ): string | null {
-  if (findListenAiQuestion(sections)) {
-    return 'Conversation is already configured for this survey';
-  }
-
   const insertGlobalIndex = getInsertGlobalIndex(sections, sectionId, insertIndex);
   if (insertGlobalIndex === 0) {
     return LISTENAI_PLACE_NOT_FIRST_TOAST;

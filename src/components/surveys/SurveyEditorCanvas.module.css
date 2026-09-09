@@ -129,22 +129,39 @@
   margin: 0.75rem 0;
 }
 
-.workspaceFooter {
+.workspaceFooterBar {
   align-items: center;
+  background: #f3f5f7;
+  border: 1px solid #d5dee7;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  justify-content: center;
+  justify-content: flex-end;
   margin-top: 0.25rem;
-  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.75rem;
+  width: 100%;
 }
 
-.workspaceFooterBtn {
-  flex: 0 0 auto;
-  font-family: 'Fira Sans', sans-serif !important;
-  font-size: 0.8125rem !important;
-  min-width: unset !important;
-  width: auto !important;
+.workspaceFooterLink {
+  background: #fff;
+  border: 1px solid #1b87e6;
+  border-radius: 2px;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 0.3rem 0.65rem;
+  white-space: nowrap;
+}
+
+.workspaceFooterLink:hover,
+.workspaceFooterLink:focus-visible {
+  background: #e8f4fd;
+  outline: none;
 }
 
 .sectionCard {
@@ -164,9 +181,47 @@
   justify-content: space-between;
   margin-bottom: 0;
   overflow: visible;
-  padding: 0.625rem 1rem;
+  padding: 0;
   position: relative;
   z-index: 2;
+}
+
+.sectionFooter {
+  border-top: 1px solid #e5e7eb;
+}
+
+.sectionBar {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
+  width: 100%;
+}
+
+.sectionBarActions {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.125rem;
+}
+
+.sectionCollapseBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.125rem;
+  height: 1.75rem;
+  justify-content: center;
+  width: 1.75rem;
+}
+
+.sectionCollapseBtn:hover,
+.sectionCollapseBtn:focus-visible {
+  color: #0f6fc7;
+  outline: none;
 }
 
 .sectionBlockSurface {
@@ -177,11 +232,48 @@
 }
 
 .sectionTitle {
-  color: #334155;
+  color: #64748b;
   font-family: 'Fira Sans', sans-serif;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 500;
   margin: 0;
+}
+
+.blockEmptyState {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  justify-content: center;
+  min-height: 12rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.blockEmptyMessage {
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.blockEmptyAiBtn {
+  background: transparent;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0;
+}
+
+.blockEmptyAiBtn:hover,
+.blockEmptyAiBtn:focus-visible {
+  color: #0f6fc7;
+  outline: none;
+  text-decoration: underline;
 }
 
 .sectionQuestionCanvas {
@@ -190,6 +282,10 @@
 
   background: transparent;
   padding: 0 0 0.75rem;
+}
+
+.sectionQuestionCanvasEmpty {
+  padding: 0;
 }
 
 .sectionQuestionSheet {
