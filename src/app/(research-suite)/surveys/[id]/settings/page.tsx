@@ -1,10 +1,11 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useParams } from 'next/navigation';
 import { SurveySettingsDashboard } from '@/components/surveys/SurveySettingsDashboard';
 import { useSurveyById } from '@/hooks/useSurveyById';
 
-export default function SurveySettingsPage() {
+function SurveySettingsPageBody() {
   const params = useParams();
   const surveyId = Number(params.id);
   const { survey, ready } = useSurveyById(surveyId);
@@ -14,4 +15,12 @@ export default function SurveySettingsPage() {
   }
 
   return <SurveySettingsDashboard surveyId={survey.id} />;
+}
+
+export default function SurveySettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SurveySettingsPageBody />
+    </Suspense>
+  );
 }

@@ -8,6 +8,10 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.workspaceEmbedded {
+  background: #fff;
+}
+
 .panel {
   display: flex;
   flex-direction: column;

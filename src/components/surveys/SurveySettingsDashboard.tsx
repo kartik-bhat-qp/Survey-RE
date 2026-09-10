@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { AgeVerificationModal } from '@/components/surveys/AgeVerificationModal';
 import { ConfirmEnableRaaModal } from '@/components/surveys/ConfirmEnableRaaModal';
@@ -13,6 +14,9 @@ import { SaveAndContinueEmailModal } from '@/components/surveys/SaveAndContinueE
 import { SurveyNotificationConfigPanel } from '@/components/surveys/SurveyNotificationConfigPanel';
 import { NotificationCriteriaViewModal } from '@/components/surveys/NotificationCriteriaViewModal';
 import { SurveySettingsRichText } from '@/components/surveys/SurveySettingsRichText';
+import { SurveyLanguagesDashboard } from '@/components/surveys/SurveyLanguagesDashboard';
+import { SurveyFinishOptionsDashboard } from '@/components/surveys/SurveyFinishOptionsDashboard';
+import { SurveyVariablesDashboard } from '@/components/surveys/SurveyVariablesDashboard';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { useSurveyById } from '@/hooks/useSurveyById';
@@ -269,11 +273,29 @@ function NotificationsComposeToolbar({ onCreate }: NotificationsComposeToolbarPr
   );
 }
 
+function isSurveySettingsTab(value: string | null): value is SurveySettingsTab {
+  return (
+    value === 'settings' ||
+    value === 'security' ||
+    value === 'privacy' ||
+    value === 'notifications' ||
+    value === 'languages' ||
+    value === 'finish-options' ||
+    value === 'variables'
+  );
+}
+
 export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardProps) {
   const { showToast } = useWuShowToast();
   const { survey } = useSurveyById(surveyId);
   const surveyName = survey?.name ?? 'Survey';
-  const [activeTab, setActiveTab] = useState<SurveySettingsTab>('settings');
+  const router = useRouter();
+  const pathname = usePathname() ?? '';
+  const searchParams = useSearchParams();
+  const tabFromQuery = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<SurveySettingsTab>(() =>
+    isSurveySettingsTab(tabFromQuery) ? tabFromQuery : 'settings'
+  );
   const [settingsRaw, setSettings] = usePersistedState<SurveySettings>(
     surveySettingsStorageKey(surveyId),
     getDefaultSurveySettings()
@@ -294,6 +316,25 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
   const [notificationGroups, setNotificationGroups] = usePersistedState<
     SurveyNotificationGroup[]
   >(NOTIFICATION_GROUPS_STORAGE_KEY, DEFAULT_SURVEY_NOTIFICATION_GROUPS);
+
+  useEffect(() => {
+    const nextTab = isSurveySettingsTab(tabFromQuery) ? tabFromQuery : 'settings';
+    setActiveTab(nextTab);
+    setEditingNotificationId(null);
+  }, [tabFromQuery]);
+
+  function selectSettingsTab(tab: SurveySettingsTab): void {
+    setEditingNotificationId(null);
+    setActiveTab(tab);
+    const next = new URLSearchParams(searchParams.toString());
+    if (tab === 'settings') {
+      next.delete('tab');
+    } else {
+      next.set('tab', tab);
+    }
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }
   const [anonymityPendingConfig, setAnonymityPendingConfig] =
     useState<RespondentAnonymityConfig | null>(null);
   const transitioningToConfirmRef = useRef(false);
@@ -618,8 +659,7 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
                 }
                 aria-current={activeTab === tab.id ? 'page' : undefined}
                 onClick={() => {
-                  setEditingNotificationId(null);
-                  setActiveTab(tab.id as SurveySettingsTab);
+                  selectSettingsTab(tab.id as SurveySettingsTab);
                 }}
               >
                 {tab.label}
@@ -1307,7 +1347,7 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
               <WuButton onClick={handleSave}>Save Changes</WuButton>
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'notifications' ? (
           <div className={`${styles.panel} ${styles.notificationsPanel}`}>
             {editingNotification ? (
               <SurveyNotificationConfigPanel
@@ -1426,7 +1466,13 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
               </>
             )}
           </div>
-        )}
+        ) : activeTab === 'languages' ? (
+          <SurveyLanguagesDashboard surveyId={surveyId} embedded />
+        ) : activeTab === 'finish-options' ? (
+          <SurveyFinishOptionsDashboard surveyId={surveyId} embedded />
+        ) : activeTab === 'variables' ? (
+          <SurveyVariablesDashboard surveyId={surveyId} embedded />
+        ) : null}
       </div>
 
       <RespondentAnonymityModal
