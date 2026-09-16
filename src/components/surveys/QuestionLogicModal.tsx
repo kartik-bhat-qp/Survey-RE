@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
@@ -16,6 +16,8 @@ import {
   isShowHideOptionsLogicComplete,
   isShowHideQuestionLogicComplete,
   isQuotaControlLogicApplied,
+  getDynamicTextTargetIds,
+  createDefaultDynamicTextCommentsState,
   getQuestionLogicTypeOptions,
   resolveLogicTypeForQuestion,
   RANDOMIZER_LIMIT_OPTIONS,
@@ -32,6 +34,9 @@ import { ShowHideOptionsLogicPanel } from '@/components/surveys/ShowHideOptionsL
 import { ShowHideQuestionLogicPanel } from '@/components/surveys/ShowHideQuestionLogicPanel';
 import { plainTextFromRichValue } from '@/components/surveys/QuestionRichTextField';
 import { useWickUILib } from '@/components/ui/useWickUILib';
+import {
+  DYNAMIC_TEXT_SAVE_DISABLED_REASON,
+} from '@/data/mock-multi-point-settings';
 import styles from './QuestionLogicModal.module.css';
 
 const WuSelect = dynamic(
@@ -40,6 +45,10 @@ const WuSelect = dynamic(
 );
 const WuToggle = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
+  { ssr: false }
+);
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
 
@@ -51,6 +60,9 @@ export interface QuestionLogicModalProps {
   surveyId: number;
   initialState?: QuestionLogicState;
   onSave?: (state: QuestionLogicState) => void;
+  /** Blocks enabling Dynamic Text/Comments when Cards carousel layout is on. */
+  cardsCarouselEnabled?: boolean;
+  onSwitchToMatrixLayout?: () => void;
 }
 
 export function QuestionLogicModal({
@@ -61,6 +73,8 @@ export function QuestionLogicModal({
   surveyId,
   initialState,
   onSave,
+  cardsCarouselEnabled = false,
+  onSwitchToMatrixLayout,
 }: QuestionLogicModalProps) {
   const wick = useWickUILib();
   const router = useRouter();
@@ -86,6 +100,10 @@ export function QuestionLogicModal({
     () => question.options.map((option) => option.id),
     [question.options]
   );
+  const dynamicTextOptionIds = useMemo(
+    () => getDynamicTextTargetIds(question),
+    [question]
+  );
   const logicTypeOptions = useMemo(
     () => getQuestionLogicTypeOptions(question),
     [question]
@@ -99,10 +117,10 @@ export function QuestionLogicModal({
   const savedDynamicTextCommentsApplied =
     initialState != null &&
     initialState.logicType === 'dynamic-text' &&
-    hasDynamicTextCommentsChanges(initialState.dynamicTextComments, optionIds);
+    hasDynamicTextCommentsChanges(initialState.dynamicTextComments, dynamicTextOptionIds);
   const canResetDynamicTextLogic =
     isDynamicTextComments &&
-    (hasDynamicTextCommentsChanges(state.dynamicTextComments, optionIds) ||
+    (hasDynamicTextCommentsChanges(state.dynamicTextComments, dynamicTextOptionIds) ||
       savedDynamicTextCommentsApplied);
 
   const branchTargets = useMemo(
@@ -118,12 +136,42 @@ export function QuestionLogicModal({
     [allQuestions, question.id]
   );
 
+  const logicHydrationKeyRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      logicHydrationKeyRef.current = null;
+      return;
+    }
+
+    // Keep in-progress edits when parent re-renders (e.g. Cards carousel → Matrix).
+    const hydrationKey = question.id;
+    if (logicHydrationKeyRef.current === hydrationKey) return;
+    logicHydrationKeyRef.current = hydrationKey;
+
     const merged = mergeQuestionLogicState(optionIds, initialState);
-    const logicType = resolveLogicTypeForQuestion(merged.logicType, question);
-    setState(logicType === merged.logicType ? merged : { ...merged, logicType });
-  }, [open, question, question.id, initialState, optionIds]);
+    const dynamicTextDefaults = createDefaultDynamicTextCommentsState(dynamicTextOptionIds);
+    const withDynamicTextTargets: QuestionLogicState = {
+      ...merged,
+      dynamicTextComments: {
+        aiPrompt:
+          initialState?.dynamicTextComments?.aiPrompt ?? dynamicTextDefaults.aiPrompt,
+        byOptionId: {
+          ...dynamicTextDefaults.byOptionId,
+          ...(initialState?.dynamicTextComments?.byOptionId ?? {}),
+        },
+      },
+    };
+    const logicType = resolveLogicTypeForQuestion(
+      withDynamicTextTargets.logicType,
+      question
+    );
+    setState(
+      logicType === withDynamicTextTargets.logicType
+        ? withDynamicTextTargets
+        : { ...withDynamicTextTargets, logicType }
+    );
+  }, [open, question, question.id, initialState, optionIds, dynamicTextOptionIds]);
 
   const selectedLogicType =
     logicTypeOptions.find((option) => option.value === state.logicType) ??
@@ -142,7 +190,11 @@ export function QuestionLogicModal({
       ? isShowHideOptionsLogicComplete(state.showHideOptions, optionIds)
       : isCompoundBranching
         ? isCompoundBranchingLogicComplete(state.compoundBranching)
-        : true;
+        : isDynamicTextComments
+          ? !cardsCarouselEnabled
+          : true;
+  const saveDisabledReason =
+    isDynamicTextComments && cardsCarouselEnabled ? DYNAMIC_TEXT_SAVE_DISABLED_REASON : null;
 
   function handleSave() {
     if (!canSave) return;
@@ -164,7 +216,7 @@ export function QuestionLogicModal({
 
   function handleResetDynamicTextLogic() {
     const defaultDynamicTextComments =
-      createDefaultQuestionLogicState(optionIds).dynamicTextComments;
+      createDefaultDynamicTextCommentsState(dynamicTextOptionIds);
     setState((prev) => {
       const nextState = {
         ...prev,
@@ -285,6 +337,8 @@ export function QuestionLogicModal({
             }
             onReset={handleResetDynamicTextLogic}
             canReset={canResetDynamicTextLogic}
+            cardsCarouselEnabled={cardsCarouselEnabled}
+            onSwitchToMatrixLayout={onSwitchToMatrixLayout}
           />
         ) : isExtraction ? (
           <ExtractionLogicPanel
@@ -416,9 +470,13 @@ export function QuestionLogicModal({
           </WuButton>
         ) : null}
         {!isQuotaControl ? (
-          <WuButton variant="primary" disabled={!canSave} onClick={handleSave}>
-            {isExtraction ? 'Save Extraction Logic' : 'Save Logic'}
-          </WuButton>
+          <WuTooltip content={saveDisabledReason ?? undefined} position="top">
+            <span className={styles.saveBtnWrap}>
+              <WuButton variant="primary" disabled={!canSave} onClick={handleSave}>
+                {isExtraction ? 'Save Extraction Logic' : 'Save Logic'}
+              </WuButton>
+            </span>
+          </WuTooltip>
         ) : null}
       </WuModalFooter>
     </WuModal>

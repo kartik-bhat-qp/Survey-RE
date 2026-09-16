@@ -229,6 +229,7 @@ import {
   collectLookupTableConversionLogicConflicts,
   createDefaultQuestionLogicState,
   getDynamicTextEnabledByOptionId,
+  getDynamicTextTargetIds,
   getQuotaControlOptionLabels,
   isDynamicTextCommentsConfigured,
   isQuotaControlConfigured,
@@ -4447,6 +4448,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     );
                     const savedLogic = logicByQuestionKey[questionKey];
                     const questionOptionIds = (question.options ?? []).map((option) => option.id);
+                    const dynamicTextOptionIds = getDynamicTextTargetIds(question);
                     const showHideOptionsApplied =
                       savedLogic != null &&
                       isShowHideOptionsLogicApplied(savedLogic, questionOptionIds);
@@ -4455,10 +4457,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                       isQuotaControlConfigured(savedLogic, questionOptionIds);
                     const dynamicTextCommentsApplied =
                       savedLogic != null &&
-                      isDynamicTextCommentsConfigured(savedLogic, questionOptionIds);
+                      isDynamicTextCommentsConfigured(savedLogic, dynamicTextOptionIds);
                     const dynamicTextEnabledByOptionId =
                       savedLogic != null
-                        ? getDynamicTextEnabledByOptionId(savedLogic, questionOptionIds)
+                        ? getDynamicTextEnabledByOptionId(savedLogic, dynamicTextOptionIds)
                         : {};
                     const extractionApplied =
                       savedLogic != null &&
@@ -5535,6 +5537,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             settings={getMultiPointSettings(settingsQuestionKey)}
             onChange={(next) => handleMultiPointSettingsChange(settingsQuestionKey, next)}
             onClose={() => setSettingsTarget(null)}
+            dynamicTextCommentsEnabled={
+              logicByQuestionKey[settingsQuestionKey] != null &&
+              isDynamicTextCommentsConfigured(
+                logicByQuestionKey[settingsQuestionKey],
+                getDynamicTextTargetIds(settingsQuestion)
+              )
+            }
           />
         ) : isListenAiConfigQuestion(settingsQuestion) && settingsListenAiConfig && settingsTarget ? (
           <ListenAIQuestionSettingsPanel
@@ -5575,6 +5584,18 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           onSave={(state) =>
             handleLogicSave(logicTarget.sectionId, logicTarget.questionId, state)
           }
+          cardsCarouselEnabled={
+            isMultiPointScalesQuestion(logicQuestion) &&
+            isCardsCarouselPreview(getMultiPointSettings(logicQuestionKey))
+          }
+          onSwitchToMatrixLayout={() => {
+            if (!logicQuestionKey) return;
+            handleMultiPointSettingsChange(logicQuestionKey, {
+              ...getMultiPointSettings(logicQuestionKey),
+              layout: 'matrix',
+            });
+            showToast({ message: 'Switched to Matrix layout', variant: 'success' });
+          }}
         />
       ) : null}
 

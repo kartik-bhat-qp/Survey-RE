@@ -278,6 +278,81 @@ export const DYNAMIC_TEXT_BOX_STATUS_OPTIONS: BranchTargetOption[] = [
   { value: 'disabled', label: 'Disabled' },
 ];
 
+export const DYNAMIC_TEXT_MATRIX_LABEL_PLACEHOLDER = 'Please tell us why:';
+
+export interface DynamicTextTargetOption {
+  id: string;
+  label: string;
+}
+
+export interface DynamicTextTargetGroup {
+  id: string;
+  /** Row label shown as "Answer options {label}". Empty for flat (non-matrix) lists. */
+  label: string;
+  options: DynamicTextTargetOption[];
+}
+
+export function buildDynamicTextCellId(rowId: string, columnId: string): string {
+  return `mx:${rowId}:${columnId}`;
+}
+
+export function isMatrixDynamicTextQuestion(question: {
+  kind?: string;
+  matrix?: { rows?: unknown[]; columns?: unknown[] } | null;
+}): boolean {
+  if (!question.matrix?.rows?.length || !question.matrix?.columns?.length) return false;
+  return (
+    question.kind === 'multi-point-scales' ||
+    question.kind === 'matrix-multi-select' ||
+    question.kind === 'matrix-spreadsheet'
+  );
+}
+
+function stripRichTextLabel(value: string): string {
+  return value.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim();
+}
+
+/** Flat answer options, or matrix row groups × column scale points. */
+export function getDynamicTextTargetGroups(question: {
+  kind?: string;
+  options: { id: string; label: string }[];
+  matrix?: {
+    rows: { id: string; label: string }[];
+    columns: { id: string; label: string }[];
+  } | null;
+}): DynamicTextTargetGroup[] {
+  if (isMatrixDynamicTextQuestion(question) && question.matrix) {
+    return question.matrix.rows.map((row, rowIndex) => ({
+      id: row.id,
+      label: stripRichTextLabel(row.label) || `Row ${rowIndex + 1}`,
+      options: question.matrix!.columns.map((column, columnIndex) => ({
+        id: buildDynamicTextCellId(row.id, column.id),
+        label: stripRichTextLabel(column.label) || String(columnIndex + 1),
+      })),
+    }));
+  }
+
+  return [
+    {
+      id: 'answer-options',
+      label: '',
+      options: question.options.map((option) => ({
+        id: option.id,
+        label: stripRichTextLabel(option.label) || option.id,
+      })),
+    },
+  ];
+}
+
+export function getDynamicTextTargetIds(
+  question: Parameters<typeof getDynamicTextTargetGroups>[0]
+): string[] {
+  return getDynamicTextTargetGroups(question).flatMap((group) =>
+    group.options.map((option) => option.id)
+  );
+}
+
+
 export const QUOTA_OVER_LIMIT_ACTION_OPTIONS: BranchTargetOption[] = [
   { value: 'none', label: 'No Branching' },
   { value: 'terminate-survey', label: 'Terminate Survey' },

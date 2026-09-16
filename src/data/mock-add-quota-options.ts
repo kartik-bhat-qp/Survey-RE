@@ -28,7 +28,7 @@ export const ADD_QUOTA_OPTIONS: AddQuotaOption[] = [
   },
   {
     id: 'advanced',
-    title: 'Advanced quota',
+    title: 'Multiple criteria handling',
     description:
       'Create a group and add multiple criteria quotas to that group. You can then specify quota handling rules like least filled, quota priority, etc',
     icon: 'wm-tune',

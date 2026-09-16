@@ -313,7 +313,7 @@ function expandFlexMatrixToCriteriaQuestions(
       items.push({
         id: stableNumericId(`${question.id}:col:${columnIndex}`, fallback),
         surveyId,
-        code: `${question.code}_${columnIndex + 1}`,
+        code: `${question.code}_0_${columnIndex + 1}`,
         text: columnLabel,
         type,
         options: flexMatrixCellCriteriaOptions(cellType, columnOptions, rowLabels),
