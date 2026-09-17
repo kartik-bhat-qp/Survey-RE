@@ -512,7 +512,7 @@ export function PathSimulatorDashboard({ surveyId }: PathSimulatorDashboardProps
           </span>
           <div className={styles.compareRow}>
             <WuToggle
-              Label="Compare all routes"
+              Label="Compare all paths"
               labelPosition="left"
               checked={compareAllRoutes}
               onChange={handleCompareChange}
