@@ -195,6 +195,10 @@
   background: #1570c2;
 }
 
+.previewBtnActive {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1b87e6;
+}
+
 @media (max-width: 767px) {
   .publishArea {
     justify-content: flex-end;

@@ -42,6 +42,7 @@ const WuTooltip = dynamic(
 );
 
 const SURVEY_VERSION_TOOLTIP = 'Survey Version';
+const PATH_SIMULATOR_TOOLTIP = 'Path Simulator';
 
 type PublishMode = 'draft' | 'publish';
 
@@ -247,15 +248,39 @@ export function SurveyEditorWorkspaceToolbar({
     activeTool !== 'design';
   const showDesignPreview = activeTool === 'design';
 
+  const isPathSimulator = pathname === `/surveys/${surveyId}/path-simulator`;
+
+  const pathSimulatorButton = (
+    <WuTooltip content={PATH_SIMULATOR_TOOLTIP} position="bottom">
+      <button
+        type="button"
+        className={`${styles.previewBtn} ${isPathSimulator ? styles.previewBtnActive : ''}`}
+        aria-label={PATH_SIMULATOR_TOOLTIP}
+        aria-pressed={isPathSimulator}
+        onClick={() => {
+          if (isPathSimulator) {
+            router.push(`/surveys/${surveyId}`);
+            return;
+          }
+          router.push(`/surveys/${surveyId}/path-simulator`);
+        }}
+      >
+        <span className="wm-share" aria-hidden />
+      </button>
+    </WuTooltip>
+  );
+
   const previewButton = (
-    <button
-      type="button"
-      className={styles.previewBtn}
-      aria-label="Preview survey"
-      onClick={() => showToast({ message: 'Preview survey', variant: 'success' })}
-    >
-      <span className="wm-visibility" />
-    </button>
+    <WuTooltip content="Preview survey" position="bottom">
+      <button
+        type="button"
+        className={styles.previewBtn}
+        aria-label="Preview survey"
+        onClick={() => showToast({ message: 'Preview survey', variant: 'success' })}
+      >
+        <span className="wm-visibility" aria-hidden />
+      </button>
+    </WuTooltip>
   );
 
   return (
@@ -314,11 +339,13 @@ export function SurveyEditorWorkspaceToolbar({
                 </button>
               )}
             </div>
+            {pathSimulatorButton}
             {previewButton}
           </div>
         ) : showDesignPreview ? (
           <div className={styles.publishArea}>
             <TestResponsesTrigger />
+            {pathSimulatorButton}
             {previewButton}
           </div>
         ) : null}
