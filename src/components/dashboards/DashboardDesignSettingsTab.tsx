@@ -49,6 +49,7 @@ type DashboardTypographyScale = 'preview';
 type DashboardTypographyRole = 'title' | 'body' | 'metric';
 
 interface DashboardDesignSettingsTabProps {
+  themeOptions?: DesignSelectOption[];
   colorSettings?: DesignColorSettings;
   onColorSettingsChange?: (settings: DesignColorSettings) => void;
   designTheme: DesignSelectOption;
@@ -160,6 +161,7 @@ export function getNextDesignFontSizeOption(
 }
 
 export function DashboardDesignSettingsTab({
+  themeOptions = DESIGN_THEME_OPTIONS,
   colorSettings,
   onColorSettingsChange,
   designTheme,
@@ -195,7 +197,7 @@ export function DashboardDesignSettingsTab({
         <div className={styles.field}>
           <label className={styles.fieldLabel}>Theme</label>
           <WuSelect
-            data={DESIGN_THEME_OPTIONS}
+            data={themeOptions}
             accessorKey={{ value: 'value', label: 'label' }}
             value={designTheme}
             aria-label="Theme"

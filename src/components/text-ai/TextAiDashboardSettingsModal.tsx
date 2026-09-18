@@ -16,7 +16,7 @@ import {
   type TextAiThemePreferences,
 } from '@/data/text-ai-theme-preferences';
 import { DashboardDesignSettingsTab } from '@/components/dashboards/DashboardDesignSettingsTab';
-import { DESIGN_THEME_OPTIONS, DESIGN_PALETTE_OPTIONS, DESIGN_SENTIMENT_OPTIONS, type DashboardDesign } from '@/data/dashboard-design';
+import { DEFAULT_DASHBOARD_DESIGN, normalizeDashboardDesign, getTextAiSavedThemes, saveTextAiTheme, type SavedDashboardTheme, DESIGN_THEME_OPTIONS, DESIGN_PALETTE_OPTIONS, DESIGN_SENTIMENT_OPTIONS, type DashboardDesign } from '@/data/dashboard-design';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import styles from './TextAiDashboardSettingsModal.module.css';
 
@@ -71,11 +71,21 @@ export function TextAiDashboardSettingsModal({
   const wick = useWickUILib();
   const [draftDesign, setDraftDesign] = useState(design);
   const [designError, setDesignError] = useState('');
+  const [savedThemes, setSavedThemes] = useState<SavedDashboardTheme[]>([]);
+  const [namingTheme, setNamingTheme] = useState(false);
+  const [themeName, setThemeName] = useState('');
+  const themeOptions = [...DESIGN_THEME_OPTIONS, ...savedThemes.map(theme => ({ value: theme.id, label: theme.name }))];
+  useEffect(() => {
+    if (!open) return;
+    // Browser-owned theme library is refreshed each time settings opens.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSavedThemes(getTextAiSavedThemes());
+  }, [open]);
   const [wasOpen, setWasOpen] = useState(open);
   // A fresh design draft per opening, without resetting other settings tabs.
   if (wasOpen !== open) {
     setWasOpen(open);
-    if (open) { setDraftDesign(design); setDesignError(''); }
+    if (open) { setDraftDesign(design); setDesignError(''); setNamingTheme(false); setThemeName(''); }
   }
   const { showToast } = useWuShowToast();
   const [activeTab, setActiveTab] = useState<SettingsTab>('preferences');
@@ -204,13 +214,18 @@ export function TextAiDashboardSettingsModal({
               <DashboardDesignSettingsTab
                 colorSettings={draftDesign}
                 onColorSettingsChange={(colors) => setDraftDesign(current => ({ ...current, ...colors }))}
-                designTheme={DESIGN_THEME_OPTIONS.find((option) => option.value === draftDesign.theme)!}
+                themeOptions={themeOptions}
+                designTheme={themeOptions.find((option) => option.value === draftDesign.theme) ?? { value: draftDesign.theme, label: 'Custom theme' }}
                 designPalette={DESIGN_PALETTE_OPTIONS.find((option) => option.value === draftDesign.palette)!}
                 designSentiment={DESIGN_SENTIMENT_OPTIONS.find((option) => option.value === draftDesign.sentiment)!}
                 designFontSize={draftDesign.typography.fontSize}
                 designFontFamily={draftDesign.typography.fontFamily}
                 designFontStyle={draftDesign.typography.fontStyle}
-                onDesignThemeChange={(option) => setDraftDesign((current) => ({ ...current, theme: option.value }))}
+                onDesignThemeChange={(option) => {
+                  const selected = option.value === 'default' ? DEFAULT_DASHBOARD_DESIGN : savedThemes.find(theme => theme.id === option.value)?.design;
+                  if (selected) setDraftDesign(normalizeDashboardDesign(selected));
+                  setDesignError('');
+                }}
                 onDesignPaletteChange={(option) => setDraftDesign((current) => ({ ...current, palette: option.value }))}
                 onDesignSentimentChange={(option) => setDraftDesign((current) => ({ ...current, sentiment: option.value }))}
                 onDesignFontSizeChange={(option) => setDraftDesign((current) => ({ ...current, typography: { ...current.typography, fontSize: option } }))}
@@ -514,9 +529,26 @@ export function TextAiDashboardSettingsModal({
         {activeTab === 'design' && (
           <WuModalFooter className={styles.designFooter}>
             {designError && <span role="alert">{designError}</span>}
-            <button type="button" className={styles.primaryButton} disabled={JSON.stringify(draftDesign) === JSON.stringify(design)} onClick={() => {
-              if (!onSaveDesign(draftDesign)) { setDesignError('Settings could not be saved. Check browser storage and try again.'); return; }
-              showToast({ message: 'Dashboard design settings saved successfully', variant: 'success' });
+            {namingTheme ? <>
+              <input autoFocus className={styles.themeNameInput} aria-label="Theme name" placeholder="Theme name" maxLength={100} value={themeName} onChange={event => { setThemeName(event.target.value); setDesignError(''); }} onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); setNamingTheme(false); setDesignError(''); } }} />
+              <button type="button" className={styles.saveAsButton} onClick={() => { setNamingTheme(false); setDesignError(''); }}>Cancel</button>
+            </> : <button type="button" className={styles.saveAsButton} onClick={() => { setNamingTheme(true); setThemeName(''); setDesignError(''); }}>Save As</button>}
+            <button type="button" className={styles.primaryButton} disabled={namingTheme ? !themeName.trim() : JSON.stringify(draftDesign) === JSON.stringify(design)} onClick={() => {
+              let next = draftDesign;
+              if (namingTheme) {
+                const result = saveTextAiTheme(themeName, draftDesign);
+                if ('error' in result) { setDesignError(result.error); return; }
+                setSavedThemes(result.themes);
+                next = result.theme.design;
+                setDraftDesign(next);
+                setNamingTheme(false);
+                // The library save has succeeded even if applying the dashboard fails below.
+                if (!onSaveDesign(next)) { setDesignError('Theme saved, but dashboard settings could not be applied. Try Save again.'); return; }
+                showToast({ message: `Theme “${result.theme.name}” saved`, variant: 'success' });
+              } else {
+                if (!onSaveDesign(next)) { setDesignError('Settings could not be saved. Check browser storage and try again.'); return; }
+                showToast({ message: 'Dashboard design settings saved successfully', variant: 'success' });
+              }
               onOpenChange(false);
             }}>Save</button>
           </WuModalFooter>

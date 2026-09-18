@@ -743,3 +743,6 @@
 .designFooter [role='alert'] { color: #b42318; margin-right: auto; }
 .designPanel { overflow: auto; padding-top: 0; }
 .tabs { overflow-x: auto; }
+
+.saveAsButton { height:32px; min-width:80px; padding:6px 12px; border:0; border-radius:4px; background:#f5f6f8; color:#335b8d; font-size:14px; cursor:pointer; }
+.themeNameInput { height:32px; width:180px; max-width:100%; border:1px solid #d5d8dc; border-radius:2px; padding:6px 10px; font-size:13px; }

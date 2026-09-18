@@ -102,7 +102,7 @@ export function normalizeDashboardDesign(value: unknown): DashboardDesign {
     themeColor: isDesignColor(record.themeColor) ? record.themeColor.toLowerCase() : DEFAULT_DASHBOARD_DESIGN.themeColor,
     customPalette: colorArray(record.customPalette, DESIGN_PALETTES.categorical),
     customSentiment: colorArray(record.customSentiment, DESIGN_SENTIMENT_COLORS, 5),
-    theme: choice(record.theme, DESIGN_THEME_OPTIONS),
+    theme: typeof record.theme === 'string' && /^custom-[a-z0-9-]+$/i.test(record.theme) ? record.theme : choice(record.theme, DESIGN_THEME_OPTIONS),
     palette: choice(record.palette === 'sequential' ? 'blue' : record.palette === 'diverging' ? 'divergent' : record.palette, DESIGN_PALETTE_OPTIONS),
     sentiment: choice(record.sentiment, DESIGN_SENTIMENT_OPTIONS),
     typography: {
@@ -135,4 +135,37 @@ export function getDashboardDesignColorVars(design: DashboardDesign): Record<str
     vars[`--dashboard-sentiment-${key}-text`] = getReadableDesignColor(colors.sentiment[[0, 1, 2, 2, 3, 4][index]]);
   });
   return vars;
+}
+
+export interface SavedDashboardTheme {
+  id: string;
+  name: string;
+  design: DashboardDesign;
+}
+const TEXT_AI_THEMES_KEY = 'text-ai-saved-design-themes';
+
+export function getTextAiSavedThemes(): SavedDashboardTheme[] {
+  try {
+    const data: unknown = JSON.parse(window.localStorage.getItem(TEXT_AI_THEMES_KEY) ?? '[]');
+    if (!Array.isArray(data)) return [];
+    const seen = new Set<string>();
+    return data.flatMap(value => {
+      if (!value || typeof value !== 'object' || typeof value.id !== 'string' || !/^custom-[a-z0-9-]+$/i.test(value.id) || typeof value.name !== 'string' || !value.name.trim() || value.name.length > 100 || seen.has(value.id)) return [];
+      seen.add(value.id);
+      return [{ id: value.id, name: value.name.trim(), design: normalizeDashboardDesign({ ...value.design, theme: value.id }) }];
+    });
+  } catch { return []; }
+}
+
+export function saveTextAiTheme(name: string, design: DashboardDesign): { theme: SavedDashboardTheme; themes: SavedDashboardTheme[] } | { error: string } {
+  const trimmed = name.trim();
+  if (!trimmed || trimmed.length > 100) return { error: 'Enter a theme name between 1 and 100 characters.' };
+  const themes = getTextAiSavedThemes();
+  if (trimmed.toLowerCase() === 'default' || themes.some(theme => theme.name.toLowerCase() === trimmed.toLowerCase())) return { error: 'A theme with this name already exists. Choose another name.' };
+  const id = `custom-${crypto.randomUUID()}`;
+  const theme = { id, name: trimmed, design: normalizeDashboardDesign({ ...design, theme: id }) };
+  try {
+    window.localStorage.setItem(TEXT_AI_THEMES_KEY, JSON.stringify([...themes, theme]));
+    return { theme, themes: [...themes, theme] };
+  } catch { return { error: 'Theme could not be saved. Check browser storage and try again.' }; }
 }

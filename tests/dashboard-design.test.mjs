@@ -60,3 +60,30 @@ test('production options, legacy migration and custom validation', () => {
   assert.equal(vars['--dashboard-sentiment-mixed'], vars['--dashboard-sentiment-neutral']);
   assert.deepEqual(normalizeDashboardDesign({ ...design, palette: 'blue' }).customPalette, customPalette);
 });
+
+test('named themes capture independent snapshots, validate names, and survive reload', async () => {
+  const { getTextAiSavedThemes, saveTextAiTheme } = await import('../src/data/dashboard-design.ts');
+  const data = new Map();
+  globalThis.window = { localStorage: { getItem: key => data.get(key), setItem: (key, value) => data.set(key, value) } };
+  try {
+    assert.ok('error' in saveTextAiTheme('   ', DEFAULT_DASHBOARD_DESIGN));
+    assert.ok('error' in saveTextAiTheme('Default', DEFAULT_DASHBOARD_DESIGN));
+    assert.ok('error' in saveTextAiTheme('x'.repeat(101), DEFAULT_DASHBOARD_DESIGN));
+    const draft = { ...DEFAULT_DASHBOARD_DESIGN, themeColor: '#123456', palette: 'custom', customPalette: [...DEFAULT_DASHBOARD_DESIGN.customPalette] };
+    const result = saveTextAiTheme('  Ocean  ', draft);
+    assert.ok('theme' in result);
+    assert.equal(result.theme.name, 'Ocean');
+    assert.equal(result.theme.design.theme, result.theme.id);
+    draft.customPalette[0] = '#ffffff';
+    assert.notEqual(result.theme.design.customPalette[0], '#ffffff');
+    assert.deepEqual(getTextAiSavedThemes(), [result.theme]);
+    assert.ok('error' in saveTextAiTheme('oCeAn', draft));
+    assert.equal(saveTextAiDashboardDesign(3, result.theme.design), true);
+    assert.deepEqual(getTextAiDashboardDesign(3), result.theme.design);
+    window.localStorage.setItem = () => { throw new Error('quota'); };
+    assert.ok('error' in saveTextAiTheme('Another', draft));
+    assert.deepEqual(getTextAiSavedThemes(), [result.theme]);
+    data.set('text-ai-saved-design-themes', '[null, {"id":"bad","name":"bad"}]');
+    assert.deepEqual(getTextAiSavedThemes(), []);
+  } finally { delete globalThis.window; }
+});
