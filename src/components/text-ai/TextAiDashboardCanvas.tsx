@@ -12,7 +12,6 @@ import { TextAiKpiByThemeWidget } from '@/components/text-ai/TextAiKpiByThemeWid
 import { TextAiSubthemeStackbarWidget } from '@/components/text-ai/TextAiSubthemeStackbarWidget';
 import { TextAiSubthemeTrendWidget } from '@/components/text-ai/TextAiSubthemeTrendWidget';
 import { TextAiSummaryWidgetCard } from '@/components/text-ai/TextAiSummaryWidget';
-import { TextAiThemeStackbarWidget } from '@/components/text-ai/TextAiThemeStackbarWidget';
 import { TextAiTopicSegmentWidgetCard } from '@/components/text-ai/TextAiTopicSegmentWidget';
 import type { TextAiDashboardQuestion } from '@/data/mock-text-ai-dashboards';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -56,7 +55,6 @@ type TextAiCanvasWidgetKind =
   | 'subtheme-trend'
   | 'topic-segment'
   | 'subtheme-stackbar'
-  | 'theme-stackbar'
   | 'analysis'
   | 'summary';
 
@@ -85,7 +83,6 @@ const INITIAL_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
   'subtheme-trend': 13,
   'topic-segment': 9,
   'subtheme-stackbar': 8,
-  'theme-stackbar': 11,
   analysis: 25,
   summary: 10,
 };
@@ -95,7 +92,6 @@ const MIN_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
   'subtheme-trend': 8,
   'topic-segment': 5,
   'subtheme-stackbar': 6,
-  'theme-stackbar': 6,
   analysis: 6,
   summary: 6,
 };
@@ -457,17 +453,6 @@ export function TextAiDashboardCanvas({
         <TextAiSubthemeStackbarWidget
           question={selectedQuestion.text}
           onDelete={() => removeWidget('subtheme-stackbar')}
-          themePreferences={themePreferences}
-        />
-      ),
-    },
-    {
-      id: 'theme-stackbar',
-      kind: 'theme-stackbar' as const,
-      content: (
-        <TextAiThemeStackbarWidget
-          question={selectedQuestion.text}
-          onDelete={() => removeWidget('theme-stackbar')}
           themePreferences={themePreferences}
         />
       ),
