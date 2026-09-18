@@ -109,8 +109,65 @@
   padding: 0.375rem 0.75rem 0.375rem 0.75rem;
 }
 
-.toolsMenuGroup + .toolsMenuGroup .toolsMenuSectionHeading {
+.toolsMenuSectionHeadingRow {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem 0.375rem 0.75rem;
+}
+
+.toolsMenuSectionHeadingRow .toolsMenuSectionHeading {
+  padding: 0;
+}
+
+.toolsMenuGroup + .toolsMenuGroup .toolsMenuSectionHeading,
+.toolsMenuGroup + .toolsMenuGroup .toolsMenuSectionHeadingRow {
   padding-top: 0.375rem;
+}
+
+.toolsMenuGroup + .toolsMenuGroup .toolsMenuSectionHeadingRow .toolsMenuSectionHeading {
+  padding-top: 0;
+}
+
+.sunsetBadge {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #f19d00;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 22%);
+  color: #f19d00;
+  cursor: default;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 1.2rem;
+  justify-content: center;
+  width: 1.2rem;
+}
+
+.sunsetBadge:hover,
+.sunsetBadge:focus-visible {
+  background: #fff8eb;
+  border-color: #f19d00;
+  color: #f19d00;
+  outline: none;
+}
+
+.sunsetTooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 16.5rem;
+  text-align: left;
+}
+
+.sunsetTooltipTitle {
+  font-weight: 600;
+  margin: 0;
+}
+
+.sunsetTooltipBody {
+  margin: 0;
+  opacity: 0.92;
 }
 
 .toolsMenuSectionDivider {

@@ -72,6 +72,20 @@
   color: #1b87e6;
 }
 
+.layoutBtnDisabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.layoutBtnDisabled:hover {
+  border-color: #d5dde6;
+  color: #475569;
+}
+
+.layoutBtnWrap {
+  display: inline-flex;
+}
+
 .newBadge {
   background: #22c55e;
   border-radius: 0.125rem;

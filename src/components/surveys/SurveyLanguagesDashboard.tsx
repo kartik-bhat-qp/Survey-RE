@@ -38,9 +38,14 @@ const WuTooltip = dynamic(
 
 interface SurveyLanguagesDashboardProps {
   surveyId: number;
+  /** When true, hides the Languages sidebar (used inside Settings). */
+  embedded?: boolean;
 }
 
-export function SurveyLanguagesDashboard({ surveyId }: SurveyLanguagesDashboardProps) {
+export function SurveyLanguagesDashboard({
+  surveyId,
+  embedded = false,
+}: SurveyLanguagesDashboardProps) {
   const { showToast } = useWuShowToast();
   const [activeTab, setActiveTab] = useState<SurveyLanguagesSidebarTab>('languages');
   const [languages, setLanguages] = useState<SurveyLanguageVersion[]>(() =>
@@ -166,31 +171,33 @@ export function SurveyLanguagesDashboard({ surveyId }: SurveyLanguagesDashboardP
   }
 
   return (
-    <div className={styles.workspace}>
-      <aside className={styles.sidebar} aria-label="Languages navigation">
-        <nav className={styles.sidebarNav}>
-          {sidebarItems.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={
-                activeTab === item.id ? styles.sidebarItemActive : styles.sidebarItem
-              }
-              onClick={() => {
-                setActiveTab(item.id);
-                if (item.id === 'import-translations') {
-                  showToast({
-                    message: `${item.label} is not available in this prototype`,
-                    variant: 'info',
-                  });
+    <div className={`${styles.workspace} ${embedded ? styles.workspaceEmbedded : ''}`}>
+      {!embedded ? (
+        <aside className={styles.sidebar} aria-label="Languages navigation">
+          <nav className={styles.sidebarNav}>
+            {sidebarItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={
+                  activeTab === item.id ? styles.sidebarItemActive : styles.sidebarItem
                 }
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-      </aside>
+                onClick={() => {
+                  setActiveTab(item.id);
+                  if (item.id === 'import-translations') {
+                    showToast({
+                      message: `${item.label} is not available in this prototype`,
+                      variant: 'info',
+                    });
+                  }
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        </aside>
+      ) : null}
 
       <div className={styles.content}>
         {activeTab === 'manual-translations' ? (
@@ -214,6 +221,31 @@ export function SurveyLanguagesDashboard({ surveyId }: SurveyLanguagesDashboardP
                   addedIds={selectedLanguageIds}
                   onSave={handleAddLanguages}
                 />
+                {embedded ? (
+                  <div className={styles.embeddedNav}>
+                    <button
+                      type="button"
+                      className={styles.embeddedNavBtn}
+                      onClick={() => {
+                        showToast({
+                          message: 'Import Translations is not available in this prototype',
+                          variant: 'info',
+                        });
+                      }}
+                    >
+                      Import Translations
+                    </button>
+                    {hasAdditionalLanguages ? (
+                      <button
+                        type="button"
+                        className={styles.embeddedNavBtn}
+                        onClick={() => setActiveTab('manual-translations')}
+                      >
+                        Manual Translations
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
 
               {hasAdditionalLanguages ? (

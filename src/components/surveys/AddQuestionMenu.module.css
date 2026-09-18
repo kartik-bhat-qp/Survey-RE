@@ -709,8 +709,12 @@
 
 .categoryAiMark {
   color: #e6a700;
-  font-size: 0.6875rem;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  height: 0.75rem;
   line-height: 1;
+  width: 0.75rem;
 }
 
 .typeList {

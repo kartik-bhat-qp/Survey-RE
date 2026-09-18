@@ -4,6 +4,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
+  CARDS_CAROUSEL_DYNAMIC_TEXT_CONFLICT_MESSAGE,
   CARDS_CAROUSEL_RESPONSE_LAYOUT_OPTIONS,
   DEFAULT_MULTI_POINT_SETTINGS,
   MATRIX_DISPLAY_ORDER_OPTIONS,
@@ -35,12 +36,19 @@ const WuToggle = dynamic(
   { ssr: false }
 );
 
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
+
 type SettingsTab = 'metadata' | 'communities';
 
 export interface MultiPointScalesSettingsPanelProps {
   settings: MultiPointScalesSettings;
   onChange: (settings: MultiPointScalesSettings) => void;
   onClose: () => void;
+  /** When true, Cards carousel cannot be selected (mutual with Dynamic Text/Comments). */
+  dynamicTextCommentsEnabled?: boolean;
 }
 
 function FieldLabel({
@@ -72,10 +80,30 @@ function FieldLabel({
 function LayoutToggle({
   value,
   onChange,
+  cardsCarouselDisabled = false,
 }: {
   value: MultiPointLayout;
   onChange: (value: MultiPointLayout) => void;
+  cardsCarouselDisabled?: boolean;
 }) {
+  const cardsCarouselButton = (
+    <button
+      type="button"
+      className={`${styles.layoutBtn} ${value === 'cards-carousel' ? styles.layoutBtnActive : ''} ${
+        cardsCarouselDisabled ? styles.layoutBtnDisabled : ''
+      }`}
+      aria-pressed={value === 'cards-carousel'}
+      aria-disabled={cardsCarouselDisabled || undefined}
+      onClick={() => {
+        if (cardsCarouselDisabled) return;
+        onChange('cards-carousel');
+      }}
+    >
+      Cards carousel
+      <span className={styles.newBadge}>New</span>
+    </button>
+  );
+
   return (
     <div className={panelStyles.field}>
       <span className={panelStyles.fieldLabel}>Layout</span>
@@ -88,15 +116,13 @@ function LayoutToggle({
         >
           Matrix
         </button>
-        <button
-          type="button"
-          className={`${styles.layoutBtn} ${value === 'cards-carousel' ? styles.layoutBtnActive : ''}`}
-          aria-pressed={value === 'cards-carousel'}
-          onClick={() => onChange('cards-carousel')}
-        >
-          Cards carousel
-          <span className={styles.newBadge}>New</span>
-        </button>
+        {cardsCarouselDisabled ? (
+          <WuTooltip content={CARDS_CAROUSEL_DYNAMIC_TEXT_CONFLICT_MESSAGE} position="top">
+            <span className={styles.layoutBtnWrap}>{cardsCarouselButton}</span>
+          </WuTooltip>
+        ) : (
+          cardsCarouselButton
+        )}
       </div>
     </div>
   );
@@ -106,12 +132,18 @@ export function MultiPointScalesSettingsPanel({
   settings = DEFAULT_MULTI_POINT_SETTINGS,
   onChange,
   onClose,
+  dynamicTextCommentsEnabled = false,
 }: MultiPointScalesSettingsPanelProps) {
   const { showToast } = useWuShowToast();
   const [activeTab, setActiveTab] = useState<SettingsTab>('metadata');
 
   function patch(partial: Partial<MultiPointScalesSettings>): void {
     onChange({ ...settings, ...partial });
+  }
+
+  function handleLayoutChange(layout: MultiPointLayout): void {
+    if (layout === 'cards-carousel' && dynamicTextCommentsEnabled) return;
+    patch({ layout });
   }
 
   function showHelp(topic: string): void {
@@ -151,7 +183,11 @@ export function MultiPointScalesSettingsPanel({
       </header>
 
       <div className={panelStyles.body}>
-        <LayoutToggle value={settings.layout} onChange={(layout) => patch({ layout })} />
+        <LayoutToggle
+          value={settings.layout}
+          onChange={handleLayoutChange}
+          cardsCarouselDisabled={dynamicTextCommentsEnabled}
+        />
 
         <div className={panelStyles.field}>
           <FieldLabel

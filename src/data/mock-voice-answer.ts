@@ -148,8 +148,53 @@ function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
 
+export interface DictationLanguage {
+  id: string;
+  label: string;
+}
+
+/** Cursor-style dictation language list (prototype — no real locale switching). */
+export const DICTATION_LANGUAGES: DictationLanguage[] = [
+  { id: 'zh-CN', label: 'Chinese (Simplified, China)' },
+  { id: 'zh-HK', label: 'Chinese (Traditional, Hong Kong)' },
+  { id: 'zh-TW', label: 'Chinese (Traditional, Taiwan)' },
+  { id: 'da', label: 'Danish' },
+  { id: 'nl', label: 'Dutch' },
+  { id: 'en', label: 'English' },
+  { id: 'fr-CA', label: 'French (Canada)' },
+  { id: 'fr-FR', label: 'French (France)' },
+  { id: 'de', label: 'German' },
+  { id: 'hi', label: 'Hindi' },
+  { id: 'it', label: 'Italian' },
+  { id: 'ja', label: 'Japanese' },
+  { id: 'ko', label: 'Korean' },
+  { id: 'pt-BR', label: 'Portuguese (Brazil)' },
+];
+
+export const DEFAULT_DICTATION_LANGUAGE_ID = 'en';
+
+export function getDictationLanguage(id: string): DictationLanguage | undefined {
+  return DICTATION_LANGUAGES.find((language) => language.id === id);
+}
+
+const MOCK_HINDI_SENTENCES = [
+  'मुझे समग्र अनुभव बहुत अच्छा लगा और मैं इसे दूसरों को ज़रूर सुझाऊँगा।',
+  'ग्राहक सहायता बहुत उत्तरदायी थी और उसने मेरा मुद्दा उसी दिन हल कर दिया।',
+];
+
+const MOCK_JAPANESE_SENTENCES = [
+  '全体的な体験はとても良く、他の人にもぜひおすすめしたいと思います。',
+  'カスタマーサポートの対応が早く、当日中に問題が解決されました。',
+];
+
 /** Pick a complete demo dictation sentence based on field context. */
-export function pickMockDictationPhrase(contextHint = ''): string {
+export function pickMockDictationPhrase(contextHint = '', languageId = DEFAULT_DICTATION_LANGUAGE_ID): string {
+  if (languageId === 'hi') {
+    return pickRandom(MOCK_HINDI_SENTENCES);
+  }
+  if (languageId === 'ja') {
+    return pickRandom(MOCK_JAPANESE_SENTENCES);
+  }
   const hint = contextHint.toLowerCase();
   if (hint.includes('email') || hint.includes('@')) {
     return pickRandom(MOCK_EMAIL_SENTENCES);

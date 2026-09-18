@@ -28,9 +28,13 @@ const WuTooltip = dynamic(
 
 interface SurveyFinishOptionsDashboardProps {
   surveyId: number;
+  embedded?: boolean;
 }
 
-export function SurveyFinishOptionsDashboard({ surveyId }: SurveyFinishOptionsDashboardProps) {
+export function SurveyFinishOptionsDashboard({
+  surveyId,
+  embedded = false,
+}: SurveyFinishOptionsDashboardProps) {
   const { showToast } = useWuShowToast();
   const [optionsRaw, setOptions] = usePersistedState<SurveyFinishOptions>(
     surveyFinishOptionsStorageKey(surveyId),
@@ -51,7 +55,7 @@ export function SurveyFinishOptionsDashboard({ surveyId }: SurveyFinishOptionsDa
   }
 
   return (
-    <div className={styles.workspace}>
+    <div className={`${styles.workspace} ${embedded ? styles.workspaceEmbedded : ''}`}>
       <div className={styles.panel}>
         <div className={styles.titleRow}>
           <h1 className={styles.title}>Finish Options</h1>

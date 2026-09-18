@@ -8,7 +8,6 @@ import {
   DEFAULT_TEXT_AI_WIDGET_TOP_N,
   DEFAULT_TEXT_AI_WIDGET_VARIANCE_PERCENT,
   getTextAiWidgetCustomModeOption,
-  getTextAiWidgetDisplaySelectOption,
   getTextAiWidgetDisplaySelectOptions,
   parseTextAiWidgetDisplayChoice,
   TEXT_AI_WIDGET_CUSTOM_MODE_OPTIONS,
@@ -73,7 +72,16 @@ export function TextAiWidgetSettingsModal({
     () => getTextAiWidgetDisplaySelectOptions(includeCustom),
     [includeCustom]
   );
-  const selectedDisplayOption = getTextAiWidgetDisplaySelectOption(draft.value, includeCustom);
+  const selectedDisplayOption =
+    displayOptions.find((option) => {
+      const key =
+        draft.value === 'custom'
+          ? 'custom'
+          : draft.value === 'all'
+            ? 'all'
+            : String(draft.value);
+      return option.value === key;
+    }) ?? displayOptions[0];
   const selectedCustomMode = getTextAiWidgetCustomModeOption(draft.customMode);
   const selectionCap = Math.min(
     TEXT_AI_WIDGET_CUSTOM_SELECTION_MAX,
@@ -195,12 +203,14 @@ export function TextAiWidgetSettingsModal({
                       const checked = draft.selectedIds.includes(item.id);
                       return (
                         <div key={item.id} className={styles.pickerItem}>
-                          <WuCheckbox
-                            checked={checked}
-                            disabled={!checked && atSelectionMax}
-                            onChange={(isChecked) => toggleItem(item.id, isChecked)}
-                            aria-label={item.label}
-                          />
+                          <span className={styles.pickerCheckbox}>
+                            <WuCheckbox
+                              checked={checked}
+                              disabled={!checked && atSelectionMax}
+                              onChange={(isChecked) => toggleItem(item.id, isChecked)}
+                              aria-label={item.label}
+                            />
+                          </span>
                           <button
                             type="button"
                             className={styles.pickerCopy}

@@ -2,14 +2,17 @@ export const SURVEY_AI_EXAMPLE_PROMPTS = [
   {
     id: 'add-nps',
     text: 'Add questions based on your goal',
+    icon: 'wm-chat',
   },
   {
     id: 'improve-wording',
     text: 'Improve the wording of the demographic questions',
+    icon: 'wm-chat',
   },
   {
     id: 'add-logic',
     text: 'Add skip logic to hide the cola brand question for non-drinkers',
+    icon: 'wm-chat',
   },
 ] as const;
 
@@ -17,18 +20,36 @@ export interface SurveyAiCapabilityPill {
   id: string;
   label: string;
   icon?: string;
+  iconTone?: 'word' | 'pdf' | 'questions' | 'logic';
   prompt?: string;
 }
 
 export const SURVEY_AI_CAPABILITY_PILLS: SurveyAiCapabilityPill[] = [
-  { id: 'import-word', label: 'Create from doc', icon: 'wm-description' },
-  { id: 'import-pdf', label: 'Create from pdf', icon: 'wm-picture-as-pdf' },
-  { id: 'add-question-types', label: 'Add different types of questions' },
-  { id: 'compound-logic', label: 'Set up advanced logic' },
+  { id: 'import-word', label: 'Create from doc', icon: 'wm-description', iconTone: 'word' },
+  { id: 'import-pdf', label: 'Create from pdf', icon: 'wm-picture-as-pdf', iconTone: 'pdf' },
+  {
+    id: 'add-question-types',
+    label: 'Add different types of questions',
+    icon: 'wm-library-add',
+    iconTone: 'questions',
+    prompt: 'Add different types of questions',
+  },
+  {
+    id: 'compound-logic',
+    label: 'Set up advanced logic',
+    icon: 'wc-logic',
+    iconTone: 'logic',
+    prompt: 'Set up advanced logic',
+  },
 ];
 
+export const SURVEY_AI_GREETING_TITLE = "Hi! I'm your research agent";
+
+export const SURVEY_AI_GREETING_BODY =
+  'I can help you build, edit, and improve this survey. Try asking me to:';
+
 export const SURVEY_AI_GREETING =
-  "Hi! I'm your research agent. I can help you build, edit, and improve this survey. Try asking me to:";
+  `${SURVEY_AI_GREETING_TITLE}. ${SURVEY_AI_GREETING_BODY}`;
 
 export const DISTRIBUTE_EMAIL_AI_GREETING =
   "Hi! I'm your research agent. I can help you craft and improve your survey invitations. Try asking me to:";

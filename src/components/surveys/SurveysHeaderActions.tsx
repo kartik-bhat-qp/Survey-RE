@@ -38,6 +38,15 @@ export function SurveysHeaderActions({ compact }: { compact?: boolean }) {
         className={styles.search}
       />
       <div className={styles.actions}>
+        <button
+          type="button"
+          className={styles.flaskBtn}
+          aria-label="Question type usage"
+          title="Question type usage"
+          onClick={() => router.push('/question-type-usage')}
+        >
+          <span className="wm-science" aria-hidden />
+        </button>
         <WuMenu
           Trigger={
             <button type="button" className={styles.adminTrigger}>

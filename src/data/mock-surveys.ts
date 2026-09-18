@@ -38,6 +38,15 @@ export const MOCK_SURVEY_FOLDERS: SurveyFolder[] = [
 
 export const MOCK_SURVEYS: Survey[] = [
   {
+    id: 20,
+    name: 'Flex logic',
+    folderId: 'all',
+    createdAt: '2026-09-09T08:00:00Z',
+    modifiedAt: '2026-09-09T12:00:00Z',
+    status: 'Active - Draft',
+    responses: 0,
+  },
+  {
     id: 16,
     name: 'Conversation',
     folderId: 'all',
@@ -215,3 +224,4 @@ export const SURVEYS_PAGE_SIZE = 100;
 export const BI_LITE_DEMO_SURVEY_ID = 17;
 export const AUDIO_INPUT_SURVEY_ID_REF = 18;
 export const SURVEY_REVIEW_MODE_SURVEY_ID_REF = 19;
+export const FLEX_LOGIC_SURVEY_ID_REF = 20;

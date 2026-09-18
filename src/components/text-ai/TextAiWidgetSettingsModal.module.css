@@ -90,9 +90,18 @@
   border-top: 1px solid #f1f3f5;
 }
 
-.pickerItem :global(button),
-.pickerItem :global(label),
-.pickerItem :global([role='checkbox']) {
+.pickerCheckbox {
+  align-items: flex-start;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 1.125rem;
+  justify-content: center;
+  width: 1.125rem;
+}
+
+.pickerCheckbox :global(button),
+.pickerCheckbox :global(label),
+.pickerCheckbox :global([role='checkbox']) {
   align-items: flex-start;
   display: inline-flex;
   height: 1.125rem;
@@ -113,6 +122,7 @@
   min-width: 0;
   padding: 0;
   text-align: left;
+  width: 100%;
 }
 
 .pickerCopy:disabled {
@@ -122,17 +132,23 @@
 
 .pickerLabel {
   color: #3f4b5a;
+  display: block;
   font-family: 'Fira Sans', sans-serif;
   font-size: 0.8125rem;
   font-weight: 500;
-  line-height: 1.125rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  width: 100%;
 }
 
 .pickerParent {
   color: #8b95a1;
+  display: block;
   font-family: 'Fira Sans', sans-serif;
   font-size: 0.6875rem;
-  line-height: 1.2;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  width: 100%;
 }
 
 .varianceField {

@@ -50,6 +50,7 @@ const WuTooltip = dynamic(
 
 interface SurveyVariablesDashboardProps {
   surveyId: number;
+  embedded?: boolean;
 }
 
 interface VariableSelectProps {
@@ -183,7 +184,10 @@ function VariableSelect({
   );
 }
 
-export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariablesDashboardProps) {
+export function SurveyVariablesDashboard({
+  surveyId: _surveyId,
+  embedded = false,
+}: SurveyVariablesDashboardProps) {
   const { showToast } = useWuShowToast();
   const router = useRouter();
   const initialRowsRef = useRef<SystemVariableMappingRow[] | null>(null);
@@ -395,7 +399,7 @@ export function SurveyVariablesDashboard({ surveyId: _surveyId }: SurveyVariable
   }
 
   return (
-    <div className={styles.workspace}>
+    <div className={`${styles.workspace} ${embedded ? styles.workspaceEmbedded : ''}`}>
       <div className={styles.panel}>
         <div className={styles.titleRow}>
           <h1 className={styles.title}>System Variable Mapping</h1>

@@ -151,3 +151,15 @@ export function isCardsCarouselVerticalPreview(settings: MultiPointScalesSetting
 export function isCardsCarouselPreview(settings: MultiPointScalesSettings): boolean {
   return settings.layout === 'cards-carousel';
 }
+
+export const CARDS_CAROUSEL_DYNAMIC_TEXT_CONFLICT_MESSAGE =
+  'Cards carousel cannot be used with Dynamic Text/Comments. Disable Dynamic Text/Comments logic first.';
+
+export const DYNAMIC_TEXT_CARDS_CAROUSEL_CONFLICT_MESSAGE =
+  'Dynamic Text/Comments cannot be used with Cards carousel.';
+
+export const DYNAMIC_TEXT_SWITCH_TO_MATRIX_LABEL = 'switch to Matrix layout';
+
+export const DYNAMIC_TEXT_SAVE_DISABLED_REASON =
+  'Dynamic Text/Comments cannot be used with Cards carousel. Switch to Matrix layout first.';
+

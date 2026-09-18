@@ -218,13 +218,10 @@ const TEXT_EDITOR_TYPE_IDS = new Set([
   'contact',
 ]);
 
-const CLOSED_ENDED_FLEX_COLUMN_TYPES = new Set([
-  'radio',
-  'checkbox',
-  'dropdown',
-  'rating-scale',
-  'rank-order',
-]);
+const COLUMN_LEVEL_FLEX_CELL_TYPES = new Set(['radio', 'checkbox']);
+
+const DEFAULT_FLEX_DROPDOWN_CRITERIA_OPTIONS = ['Option 1', 'Option 2'];
+const DEFAULT_FLEX_RATING_CRITERIA_OPTIONS = ['1', '2', '3'];
 
 /** Minimal editor-question shape used when mapping workspace questions into criteria. */
 export interface EditorQuestionForCriteria {
@@ -262,9 +259,88 @@ function stableNumericId(id: string, fallback: number): number {
   return numeric === 0 ? fallback : numeric;
 }
 
+function isFlexMatrixEditorQuestion(question: EditorQuestionForCriteria): boolean {
+  return question.kind === 'flex-matrix' || question.addQuestionTypeId === 'flex-matrix';
+}
+
+function flexMatrixCellCriteriaType(cellType: string): SurveyQuestionType {
+  if (cellType === 'radio') return 'Single Select';
+  if (cellType === 'checkbox') return 'Multiple Select';
+  if (cellType === 'rank-order') return 'Rank order';
+  if (cellType === 'dropdown' || cellType === 'rating-scale') return 'Single Select';
+  return 'Text';
+}
+
+function flexMatrixCellCriteriaOptions(
+  cellType: string,
+  columnOptions: string[],
+  rowLabels: string[]
+): string[] | undefined {
+  if (cellType === 'radio' || cellType === 'checkbox') {
+    return rowLabels.length > 0 ? rowLabels : undefined;
+  }
+  if (cellType === 'dropdown') {
+    return columnOptions.length > 0 ? columnOptions : [...DEFAULT_FLEX_DROPDOWN_CRITERIA_OPTIONS];
+  }
+  if (cellType === 'rating-scale') {
+    return columnOptions.length > 0 ? columnOptions : [...DEFAULT_FLEX_RATING_CRITERIA_OPTIONS];
+  }
+  if (cellType === 'rank-order') {
+    return rowLabels.map((_, index) => String(index + 1));
+  }
+  return undefined;
+}
+
+function expandFlexMatrixToCriteriaQuestions(
+  surveyId: number,
+  question: EditorQuestionForCriteria,
+  fallbackStart: number
+): SurveyQuestion[] {
+  const rowLabels = (question.matrix?.rows ?? [])
+    .map((row) => toPlainLabel(row.label))
+    .filter(Boolean);
+  const columns = question.matrix?.columns ?? [];
+  const items: SurveyQuestion[] = [];
+  let fallback = fallbackStart;
+
+  columns.forEach((column, columnIndex) => {
+    const cellType = column.cellType ?? 'text';
+    const columnLabel = toPlainLabel(column.label) || `Column ${columnIndex + 1}`;
+    const columnOptions = (column.options ?? []).map(toPlainLabel).filter(Boolean);
+    const type = flexMatrixCellCriteriaType(cellType);
+
+    if (COLUMN_LEVEL_FLEX_CELL_TYPES.has(cellType)) {
+      items.push({
+        id: stableNumericId(`${question.id}:col:${columnIndex}`, fallback),
+        surveyId,
+        code: `${question.code}_0_${columnIndex + 1}`,
+        text: columnLabel,
+        type,
+        options: flexMatrixCellCriteriaOptions(cellType, columnOptions, rowLabels),
+      });
+      fallback += 1;
+      return;
+    }
+
+    rowLabels.forEach((rowLabel, rowIndex) => {
+      items.push({
+        id: stableNumericId(`${question.id}:cell:${rowIndex}:${columnIndex}`, fallback),
+        surveyId,
+        code: `${question.code}_${rowIndex + 1}_${columnIndex + 1}`,
+        text: `${rowLabel} — ${columnLabel}`,
+        type,
+        options: flexMatrixCellCriteriaOptions(cellType, columnOptions, rowLabels),
+      });
+      fallback += 1;
+    });
+  });
+
+  return items;
+}
+
 function criteriaTypeFromEditor(question: EditorQuestionForCriteria): SurveyQuestionType {
   const typeId = question.addQuestionTypeId;
-  if (question.kind === 'flex-matrix' || typeId === 'flex-matrix') return 'Flex Matrix';
+  if (isFlexMatrixEditorQuestion(question)) return 'Flex Matrix';
   if (
     question.kind === 'multi-point-scales' ||
     question.kind === 'matrix-multi-select' ||
@@ -291,21 +367,6 @@ function criteriaOptionsFromEditor(
   question: EditorQuestionForCriteria,
   type: SurveyQuestionType
 ): string[] | undefined {
-  if (type === 'Flex Matrix') {
-    const columns = question.matrix?.columns ?? [];
-    const closedEnded = columns.filter((column) =>
-      CLOSED_ENDED_FLEX_COLUMN_TYPES.has(column.cellType ?? 'text')
-    );
-    const labels = closedEnded
-      .map((column) => toPlainLabel(column.label))
-      .filter(Boolean);
-    if (labels.length > 0) return labels;
-    const rowLabels = (question.matrix?.rows ?? [])
-      .map((row) => toPlainLabel(row.label))
-      .filter(Boolean);
-    return rowLabels.length > 0 ? rowLabels : undefined;
-  }
-
   if (type === 'Matrix Uni choice') {
     const columnLabels = (question.matrix?.columns ?? [])
       .map((column) => toPlainLabel(column.label))
@@ -339,19 +400,25 @@ export function toCriteriaQuestionsFromEditor(
   surveyId: number,
   questions: EditorQuestionForCriteria[]
 ): SurveyQuestion[] {
-  return questions.filter(isCriteriaEligibleEditorQuestion).map((question, index) => {
+  return questions.filter(isCriteriaEligibleEditorQuestion).flatMap((question, index) => {
+    if (isFlexMatrixEditorQuestion(question)) {
+      return expandFlexMatrixToCriteriaQuestions(surveyId, question, index + 1);
+    }
+
     const type = criteriaTypeFromEditor(question);
     const matrixRows = (question.matrix?.rows ?? [])
       .map((row) => toPlainLabel(row.label))
       .filter(Boolean);
-    return {
-      id: stableNumericId(question.id, index + 1),
-      surveyId,
-      code: question.code,
-      text: toPlainLabel(question.text) || question.code,
-      type,
-      ...(matrixRows.length > 0 ? { matrixRows } : {}),
-      options: criteriaOptionsFromEditor(question, type),
-    };
+    return [
+      {
+        id: stableNumericId(question.id, index + 1),
+        surveyId,
+        code: question.code,
+        text: toPlainLabel(question.text) || question.code,
+        type,
+        ...(matrixRows.length > 0 ? { matrixRows } : {}),
+        options: criteriaOptionsFromEditor(question, type),
+      },
+    ];
   });
 }

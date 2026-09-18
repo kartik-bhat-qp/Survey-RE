@@ -17,7 +17,7 @@ const STEP_META: Record<QuotaStep, { label: string; icon: string }> = {
   question: { label: 'Question', icon: 'wm-list' },
   dimension: { label: 'Quota #', icon: 'wm-tune' },
   criteria: { label: 'Criteria', icon: 'wm-call-split' },
-  advanced: { label: 'Advanced quota', icon: 'wm-tune' },
+  advanced: { label: 'Multiple criteria handling', icon: 'wm-tune' },
   'quota-group': { label: 'Quota group', icon: 'wm-group' },
   'primary-variables': { label: 'Primary variables', icon: 'wm-list' },
   'secondary-variables': { label: 'Secondary variables', icon: 'wm-grid-on' },

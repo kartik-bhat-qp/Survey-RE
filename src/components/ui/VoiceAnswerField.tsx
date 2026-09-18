@@ -15,10 +15,15 @@ import {
   type VoiceAnswerUploadStatus,
   type VoiceAnswerValue,
 } from '@/data/mock-voice-answer';
+import { DictationWaveform } from '@/components/ui/DictationWaveform';
 import styles from './VoiceAnswerField.module.css';
 
 const WuTooltip = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
+const WuMenu = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
   { ssr: false }
 );
 
@@ -75,6 +80,11 @@ function DictationAnswerField({
   const mockStreamRef = useRef<MockDictationStream | null>(null);
   const listeningRef = useRef(false);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const waveformActivityRef = useRef(0);
+
+  function bumpWaveformActivity(): void {
+    waveformActivityRef.current = Math.min(1, waveformActivityRef.current + 0.45);
+  }
 
   function joinParts(...parts: string[]): string {
     return parts
@@ -149,6 +159,7 @@ function DictationAnswerField({
     listeningRef.current = false;
     clearSilenceTimer();
     stopMockStream();
+    waveformActivityRef.current = 0;
     setListening(false);
     setInterim('');
     setText(committed);
@@ -167,6 +178,23 @@ function DictationAnswerField({
     };
   }, []);
 
+  function startMockStreamForPhrase(phrase: string): void {
+    mockStreamRef.current = startMockDictationStream(
+      phrase,
+      (committed, interimText) => {
+        if (!listeningRef.current) return;
+        bumpWaveformActivity();
+        publishSession(committed, interimText);
+        resetSilenceTimer();
+      },
+      () => {
+        if (!listeningRef.current) return;
+        bumpWaveformActivity();
+        resetSilenceTimer();
+      }
+    );
+  }
+
   function startDictation(): void {
     if (disabled || listeningRef.current) return;
 
@@ -175,21 +203,11 @@ function DictationAnswerField({
     setInterim('');
     listeningRef.current = true;
     setListening(true);
+    bumpWaveformActivity();
     resetSilenceTimer();
 
     const phrase = pickMockDictationPhrase(placeholder);
-    mockStreamRef.current = startMockDictationStream(
-      phrase,
-      (committed, interimText) => {
-        if (!listeningRef.current) return;
-        publishSession(committed, interimText);
-        resetSilenceTimer();
-      },
-      () => {
-        if (!listeningRef.current) return;
-        resetSilenceTimer();
-      }
-    );
+    startMockStreamForPhrase(phrase);
   }
 
   function handleTextChange(next: string): void {
@@ -242,23 +260,57 @@ function DictationAnswerField({
             }
           }}
         />
-        <WuTooltip content="Dictation">
-          <button
-            type="button"
-            className={[styles.micBtn, listening ? styles.micBtnListening : '']
-              .filter(Boolean)
-              .join(' ')}
-            onClick={(e) => {
-              e.stopPropagation();
-              startDictation();
-            }}
-            disabled={disabled || listening}
-            aria-label="Dictation"
-            aria-pressed={listening}
-          >
-            <span className="wm-mic" aria-hidden />
-          </button>
-        </WuTooltip>
+        {listening ? (
+          <div className={styles.dictationControls} role="group" aria-label="Dictation in progress">
+            <DictationWaveform active={listening} activityRef={waveformActivityRef} />
+            <WuMenu
+              Trigger={
+                <button
+                  type="button"
+                  className={styles.dictationLangTrigger}
+                  aria-label="Dictation language"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className={`wm-keyboard-arrow-down ${styles.dictationLangCaret}`} aria-hidden />
+                </button>
+              }
+              align="end"
+            >
+              <div className={styles.dictationLangMenu} role="status" aria-live="polite">
+                <span className={styles.dictationLangComingSoonBadge}>Coming soon</span>
+                <p className={styles.dictationLangComingSoonText}>
+                  Dictation language selection is not available yet.
+                </p>
+              </div>
+            </WuMenu>
+            <button
+              type="button"
+              className={styles.dictationStopBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                endListening();
+              }}
+              aria-label="Stop dictation"
+            >
+              <span className="wm-stop-circle" aria-hidden />
+            </button>
+          </div>
+        ) : (
+          <WuTooltip content="Dictation">
+            <button
+              type="button"
+              className={styles.micBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                startDictation();
+              }}
+              disabled={disabled}
+              aria-label="Dictation"
+            >
+              <span className="wm-mic" aria-hidden />
+            </button>
+          </WuTooltip>
+        )}
       </div>
       <span className={styles.srOnly} aria-live="polite">
         {listening ? 'Dictation active' : ''}

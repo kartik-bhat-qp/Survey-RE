@@ -8,11 +8,6 @@ export interface Dashboard {
   type?: DashboardType;
   surveyId?: number;
   surveyName?: string;
-  aiMethod?: 'learn' | 'prompt';
-  referenceDashboardIds?: number[];
-  themeReferenceDashboardId?: number;
-  prompt?: string;
-  letAiDecide?: boolean;
 }
 
 const PREFIXES = [

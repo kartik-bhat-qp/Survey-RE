@@ -1,0 +1,4 @@
+.canvas {
+  display: block;
+  flex-shrink: 0;
+}

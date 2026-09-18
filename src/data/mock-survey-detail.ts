@@ -21,6 +21,11 @@ import {
   createAudioInputSections,
 } from '@/data/mock-audio-input-survey';
 import {
+  FLEX_LOGIC_SURVEY_ID,
+  FLEX_LOGIC_SURVEY_NAME,
+  createFlexLogicSections,
+} from '@/data/mock-flex-logic-survey';
+import {
   SURVEY_REVIEW_MODE_SURVEY_ID,
   createSurveyReviewModeSections,
 } from '@/data/mock-survey-review-mode';
@@ -946,6 +951,14 @@ export function getSurveyDetail(survey: Survey): SurveyDetail {
       survey,
       editorTitle: getSurveyEditorTitle(survey),
       sections: createAudioInputSections(),
+    };
+  }
+
+  if (survey.id === FLEX_LOGIC_SURVEY_ID) {
+    return {
+      survey,
+      editorTitle: FLEX_LOGIC_SURVEY_NAME,
+      sections: createFlexLogicSections(),
     };
   }
 
