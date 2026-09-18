@@ -1,14 +1,16 @@
 .card {
+  border-radius: var(--dashboard-card-radius, 4px);
+  box-shadow: var(--dashboard-card-shadow, none);
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
   color: #545e6b;
   display: flex;
   flex: 0 0 auto;
   flex-direction: column;
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 400;
+  font-family: var(--dashboard-widget-font-family, 'Fira Sans', sans-serif);
+  font-style: var(--dashboard-widget-font-style, normal);
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 1.0000);
+  font-weight: var(--dashboard-widget-font-weight, 400);
   line-height: 24px;
   min-width: 0;
   overflow: hidden;
@@ -35,10 +37,10 @@
 }
 
 .cardTitle {
-  color: #1b3380;
+  color: var(--dashboard-accent, #1b3380);
   flex: 1 1 20rem;
-  font-size: 18px;
-  font-weight: 500;
+  font-size: var(--dashboard-widget-title-size, 18px);
+  font-weight: var(--dashboard-widget-font-weight, 500);
   line-height: 32px;
   margin: 0;
   min-width: 0;
@@ -61,8 +63,8 @@
   box-sizing: border-box;
   color: #545e6b;
   flex: 1;
-  font-size: 14px;
-  font-weight: 400;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 1.0000);
+  font-weight: var(--dashboard-widget-font-weight, 400);
   height: clamp(24rem, 52vh, 34rem);
   line-height: 24px;
   min-height: 0;
@@ -99,8 +101,8 @@
 
 .sectionTitle {
   color: #545e6b;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 1.0000);
+  font-weight: var(--dashboard-widget-font-weight, 500);
   letter-spacing: 0.01em;
   line-height: 24px;
   margin: 0 0 0.75rem;
@@ -130,7 +132,7 @@
 }
 
 .listLabel {
-  font-weight: 500;
+  font-weight: var(--dashboard-widget-font-weight, 500);
 }
 
 @media (min-width: 640px) {
@@ -139,7 +141,7 @@
   }
 
   .reportBody {
-    font-size: 14px;
+    font-size: calc(var(--dashboard-widget-body-size, 14px) * 1.0000);
     padding: 2rem 2rem 2.5rem;
   }
 }

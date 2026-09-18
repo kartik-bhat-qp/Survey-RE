@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { DEFAULT_DASHBOARD_DESIGN, getTextAiDashboardDesign, saveTextAiDashboardDesign, type DashboardDesign } from '@/data/dashboard-design';
 import { useRouter } from 'next/navigation';
 import { TextAiAddWidgetModal } from '@/components/text-ai/TextAiAddWidgetModal';
 import { TextAiDashboardCanvas } from '@/components/text-ai/TextAiDashboardCanvas';
@@ -61,6 +62,17 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     () => dashboard?.segmentFilters ?? createDefaultSegmentFilterState()
   );
   const [processedResponseIds, setProcessedResponseIds] = useState<string[]>(() => dashboard?.processedResponseIds ?? []);
+  const [design, setDesign] = useState<DashboardDesign>(DEFAULT_DASHBOARD_DESIGN);
+  useEffect(() => {
+    // Restore browser-only persisted settings after hydration, keeping SSR deterministic.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDesign(getTextAiDashboardDesign(numericId));
+  }, [numericId]);
+  function saveDesign(next: DashboardDesign): boolean {
+    const saved = saveTextAiDashboardDesign(numericId, next);
+    if (saved) setDesign(next);
+    return saved;
+  }
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
   const [addedTopicSegmentWidgets, setAddedTopicSegmentWidgets] = useState<
@@ -209,9 +221,12 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         addedKpiWidgets={addedKpiWidgets}
         addedSubthemeTrendWidgets={addedSubthemeTrendWidgets}
         themePreferences={themePreferences}
+        design={design}
       />
       <TextAiDashboardSettingsModal
         dashboard={currentDashboard}
+        design={design}
+        onSaveDesign={saveDesign}
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
       />

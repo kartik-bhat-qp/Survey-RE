@@ -1,5 +1,5 @@
 .canvas {
-  background: #f5f5f5;
+  background: var(--dashboard-canvas, #f5f5f5);
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -125,4 +125,11 @@
   .canvas {
     padding: 1rem 1.25rem 1.5rem;
   }
+}
+
+/* Global headings and WickUI tables declare their own fonts. Scope the design
+   override to widget text, leaving icon glyphs and portaled controls intact. */
+.canvas :is(.widgetSurface, .mobileWidget) :is(h2, h3, p, li, table, th, td, input, button, div, span, text, strong, small, a):not([class*='wm-']):not([class*='wc-']) {
+  font-family: var(--dashboard-widget-font-family);
+  font-style: var(--dashboard-widget-font-style);
 }

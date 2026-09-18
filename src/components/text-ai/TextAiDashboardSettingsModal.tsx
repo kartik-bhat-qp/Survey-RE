@@ -15,6 +15,8 @@ import {
   type TextAiEmergingValidityOption,
   type TextAiThemePreferences,
 } from '@/data/text-ai-theme-preferences';
+import { DashboardDesignSettingsTab } from '@/components/dashboards/DashboardDesignSettingsTab';
+import { DESIGN_THEME_OPTIONS, DESIGN_PALETTE_OPTIONS, DESIGN_SENTIMENT_OPTIONS, DEFAULT_DASHBOARD_DESIGN, type DashboardDesign } from '@/data/dashboard-design';
 import styles from './TextAiDashboardSettingsModal.module.css';
 
 const WuToggle = dynamic(
@@ -26,7 +28,7 @@ const WuSelect = dynamic(
   { ssr: false }
 );
 
-type SettingsTab = 'preferences' | 'data-slicers' | 'filters' | 'logs';
+type SettingsTab = 'design' | 'preferences' | 'data-slicers' | 'filters' | 'logs';
 
 interface TextAiDataSlicer {
   id: number;
@@ -37,6 +39,8 @@ interface TextAiDataSlicer {
 
 interface TextAiDashboardSettingsModalProps {
   dashboard: TextAiDashboard;
+  design: DashboardDesign;
+  onSaveDesign: (design: DashboardDesign) => boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -58,9 +62,19 @@ const INITIAL_DATA_SLICERS: TextAiDataSlicer[] = [
 
 export function TextAiDashboardSettingsModal({
   dashboard,
+  design,
+  onSaveDesign,
   open,
   onOpenChange,
 }: TextAiDashboardSettingsModalProps) {
+  const [draftDesign, setDraftDesign] = useState(design);
+  const [designError, setDesignError] = useState('');
+  const [wasOpen, setWasOpen] = useState(open);
+  // A fresh design draft per opening, without resetting other settings tabs.
+  if (wasOpen !== open) {
+    setWasOpen(open);
+    if (open) { setDraftDesign(design); setDesignError(''); }
+  }
   const { showToast } = useWuShowToast();
   const [activeTab, setActiveTab] = useState<SettingsTab>('preferences');
   const [search, setSearch] = useState('');
@@ -202,9 +216,29 @@ export function TextAiDashboardSettingsModal({
             >
               Logs
             </button>
+            <button type="button" id="design-tab" role="tab" aria-selected={activeTab === 'design'}
+              aria-controls="design-panel" className={activeTab === 'design' ? styles.activeTab : undefined}
+              onClick={() => setActiveTab('design')}>Design</button>
           </div>
 
-          {activeTab === 'preferences' ? (
+          {activeTab === 'design' ? (
+            <div id="design-panel" role="tabpanel" aria-labelledby="design-tab" className={`${styles.tabPanel} ${styles.designPanel}`}>
+              <DashboardDesignSettingsTab
+                designTheme={DESIGN_THEME_OPTIONS.find((option) => option.value === draftDesign.theme)!}
+                designPalette={DESIGN_PALETTE_OPTIONS.find((option) => option.value === draftDesign.palette)!}
+                designSentiment={DESIGN_SENTIMENT_OPTIONS.find((option) => option.value === draftDesign.sentiment)!}
+                designFontSize={draftDesign.typography.fontSize}
+                designFontFamily={draftDesign.typography.fontFamily}
+                designFontStyle={draftDesign.typography.fontStyle}
+                onDesignThemeChange={(option) => setDraftDesign((current) => ({ ...current, theme: option.value }))}
+                onDesignPaletteChange={(option) => setDraftDesign((current) => ({ ...current, palette: option.value }))}
+                onDesignSentimentChange={(option) => setDraftDesign((current) => ({ ...current, sentiment: option.value }))}
+                onDesignFontSizeChange={(option) => setDraftDesign((current) => ({ ...current, typography: { ...current.typography, fontSize: option } }))}
+                onDesignFontFamilyChange={(option) => setDraftDesign((current) => ({ ...current, typography: { ...current.typography, fontFamily: option } }))}
+                onDesignFontStyleChange={(option) => setDraftDesign((current) => ({ ...current, typography: { ...current.typography, fontStyle: option } }))}
+              />
+            </div>
+          ) : activeTab === 'preferences' ? (
             <div
               id="preferences-panel"
               role="tabpanel"
@@ -497,6 +531,18 @@ export function TextAiDashboardSettingsModal({
             </div>
           )}
         </div>
+        {activeTab === 'design' && (
+          <footer className={styles.designFooter}>
+            <button type="button" className={styles.secondaryButton} onClick={() => setDraftDesign(DEFAULT_DASHBOARD_DESIGN)}>Reset to default</button>
+            {designError && <span role="alert">{designError}</span>}
+            <button type="button" className={styles.secondaryButton} onClick={() => onOpenChange(false)}>Cancel</button>
+            <button type="button" className={styles.primaryButton} onClick={() => {
+              if (!onSaveDesign(draftDesign)) { setDesignError('Settings could not be saved. Check browser storage and try again.'); return; }
+              showToast({ message: 'Dashboard design settings saved successfully', variant: 'success' });
+              onOpenChange(false);
+            }}>Save</button>
+          </footer>
+        )}
       </section>
     </div>
   );

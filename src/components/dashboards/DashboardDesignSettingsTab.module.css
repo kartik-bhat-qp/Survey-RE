@@ -4,7 +4,7 @@
   display: grid;
   font-family: 'Fira Sans', sans-serif;
   gap: 24px;
-  grid-template-columns: minmax(260px, 340px) minmax(750px, 1.55fr);
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
   min-height: 500px;
   overflow: visible;
 }
@@ -12,7 +12,7 @@
 .controls {
   min-height: 0;
   overflow: visible;
-  padding: 12px 24px 128px 0;
+  padding: 12px 16px 24px 0;
 }
 
 .field {
@@ -99,7 +99,8 @@
   border: 10px solid #303838;
   border-radius: 16px;
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08);
-  height: 380px;
+  min-height: 380px;
+  height: auto;
   outline: 3px solid #303838;
   overflow: hidden;
   padding: 18px 22px;
@@ -127,8 +128,8 @@
 .previewGrid {
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(0, 1fr) 240px;
-  height: 272px;
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 0.7fr);
+  min-height: 272px;
   margin-top: 16px;
 }
 
@@ -149,7 +150,7 @@
 }
 
 .barPreview {
-  align-items: end;
+  align-items: start;
   display: grid;
   gap: 20px;
   grid-template-columns: 132px minmax(0, 1fr);
@@ -216,7 +217,7 @@
 }
 
 .smallCard {
-  height: 118px;
+  min-height: 118px;
 }
 
 .chartCenter {
@@ -259,6 +260,17 @@
   }
 
   .previewWrap {
-    min-height: 540px;
+    min-height: 380px;
   }
 }
+
+@media (max-width: 600px) {
+  .fontGrid, .previewGrid { grid-template-columns: 1fr; }
+  .previewWrap { padding: 8px; }
+  .device { padding: 12px; border-width: 6px; }
+  .previewCard { padding: 10px; }
+  .barPreview { grid-template-columns: 100px minmax(0, 1fr); gap: 8px; }
+  .controls { padding-right: 0; }
+}
+
+.device :is(div, span):not([class*='wm-']):not([class*='wc-']) { font-family: inherit; font-style: inherit; }

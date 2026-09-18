@@ -1,11 +1,13 @@
 .card {
+  border-radius: var(--dashboard-card-radius, 4px);
+  box-shadow: var(--dashboard-card-shadow, none);
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
   color: #545e6b;
   display: flex;
   flex-direction: column;
-  font-family: 'Fira Sans', sans-serif;
+  font-family: var(--dashboard-widget-font-family, 'Fira Sans', sans-serif);
+  font-style: var(--dashboard-widget-font-style, normal);
   height: 100%;
   min-width: 0;
   overflow: hidden;
@@ -28,9 +30,9 @@
 }
 
 .cardTitle {
-  color: #1b3380;
-  font-size: 18px;
-  font-weight: 500;
+  color: var(--dashboard-accent, #1b3380);
+  font-size: var(--dashboard-widget-title-size, 18px);
+  font-weight: var(--dashboard-widget-font-weight, 500);
   line-height: 24px;
   margin: 0;
   overflow: hidden;
@@ -41,7 +43,7 @@
 .widgetLabel {
   color: #7b8491;
   display: block;
-  font-size: 11px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7857);
   line-height: 16px;
 }
 
@@ -69,7 +71,7 @@
 
 .axisLabel {
   fill: #8b95a1;
-  font-size: 10px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7143);
 }
 
 .gridLine {
@@ -141,20 +143,20 @@
 
 .legendLabel {
   color: #3f4b5a;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.8571);
+  font-weight: var(--dashboard-widget-font-weight, 600);
   line-height: 16px;
 }
 
 .legendParent {
   color: #8b95a1;
-  font-size: 11px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7857);
   line-height: 14px;
 }
 
 .emptyState {
   color: #7b8491;
-  font-size: 13px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.9286);
   padding: 32px 0;
   text-align: center;
 }

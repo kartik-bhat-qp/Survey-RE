@@ -36,6 +36,8 @@ import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import type { TextAiThemePreferences } from '@/data/text-ai-theme-preferences';
 import type { TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
 import type { TextAiSubthemeTrendWidgetInstance } from '@/data/mock-text-ai-subtheme-trend';
+import { DEFAULT_DASHBOARD_DESIGN, getDashboardDesignColorVars, type DashboardDesign } from '@/data/dashboard-design';
+import { getDashboardTypographyCssVars } from '@/components/dashboards/DashboardDesignSettingsTab';
 import styles from './TextAiDashboardCanvas.module.css';
 
 import 'react-grid-layout/css/styles.css';
@@ -66,6 +68,7 @@ interface TextAiCanvasWidget {
 
 interface TextAiDashboardCanvasProps {
   dashboardId: number;
+  design?: DashboardDesign;
   selectedQuestion: TextAiDashboardQuestion;
   questionIndex: number;
   /** Widgets added via Add widget (e.g. comparative chart). Shown above default widgets. */
@@ -322,6 +325,7 @@ function filterAnalysisWidgetsForDashboard(
 
 export function TextAiDashboardCanvas({
   dashboardId,
+  design = DEFAULT_DASHBOARD_DESIGN,
   selectedQuestion,
   questionIndex,
   addedTopicSegmentWidgets = [],
@@ -329,6 +333,7 @@ export function TextAiDashboardCanvas({
   addedSubthemeTrendWidgets = [],
   themePreferences,
 }: TextAiDashboardCanvasProps) {
+  const designStyle = { ...getDashboardTypographyCssVars(design.typography), ...getDashboardDesignColorVars(design) };
   const isMobile = useIsMobile();
   const [isPositioning, setIsPositioning] = useState(false);
   const [removedWidgetIds, setRemovedWidgetIds] = useState<Set<string>>(() => new Set());
@@ -564,7 +569,7 @@ export function TextAiDashboardCanvas({
 
   if (isMobile) {
     return (
-      <div className={styles.canvas}>
+      <div className={styles.canvas} style={designStyle} data-dashboard-theme={design.theme}>
         <div className={styles.mobileWidgetStack}>
           {canvasWidgets.map((widget) => (
             <div className={styles.mobileWidget} key={widget.id}>
@@ -579,6 +584,8 @@ export function TextAiDashboardCanvas({
   return (
     <div
       className={`${styles.canvas} ${isPositioning ? styles.canvasPositioning : ''}`}
+      style={designStyle}
+      data-dashboard-theme={design.theme}
     >
       <div className={styles.layoutStage}>
         <div className={styles.gridGuide} aria-hidden>

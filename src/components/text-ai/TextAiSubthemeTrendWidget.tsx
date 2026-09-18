@@ -180,7 +180,7 @@ export function TextAiSubthemeTrendWidget({
                           muted ? styles.seriesLineMuted : ''
                         }`}
                         d={linePath(series, maxValue)}
-                        stroke={series.color}
+                        stroke={`var(--dashboard-series-${TEXT_AI_SUBTHEME_TREND_SERIES.findIndex((item) => item.id === series.id) % 10}, ${series.color})`}
                       />
                       {series.values.map((value, index) => {
                         const point = pointPosition(value, index, maxValue);
@@ -191,7 +191,7 @@ export function TextAiSubthemeTrendWidget({
                             cx={point.x}
                             cy={point.y}
                             r={hoveredId === series.id ? 3.5 : 2.5}
-                            fill={series.color}
+                            fill={`var(--dashboard-series-${TEXT_AI_SUBTHEME_TREND_SERIES.findIndex((item) => item.id === series.id) % 10}, ${series.color})`}
                             opacity={muted ? 0.18 : 1}
                           >
                             <title>
@@ -224,7 +224,7 @@ export function TextAiSubthemeTrendWidget({
                 >
                   <span
                     className={styles.swatch}
-                    style={{ background: series.color }}
+                    style={{ background: `var(--dashboard-series-${TEXT_AI_SUBTHEME_TREND_SERIES.findIndex((item) => item.id === series.id) % 10}, ${series.color})` }}
                     aria-hidden
                   />
                   <span className={styles.legendCopy}>

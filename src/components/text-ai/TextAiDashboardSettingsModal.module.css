@@ -753,3 +753,11 @@
     grid-column: auto;
   }
 }
+
+.designFooter { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 24px; border-top: 1px solid #e5e7eb; }
+.designFooter > :first-child { margin-right: auto; }
+.designFooter [role='alert'] { color: #b42318; }
+
+.designPanel { overflow: auto; }
+.designFooter { flex-shrink: 0; background: #fff; position: relative; }
+.tabs { overflow-x: auto; }

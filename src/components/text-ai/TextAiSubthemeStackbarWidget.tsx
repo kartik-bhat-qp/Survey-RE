@@ -91,7 +91,8 @@ function SentimentStackbar({
               bucket.key === 'neutral' ? styles.neutralSegment : ''
             }`}
             style={{
-              backgroundColor: bucket.color,
+              backgroundColor: `var(--dashboard-sentiment-${bucket.key}, ${bucket.color})`,
+              color: `var(--dashboard-sentiment-${bucket.key}-text, #111111)`,
               width: `${(value / visibleTotal) * 100}%`,
             }}
             title={`${bucket.label}: ${value}%`}
@@ -313,7 +314,7 @@ export function TextAiSubthemeStackbarWidget({
             >
               <span
                 className={styles.legendSwatch}
-                style={{ backgroundColor: bucket.color }}
+                style={{ backgroundColor: `var(--dashboard-sentiment-${bucket.key}, ${bucket.color})` }}
                 aria-hidden
               />
               {bucket.label}
