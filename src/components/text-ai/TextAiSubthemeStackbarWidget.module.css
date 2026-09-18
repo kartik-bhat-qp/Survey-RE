@@ -1,13 +1,15 @@
 .card {
+  border-radius: var(--dashboard-card-radius, 4px);
+  box-shadow: var(--dashboard-card-shadow, none);
   background: #fff;
   border: 1px solid #d5d8dc;
-  border-radius: 8px;
   color: #545e6b;
   display: flex;
   flex-direction: column;
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 400;
+  font-family: var(--dashboard-widget-font-family, 'Fira Sans', sans-serif);
+  font-style: var(--dashboard-widget-font-style, normal);
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 1.0000);
+  font-weight: var(--dashboard-widget-font-weight, 400);
   height: 100%;
   line-height: 24px;
   min-width: 0;
@@ -26,10 +28,10 @@
 }
 
 .cardTitle {
-  color: #1b3380;
+  color: var(--dashboard-accent, #1b3380);
   flex: 1;
-  font-size: 18px;
-  font-weight: 500;
+  font-size: var(--dashboard-widget-title-size, 18px);
+  font-weight: var(--dashboard-widget-font-weight, 500);
   line-height: 32px;
   margin: 0;
   min-width: 0;
@@ -47,12 +49,12 @@
   color: #545e6b;
   display: grid;
   flex: 0 0 auto;
-  font-size: 13px;
-  font-weight: 500;
-  grid-template-columns: minmax(20rem, 36%) minmax(32rem, 64%);
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.9286);
+  font-weight: var(--dashboard-widget-font-weight, 500);
+  grid-template-columns: minmax(100px, 38%) minmax(0, 1fr);
   line-height: 24px;
   margin: 12px 16px 0;
-  min-width: 54rem;
+  min-width: 0;
   padding: 5px 8px;
 }
 
@@ -67,14 +69,14 @@
 
 .themeGroup {
   border-bottom: 1px solid #d8dadd;
-  min-width: 54rem;
+  min-width: 0;
 }
 
 .themeRow {
   align-items: center;
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(20rem, 36%) minmax(32rem, 64%);
+  grid-template-columns: minmax(100px, 38%) minmax(0, 1fr);
   min-height: 40px;
   padding: 4px 12px 4px 8px;
 }
@@ -87,8 +89,8 @@
   cursor: pointer;
   display: inline-flex;
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 1.0000);
+  font-weight: var(--dashboard-widget-font-weight, 500);
   gap: 10px;
   line-height: 24px;
   min-width: 0;
@@ -98,11 +100,11 @@
 
 .themeToggle > :global([class*='wm-keyboard-arrow']) {
   flex: 0 0 auto;
-  font-size: 16px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 1.1429);
 }
 
 .themeToggle:hover {
-  color: #1b3380;
+  color: var(--dashboard-accent, #1b3380);
 }
 
 .themeToggle:focus-visible {
@@ -127,7 +129,7 @@
   align-items: center;
   background: #f1f2f3;
   color: #7b8490;
-  font-size: 12px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.8571);
   justify-content: center;
 }
 
@@ -136,7 +138,7 @@
   color: #fff;
   display: flex;
   flex: 0 0 auto;
-  font-size: 12px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.8571);
   justify-content: center;
   line-height: 1;
   min-width: 0;
@@ -160,7 +162,7 @@
   align-items: center;
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(20rem, 36%) minmax(32rem, 64%);
+  grid-template-columns: minmax(100px, 38%) minmax(0, 1fr);
   min-height: 36px;
 }
 
@@ -168,7 +170,7 @@
   align-items: center;
   color: #596576;
   display: flex;
-  font-size: 14px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 1.0000);
   gap: 8px;
   line-height: 20px;
   padding-left: 42px;
@@ -198,7 +200,7 @@
   cursor: pointer;
   display: inline-flex;
   font-family: inherit;
-  font-size: 12px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.8571);
   gap: 6px;
   line-height: 20px;
   padding: 2px;
@@ -206,7 +208,7 @@
 }
 
 .legendItem:hover {
-  color: #1b3380;
+  color: var(--dashboard-accent, #1b3380);
 }
 
 .legendItem:focus-visible {

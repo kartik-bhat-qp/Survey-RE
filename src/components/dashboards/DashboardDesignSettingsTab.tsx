@@ -1,6 +1,8 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { DesignColorPicker } from './DesignColorPicker';
 import dynamic from 'next/dynamic';
 import styles from './DashboardDesignSettingsTab.module.css';
 
@@ -9,92 +11,47 @@ const WuSelect = dynamic(
   { ssr: false }
 );
 
-export type DesignSelectOption = {
-  value: string;
-  label: string;
-};
-
-export type DesignTypographyOptions = {
-  fontSize: DesignSelectOption;
-  fontStyle: DesignSelectOption;
-  fontFamily: DesignSelectOption;
-};
-
-export const DESIGN_THEME_OPTIONS: DesignSelectOption[] = [
-  { value: 'default', label: 'Default' },
-  { value: 'modern', label: 'Modern' },
-  { value: 'classic', label: 'Classic' },
-];
-
-export const DESIGN_PALETTE_OPTIONS: DesignSelectOption[] = [
-  { value: 'categorical', label: 'Categorical' },
-  { value: 'sequential', label: 'Sequential' },
-  { value: 'diverging', label: 'Diverging' },
-];
-
-export const DESIGN_SENTIMENT_OPTIONS: DesignSelectOption[] = [
-  { value: 'default', label: 'Default' },
-  { value: 'soft', label: 'Soft' },
-  { value: 'high-contrast', label: 'High contrast' },
-];
-
-export const DESIGN_FONT_SIZE_OPTIONS: DesignSelectOption[] = [
-  { value: 'extra-small', label: 'Extra small' },
-  { value: 'small', label: 'Small' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'large', label: 'Large' },
-  { value: 'extra-large', label: 'Extra large' },
-];
-
-export const DESIGN_FONT_STYLE_OPTIONS: DesignSelectOption[] = [
-  { value: 'regular', label: 'Regular' },
-  { value: 'bold', label: 'Bold' },
-  { value: 'italic', label: 'Italic' },
-];
-
-export const DESIGN_FONT_FAMILY_OPTIONS: DesignSelectOption[] = [
-  { value: '"Fira Sans Dashboard", Arial, sans-serif', label: 'Fira Sans' },
-  { value: 'Inter, "Segoe UI", Roboto, Arial, sans-serif', label: 'Inter' },
-  { value: 'Roboto, Arial, sans-serif', label: 'Roboto' },
-  { value: '"Segoe UI", Arial, sans-serif', label: 'Segoe UI' },
-  { value: '"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif', label: 'IBM Plex Sans' },
-  { value: 'Arial, sans-serif', label: 'Arial' },
-  { value: 'Georgia, serif', label: 'Georgia' },
-];
-
-export const DEFAULT_DESIGN_TYPOGRAPHY: DesignTypographyOptions = {
-  fontSize: DESIGN_FONT_SIZE_OPTIONS[1],
-  fontStyle: DESIGN_FONT_STYLE_OPTIONS[0],
-  fontFamily: DESIGN_FONT_FAMILY_OPTIONS[0],
-};
-
-const DESIGN_PALETTE_COLORS = [
-  '#4f63a2',
-  '#6680b5',
-  '#3ea2b5',
-  '#3fb6a3',
-  '#8ed09a',
-  '#bbc65a',
-  '#e6963d',
-  '#d7654f',
-  '#9d3c31',
-  '#9d637f',
-];
-
-const DESIGN_SENTIMENT_COLORS = ['#ff5470', '#ff967e', '#f2d46f', '#99d493', '#3dc481'];
+import {
+  type DesignColorSettings,
+  DEFAULT_DASHBOARD_DESIGN,
+  DESIGN_PALETTES,
+  type DesignSelectOption,
+  type DesignTypographyOptions,
+  DESIGN_THEME_OPTIONS,
+  DESIGN_PALETTE_OPTIONS,
+  DESIGN_SENTIMENT_OPTIONS,
+  DESIGN_FONT_SIZE_OPTIONS,
+  DESIGN_FONT_FAMILY_OPTIONS,
+  getDashboardDesignColors,
+  getReadableDesignColor,
+} from '@/data/dashboard-design';
+export {
+  type DesignSelectOption,
+  type DesignTypographyOptions,
+  DESIGN_THEME_OPTIONS,
+  DESIGN_PALETTE_OPTIONS,
+  DESIGN_SENTIMENT_OPTIONS,
+  DESIGN_FONT_SIZE_OPTIONS,
+  DESIGN_FONT_STYLE_OPTIONS,
+  DESIGN_FONT_FAMILY_OPTIONS,
+  DEFAULT_DESIGN_TYPOGRAPHY
+} from '@/data/dashboard-design';
 
 const DESIGN_PREVIEW_BARS = [
-  { label: 'Very Satisfied', value: '30%', width: 100, color: '#52649d', textColor: '#ffffff' },
-  { label: 'Satisfied', value: '20%', width: 67, color: '#6684b8', textColor: '#ffffff' },
-  { label: 'Neutral', value: '20%', width: 67, color: '#45a5b8', textColor: '#ffffff' },
-  { label: 'Unsatisfied', value: '15%', width: 50, color: '#45b7a3', textColor: '#ffffff' },
-  { label: 'Very Unsatisfied', value: '20%', width: 67, color: '#9bd79b', textColor: '#253449' },
+  { label: 'Very Satisfied', value: '30%', width: 100 },
+  { label: 'Satisfied', value: '20%', width: 67 },
+  { label: 'Neutral', value: '20%', width: 67 },
+  { label: 'Unsatisfied', value: '15%', width: 50 },
+  { label: 'Very Unsatisfied', value: '20%', width: 67 },
 ];
 
 type DashboardTypographyScale = 'preview';
 type DashboardTypographyRole = 'title' | 'body' | 'metric';
 
 interface DashboardDesignSettingsTabProps {
+  themeOptions?: DesignSelectOption[];
+  colorSettings?: DesignColorSettings;
+  onColorSettingsChange?: (settings: DesignColorSettings) => void;
   designTheme: DesignSelectOption;
   designPalette: DesignSelectOption;
   designSentiment: DesignSelectOption;
@@ -172,7 +129,7 @@ function getDashboardTextStyle(
   const metrics = getDashboardTypographyMetrics(typography, scale);
 
   return {
-    fontSize: metrics.sizes[role],
+    fontSize: `${parseFloat(metrics.sizes[role]) * (role === 'title' ? 0.75 : 0.93)}px`,
     fontFamily: metrics.fontFamily,
     fontStyle: metrics.fontStyle,
     fontWeight: metrics.fontWeight,
@@ -204,6 +161,9 @@ export function getNextDesignFontSizeOption(
 }
 
 export function DashboardDesignSettingsTab({
+  themeOptions = DESIGN_THEME_OPTIONS,
+  colorSettings,
+  onColorSettingsChange,
   designTheme,
   designPalette,
   designSentiment,
@@ -216,6 +176,12 @@ export function DashboardDesignSettingsTab({
   onDesignFontSizeChange,
   onDesignFontFamilyChange,
 }: DashboardDesignSettingsTabProps) {
+  const [localColors, setLocalColors] = useState<DesignColorSettings>(DEFAULT_DASHBOARD_DESIGN);
+  const settings = colorSettings ?? localColors;
+  const changeColors = (patch: Partial<DesignColorSettings>) => {
+    const next = { ...settings, ...patch }; setLocalColors(next); onColorSettingsChange?.(next);
+  };
+  const colors = getDashboardDesignColors({ ...settings, theme: designTheme.value, palette: designPalette.value, sentiment: designSentiment.value });
   const draftTypography = {
     fontSize: designFontSize,
     fontStyle: designFontStyle,
@@ -231,9 +197,10 @@ export function DashboardDesignSettingsTab({
         <div className={styles.field}>
           <label className={styles.fieldLabel}>Theme</label>
           <WuSelect
-            data={DESIGN_THEME_OPTIONS}
+            data={themeOptions}
             accessorKey={{ value: 'value', label: 'label' }}
             value={designTheme}
+            aria-label="Theme"
             onSelect={(option) =>
               handleSelect(option as DesignSelectOption | DesignSelectOption[], onDesignThemeChange)
             }
@@ -244,31 +211,28 @@ export function DashboardDesignSettingsTab({
 
         <div className={styles.themeColorRow}>
           <span className={styles.fieldLabel}>Theme color</span>
-          <span className={styles.themeSwatch} aria-label="Theme color swatch" />
+          <DesignColorPicker value={colors.accent} label="Theme color" onChange={themeColor => changeColors({ themeColor })} />
         </div>
 
         <div className={styles.field}>
           <label className={styles.fieldLabel}>Color palette</label>
-          <WuSelect
-            data={DESIGN_PALETTE_OPTIONS}
-            accessorKey={{ value: 'value', label: 'label' }}
-            value={designPalette}
-            onSelect={(option) =>
-              handleSelect(option as DesignSelectOption | DesignSelectOption[], onDesignPaletteChange)
-            }
-            variant="outlined"
-            className={styles.select}
-          />
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger className={styles.paletteTrigger} aria-label="Color palette">{designPalette.label}<span aria-hidden>▾</span></DropdownMenu.Trigger>
+            <DropdownMenu.Portal><DropdownMenu.Content className={styles.paletteMenu} sideOffset={4} align="start">
+              <DropdownMenu.RadioGroup value={designPalette.value} onValueChange={value => onDesignPaletteChange(DESIGN_PALETTE_OPTIONS.find(option => option.value === value)!)}>
+                {DESIGN_PALETTE_OPTIONS.map(option => <DropdownMenu.RadioItem className={styles.paletteOption} value={option.value} key={option.value}>
+                  <span>{option.label}</span><span className={styles.miniSwatches} aria-hidden>{(DESIGN_PALETTES[option.value] ?? settings.customPalette).filter((_, index) => index % 2 === 0).slice(0, 9).map((color, index) => <i key={index} style={{ background: color }} />)}</span>
+                </DropdownMenu.RadioItem>)}
+              </DropdownMenu.RadioGroup>
+            </DropdownMenu.Content></DropdownMenu.Portal>
+          </DropdownMenu.Root>
           <div className={styles.swatches}>
-            {DESIGN_PALETTE_COLORS.map((color) => (
-              <span
-                key={color}
-                className={styles.swatch}
-                style={{ backgroundColor: color }}
-                aria-label={`Palette color ${color}`}
-              />
-            ))}
+            {colors.palette.map((color, index) => designPalette.value === 'custom' ?
+              <DesignColorPicker key={index} value={color} label={`Palette color ${index + 1}`} onChange={value => changeColors({ customPalette: settings.customPalette.map((entry, i) => i === index ? value : entry) })} /> :
+              <span key={index} className={styles.swatch} style={{ backgroundColor: color }} aria-label={`Palette color ${color}`} />)}
           </div>
+          {designPalette.value === 'custom' && <button type="button" className={styles.addColor} aria-label="Add palette color" disabled={settings.customPalette.length >= 64} onClick={() => changeColors({ customPalette: [...settings.customPalette, '#000000'] })}>+</button>}
+
         </div>
 
         <div className={styles.field}>
@@ -277,6 +241,7 @@ export function DashboardDesignSettingsTab({
             data={DESIGN_SENTIMENT_OPTIONS}
             accessorKey={{ value: 'value', label: 'label' }}
             value={designSentiment}
+            aria-label="Sentiment colors"
             onSelect={(option) =>
               handleSelect(option as DesignSelectOption | DesignSelectOption[], onDesignSentimentChange)
             }
@@ -284,40 +249,20 @@ export function DashboardDesignSettingsTab({
             className={`${styles.select} ${styles.sentimentSelect}`}
           />
           <div className={styles.swatches}>
-            {DESIGN_SENTIMENT_COLORS.map((color) => (
-              <span
-                key={color}
-                className={styles.swatch}
-                style={{ backgroundColor: color }}
-                aria-label={`Sentiment color ${color}`}
-              />
-            ))}
+            {colors.sentiment.map((color, index) => designSentiment.value === 'custom' ?
+              <DesignColorPicker key={index} value={color} label={`Sentiment color ${index + 1}`} onChange={value => changeColors({ customSentiment: settings.customSentiment.map((entry, i) => i === index ? value : entry) })} /> :
+              <span key={index} className={styles.swatch} style={{ backgroundColor: color }} aria-label={`Sentiment color ${color}`} />)}
           </div>
         </div>
 
         <div className={styles.fontGrid}>
-          <div>
-            <label className={styles.fieldLabel}>Font family</label>
-            <WuSelect
-              data={DESIGN_FONT_FAMILY_OPTIONS}
-              accessorKey={{ value: 'value', label: 'label' }}
-              value={designFontFamily}
-              onSelect={(option) =>
-                handleSelect(
-                  option as DesignSelectOption | DesignSelectOption[],
-                  onDesignFontFamilyChange
-                )
-              }
-              variant="outlined"
-              className={styles.select}
-            />
-          </div>
           <div>
             <label className={styles.fieldLabel}>Font size</label>
             <WuSelect
               data={DESIGN_FONT_SIZE_OPTIONS}
               accessorKey={{ value: 'value', label: 'label' }}
               value={designFontSize}
+            aria-label="Font size"
               onSelect={(option) =>
                 handleSelect(
                   option as DesignSelectOption | DesignSelectOption[],
@@ -328,25 +273,38 @@ export function DashboardDesignSettingsTab({
               className={styles.select}
             />
           </div>
+          <div>
+            <label className={styles.fieldLabel}>Font family</label>
+            <WuSelect
+              data={DESIGN_FONT_FAMILY_OPTIONS}
+              accessorKey={{ value: 'value', label: 'label' }}
+              value={designFontFamily}
+            aria-label="Font family"
+              onSelect={(option) =>
+                handleSelect(
+                  option as DesignSelectOption | DesignSelectOption[],
+                  onDesignFontFamilyChange
+                )
+              }
+              variant="outlined"
+              className={styles.select}
+            />
+          </div>
         </div>
-
-        <p className={styles.hint}>
-          Enable Accessibility shortcuts in General settings to adjust font size and other dashboard settings.
-        </p>
       </div>
 
       <div className={styles.previewWrap}>
-        <div className={styles.device} style={previewTypographyStyle}>
+        <div className={styles.device} style={{ ...previewTypographyStyle, background: colors.canvas }}>
           <span className={styles.notch} aria-hidden />
-          <div className={styles.previewHeader} style={previewTitleStyle}>
+          <div className={styles.previewHeader} style={{ ...previewTitleStyle, fontWeight: 600 }}>
             Dashboard name
           </div>
 
           <div className={styles.previewGrid}>
             <div className={styles.previewCard}>
-              <div className={styles.previewCardTitle}>
+              <div className={styles.previewCardTitle} style={{ color: colors.accent }}>
                 <span style={previewTitleStyle}>First widget name</span>
-                <span className="wm-lightbulb text-[24px] text-[#566173]" aria-hidden />
+                <span className="wm-lightbulb text-[18px] text-[#566173]" aria-hidden />
               </div>
               <div className={styles.barPreview}>
                 <div className={styles.barLabels} style={previewBodyStyle}>
@@ -359,13 +317,13 @@ export function DashboardDesignSettingsTab({
                 <div className={styles.barPlot}>
                   <span className={styles.barMidline} aria-hidden />
                   <div className={styles.bars}>
-                    {DESIGN_PREVIEW_BARS.map((bar) => (
+                    {DESIGN_PREVIEW_BARS.map((bar, index) => (
                       <div key={bar.label} className={styles.barTrack}>
                         <span
                           className={styles.barValue}
-                          style={{ width: `${bar.width}%`, backgroundColor: bar.color }}
+                          style={{ width: `${bar.width}%`, backgroundColor: colors.palette[index] }}
                         >
-                          <span style={{ ...previewBodyStyle, color: bar.textColor }}>
+                          <span style={{ ...previewBodyStyle, color: getReadableDesignColor(colors.palette[index]) }}>
                             {bar.value}
                           </span>
                         </span>
@@ -382,23 +340,23 @@ export function DashboardDesignSettingsTab({
 
             <div className={styles.sideCards}>
               <div className={`${styles.previewCard} ${styles.smallCard}`}>
-                <div className={styles.previewCardTitle}>
+                <div className={styles.previewCardTitle} style={{ color: colors.accent }}>
                   <span style={previewTitleStyle}>Second widget name</span>
-                  <span className="wm-lightbulb text-[24px] text-[#566173]" aria-hidden />
+                  <span className="wm-lightbulb text-[18px] text-[#566173]" aria-hidden />
                 </div>
                 <div className={styles.chartCenter}>
-                  <div className={styles.donut} aria-label="Donut chart preview" />
+                  <div className={styles.donut} style={{ background: `conic-gradient(${colors.palette.slice(0, 5).map((color, i) => `${color} ${i * 20}% ${(i + 1) * 20}%`).join(", ")})` }} aria-label="Donut chart preview" />
                 </div>
               </div>
 
               <div className={`${styles.previewCard} ${styles.smallCard}`}>
-                <div className={styles.previewCardTitle}>
+                <div className={styles.previewCardTitle} style={{ color: colors.accent }}>
                   <span style={previewTitleStyle}>Third widget name</span>
-                  <span className="wm-lightbulb text-[24px] text-[#566173]" aria-hidden />
+                  <span className="wm-lightbulb text-[18px] text-[#566173]" aria-hidden />
                 </div>
                 <div className={styles.chartCenter}>
                   <div className={styles.gaugeClip}>
-                    <div className={styles.gauge} aria-label="Gauge chart preview" />
+                    <div className={styles.gauge} style={{ background: `conic-gradient(from 270deg, ${colors.sentiment.map((color, i) => `${color} ${i * 36}deg ${(i + 1) * 36}deg`).join(", ")}, transparent 180deg 360deg)` }} aria-label="Gauge chart preview" />
                   </div>
                 </div>
               </div>

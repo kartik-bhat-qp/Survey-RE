@@ -15,6 +15,9 @@ import {
   type TextAiEmergingValidityOption,
   type TextAiThemePreferences,
 } from '@/data/text-ai-theme-preferences';
+import { DashboardDesignSettingsTab } from '@/components/dashboards/DashboardDesignSettingsTab';
+import { DEFAULT_DASHBOARD_DESIGN, normalizeDashboardDesign, getTextAiSavedThemes, saveTextAiTheme, type SavedDashboardTheme, DESIGN_THEME_OPTIONS, DESIGN_PALETTE_OPTIONS, DESIGN_SENTIMENT_OPTIONS, type DashboardDesign } from '@/data/dashboard-design';
+import { useWickUILib } from '@/components/ui/useWickUILib';
 import styles from './TextAiDashboardSettingsModal.module.css';
 
 const WuToggle = dynamic(
@@ -26,7 +29,7 @@ const WuSelect = dynamic(
   { ssr: false }
 );
 
-type SettingsTab = 'preferences' | 'data-slicers' | 'filters' | 'logs';
+type SettingsTab = 'design' | 'preferences' | 'data-slicers' | 'filters' | 'logs';
 
 interface TextAiDataSlicer {
   id: number;
@@ -37,6 +40,8 @@ interface TextAiDataSlicer {
 
 interface TextAiDashboardSettingsModalProps {
   dashboard: TextAiDashboard;
+  design: DashboardDesign;
+  onSaveDesign: (design: DashboardDesign) => boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -58,9 +63,30 @@ const INITIAL_DATA_SLICERS: TextAiDataSlicer[] = [
 
 export function TextAiDashboardSettingsModal({
   dashboard,
+  design,
+  onSaveDesign,
   open,
   onOpenChange,
 }: TextAiDashboardSettingsModalProps) {
+  const wick = useWickUILib();
+  const [draftDesign, setDraftDesign] = useState(design);
+  const [designError, setDesignError] = useState('');
+  const [savedThemes, setSavedThemes] = useState<SavedDashboardTheme[]>([]);
+  const [namingTheme, setNamingTheme] = useState(false);
+  const [themeName, setThemeName] = useState('');
+  const themeOptions = [...DESIGN_THEME_OPTIONS, ...savedThemes.map(theme => ({ value: theme.id, label: theme.name }))];
+  useEffect(() => {
+    if (!open) return;
+    // Browser-owned theme library is refreshed each time settings opens.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSavedThemes(getTextAiSavedThemes());
+  }, [open]);
+  const [wasOpen, setWasOpen] = useState(open);
+  // A fresh design draft per opening, without resetting other settings tabs.
+  if (wasOpen !== open) {
+    setWasOpen(open);
+    if (open) { setDraftDesign(design); setDesignError(''); setNamingTheme(false); setThemeName(''); }
+  }
   const { showToast } = useWuShowToast();
   const [activeTab, setActiveTab] = useState<SettingsTab>('preferences');
   const [search, setSearch] = useState('');
@@ -73,17 +99,6 @@ export function TextAiDashboardSettingsModal({
     () => getTextAiDashboardCreationPreferences(dashboard),
     [dashboard]
   );
-
-  useEffect(() => {
-    if (!open) return;
-
-    function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === 'Escape') onOpenChange(false);
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [dashboard.id, onOpenChange, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -107,7 +122,8 @@ export function TextAiDashboardSettingsModal({
     return slicers.filter((slicer) => slicer.name.toLowerCase().includes(term));
   }, [search, slicers]);
 
-  if (!open) return null;
+  if (!open || !wick) return null;
+  const { WuModal, WuModalHeader, WuModalContent, WuModalFooter } = wick;
 
   const visibleCount = filteredSlicers.length;
 
@@ -132,31 +148,16 @@ export function TextAiDashboardSettingsModal({
   }
 
   return (
-    <div
-      className={styles.backdrop}
-      onMouseDown={(event) => {
-        if (event.currentTarget === event.target) onOpenChange(false);
-      }}
+    <WuModal
+      open={open}
+      onOpenChange={onOpenChange}
+      variant="action"
+      maxWidth="1250px"
+      maxHeight="min(685px, calc(100dvh - 2rem))"
+      className={styles.modal}
     >
-      <section
-        className={styles.modal}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="text-ai-settings-title"
-      >
-        <header className={styles.header}>
-          <h2 id="text-ai-settings-title">Settings</h2>
-          <button
-            type="button"
-            className={styles.closeButton}
-            aria-label="Close settings"
-            onClick={() => onOpenChange(false)}
-          >
-            <span className="wm-close" aria-hidden />
-          </button>
-        </header>
-
-        <div className={styles.body}>
+      <WuModalHeader className={styles.header}>Dashboard settings</WuModalHeader>
+      <WuModalContent className={styles.body}>
           <div className={styles.tabs} role="tablist" aria-label="TextAI settings">
             <button
               type="button"
@@ -180,6 +181,9 @@ export function TextAiDashboardSettingsModal({
             >
               Data slicers
             </button>
+            <button type="button" id="design-tab" role="tab" aria-selected={activeTab === 'design'}
+              aria-controls="design-panel" className={activeTab === 'design' ? styles.activeTab : undefined}
+              onClick={() => setActiveTab('design')}>Design</button>
             <button
               type="button"
               id="filters-tab"
@@ -202,9 +206,34 @@ export function TextAiDashboardSettingsModal({
             >
               Logs
             </button>
+
           </div>
 
-          {activeTab === 'preferences' ? (
+          {activeTab === 'design' ? (
+            <div id="design-panel" role="tabpanel" aria-labelledby="design-tab" className={`${styles.tabPanel} ${styles.designPanel}`}>
+              <DashboardDesignSettingsTab
+                colorSettings={draftDesign}
+                onColorSettingsChange={(colors) => setDraftDesign(current => ({ ...current, ...colors }))}
+                themeOptions={themeOptions}
+                designTheme={themeOptions.find((option) => option.value === draftDesign.theme) ?? { value: draftDesign.theme, label: 'Custom theme' }}
+                designPalette={DESIGN_PALETTE_OPTIONS.find((option) => option.value === draftDesign.palette)!}
+                designSentiment={DESIGN_SENTIMENT_OPTIONS.find((option) => option.value === draftDesign.sentiment)!}
+                designFontSize={draftDesign.typography.fontSize}
+                designFontFamily={draftDesign.typography.fontFamily}
+                designFontStyle={draftDesign.typography.fontStyle}
+                onDesignThemeChange={(option) => {
+                  const selected = option.value === 'default' ? DEFAULT_DASHBOARD_DESIGN : savedThemes.find(theme => theme.id === option.value)?.design;
+                  if (selected) setDraftDesign(normalizeDashboardDesign(selected));
+                  setDesignError('');
+                }}
+                onDesignPaletteChange={(option) => setDraftDesign((current) => ({ ...current, palette: option.value }))}
+                onDesignSentimentChange={(option) => setDraftDesign((current) => ({ ...current, sentiment: option.value }))}
+                onDesignFontSizeChange={(option) => setDraftDesign((current) => ({ ...current, typography: { ...current.typography, fontSize: option } }))}
+                onDesignFontFamilyChange={(option) => setDraftDesign((current) => ({ ...current, typography: { ...current.typography, fontFamily: option } }))}
+                onDesignFontStyleChange={(option) => setDraftDesign((current) => ({ ...current, typography: { ...current.typography, fontStyle: option } }))}
+              />
+            </div>
+          ) : activeTab === 'preferences' ? (
             <div
               id="preferences-panel"
               role="tabpanel"
@@ -496,8 +525,34 @@ export function TextAiDashboardSettingsModal({
               </div>
             </div>
           )}
-        </div>
-      </section>
-    </div>
+      </WuModalContent>
+        {activeTab === 'design' && (
+          <WuModalFooter className={styles.designFooter}>
+            {designError && <span role="alert">{designError}</span>}
+            {namingTheme ? <>
+              <input autoFocus className={styles.themeNameInput} aria-label="Theme name" placeholder="Theme name" maxLength={100} value={themeName} onChange={event => { setThemeName(event.target.value); setDesignError(''); }} onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); setNamingTheme(false); setDesignError(''); } }} />
+              <button type="button" className={styles.saveAsButton} onClick={() => { setNamingTheme(false); setDesignError(''); }}>Cancel</button>
+            </> : <button type="button" className={styles.saveAsButton} onClick={() => { setNamingTheme(true); setThemeName(''); setDesignError(''); }}>Save As</button>}
+            <button type="button" className={styles.primaryButton} disabled={namingTheme ? !themeName.trim() : JSON.stringify(draftDesign) === JSON.stringify(design)} onClick={() => {
+              let next = draftDesign;
+              if (namingTheme) {
+                const result = saveTextAiTheme(themeName, draftDesign);
+                if ('error' in result) { setDesignError(result.error); return; }
+                setSavedThemes(result.themes);
+                next = result.theme.design;
+                setDraftDesign(next);
+                setNamingTheme(false);
+                // The library save has succeeded even if applying the dashboard fails below.
+                if (!onSaveDesign(next)) { setDesignError('Theme saved, but dashboard settings could not be applied. Try Save again.'); return; }
+                showToast({ message: `Theme “${result.theme.name}” saved`, variant: 'success' });
+              } else {
+                if (!onSaveDesign(next)) { setDesignError('Settings could not be saved. Check browser storage and try again.'); return; }
+                showToast({ message: 'Dashboard design settings saved successfully', variant: 'success' });
+              }
+              onOpenChange(false);
+            }}>Save</button>
+          </WuModalFooter>
+        )}
+    </WuModal>
   );
 }

@@ -1,7 +1,9 @@
 'use client';
+import type { TextAiAddedWidget } from '@/components/text-ai/TextAiDashboardCanvas';
 
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { DEFAULT_DASHBOARD_DESIGN, getTextAiDashboardDesign, saveTextAiDashboardDesign, type DashboardDesign } from '@/data/dashboard-design';
 import { useRouter } from 'next/navigation';
 import { TextAiAddWidgetModal } from '@/components/text-ai/TextAiAddWidgetModal';
 import { TextAiDashboardCanvas } from '@/components/text-ai/TextAiDashboardCanvas';
@@ -61,11 +63,23 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     () => dashboard?.segmentFilters ?? createDefaultSegmentFilterState()
   );
   const [processedResponseIds, setProcessedResponseIds] = useState<string[]>(() => dashboard?.processedResponseIds ?? []);
+  const [design, setDesign] = useState<DashboardDesign>(DEFAULT_DASHBOARD_DESIGN);
+  useEffect(() => {
+    // Restore browser-only persisted settings after hydration, keeping SSR deterministic.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDesign(getTextAiDashboardDesign(numericId));
+  }, [numericId]);
+  function saveDesign(next: DashboardDesign): boolean {
+    const saved = saveTextAiDashboardDesign(numericId, next);
+    if (saved) setDesign(next);
+    return saved;
+  }
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
   const [addedTopicSegmentWidgets, setAddedTopicSegmentWidgets] = useState<
     TextAiTopicSegmentWidget[]
   >([]);
+  const [addedWidgets, setAddedWidgets] = useState<TextAiAddedWidget[]>([]);
   const [addedKpiWidgets, setAddedKpiWidgets] = useState<
     TextAiKpiWidgetInstance[]
   >([]);
@@ -151,13 +165,16 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     setSelectedQuestion(dashboardQuestion);
 
     if (
-      chartTypeId === 'comparative-chart' ||
-      chartTypeId === 'subtheme-comparative-chart'
+      chartTypeId === 'comparative-chart'
     ) {
       setAddedTopicSegmentWidgets((prev) => [
         createTextAiComparativeChartWidget(question.text),
         ...prev,
       ]);
+    }
+
+    if (!['comparative-chart', 'kpi-by-theme', 'subtheme-trend'].includes(chartTypeId)) {
+      setAddedWidgets(prev => [{ id: `${chartTypeId}-${Date.now()}`, chartType: chartTypeId, question: question.text }, ...prev]);
     }
 
     if (chartTypeId === 'kpi-by-theme') {
@@ -205,13 +222,17 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         questionIndex={availableQuestions.findIndex(
           (question) => question.id === selectedQuestion.id
         )}
+        addedWidgets={addedWidgets}
         addedTopicSegmentWidgets={addedTopicSegmentWidgets}
         addedKpiWidgets={addedKpiWidgets}
         addedSubthemeTrendWidgets={addedSubthemeTrendWidgets}
         themePreferences={themePreferences}
+        design={design}
       />
       <TextAiDashboardSettingsModal
         dashboard={currentDashboard}
+        design={design}
+        onSaveDesign={saveDesign}
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
       />

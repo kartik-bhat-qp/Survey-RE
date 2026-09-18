@@ -1,11 +1,13 @@
 .card {
+  border-radius: var(--dashboard-card-radius, 4px);
+  box-shadow: var(--dashboard-card-shadow, none);
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
   color: #545e6b;
   display: flex;
   flex-direction: column;
-  font-family: 'Fira Sans', sans-serif;
+  font-family: var(--dashboard-widget-font-family, 'Fira Sans', sans-serif);
+  font-style: var(--dashboard-widget-font-style, normal);
   height: 100%;
   min-width: 0;
   overflow: hidden;
@@ -36,9 +38,9 @@
 }
 
 .cardTitle {
-  color: #1b3380;
-  font-size: 18px;
-  font-weight: 500;
+  color: var(--dashboard-accent, #1b3380);
+  font-size: var(--dashboard-widget-title-size, 18px);
+  font-weight: var(--dashboard-widget-font-weight, 500);
   line-height: 24px;
   margin: 0;
   overflow: hidden;
@@ -49,20 +51,20 @@
 .widgetLabel {
   color: #7b8491;
   display: block;
-  font-size: 11px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7857);
   line-height: 16px;
 }
 
 .sentimentPositive {
-  background: #42a66c;
+  background: var(--dashboard-sentiment-positive, #42a66c);
 }
 
 .sentimentNeutral {
-  background: #e9b949;
+  background: var(--dashboard-sentiment-neutral, #e9b949);
 }
 
 .sentimentNegative {
-  background: #d85b63;
+  background: var(--dashboard-sentiment-negative, #d85b63);
 }
 
 .tableWrap {
@@ -82,8 +84,8 @@
 
 .table th {
   color: #8b95a1;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7857);
+  font-weight: var(--dashboard-widget-font-weight, 500);
   letter-spacing: 0.04em;
   line-height: 16px;
   padding: 10px 12px 8px;
@@ -115,7 +117,7 @@
   cursor: pointer;
   display: inline-flex;
   font: inherit;
-  font-weight: 500;
+  font-weight: var(--dashboard-widget-font-weight, 500);
   gap: 5px;
   letter-spacing: 0.04em;
   padding: 0;
@@ -136,15 +138,15 @@
 
 .sortIndicator {
   color: #a0a8b2;
-  font-size: 10px;
-  font-weight: 600;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7143);
+  font-weight: var(--dashboard-widget-font-weight, 600);
   line-height: 1;
   text-transform: none;
 }
 
 .table td {
   border-bottom: 1px solid #edf0f3;
-  font-size: 13px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.9286);
   height: 48px;
   padding: 8px 12px;
   vertical-align: middle;
@@ -171,15 +173,15 @@
 
 .subthemeName {
   color: #3f4b5a;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.9286);
+  font-weight: var(--dashboard-widget-font-weight, 600);
   line-height: 18px;
 }
 
 .parentTheme {
   color: #8b95a1;
-  font-size: 11px;
-  font-weight: 400;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7857);
+  font-weight: var(--dashboard-widget-font-weight, 400);
   line-height: 14px;
 }
 
@@ -199,7 +201,7 @@
   color: #8b95a1;
   cursor: pointer;
   font: inherit;
-  font-size: 12px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.8571);
   font-variant-numeric: tabular-nums;
   padding: 0;
 }
@@ -209,8 +211,8 @@
   border-radius: 999px;
   color: #667281;
   display: inline-block;
-  font-size: 9px;
-  font-weight: 600;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.6429);
+  font-weight: var(--dashboard-widget-font-weight, 600);
   line-height: 14px;
   margin-top: 3px;
   padding: 0 6px;
@@ -218,19 +220,19 @@
 }
 
 .netCell {
-  font-size: 13px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.9286);
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
+  font-weight: var(--dashboard-widget-font-weight, 600);
   text-align: right;
   white-space: nowrap;
 }
 
 .netPositive {
-  color: #3d9a63;
+  color: color-mix(in srgb, var(--dashboard-sentiment-positive, #3d9a63) 65%, #000);
 }
 
 .netNegative {
-  color: #c45b5b;
+  color: color-mix(in srgb, var(--dashboard-sentiment-negative, #c45b5b) 65%, #000);
 }
 
 .deltaCell {
@@ -276,29 +278,29 @@
 }
 
 .negativeBar {
-  background: #e08a8a;
+  background: var(--dashboard-sentiment-negative, #e08a8a);
   border-radius: 2px 0 0 2px;
 }
 
 .positiveBar {
-  background: #7cb892;
+  background: var(--dashboard-sentiment-positive, #7cb892);
   border-radius: 0 2px 2px 0;
 }
 
 .coeffLabel {
   flex: 0 0 auto;
-  font-size: 11px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7857);
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
+  font-weight: var(--dashboard-widget-font-weight, 600);
   line-height: 1;
 }
 
 .coeffLabel.deltaPositive {
-  color: #3d9a63;
+  color: color-mix(in srgb, var(--dashboard-sentiment-positive, #3d9a63) 65%, #000);
 }
 
 .coeffLabel.deltaNegative {
-  color: #c45b5b;
+  color: color-mix(in srgb, var(--dashboard-sentiment-negative, #c45b5b) 65%, #000);
 }
 
 .sentimentCellWrap {
@@ -330,7 +332,7 @@
 .sentimentValue {
   color: #8b95a1;
   flex: 0 0 auto;
-  font-size: 11px;
+  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7857);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
