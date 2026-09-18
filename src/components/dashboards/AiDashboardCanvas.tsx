@@ -31,6 +31,7 @@ import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
 import { stackLayoutSingleColumn } from '@/lib/ai-dashboard-layout';
 import { DashboardWidgetCard } from '@/components/dashboards/widgets/DashboardWidgetCard';
 import { AiWidgetRenderer } from '@/components/dashboards/widgets/AiWidgetRenderer';
+import { WordCloudDashboardCard } from '@/components/dashboards/widgets/WordCloudDashboardCard';
 import {
   createDashboardWidgetInsightThread,
   DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY,
@@ -327,6 +328,7 @@ export function AiDashboardCanvas({
 
           return (
             <div key={widget.id} className={styles.gridItem}>
+              {widget.type === 'wordcloud' ? <WordCloudDashboardCard shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /> : <>
               <DashboardWidgetCard
                 title={widget.title}
                 dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle}
@@ -348,6 +350,7 @@ export function AiDashboardCanvas({
                   typography={chartTypography}
                 />}
               </DashboardWidgetCard>
+              </>}
             </div>
           );
         })}

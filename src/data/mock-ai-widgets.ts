@@ -21,7 +21,8 @@ export type AiWidgetType =
   | 'stat-highlight'
   | 'stat-metric'
   | 'comparative-bar'
-  | 'segment-trend';
+  | 'segment-trend'
+  | 'wordcloud';
 
 export interface AiWidgetConfig {
   id: string;
@@ -40,6 +41,7 @@ export const AI_DASHBOARD_WIDGETS: AiWidgetConfig[] = [
   { id: 'w-mean', type: 'stat-metric', title: 'Mean' },
   { id: 'w-comparative-bar', type: 'comparative-bar', title: 'Comparative Bar' },
   { id: 'w-segment-trend', type: 'segment-trend', title: 'Segment Trend' },
+  { id: 'w-comments-wordcloud', type: 'wordcloud', title: 'Suggestions / comments' },
 ];
 
 /** Desktop column count — mobile uses a single column via AiDashboardCanvas. */
@@ -65,6 +67,15 @@ export const AI_DASHBOARD_LAYOUT: Layout = [
     i: 'w-segment-trend',
     x: 0,
     y: 4,
+    w: AI_DASHBOARD_GRID_COLS,
+    h: DEFAULT_H,
+    minW: 1,
+    minH: 1,
+  },
+  {
+    i: 'w-comments-wordcloud',
+    x: 0,
+    y: 5,
     w: AI_DASHBOARD_GRID_COLS,
     h: DEFAULT_H,
     minW: 1,

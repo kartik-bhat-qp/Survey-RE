@@ -26,6 +26,7 @@ const WuMenuItem = dynamic(
 );
 
 interface DashboardWidgetCardProps {
+  onOpenSettings?: () => void;
   title: string;
   children: React.ReactNode;
   dragHandleClassName?: string;
@@ -37,6 +38,7 @@ interface DashboardWidgetCardProps {
 }
 
 export function DashboardWidgetCard({
+  onOpenSettings,
   title,
   children,
   dragHandleClassName,
@@ -95,7 +97,7 @@ export function DashboardWidgetCard({
             )}
           >
             <WuMenuItem Icon={<span className="wm-edit" aria-hidden />} onSelect={() => showToast({ message: `Edit ${title}`, variant: 'info' })}>Edit</WuMenuItem>
-            <WuMenuItem Icon={<span className="wm-settings" aria-hidden />} onSelect={() => { setMenuOpen(false); setSettingsOpen(true); }}>Settings</WuMenuItem>
+            <WuMenuItem Icon={<span className="wm-settings" aria-hidden />} onSelect={() => { setMenuOpen(false); if (onOpenSettings) onOpenSettings(); else setSettingsOpen(true); }}>Settings</WuMenuItem>
             <WuMenuItem Icon={<span className="wm-open-in-full" aria-hidden />} onSelect={() => showToast({ message: `${title} opened in full screen`, variant: 'success' })}>Full screen</WuMenuItem>
             <WuMenuItem Icon={<span className="wm-content-copy" aria-hidden />} onSelect={() => showToast({ message: `${title} duplicated`, variant: 'success' })}>Duplicate</WuMenuItem>
             <WuMenuItem Icon={<span className="wm-info" aria-hidden />} onSelect={() => showToast({ message: `${title} widget information`, variant: 'info' })}>Info</WuMenuItem>

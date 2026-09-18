@@ -20,6 +20,7 @@ type DashboardAmChartType = Exclude<AmChartWidgetType, MatrixAmChartWidgetType>;
 import { MeanStatWidget } from '@/components/dashboards/widgets/MeanStatWidget';
 import { NpsBenchmarkWidget } from '@/components/dashboards/widgets/NpsBenchmarkWidget';
 import { ResponseInfoWidget } from '@/components/dashboards/widgets/ResponseInfoWidget';
+import { WordCloudWidget } from '@/components/dashboards/widgets/WordCloudWidget';
 import {
   COMPARATIVE_BAR_DEMO_DATA,
   COMPARATIVE_BAR_SERIES,
@@ -187,6 +188,8 @@ export function AiWidgetRenderer({
   if (type === 'stat-metric') {
     return <MeanStatWidget value={meanValue} />;
   }
+
+  if (type === 'wordcloud') return <WordCloudWidget />;
 
   if (isAmChartType(type)) {
     return (
