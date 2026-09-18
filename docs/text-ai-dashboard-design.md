@@ -6,7 +6,7 @@ Implemented in the Survey-RE prototype, 18 September 2026. Reference: the existi
 
 BI has Theme (Default/Modern/Classic), Color palette (Categorical/Sequential/Diverging), Sentiment colors (Default/Soft/High contrast), font family and size selectors. Its Save handler applies typography; theme/palette/sentiment were modal-local selections with static swatches and previews. Text AI had no Design tab.
 
-Text AI now reuses the shared BI Design tab, with dynamic swatches and preview, and adds Save, Cancel and Reset to default. Font style exposes the existing Regular/Bold/Italic model. Draft edits affect the preview; Save applies to the dashboard. Cancel, Escape and close discard design drafts. Reset changes the draft and requires Save.
+Text AI now reuses the shared BI Design tab, with dynamic swatches and preview, with a Save-only footer. Font size precedes font family, matching production BI. Draft edits affect the preview; Save applies to the dashboard. Escape and close discard design drafts. Save is disabled until the draft changes.
 
 Theme controls widget title color, canvas background, card rounding and shadow. Palette controls comparative/segment bars and trend series, including matching legend swatches and points. Sentiment presets separately control stacked bars, their legends, KPI sentiment bars, impact bars and text-viewer sentiment pills. The six Text AI categories retain their identities (very negative, negative, mixed, neutral, positive, very positive); palette changes never remap sentiment meanings. Text over colored segments uses contrasting black/white.
 
@@ -19,7 +19,7 @@ Settings persist in browser local storage per Text AI dashboard ID. Invalid stor
 - TypeScript: `node node_modules/typescript/bin/tsc --noEmit --incremental false`.
 - Targeted ESLint on changed TS/TSX files.
 - `node --test tests/dashboard-design.test.mjs tests/text-ai-segment-filters.test.mjs`: 19 passing tests covering normalization, per-dashboard storage isolation/failures, palette/sentiment independence and existing filter behavior.
-- Work Chrome on port 3012: changed theme, palette, sentiment, font family, size and style; Save applied computed widget styles; reload restored settings; reset followed by Cancel preserved the saved design. Added a sub-theme trend and verified inherited typography and SVG series colors.
+- Work Chrome on port 3012: changed theme, palette, sentiment, font family, size and style; Save applied computed widget styles; reload restored settings; closing without saving preserved the saved design. Added a sub-theme trend and verified inherited typography and SVG series colors.
 
 ## Local development and later merge
 
@@ -44,3 +44,7 @@ git -C /Users/prabalgupta/Documents/work/Survey-RE merge text-ai-dashboard-desig
 ```
 
 No fetch, push, remote branch or remote merge is needed. Review any conflicts if the other task later touches the shared BI Design tab. The original checkout's concurrent widget changes were left intact.
+
+## Production BI style review — 18 September 2026
+
+Read-only comparison with the already-open Design tab on production BI dashboard 27109 in workspace 348. Matched the 1250 × 685 modal, 56px header with 24px title, compact tabs, 35/65 controls-to-preview columns, 32px selectors, font-control order, rounded preview cards and Save-only footer. Removed the prototype-only Reset, Cancel and Font style controls. Retained Text AI-specific settings tabs and six-category sentiment mapping. This comparison verifies visible styling only; production settings were not changed.

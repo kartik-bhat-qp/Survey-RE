@@ -42,7 +42,7 @@ export const DESIGN_FONT_STYLE_OPTIONS: DesignSelectOption[] = [
 ];
 
 export const DESIGN_FONT_FAMILY_OPTIONS: DesignSelectOption[] = [
-  { value: '"Fira Sans Dashboard", Arial, sans-serif', label: 'Fira Sans' },
+  { value: '"Fira Sans", Arial, sans-serif', label: 'Fira Sans' },
   { value: 'Inter, "Segoe UI", Roboto, Arial, sans-serif', label: 'Inter' },
   { value: 'Roboto, Arial, sans-serif', label: 'Roboto' },
   { value: '"Segoe UI", Arial, sans-serif', label: 'Segoe UI' },

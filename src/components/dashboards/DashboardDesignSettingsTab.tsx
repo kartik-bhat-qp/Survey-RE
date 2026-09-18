@@ -16,7 +16,6 @@ import {
   DESIGN_PALETTE_OPTIONS,
   DESIGN_SENTIMENT_OPTIONS,
   DESIGN_FONT_SIZE_OPTIONS,
-  DESIGN_FONT_STYLE_OPTIONS,
   DESIGN_FONT_FAMILY_OPTIONS,
   getDashboardDesignColors,
   getReadableDesignColor,
@@ -122,7 +121,7 @@ function getDashboardTextStyle(
   const metrics = getDashboardTypographyMetrics(typography, scale);
 
   return {
-    fontSize: metrics.sizes[role],
+    fontSize: `${parseFloat(metrics.sizes[role]) * (role === 'title' ? 0.75 : 0.93)}px`,
     fontFamily: metrics.fontFamily,
     fontStyle: metrics.fontStyle,
     fontWeight: metrics.fontWeight,
@@ -164,7 +163,6 @@ export function DashboardDesignSettingsTab({
   onDesignPaletteChange,
   onDesignSentimentChange,
   onDesignFontSizeChange,
-  onDesignFontStyleChange,
   onDesignFontFamilyChange,
 }: DashboardDesignSettingsTabProps) {
   const colors = getDashboardDesignColors({ theme: designTheme.value, palette: designPalette.value, sentiment: designSentiment.value });
@@ -252,23 +250,6 @@ export function DashboardDesignSettingsTab({
 
         <div className={styles.fontGrid}>
           <div>
-            <label className={styles.fieldLabel}>Font family</label>
-            <WuSelect
-              data={DESIGN_FONT_FAMILY_OPTIONS}
-              accessorKey={{ value: 'value', label: 'label' }}
-              value={designFontFamily}
-            aria-label="Font family"
-              onSelect={(option) =>
-                handleSelect(
-                  option as DesignSelectOption | DesignSelectOption[],
-                  onDesignFontFamilyChange
-                )
-              }
-              variant="outlined"
-              className={styles.select}
-            />
-          </div>
-          <div>
             <label className={styles.fieldLabel}>Font size</label>
             <WuSelect
               data={DESIGN_FONT_SIZE_OPTIONS}
@@ -285,20 +266,30 @@ export function DashboardDesignSettingsTab({
               className={styles.select}
             />
           </div>
-        </div>
-
-        <div className={styles.field}>
-          <label className={styles.fieldLabel}>Font style</label>
-          <WuSelect data={DESIGN_FONT_STYLE_OPTIONS} accessorKey={{ value: 'value', label: 'label' }}
-            value={designFontStyle} onSelect={(option) => handleSelect(option as DesignSelectOption | DesignSelectOption[], onDesignFontStyleChange)}
-            variant="outlined" className={styles.select} aria-label="Font style" />
+          <div>
+            <label className={styles.fieldLabel}>Font family</label>
+            <WuSelect
+              data={DESIGN_FONT_FAMILY_OPTIONS}
+              accessorKey={{ value: 'value', label: 'label' }}
+              value={designFontFamily}
+            aria-label="Font family"
+              onSelect={(option) =>
+                handleSelect(
+                  option as DesignSelectOption | DesignSelectOption[],
+                  onDesignFontFamilyChange
+                )
+              }
+              variant="outlined"
+              className={styles.select}
+            />
+          </div>
         </div>
       </div>
 
       <div className={styles.previewWrap}>
         <div className={styles.device} style={{ ...previewTypographyStyle, background: colors.canvas }}>
           <span className={styles.notch} aria-hidden />
-          <div className={styles.previewHeader} style={previewTitleStyle}>
+          <div className={styles.previewHeader} style={{ ...previewTitleStyle, fontWeight: 600 }}>
             Dashboard name
           </div>
 
@@ -306,7 +297,7 @@ export function DashboardDesignSettingsTab({
             <div className={styles.previewCard}>
               <div className={styles.previewCardTitle} style={{ color: colors.accent }}>
                 <span style={previewTitleStyle}>First widget name</span>
-                <span className="wm-lightbulb text-[24px] text-[#566173]" aria-hidden />
+                <span className="wm-lightbulb text-[18px] text-[#566173]" aria-hidden />
               </div>
               <div className={styles.barPreview}>
                 <div className={styles.barLabels} style={previewBodyStyle}>
@@ -344,7 +335,7 @@ export function DashboardDesignSettingsTab({
               <div className={`${styles.previewCard} ${styles.smallCard}`}>
                 <div className={styles.previewCardTitle} style={{ color: colors.accent }}>
                   <span style={previewTitleStyle}>Second widget name</span>
-                  <span className="wm-lightbulb text-[24px] text-[#566173]" aria-hidden />
+                  <span className="wm-lightbulb text-[18px] text-[#566173]" aria-hidden />
                 </div>
                 <div className={styles.chartCenter}>
                   <div className={styles.donut} style={{ background: `conic-gradient(${colors.palette.slice(0, 5).map((color, i) => `${color} ${i * 20}% ${(i + 1) * 20}%`).join(", ")})` }} aria-label="Donut chart preview" />
@@ -354,7 +345,7 @@ export function DashboardDesignSettingsTab({
               <div className={`${styles.previewCard} ${styles.smallCard}`}>
                 <div className={styles.previewCardTitle} style={{ color: colors.accent }}>
                   <span style={previewTitleStyle}>Third widget name</span>
-                  <span className="wm-lightbulb text-[24px] text-[#566173]" aria-hidden />
+                  <span className="wm-lightbulb text-[18px] text-[#566173]" aria-hidden />
                 </div>
                 <div className={styles.chartCenter}>
                   <div className={styles.gaugeClip}>

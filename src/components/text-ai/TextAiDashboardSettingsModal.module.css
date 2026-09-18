@@ -1,6 +1,6 @@
 .backdrop {
   align-items: center;
-  background: rgb(13 24 39 / 32%);
+  background: rgb(0 0 0 / 32%);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -11,13 +11,13 @@
 
 .modal {
   background: #fff;
-  border: 1px solid #d6dde7;
-  border-radius: 0.95rem;
-  box-shadow: 0 10px 24px rgb(15 23 42 / 18%);
+  border: 0;
+  border-radius: 14px;
+  box-shadow: 0 0 0 3px #aaa0ee, 0 10px 24px rgb(15 23 42 / 12%);
   display: flex;
   flex-direction: column;
   font-family: 'Fira Sans', sans-serif;
-  height: min(42.75rem, calc(100dvh - 2rem));
+  height: min(685px, calc(100dvh - 2rem));
   max-width: 78.125rem;
   overflow: hidden;
   width: min(78.125rem, calc(100vw - 2rem));
@@ -25,8 +25,8 @@
 
 .header {
   align-items: center;
-  background: #f0f5fc;
-  border-bottom: 1px solid #cbdaf0;
+  background: #f0f3ff;
+  border-bottom: 1px solid #e9ecf5;
   display: flex;
   flex-shrink: 0;
   justify-content: space-between;
@@ -36,8 +36,9 @@
 
 .header h2 {
   color: #1c387f;
-  font-size: 1.05rem;
-  font-weight: 500;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 400;
   margin: 0;
 }
 
@@ -64,7 +65,7 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  padding: 1.8rem 2rem 2rem;
+  padding: 32px;
 }
 
 .tabs {
@@ -81,8 +82,9 @@
   cursor: pointer;
   font-family: inherit;
   font-size: 0.75rem;
-  min-width: 6rem;
-  padding: 0.75rem 1rem 0.65rem;
+  min-width: 0;
+  padding: 8px 16px;
+  line-height: 16px;
   position: relative;
 }
 
@@ -754,10 +756,19 @@
   }
 }
 
-.designFooter { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 24px; border-top: 1px solid #e5e7eb; }
-.designFooter > :first-child { margin-right: auto; }
-.designFooter [role='alert'] { color: #b42318; }
-
-.designPanel { overflow: auto; }
-.designFooter { flex-shrink: 0; background: #fff; position: relative; }
+.designFooter {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: 64px;
+  padding: 16px;
+  border-top: 1px solid #c5bff0;
+  flex-shrink: 0;
+  background: #fff;
+}
+.designFooter .primaryButton { min-width: 104px; height: 32px; padding: 6px 8px; font-size: 14px; border-radius: 4px; }
+.designFooter .primaryButton:disabled { background: #f2f2f2; border-color: #f2f2f2; color: #9b9b9b; cursor: not-allowed; }
+.designFooter [role='alert'] { color: #b42318; margin-right: auto; }
+.designPanel { overflow: auto; padding-top: 0; }
 .tabs { overflow-x: auto; }

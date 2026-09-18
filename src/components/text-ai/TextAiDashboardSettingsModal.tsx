@@ -16,7 +16,7 @@ import {
   type TextAiThemePreferences,
 } from '@/data/text-ai-theme-preferences';
 import { DashboardDesignSettingsTab } from '@/components/dashboards/DashboardDesignSettingsTab';
-import { DESIGN_THEME_OPTIONS, DESIGN_PALETTE_OPTIONS, DESIGN_SENTIMENT_OPTIONS, DEFAULT_DASHBOARD_DESIGN, type DashboardDesign } from '@/data/dashboard-design';
+import { DESIGN_THEME_OPTIONS, DESIGN_PALETTE_OPTIONS, DESIGN_SENTIMENT_OPTIONS, type DashboardDesign } from '@/data/dashboard-design';
 import styles from './TextAiDashboardSettingsModal.module.css';
 
 const WuToggle = dynamic(
@@ -159,7 +159,7 @@ export function TextAiDashboardSettingsModal({
         aria-labelledby="text-ai-settings-title"
       >
         <header className={styles.header}>
-          <h2 id="text-ai-settings-title">Settings</h2>
+          <h2 id="text-ai-settings-title">Dashboard settings</h2>
           <button
             type="button"
             className={styles.closeButton}
@@ -194,6 +194,9 @@ export function TextAiDashboardSettingsModal({
             >
               Data slicers
             </button>
+            <button type="button" id="design-tab" role="tab" aria-selected={activeTab === 'design'}
+              aria-controls="design-panel" className={activeTab === 'design' ? styles.activeTab : undefined}
+              onClick={() => setActiveTab('design')}>Design</button>
             <button
               type="button"
               id="filters-tab"
@@ -216,9 +219,7 @@ export function TextAiDashboardSettingsModal({
             >
               Logs
             </button>
-            <button type="button" id="design-tab" role="tab" aria-selected={activeTab === 'design'}
-              aria-controls="design-panel" className={activeTab === 'design' ? styles.activeTab : undefined}
-              onClick={() => setActiveTab('design')}>Design</button>
+
           </div>
 
           {activeTab === 'design' ? (
@@ -533,10 +534,8 @@ export function TextAiDashboardSettingsModal({
         </div>
         {activeTab === 'design' && (
           <footer className={styles.designFooter}>
-            <button type="button" className={styles.secondaryButton} onClick={() => setDraftDesign(DEFAULT_DASHBOARD_DESIGN)}>Reset to default</button>
             {designError && <span role="alert">{designError}</span>}
-            <button type="button" className={styles.secondaryButton} onClick={() => onOpenChange(false)}>Cancel</button>
-            <button type="button" className={styles.primaryButton} onClick={() => {
+            <button type="button" className={styles.primaryButton} disabled={JSON.stringify(draftDesign) === JSON.stringify(design)} onClick={() => {
               if (!onSaveDesign(draftDesign)) { setDesignError('Settings could not be saved. Check browser storage and try again.'); return; }
               showToast({ message: 'Dashboard design settings saved successfully', variant: 'success' });
               onOpenChange(false);
