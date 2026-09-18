@@ -1,4 +1,5 @@
 'use client';
+import type { TextAiAddedWidget } from '@/components/text-ai/TextAiDashboardCanvas';
 
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -78,6 +79,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const [addedTopicSegmentWidgets, setAddedTopicSegmentWidgets] = useState<
     TextAiTopicSegmentWidget[]
   >([]);
+  const [addedWidgets, setAddedWidgets] = useState<TextAiAddedWidget[]>([]);
   const [addedKpiWidgets, setAddedKpiWidgets] = useState<
     TextAiKpiWidgetInstance[]
   >([]);
@@ -163,13 +165,16 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     setSelectedQuestion(dashboardQuestion);
 
     if (
-      chartTypeId === 'comparative-chart' ||
-      chartTypeId === 'subtheme-comparative-chart'
+      chartTypeId === 'comparative-chart'
     ) {
       setAddedTopicSegmentWidgets((prev) => [
         createTextAiComparativeChartWidget(question.text),
         ...prev,
       ]);
+    }
+
+    if (!['comparative-chart', 'kpi-by-theme', 'subtheme-trend'].includes(chartTypeId)) {
+      setAddedWidgets(prev => [{ id: `${chartTypeId}-${Date.now()}`, chartType: chartTypeId, question: question.text }, ...prev]);
     }
 
     if (chartTypeId === 'kpi-by-theme') {
@@ -217,6 +222,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         questionIndex={availableQuestions.findIndex(
           (question) => question.id === selectedQuestion.id
         )}
+        addedWidgets={addedWidgets}
         addedTopicSegmentWidgets={addedTopicSegmentWidgets}
         addedKpiWidgets={addedKpiWidgets}
         addedSubthemeTrendWidgets={addedSubthemeTrendWidgets}

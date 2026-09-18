@@ -7,6 +7,8 @@ import ReactGridLayout, {
   type Layout,
   type ResizeHandleAxis,
 } from 'react-grid-layout/legacy';
+import { TextAiOverviewWidget, type TextAiOverviewKind } from './TextAiOverviewWidget';
+import type { TextAiWidgetChartTypeId } from '@/data/mock-text-ai-widget-chart-types';
 import { TextAiAnalysisWidgetCard } from '@/components/text-ai/TextAiAnalysisWidget';
 import { TextAiKpiByThemeWidget } from '@/components/text-ai/TextAiKpiByThemeWidget';
 import { TextAiSubthemeStackbarWidget } from '@/components/text-ai/TextAiSubthemeStackbarWidget';
@@ -51,6 +53,8 @@ const TEXT_AI_GRID_GUIDE_CELL_COUNT = TEXT_AI_GRID_COLS * 60;
 const TEXT_AI_WIDGET_DRAG_HANDLE_CLASS = 'text-ai-widget-drag-handle';
 
 type TextAiCanvasWidgetKind =
+  | 'overview'
+  | 'subtheme-comparative'
   | 'kpi-by-theme'
   | 'subtheme-trend'
   | 'topic-segment'
@@ -64,7 +68,10 @@ interface TextAiCanvasWidget {
   content: ReactNode;
 }
 
+export interface TextAiAddedWidget { id: string; chartType: TextAiWidgetChartTypeId; question: string; }
+
 interface TextAiDashboardCanvasProps {
+  addedWidgets?: TextAiAddedWidget[];
   dashboardId: number;
   design?: DashboardDesign;
   selectedQuestion: TextAiDashboardQuestion;
@@ -79,15 +86,19 @@ interface TextAiDashboardCanvasProps {
 }
 
 const INITIAL_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
-  'kpi-by-theme': 14,
-  'subtheme-trend': 13,
+  overview: 8,
+  'subtheme-comparative': 8,
+  'kpi-by-theme': 8,
+  'subtheme-trend': 8,
   'topic-segment': 9,
   'subtheme-stackbar': 8,
-  analysis: 25,
-  summary: 10,
+  analysis: 8,
+  summary: 8,
 };
 
 const MIN_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
+  overview: 6,
+  'subtheme-comparative': 6,
   'kpi-by-theme': 8,
   'subtheme-trend': 8,
   'topic-segment': 5,
@@ -96,21 +107,17 @@ const MIN_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
   summary: 6,
 };
 
-function createInitialLayout(widgets: TextAiCanvasWidget[]): Layout {
+function createInitialLayout(widgets: TextAiCanvasWidget[], previous: Layout = []): Layout {
   let y = 0;
-
-  return widgets.map((widget) => {
-    const height = INITIAL_WIDGET_HEIGHTS[widget.kind];
-    const item = {
-      i: widget.id,
-      x: 0,
-      y,
-      w: TEXT_AI_GRID_COLS,
-      h: height,
-      minW: 3,
-      minH: MIN_WIDGET_HEIGHTS[widget.kind],
-    };
-    y += height;
+  let x = 0;
+  let rowHeight = 0;
+  return widgets.map(widget => {
+    const fullWidth = widget.kind === 'topic-segment';
+    if (fullWidth && x !== 0) { y += rowHeight; x = 0; rowHeight = 0; }
+    const height = previous.find(item => item.i === widget.id)?.h ?? INITIAL_WIDGET_HEIGHTS[widget.kind];
+    const item = { i: widget.id, x, y, w: fullWidth ? 12 : 6, h: height, minW: fullWidth ? 12 : 6, maxW: fullWidth ? 12 : 6, minH: MIN_WIDGET_HEIGHTS[widget.kind] };
+    rowHeight = Math.max(rowHeight, height);
+    if (fullWidth || x === 6) { y += rowHeight; x = 0; rowHeight = 0; } else x = 6;
     return item;
   });
 }
@@ -325,6 +332,7 @@ export function TextAiDashboardCanvas({
   selectedQuestion,
   questionIndex,
   addedTopicSegmentWidgets = [],
+  addedWidgets = [],
   addedKpiWidgets = [],
   addedSubthemeTrendWidgets = [],
   themePreferences,
@@ -389,7 +397,23 @@ export function TextAiDashboardCanvas({
     });
   }
 
+  function renderAddedWidget(widget: TextAiAddedWidget): TextAiCanvasWidget {
+    const onDelete = () => removeWidget(widget.id);
+    const question = widget.question;
+    if (widget.chartType === 'text-viewer') return { id: widget.id, kind: 'analysis', content: <TextAiAnalysisWidgetCard widget={{ ...analysisWidgets[0], id: widget.id, question }} onDelete={onDelete} /> };
+    if (widget.chartType === 'text-summary') return { id: widget.id, kind: 'summary', content: <TextAiSummaryWidgetCard widget={{ ...summaryWidgets[0], id: widget.id, question }} onDelete={onDelete} /> };
+    if (widget.chartType === 'subtheme-stacked-bar') return { id: widget.id, kind: 'subtheme-stackbar', content: <TextAiSubthemeStackbarWidget question={question} themePreferences={themePreferences} onDelete={onDelete} /> };
+    if (widget.chartType === 'subtheme-comparative-chart') {
+      const base = visibleTopicSegmentWidgets[0];
+      const rows = base.rows.flatMap(row => row.subtopics ?? []).map(row => ({ ...row, subtopics: undefined }));
+      return { id: widget.id, kind: 'subtheme-comparative', content: <TextAiTopicSegmentWidgetCard widget={{ ...base, id: widget.id, question, rows, visibleSegmentKeys: ['overall'] }} onDelete={onDelete} /> };
+    }
+    return { id: widget.id, kind: 'overview', content: <TextAiOverviewWidget kind={widget.chartType as TextAiOverviewKind} question={question} themePreferences={themePreferences} onDelete={onDelete} /> };
+  }
+  const defaultExtraWidgets: TextAiAddedWidget[] = ['gauge', 'theme-stacked-bar', 'bubble-chart', 'trend-line', 'subtheme-comparative-chart'].map(chartType => ({ id: `default-${chartType}`, chartType: chartType as TextAiWidgetChartTypeId, question: selectedQuestion.text }));
+
   const allCanvasWidgets: TextAiCanvasWidget[] = [
+    ...addedWidgets.map(renderAddedWidget),
     ...addedKpiWidgets.map((widget) => {
       const id = `kpi-widget-${widget.id}`;
       return {
@@ -457,6 +481,7 @@ export function TextAiDashboardCanvas({
         />
       ),
     },
+    ...defaultExtraWidgets.map(renderAddedWidget),
     ...visibleAnalysisWidgets.map((widget, index) => {
       const id = `analysis-${index}`;
       return {
@@ -488,7 +513,7 @@ export function TextAiDashboardCanvas({
   ];
   const canvasWidgets = allCanvasWidgets.filter(
     (widget) => !removedWidgetIds.has(widget.id)
-  );
+  ).sort((a, b) => Number(b.kind === 'topic-segment') - Number(a.kind === 'topic-segment'));
   const canvasWidgetIds = canvasWidgets.map((widget) => widget.id).join('|');
   const [desktopLayout, setDesktopLayout] = useState<Layout>(() =>
     createInitialLayout(canvasWidgets)
@@ -504,30 +529,8 @@ export function TextAiDashboardCanvas({
       const existingIds = new Set(kept.map((item) => item.i));
       const missing = canvasWidgets.filter((widget) => !existingIds.has(widget.id));
 
-      if (missing.length === 0) {
-        return kept.length === prev.length ? prev : kept;
-      }
-
-      let yOffset = 0;
-      const inserted = missing.map((widget) => {
-        const height = INITIAL_WIDGET_HEIGHTS[widget.kind];
-        const item = {
-          i: widget.id,
-          x: 0,
-          y: yOffset,
-          w: TEXT_AI_GRID_COLS,
-          h: height,
-          minW: 3,
-          minH: MIN_WIDGET_HEIGHTS[widget.kind],
-        };
-        yOffset += height;
-        return item;
-      });
-
-      return [
-        ...inserted,
-        ...kept.map((item) => ({ ...item, y: item.y + yOffset })),
-      ];
+      if (missing.length === 0 && kept.length === prev.length) return prev;
+      return createInitialLayout(canvasWidgets, prev);
     });
     // Sync layout when widgets are added or deleted
     // eslint-disable-next-line react-hooks/exhaustive-deps

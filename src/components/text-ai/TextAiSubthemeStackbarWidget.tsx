@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { StandardLoader } from '@/components/ui/StandardLoader';
 import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
 import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
@@ -110,6 +110,7 @@ export function TextAiSubthemeStackbarWidget({
   onDelete,
   themePreferences,
 }: TextAiSubthemeStackbarWidgetProps) {
+  const widgetId = useId();
   const wick = useWickUILib();
   const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
   const [expandedThemeIds, setExpandedThemeIds] = useState<Set<string>>(
@@ -242,7 +243,7 @@ export function TextAiSubthemeStackbarWidget({
       <div className={styles.rows}>
         {visibleThemes.map((theme) => {
           const expanded = expandedThemeIds.has(theme.id);
-          const subthemeRegionId = `subtheme-stackbar-${theme.id}`;
+          const subthemeRegionId = `${widgetId}-subtheme-stackbar-${theme.id}`;
 
           return (
             <section className={styles.themeGroup} key={theme.id}>

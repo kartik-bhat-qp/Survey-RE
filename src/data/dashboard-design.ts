@@ -129,7 +129,7 @@ export function getDashboardDesignColorVars(design: DashboardDesign): Record<str
     '--dashboard-accent': colors.accent, '--dashboard-canvas': colors.canvas,
     '--dashboard-card-radius': colors.radius, '--dashboard-card-shadow': colors.shadow,
   };
-  Array.from({ length: Math.max(16, colors.palette.length) }, (_, index) => { vars[`--dashboard-series-${index}`] = colors.palette[index % colors.palette.length]; });
+  Array.from({ length: Math.max(16, colors.palette.length) }, (_, index) => { vars[`--dashboard-series-${index}`] = colors.palette[index % colors.palette.length]; vars[`--dashboard-series-${index}-text`] = getReadableDesignColor(colors.palette[index % colors.palette.length]); });
   ['veryNegative', 'negative', 'mixed', 'neutral', 'positive', 'veryPositive'].forEach((key, index) => {
     vars[`--dashboard-sentiment-${key}`] = colors.sentiment[[0, 1, 2, 2, 3, 4][index]];
     vars[`--dashboard-sentiment-${key}-text`] = getReadableDesignColor(colors.sentiment[[0, 1, 2, 2, 3, 4][index]]);
