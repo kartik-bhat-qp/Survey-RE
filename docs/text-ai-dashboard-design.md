@@ -48,3 +48,5 @@ No fetch, push, remote branch or remote merge is needed. Review any conflicts if
 ## Production BI style review — 18 September 2026
 
 Read-only comparison with the already-open Design tab on production BI dashboard 27109 in workspace 348. Matched the 1250 × 685 modal, 56px header with 24px title, compact tabs, 35/65 controls-to-preview columns, 32px selectors, font-control order, rounded preview cards and Save-only footer. Removed the prototype-only Reset, Cancel and Font style controls. Retained Text AI-specific settings tabs and six-category sentiment mapping. This comparison verifies visible styling only; production settings were not changed.
+
+The Text AI settings shell now uses the same client-loaded `WuModal` action variant, header, content and footer as BI. This replaces the static outline with WickUI's pointer-responsive radial gradient: 4px stroke, pale blue to #1D50F4 at 80% opacity, and the shared transition. Browser verification confirmed that pointer movement changes the gradient center, and closing/reopening works. The shared modal also owns Escape, outside-click dismissal and focus handling.

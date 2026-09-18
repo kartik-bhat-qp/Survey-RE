@@ -17,6 +17,7 @@ import {
 } from '@/data/text-ai-theme-preferences';
 import { DashboardDesignSettingsTab } from '@/components/dashboards/DashboardDesignSettingsTab';
 import { DESIGN_THEME_OPTIONS, DESIGN_PALETTE_OPTIONS, DESIGN_SENTIMENT_OPTIONS, type DashboardDesign } from '@/data/dashboard-design';
+import { useWickUILib } from '@/components/ui/useWickUILib';
 import styles from './TextAiDashboardSettingsModal.module.css';
 
 const WuToggle = dynamic(
@@ -67,6 +68,7 @@ export function TextAiDashboardSettingsModal({
   open,
   onOpenChange,
 }: TextAiDashboardSettingsModalProps) {
+  const wick = useWickUILib();
   const [draftDesign, setDraftDesign] = useState(design);
   const [designError, setDesignError] = useState('');
   const [wasOpen, setWasOpen] = useState(open);
@@ -91,17 +93,6 @@ export function TextAiDashboardSettingsModal({
   useEffect(() => {
     if (!open) return;
 
-    function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === 'Escape') onOpenChange(false);
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [dashboard.id, onOpenChange, open]);
-
-  useEffect(() => {
-    if (!open) return;
-
     const refreshPreferences = () =>
       setThemePreferences(getTextAiThemePreferences(dashboard.id));
 
@@ -121,7 +112,8 @@ export function TextAiDashboardSettingsModal({
     return slicers.filter((slicer) => slicer.name.toLowerCase().includes(term));
   }, [search, slicers]);
 
-  if (!open) return null;
+  if (!open || !wick) return null;
+  const { WuModal, WuModalHeader, WuModalContent, WuModalFooter } = wick;
 
   const visibleCount = filteredSlicers.length;
 
@@ -146,31 +138,16 @@ export function TextAiDashboardSettingsModal({
   }
 
   return (
-    <div
-      className={styles.backdrop}
-      onMouseDown={(event) => {
-        if (event.currentTarget === event.target) onOpenChange(false);
-      }}
+    <WuModal
+      open={open}
+      onOpenChange={onOpenChange}
+      variant="action"
+      maxWidth="1250px"
+      maxHeight="min(685px, calc(100dvh - 2rem))"
+      className={styles.modal}
     >
-      <section
-        className={styles.modal}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="text-ai-settings-title"
-      >
-        <header className={styles.header}>
-          <h2 id="text-ai-settings-title">Dashboard settings</h2>
-          <button
-            type="button"
-            className={styles.closeButton}
-            aria-label="Close settings"
-            onClick={() => onOpenChange(false)}
-          >
-            <span className="wm-close" aria-hidden />
-          </button>
-        </header>
-
-        <div className={styles.body}>
+      <WuModalHeader className={styles.header}>Dashboard settings</WuModalHeader>
+      <WuModalContent className={styles.body}>
           <div className={styles.tabs} role="tablist" aria-label="TextAI settings">
             <button
               type="button"
@@ -531,18 +508,17 @@ export function TextAiDashboardSettingsModal({
               </div>
             </div>
           )}
-        </div>
+      </WuModalContent>
         {activeTab === 'design' && (
-          <footer className={styles.designFooter}>
+          <WuModalFooter className={styles.designFooter}>
             {designError && <span role="alert">{designError}</span>}
             <button type="button" className={styles.primaryButton} disabled={JSON.stringify(draftDesign) === JSON.stringify(design)} onClick={() => {
               if (!onSaveDesign(draftDesign)) { setDesignError('Settings could not be saved. Check browser storage and try again.'); return; }
               showToast({ message: 'Dashboard design settings saved successfully', variant: 'success' });
               onOpenChange(false);
             }}>Save</button>
-          </footer>
+          </WuModalFooter>
         )}
-      </section>
-    </div>
+    </WuModal>
   );
 }

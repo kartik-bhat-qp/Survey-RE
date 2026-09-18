@@ -1,26 +1,12 @@
-.backdrop {
-  align-items: center;
-  background: rgb(0 0 0 / 32%);
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  padding: 1rem;
-  position: fixed;
-  z-index: 110;
-}
-
 .modal {
-  background: #fff;
-  border: 0;
   border-radius: 14px;
-  box-shadow: 0 0 0 3px #aaa0ee, 0 10px 24px rgb(15 23 42 / 12%);
   display: flex;
   flex-direction: column;
   font-family: 'Fira Sans', sans-serif;
   height: min(685px, calc(100dvh - 2rem));
   max-width: 78.125rem;
-  overflow: hidden;
-  width: min(78.125rem, calc(100vw - 2rem));
+  overflow: visible;
+  width: 100%;
 }
 
 .header {
@@ -42,25 +28,10 @@
   margin: 0;
 }
 
-.closeButton {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  color: #1c387f;
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 1rem;
-  height: 2rem;
-  justify-content: center;
-  padding: 0;
-  width: 2rem;
-}
-
-.closeButton:hover {
-  background: #e1eaf7;
-}
-
 .body {
+  background: #fff;
+  gap: 0;
+  overflow: hidden;
   display: flex;
   flex: 1;
   flex-direction: column;
