@@ -202,6 +202,8 @@ export function TextAiDashboardSettingsModal({
           {activeTab === 'design' ? (
             <div id="design-panel" role="tabpanel" aria-labelledby="design-tab" className={`${styles.tabPanel} ${styles.designPanel}`}>
               <DashboardDesignSettingsTab
+                colorSettings={draftDesign}
+                onColorSettingsChange={(colors) => setDraftDesign(current => ({ ...current, ...colors }))}
                 designTheme={DESIGN_THEME_OPTIONS.find((option) => option.value === draftDesign.theme)!}
                 designPalette={DESIGN_PALETTE_OPTIONS.find((option) => option.value === draftDesign.palette)!}
                 designSentiment={DESIGN_SENTIMENT_OPTIONS.find((option) => option.value === draftDesign.sentiment)!}

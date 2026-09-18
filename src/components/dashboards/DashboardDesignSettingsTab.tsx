@@ -1,6 +1,8 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { DesignColorPicker } from './DesignColorPicker';
 import dynamic from 'next/dynamic';
 import styles from './DashboardDesignSettingsTab.module.css';
 
@@ -10,6 +12,9 @@ const WuSelect = dynamic(
 );
 
 import {
+  type DesignColorSettings,
+  DEFAULT_DASHBOARD_DESIGN,
+  DESIGN_PALETTES,
   type DesignSelectOption,
   type DesignTypographyOptions,
   DESIGN_THEME_OPTIONS,
@@ -44,6 +49,8 @@ type DashboardTypographyScale = 'preview';
 type DashboardTypographyRole = 'title' | 'body' | 'metric';
 
 interface DashboardDesignSettingsTabProps {
+  colorSettings?: DesignColorSettings;
+  onColorSettingsChange?: (settings: DesignColorSettings) => void;
   designTheme: DesignSelectOption;
   designPalette: DesignSelectOption;
   designSentiment: DesignSelectOption;
@@ -153,6 +160,8 @@ export function getNextDesignFontSizeOption(
 }
 
 export function DashboardDesignSettingsTab({
+  colorSettings,
+  onColorSettingsChange,
   designTheme,
   designPalette,
   designSentiment,
@@ -165,7 +174,12 @@ export function DashboardDesignSettingsTab({
   onDesignFontSizeChange,
   onDesignFontFamilyChange,
 }: DashboardDesignSettingsTabProps) {
-  const colors = getDashboardDesignColors({ theme: designTheme.value, palette: designPalette.value, sentiment: designSentiment.value });
+  const [localColors, setLocalColors] = useState<DesignColorSettings>(DEFAULT_DASHBOARD_DESIGN);
+  const settings = colorSettings ?? localColors;
+  const changeColors = (patch: Partial<DesignColorSettings>) => {
+    const next = { ...settings, ...patch }; setLocalColors(next); onColorSettingsChange?.(next);
+  };
+  const colors = getDashboardDesignColors({ ...settings, theme: designTheme.value, palette: designPalette.value, sentiment: designSentiment.value });
   const draftTypography = {
     fontSize: designFontSize,
     fontStyle: designFontStyle,
@@ -195,32 +209,28 @@ export function DashboardDesignSettingsTab({
 
         <div className={styles.themeColorRow}>
           <span className={styles.fieldLabel}>Theme color</span>
-          <span className={styles.themeSwatch} style={{ background: colors.accent }} aria-label="Theme color swatch" />
+          <DesignColorPicker value={colors.accent} label="Theme color" onChange={themeColor => changeColors({ themeColor })} />
         </div>
 
         <div className={styles.field}>
           <label className={styles.fieldLabel}>Color palette</label>
-          <WuSelect
-            data={DESIGN_PALETTE_OPTIONS}
-            accessorKey={{ value: 'value', label: 'label' }}
-            value={designPalette}
-            aria-label="Color palette"
-            onSelect={(option) =>
-              handleSelect(option as DesignSelectOption | DesignSelectOption[], onDesignPaletteChange)
-            }
-            variant="outlined"
-            className={styles.select}
-          />
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger className={styles.paletteTrigger} aria-label="Color palette">{designPalette.label}<span aria-hidden>▾</span></DropdownMenu.Trigger>
+            <DropdownMenu.Portal><DropdownMenu.Content className={styles.paletteMenu} sideOffset={4} align="start">
+              <DropdownMenu.RadioGroup value={designPalette.value} onValueChange={value => onDesignPaletteChange(DESIGN_PALETTE_OPTIONS.find(option => option.value === value)!)}>
+                {DESIGN_PALETTE_OPTIONS.map(option => <DropdownMenu.RadioItem className={styles.paletteOption} value={option.value} key={option.value}>
+                  <span>{option.label}</span><span className={styles.miniSwatches} aria-hidden>{(DESIGN_PALETTES[option.value] ?? settings.customPalette).filter((_, index) => index % 2 === 0).slice(0, 9).map((color, index) => <i key={index} style={{ background: color }} />)}</span>
+                </DropdownMenu.RadioItem>)}
+              </DropdownMenu.RadioGroup>
+            </DropdownMenu.Content></DropdownMenu.Portal>
+          </DropdownMenu.Root>
           <div className={styles.swatches}>
-            {colors.palette.map((color) => (
-              <span
-                key={color}
-                className={styles.swatch}
-                style={{ backgroundColor: color }}
-                aria-label={`Palette color ${color}`}
-              />
-            ))}
+            {colors.palette.map((color, index) => designPalette.value === 'custom' ?
+              <DesignColorPicker key={index} value={color} label={`Palette color ${index + 1}`} onChange={value => changeColors({ customPalette: settings.customPalette.map((entry, i) => i === index ? value : entry) })} /> :
+              <span key={index} className={styles.swatch} style={{ backgroundColor: color }} aria-label={`Palette color ${color}`} />)}
           </div>
+          {designPalette.value === 'custom' && <button type="button" className={styles.addColor} aria-label="Add palette color" disabled={settings.customPalette.length >= 64} onClick={() => changeColors({ customPalette: [...settings.customPalette, '#000000'] })}>+</button>}
+
         </div>
 
         <div className={styles.field}>
@@ -237,14 +247,9 @@ export function DashboardDesignSettingsTab({
             className={`${styles.select} ${styles.sentimentSelect}`}
           />
           <div className={styles.swatches}>
-            {colors.sentiment.map((color) => (
-              <span
-                key={color}
-                className={styles.swatch}
-                style={{ backgroundColor: color }}
-                aria-label={`Sentiment color ${color}`}
-              />
-            ))}
+            {colors.sentiment.map((color, index) => designSentiment.value === 'custom' ?
+              <DesignColorPicker key={index} value={color} label={`Sentiment color ${index + 1}`} onChange={value => changeColors({ customSentiment: settings.customSentiment.map((entry, i) => i === index ? value : entry) })} /> :
+              <span key={index} className={styles.swatch} style={{ backgroundColor: color }} aria-label={`Sentiment color ${color}`} />)}
           </div>
         </div>
 
@@ -349,7 +354,7 @@ export function DashboardDesignSettingsTab({
                 </div>
                 <div className={styles.chartCenter}>
                   <div className={styles.gaugeClip}>
-                    <div className={styles.gauge} style={{ background: `conic-gradient(from 270deg, ${colors.sentiment.map((color, i) => `${color} ${i * 30}deg ${(i + 1) * 30}deg`).join(", ")}, transparent 180deg 360deg)` }} aria-label="Gauge chart preview" />
+                    <div className={styles.gauge} style={{ background: `conic-gradient(from 270deg, ${colors.sentiment.map((color, i) => `${color} ${i * 36}deg ${(i + 1) * 36}deg`).join(", ")}, transparent 180deg 360deg)` }} aria-label="Gauge chart preview" />
                   </div>
                 </div>
               </div>

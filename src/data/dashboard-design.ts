@@ -9,23 +9,9 @@ export type DesignTypographyOptions = {
   fontFamily: DesignSelectOption;
 };
 
-export const DESIGN_THEME_OPTIONS: DesignSelectOption[] = [
-  { value: 'default', label: 'Default' },
-  { value: 'modern', label: 'Modern' },
-  { value: 'classic', label: 'Classic' },
-];
-
-export const DESIGN_PALETTE_OPTIONS: DesignSelectOption[] = [
-  { value: 'categorical', label: 'Categorical' },
-  { value: 'sequential', label: 'Sequential' },
-  { value: 'diverging', label: 'Diverging' },
-];
-
-export const DESIGN_SENTIMENT_OPTIONS: DesignSelectOption[] = [
-  { value: 'default', label: 'Default' },
-  { value: 'soft', label: 'Soft' },
-  { value: 'high-contrast', label: 'High contrast' },
-];
+export const DESIGN_THEME_OPTIONS: DesignSelectOption[] = [{ value: 'default', label: 'Default' }];
+export const DESIGN_PALETTE_OPTIONS: DesignSelectOption[] = ['Categorical', 'Divergent', 'Blue', 'Green', 'Red', 'Orange', 'Custom'].map(label => ({ value: label.toLowerCase(), label }));
+export const DESIGN_SENTIMENT_OPTIONS: DesignSelectOption[] = ['Default', 'Custom'].map(label => ({ value: label.toLowerCase(), label }));
 
 export const DESIGN_FONT_SIZE_OPTIONS: DesignSelectOption[] = [
   { value: 'extra-small', label: 'Extra small' },
@@ -52,43 +38,46 @@ export const DESIGN_FONT_FAMILY_OPTIONS: DesignSelectOption[] = [
 ];
 
 export const DEFAULT_DESIGN_TYPOGRAPHY: DesignTypographyOptions = {
-  fontSize: DESIGN_FONT_SIZE_OPTIONS[1],
+  fontSize: DESIGN_FONT_SIZE_OPTIONS[2],
   fontStyle: DESIGN_FONT_STYLE_OPTIONS[0],
   fontFamily: DESIGN_FONT_FAMILY_OPTIONS[0],
 };
 
 
+export const DESIGN_PALETTES: Record<string, string[]> = {
+  categorical: ['#4c5b94', '#5b7aae', '#409eb5', '#40b59e', '#60c790', '#9ad69a', '#b3bd56', '#dd8f40', '#ce6550', '#ae4c3d', '#8f3328', '#985d75', '#b181a8', '#c5a0c2', '#dac2e0', '#e3d9e8'],
+  divergent: ['#661200', '#a11c00', '#d2300f', '#df4828', '#eb6a4a', '#f4896c', '#fca78f', '#ffc4b3', '#ffe2d9', '#f5f5f5', '#dbd9e9', '#b7b5d4', '#9392bf', '#7070aa', '#4a5195', '#1b3380', '#182d72', '#122254'],
+  blue: ['#ebf8ff', '#d7efff', '#c2deff', '#aad0ff', '#94c1f3', '#7db2e7', '#67a3db', '#5194cf', '#3b85c3', '#2576b7', '#256cac', '#1a60a6', '#184994', '#1c337f', '#0d2163', '#00083d'],
+  green: ['#e0f9ed', '#c4f3dc', '#a8eccc', '#8de5bd', '#78ddb1', '#62d3a3', '#4cc996', '#3abf8a', '#35af7f', '#329d75', '#308a6a', '#2d7a60', '#286a55', '#255c4b', '#1f4b3e', '#1b3d34'],
+  red: ['#fee9ec', '#ffd2d8', '#ffbbc4', '#ffa6b3', '#fb97a5', '#f78998', '#f37c8c', '#ee6f80', '#e76172', '#e15466', '#da465b', '#d33b50', '#bc3548', '#a73343', '#91313e', '#7d2d38'],
+  orange: ['#fdede5', '#fcdfcf', '#fbcfba', '#fac5ab', '#f7b694', '#f6ab85', '#f79d70', '#f6915f', '#ef8450', '#e37944', '#db713c', '#d06530', '#c95e29', '#bd521c', '#b24610', '#aa3f08'],
+};
+export const DESIGN_SENTIMENT_COLORS = ['#f85271', '#f69a79', '#f1da7e', '#94d08b', '#42bd84'];
 export interface DashboardDesign {
   theme: string;
   palette: string;
   sentiment: string;
+  themeColor: string;
+  customPalette: string[];
+  customSentiment: string[];
   typography: DesignTypographyOptions;
 }
-
+export type DesignColorSettings = Pick<DashboardDesign, 'themeColor' | 'customPalette' | 'customSentiment'>;
 export const DEFAULT_DASHBOARD_DESIGN: DashboardDesign = {
-  theme: 'default', palette: 'categorical', sentiment: 'default',
+  theme: 'default', palette: 'categorical', sentiment: 'default', themeColor: '#1b3380',
+  customPalette: DESIGN_PALETTES.categorical, customSentiment: DESIGN_SENTIMENT_COLORS,
   typography: DEFAULT_DESIGN_TYPOGRAPHY,
 };
-
-const PALETTES: Record<string, string[]> = {
-  categorical: ['#4f63a2', '#6680b5', '#3ea2b5', '#3fb6a3', '#8ed09a', '#bbc65a', '#e6963d', '#d7654f', '#9d3c31', '#9d637f'],
-  sequential: ['#08306b', '#103e7a', '#184c88', '#205a96', '#2868a4', '#3075ad', '#3881b5', '#408dbb', '#4896bf', '#509fc3'],
-  diverging: ['#8e0152', '#c51b7d', '#de77ae', '#f1b6da', '#fde0ef', '#e6f5d0', '#b8e186', '#7fbc41', '#4d9221', '#276419'],
-};
-// Semantic order stays fixed: very negative, negative, mixed, neutral, positive, very positive.
-const SENTIMENTS: Record<string, string[]> = {
-  default: ['#ff5470', '#ff967e', '#f2d46f', '#ecece1', '#99d493', '#3dc481'],
-  soft: ['#df8b9b', '#edb29d', '#efdda1', '#e4e4df', '#bbd8b6', '#89c9ac'],
-  'high-contrast': ['#a50026', '#d73027', '#fdae61', '#bdbdbd', '#66bd63', '#006837'],
-};
-const THEMES: Record<string, { accent: string; canvas: string; radius: string; shadow: string }> = {
-  default: { accent: '#1b3380', canvas: '#f5f5f5', radius: '4px', shadow: 'none' },
-  modern: { accent: '#0f766e', canvas: '#eef6f5', radius: '12px', shadow: '0 3px 12px rgb(15 118 110 / 8%)' },
-  classic: { accent: '#6b3e26', canvas: '#f5f1e9', radius: '0px', shadow: 'none' },
-};
-
-export function getDashboardDesignColors(design: Pick<DashboardDesign, 'theme' | 'palette' | 'sentiment'>) {
-  return { ...(THEMES[design.theme] ?? THEMES.default), palette: PALETTES[design.palette] ?? PALETTES.categorical, sentiment: SENTIMENTS[design.sentiment] ?? SENTIMENTS.default };
+export function isDesignColor(value: unknown): value is string {
+  return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
+}
+export function getDashboardDesignColors(design: Pick<DashboardDesign, 'theme' | 'palette' | 'sentiment'> & Partial<DesignColorSettings>) {
+  const palette = design.palette === 'custom' ? design.customPalette ?? DESIGN_PALETTES.categorical : DESIGN_PALETTES[design.palette] ?? DESIGN_PALETTES.categorical;
+  return {
+    accent: design.themeColor ?? DEFAULT_DASHBOARD_DESIGN.themeColor,
+    canvas: '#f5f5f5', radius: '4px', shadow: 'none', palette,
+    sentiment: design.sentiment === 'custom' ? design.customSentiment ?? DESIGN_SENTIMENT_COLORS : DESIGN_SENTIMENT_COLORS,
+  };
 }
 
 export function getReadableDesignColor(hex: string): string {
@@ -107,9 +96,14 @@ export function normalizeDashboardDesign(value: unknown): DashboardDesign {
     return options.find((entry) => entry.value === id) ?? fallback;
   };
   const choice = (value: unknown, options: DesignSelectOption[]) => options.find((entry) => entry.value === value)?.value ?? options[0].value;
+  const colorArray = (value: unknown, fallback: string[], exactLength?: number) =>
+    Array.isArray(value) && value.length >= 5 && value.length <= 64 && (!exactLength || value.length === exactLength) && value.every(isDesignColor) ? value.map(color => color.toLowerCase()) : [...fallback];
   return {
+    themeColor: isDesignColor(record.themeColor) ? record.themeColor.toLowerCase() : DEFAULT_DASHBOARD_DESIGN.themeColor,
+    customPalette: colorArray(record.customPalette, DESIGN_PALETTES.categorical),
+    customSentiment: colorArray(record.customSentiment, DESIGN_SENTIMENT_COLORS, 5),
     theme: choice(record.theme, DESIGN_THEME_OPTIONS),
-    palette: choice(record.palette, DESIGN_PALETTE_OPTIONS),
+    palette: choice(record.palette === 'sequential' ? 'blue' : record.palette === 'diverging' ? 'divergent' : record.palette, DESIGN_PALETTE_OPTIONS),
     sentiment: choice(record.sentiment, DESIGN_SENTIMENT_OPTIONS),
     typography: {
       fontSize: option(typography.fontSize, DESIGN_FONT_SIZE_OPTIONS, DEFAULT_DESIGN_TYPOGRAPHY.fontSize),
@@ -135,10 +129,10 @@ export function getDashboardDesignColorVars(design: DashboardDesign): Record<str
     '--dashboard-accent': colors.accent, '--dashboard-canvas': colors.canvas,
     '--dashboard-card-radius': colors.radius, '--dashboard-card-shadow': colors.shadow,
   };
-  colors.palette.forEach((color, index) => { vars[`--dashboard-series-${index}`] = color; });
+  Array.from({ length: Math.max(16, colors.palette.length) }, (_, index) => { vars[`--dashboard-series-${index}`] = colors.palette[index % colors.palette.length]; });
   ['veryNegative', 'negative', 'mixed', 'neutral', 'positive', 'veryPositive'].forEach((key, index) => {
-    vars[`--dashboard-sentiment-${key}`] = colors.sentiment[index];
-    vars[`--dashboard-sentiment-${key}-text`] = getReadableDesignColor(colors.sentiment[index]);
+    vars[`--dashboard-sentiment-${key}`] = colors.sentiment[[0, 1, 2, 2, 3, 4][index]];
+    vars[`--dashboard-sentiment-${key}-text`] = getReadableDesignColor(colors.sentiment[[0, 1, 2, 2, 3, 4][index]]);
   });
   return vars;
 }
