@@ -359,7 +359,8 @@ export function ListenAIQuestionRow({
             <span className={`wc-ai ${styles.creditsAiIcon}`} aria-hidden />
             <p className={styles.creditsRateText}>
               <strong>
-                {LISTENAI_CREDITS_PER_CONVERSATION} QuestionPro AI credits per conversation
+                {LISTENAI_CREDITS_PER_CONVERSATION} QuestionPro AI credit
+                {LISTENAI_CREDITS_PER_CONVERSATION === 1 ? '' : 's'} per conversation
               </strong>
             </p>
           </div>

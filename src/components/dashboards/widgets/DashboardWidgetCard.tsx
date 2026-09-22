@@ -33,6 +33,8 @@ interface DashboardWidgetCardProps {
   showDiamond?: boolean;
   insightCount?: number;
   onOpenInsights?: () => void;
+  /** Rendered before the insight / menu buttons (e.g. Diagnose / Predict). */
+  headerExtra?: React.ReactNode;
   actions?: React.ReactNode;
   shared?: boolean;
 }
@@ -45,6 +47,7 @@ export function DashboardWidgetCard({
   showDiamond = false,
   insightCount = 0,
   onOpenInsights,
+  headerExtra,
   actions,
   shared = false,
 }: DashboardWidgetCardProps) {
@@ -63,6 +66,7 @@ export function DashboardWidgetCard({
           onPointerDown={(event) => event.stopPropagation()}
           onTouchStart={(event) => event.stopPropagation()}
         >{actions !== undefined ? actions : <>
+          {headerExtra}
           <button
             type="button"
             className={`${styles.actionBtn} ${styles.insightButton}`}

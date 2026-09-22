@@ -11,6 +11,7 @@ import {
   GRID_ROW_HEIGHT,
   MOBILE_GRID_MARGIN,
   MOBILE_GRID_ROW_HEIGHT,
+  DRIVER_ANALYSIS_LAYOUT_W,
 } from '@/data/dashboard-grid-config';
 import {
   AI_DASHBOARD_GRID_COLS,
@@ -32,6 +33,7 @@ import { stackLayoutSingleColumn } from '@/lib/ai-dashboard-layout';
 import { DashboardWidgetCard } from '@/components/dashboards/widgets/DashboardWidgetCard';
 import { AiWidgetRenderer } from '@/components/dashboards/widgets/AiWidgetRenderer';
 import { WordCloudDashboardCard } from '@/components/dashboards/widgets/WordCloudDashboardCard';
+import { DriverAnalysisDashboardCard } from '@/components/dashboards/widgets/DriverAnalysisDashboardCard';
 import {
   createDashboardWidgetInsightThread,
   DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY,
@@ -46,6 +48,8 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
 const GridLayoutWithWidth = WidthProvider(ReactGridLayout);
+
+const NO_ADDED_WIDGETS: AiWidgetConfig[] = [];
 
 const CHART_BODY_FONT_SIZE_BY_DESIGN_SIZE: Record<string, number> = {
   'extra-small': 11,
@@ -78,6 +82,8 @@ interface AiDashboardCanvasProps {
   globalInsightRefreshFailedWidgetIds?: string[];
   lastAiInsightsRefreshAt?: string;
   onInsightsRefreshed?: (widgetId: string, refreshedAt: string) => void;
+  /** Widgets added from the Add widget flow — appended below the seeded widgets. */
+  addedWidgets?: AiWidgetConfig[];
   readOnly?: boolean;
   renderWidget?: (widget: AiWidgetConfig) => React.ReactNode;
   renderWidgetActions?: (widget: AiWidgetConfig) => React.ReactNode;
@@ -92,6 +98,7 @@ export function AiDashboardCanvas({
   globalInsightRefreshFailedWidgetIds = [],
   lastAiInsightsRefreshAt = '2026-09-01T06:30:00.000Z',
   onInsightsRefreshed,
+  addedWidgets = NO_ADDED_WIDGETS,
   readOnly = false,
   renderWidget,
   renderWidgetActions,
@@ -121,9 +128,54 @@ export function AiDashboardCanvas({
   );
 
   const widgetById = useMemo(
-    () => new Map(AI_DASHBOARD_WIDGETS.map((widget) => [widget.id, widget])),
-    []
+    () =>
+      new Map(
+        [...AI_DASHBOARD_WIDGETS, ...addedWidgets].map((widget) => [widget.id, widget])
+      ),
+    [addedWidgets]
   );
+
+  useEffect(() => {
+    if (addedWidgets.length === 0) return;
+
+    setDesktopLayout((current) => {
+      const missing = addedWidgets.filter(
+        (widget) => !current.some((item) => item.i === widget.id)
+      );
+      if (missing.length === 0) return current;
+      let nextY = current.reduce((lowest, item) => Math.max(lowest, item.y + item.h), 0);
+      return [
+        ...current,
+        ...missing.map((widget) => {
+          const item = {
+            i: widget.id,
+            x: 0,
+            y: nextY,
+            w: widget.type === 'driver-analysis' ? DRIVER_ANALYSIS_LAYOUT_W : AI_DASHBOARD_GRID_COLS,
+            h: 1,
+            minW: 1,
+            minH: 1,
+          };
+          nextY += 1;
+          return item;
+        }),
+      ];
+    });
+
+    setInsightThreads((current) => {
+      const missing = addedWidgets.filter((widget) => !current[widget.id]);
+      if (missing.length === 0) return current;
+      return {
+        ...current,
+        ...Object.fromEntries(
+          missing.map((widget) => [
+            widget.id,
+            createDashboardWidgetInsightThread(widget.id, lastAiInsightsRefreshAt),
+          ])
+        ),
+      };
+    });
+  }, [addedWidgets, lastAiInsightsRefreshAt]);
 
   const handleLayoutChange = useCallback(
     (nextLayout: Layout) => {
@@ -328,7 +380,16 @@ export function AiDashboardCanvas({
 
           return (
             <div key={widget.id} className={styles.gridItem}>
-              {widget.type === 'wordcloud' ? <WordCloudDashboardCard shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /> : <>
+              {widget.type === 'wordcloud' ? <WordCloudDashboardCard shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /> : widget.type === 'driver-analysis' ? (
+                <DriverAnalysisDashboardCard
+                  title={widget.title}
+                  dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle}
+                  shared={readOnly}
+                  actions={renderWidgetActions?.(widget) ?? (readOnly ? null : undefined)}
+                  insightCount={insightThreads[widget.id]?.items.length ?? 0}
+                  onOpenInsights={readOnly ? undefined : () => setActiveInsightWidgetId(widget.id)}
+                />
+              ) : <>
               <DashboardWidgetCard
                 title={widget.title}
                 dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle}

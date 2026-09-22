@@ -22,7 +22,8 @@ export type AiWidgetType =
   | 'stat-metric'
   | 'comparative-bar'
   | 'segment-trend'
-  | 'wordcloud';
+  | 'wordcloud'
+  | 'driver-analysis';
 
 export interface AiWidgetConfig {
   id: string;

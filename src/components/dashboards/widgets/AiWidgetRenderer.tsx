@@ -17,6 +17,7 @@ import type {
 } from '@/components/charts/amcharts/types';
 
 type DashboardAmChartType = Exclude<AmChartWidgetType, MatrixAmChartWidgetType>;
+import { DriverAnalysisWidget } from '@/components/dashboards/widgets/DriverAnalysisWidget';
 import { MeanStatWidget } from '@/components/dashboards/widgets/MeanStatWidget';
 import { NpsBenchmarkWidget } from '@/components/dashboards/widgets/NpsBenchmarkWidget';
 import { ResponseInfoWidget } from '@/components/dashboards/widgets/ResponseInfoWidget';
@@ -190,6 +191,8 @@ export function AiWidgetRenderer({
   }
 
   if (type === 'wordcloud') return <WordCloudWidget />;
+
+  if (type === 'driver-analysis') return <DriverAnalysisWidget />;
 
   if (isAmChartType(type)) {
     return (

@@ -18,6 +18,8 @@ import {
   type SurveyQuestion,
 } from '@/data/mock-survey-questions';
 import { DEFAULT_DASHBOARD_SURVEY } from '@/data/mock-survey-folders';
+import type { AiWidgetConfig } from '@/data/mock-ai-widgets';
+import { DRIVER_ANALYSIS_WIDGET_TITLE } from '@/data/mock-driver-analysis';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import styles from './AdvancedWidgetModal.module.css';
 
@@ -31,7 +33,8 @@ interface AdvancedWidgetModalProps {
   onOpenChange: (open: boolean) => void;
   /** Survey used when picking primary / driver questions for Driver analysis. */
   surveyId?: number;
-  onWidgetAdded?: () => void;
+  /** `widget` is passed for widget types the canvas can render. */
+  onWidgetAdded?: (widget?: AiWidgetConfig) => void;
 }
 
 function breadcrumbStepFor(step: ModalStep): AdvancedWidgetStep {
@@ -98,14 +101,17 @@ export function AdvancedWidgetModal({
     primary: SurveyQuestion,
     drivers: SurveyQuestion[]
   ): void {
-    const selectedType = ADVANCED_WIDGET_TYPES.find((t) => t.id === selectedTypeId);
-    const name = widgetName.trim() || selectedType?.name || 'Driver analysis';
+    const name = widgetName.trim() || DRIVER_ANALYSIS_WIDGET_TITLE;
     const driverCodes = drivers.map((q) => q.code).join(', ');
     showToast({
       message: `Widget "${name}" added · Primary: ${primary.code} · Drivers: ${driverCodes}`,
       variant: 'success',
     });
-    onWidgetAdded?.();
+    onWidgetAdded?.({
+      id: `w-driver-analysis-${Date.now()}`,
+      type: 'driver-analysis',
+      title: name,
+    });
     handleClose();
   }
 

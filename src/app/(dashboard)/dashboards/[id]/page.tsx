@@ -34,7 +34,7 @@ import {
   type AiInsightRefreshFrequency,
   type DashboardInsightRegenerationResult,
 } from '@/data/mock-dashboard-ai-insights';
-import { AI_DASHBOARD_WIDGETS } from '@/data/mock-ai-widgets';
+import { AI_DASHBOARD_WIDGETS, type AiWidgetConfig } from '@/data/mock-ai-widgets';
 import {
   INITIAL_DASHBOARD_SAVED_FILTERS,
   type DashboardSavedFilter,
@@ -69,6 +69,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
     useState<SurveyListItem | null>(null);
   const [advancedWidgetOpen, setAdvancedWidgetOpen] = useState(false);
   const [hasAddedWidget, setHasAddedWidget] = useState(false);
+  const [addedWidgets, setAddedWidgets] = useState<AiWidgetConfig[]>([]);
   const [designTypography, setDesignTypography] = useState<DesignTypographyOptions>(
     DEFAULT_DESIGN_TYPOGRAPHY
   );
@@ -247,7 +248,10 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
           resolveDashboardSurvey(dashboard.surveyId, dashboard.surveyName ?? 'QuestionPro - RE')
             .id
         }
-        onWidgetAdded={() => setHasAddedWidget(true)}
+        onWidgetAdded={(widget) => {
+          setHasAddedWidget(true);
+          if (widget) setAddedWidgets((current) => [...current, widget]);
+        }}
       />
 
       <QuestionBasedWidgetModal
@@ -272,6 +276,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
             current.filter((failedWidgetId) => failedWidgetId !== widgetId)
           )
         }
+        addedWidgets={addedWidgets}
       />
     </div>
   );
