@@ -388,6 +388,7 @@ export function AiDashboardCanvas({
                   actions={renderWidgetActions?.(widget) ?? (readOnly ? null : undefined)}
                   insightCount={insightThreads[widget.id]?.items.length ?? 0}
                   onOpenInsights={readOnly ? undefined : () => setActiveInsightWidgetId(widget.id)}
+                  driverAnalysis={widget.driverAnalysis}
                 />
               ) : <>
               <DashboardWidgetCard

@@ -16,6 +16,8 @@ import {
   DRIVER_NPS_TICKS,
   DRIVER_PERF_SPLIT,
   DRIVER_PERF_TICKS,
+  buildDriversFromSelections,
+  driverAnalysisMethodNote,
   driverColor,
   driverContribution,
   driverImpactTopPercent,
@@ -37,6 +39,8 @@ interface DriverAnalysisWidgetProps {
   mode?: DriverAnalysisMode;
   onModeChange?: (mode: DriverAnalysisMode) => void;
   showModeToggle?: boolean;
+  /** When set, only these selected driver-question items are shown. */
+  selectedDrivers?: Array<{ id: string; name: string }>;
 }
 
 export function DriverAnalysisWidget({
@@ -47,6 +51,7 @@ export function DriverAnalysisWidget({
   mode: controlledMode,
   onModeChange,
   showModeToggle = true,
+  selectedDrivers,
 }: DriverAnalysisWidgetProps) {
   const [uncontrolledMode, setUncontrolledMode] = useState<DriverAnalysisMode>('diagnose');
   const mode = controlledMode ?? uncontrolledMode;
@@ -54,13 +59,18 @@ export function DriverAnalysisWidget({
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [deltaById, setDeltaById] = useState<Record<string, number>>({});
 
-  const drivers = useMemo(
-    () =>
-      hideNonSignificant
-        ? DRIVER_ANALYSIS_DRIVERS.filter((driver) => driver.sig)
-        : DRIVER_ANALYSIS_DRIVERS,
-    [hideNonSignificant]
-  );
+  const drivers = useMemo(() => {
+    const source =
+      selectedDrivers && selectedDrivers.length > 0
+        ? buildDriversFromSelections(selectedDrivers)
+        : DRIVER_ANALYSIS_DRIVERS;
+    return hideNonSignificant ? source.filter((driver) => driver.sig) : source;
+  }, [hideNonSignificant, selectedDrivers]);
+
+  const methodNote =
+    selectedDrivers && selectedDrivers.length > 0
+      ? driverAnalysisMethodNote(drivers.length)
+      : DRIVER_ANALYSIS_METHOD_NOTE;
 
   const adjusted = drivers.filter((driver) => (deltaById[driver.id] ?? 0) !== 0);
   const lift = drivers.reduce(
@@ -269,7 +279,7 @@ export function DriverAnalysisWidget({
                 </div>
               ))}
             </div>
-            <div className={styles.note}>{DRIVER_ANALYSIS_METHOD_NOTE}</div>
+            <div className={styles.note}>{methodNote}</div>
           </div>
         </div>
       ) : (

@@ -63,6 +63,62 @@ export const DRIVER_ANALYSIS_WIDGET_TITLE = 'NPS driver analysis';
 export const DRIVER_ANALYSIS_METHOD_NOTE =
   'Primary: Q4 NPS · 10 drivers · Shapley relative weights on 2,634 complete responses. ✓ = significant at p < 0.05.';
 
+/** Compact subject used in the widget title, derived from the primary question. */
+export function primaryQuestionSubject(text: string): string {
+  const raw = text.replace(/\?+$/, '').trim();
+  if (/\brecommend\b/i.test(raw)) return 'NPS';
+  if (/overall satisfaction/i.test(raw)) return 'Overall satisfaction';
+  if (/\bsatisfaction\b/i.test(raw)) return 'Satisfaction';
+
+  let subject = raw
+    .replace(/^(please |kindly )/i, '')
+    .replace(
+      /^(what is your |what's your |what is the |what is |how would you rate |how do you rate |how satisfied are you with |how often do you |how likely are you to |rate |please rate )/i,
+      ''
+    )
+    .replace(/^(use |the |this |your )/i, '')
+    .trim();
+  if (!subject) subject = raw;
+  subject = subject.charAt(0).toUpperCase() + subject.slice(1);
+  if (subject.length > 42) return `${subject.slice(0, 40).trimEnd()}…`;
+  return subject;
+}
+
+export function driverAnalysisWidgetTitle(primary: {
+  text: string;
+  type?: string;
+}): string {
+  if (primary.type === 'NPS' || /\brecommend\b/i.test(primary.text)) {
+    return DRIVER_ANALYSIS_WIDGET_TITLE;
+  }
+  return `${primaryQuestionSubject(primary.text)} driver analysis`;
+}
+
+export function driverAnalysisMethodNote(driverCount: number): string {
+  return `${driverCount} driver${driverCount === 1 ? '' : 's'} · Shapley relative weights on 2,634 complete responses. ✓ = significant at p < 0.05.`;
+}
+
+/** Build plotted drivers from wizard selections, reusing mock impact/perf/corr values. */
+export function buildDriversFromSelections(
+  selections: Array<{ id: string; name: string }>
+): DriverAnalysisDriver[] {
+  if (selections.length === 0) return DRIVER_ANALYSIS_DRIVERS;
+
+  return selections.map((selection, index) => {
+    const template = DRIVER_ANALYSIS_DRIVERS[index % DRIVER_ANALYSIS_DRIVERS.length];
+    const short =
+      selection.name.length > 12
+        ? `${selection.name.slice(0, 10).trimEnd()}…`
+        : selection.name;
+    return {
+      ...template,
+      id: selection.id,
+      name: selection.name,
+      short,
+    };
+  });
+}
+
 export const DRIVER_ANALYSIS_PREDICT_NOTE =
   'Predicted NPS = baseline + Σ (driver shift × relative weight × 55). Headroom-capped at a 5.0 ceiling; ±2.8 pt prediction interval at 95%.';
 

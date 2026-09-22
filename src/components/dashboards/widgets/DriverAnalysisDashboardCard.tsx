@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import type { DriverAnalysisMode } from '@/data/mock-driver-analysis';
+import type { DriverAnalysisWidgetConfig } from '@/data/mock-ai-widgets';
 import { DashboardWidgetCard } from '@/components/dashboards/widgets/DashboardWidgetCard';
 import { DriverAnalysisWidget } from '@/components/dashboards/widgets/DriverAnalysisWidget';
 import styles from './DriverAnalysisWidget.module.css';
@@ -14,6 +15,7 @@ interface DriverAnalysisDashboardCardProps {
   onOpenInsights?: () => void;
   actions?: ReactNode;
   showDiamond?: boolean;
+  driverAnalysis?: DriverAnalysisWidgetConfig;
 }
 
 export function DriverAnalysisDashboardCard({
@@ -24,6 +26,7 @@ export function DriverAnalysisDashboardCard({
   onOpenInsights,
   actions,
   showDiamond = false,
+  driverAnalysis,
 }: DriverAnalysisDashboardCardProps) {
   const [mode, setMode] = useState<DriverAnalysisMode>('diagnose');
 
@@ -53,6 +56,8 @@ export function DriverAnalysisDashboardCard({
   return (
     <DashboardWidgetCard
       title={title}
+      subtitle={driverAnalysis?.primaryQuestionText}
+      subtitleTitle={driverAnalysis?.primaryQuestionText}
       dragHandleClassName={dragHandleClassName}
       shared={shared}
       insightCount={insightCount}
@@ -61,7 +66,12 @@ export function DriverAnalysisDashboardCard({
       headerExtra={modeToggle}
       actions={actions}
     >
-      <DriverAnalysisWidget mode={mode} onModeChange={setMode} showModeToggle={false} />
+      <DriverAnalysisWidget
+        mode={mode}
+        onModeChange={setMode}
+        showModeToggle={false}
+        selectedDrivers={driverAnalysis?.drivers}
+      />
     </DashboardWidgetCard>
   );
 }

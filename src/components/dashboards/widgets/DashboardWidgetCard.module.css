@@ -17,8 +17,17 @@
   border-bottom: 1px solid #f0f0f0;
   display: flex;
   flex-shrink: 0;
+  gap: 12px;
   justify-content: space-between;
   padding: 10px 14px;
+}
+
+.titleBlock {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .title {
@@ -26,6 +35,17 @@
   font-size: var(--dashboard-widget-title-size, 14px);
   font-weight: var(--dashboard-widget-font-weight, 600);
   margin: 0;
+}
+
+.subtitle {
+  color: #6b7785;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .actions {
@@ -116,3 +136,4 @@
 .shared { border-color: #ccc; border-radius: 8px; }
 .shared .header { border-color: #ddd; margin: 0 8px; padding: 10px 8px; min-height: 44px; }
 .shared .title { color: #1b3380; font-size: 18px; font-weight: 500; }
+.shared .subtitle { color: #5b6b80; font-size: 12px; }

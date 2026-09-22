@@ -77,17 +77,13 @@ export function WidgetQuestionSelection({
   const allVisibleSelected =
     multiSelect &&
     displayQuestions.length > 0 &&
-    displayQuestions.every((q) => selectedIds.has(q.parentQuestionId ?? q.id));
+    displayQuestions.every((q) => selectedIds.has(q.id));
 
   const toggleAllVisible = useCallback(
     (checked: boolean): void => {
       if (!onToggleQuestion) return;
-      const seen = new Set<number>();
       for (const question of displayQuestions) {
-        const key = question.parentQuestionId ?? question.id;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const isSelected = selectedIds.has(key);
+        const isSelected = selectedIds.has(question.id);
         if (checked && !isSelected) onToggleQuestion(question, true);
         if (!checked && isSelected) onToggleQuestion(question, false);
       }
@@ -113,9 +109,8 @@ export function WidgetQuestionSelection({
           const isSubRow = question.parentQuestionId !== undefined;
           const isExpandable = questionHasExpandableRows(question);
           const isExpanded = expandedParentIds.has(question.id);
-          const selectionKey = question.parentQuestionId ?? question.id;
           const isSelected = multiSelect
-            ? selectedIds.has(selectionKey)
+            ? selectedIds.has(question.id)
             : selectedQuestionId === question.id;
 
           return (
@@ -147,7 +142,7 @@ export function WidgetQuestionSelection({
                 style={isSelected ? { fontWeight: 600 } : undefined}
                 onClick={() => {
                   if (multiSelect) {
-                    onToggleQuestion?.(question, !selectedIds.has(selectionKey));
+                    onToggleQuestion?.(question, !selectedIds.has(question.id));
                     return;
                   }
                   onSelectQuestion?.(question);
@@ -186,8 +181,7 @@ export function WidgetQuestionSelection({
         ),
         cell: ({ row }) => {
           const question = row.original;
-          const selectionKey = question.parentQuestionId ?? question.id;
-          const checked = selectedIds.has(selectionKey);
+          const checked = selectedIds.has(question.id);
           return (
             <div className={styles.checkboxCell}>
               <WuCheckbox
