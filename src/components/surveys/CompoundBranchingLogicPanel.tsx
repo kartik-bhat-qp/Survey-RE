@@ -7,6 +7,7 @@ import {
   getQuestionsBySurvey,
   isEditorQuestionForCriteria,
   toCriteriaQuestionsFromEditor,
+  toCriteriaQuestionsFromSections,
 } from '@/data/mock-survey-questions';
 import {
   COMPOUND_BRANCH_CUSTOM_VARIABLE_OPTIONS,
@@ -18,6 +19,7 @@ import {
   type CompoundBranchingState,
 } from '@/data/mock-question-logic';
 import type { Criterion } from '@/data/mock-criteria-engine';
+import type { QuestionLoopContext } from '@/data/mock-looping';
 import { CriteriaEngineEditor } from '@/components/surveys/CriteriaEngineEditor';
 import { plainTextFromRichValue } from '@/components/surveys/QuestionRichTextField';
 import styles from './CompoundBranchingLogicPanel.module.css';
@@ -39,7 +41,9 @@ interface CompoundBranchingLogicPanelProps {
   state: CompoundBranchingState;
   question: EditorSurveyQuestion;
   allQuestions: EditorSurveyQuestion[];
+  sections?: { title: string; questions: EditorSurveyQuestion[] }[];
   surveyId: number;
+  loopContextByQuestionId?: Record<number, QuestionLoopContext>;
   onChange: (next: CompoundBranchingState) => void;
 }
 
@@ -104,14 +108,19 @@ export function CompoundBranchingLogicPanel({
   state,
   question,
   allQuestions,
+  sections,
   surveyId,
+  loopContextByQuestionId,
   onChange,
 }: CompoundBranchingLogicPanelProps) {
   const surveyQuestions = useMemo(() => {
-    const fromEditor = toCriteriaQuestionsFromEditor(surveyId, allQuestions);
+    const fromEditor =
+      sections && sections.length > 0
+        ? toCriteriaQuestionsFromSections(surveyId, sections)
+        : toCriteriaQuestionsFromEditor(surveyId, allQuestions);
     const catalog = fromEditor.length > 0 ? fromEditor : getQuestionsBySurvey(surveyId);
     return catalog.filter((item) => item.parentQuestionId === undefined);
-  }, [allQuestions, surveyId]);
+  }, [allQuestions, sections, surveyId]);
 
   const questionJumpTargets = useMemo(
     () => [
@@ -173,6 +182,7 @@ export function CompoundBranchingLogicPanel({
         criteria={state.criteria}
         collapsedCriterionIds={state.collapsedCriterionIds}
         questions={surveyQuestions}
+        loopContextByQuestionId={loopContextByQuestionId}
         onChange={handleCriteriaEngineChange}
         showAddCriteria
         modeControl="dropdown"

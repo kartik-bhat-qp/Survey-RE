@@ -48,6 +48,10 @@ import {
   type Criterion,
   type CriterionCondition,
 } from '@/data/mock-criteria-engine';
+import {
+  getLoopRefLabel,
+  type QuestionLoopContext,
+} from '@/data/mock-looping';
 import { MultiValueInput } from '@/components/surveys/MultiValueInput';
 import styles from './CriteriaBasedQuotaModal.module.css';
 
@@ -304,6 +308,33 @@ export interface CriteriaEngineEditorProps {
   addCriteriaLabel?: string;
   /** Override available condition sources. Defaults to CONDITION_SOURCES; Quota is excluded for the quota variant. */
   sources?: readonly ConditionSource[];
+  /** Loop choices for questions that live in a looped block, keyed by criteria question id. */
+  loopContextByQuestionId?: Record<number, QuestionLoopContext>;
+}
+
+function findLoopContext(
+  contexts: Record<number, QuestionLoopContext> | undefined,
+  questionId: number | undefined
+): QuestionLoopContext | undefined {
+  if (!contexts || questionId == null) return undefined;
+  return contexts[questionId];
+}
+
+/** Keep survey order; start a new group whenever blockTitle changes. */
+function groupQuestionsByBlock(
+  questions: SurveyQuestion[]
+): { title: string; questions: SurveyQuestion[] }[] {
+  const groups: { title: string; questions: SurveyQuestion[] }[] = [];
+  for (const question of questions) {
+    const title = question.blockTitle?.trim() ?? '';
+    const last = groups[groups.length - 1];
+    if (!last || last.title !== title) {
+      groups.push({ title, questions: [question] });
+    } else {
+      last.questions.push(question);
+    }
+  }
+  return groups;
 }
 
 const CRITERIA_MODE_SELECT_OPTIONS = [
@@ -323,6 +354,7 @@ export function CriteriaEngineEditor({
   modeControl = 'toggle',
   addCriteriaLabel = 'Criteria',
   sources,
+  loopContextByQuestionId,
 }: CriteriaEngineEditorProps) {
   const isQuotaVariant = variant === 'quota';
   const useModeDropdown = !isQuotaVariant && modeControl === 'dropdown';
@@ -752,6 +784,9 @@ export function CriteriaEngineEditor({
                         cond.source === 'System Variable' || isOpenEndedQuestionSource;
                       const usesSystemVariableStyleValue =
                         usesSystemVariableStyleOperators;
+                      const loopContext = isQuestionSource
+                        ? findLoopContext(loopContextByQuestionId, selectedQuestion?.id)
+                        : undefined;
 
                       return (
                         <div key={cond.id} className={styles.conditionRow}>
@@ -936,6 +971,7 @@ export function CriteriaEngineEditor({
                               ))}
                             </WuMenu>
                           ) : isQuestionSource ? (
+                            <div className={styles.conditionSubjectStack}>
                             <WuMenu
                               Trigger={
                                 <button
@@ -951,24 +987,121 @@ export function CriteriaEngineEditor({
                               }
                               align="start"
                             >
-                              {questions.map((question) => (
-                                <WuMenuItem
-                                  key={question.id}
-                                  onSelect={() =>
-                                    handleUpdateCondition(criterion.id, cond.id, {
-                                      questionId: question.id,
-                                      operator: resolveOperatorForQuestion(
-                                        question,
-                                        cond.operator
-                                      ),
-                                      value: '',
-                                    })
-                                  }
-                                >
-                                  [{question.code}] {question.text}
-                                </WuMenuItem>
-                              ))}
+                              {(() => {
+                                let questionNumber = 0;
+                                return groupQuestionsByBlock(questions).map((group, groupIndex) => (
+                                  <div key={`${group.title || '__ungrouped__'}-${groupIndex}`}>
+                                    {group.title ? (
+                                      <div
+                                        className={styles.operatorMenuHeader}
+                                        role="presentation"
+                                      >
+                                        {group.title}
+                                      </div>
+                                    ) : null}
+                                    {group.questions.map((question) => {
+                                      questionNumber += 1;
+                                      const displayNumber = questionNumber;
+                                      const questionLoop = findLoopContext(
+                                        loopContextByQuestionId,
+                                        question.id
+                                      );
+                                      return (
+                                        <WuMenuItem
+                                          key={question.id}
+                                          onSelect={() =>
+                                            handleUpdateCondition(criterion.id, cond.id, {
+                                              questionId: question.id,
+                                              operator: resolveOperatorForQuestion(
+                                                question,
+                                                cond.operator
+                                              ),
+                                              value: '',
+                                              loopRef: questionLoop?.defaultRef ?? null,
+                                            })
+                                          }
+                                        >
+                                          <span className={styles.sourceOptionLabel}>
+                                            {displayNumber}. [{question.code}] {question.text}
+                                            {questionLoop ? (
+                                              <span
+                                                className={styles.loopedQuestionBadge}
+                                                title={`Looped in ${questionLoop.blockTitle}`}
+                                                aria-label={`Looped in ${questionLoop.blockTitle}`}
+                                              >
+                                                <span className="wm-autorenew" aria-hidden />
+                                              </span>
+                                            ) : null}
+                                          </span>
+                                        </WuMenuItem>
+                                      );
+                                    })}
+                                  </div>
+                                ));
+                              })()}
                             </WuMenu>
+                            {loopContext ? (
+                            <WuMenu
+                              Trigger={
+                                <button
+                                  type="button"
+                                  className={`${styles.menuTrigger} ${styles.conditionLoop}`}
+                                  aria-label={`Loop referenced for ${selectedQuestion?.code}`}
+                                  title={`${selectedQuestion?.code} repeats in ${loopContext.blockTitle}`}
+                                >
+                                  <span
+                                    className={`wm-autorenew ${styles.conditionLoopIcon}`}
+                                    aria-hidden
+                                  />
+                                  <span className={styles.menuTriggerLabel}>
+                                    {getLoopRefLabel(loopContext.options, cond.loopRef)}
+                                  </span>
+                                  <span
+                                    className={`wm-keyboard-arrow-down ${styles.menuCaret}`}
+                                    aria-hidden
+                                  />
+                                </button>
+                              }
+                              align="start"
+                            >
+                              <div className={styles.operatorMenuHeader} role="presentation">
+                                {loopContext.blockTitle}
+                              </div>
+                              {loopContext.options
+                                .filter((option) => !/^loop:\d+$/.test(option.value))
+                                .map((option) => (
+                                  <WuMenuItem
+                                    key={option.value}
+                                    onSelect={() =>
+                                      handleUpdateCondition(criterion.id, cond.id, {
+                                        loopRef: option.value,
+                                      })
+                                    }
+                                  >
+                                    {option.label}
+                                  </WuMenuItem>
+                                ))}
+                              <WuMenuSeparatorItem />
+                              <div className={styles.operatorMenuHeader} role="presentation">
+                                Specific loop
+                              </div>
+                              {loopContext.options
+                                .filter((option) => /^loop:\d+$/.test(option.value))
+                                .map((option) => (
+                                  <WuMenuItem
+                                    key={option.value}
+                                    onSelect={() =>
+                                      handleUpdateCondition(criterion.id, cond.id, {
+                                        loopRef: option.value,
+                                      })
+                                    }
+                                  >
+                                    {option.label}
+                                  </WuMenuItem>
+                                ))}
+                            </WuMenu>
+                            ) : null}
+                            </div>
                           ) : (
                             <span className={styles.conditionSubjectPlaceholder} aria-hidden />
                           )}

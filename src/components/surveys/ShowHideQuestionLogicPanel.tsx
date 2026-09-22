@@ -6,9 +6,11 @@ import type { SurveyQuestion as EditorSurveyQuestion } from '@/data/mock-survey-
 import {
   getQuestionsBySurvey,
   toCriteriaQuestionsFromEditor,
+  toCriteriaQuestionsFromSections,
 } from '@/data/mock-survey-questions';
 import type { ShowHideQuestionState } from '@/data/mock-question-logic';
 import type { Criterion } from '@/data/mock-criteria-engine';
+import type { QuestionLoopContext } from '@/data/mock-looping';
 import { CriteriaEngineEditor } from '@/components/surveys/CriteriaEngineEditor';
 import styles from './ShowHideQuestionLogicPanel.module.css';
 
@@ -21,7 +23,9 @@ interface ShowHideQuestionLogicPanelProps {
   state: ShowHideQuestionState;
   question: EditorSurveyQuestion;
   allQuestions: EditorSurveyQuestion[];
+  sections?: { title: string; questions: EditorSurveyQuestion[] }[];
   surveyId: number;
+  loopContextByQuestionId?: Record<number, QuestionLoopContext>;
   onChange: (next: ShowHideQuestionState) => void;
 }
 
@@ -29,11 +33,16 @@ export function ShowHideQuestionLogicPanel({
   state,
   question,
   allQuestions,
+  sections,
   surveyId,
+  loopContextByQuestionId,
   onChange,
 }: ShowHideQuestionLogicPanelProps) {
   const surveyQuestions = useMemo(() => {
-    const fromEditor = toCriteriaQuestionsFromEditor(surveyId, allQuestions);
+    const fromEditor =
+      sections && sections.length > 0
+        ? toCriteriaQuestionsFromSections(surveyId, sections)
+        : toCriteriaQuestionsFromEditor(surveyId, allQuestions);
     const catalog = fromEditor.length > 0 ? fromEditor : getQuestionsBySurvey(surveyId);
     const currentCriteriaIds = new Set(
       toCriteriaQuestionsFromEditor(surveyId, [question]).map((item) => item.id)
@@ -41,7 +50,7 @@ export function ShowHideQuestionLogicPanel({
     return catalog.filter(
       (item) => item.parentQuestionId === undefined && !currentCriteriaIds.has(item.id)
     );
-  }, [allQuestions, question, surveyId]);
+  }, [allQuestions, question, sections, surveyId]);
 
   const criteriaActionLabel = state.showQuestionByDefault
     ? 'If criteria is met, hide question'
@@ -107,6 +116,7 @@ export function ShowHideQuestionLogicPanel({
         criteria={state.criteria}
         collapsedCriterionIds={state.collapsedCriterionIds}
         questions={surveyQuestions}
+        loopContextByQuestionId={loopContextByQuestionId}
         onChange={handleCriteriaEngineChange}
         showAddCriteria
         modeControl="dropdown"

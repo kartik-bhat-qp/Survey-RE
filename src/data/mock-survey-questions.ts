@@ -19,6 +19,8 @@ export interface SurveyQuestion {
   parentQuestionId?: number;
   /** Answer options used for quota and weighting dimension flows. */
   options?: string[];
+  /** Block title when built from survey sections — used to group criteria pickers. */
+  blockTitle?: string;
 }
 
 const DEMO_QUESTIONS: Omit<SurveyQuestion, 'id' | 'surveyId'>[] = [
@@ -398,11 +400,16 @@ export function isEditorQuestionForCriteria(
  */
 export function toCriteriaQuestionsFromEditor(
   surveyId: number,
-  questions: EditorQuestionForCriteria[]
+  questions: EditorQuestionForCriteria[],
+  blockTitle?: string
 ): SurveyQuestion[] {
+  const blockFields = blockTitle ? { blockTitle } : {};
   return questions.filter(isCriteriaEligibleEditorQuestion).flatMap((question, index) => {
     if (isFlexMatrixEditorQuestion(question)) {
-      return expandFlexMatrixToCriteriaQuestions(surveyId, question, index + 1);
+      return expandFlexMatrixToCriteriaQuestions(surveyId, question, index + 1).map((item) => ({
+        ...item,
+        ...blockFields,
+      }));
     }
 
     const type = criteriaTypeFromEditor(question);
@@ -418,7 +425,18 @@ export function toCriteriaQuestionsFromEditor(
         type,
         ...(matrixRows.length > 0 ? { matrixRows } : {}),
         options: criteriaOptionsFromEditor(question, type),
+        ...blockFields,
       },
     ];
   });
+}
+
+/** Build criteria questions from survey blocks, preserving block titles for picker headers. */
+export function toCriteriaQuestionsFromSections(
+  surveyId: number,
+  sections: { title: string; questions: EditorQuestionForCriteria[] }[]
+): SurveyQuestion[] {
+  return sections.flatMap((section) =>
+    toCriteriaQuestionsFromEditor(surveyId, section.questions, section.title)
+  );
 }

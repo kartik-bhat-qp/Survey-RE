@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type { SurveyQuestion } from '@/data/mock-survey-detail';
+import type { QuestionLoopContext } from '@/data/mock-looping';
 import {
   buildBranchTargetOptions,
   createDefaultQuestionLogicState,
@@ -57,7 +58,11 @@ export interface QuestionLogicModalProps {
   onOpenChange: (open: boolean) => void;
   question: SurveyQuestion;
   allQuestions: SurveyQuestion[];
+  /** Survey blocks — used to group criteria question pickers by block header. */
+  sections?: { title: string; questions: SurveyQuestion[] }[];
   surveyId: number;
+  /** Loop choices for questions inside looped blocks, keyed by criteria question id. */
+  loopContextByQuestionId?: Record<number, QuestionLoopContext>;
   initialState?: QuestionLogicState;
   onSave?: (state: QuestionLogicState) => void;
   /** Blocks enabling Dynamic Text/Comments when Cards carousel layout is on. */
@@ -70,7 +75,9 @@ export function QuestionLogicModal({
   onOpenChange,
   question,
   allQuestions,
+  sections,
   surveyId,
+  loopContextByQuestionId,
   initialState,
   onSave,
   cardsCarouselEnabled = false,
@@ -291,7 +298,9 @@ export function QuestionLogicModal({
             state={state.showHideQuestion}
             question={question}
             allQuestions={allQuestions}
+            sections={sections}
             surveyId={surveyId}
+            loopContextByQuestionId={loopContextByQuestionId}
             onChange={(showHideQuestion) => setState((prev) => ({ ...prev, showHideQuestion }))}
           />
         ) : isShowHideOptions ? (
@@ -299,7 +308,9 @@ export function QuestionLogicModal({
             state={state.showHideOptions}
             question={question}
             allQuestions={allQuestions}
+            sections={sections}
             surveyId={surveyId}
+            loopContextByQuestionId={loopContextByQuestionId}
             onChange={(showHideOptions) => setState((prev) => ({ ...prev, showHideOptions }))}
           />
         ) : isCompoundBranching ? (
@@ -307,7 +318,9 @@ export function QuestionLogicModal({
             state={state.compoundBranching}
             question={question}
             allQuestions={allQuestions}
+            sections={sections}
             surveyId={surveyId}
+            loopContextByQuestionId={loopContextByQuestionId}
             onChange={(compoundBranching) =>
               setState((prev) => ({ ...prev, compoundBranching }))
             }

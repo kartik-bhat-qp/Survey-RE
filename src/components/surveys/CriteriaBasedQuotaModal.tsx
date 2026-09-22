@@ -166,6 +166,7 @@ function quotaBlockFromAdvanceQuota(quota: AdvanceQuota, questions: SurveyQuesti
           value: cond.value,
           valueEnd: cond.valueEnd ?? '',
           connector: cond.connector ?? 'AND',
+          loopRef: null,
         })),
     }))
     .filter((criterion) => criterion.conditions.length > 0);

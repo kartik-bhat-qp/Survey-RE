@@ -681,6 +681,7 @@ function normalizeCondition(value: unknown): CriterionCondition | null {
     value: typeof parsed.value === 'string' ? parsed.value : '',
     valueEnd: typeof parsed.valueEnd === 'string' ? parsed.valueEnd : '',
     connector: isConnector(parsed.connector) ? parsed.connector : 'AND',
+    loopRef: typeof parsed.loopRef === 'string' ? parsed.loopRef : null,
   };
 }
 
