@@ -420,7 +420,6 @@ export function FlexMatrixQuestionRow({
                           </button>
                         }
                         align="start"
-                        modal={false}
                       >
                         {canExcludeFromValidation ? (
                           <WuMenuItem
@@ -554,7 +553,6 @@ export function FlexMatrixQuestionRow({
                   </button>
                 }
                 align="start"
-                modal={false}
               >
                 {FLEX_MATRIX_COLUMN_TYPES.map((columnType) => (
                   <WuMenuItem
