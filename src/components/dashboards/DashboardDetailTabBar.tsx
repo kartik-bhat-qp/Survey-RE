@@ -62,6 +62,7 @@ interface DashboardDetailTabBarProps {
   onInsightsRefreshed?: (widgetId: string, refreshedAt: string) => void;
   /** Widgets added from the Add widget flow. */
   addedWidgets?: AiWidgetConfig[];
+  dashboardName?: string;
 }
 
 export function DashboardDetailTabBar({
@@ -73,6 +74,7 @@ export function DashboardDetailTabBar({
   lastAiInsightsRefreshAt,
   onInsightsRefreshed,
   addedWidgets,
+  dashboardName = 'this dashboard',
 }: DashboardDetailTabBarProps) {
   const { showToast } = useWuShowToast();
   const [tabs, setTabs] = useState<DashboardTab[]>(INITIAL_TABS);
@@ -154,6 +156,7 @@ export function DashboardDetailTabBar({
             lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
             onInsightsRefreshed={onInsightsRefreshed}
             addedWidgets={addedWidgets}
+            dashboardName={dashboardName}
           />
         )}
       </div>

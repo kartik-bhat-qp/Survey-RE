@@ -43,27 +43,6 @@
   margin-top: -0.15rem;
 }
 
-.headerTagline {
-  color: #94a3b8;
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 0.6875rem;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  line-height: 1.3;
-  margin: 0;
-}
-
-.headerTaglineLink {
-  color: inherit;
-  font-weight: 400;
-  text-decoration: none;
-}
-
-.headerTaglineLink:hover {
-  color: #64748b;
-  text-decoration: underline;
-}
-
 .closeBtn {
   align-items: center;
   background: transparent;

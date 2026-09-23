@@ -119,7 +119,7 @@ export const ADD_QUESTION_CATEGORIES: AddQuestionCategory[] = [
   },
   {
     id: 'questionpro-ai',
-    title: 'QuestionProAI',
+    title: 'Interview',
     tier: 'advanced',
     types: [
       { id: 'listenai', label: 'Conversation', icon: 'wm-chat' },

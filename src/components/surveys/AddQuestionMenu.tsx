@@ -487,8 +487,8 @@ function CategoryBlock({
         {category.id === 'questionpro-ai' ? (
           <span
             className={`wc-ai ${styles.categoryAiMark}`}
-            title="QuestionPro AI"
-            aria-label="QuestionPro AI"
+            title="Interview"
+            aria-label="Interview"
           />
         ) : null}
       </h4>

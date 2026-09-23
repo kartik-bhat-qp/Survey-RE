@@ -277,6 +277,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
           )
         }
         addedWidgets={addedWidgets}
+        dashboardName={name}
       />
     </div>
   );

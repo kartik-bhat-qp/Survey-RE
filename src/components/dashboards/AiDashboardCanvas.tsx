@@ -25,6 +25,7 @@ import {
   type DesignTypographyOptions,
 } from '@/components/dashboards/DashboardDesignSettingsTab';
 import { DashboardAiInsightsPanel } from '@/components/dashboards/DashboardAiInsightsPanel';
+import { DashboardResearchAgentPanel } from '@/components/dashboards/DashboardResearchAgentPanel';
 import type { AmChartTypography } from '@/components/charts/amcharts/theme';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -84,6 +85,8 @@ interface AiDashboardCanvasProps {
   onInsightsRefreshed?: (widgetId: string, refreshedAt: string) => void;
   /** Widgets added from the Add widget flow — appended below the seeded widgets. */
   addedWidgets?: AiWidgetConfig[];
+  /** Dashboard name used in the Research agent opening summary. */
+  dashboardName?: string;
   readOnly?: boolean;
   renderWidget?: (widget: AiWidgetConfig) => React.ReactNode;
   renderWidgetActions?: (widget: AiWidgetConfig) => React.ReactNode;
@@ -99,6 +102,7 @@ export function AiDashboardCanvas({
   lastAiInsightsRefreshAt = '2026-09-01T06:30:00.000Z',
   onInsightsRefreshed,
   addedWidgets = NO_ADDED_WIDGETS,
+  dashboardName = 'this dashboard',
   readOnly = false,
   renderWidget,
   renderWidgetActions,
@@ -109,6 +113,7 @@ export function AiDashboardCanvas({
   const showLicenseRestrictions = useBiLicenseRestrictions();
   const [desktopLayout, setDesktopLayout] = useState<Layout>(AI_DASHBOARD_LAYOUT);
   const [activeInsightWidgetId, setActiveInsightWidgetId] = useState<string | null>(null);
+  const [researchAgentOpen, setResearchAgentOpen] = useState(false);
   const [refreshingWidgetId, setRefreshingWidgetId] = useState<string | null>(null);
   const [insightThreads, setInsightThreads] = useState<Record<string, DashboardWidgetInsightThread>>(
     () =>
@@ -418,9 +423,25 @@ export function AiDashboardCanvas({
         })}
       </GridLayoutWithWidth>
       {footer}
-      {!readOnly && <button type="button" className={styles.aiFab} aria-label="AI assistant">
-        <span className="wc-ai" />
-      </button>}
+      {!readOnly && !researchAgentOpen ? (
+        <button
+          type="button"
+          className={styles.aiFab}
+          aria-label="Research agent"
+          title="Research agent"
+          onClick={() => setResearchAgentOpen(true)}
+        >
+          <span className="wc-ai" />
+        </button>
+      ) : null}
+
+      {!readOnly ? (
+        <DashboardResearchAgentPanel
+          open={researchAgentOpen}
+          dashboardName={dashboardName}
+          onClose={() => setResearchAgentOpen(false)}
+        />
+      ) : null}
 
       {!readOnly && activeInsightWidgetId ? (() => {
         const activeWidget = widgetById.get(activeInsightWidgetId);

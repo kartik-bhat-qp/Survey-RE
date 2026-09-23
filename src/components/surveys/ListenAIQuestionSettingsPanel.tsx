@@ -74,17 +74,6 @@ export function ListenAIQuestionSettingsPanel({
                 aria-label="This question uses QuestionPro AI"
               />
             </h3>
-            <p className={styles.headerTagline}>
-              Powered by{' '}
-              <a
-                className={styles.headerTaglineLink}
-                href="https://www.questionpro.com/research-suite/listen-ai/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Interviews
-              </a>
-            </p>
           </div>
         </div>
         <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Close">
