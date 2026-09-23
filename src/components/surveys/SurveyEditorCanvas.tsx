@@ -70,6 +70,11 @@ import {
   readBlankSurveyDraft,
 } from '@/data/mock-survey-creation-flow';
 import { isClientOnlySurveyId } from '@/lib/client-only-survey-ids';
+import {
+  AI_LENS_FOCUS_QUESTION_EVENT,
+  isAiLensSurvey,
+  type AiLensFocusQuestionDetail,
+} from '@/data/mock-ai-lens';
 import { generatedSurveyToSections } from '@/lib/ai-survey-generation';
 import { requestAiSurveyGeneration } from '@/lib/request-ai-survey-generation';
 import {
@@ -78,7 +83,10 @@ import {
   type SurveyAiGenerationResult,
 } from '@/data/mock-survey-ai-agent';
 import { getQuestionTypePreview } from '@/data/mock-add-question-previews';
-import { SectionBlockOptionsButton, type SectionBlockMenuAction } from '@/components/surveys/SectionBlockOptionsButton';
+import {
+  SectionBlockOptionsButton,
+  type SectionBlockMenuAction,
+} from '@/components/surveys/SectionBlockOptionsButton';
 import { BlockFlowModal } from '@/components/surveys/BlockFlowModal';
 import { LoopingModal } from '@/components/surveys/LoopingModal';
 import {
@@ -1496,6 +1504,31 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     },
     [showToast]
   );
+
+  useEffect(() => {
+    if (!isAiLensSurvey(detail.survey.id)) return;
+
+    const onFocusQuestion = (event: Event) => {
+      const custom = event as CustomEvent<AiLensFocusQuestionDetail>;
+      const detailPayload = custom.detail;
+      if (!detailPayload?.sectionId || !detailPayload?.questionId) return;
+
+      const questionKey = `${detailPayload.sectionId}:${detailPayload.questionId}`;
+      setSelectedQuestionKey(questionKey);
+
+      window.setTimeout(() => {
+        const el = document.getElementById(
+          `survey-question-${detailPayload.sectionId}-${detailPayload.questionId}`
+        );
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 80);
+
+      toast(`Opened ${detailPayload.code}`);
+    };
+
+    window.addEventListener(AI_LENS_FOCUS_QUESTION_EVENT, onFocusQuestion);
+    return () => window.removeEventListener(AI_LENS_FOCUS_QUESTION_EVENT, onFocusQuestion);
+  }, [detail.survey.id, toast]);
 
   useEffect(() => {
     setSelectedQuestionKey(null);

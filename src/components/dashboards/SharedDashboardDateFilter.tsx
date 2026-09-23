@@ -41,8 +41,6 @@ export function SharedDashboardDateFilter({
         value={from || to ? { from, to } : undefined}
         minDate={new Date(2020, 0, 1)}
         maxDate={new Date(new Date().getFullYear() + 1, 11, 31)}
-        required
-        append
         onChange={(range) => {
           onChange({
             startDate: asString(range?.from),
@@ -50,7 +48,6 @@ export function SharedDashboardDateFilter({
           });
         }}
         onReset={() => onChange({ startDate: '', endDate: '' })}
-        position={{ align: 'start', side: 'bottom', sideOffset: -1 }}
       />
     </div>
   );

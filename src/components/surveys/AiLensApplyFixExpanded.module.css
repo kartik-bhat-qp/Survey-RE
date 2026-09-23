@@ -1,0 +1,189 @@
+.panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  margin-top: 0.75rem;
+  padding: 1rem 1.125rem 1rem;
+  width: 100%;
+}
+
+.headerRow {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.title {
+  color: #0f172a;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.closeBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.125rem;
+  line-height: 1;
+  padding: 0.125rem;
+}
+
+.closeBtn:hover {
+  color: #475569;
+}
+
+.preparing {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  justify-content: center;
+  min-height: 7.5rem;
+  padding: 1.25rem 0.5rem;
+}
+
+.dots {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.dots span {
+  animation: aiLensDotPulse 1s ease-in-out infinite;
+  background: #1b87e6;
+  border-radius: 999px;
+  height: 0.5rem;
+  width: 0.5rem;
+}
+
+.dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes aiLensDotPulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-0.2rem);
+  }
+}
+
+.preparingLabel {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.ready {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.rationale {
+  color: #334155;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.compare {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compareCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.compareLabel {
+  color: #64748b;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.compareBox {
+  border-radius: 0.375rem;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  min-height: 5rem;
+  padding: 0.75rem 0.875rem;
+  white-space: pre-wrap;
+}
+
+.compareBoxNow {
+  background: #fef2f2;
+  color: #7f1d1d;
+}
+
+.compareBoxAfter {
+  background: #ecfdf5;
+  color: #14532d;
+}
+
+.warning {
+  color: #c2410c;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.footer {
+  align-items: center;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 0.875rem;
+}
+
+.cancelBtn {
+  background: transparent;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-right: auto;
+  padding: 0.375rem 0.25rem;
+}
+
+.cancelBtn:hover {
+  color: #0b6bc4;
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .compare {
+    grid-template-columns: 1fr;
+  }
+}

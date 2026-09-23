@@ -1,0 +1,42 @@
+.wrap {
+  flex-shrink: 0;
+  position: relative;
+  width: 11.5rem;
+}
+
+.svg {
+  display: block;
+  height: auto;
+  overflow: visible;
+  width: 100%;
+}
+
+.centerLabel {
+  align-items: center;
+  bottom: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  left: 0;
+  position: absolute;
+  right: 0;
+  text-align: center;
+}
+
+.band {
+  color: #0f172a;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 7.5rem;
+}
+
+.overall {
+  color: #94a3b8;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}

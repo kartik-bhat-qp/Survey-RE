@@ -23,12 +23,14 @@ import {
   SURVEY_WORKSPACE_TOOLS,
   type SurveyWorkspaceTool,
 } from '@/components/surveys/survey-workspace-tools';
+import { surveyHasDesignTab } from '@/data/mock-survey-design';
 import {
   readSurveyApprovalState,
   subscribeSurveyApprovalState,
   surveyHasApprovalTab,
   writeSurveyApprovalState,
 } from '@/data/mock-survey-approval';
+import { isAiLensSurvey, MOCK_AI_LENS_FINDINGS, summarizeAiLensFindings } from '@/data/mock-ai-lens';
 import styles from './SurveyEditorWorkspaceToolbar.module.css';
 
 const WuSecondaryNavbar = dynamic(
@@ -48,7 +50,7 @@ type PublishMode = 'draft' | 'publish';
 
 function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null {
   if (tool === 'workspace') return `/surveys/${surveyId}`;
-  if (tool === 'design') return `/surveys/${surveyId}/design`;
+  if (tool === 'design' && surveyHasDesignTab(surveyId)) return `/surveys/${surveyId}/design`;
   if (tool === 'media-library') return `/surveys/${surveyId}/media-library`;
   if (tool === 'advance-quotas') return `/surveys/${surveyId}/advance-quotas`;
   if (tool === 'settings') return `/surveys/${surveyId}/settings`;
@@ -172,6 +174,20 @@ export function SurveyEditorWorkspaceToolbar({
     if (next === 'publish') {
       if (requiresApproval) return;
 
+      if (isAiLensSurvey(surveyId)) {
+        const summary = summarizeAiLensFindings(MOCK_AI_LENS_FINDINGS);
+        if (summary.allOpen > 0 && !sessionStorage.getItem('ai-lens-publish-anyway')) {
+          window.dispatchEvent(new Event('questionpro-ai-lens-open'));
+          showToast({
+            message:
+              'Outstanding Pro Insights findings. Resolve them in Pro Insights, or choose Publish anyway.',
+            variant: 'info',
+          });
+          return;
+        }
+        sessionStorage.removeItem('ai-lens-publish-anyway');
+      }
+
       const conflicts = collectSurveyLicenseConflicts(
         sections,
         getUserPlanLicense(footerBrand),
@@ -204,6 +220,30 @@ export function SurveyEditorWorkspaceToolbar({
     },
     [router, showToast, surveyId]
   );
+
+  useEffect(() => {
+    if (!isAiLensSurvey(surveyId)) return;
+    const onPublishAnyway = () => {
+      sessionStorage.setItem('ai-lens-publish-anyway', '1');
+      const conflicts = collectSurveyLicenseConflicts(
+        sections,
+        getUserPlanLicense(footerBrand),
+        logicByQuestionKey
+      );
+      if (conflicts.length > 0) {
+        setLicenseConflicts(conflicts);
+        setLicenseModalView('conflicts');
+        setLicenseModalOpen(true);
+        return;
+      }
+      setLicenseConflicts([]);
+      setLicenseModalView('publish-confirm');
+      setLicenseModalOpen(true);
+    };
+    window.addEventListener('questionpro-ai-lens-publish-anyway', onPublishAnyway);
+    return () =>
+      window.removeEventListener('questionpro-ai-lens-publish-anyway', onPublishAnyway);
+  }, [footerBrand, logicByQuestionKey, sections, surveyId]);
 
   const links = useMemo(
     () =>
@@ -240,6 +280,8 @@ export function SurveyEditorWorkspaceToolbar({
       }),
     [activeTool, handleToolClick, surveyId]
   );
+
+  const showAiLens = isAiLensSurvey(surveyId);
 
   const showPublishArea =
     activeTool !== 'advance-quotas' &&
@@ -289,18 +331,34 @@ export function SurveyEditorWorkspaceToolbar({
         {showPublishArea ? (
           <div className={styles.publishArea}>
             <SurveyWorkspaceToolIcons />
-            <WuTooltip content={SURVEY_VERSION_TOOLTIP} position="bottom">
-              <button
-                type="button"
-                className={styles.toolbarIconBtn}
-                aria-label={SURVEY_VERSION_TOOLTIP}
-                onClick={() =>
-                  showToast({ message: SURVEY_VERSION_TOOLTIP, variant: 'success' })
-                }
-              >
-                <span className="wm-history" aria-hidden />
-              </button>
-            </WuTooltip>
+            {showAiLens ? (
+              <WuTooltip content="Pro Insights" position="bottom">
+                <button
+                  type="button"
+                  className={styles.reviewBtn}
+                  aria-label="Pro Insights"
+                  onClick={() =>
+                    window.dispatchEvent(new Event('questionpro-ai-lens-open'))
+                  }
+                >
+                  <span className={`wc-ai ${styles.reviewAiIcon}`} aria-hidden />
+                  Pro Insights
+                </button>
+              </WuTooltip>
+            ) : (
+              <WuTooltip content={SURVEY_VERSION_TOOLTIP} position="bottom">
+                <button
+                  type="button"
+                  className={styles.surveyVersionBtn}
+                  aria-label={SURVEY_VERSION_TOOLTIP}
+                  onClick={() =>
+                    showToast({ message: SURVEY_VERSION_TOOLTIP, variant: 'success' })
+                  }
+                >
+                  <span className="wm-history" aria-hidden />
+                </button>
+              </WuTooltip>
+            )}
             <TestResponsesTrigger />
             <div className={styles.statusToggle} role="group" aria-label="Survey status">
               <button

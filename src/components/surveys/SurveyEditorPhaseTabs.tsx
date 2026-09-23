@@ -17,6 +17,8 @@ import {
 } from '@/data/mock-survey-approval';
 import { SurveyApprovalsModal } from '@/components/surveys/SurveyApprovalsModal';
 import { SurveyReviewModal } from '@/components/surveys/SurveyReviewModal';
+import { AiLensModal } from '@/components/surveys/AiLensModal';
+import { isAiLensSurvey } from '@/data/mock-ai-lens';
 import styles from './SurveyEditorPhaseTabs.module.css';
 
 const WuPrimaryNavbar = dynamic(
@@ -32,6 +34,10 @@ const PHASE_TABS: { id: SurveyEditorPhase; label: string }[] = [
   { id: 'integration', label: 'Integration' },
 ];
 
+function deferOpenChange(setter: (open: boolean) => void, open: boolean): void {
+  queueMicrotask(() => setter(open));
+}
+
 export function SurveyEditorPhaseTabs() {
   const params = useParams();
   const pathname = usePathname() ?? '';
@@ -40,9 +46,11 @@ export function SurveyEditorPhaseTabs() {
   const surveyId = Number(params.id);
   const { showToast } = useWuShowToast();
   const showApprovals = surveyHasApprovalTab(surveyId);
+  const showAiLens = isAiLensSurvey(surveyId);
   const { activePhase, setActivePhase } = useSurveyEditorPhase();
   const [approvalsModalOpen, setApprovalsModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [aiLensOpen, setAiLensOpen] = useState(false);
   const reviewModeRequested = isSurveyReviewModeQuery(
     searchParams.get(SURVEY_REVIEW_MODE_QUERY)
   );
@@ -68,6 +76,17 @@ export function SurveyEditorPhaseTabs() {
     },
     [clearReviewModeQuery]
   );
+
+  const handleAiLensOpenChange = useCallback((open: boolean) => {
+    deferOpenChange(setAiLensOpen, open);
+  }, []);
+
+  useEffect(() => {
+    if (!showAiLens) return;
+    const onOpenRequest = () => setAiLensOpen(true);
+    window.addEventListener('questionpro-ai-lens-open', onOpenRequest);
+    return () => window.removeEventListener('questionpro-ai-lens-open', onOpenRequest);
+  }, [showAiLens]);
 
   const links = useMemo(
     () =>
@@ -130,6 +149,9 @@ export function SurveyEditorPhaseTabs() {
           onOpenChange={handleReviewModalOpenChange}
           surveyId={surveyId}
         />
+      ) : null}
+      {aiLensOpen && showAiLens ? (
+        <AiLensModal open onOpenChange={handleAiLensOpenChange} />
       ) : null}
     </>
   );

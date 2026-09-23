@@ -17,10 +17,10 @@ export interface Survey {
   responses: number;
 }
 
-export const SURVEY_TOTAL_COUNT = 1349;
+export const SURVEY_TOTAL_COUNT = 1350;
 
 export const MOCK_SURVEY_FOLDERS: SurveyFolder[] = [
-  { id: 'all', name: 'My Surveys', shortLabel: 'MS', count: 1349 },
+  { id: 'all', name: 'My Surveys', shortLabel: 'MS', count: 1350 },
   { id: 'text-ai', name: 'Text AI', shortLabel: 'TA', count: 6 },
   { id: 'participant-id', name: 'Participant ID', shortLabel: 'PI', count: 3 },
   { id: 'rmb', name: 'RMB', shortLabel: 'RMB', count: 9 },
@@ -217,6 +217,15 @@ export const MOCK_SURVEYS: Survey[] = [
     status: 'Active - Draft',
     responses: 0,
   },
+  {
+    id: 21,
+    name: 'QuestionPro Pro Insights',
+    folderId: 'all',
+    createdAt: '2026-09-04T10:00:00Z',
+    modifiedAt: '2026-09-04T10:00:00Z',
+    status: 'Active - Draft',
+    responses: 0,
+  },
 ];
 
 export const SURVEYS_PAGE_SIZE = 100;
@@ -225,3 +234,4 @@ export const BI_LITE_DEMO_SURVEY_ID = 17;
 export const AUDIO_INPUT_SURVEY_ID_REF = 18;
 export const SURVEY_REVIEW_MODE_SURVEY_ID_REF = 19;
 export const FLEX_LOGIC_SURVEY_ID_REF = 20;
+export const QUESTIONPRO_AI_LENS_SURVEY_ID = 21;
