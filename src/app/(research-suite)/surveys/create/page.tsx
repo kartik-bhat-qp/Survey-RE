@@ -9,6 +9,8 @@ import { SurveyCreationAiThinkingOverlay } from '@/components/surveys/SurveyCrea
 import { SurveyCreationTemplatePicker } from '@/components/surveys/SurveyCreationTemplatePicker';
 import { SurveyCreationTracerTitle } from '@/components/surveys/SurveyCreationTracerTitle';
 import { AudioInputButton } from '@/components/ui/AudioInputButton';
+import { useEssentialsAccountActionsLocked } from '@/hooks/useEssentialsAccountUnderReview';
+import { ESSENTIALS_ACCOUNT_LOCKED_TOAST } from '@/data/mock-essentials-phishing-review';
 import { NEW_AI_SURVEY_ID } from '@/data/ai-survey-draft';
 import { runAiSurveyCreationFlow } from '@/lib/request-ai-survey-generation';
 import {
@@ -49,6 +51,7 @@ const WuMenuItem = dynamic(
 export default function NewSurveyCreationFlowPage() {
   const router = useRouter();
   const { showToast } = useWuShowToast();
+  const accountLocked = useEssentialsAccountActionsLocked();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const blankNameInputRef = useRef<HTMLInputElement>(null);
@@ -74,6 +77,10 @@ export default function NewSurveyCreationFlowPage() {
   const surveyLanguageLabel = getSurveyCreationLanguageLabel(language);
 
   async function handleCreateSurvey() {
+    if (accountLocked) {
+      showToast({ message: ESSENTIALS_ACCOUNT_LOCKED_TOAST, variant: 'error' });
+      return;
+    }
     if (!canCreate) {
       showToast({ message: 'Describe what you want to learn to continue', variant: 'error' });
       promptRef.current?.focus();
@@ -112,6 +119,10 @@ export default function NewSurveyCreationFlowPage() {
 
   async function handleTemplateSelect(template: SurveyCreationTemplate) {
     if (isAiDrafting) return;
+    if (accountLocked) {
+      showToast({ message: ESSENTIALS_ACCOUNT_LOCKED_TOAST, variant: 'error' });
+      return;
+    }
 
     setSelectedTemplateId(template.id);
     setAiOverlayVariant('building');
@@ -185,6 +196,10 @@ export default function NewSurveyCreationFlowPage() {
   }
 
   function handleBlankSurveyCreate(name: string) {
+    if (accountLocked) {
+      showToast({ message: ESSENTIALS_ACCOUNT_LOCKED_TOAST, variant: 'error' });
+      return;
+    }
     saveBlankSurveyDraft(name);
     showToast({ message: 'Blank survey created', variant: 'success' });
     router.push(`/surveys/${NEW_BLANK_SURVEY_ID}`);

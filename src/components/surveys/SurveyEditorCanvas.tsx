@@ -75,6 +75,10 @@ import {
   isAiLensSurvey,
   type AiLensFocusQuestionDetail,
 } from '@/data/mock-ai-lens';
+import {
+  ESSENTIALS_ACCOUNT_LOCKED_TOAST,
+  essentialsAccountActionsLocked,
+} from '@/data/mock-essentials-phishing-review';
 import { generatedSurveyToSections } from '@/lib/ai-survey-generation';
 import { requestAiSurveyGeneration } from '@/lib/request-ai-survey-generation';
 import {
@@ -3281,6 +3285,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       typeLabel: string,
       typeId: string
     ) => {
+      if (essentialsAccountActionsLocked()) {
+        showToast({ message: ESSENTIALS_ACCOUNT_LOCKED_TOAST, variant: 'error' });
+        return;
+      }
       if (typeId === 'select-one') {
         const ts = Date.now();
         const newId = `q-new-${ts}`;

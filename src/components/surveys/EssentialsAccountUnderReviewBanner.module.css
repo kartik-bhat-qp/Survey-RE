@@ -1,0 +1,58 @@
+.bar {
+  flex-shrink: 0;
+  width: 100%;
+  z-index: 40;
+}
+
+.alert {
+  align-items: flex-start;
+  border-radius: 0;
+  gap: 0.625rem;
+  padding: 0.625rem 1.25rem;
+  width: 100%;
+}
+
+.icon {
+  font-size: 1.125rem;
+  line-height: 1;
+  margin-top: 0.0625rem;
+}
+
+.title {
+  display: block;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.copy {
+  display: block;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.4;
+  margin-top: 0.125rem;
+  opacity: 0.92;
+}
+
+.supportLink {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 0.125rem;
+}
+
+.supportLink:hover {
+  opacity: 0.85;
+}
+
+.supportLink:focus-visible {
+  border-radius: 0.125rem;
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

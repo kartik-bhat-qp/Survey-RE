@@ -25,6 +25,9 @@ import {
 } from '@/data/mock-add-question-previews';
 import { BiDiamondIcon } from '@/components/ui/BiDiamondIcon';
 import { useSurveyFooterBrand } from '@/components/surveys/useSurveyFooterBrand';
+import { useEssentialsAccountActionsLocked } from '@/hooks/useEssentialsAccountUnderReview';
+import { ESSENTIALS_ACCOUNT_LOCKED_TOAST } from '@/data/mock-essentials-phishing-review';
+import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { PushToSocialQuestionPreview } from '@/components/surveys/PushToSocialQuestionPreview';
 import { NumericSliderQuestionPreview } from '@/components/surveys/NumericSliderQuestionPreview';
 import { ConstantSumQuestionPreview } from '@/components/surveys/ConstantSumQuestionPreview';
@@ -583,6 +586,8 @@ function TierSection({
 }
 
 export function AddQuestionMenu({ onSelect, excludeTypeIds }: AddQuestionMenuProps) {
+  const { showToast } = useWuShowToast();
+  const accountLocked = useEssentialsAccountActionsLocked();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<DrawerTab>('all');
@@ -689,6 +694,10 @@ export function AddQuestionMenu({ onSelect, excludeTypeIds }: AddQuestionMenuPro
   }
 
   function handleToggle(): void {
+    if (accountLocked) {
+      showToast({ message: ESSENTIALS_ACCOUNT_LOCKED_TOAST, variant: 'error' });
+      return;
+    }
     setOpen((prev) => !prev);
   }
 

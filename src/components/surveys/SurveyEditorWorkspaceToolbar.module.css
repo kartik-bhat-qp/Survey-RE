@@ -171,6 +171,16 @@
   background: #1570c2;
 }
 
+.previewBtn:disabled,
+.previewBtnReviewing {
+  cursor: progress;
+  opacity: 1;
+}
+
+.previewBtnReviewing:hover {
+  background: #1b87e6;
+}
+
 .previewBtnActive {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1b87e6;
 }
