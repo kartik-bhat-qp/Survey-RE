@@ -200,7 +200,7 @@ export function SurveyEditorWorkspaceToolbar({
           window.dispatchEvent(new Event('questionpro-ai-lens-open'));
           showToast({
             message:
-              'Outstanding Pro Insights findings. Resolve them in Pro Insights, or choose Publish anyway.',
+              'Outstanding Survey Expert findings. Resolve them in Survey Expert, or choose Publish anyway.',
             variant: 'info',
           });
           return;
@@ -365,17 +365,17 @@ export function SurveyEditorWorkspaceToolbar({
           <div className={styles.publishArea}>
             <SurveyWorkspaceToolIcons />
             {showAiLens ? (
-              <WuTooltip content="Pro Insights" position="bottom">
+              <WuTooltip content="Survey Expert" position="bottom">
                 <button
                   type="button"
                   className={styles.reviewBtn}
-                  aria-label="Pro Insights"
+                  aria-label="Survey Expert"
                   onClick={() =>
                     window.dispatchEvent(new Event('questionpro-ai-lens-open'))
                   }
                 >
                   <span className={`wc-ai ${styles.reviewAiIcon}`} aria-hidden />
-                  Pro Insights
+                  Survey Expert
                 </button>
               </WuTooltip>
             ) : (

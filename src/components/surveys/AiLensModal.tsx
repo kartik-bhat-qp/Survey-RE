@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useWickUILib } from '@/components/ui/useWickUILib';
@@ -9,25 +9,23 @@ import {
   filterAiLensFindings,
   focusAiLensQuestion,
   getAiLensCategoryIcon,
+  getAiLensSeverityMeta,
   groupAiLensFindingsByCategory,
   summarizeAiLensFindings,
   usesAiLensFixPreview,
+  type AiLensAffectedQuestion,
   type AiLensCategory,
   type AiLensFinding,
   type AiLensPrimaryAction,
   type AiLensSidebarFilter,
 } from '@/data/mock-ai-lens';
 import { AiLensApplyFixExpanded } from '@/components/surveys/AiLensApplyFixExpanded';
+import { AiLensQuestionQuickView } from '@/components/surveys/AiLensQuestionQuickView';
 import { AiLensReadinessGauge } from '@/components/surveys/AiLensReadinessGauge';
 import styles from './AiLensModal.module.css';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
-  { ssr: false }
-);
-
-const WuInput = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
   { ssr: false }
 );
 
@@ -37,7 +35,7 @@ interface AiLensModalProps {
 }
 
 type SeveritySection = 'blocker' | 'warning' | 'advisory';
-type AiLensCheckFilter = 'all' | AiLensCategory | 'ai-judged';
+type AiLensCheckFilter = 'all' | AiLensCategory;
 type HistoryStatusSection = 'resolved' | 'dismissed' | 'passed';
 
 const HISTORY_META: {
@@ -66,7 +64,6 @@ const CHECK_FILTERS: { id: AiLensCheckFilter; label: string }[] = [
   { id: 'Accessibility', label: 'Accessibility' },
   { id: 'Methodology', label: 'Methodology' },
   { id: 'Compliance', label: 'Compliance' },
-  { id: 'ai-judged', label: 'AI-judged' },
 ];
 
 const SEVERITY_ORDER: SeveritySection[] = ['blocker', 'warning', 'advisory'];
@@ -116,6 +113,7 @@ export function AiLensModal({ open, onOpenChange }: AiLensModalProps) {
   const [filter, setFilter] = useState<AiLensSidebarFilter>('all');
   const [checkFilter, setCheckFilter] = useState<AiLensCheckFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const [fixTarget, setFixTarget] = useState<AiLensFinding | null>(null);
   const [collapsedSeverities, setCollapsedSeverities] = useState<
     Partial<Record<SeveritySection, boolean>>
@@ -123,16 +121,22 @@ export function AiLensModal({ open, onOpenChange }: AiLensModalProps) {
   const [collapsedHistory, setCollapsedHistory] = useState<
     Partial<Record<HistoryStatusSection, boolean>>
   >({});
+  const [expandedAffectedIds, setExpandedAffectedIds] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [quickViewQuestion, setQuickViewQuestion] = useState<AiLensAffectedQuestion | null>(
+    null
+  );
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const summary = useMemo(() => summarizeAiLensFindings(findings), [findings]);
   const historyTotal = summary.resolved + summary.dismissed + summary.passed;
   const historyActive = filter === 'history';
+  const searchOpen = searchExpanded || searchQuery.trim().length > 0;
 
   const filtered = useMemo(() => {
     let list = filterAiLensFindings(findings, filter);
-    if (checkFilter === 'ai-judged') {
-      list = list.filter((finding) => Boolean(finding.aiJudged));
-    } else if (checkFilter !== 'all') {
+    if (checkFilter !== 'all') {
       list = list.filter((finding) => finding.category === checkFilter);
     }
 
@@ -140,13 +144,15 @@ export function AiLensModal({ open, onOpenChange }: AiLensModalProps) {
     if (!query) return list;
 
     return list.filter((finding) => {
+      const affectedText = (finding.affectedQuestions ?? [])
+        .map((question) => `${question.code} ${question.text}`)
+        .join(' ');
       const haystack = [
         finding.title,
         finding.description,
         finding.suggestedFix ?? '',
         finding.category,
-        finding.affectedQuestion?.code ?? '',
-        finding.affectedQuestion?.text ?? '',
+        affectedText,
       ]
         .join(' ')
         .toLowerCase();
@@ -193,14 +199,70 @@ export function AiLensModal({ open, onOpenChange }: AiLensModalProps) {
     setFixTarget(null);
     setCollapsedSeverities({});
     setCollapsedHistory({});
+    setExpandedAffectedIds({});
+    setQuickViewQuestion(null);
     setSearchQuery('');
+    setSearchExpanded(false);
     setCheckFilter('all');
-    showToast({ message: 'Pro Insights re-scan complete', variant: 'success' });
+    showToast({ message: 'Survey Expert re-scan complete', variant: 'success' });
   }, [showToast]);
+
+  const toggleAffectedQuestions = useCallback((findingId: string) => {
+    setExpandedAffectedIds((prev) => ({
+      ...prev,
+      [findingId]: !prev[findingId],
+    }));
+  }, []);
+
+  const openQuickView = useCallback((question: AiLensAffectedQuestion) => {
+    setQuickViewQuestion(question);
+  }, []);
+
+  const handleQuickViewOpenChange = useCallback((open: boolean) => {
+    if (!open) setQuickViewQuestion(null);
+  }, []);
+
+  const goToAffectedQuestion = useCallback(
+    (question: AiLensAffectedQuestion) => {
+      setQuickViewQuestion(null);
+      onOpenChange(false);
+      queueMicrotask(() => {
+        focusAiLensQuestion({
+          sectionId: question.sectionId,
+          questionId: question.questionId,
+          code: question.code,
+        });
+      });
+    },
+    [onOpenChange]
+  );
+
+  const openSearch = useCallback(() => {
+    setSearchExpanded(true);
+  }, []);
+
+  const collapseSearchIfEmpty = useCallback(() => {
+    if (searchQuery.trim().length === 0) {
+      setSearchExpanded(false);
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      searchInputRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [searchOpen]);
 
   const handleModalOpenChange = useCallback(
     (nextOpen: boolean) => {
-      if (!nextOpen) setFixTarget(null);
+      if (!nextOpen) {
+        setFixTarget(null);
+        setSearchExpanded(false);
+        setSearchQuery('');
+        setQuickViewQuestion(null);
+      }
       queueMicrotask(() => onOpenChange(nextOpen));
     },
     [onOpenChange]
@@ -349,6 +411,7 @@ export function AiLensModal({ open, onOpenChange }: AiLensModalProps) {
   const { WuModal, WuModalHeader, WuModalContent } = wick;
 
   return (
+    <>
     <WuModal
       open
       onOpenChange={handleModalOpenChange}
@@ -359,16 +422,16 @@ export function AiLensModal({ open, onOpenChange }: AiLensModalProps) {
       <WuModalHeader className={styles.header}>
         <div className={styles.headerBrand}>
           <span className={`wm-auto-awesome ${styles.headerStar}`} aria-hidden />
-          <span className={styles.headerTitle}>Pro Insights</span>
+          <span className={styles.headerTitle}>Survey Expert</span>
           <span className={styles.betaBadge}>BETA</span>
           <button
             type="button"
             className={styles.helpBtn}
-            aria-label="About Pro Insights"
+            aria-label="About Survey Expert"
             onClick={() =>
               showToast({
                 message:
-                  'Pro Insights scans logic, accessibility, experience, methodology, and compliance before you publish.',
+                  'Survey Expert scans logic, accessibility, experience, methodology, and compliance before you publish.',
                 variant: 'info',
               })
             }
@@ -381,7 +444,7 @@ export function AiLensModal({ open, onOpenChange }: AiLensModalProps) {
         <div className={styles.summaryBar}>
           <AiLensReadinessGauge score={summary.score} band={summary.band} />
 
-          <div className={styles.metricsCard} role="group" aria-label="Pro Insights summary metrics">
+          <div className={styles.metricsCard} role="group" aria-label="Survey Expert summary metrics">
             <button
               type="button"
               className={`${styles.metricCell} ${styles.metricCellBtn} ${
@@ -449,7 +512,7 @@ export function AiLensModal({ open, onOpenChange }: AiLensModalProps) {
               <span className={styles.metricRule} aria-hidden />
               <span className={styles.metricLabel}>
                 <span className={`wm-history ${styles.metricLabelIconHistory}`} aria-hidden />
-                History
+                Archived
               </span>
             </button>
           </div>
@@ -475,26 +538,79 @@ export function AiLensModal({ open, onOpenChange }: AiLensModalProps) {
           <div className={styles.searchActions}>
             <button
               type="button"
-              className={styles.rerunBtn}
+              className={styles.estdTimeBtn}
+              aria-label="The approximate time a respondent will take to complete the survey."
+              title="The approximate time a respondent will take to complete the survey."
+              onClick={() =>
+                showToast({
+                  message:
+                    'The approximate time a respondent will take to complete the survey.',
+                  variant: 'info',
+                })
+              }
+            >
+              <span className={`wm-schedule ${styles.estdTimeIcon}`} aria-hidden />
+              <span className={styles.estdTimeValue}>{summary.estimatedMinutes} Mins</span>
+            </button>
+            <button
+              type="button"
+              className={styles.toolIconBtn}
               aria-label="Re-run"
               title="Re-run"
               onClick={handleRerun}
             >
               <span className="wm-refresh" aria-hidden />
             </button>
-            <div className={styles.searchWrap}>
-              <WuInput
-                variant="outlined"
-                placeholder="Search findings"
-                aria-label="Search findings"
-                value={searchQuery}
-                onChange={(event: { target: { value: string } }) =>
-                  setSearchQuery(event.target.value)
-                }
-                Icon={<span className="wm-search" aria-hidden />}
-                iconPosition="left"
-                className={styles.searchInput}
-              />
+            <div
+              className={`${styles.searchControl} ${
+                searchOpen ? styles.searchControlExpanded : ''
+              }`}
+            >
+              {searchOpen ? (
+                <div className={styles.searchField}>
+                  <span className={`wm-search ${styles.searchFieldIcon}`} aria-hidden />
+                  <input
+                    ref={searchInputRef}
+                    type="search"
+                    className={styles.searchNativeInput}
+                    placeholder="Search findings"
+                    aria-label="Search findings"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    onBlur={collapseSearchIfEmpty}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        setSearchQuery('');
+                        setSearchExpanded(false);
+                      }
+                    }}
+                  />
+                  {searchQuery ? (
+                    <button
+                      type="button"
+                      className={styles.searchClearBtn}
+                      aria-label="Clear search"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSearchExpanded(false);
+                      }}
+                    >
+                      <span className="wm-close" aria-hidden />
+                    </button>
+                  ) : null}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.toolIconBtn}
+                  aria-label="Search findings"
+                  title="Search findings"
+                  onClick={openSearch}
+                >
+                  <span className="wm-search" aria-hidden />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -563,6 +679,9 @@ export function AiLensModal({ open, onOpenChange }: AiLensModalProps) {
                             <ul className={styles.findingList}>
                               {group.findings.map((finding) => {
                                 const isExpanded = fixTarget?.id === finding.id;
+                                const severityMeta = getAiLensSeverityMeta(finding.severity);
+                                const affectedQuestions = finding.affectedQuestions ?? [];
+                                const affectedOpen = Boolean(expandedAffectedIds[finding.id]);
                                 return (
                                   <li
                                     key={finding.id}
@@ -578,20 +697,26 @@ export function AiLensModal({ open, onOpenChange }: AiLensModalProps) {
                                       <div className={styles.findingMain}>
                                         <div className={styles.findingTitleRow}>
                                           <span
-                                            className={`${styles.severityBadge} ${
-                                              styles[`severityBadge_${finding.severity}`]
+                                            className={`${severityMeta.icon} ${styles.severityIcon} ${
+                                              styles[`severityIcon_${finding.severity}`]
                                             }`}
-                                          >
-                                            {finding.severity.toUpperCase()}
-                                          </span>
+                                            title={severityMeta.label}
+                                            aria-label={severityMeta.label}
+                                            role="img"
+                                          />
                                           <span className={styles.findingTitle}>
                                             {finding.title}
                                           </span>
-                                          {finding.aiJudged ? (
-                                            <span className={styles.aiBadge}>AI-judged</span>
-                                          ) : null}
                                           {finding.confidence ? (
-                                            <span className={styles.confidenceBadge}>
+                                            <span
+                                              className={styles.confidenceBadge}
+                                              title="QuestionPro AI"
+                                              aria-label={`QuestionPro AI, ${finding.confidence}`}
+                                            >
+                                              <span
+                                                className={`wm-auto-awesome ${styles.confidenceStar}`}
+                                                aria-hidden
+                                              />
                                               {finding.confidence}
                                             </span>
                                           ) : null}
@@ -599,40 +724,99 @@ export function AiLensModal({ open, onOpenChange }: AiLensModalProps) {
                                         <p className={styles.findingDescription}>
                                           {finding.description}
                                         </p>
-                                        {!isExpanded && finding.suggestedFix ? (
-                                          <p className={styles.suggestedFix}>
-                                            <span className={styles.suggestedFixLabel}>
-                                              Suggested fix:
-                                            </span>{' '}
-                                            {finding.suggestedFix}
-                                          </p>
-                                        ) : null}
-                                        {finding.affectedQuestion ? (
-                                          <button
-                                            type="button"
-                                            className={styles.affectedLink}
-                                            aria-label={`View question ${finding.affectedQuestion.code}`}
-                                            onClick={() => {
-                                              const target = finding.affectedQuestion!;
-                                              onOpenChange(false);
-                                              queueMicrotask(() => {
-                                                focusAiLensQuestion({
-                                                  sectionId: target.sectionId,
-                                                  questionId: target.questionId,
-                                                  code: target.code,
-                                                });
-                                              });
-                                            }}
-                                          >
-                                            <span
-                                              className={`wm-visibility ${styles.affectedLinkIcon}`}
-                                              aria-hidden
-                                            />
-                                            <span className={styles.affectedLinkText}>
-                                              Affected question {finding.affectedQuestion.code}{' '}
-                                              — {finding.affectedQuestion.text}
-                                            </span>
-                                          </button>
+                                        {affectedQuestions.length > 0 ? (
+                                          <div className={styles.affectedBlock}>
+                                            <button
+                                              type="button"
+                                              className={styles.affectedToggle}
+                                              aria-expanded={affectedOpen}
+                                              onClick={() =>
+                                                toggleAffectedQuestions(finding.id)
+                                              }
+                                            >
+                                              <span className={styles.affectedToggleLabel}>
+                                                Affected question
+                                                {affectedQuestions.length === 1 ? '' : 's'} (
+                                                {affectedQuestions.length})
+                                              </span>
+                                              <span
+                                                className={`${
+                                                  affectedOpen
+                                                    ? 'wm-expand-less'
+                                                    : 'wm-expand-more'
+                                                } ${styles.affectedToggleChevron}`}
+                                                aria-hidden
+                                              />
+                                            </button>
+                                            {affectedOpen ? (
+                                              <ul className={styles.affectedList}>
+                                                {affectedQuestions.map((question) => {
+                                                  const isQuickView =
+                                                    quickViewQuestion?.questionId ===
+                                                    question.questionId;
+                                                  return (
+                                                    <li
+                                                      key={question.questionId}
+                                                      className={styles.affectedItem}
+                                                    >
+                                                      <div className={styles.affectedItemRow}>
+                                                        <span
+                                                          className={styles.affectedItemText}
+                                                        >
+                                                          <span
+                                                            className={styles.affectedItemCode}
+                                                          >
+                                                            {question.code}
+                                                          </span>
+                                                          <span
+                                                            className={styles.affectedItemSep}
+                                                          >
+                                                            —
+                                                          </span>
+                                                          <span>{question.text}</span>
+                                                        </span>
+                                                        <div
+                                                          className={styles.affectedItemActions}
+                                                        >
+                                                          <button
+                                                            type="button"
+                                                            className={`${styles.affectedIconBtn} ${
+                                                              isQuickView
+                                                                ? styles.affectedIconBtnActive
+                                                                : ''
+                                                            }`}
+                                                            aria-pressed={isQuickView}
+                                                            aria-label={`Quick view ${question.code}`}
+                                                            title="Quick view"
+                                                            onClick={() => openQuickView(question)}
+                                                          >
+                                                            <span
+                                                              className="wm-visibility"
+                                                              aria-hidden
+                                                            />
+                                                          </button>
+                                                          <button
+                                                            type="button"
+                                                            className={styles.affectedIconBtn}
+                                                            aria-label={`Go to question ${question.code}`}
+                                                            title="Go to question"
+                                                            onClick={() =>
+                                                              goToAffectedQuestion(question)
+                                                            }
+                                                          >
+                                                            <span
+                                                              className="wm-open-in-new"
+                                                              aria-hidden
+                                                            />
+                                                          </button>
+                                                        </div>
+                                                      </div>
+                                                    </li>
+                                                  );
+                                                })}
+                                              </ul>
+                                            ) : null}
+                                          </div>
                                         ) : null}
                                       </div>
                                       {!isExpanded && finding.status === 'open' ? (
@@ -695,5 +879,15 @@ export function AiLensModal({ open, onOpenChange }: AiLensModalProps) {
         </div>
       </WuModalContent>
     </WuModal>
+    {quickViewQuestion ? (
+      <AiLensQuestionQuickView
+        open
+        questionId={quickViewQuestion.questionId}
+        code={quickViewQuestion.code}
+        text={quickViewQuestion.text}
+        onOpenChange={handleQuickViewOpenChange}
+      />
+    ) : null}
+    </>
   );
 }

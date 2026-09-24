@@ -219,7 +219,7 @@ export const MOCK_SURVEYS: Survey[] = [
   },
   {
     id: 21,
-    name: 'QuestionPro Pro Insights',
+    name: 'QuestionPro Survey Expert',
     folderId: 'all',
     createdAt: '2026-09-04T10:00:00Z',
     modifiedAt: '2026-09-04T10:00:00Z',

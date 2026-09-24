@@ -1,5 +1,5 @@
 /**
- * QuestionPro Pro Insights — pre-publish survey quality review (prototype).
+ * QuestionPro Survey Expert — pre-publish survey quality review (prototype).
  * Scoped to QUESTIONPRO_AI_LENS_SURVEY_ID only.
  * @see https://www.questionpro.com/help/2057.html
  */
@@ -38,6 +38,13 @@ export interface AiLensFixPreview {
   after: string;
 }
 
+export interface AiLensAffectedQuestion {
+  code: string;
+  text: string;
+  questionId: string;
+  sectionId: string;
+}
+
 export interface AiLensFinding {
   id: string;
   severity: AiLensSeverity;
@@ -47,7 +54,7 @@ export interface AiLensFinding {
   description: string;
   suggestedFix?: string;
   fixPreview?: AiLensFixPreview;
-  affectedQuestion?: { code: string; text: string; questionId: string; sectionId: string };
+  affectedQuestions?: AiLensAffectedQuestion[];
   aiJudged?: boolean;
   confidence?: 'High confidence' | 'Medium confidence';
   /** When false, finding never affects readiness score (AI wording/coherence). */
@@ -143,7 +150,63 @@ export function createAiLensSurveySections(): SurveySection[] {
   ];
 }
 
-/** Baseline findings matching the Pro Insights screenshot / help-file categories. */
+export interface AiLensQuestionQuickViewData {
+  code: string;
+  text: string;
+  familyLabel: string;
+  typeLabel: string;
+  optionLabels: string[];
+}
+
+function resolveQuestionTypeLabels(typeId: string | undefined): {
+  familyLabel: string;
+  typeLabel: string;
+} {
+  switch (typeId) {
+    case 'select-one':
+      return { familyLabel: 'Choice', typeLabel: 'Select One' };
+    case 'select-many':
+      return { familyLabel: 'Choice', typeLabel: 'Select Many' };
+    case 'dropdown':
+      return { familyLabel: 'Choice', typeLabel: 'Drop-down Menu' };
+    case 'comment-box':
+      return { familyLabel: 'Text', typeLabel: 'Comment Box' };
+    case 'single-row':
+      return { familyLabel: 'Text', typeLabel: 'Single Row Text' };
+    default:
+      return { familyLabel: 'Question', typeLabel: typeId ?? 'Standard' };
+  }
+}
+
+/** Resolve full question info for Survey Expert Quick view. */
+export function getAiLensQuestionQuickView(
+  questionId: string,
+  fallback?: Pick<AiLensAffectedQuestion, 'code' | 'text'>
+): AiLensQuestionQuickViewData {
+  const sections = createAiLensSurveySections();
+  for (const section of sections) {
+    const question = section.questions.find((item) => item.id === questionId);
+    if (!question) continue;
+    const { familyLabel, typeLabel } = resolveQuestionTypeLabels(question.addQuestionTypeId);
+    return {
+      code: question.code,
+      text: question.text,
+      familyLabel,
+      typeLabel,
+      optionLabels: question.options.map((option) => option.label),
+    };
+  }
+
+  return {
+    code: fallback?.code ?? '—',
+    text: fallback?.text ?? 'Question details are not available.',
+    familyLabel: 'Question',
+    typeLabel: 'Standard',
+    optionLabels: [],
+  };
+}
+
+/** Baseline findings matching the Survey Expert screenshot / help-file categories. */
 export const MOCK_AI_LENS_FINDINGS: AiLensFinding[] = [
   {
     id: 'f-logic-a1',
@@ -188,12 +251,14 @@ export const MOCK_AI_LENS_FINDINGS: AiLensFinding[] = [
       after:
         "Q2 — Which of the following best describes your gender identity?\nOptions: Woman, Man, Non-binary, Prefer to self-describe, Prefer not to say",
     },
-    affectedQuestion: {
-      code: 'Q2',
-      text: 'How do you describe your gender?',
-      questionId: 'q-ailens-2',
-      sectionId: 'section-ai-lens-1',
-    },
+    affectedQuestions: [
+      {
+        code: 'Q2',
+        text: 'How do you describe your gender?',
+        questionId: 'q-ailens-2',
+        sectionId: 'section-ai-lens-1',
+      },
+    ],
     aiJudged: true,
     confidence: 'High confidence',
     affectsScore: true,
@@ -218,12 +283,14 @@ export const MOCK_AI_LENS_FINDINGS: AiLensFinding[] = [
       after:
         'Q1 options: Very satisfied, Satisfied, Neither satisfied nor dissatisfied, Dissatisfied, Very dissatisfied',
     },
-    affectedQuestion: {
-      code: 'Q1',
-      text: 'How satisfied are you with our product overall?',
-      questionId: 'q-ailens-1',
-      sectionId: 'section-ai-lens-1',
-    },
+    affectedQuestions: [
+      {
+        code: 'Q1',
+        text: 'How satisfied are you with our product overall?',
+        questionId: 'q-ailens-1',
+        sectionId: 'section-ai-lens-1',
+      },
+    ],
     affectsScore: true,
     scorePenalty: SCORE_PENALTY.warning,
     primaryAction: 'fix-this',
@@ -238,6 +305,26 @@ export const MOCK_AI_LENS_FINDINGS: AiLensFinding[] = [
     description:
       'One or more answer options are missing accessible name associations for screen readers (WCAG 1.3.1 / 4.1.2).',
     suggestedFix: 'Ensure each option has a visible label tied to its input control.',
+    affectedQuestions: [
+      {
+        code: 'Q1',
+        text: 'How satisfied are you with our product overall?',
+        questionId: 'q-ailens-1',
+        sectionId: 'section-ai-lens-1',
+      },
+      {
+        code: 'Q2',
+        text: 'How do you describe your gender?',
+        questionId: 'q-ailens-2',
+        sectionId: 'section-ai-lens-1',
+      },
+      {
+        code: 'Q10',
+        text: 'Which interior finishes did you select?',
+        questionId: 'q-ailens-10',
+        sectionId: 'section-ai-lens-1',
+      },
+    ],
     affectsScore: true,
     scorePenalty: SCORE_PENALTY.warning,
     primaryAction: 'fix-this',
@@ -252,12 +339,20 @@ export const MOCK_AI_LENS_FINDINGS: AiLensFinding[] = [
     description:
       'Multiple open-ended questions increase completion time and drop-off risk for mobile respondents.',
     suggestedFix: 'Limit open text to essential probes, or make optional where possible.',
-    affectedQuestion: {
-      code: 'Q3',
-      text: 'Please share any additional feedback.',
-      questionId: 'q-ailens-3',
-      sectionId: 'section-ai-lens-1',
-    },
+    affectedQuestions: [
+      {
+        code: 'Q3',
+        text: 'Please share any additional feedback.',
+        questionId: 'q-ailens-3',
+        sectionId: 'section-ai-lens-1',
+      },
+      {
+        code: 'Q1',
+        text: 'How satisfied are you with our product overall?',
+        questionId: 'q-ailens-1',
+        sectionId: 'section-ai-lens-1',
+      },
+    ],
     affectsScore: true,
     scorePenalty: SCORE_PENALTY.advisory,
     primaryAction: 'suggest-fix',
@@ -299,12 +394,14 @@ export const MOCK_AI_LENS_FINDINGS: AiLensFinding[] = [
     description:
       'AI wording check: Q1 may combine overall satisfaction with an implied product judgment in a single item.',
     suggestedFix: 'Split into separate questions if you need both constructs.',
-    affectedQuestion: {
-      code: 'Q1',
-      text: 'How satisfied are you with our product overall?',
-      questionId: 'q-ailens-1',
-      sectionId: 'section-ai-lens-1',
-    },
+    affectedQuestions: [
+      {
+        code: 'Q1',
+        text: 'How satisfied are you with our product overall?',
+        questionId: 'q-ailens-1',
+        sectionId: 'section-ai-lens-1',
+      },
+    ],
     aiJudged: true,
     confidence: 'Medium confidence',
     affectsScore: false,
@@ -319,7 +416,7 @@ export const MOCK_AI_LENS_FINDINGS: AiLensFinding[] = [
     category: 'Methodology',
     title: 'Survey name vs. content coherence',
     description:
-      'AI coherence check: the survey name “QuestionPro Pro Insights” does not clearly match the product-satisfaction theme of the questions.',
+      'AI coherence check: the survey name “QuestionPro Survey Expert” does not clearly match the product-satisfaction theme of the questions.',
     aiJudged: true,
     confidence: 'Medium confidence',
     affectsScore: false,
@@ -336,12 +433,20 @@ export const MOCK_AI_LENS_FINDINGS: AiLensFinding[] = [
     title: 'Unreachable question path',
     description:
       'A branch condition references an answer option that no longer exists on Q10, so respondents can never reach the intended follow-up.',
-    affectedQuestion: {
-      code: 'Q10',
-      text: 'Which interior finishes did you select?',
-      questionId: 'q-ailens-10',
-      sectionId: 'section-ai-lens-1',
-    },
+    affectedQuestions: [
+      {
+        code: 'Q10',
+        text: 'Which interior finishes did you select?',
+        questionId: 'q-ailens-10',
+        sectionId: 'section-ai-lens-1',
+      },
+      {
+        code: 'Q1',
+        text: 'How satisfied are you with our product overall?',
+        questionId: 'q-ailens-1',
+        sectionId: 'section-ai-lens-1',
+      },
+    ],
     affectsScore: true,
     scorePenalty: SCORE_PENALTY.warning,
     primaryAction: 'fix-this',
@@ -355,12 +460,14 @@ export const MOCK_AI_LENS_FINDINGS: AiLensFinding[] = [
     title: 'Missing validation on required question',
     description:
       'Q1 is marked required but has no validation message configured for empty submissions.',
-    affectedQuestion: {
-      code: 'Q1',
-      text: 'How satisfied are you with our product overall?',
-      questionId: 'q-ailens-1',
-      sectionId: 'section-ai-lens-1',
-    },
+    affectedQuestions: [
+      {
+        code: 'Q1',
+        text: 'How satisfied are you with our product overall?',
+        questionId: 'q-ailens-1',
+        sectionId: 'section-ai-lens-1',
+      },
+    ],
     affectsScore: true,
     scorePenalty: SCORE_PENALTY.warning,
     primaryAction: 'fix-this',
@@ -374,6 +481,14 @@ export const MOCK_AI_LENS_FINDINGS: AiLensFinding[] = [
     title: 'Low-contrast helper text',
     description:
       'Helper text under Q3 may fall below WCAG AA contrast against the default theme background.',
+    affectedQuestions: [
+      {
+        code: 'Q3',
+        text: 'Please share any additional feedback.',
+        questionId: 'q-ailens-3',
+        sectionId: 'section-ai-lens-1',
+      },
+    ],
     affectsScore: true,
     scorePenalty: SCORE_PENALTY.advisory,
     primaryAction: 'fix-this',
@@ -602,12 +717,28 @@ export function getAiLensCategoryIcon(category: AiLensCategory): string {
   }
 }
 
+export function getAiLensSeverityMeta(severity: AiLensSeverity): {
+  label: string;
+  icon: string;
+} {
+  switch (severity) {
+    case 'blocker':
+      return { label: 'Blocker', icon: 'wm-error' };
+    case 'warning':
+      return { label: 'Warning', icon: 'wm-warning' };
+    case 'advisory':
+      return { label: 'Advisory', icon: 'wm-info' };
+    default:
+      return { label: 'Finding', icon: 'wm-info' };
+  }
+}
+
 export function cloneAiLensFindings(): AiLensFinding[] {
   return MOCK_AI_LENS_FINDINGS.map((finding) => ({
     ...finding,
     fixPreview: finding.fixPreview ? { ...finding.fixPreview } : undefined,
-    affectedQuestion: finding.affectedQuestion
-      ? { ...finding.affectedQuestion }
+    affectedQuestions: finding.affectedQuestions
+      ? finding.affectedQuestions.map((question) => ({ ...question }))
       : undefined,
   }));
 }
@@ -615,18 +746,19 @@ export function cloneAiLensFindings(): AiLensFinding[] {
 export function getAiLensFixPreview(finding: AiLensFinding): AiLensFixPreview {
   if (finding.fixPreview) return finding.fixPreview;
 
-  const questionLabel = finding.affectedQuestion
-    ? `${finding.affectedQuestion.code} — ${finding.affectedQuestion.text}`
+  const firstQuestion = finding.affectedQuestions?.[0];
+  const questionLabel = firstQuestion
+    ? `${firstQuestion.code} — ${firstQuestion.text}`
     : finding.title;
 
   return {
     rationale: finding.description,
-    before: finding.affectedQuestion
+    before: firstQuestion
       ? `${questionLabel}\nCurrent wording and settings as authored.`
       : finding.description,
     after: finding.suggestedFix
       ? `${questionLabel}\n${finding.suggestedFix}`
-      : `${questionLabel}\nApply the recommended correction from Pro Insights.`,
+      : `${questionLabel}\nApply the recommended correction from Survey Expert.`,
   };
 }
 

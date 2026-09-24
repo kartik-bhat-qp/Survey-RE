@@ -1527,7 +1527,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
         el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 80);
 
-      toast(`Opened ${detailPayload.code}`);
+      toast(`Opened ${detailPayload.code} in survey builder`);
     };
 
     window.addEventListener(AI_LENS_FOCUS_QUESTION_EVENT, onFocusQuestion);
