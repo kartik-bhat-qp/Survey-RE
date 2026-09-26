@@ -1,5 +1,7 @@
 export type SurveyLanguageTranslationStatus = 'default' | 'complete' | 'in-progress' | 'not-started';
 
+export type SurveyLanguageTextDirection = 'ltr' | 'rtl';
+
 export type SurveyLanguagesSidebarTab =
   | 'languages'
   | 'import-translations'
@@ -16,6 +18,15 @@ export interface SurveyLanguageVersion {
   enabled: boolean;
   /** Translation completion 0–100. */
   progressPercent: number;
+  /** Manual-import custom language (no machine translate). */
+  isCustom?: boolean;
+  /** Standard/catalog language this custom language is based on. */
+  baseLanguageId?: string;
+  fallbackLanguageId?: string;
+  textDirection?: SurveyLanguageTextDirection;
+  /** Populated for custom languages when an import file is applied. */
+  translatedCount?: number;
+  totalStrings?: number;
 }
 
 export interface AddableSurveyLanguage {
@@ -96,6 +107,79 @@ export function getSurveyLanguageStatusLabel(
     default:
       return 'Not Started';
   }
+}
+
+export function getCustomLanguageStatusLabel(language: SurveyLanguageVersion): string {
+  const total = language.totalStrings ?? 0;
+  const translated = language.translatedCount ?? 0;
+  if (total <= 0 || translated <= 0) {
+    return 'No translations imported';
+  }
+  return `${translated} of ${total} strings translated`;
+}
+
+export function slugifyCustomLanguageName(name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'custom';
+}
+
+export function buildCustomLanguageCode(fallbackCode: string, name: string): string {
+  return `${fallbackCode}-x-${slugifyCustomLanguageName(name)}`;
+}
+
+export function isSurveyLanguageNameTaken(
+  name: string,
+  languages: SurveyLanguageVersion[],
+  catalog: AddableSurveyLanguage[] = ADDABLE_SURVEY_LANGUAGES
+): boolean {
+  const normalized = name.trim().toLowerCase();
+  if (!normalized) return false;
+  if (languages.some((language) => language.name.trim().toLowerCase() === normalized)) {
+    return true;
+  }
+  return catalog.some((language) => language.name.trim().toLowerCase() === normalized);
+}
+
+export interface CreateCustomSurveyLanguageInput {
+  name: string;
+  baseLanguage: AddableSurveyLanguage | SurveyLanguageVersion;
+  fallbackLanguage: AddableSurveyLanguage | SurveyLanguageVersion;
+  textDirection: SurveyLanguageTextDirection;
+  translatedCount: number;
+  totalStrings: number;
+}
+
+export function createCustomSurveyLanguage(
+  input: CreateCustomSurveyLanguageInput
+): SurveyLanguageVersion {
+  const name = input.name.trim();
+  const total = Math.max(0, input.totalStrings);
+  const translated = Math.max(0, Math.min(input.translatedCount, total));
+  const progressPercent =
+    total === 0 ? 0 : Math.round((translated / total) * 100);
+  const baseCode = input.baseLanguage.code;
+
+  return {
+    id: `custom-${buildCustomLanguageCode(baseCode, name)}-${Date.now()}`,
+    name,
+    code: buildCustomLanguageCode(baseCode, name),
+    status: translated > 0 ? (progressPercent >= 100 ? 'complete' : 'in-progress') : 'not-started',
+    isDefault: false,
+    enabled: true,
+    progressPercent,
+    isCustom: true,
+    baseLanguageId: input.baseLanguage.id,
+    fallbackLanguageId: input.fallbackLanguage.id,
+    textDirection: input.textDirection,
+    translatedCount: translated,
+    totalStrings: total,
+  };
 }
 
 /**
@@ -231,6 +315,14 @@ export const ADDABLE_SURVEY_LANGUAGES: AddableSurveyLanguage[] = [
   ...FEATURED_SURVEY_LANGUAGES,
   ...ALL_SURVEY_LANGUAGES,
 ];
+
+/**
+ * Same ordered catalog as the Add Languages dropdown:
+ * featured section first, then alphabetical languages.
+ */
+export function getAddLanguagesCatalog(): AddableSurveyLanguage[] {
+  return ADDABLE_SURVEY_LANGUAGES;
+}
 
 export function getAddableSurveyLanguageById(
   id: string

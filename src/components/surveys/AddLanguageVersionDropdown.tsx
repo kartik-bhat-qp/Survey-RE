@@ -26,11 +26,14 @@ interface AddLanguageVersionDropdownProps {
   /** Language ids already on the survey (including default). These are hidden from the list. */
   addedIds: string[];
   onSave: (languages: AddableSurveyLanguage[]) => void;
+  /** Opens Create custom language flow; selection is left unsaved and the dropdown closes. */
+  onCreateCustomLanguage?: () => void;
 }
 
 export function AddLanguageVersionDropdown({
   addedIds,
   onSave,
+  onCreateCustomLanguage,
 }: AddLanguageVersionDropdownProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -124,6 +127,11 @@ export function AddLanguageVersionDropdown({
     setOpen(false);
   }
 
+  function handleCreateCustomLanguage(): void {
+    setOpen(false);
+    onCreateCustomLanguage?.();
+  }
+
   function renderLanguageButton(language: AddableSurveyLanguage): React.ReactNode {
     const isSelected = draftIdSet.has(language.id);
     return (
@@ -151,7 +159,7 @@ export function AddLanguageVersionDropdown({
         onClick={handleToggleOpen}
         aria-expanded={open}
         aria-haspopup="dialog"
-        disabled={!hasAvailableLanguages}
+        disabled={!hasAvailableLanguages && onCreateCustomLanguage == null}
       >
         Add Languages
       </WuButton>
@@ -200,17 +208,19 @@ export function AddLanguageVersionDropdown({
           )}
 
           <div className={styles.footer}>
-            <p className={styles.selectionCount} aria-live="polite">
-              {draftIds.length === 0
-                ? 'No languages selected'
-                : `${draftIds.length} language${draftIds.length === 1 ? '' : 's'} selected`}
-            </p>
+            <WuButton
+              variant="secondary"
+              Icon={<span className="wm-add" aria-hidden />}
+              onClick={handleCreateCustomLanguage}
+            >
+              Custom language
+            </WuButton>
             <div className={styles.footerActions}>
               <WuButton variant="secondary" onClick={handleClearSelection}>
                 Clear Selection
               </WuButton>
               <WuButton onClick={handleSave} disabled={draftIds.length === 0}>
-                Save
+                {draftIds.length > 0 ? `Save (${draftIds.length})` : 'Save'}
               </WuButton>
             </div>
           </div>
