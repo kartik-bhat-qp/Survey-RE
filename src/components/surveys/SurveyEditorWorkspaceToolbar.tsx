@@ -30,13 +30,20 @@ import {
   subscribeSurveyApprovalState,
   surveyHasApprovalTab,
   writeSurveyApprovalState,
+  SURVEY_APPROVAL_OWNER_NAME,
+  createApprovalActivity,
+  getPrototypeSurveyApprovalDueDate,
+  type SurveyReviewer,
 } from '@/data/mock-survey-approval';
+import { deliverReviewRequestEmail } from '@/data/mock-survey-reviewer-inbox';
+import { getSurveyById } from '@/data/get-survey-by-id';
 import { isAiLensSurvey, MOCK_AI_LENS_FINDINGS, summarizeAiLensFindings } from '@/data/mock-ai-lens';
 import {
   ESSENTIALS_SURVEY_REVIEWING_TOOLTIP,
   essentialsPublishShouldBeBlocked,
   runEssentialsPhishingReview,
 } from '@/data/mock-essentials-phishing-review';
+import { SendSurveyForReviewModal } from '@/components/surveys/SendSurveyForReviewModal';
 import styles from './SurveyEditorWorkspaceToolbar.module.css';
 
 const WuSecondaryNavbar = dynamic(
@@ -54,10 +61,62 @@ const WuLoader = dynamic(
   { ssr: false }
 );
 
+const WuMenu = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
+  { ssr: false }
+);
+
+const WuMenuItem = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
+  { ssr: false }
+);
+
 const SURVEY_VERSION_TOOLTIP = 'Survey Version';
 const PATH_SIMULATOR_TOOLTIP = 'Path Simulator';
+const APPROVAL_PUBLISH_TOOLTIP =
+  'A reviewer publishes this survey after they approve it.';
 
-type PublishMode = 'draft' | 'publish';
+type PublishMode = 'draft' | 'review' | 'publish';
+
+const STATUS_OPTIONS: Array<{
+  value: PublishMode;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: 'draft',
+    label: 'Draft',
+    description: 'Editing only. Data collection is paused.',
+  },
+  {
+    value: 'review',
+    label: 'Review',
+    description: 'Send for review before publishing.',
+  },
+  {
+    value: 'publish',
+    label: 'Publish',
+    description: 'Make the survey live and collect responses.',
+  },
+];
+
+function statusTriggerClass(mode: PublishMode): string {
+  if (mode === 'publish') return styles.statusTriggerLive;
+  if (mode === 'review') return styles.statusTriggerReview;
+  return styles.statusTriggerDraft;
+}
+
+function statusLabel(mode: PublishMode): string {
+  if (mode === 'publish') return 'Publish';
+  if (mode === 'review') return 'Review';
+  return 'Draft';
+}
+
+function statusMenuDotClass(mode: PublishMode): string {
+  if (mode === 'publish') return styles.statusMenuDotLive;
+  if (mode === 'review') return styles.statusMenuDotReview;
+  return styles.statusMenuDotDraft;
+}
 
 function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null {
   if (tool === 'workspace') return `/surveys/${surveyId}`;
@@ -103,6 +162,7 @@ export function SurveyEditorWorkspaceToolbar({
     useState<PublishLicenseModalView>('conflicts');
   const [licenseConflicts, setLicenseConflicts] = useState<SurveyLicenseConflict[]>([]);
   const [draftConfirmOpen, setDraftConfirmOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const surveyReviewing = useEssentialsSurveyReviewing();
   const requiresApproval = surveyHasApprovalTab(surveyId);
 
@@ -114,13 +174,19 @@ export function SurveyEditorWorkspaceToolbar({
 
   useEffect(() => {
     if (!requiresApproval) return;
-    const applyPublished = (published: boolean): void => {
-      setMode(published ? 'publish' : 'draft');
+    const applyStatus = (state: ReturnType<typeof readSurveyApprovalState>): void => {
+      if (state.published) {
+        setMode('publish');
+        return;
+      }
+      if (state.status === 'pending') {
+        setMode('review');
+        return;
+      }
+      setMode('draft');
     };
-    applyPublished(readSurveyApprovalState(surveyId).published);
-    return subscribeSurveyApprovalState(surveyId, (state) => {
-      applyPublished(state.published);
-    });
+    applyStatus(readSurveyApprovalState(surveyId));
+    return subscribeSurveyApprovalState(surveyId, applyStatus);
   }, [requiresApproval, surveyId]);
 
   useEffect(() => {
@@ -182,10 +248,62 @@ export function SurveyEditorWorkspaceToolbar({
     setMode('draft');
     if (requiresApproval) {
       const current = readSurveyApprovalState(surveyId);
-      writeSurveyApprovalState(surveyId, { ...current, published: false });
+      writeSurveyApprovalState(surveyId, {
+        ...current,
+        published: false,
+        status: current.status === 'pending' ? 'not-submitted' : current.status,
+        currentRequest: current.status === 'pending' ? null : current.currentRequest,
+      });
     }
     showToast({ message: 'Switched to Draft', variant: 'success' });
   }, [requiresApproval, showToast, surveyId]);
+
+  const handleSendForReview = useCallback(
+    (reviewer: SurveyReviewer, ownerNotes: string) => {
+      const surveyName = getSurveyById(surveyId)?.name ?? 'Survey';
+      const request = {
+        id: `req-${Date.now()}`,
+        reviewerId: reviewer.id,
+        reviewerName: reviewer.name,
+        reviewerEmail: reviewer.email,
+        notes: ownerNotes,
+        submittedAt: new Date().toISOString(),
+        submittedBy: SURVEY_APPROVAL_OWNER_NAME,
+        dueDate: getPrototypeSurveyApprovalDueDate(),
+        lastReminderSentAt: null as string | null,
+      };
+      const current = readSurveyApprovalState(surveyId);
+      writeSurveyApprovalState(surveyId, {
+        ...current,
+        status: 'pending',
+        published: false,
+        currentRequest: request,
+        reviewerFeedback: '',
+        activity: [
+          createApprovalActivity(
+            'submitted',
+            SURVEY_APPROVAL_OWNER_NAME,
+            ownerNotes,
+            reviewer.email
+          ),
+        ],
+      });
+      deliverReviewRequestEmail({
+        surveyId,
+        surveyName,
+        requestId: request.id,
+        recipientEmail: reviewer.email,
+        requesterName: SURVEY_APPROVAL_OWNER_NAME,
+        ownerNotes,
+      });
+      setMode('review');
+      showToast({
+        message: `Review request emailed to ${reviewer.email}`,
+        variant: 'success',
+      });
+    },
+    [showToast, surveyId]
+  );
 
   function selectMode(next: PublishMode) {
     if (next === mode) return;
@@ -223,6 +341,16 @@ export function SurveyEditorWorkspaceToolbar({
       setLicenseConflicts([]);
       setLicenseModalView('publish-confirm');
       setLicenseModalOpen(true);
+      return;
+    }
+
+    if (next === 'review') {
+      if (requiresApproval) {
+        setReviewModalOpen(true);
+        return;
+      }
+      setMode('review');
+      showToast({ message: 'Survey marked for review', variant: 'success' });
       return;
     }
 
@@ -393,43 +521,58 @@ export function SurveyEditorWorkspaceToolbar({
               </WuTooltip>
             )}
             <TestResponsesTrigger />
-            <div className={styles.statusToggle} role="group" aria-label="Survey status">
-              <button
-                type="button"
-                className={mode === 'draft' ? styles.toggleActive : styles.toggleInactive}
-                aria-pressed={mode === 'draft'}
-                onClick={() => selectMode('draft')}
-              >
-                Draft
-              </button>
-              {requiresApproval ? (
-                <WuTooltip
-                  content="A reviewer publishes this survey after they approve it."
-                  position="bottom"
-                >
-                  <span>
-                    <button
-                      type="button"
-                      className={`${mode === 'publish' ? styles.toggleActive : styles.toggleInactive} ${styles.toggleDisabled}`}
-                      aria-pressed={mode === 'publish'}
-                      aria-disabled="true"
-                      disabled
-                    >
-                      Publish
-                    </button>
-                  </span>
-                </WuTooltip>
-              ) : (
+            <WuMenu
+              align="end"
+              position={{ side: 'bottom', align: 'end', sideOffset: 6 }}
+              slots={{ popup: { width: '17.5rem' } }}
+              Trigger={
                 <button
                   type="button"
-                  className={mode === 'publish' ? styles.toggleActive : styles.toggleInactive}
-                  aria-pressed={mode === 'publish'}
-                  onClick={() => selectMode('publish')}
+                  className={`${styles.statusTrigger} ${statusTriggerClass(mode)}`}
+                  aria-label="Survey status"
                 >
-                  Publish
+                  <span className={styles.statusDot} aria-hidden />
+                  <span className={styles.statusLabel}>{statusLabel(mode)}</span>
+                  <span className={`wm-arrow-drop-down ${styles.statusChevron}`} aria-hidden />
                 </button>
-              )}
-            </div>
+              }
+            >
+              {STATUS_OPTIONS.map((option) => {
+                const selected = mode === option.value;
+                const publishLocked = option.value === 'publish' && requiresApproval;
+                return (
+                  <WuMenuItem
+                    key={option.value}
+                    className={`${styles.statusMenuItem} ${
+                      selected ? styles.statusMenuItemSelected : ''
+                    } ${publishLocked ? styles.statusMenuItemLocked : ''}`}
+                    onSelect={() => {
+                      if (publishLocked) {
+                        showToast({ message: APPROVAL_PUBLISH_TOOLTIP, variant: 'info' });
+                        return;
+                      }
+                      selectMode(option.value);
+                    }}
+                  >
+                    <span
+                      className={`${styles.statusMenuDot} ${statusMenuDotClass(option.value)}`}
+                      aria-hidden
+                    />
+                    <span className={styles.statusMenuCopy}>
+                      <span className={styles.statusMenuTitle}>
+                        {option.label}
+                        {selected ? (
+                          <span className={`wm-check ${styles.statusMenuCheck}`} aria-hidden />
+                        ) : null}
+                      </span>
+                      <span className={styles.statusMenuHint}>
+                        {publishLocked ? APPROVAL_PUBLISH_TOOLTIP : option.description}
+                      </span>
+                    </span>
+                  </WuMenuItem>
+                );
+              })}
+            </WuMenu>
             {pathSimulatorButton}
             {previewButton}
           </div>
@@ -459,6 +602,11 @@ export function SurveyEditorWorkspaceToolbar({
         description="Would you like to switch your survey to draft? Please note that data collection will be paused when the survey is in draft mode."
         confirmLabel="Draft"
         onConfirm={handleConfirmDraft}
+      />
+      <SendSurveyForReviewModal
+        open={reviewModalOpen}
+        onOpenChange={setReviewModalOpen}
+        onSubmit={handleSendForReview}
       />
     </>
   );
