@@ -1,0 +1,66 @@
+[
+  {
+    "id": "filmstrip-slide-0-g145dcb058cc_0_35",
+    "text": "AdvancedHeatmapBusinessIntelligenceOpenprototype"
+  },
+  {
+    "id": "filmstrip-slide-1-g30a02577f3c_0_5",
+    "text": "IntroductionBIusersneedtocompareseveralmatrixandchoicequestionsandapplytheirownscoringlogicinoneconsistentview.AdvancedHeatmapcombinesanswerdistributionsandsegmentcomparisons,withconfigurablecustommetrics,filtersandanswerlabels."
+  },
+  {
+    "id": "filmstrip-slide-2-g8709499aee_5_33",
+    "text": "ProblemsOneworkflow,twoanalysismodelsMatrixHeatmapprovidesanswerdistributionsforonematrix.HeatMapChartsupportsseveralquestionsbutdisplaysmeansforrespondentsegments.Usersneedbothanalysesacrossmixedquestionswithoutconfusingansweroptionswithrespondentgroups."
+  },
+  {
+    "id": "filmstrip-slide-3-gfdf248c7ff_0_5",
+    "text": "●Supported:multiplematrices,single-select,multi-selectandratingchoicequestionsfromonesurvey.●Analysis:AnswerdistributionandSegmentcomparison,switchableaftercreation.●Controls:custommetrics,resultfilters,answerlabels,livepreviewandregularHeatMapsegmentcontrols.●Deferred:labelmergingandbaseselector;unsupportedtypes,cross-surveyanalysisandcross-chartmetricreuse.●Existingheatmapwidgetsremainunchanged.TheprototypeincludesonedefaultAdvancedHeatmapperdashboard.Scope"
+  },
+  {
+    "id": "filmstrip-slide-4-g86f1215a00_0_64",
+    "text": "●Selectmultiplewholematricesandchoicequestionsinonewidget.●ChooseAnswerdistributionorSegmentcomparison;switchlaterinAnalytics.●Addanamedcustommetricwitheditableoriginal-answerweights.●Rename,reorderorexcludeanswerlabels;filterandpreviewresults.●Usethestandardwidgetheader,three-dotmenuandsettingspanel.Solution"
+  },
+  {
+    "id": "filmstrip-slide-5-g86f1215a00_0_12",
+    "text": "1.Afterdeployment,openhttps://survey-re.vercel.app/→Dashboards→openadashboard.2.InspectthedefaultAdvancedHeatmap,orchooseAddwidget→Advancedwidgets→AdvancedHeatmap.3.SelectNext→survey→questions(wholematricesorchoices)→Next.4.ChooseAnswerdistributionorSegmentcomparison→Createwidget.5.Open⋮→Settings.ConfigureGeneral,Analytics,LabelsandDesignwhilepreviewingresults.6.Applytocommit;Cancelorclosetodiscard.SwitchanalysisinAnalyticstocomparebothviews.Prototypewalkthrough"
+  },
+  {
+    "id": "filmstrip-slide-6-g86f1215898_1_32",
+    "text": "SelectionrulesQuestionselectionanddisplay●Selectatleastonesupportedquestionfromonesurvey;amatrixcheckboxincludesallstatements.●Showquestionname,type,checkbox,searchand“selectedoutofavailable”counter.●Keepfootercheckpoints:Widget→Survey→Question→Analysis.●Changingsurveyclearsselection;unsupportedquestiontypesarevisiblebutunavailable.●Matricesstartcollapsedandexpandtoshowstatementswithinthesametable."
+  },
+  {
+    "id": "filmstrip-slide-7-g3c6d0c60111_0_4",
+    "text": "●Columnsfolloworiginalanswerpositions;maximumcolumns=largestselectedoptioncount.●Shorterscalesshowadash.Mixedscalesusegenericlabels,notassumedequivalence.●Choosecountsorpercentages;useafixedvalid-respondentbase.Nobaseselector.●Multi-selectrespondentpercentagescanexceed100%;emptycellsremainneutral.●Matrixsummariespoolvalidstatementanswers;neveraveragerowmeans.Answerdistributionrules"
+  },
+  {
+    "id": "filmstrip-slide-8-g3c599b074b0_0_4",
+    "text": "Segmentcomparisonrules●Columnsareselectablerespondentsegments;create,rename,editorremovenamedAND/ORgroups.●Eachrowaveragesthatsegment’svalidanswers.RetainOverall,responsecountsandoverallaverage.●Retain0–4decimals,Default/0–5/0–10meanrangesandindependentquestionreversal.●Retain2–5thresholdbands,editablecutoffsandresponsestatistics;overlappingsegmentsarenotadditive.●Custommetricskeeptheirownscale.Nominalanswersrequireweights;codeaveragesarenotratings."
+  },
+  {
+    "id": "filmstrip-slide-9-g3c599b074b0_0_99",
+    "text": "Custommetrics●Offbydefault:columnhidden,weightsblank;nameeditableinAnalytics.●Everyincludedoriginalanswerneedsafiniteweight;missingweightsblockApply.●Single-select/matrices:sum(count×weight)÷validanswers,usingMatrixHeatmapweightlogic.●Multi-select:meanselectedweightsperrespondent,thenmeanrespondents.●Distributionaddsametriccolumn;Segmentcomparisonscoreseachsegment’spairedanswers.●Omitmissing/excludedanswers.Emptybasesshowunavailable;reverse=min+max−weight."
+  },
+  {
+    "id": "filmstrip-slide-10-g3c5e094be57_0_0",
+    "text": "Filterbycustommetric●ActiveonlyinAnswerdistributionwithavalidcustommetric.●Compareunroundedscores:below,atmost,above,atleastorinclusivebetween.●Acceptfinitedecimals,includingnegativevalues;rejectblankthresholdsorreversedranges.●Hideresultrows,notrespondents;basesandmatrixtotalsremainunchanged.●Testparentsandchildrenindependently;keepacontext-onlyparentwhenachildpasses.●Missingscoresnevermatch.Showcondition,matchingcount,Clearfilterandno-resultsstate.●Retainfiltersettingsacrossmode/metricchanges;re-evaluateafterweightsorexclusionschange."
+  },
+  {
+    "id": "filmstrip-slide-11-h6ac4269131736c5d_1_11",
+    "text": "AnswerlabelsAnswer-levelcontrols●Rename,reorderandexcludeanswerlabelsonly.Labelmergingisdeferred.●KeepquestionselectionandsearchinsidetheLabelsdropdown.●Preserveoriginal-answerIDsandweightswhenlabelsarerenamedorreordered.●Multi-selectpercentagesuserespondentsansweringtherow;totalsmayexceed100%.●Excludedanswersleavethevalidbaseandmetric;unmatchedoptionpositionsremainadash."
+  },
+  {
+    "id": "filmstrip-slide-12-h6ac4269131736c5d_1_5",
+    "text": "●Open⋮→Settingsforanenlargedlivepreviewbesidethestandardpanel.●General:Dashboard,Widget,CombinedorNofilters;Is/IsnotwithAND/ORappliesbeforecalculations.●Analytics:switchanalysis;retainregularHeatMapcontrolsandconfigureCustommetrics.●Labels:selectquestions;manageanswerlabelsinDistributionandsegmentsinSegmentcomparison.●Applycommitschanges;Cancelorclosediscardsthem.Modeswitchespreserveconfiguration.Settingsandfilters"
+  },
+  {
+    "id": "filmstrip-slide-13-h6ac4269131736c5d_1_17",
+    "text": "WorkedexampleCustommetricona0–100scale●Answercounts:Poor30,Average33,Good25,Excellent24;validbase=112.●Weights0,0,100,100→(25+24)×100÷112=43.75(display43.8).●ExcludePoor→49×100÷82=59.7561(display59.8).●RenameGoodorExcellent→labelschange;thecustommetricremainsunchanged.●Filter“atleast80”hidesthisrow;“below80”retainsit.Usetheunroundedscore."
+  },
+  {
+    "id": "filmstrip-slide-14-gfdf248c7ff_0_0",
+    "text": "FunctionalandcalculationacceptanceAcceptancecriteria●Multiplematriceswithunequalrows/optionsandmixedchoicequestionsrendercorrectlyinbothmodes.●Counts,percentages,weights,pooledtotalsandsegmentcontrolsmatchcalculationtests;nomerge/baseselector.●Exactfilterboundaries,missingscoresandnoresultsbehaveasspecified;matchingchildrenremainreachable.●Whole-matrixselection,expandablerows,modeswitching,livepreview,ApplyandCancelworkendtoend.●Nativecontrols,titletypography,three-dotmenu,dividerandsettings-panellayoutmatchexistingwidgets."
+  },
+  {
+    "id": "filmstrip-slide-15-g13441c123f6_0_1",
+    "text": "Interactivereference,notproductiondataPrototypeboundaries●TargetURL:https://survey-re.vercel.app/—AdvancedHeatmapwasnotyetdeployedthereon28September2026.●Walkthroughdirectionsdescribetheintendedpathaftertheprototypeisdeployed.●Prototypedataissynthetic;sessionsettingsresetonreload.Unmappedfiltersshowunavailable.●Prototypegaps:weightingexecution,date/status/systemfilters,persistence,sourceeditingandexports.●Productionintegrationandreleasevalidationremainseparatefromprototypeapproval."
+  }
+]

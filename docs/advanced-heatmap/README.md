@@ -2,6 +2,12 @@
 
 Implemented locally, 28 September 2026. This is a new widget, separate from the production-baseline Heat Map Chart. No production configuration changed.
 
+## Current scope — 28 September 2026 revision
+
+Merge labels and the Percentage / count base selector are removed. Distribution retains Percentages/Counts with a fixed valid-respondent base. Older notes below describe prior iterations, not the current scope.
+
+Segment Comparison now includes Overall, response counts, overall average, 0–4 decimals, mean scaling, independent reversal, threshold bands, statistics and custom segment management. See [regular Heat Map comparison and remaining limitations](SEGMENT-PARITY.md). Do not infer full production parity from the presence of controls.
+
 ## Try it
 
 On a regular BI or BI Lite dashboard, choose **Add widget → Advanced widgets → Advanced Heatmap → Next**. Select a survey using the standard data-source picker, select questions (one checkbox selects every matrix statement), then choose **Next**, choose an analysis type, then **Create widget**. The new card appears in the two-column dashboard layout. Open Settings from the standard three-dot widget menu; tabs are **General, Analytics, Labels, Design**.

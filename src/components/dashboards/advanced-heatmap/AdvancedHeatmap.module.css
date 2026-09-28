@@ -155,3 +155,6 @@
 .segmentRow { display:flex; align-items:center; gap:8px; margin:10px 0; }
 .segmentRow > input:not([type=checkbox]) { min-width:0; width:100%; padding:8px; border:1px solid #ddd; }
 .check { display:flex; align-items:center; gap:8px; }
+
+.widgetFrame > article > header > h3, .settingsPreview > article > header > h3 { color:var(--advanced-title-color, #3f559a); }
+.widgetFrame[data-show-name=false] > article > header > h3, .settingsPreview[data-show-name=false] > article > header > h3 { visibility:hidden; }

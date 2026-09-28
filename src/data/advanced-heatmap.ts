@@ -53,6 +53,7 @@ export interface HeatmapRespondentFilter {
   match: 'all' | 'any';
 }
 export interface AdvancedHeatmapConfig {
+  themeColor?: string;
   designType?: 'Dashboard' | 'Widget'; fontFamily?: string; fontSize?: number; sentimentColors?: string[];
   weighting?: 'Dashboard' | 'Widget' | 'None';
   overallAverage?: boolean; scoreRange?: 'Default' | '0–5' | '0–10';
@@ -131,7 +132,8 @@ export function scoreCell(responses: HeatmapResponse[], rowId: string, question:
     return { value: null, base, numerator: 0, selections: base, reason: base ? 'weights-required' : 'no-data' };
   }
   const score = new Map(question.options.filter(o => !isHeatmapOptionExcluded(o.id, config)).map((o, i) => [o.id, weights[i]!]));
-  const low = Math.min(...weights as number[]), high = Math.max(...weights as number[]);
+  const reversalWeights = custom ? weights : question.options.map(o=>o.score).filter((v): v is number=>v!==undefined && Number.isFinite(v));
+  const low = Math.min(...reversalWeights as number[]), high = Math.max(...reversalWeights as number[]);
   const values = responses.flatMap(response => {
     const answers = rowAnswers(response, rowId, config).filter(id => score.has(id));
     if (!answers.length) return [];

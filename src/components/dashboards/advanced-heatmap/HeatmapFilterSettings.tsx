@@ -9,9 +9,9 @@ import styles from './AdvancedHeatmap.module.css';
 
 const WuSelect = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => ({ default: m.WuSelect })), { ssr: false });
 const FilterModal = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => ({
-  default: function FilterModalShell({ children, footer, onClose }: { children: ReactNode; footer: ReactNode; onClose: () => void }) {
+  default: function FilterModalShell({ children, footer, onClose, title }: { children: ReactNode; footer: ReactNode; onClose: () => void; title: string }) {
     return <m.WuModal open preventClickOutside onOpenChange={open => { if (!open) onClose(); }} size="md" maxWidth="95vw">
-      <m.WuModalHeader>Widget filter</m.WuModalHeader>
+      <m.WuModalHeader>{title}</m.WuModalHeader>
       <m.WuModalContent>{children}</m.WuModalContent>
       <m.WuModalFooter>{footer}</m.WuModalFooter>
     </m.WuModal>;
@@ -32,7 +32,7 @@ export function HeatmapFilterSettings({ config, questions, update, segment = fal
       <button type="button" className={styles.secondary} onClick={() => setFilter(config.widgetFilter ? structuredClone(config.widgetFilter) : { name: '', match: 'all', criteria: [blankCondition()] })}>{config.widgetFilter?.name || (segment ? 'Create segment' : 'Create filter')}</button>
       {config.widgetFilter && <button type="button" className={styles.secondary} onClick={() => update({ widgetFilter: undefined })}>{segment ? 'Remove segment' : 'Remove filter'}</button>}
     </div>}
-    {filter && <FilterModal onClose={() => setFilter(null)} footer={<div className={styles.mergeActions}><button className={styles.secondary} onClick={() => setFilter(null)}>Cancel</button><button className={styles.primary} disabled={Boolean(error)} onClick={() => { update({ widgetFilter: filter }); setFilter(null); }}>{segment ? 'Save segment' : 'Save filter'}</button></div>}>
+    {filter && <FilterModal title={segment ? 'Segment' : 'Widget filter'} onClose={() => setFilter(null)} footer={<div className={styles.mergeActions}><button className={styles.secondary} onClick={() => setFilter(null)}>Cancel</button><button className={styles.primary} disabled={Boolean(error)} onClick={() => { update({ widgetFilter: filter }); setFilter(null); }}>{segment ? 'Save segment' : 'Save filter'}</button></div>}>
       <label className={styles.field}>{segment ? 'Segment name' : 'Filter name'}<input value={filter.name} onChange={e => setFilter({ ...filter, name: e.target.value })} /></label>
       <label className={styles.field}>Match<HeatMapSelect label="Match conditions" value={filter.match} options={['all','any']} formatOption={v => v === 'all' ? 'All conditions (AND)' : 'Any condition (OR)'} onChange={match => setFilter({ ...filter, match: match as 'all' | 'any' })} /></label>
       {filter.criteria.map((condition, index) => {
