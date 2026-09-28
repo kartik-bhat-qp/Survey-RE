@@ -182,7 +182,7 @@ export function HeatMapBaseline({ dashboardDesign, dashboardFilter, embedded = f
         {!activeFilter.error && settings.widgetStats && settings.statsResponseCount && <footer className={styles.stats}>{settings.statsLabel}: <strong>{totalCount}</strong></footer>}
       </article>;
 
-  return <div className={`${styles.page} ${embedded ? styles.embedded : ''}`}> 
+  return <div className={`${styles.page} ${embedded ? styles.embedded : ''}`}>
     {!embedded && <div className={styles.toolbar}><h1>Dashboard 2</h1><div><select aria-label="Baseline fixture" value={settings.source} onChange={event => reset(event.target.value)}><option value="single">Current single-select fixture</option><option value="mixed">Current mixed-question fixture</option><option value="matrix">Audited mixed-matrix fixture</option></select><button onClick={() => setInfoOpen(true)}>Baseline notes</button><button onClick={() => reset(settings.source)}>Reset fixture</button><span role="status">{saved}</span></div></div>}
     {notice && <div className={styles.notice} role="alert">{notice}<button aria-label="Dismiss notice" onClick={() => setNotice('')}>×</button></div>}
     <div className={`${styles.canvas} ${settingsOpen ? styles.canvasWithSettings : ''}`}>

@@ -6,7 +6,8 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import styles from './SharedDashboardDateFilter.module.css';
 
 const WuDateRangePicker = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuDateRangePicker })), { ssr: false });
-const WuCalender = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCalender })), { ssr: false });
+// WickUI 2 restricts its calendar props; preserve controlled reporting-year navigation.
+const ReportingCalendar = dynamic(() => import('react-day-picker').then((m) => ({ default: m.DayPicker })), { ssr: false });
 const WuSelect = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })), { ssr: false });
 const WuButton = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })), { ssr: false });
 
@@ -117,7 +118,7 @@ export function DashboardCalendar({ startDate, endDate, month, onMonthChange, on
     },
   };
   return single
-    ? <WuCalender {...common} mode="single" selected={asDate(startDate)} onSelect={date => onChange(asString(date), '')} />
-    : <WuCalender {...common} mode="range" selected={startDate ? { from: asDate(startDate), to: asDate(endDate ?? '') } : undefined}
+    ? <ReportingCalendar {...common} mode="single" selected={asDate(startDate)} onSelect={date => onChange(asString(date), '')} />
+    : <ReportingCalendar {...common} mode="range" selected={startDate ? { from: asDate(startDate), to: asDate(endDate ?? '') } : undefined}
         onSelect={range => onChange(asString(range?.from), asString(range?.to))} />;
 }
