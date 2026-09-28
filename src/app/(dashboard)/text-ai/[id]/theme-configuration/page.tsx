@@ -2,6 +2,7 @@
 
 import { use, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Title as DialogTitle } from '@radix-ui/react-dialog';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -13,6 +14,7 @@ import {
   getSentimentIcon,
   getSentimentLabel,
   TextAiUpdateSentimentModal,
+  type TextAiSentimentSubtheme,
   type TextAiAssignedSentiment,
   type TextAiSentimentDraft,
   type TextAiSentimentEditableResponse,
@@ -30,6 +32,15 @@ import {
   type TextAiEmergingValidityOption,
   type TextAiThemePreferences,
 } from '@/data/text-ai-theme-preferences';
+import {
+  commitTagDrafts, parseTagAssignments, stageTagAssignment, summarizeTagDrafts,
+  type TagAssignments, type TagDrafts,
+} from '@/data/text-ai-tag-drafts';
+import {
+  mergeCodeFrameItems, parseCodeFrames, remapResponseTags, removeCodeFrameItems,
+  stageCodeFrame, summarizeCodeFrameDrafts, validateCodeFrameName,
+  type CodeFrames, type CodeFrameDrafts, type SubTheme, type ThemeGroup, type ThemeTone,
+} from '@/data/text-ai-code-frame-drafts';
 import styles from './ThemeConfiguration.module.css';
 
 const WuCombobox = dynamic(
@@ -65,40 +76,13 @@ const WuSelect = dynamic(
   { ssr: false }
 );
 
-type ThemeTone = 'blue' | 'green' | 'red';
 type GranularityLevel = 'high' | 'medium' | 'low';
 type RecodeScope = 'new-sub-themes' | 'all-sub-themes' | 'custom';
 
-interface SubTheme {
-  description?: string;
-  id: string;
-  emerging?: boolean;
-  pendingApproval?: boolean;
-  name: string;
-  percentage: string;
-}
-
-interface SubThemeEdit {
-  description: string;
-  name: string;
-  originalName: string;
-}
-
 interface EditSubThemeTarget {
   editKey: string;
-  originalName: string;
   previousDescription: string;
   previousName: string;
-}
-
-interface ThemeGroup {
-  emerging?: boolean;
-  id: string;
-  name: string;
-  pendingApproval?: boolean;
-  percentage: string;
-  tone: ThemeTone;
-  subThemes: SubTheme[];
 }
 
 type ApproveTarget =
@@ -547,6 +531,16 @@ const FALLBACK_QUESTIONS: TextAiDashboardQuestion[] = MOCK_TEXT_AI_ANALYSIS_QUES
   })
 );
 
+function readSavedConfiguration(storageKey: string, legacyKey: string): { assignments: TagAssignments; codeFrames: CodeFrames } {
+  const raw = window.localStorage.getItem(storageKey);
+  if (!raw) return { assignments: parseTagAssignments(window.localStorage.getItem(legacyKey)), codeFrames: {} };
+  const value: unknown = JSON.parse(raw);
+  if (!value || typeof value !== 'object' || !('assignments' in value) || !('codeFrames' in value)) {
+    throw new Error('Invalid saved configuration');
+  }
+  return { assignments: parseTagAssignments(JSON.stringify(value.assignments)), codeFrames: parseCodeFrames(value.codeFrames) };
+}
+
 function formatPercentage(value: number): string {
   return `${Number(value.toFixed(2))}%`;
 }
@@ -591,6 +585,7 @@ function ThemeGroupCard({
   group,
   collapsed,
   onEditSubTheme,
+  onDeleteTheme,
   onSelectionToggle,
   onToggle,
   selectedKeys,
@@ -598,6 +593,7 @@ function ThemeGroupCard({
   group: ThemeGroup;
   collapsed: boolean;
   onEditSubTheme: (subTheme: SubTheme) => void;
+  onDeleteTheme: () => void;
   onSelectionToggle: (target: ApproveTarget) => void;
   onToggle: () => void;
   selectedKeys: ReadonlySet<string>;
@@ -632,6 +628,10 @@ function ThemeGroupCard({
             </span>
             <span className={styles.themeGroupPercentage}>{group.percentage}</span>
           </span>
+        </button>
+        <button type="button" className={styles.deleteThemeButton} onClick={onDeleteTheme}
+          aria-label={`Delete theme ${group.name}`} title="Delete theme">
+          <span className="wm-delete" aria-hidden />
         </button>
       </div>
       {!collapsed && (
@@ -701,6 +701,7 @@ export default function TextAiThemeConfigurationPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
   const numericDashboardId = Number(id);
   const dashboard = getTextAiDashboardById(numericDashboardId);
   const questions = dashboard?.questions?.length ? dashboard.questions : FALLBACK_QUESTIONS;
@@ -735,9 +736,6 @@ export default function TextAiThemeConfigurationPage({
   const [customRecodeSubThemeIds, setCustomRecodeSubThemeIds] = useState<string[]>(
     []
   );
-  const [subThemeEdits, setSubThemeEdits] = useState<Record<string, SubThemeEdit>>(
-    () => ({})
-  );
   const [editSubThemeTarget, setEditSubThemeTarget] =
     useState<EditSubThemeTarget | null>(null);
   const [draftSubThemeName, setDraftSubThemeName] = useState('');
@@ -751,6 +749,73 @@ export default function TextAiThemeConfigurationPage({
     Record<string, TextAiSentimentDraft>
   >(() => ({}));
   const [sentimentUpdateMessage, setSentimentUpdateMessage] = useState('');
+  const [savedTagAssignments, setSavedTagAssignments] = useState<TagAssignments>({});
+  const [tagDrafts, setTagDrafts] = useState<TagDrafts>({});
+  const [tagsReady, setTagsReady] = useState(false);
+  const [tagMessage, setTagMessage] = useState('');
+  const [tagError, setTagError] = useState('');
+  const [tagConfirmation, setTagConfirmation] = useState<'save' | 'discard' | null>(null);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [taggingResponseIds, setTaggingResponseIds] = useState<number[]>([]);
+  const [tagPickerIds, setTagPickerIds] = useState<string[]>([]);
+  const tagSummary = useMemo(() => summarizeTagDrafts(tagDrafts), [tagDrafts]);
+  const [savedCodeFrames, setSavedCodeFrames] = useState<CodeFrames>({});
+  const [codeFrameDrafts, setCodeFrameDrafts] = useState<CodeFrameDrafts>({});
+  const [configurationAction, setConfigurationAction] = useState<'new-theme' | 'new-sub-theme' | 'merge' | 'delete' | null>(null);
+  const [configurationName, setConfigurationName] = useState('');
+  const [configurationDescription, setConfigurationDescription] = useState('');
+  const [configurationParentId, setConfigurationParentId] = useState('');
+  const [deleteTargets, setDeleteTargets] = useState<ApproveTarget[]>([]);
+  const codeFrameSummary = useMemo(() => summarizeCodeFrameDrafts(codeFrameDrafts), [codeFrameDrafts]);
+  const changeCount = tagSummary.changes + codeFrameSummary.changes;
+  const hasTagChanges = changeCount > 0;
+  const configurationStorageKey = `bi-stats-text-ai-configuration-v2:${numericDashboardId}`;
+  const tagStorageKey = `bi-stats-text-ai-tags-v1:${numericDashboardId}`;
+  const tagScope = `${selectedQuestionId}:${appliedGranularity}:`;
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      try {
+        const snapshot = readSavedConfiguration(configurationStorageKey, tagStorageKey);
+        setSavedTagAssignments(snapshot.assignments);
+        setSavedCodeFrames(snapshot.codeFrames);
+        setTagsReady(true);
+      } catch {
+        setTagsReady(false);
+        setTagError('Saved theme configuration could not be loaded. Reload the page to try again.');
+      }
+      setTagDrafts({});
+      setCodeFrameDrafts({});
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [configurationStorageKey, tagStorageKey]);
+
+  useEffect(() => {
+    if (!hasTagChanges) return;
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    const guardLink = (event: MouseEvent) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const link = event.target instanceof Element ? event.target.closest('a') : null;
+      if (!link || link.target === '_blank' || link.hasAttribute('download')) return;
+      const destination = new URL(link.href, window.location.href);
+      if (destination.origin !== window.location.origin ||
+          (destination.pathname === window.location.pathname && destination.search === window.location.search)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setPendingHref(destination.pathname + destination.search + destination.hash);
+      setTagConfirmation('discard');
+    };
+    window.addEventListener('beforeunload', beforeUnload);
+    document.addEventListener('click', guardLink, true);
+    return () => {
+      window.removeEventListener('beforeunload', beforeUnload);
+      document.removeEventListener('click', guardLink, true);
+    };
+  }, [hasTagChanges]);
+
 
   useEffect(() => {
     const refreshPreferences = () =>
@@ -787,7 +852,6 @@ export default function TextAiThemeConfigurationPage({
   const appliedGranularityOption =
     GRANULARITY_OPTIONS.find((option) => option.level === appliedGranularity) ??
     GRANULARITY_OPTIONS[1];
-  const visibleThemeCount = appliedGranularityOption.classificationCount;
   const granularityChangeLimitReached =
     granularityChangesUsed >= GRANULARITY_CHANGE_LIMIT;
   const granularityChangesRemaining = Math.max(
@@ -797,7 +861,7 @@ export default function TextAiThemeConfigurationPage({
   const granularitySelectionChanged = draftGranularity !== appliedGranularity;
   const recodesRemaining = Math.max(0, RECODE_RUN_LIMIT - recodesUsed);
 
-  const themeGroups = useMemo(
+  const baseThemeGroups = useMemo(
     () =>
       THEME_GROUPS.map((group, groupIndex) => {
         const groupCandidate = Boolean(group.emerging);
@@ -824,11 +888,7 @@ export default function TextAiThemeConfigurationPage({
               const basePercentage = Number.parseFloat(subTheme.percentage);
               const indexAdjustment =
                 ((subThemeIndex % 3) - 1) * selectedQuestionIndex * 0.04;
-              const edit =
-                subThemeEdits[
-                  getSubThemeEditKey(selectedQuestionId, group.id, subTheme.id)
-                ];
-              const name = edit?.name ?? subTheme.name;
+              const name = subTheme.name;
               const subThemeCandidate =
                 groupCandidate || Boolean(subTheme.emerging);
               const subThemeApproved =
@@ -846,7 +906,6 @@ export default function TextAiThemeConfigurationPage({
                   ),
                 pendingApproval: subThemeCandidate && !subThemeApproved,
                 description:
-                  edit?.description ??
                   subTheme.description ??
                   getDefaultSubThemeDescription(subTheme.name),
                 name,
@@ -863,14 +922,33 @@ export default function TextAiThemeConfigurationPage({
     [
       appliedGranularityOption,
       questionVariant,
-      selectedQuestionId,
       selectedQuestionIndex,
-      subThemeEdits,
       themePreferences.approvedEmergingNames,
       themePreferences.emergingApprovedAtByName,
       themePreferences.emergingThemeValidityDays,
     ]
   );
+
+  const themeGroups = useMemo(() => {
+    const source = codeFrameDrafts[tagScope]?.after ?? savedCodeFrames[tagScope] ?? baseThemeGroups;
+    return source.map((group) => {
+      const original = THEME_GROUPS.find((item) => item.id === group.id);
+      const groupCandidate = Boolean(original?.emerging);
+      const groupApproved = !groupCandidate || themePreferences.approvedEmergingNames.includes(group.name);
+      return { ...group,
+        pendingApproval: groupCandidate && !groupApproved,
+        emerging: groupApproved && isTextAiItemEmerging(group.name, groupCandidate, themePreferences.emergingThemeValidityDays, themePreferences.emergingApprovedAtByName[group.name]),
+        subThemes: group.subThemes.map((sub) => {
+          const candidate = groupCandidate || Boolean(original?.subThemes.find((item) => item.id === sub.id)?.emerging);
+          const approved = !candidate || themePreferences.approvedEmergingNames.includes(sub.name);
+          return { ...sub, pendingApproval: candidate && !approved,
+            emerging: approved && isTextAiItemEmerging(sub.name, candidate, themePreferences.emergingThemeValidityDays, themePreferences.emergingApprovedAtByName[sub.name]) };
+        }),
+      };
+    });
+  }, [baseThemeGroups, codeFrameDrafts, savedCodeFrames, tagScope, themePreferences]);
+  const codeFrameLabels = useMemo(() => new Map<string, string>(themeGroups.flatMap((group) =>
+    group.subThemes.map((sub) => [`${group.id}:${sub.id}`, sub.name] as const))), [themeGroups]);
 
   const pendingApprovalTargets = useMemo(() => {
     return themeGroups.flatMap((group): ApproveTarget[] => {
@@ -935,6 +1013,7 @@ export default function TextAiThemeConfigurationPage({
         .flatMap((group) => {
           if (
             !themePreferences.showThemesWithNoResponses &&
+            !group.id.startsWith('custom-') &&
             !hasResponses(group.percentage)
           ) {
             return [];
@@ -942,7 +1021,7 @@ export default function TextAiThemeConfigurationPage({
 
           const subThemes = group.subThemes.filter(
             (subTheme) =>
-              (themePreferences.showThemesWithNoResponses ||
+              (themePreferences.showThemesWithNoResponses || subTheme.id.startsWith('custom-') ||
                 hasResponses(subTheme.percentage))
           );
 
@@ -990,22 +1069,22 @@ export default function TextAiThemeConfigurationPage({
             ]
           : [];
         const subthemes = classifications.map((item, subthemeIndex) => {
-          const renamedClassification = Object.entries(subThemeEdits).find(
-            ([editKey, edit]) =>
-              editKey.startsWith(`${selectedQuestionId}:`) &&
-              edit.originalName === item.tag
-          )?.[1];
+          const group = THEME_GROUPS.find((group) => group.subThemes.some((subtheme) => subtheme.name === item.tag));
+          const taxonomyId = group?.subThemes.find((subtheme) => subtheme.name === item.tag)?.id;
           return {
-            id: `${responseId}-${subthemeIndex}`,
-            label: renamedClassification?.name ?? item.tag,
+            id: group && taxonomyId ? `${group.id}:${taxonomyId}` : `seed:${sampleIndex}:${subthemeIndex}`,
+            label: item.tag,
             sentiment: item.sentiment,
             tone: item.tone,
           };
         });
         const edit =
           responseSentimentEdits[`${selectedQuestionId}:${responseId}`];
-        const editedSubthemes = subthemes.map((subtheme) => ({
+        const assignmentKey = `${tagScope}${responseId}`;
+        const assignedSubthemes = tagDrafts[assignmentKey]?.after ?? savedTagAssignments[assignmentKey] ?? subthemes;
+        const editedSubthemes = assignedSubthemes.map((subtheme) => ({
           ...subtheme,
+          label: codeFrameLabels.get(subtheme.id) ?? subtheme.label,
           sentiment:
             edit?.subthemeSentiments[subtheme.id] ?? subtheme.sentiment,
         }));
@@ -1025,8 +1104,11 @@ export default function TextAiThemeConfigurationPage({
       appliedGranularity,
       questionVariant,
       responseSentimentEdits,
+      savedTagAssignments,
+      codeFrameLabels,
+      tagDrafts,
+      tagScope,
       selectedQuestionId,
-      subThemeEdits,
     ]
   );
 
@@ -1074,6 +1156,140 @@ export default function TextAiThemeConfigurationPage({
   const someVisibleResponsesSelected =
     !allVisibleResponsesSelected &&
     visibleResponses.some((response) => selectedResponseIds.has(response.id));
+
+  function removeResponseTag(response: TextAiSentimentEditableResponse, tagId: string): void {
+    if (!tagsReady) return;
+    const key = `${tagScope}${response.id}`;
+    setTagDrafts((current) => stageTagAssignment(current, key, response.subthemes,
+      (current[key]?.after ?? response.subthemes).filter((tag) => tag.id !== tagId)));
+    setTagMessage('');
+    setTagError('');
+  }
+
+  function openTagPicker(responseIds: number[]): void {
+    setTaggingResponseIds(responseIds);
+    setTagPickerIds([]);
+  }
+
+  function addResponseTags(): void {
+    const tags: TextAiSentimentSubtheme[] = themeGroups.flatMap((group) => group.subThemes
+      .filter((subtheme) => tagPickerIds.includes(`${group.id}:${subtheme.id}`))
+      .map((subtheme) => ({ id: `${group.id}:${subtheme.id}`, label: subtheme.name, sentiment: 'neutral' as const })));
+    setTagDrafts((current) => {
+      let next = current;
+      for (const response of questionResponses.filter((response) => taggingResponseIds.includes(response.id))) {
+        const key = `${tagScope}${response.id}`;
+        const existing = next[key]?.after ?? response.subthemes;
+        const additions = tags.filter((tag) => !existing.some((item) => item.id === tag.id))
+          .map((tag) => next[key]?.before.find((item) => item.id === tag.id) ?? tag);
+        next = stageTagAssignment(next, key, response.subthemes, [...existing, ...additions]);
+      }
+      return next;
+    });
+    setTaggingResponseIds([]);
+    setTagMessage('');
+    setTagError('');
+  }
+
+  function saveThemeAssignments(): void {
+    try {
+      // Merge into the latest saved snapshot so unrelated saved responses remain intact.
+      const latest = readSavedConfiguration(configurationStorageKey, tagStorageKey);
+      const assignments = commitTagDrafts(latest.assignments, tagDrafts);
+      const codeFrames = { ...latest.codeFrames, ...Object.fromEntries(Object.entries(codeFrameDrafts).map(([scope, draft]) => [scope, draft.after])) };
+      window.localStorage.setItem(configurationStorageKey, JSON.stringify({ assignments, codeFrames }));
+      setSavedTagAssignments(assignments);
+      setSavedCodeFrames(codeFrames);
+      setTagDrafts({});
+      setCodeFrameDrafts({});
+      setSelectedCodeFrameKeys(new Set());
+      setTagConfirmation(null);
+      setTagError('');
+      setTagMessage('Theme changes saved.');
+    } catch {
+      setTagConfirmation(null);
+      setTagError('Changes could not be saved. Your edits are still here. Please try again.');
+    }
+  }
+
+  function discardThemeAssignments(): void {
+    setTagDrafts({});
+    setCodeFrameDrafts({});
+    setSelectedCodeFrameKeys(new Set());
+    setTagConfirmation(null);
+    setTagError('');
+    setTagMessage('Changes discarded. Last saved theme configuration restored.');
+    if (pendingHref) router.push(pendingHref);
+    setPendingHref(null);
+  }
+
+  const configurationParent = themeGroups.find((group) => group.id === configurationParentId);
+  const mergeSourceIds = selectedCodeFrameTargets.flatMap((target) => target.kind === 'sub-theme' ? [`${target.themeId}:${target.subThemeId}`] : []);
+  const configurationNameError = validateCodeFrameName(configurationName, configurationAction === 'new-theme'
+    ? themeGroups.map((group) => group.name)
+    : (configurationParent?.subThemes ?? []).filter((sub) => configurationAction !== 'merge' || !mergeSourceIds.includes(`${configurationParentId}:${sub.id}`)).map((sub) => sub.name));
+  const editedParent = editSubThemeTarget ? themeGroups.find((group) => group.subThemes.some((sub) =>
+    getSubThemeEditKey(selectedQuestionId, group.id, sub.id) === editSubThemeTarget.editKey)) : undefined;
+  const subThemeEditError = editSubThemeTarget && draftSubThemeName.trim() !== editSubThemeTarget.previousName
+    ? validateCodeFrameName(draftSubThemeName, (editedParent?.subThemes ?? []).filter((sub) =>
+      getSubThemeEditKey(selectedQuestionId, editedParent!.id, sub.id) !== editSubThemeTarget.editKey).map((sub) => sub.name)) : null;
+  const deletedThemeIds = deleteTargets.filter((target) => target.kind === 'theme').map((target) => target.themeId);
+  const deletedSubThemeIds = deleteTargets.flatMap((target) => target.kind === 'sub-theme' ? [`${target.themeId}:${target.subThemeId}`] : []);
+  const deletionAffectedCount = questionResponses.filter((response) => response.subthemes.some((tag) =>
+    deletedThemeIds.some((id) => tag.id.startsWith(`${id}:`)) || deletedSubThemeIds.includes(tag.id))).length;
+
+  function stageConfiguration(nextGroups: ThemeGroup[], removedIds: string[] = [], destination?: TextAiSentimentSubtheme): void {
+    setCodeFrameDrafts((current) => stageCodeFrame(current, tagScope, themeGroups, nextGroups));
+    if (removedIds.length) {
+      const removed = new Set(removedIds);
+      setTagDrafts((current) => {
+        let next = current;
+        for (const response of questionResponses) {
+          const key = `${tagScope}${response.id}`;
+          const existing = next[key]?.after ?? response.subthemes;
+          const after = remapResponseTags(existing, removed, destination);
+          if (after !== existing) next = stageTagAssignment(next, key, response.subthemes, after);
+        }
+        return next;
+      });
+    }
+    setSelectedCodeFrameKeys(new Set());
+    setTagMessage('');
+    setTagError('');
+    setConfigurationAction(null);
+  }
+
+  function openConfigurationAction(action: 'new-theme' | 'new-sub-theme' | 'merge'): void {
+    setConfigurationName('');
+    setConfigurationDescription('');
+    setConfigurationParentId(action === 'merge' ? selectedCodeFrameTargets[0]?.themeId ?? '' : themeGroups[0]?.id ?? '');
+    setConfigurationAction(action);
+  }
+
+  function applyConfigurationAction(): void {
+    if (configurationAction === 'delete') {
+      const removed = [...new Set([...deletedSubThemeIds, ...questionResponses.flatMap((response) => response.subthemes
+        .filter((tag) => deletedThemeIds.some((id) => tag.id.startsWith(`${id}:`))).map((tag) => tag.id))])];
+      stageConfiguration(removeCodeFrameItems(themeGroups, deletedThemeIds, deletedSubThemeIds), removed);
+      return;
+    }
+    if (configurationNameError || !tagsReady) return;
+    const name = configurationName.trim();
+    const id = `custom-${crypto.randomUUID()}`;
+    if (configurationAction === 'new-theme') {
+      stageConfiguration([...themeGroups, { id, name, percentage: '0%', tone: 'blue', subThemes: [] }]);
+      return;
+    }
+    if (!configurationParent) return;
+    const subTheme: SubTheme = { id, name, description: configurationDescription.trim(), percentage: '0%' };
+    if (configurationAction === 'new-sub-theme') {
+      stageConfiguration(themeGroups.map((group) => group.id === configurationParentId
+        ? { ...group, subThemes: [...group.subThemes, subTheme] } : group));
+    } else if (configurationAction === 'merge' && canMergeSelection) {
+      stageConfiguration(mergeCodeFrameItems(themeGroups, mergeSourceIds, configurationParentId, subTheme), mergeSourceIds,
+        { id: `${configurationParentId}:${id}`, label: name, sentiment: 'neutral' });
+    }
+  }
 
   if (!dashboard) {
     return (
@@ -1232,37 +1448,12 @@ export default function TextAiThemeConfigurationPage({
 
     const name = draftSubThemeName.trim();
     if (!name) return;
+    if (subThemeEditError) return;
     const description = draftSubThemeDescription.trim();
-    const nameChanged = name !== editSubThemeTarget.previousName;
-    const descriptionChanged =
-      description !== editSubThemeTarget.previousDescription;
-
-    setSubThemeEdits((current) => ({
-      ...current,
-      [editSubThemeTarget.editKey]: {
-        description,
-        name,
-        originalName: editSubThemeTarget.originalName,
-      },
-    }));
-    if (nameChanged) {
-      appendTextAiRecodeLog({
-        action: 'sub-theme-renamed',
-        dashboardId: numericDashboardId,
-        details: `Renamed “${editSubThemeTarget.previousName}” to “${name}”.`,
-        question: selectedQuestion?.text ?? 'Selected question',
-        title: 'Sub-theme renamed',
-      });
-    }
-    if (descriptionChanged) {
-      appendTextAiRecodeLog({
-        action: 'sub-theme-description-updated',
-        dashboardId: numericDashboardId,
-        details: `Updated the description for “${name}”.`,
-        question: selectedQuestion?.text ?? 'Selected question',
-        title: 'Sub-theme description updated',
-      });
-    }
+    const next = themeGroups.map((group) => ({ ...group, subThemes: group.subThemes.map((sub) =>
+      getSubThemeEditKey(selectedQuestionId, group.id, sub.id) === editSubThemeTarget.editKey
+        ? { ...sub, name, description } : sub) }));
+    stageConfiguration(next);
     setEditSubThemeTarget(null);
   }
 
@@ -1321,20 +1512,6 @@ export default function TextAiThemeConfigurationPage({
               />
             </div>
           </div>
-          <div className={styles.themeVisibilityControls}>
-            <label className={styles.searchBox}>
-              <span className="wm-search" aria-hidden />
-              <span className={styles.srOnly}>Search themes or responses</span>
-              <input
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setRawDataPage(0);
-                }}
-                placeholder="Search themes or responses..."
-              />
-            </label>
-          </div>
         </div>
         <div className={styles.utilityActions}>
           <div className={styles.recodeAction}>
@@ -1348,6 +1525,8 @@ export default function TextAiThemeConfigurationPage({
             <button
               type="button"
               className={styles.recodeTrigger}
+              disabled={hasTagChanges}
+              title={hasTagChanges ? 'Save or cancel configuration changes before recoding' : undefined}
               onClick={() => {
                 setRecodeScope('new-sub-themes');
                 setCustomRecodeSubThemeIds([]);
@@ -1361,6 +1540,8 @@ export default function TextAiThemeConfigurationPage({
           <button
             type="button"
             className={styles.granularityAction}
+            disabled={hasTagChanges}
+            title={hasTagChanges ? 'Save or cancel configuration changes before changing granularity' : undefined}
             onClick={() => {
               setDraftGranularity(appliedGranularity);
               setGranularityModalOpen(true);
@@ -1385,23 +1566,47 @@ export default function TextAiThemeConfigurationPage({
         </div>
       </div>
 
+      <div className={styles.themeVisibilityControls}>
+        <label className={styles.searchBox}>
+          <span className="wm-search" aria-hidden />
+          <span className={styles.srOnly}>Search themes or responses</span>
+          <input
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setRawDataPage(0);
+            }}
+            placeholder="Search themes or responses..."
+          />
+        </label>
+        <div className={styles.themeSaveActions} aria-label="Theme configuration changes">
+          <span className={hasTagChanges ? styles.unsavedChangeCount : styles.srOnly} role="status" aria-live="polite">
+            {hasTagChanges ? `${changeCount} unsaved change${changeCount === 1 ? '' : 's'}` : tagMessage || 'No unsaved configuration changes'}
+          </span>
+          <WuButton size="sm" variant="secondary" disabled={!hasTagChanges} onClick={() => { setPendingHref(null); setTagConfirmation('discard'); }}>Cancel</WuButton>
+          <WuButton size="sm" variant="primary" disabled={!hasTagChanges} onClick={() => setTagConfirmation('save')}>Save</WuButton>
+        </div>
+      </div>
+      {tagError && <p className={styles.tagError} role="alert">{tagError}</p>}
+
       <div className={styles.workspace}>
         <section className={styles.codeFramePanel} aria-label="Code frame">
           <header className={styles.codeFrameHeader}>
             <div className={styles.codeFrameTitle}>
               <strong>My code frame</strong>
-              <span className={styles.headerCount}>{visibleThemeCount}</span>
+              <span className={styles.headerCount}>{themeGroups.reduce((count, group) => count + group.subThemes.length, 0)}</span>
               <span className={styles.appliedGranularity}>
                 {`${appliedGranularityOption.label} · Up to ${appliedGranularityOption.classificationCount} sub-themes`}
               </span>
             </div>
             <div className={styles.codeFrameActions}>
               <span className={styles.headerCount}>{questionVariant.responseCount}</span>
-              <button type="button">New sub-theme</button>
-              <button type="button">New theme</button>
+              <button type="button" disabled={!tagsReady || themeGroups.length === 0} onClick={() => openConfigurationAction('new-sub-theme')}>New sub-theme</button>
+              <button type="button" disabled={!tagsReady} onClick={() => openConfigurationAction('new-theme')}>New theme</button>
             </div>
           </header>
           <div className={styles.themeScrollArea}>
+            {visibleThemeGroups.length === 0 && <p className={styles.noSubThemes}>No themes to display. Create a new theme to start building your code frame.</p>}
             {visibleThemeGroups.map((group) => (
               <ThemeGroupCard
                 key={group.id}
@@ -1414,14 +1619,6 @@ export default function TextAiThemeConfigurationPage({
                       group.id,
                       subTheme.id
                     ),
-                    originalName:
-                      subThemeEdits[
-                        getSubThemeEditKey(
-                          selectedQuestionId,
-                          group.id,
-                          subTheme.id
-                        )
-                      ]?.originalName ?? subTheme.name,
                     previousDescription:
                       subTheme.description ??
                       getDefaultSubThemeDescription(subTheme.name),
@@ -1432,6 +1629,10 @@ export default function TextAiThemeConfigurationPage({
                     subTheme.description ??
                       getDefaultSubThemeDescription(subTheme.name)
                   );
+                }}
+                onDeleteTheme={() => {
+                  setDeleteTargets([{ kind: 'theme', themeId: group.id, name: group.name }]);
+                  setConfigurationAction('delete');
                 }}
                 onSelectionToggle={toggleCodeFrameSelection}
                 onToggle={() => toggleGroup(group.id)}
@@ -1525,6 +1726,14 @@ export default function TextAiThemeConfigurationPage({
               <button
                 type="button"
                 className={styles.updateSentimentButton}
+                disabled={!tagsReady || selectedResponses.length === 0}
+                onClick={() => openTagPicker(selectedResponses.map((response) => response.id))}
+              >
+                Tag responses
+              </button>
+              <button
+                type="button"
+                className={styles.updateSentimentButton}
                 disabled={selectedResponses.length === 0}
                 onClick={() => setSentimentEditorOpen(true)}
               >
@@ -1568,7 +1777,7 @@ export default function TextAiThemeConfigurationPage({
 
           <div className={styles.responses}>
             {currentPageResponses.map((response) => (
-              <article className={styles.responseCard} key={response.id}>
+              <article className={`${styles.responseCard} ${tagDrafts[`${tagScope}${response.id}`] ? styles.responseCardPending : ''}`} key={response.id}>
                 <label className={styles.responseText}>
                   <input
                     type="checkbox"
@@ -1602,13 +1811,25 @@ export default function TextAiThemeConfigurationPage({
                         <button
                           type="button"
                           aria-label={`Remove ${subtheme.label}`}
+                          disabled={!tagsReady}
+                          onClick={() => removeResponseTag(response, subtheme.id)}
                         >
                           <span className="wm-close" aria-hidden />
                         </button>
                       </span>
                     ))}
                   </div>
-                ) : null}
+                ) : <span className={styles.untaggedLabel}>Untagged</span>}
+                <div className={styles.responseEditActions}>
+                  <button type="button" className={styles.addResponseTag} disabled={!tagsReady}
+                    onClick={() => openTagPicker([response.id])}
+                    aria-label={`Tag response ${response.id}`}>
+                    <span className="wm-add" aria-hidden /> Tag response
+                  </button>
+                  {tagDrafts[`${tagScope}${response.id}`] && (
+                    <span className={styles.responsePendingLabel}>Unsaved changes</span>
+                  )}
+                </div>
               </article>
             ))}
             {visibleResponses.length === 0 && (
@@ -1617,6 +1838,106 @@ export default function TextAiThemeConfigurationPage({
           </div>
         </section>
       </div>
+
+      <WuModal open={configurationAction !== null} onOpenChange={(open) => { if (!open) setConfigurationAction(null); }}
+        size="md" variant={configurationAction === 'delete' ? 'critical' : 'action'} aria-describedby="code-frame-action-description">
+        <DialogTitle className={styles.srOnly}>{configurationAction === 'new-theme' ? 'New theme' : configurationAction === 'new-sub-theme' ? 'New sub-theme' : configurationAction === 'merge' ? 'Merge sub-themes' : 'Delete selected items?'}</DialogTitle>
+        <WuModalHeader>{configurationAction === 'new-theme' ? 'New theme' : configurationAction === 'new-sub-theme' ? 'New sub-theme' : configurationAction === 'merge' ? 'Merge sub-themes' : 'Delete selected items?'}</WuModalHeader>
+        <WuModalContent>
+          {configurationAction === 'delete' ? <div className={styles.tagConfirmationContent}>
+            <p id="code-frame-action-description">Remove the selected items from your code frame? Deleting a theme also removes its sub-themes. Associated response tags will be removed; the original response text will remain.</p>
+            <ul className={styles.configurationItemList}>{deleteTargets.map((target) => <li key={getApproveTargetKey(target)}>{target.name}</li>)}</ul>
+            <p>{deletionAffectedCount} response{deletionAffectedCount === 1 ? '' : 's'} affected.</p>
+            <p className={styles.tagConfirmationHint}>This deletion stays unsaved until you select Save. Use Cancel to restore your last saved configuration.</p>
+          </div> : <div className={styles.configurationForm}>
+            <p id="code-frame-action-description">{configurationAction === 'merge'
+              ? 'Combine the selected sub-themes into one sub-theme. Their response assignments will be combined without duplicate tags.'
+              : 'Add an item to your code frame. It will remain unsaved until you select Save.'}</p>
+            {configurationAction === 'merge' && <ul className={styles.configurationItemList}>{selectedCodeFrameTargets.map((target) => <li key={getApproveTargetKey(target)}>{target.name}</li>)}</ul>}
+            {configurationAction !== 'new-theme' && <label>
+              <span>Parent theme</span>
+              <select value={configurationParentId} onChange={(event) => setConfigurationParentId(event.target.value)}>
+                {themeGroups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
+              </select>
+            </label>}
+            <label>
+              <span>{configurationAction === 'new-theme' ? 'Theme name' : configurationAction === 'merge' ? 'Merged sub-theme name' : 'Sub-theme name'}</span>
+              <input value={configurationName} maxLength={100} onChange={(event) => setConfigurationName(event.target.value)}
+                aria-invalid={Boolean(configurationName && configurationNameError)} aria-describedby={configurationName && configurationNameError ? 'configuration-name-error' : undefined} />
+            </label>
+            {configurationName && configurationNameError && <p id="configuration-name-error" className={styles.tagError} role="alert">{configurationNameError}</p>}
+            {configurationAction !== 'new-theme' && <label>
+              <span>Description <small>(optional)</small></span>
+              <textarea value={configurationDescription} maxLength={300} rows={3} onChange={(event) => setConfigurationDescription(event.target.value)} />
+            </label>}
+            {configurationAction === 'merge' && <p className={styles.tagConfirmationHint}>Shared sentiments are retained. Conflicting sentiments become Neutral for review. This merge stays unsaved until you select Save.</p>}
+          </div>}
+        </WuModalContent>
+        <WuModalFooter>
+          <WuButton variant="primary" color={configurationAction === 'delete' ? 'error' : 'primary'}
+            disabled={!tagsReady || (configurationAction !== 'delete' && (Boolean(configurationNameError) || (configurationAction !== 'new-theme' && !configurationParent)))}
+            onClick={applyConfigurationAction}>{configurationAction === 'delete' ? 'Delete' : configurationAction === 'merge' ? 'Merge' : 'Create'}</WuButton>
+        </WuModalFooter>
+      </WuModal>
+
+      <WuModal open={tagConfirmation !== null} onOpenChange={(open) => { if (!open) { setTagConfirmation(null); setPendingHref(null); } }}
+        size="md" variant={tagConfirmation === 'discard' ? 'critical' : 'action'}
+        aria-describedby="theme-confirmation-description">
+        <DialogTitle className={styles.srOnly}>{tagConfirmation === 'discard' ? 'Discard theme changes?' : 'Save theme changes?'}</DialogTitle>
+        <WuModalHeader>{tagConfirmation === 'discard' ? 'Discard theme changes?' : 'Save theme changes?'}</WuModalHeader>
+        <WuModalContent>
+          <div className={styles.tagConfirmationContent}>
+            <p id="theme-confirmation-description">{tagConfirmation === 'discard'
+              ? 'You’re about to discard all unsaved theme configuration changes, including created or deleted items, merges, and response tags. Your last saved configuration and response assignments will be restored.'
+              : 'Saving will apply all theme configuration changes, including created or deleted items, merges, and response tags. Once saved, these changes cannot be undone.'}</p>
+            <div className={styles.tagChangeSummary}>
+              <strong>{changeCount} configuration change{changeCount === 1 ? '' : 's'}</strong>
+              {codeFrameSummary.themesAdded > 0 && <span>{codeFrameSummary.themesAdded} theme{codeFrameSummary.themesAdded === 1 ? '' : 's'} created</span>}
+              {codeFrameSummary.themesDeleted > 0 && <span>{codeFrameSummary.themesDeleted} theme{codeFrameSummary.themesDeleted === 1 ? '' : 's'} deleted with all associated sub-themes</span>}
+              {codeFrameSummary.subThemesAdded > 0 && <span>{codeFrameSummary.subThemesAdded} sub-theme{codeFrameSummary.subThemesAdded === 1 ? '' : 's'} created</span>}
+              {codeFrameSummary.subThemesDeleted > 0 && <span>{codeFrameSummary.subThemesDeleted} sub-theme{codeFrameSummary.subThemesDeleted === 1 ? '' : 's'} deleted</span>}
+              {codeFrameSummary.subThemesUpdated > 0 && <span>{codeFrameSummary.subThemesUpdated} sub-theme{codeFrameSummary.subThemesUpdated === 1 ? '' : 's'} updated</span>}
+              {codeFrameSummary.merges > 0 && <span>{codeFrameSummary.merges} sub-theme merge{codeFrameSummary.merges === 1 ? '' : 's'}</span>}
+              <span>{tagSummary.added} tag{tagSummary.added === 1 ? '' : 's'} added · {tagSummary.removed} removed</span>
+              <span>{tagSummary.responses} response{tagSummary.responses === 1 ? '' : 's'} affected across all edited questions</span>
+            </div>
+            {tagConfirmation === 'discard' && <p className={styles.tagConfirmationHint}>Discarded edits cannot be recovered.</p>}
+          </div>
+        </WuModalContent>
+        <WuModalFooter>
+          <WuButton variant="primary" color={tagConfirmation === 'discard' ? 'error' : 'primary'}
+            onClick={tagConfirmation === 'discard' ? discardThemeAssignments : saveThemeAssignments}>
+            {tagConfirmation === 'discard' ? 'Discard' : 'Save'}
+          </WuButton>
+        </WuModalFooter>
+      </WuModal>
+
+      <WuModal open={taggingResponseIds.length > 0} onOpenChange={(open) => { if (!open) setTaggingResponseIds([]); }} size="md" variant="action" aria-describedby="tag-picker-description">
+        <DialogTitle className={styles.srOnly}>Tag responses</DialogTitle>
+        <WuModalHeader>Tag responses</WuModalHeader>
+        <WuModalContent>
+          <p id="tag-picker-description" className={styles.tagPickerDescription}>Choose sub-themes for {taggingResponseIds.length} response{taggingResponseIds.length === 1 ? '' : 's'}. Changes stay unsaved until you select Save.</p>
+          <div className={styles.tagPickerGroups}>
+            {themeGroups.map((group) => <fieldset key={group.id}>
+              <legend>{group.name}</legend>
+              {group.subThemes.map((subtheme) => {
+                const tagId = `${group.id}:${subtheme.id}`;
+                const alreadyAssigned = questionResponses.filter((response) => taggingResponseIds.includes(response.id))
+                  .every((response) => response.subthemes.some((tag) => tag.id === tagId));
+                return <label key={tagId}>
+                  <input type="checkbox" checked={alreadyAssigned || tagPickerIds.includes(tagId)} disabled={alreadyAssigned}
+                    onChange={(event) => setTagPickerIds((current) => event.target.checked ? [...current, tagId] : current.filter((id) => id !== tagId))} />
+                  <span>{subtheme.name}{alreadyAssigned && <small>Already tagged</small>}</span>
+                </label>;
+              })}
+            </fieldset>)}
+          </div>
+        </WuModalContent>
+        <WuModalFooter>
+          <WuButton variant="secondary" onClick={() => setTaggingResponseIds([])}>Cancel</WuButton>
+          <WuButton variant="primary" disabled={tagPickerIds.length === 0} onClick={addResponseTags}>Add tags</WuButton>
+        </WuModalFooter>
+      </WuModal>
 
       {selectedCodeFrameTargets.length > 0 ? (
         <div
@@ -1643,6 +1964,7 @@ export default function TextAiThemeConfigurationPage({
             type="button"
             className={styles.selectionTextAction}
             disabled={!canMergeSelection}
+            onClick={() => openConfigurationAction('merge')}
           >
             Merge
           </button>
@@ -1663,7 +1985,9 @@ export default function TextAiThemeConfigurationPage({
               Approve
             </button>
           ) : null}
-          <button type="button" className={styles.selectionDeleteAction}>
+          <button type="button" className={styles.selectionDeleteAction} onClick={() => {
+            setDeleteTargets(selectedCodeFrameTargets); setConfigurationAction('delete');
+          }}>
             Delete
           </button>
         </div>
@@ -1841,6 +2165,8 @@ export default function TextAiThemeConfigurationPage({
                 rows={4}
               />
               <small>{draftSubThemeDescription.length}/300 characters</small>
+              {subThemeEditError && <p className={styles.tagError} role="alert">{subThemeEditError}</p>}
+              <small>Edits stay unsaved until you select Save in Theme configuration.</small>
             </label>
           </div>
         </WuModalContent>
@@ -1854,10 +2180,10 @@ export default function TextAiThemeConfigurationPage({
           </WuButton>
           <WuButton
             type="button"
-            disabled={!draftSubThemeName.trim()}
+            disabled={!draftSubThemeName.trim() || Boolean(subThemeEditError)}
             onClick={saveSubThemeEdit}
           >
-            Save changes
+            Apply
           </WuButton>
         </WuModalFooter>
       </WuModal>

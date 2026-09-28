@@ -56,7 +56,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem 1rem;
-  max-width: 48rem;
+  flex-shrink: 0;
+  justify-content: space-between;
   width: 100%;
 }
 
@@ -496,10 +497,12 @@
   display: flex;
   gap: 0.75rem;
   justify-content: center;
-  left: 16rem;
   min-height: 3.5rem;
   padding: 0.5rem 1rem;
-  position: fixed;
+  position: relative;
+  flex-shrink: 0;
+  order: 2;
+  left: 0;
   right: 0;
   z-index: 40;
 }
@@ -1424,3 +1427,71 @@
     width: 100%;
   }
 }
+
+/* Compact commit controls share the full-width search row. */
+.themeSaveActions {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.unsavedChangeCount {
+  color: #647282;
+  font-size: 12px;
+  margin-right: 6px;
+}
+
+.tagError {
+  color: #b42318;
+  font-size: 12px;
+  margin: 0;
+}
+
+.responseCardPending { background: #f8fbff; box-shadow: inset 3px 0 #247fd2; }
+.responseEditActions { display: flex; align-items: center; gap: 12px; margin: 9px 0 0 24px; }
+.addResponseTag { display: inline-flex; align-items: center; gap: 4px; background: transparent; border: 0; color: #1769aa; font-size: 12px; padding: 3px 0; cursor: pointer; }
+.addResponseTag:hover { text-decoration: underline; }
+.responsePendingLabel { color: #7b580c; font-size: 11px; background: #fff4da; border-radius: 4px; padding: 3px 7px; }
+.untaggedLabel { color: #7d8792; display: inline-block; font-size: 12px; margin: 7px 0 0 24px; }
+.tagConfirmationContent { color: #465363; font-size: 14px; line-height: 1.6; padding: 4px 0 8px; }
+.tagChangeSummary { display: flex; flex-direction: column; gap: 3px; background: #f5f7fa; border: 1px solid #e2e7ed; border-radius: 7px; margin: 18px 0; padding: 14px 16px; font-size: 13px; }
+.tagChangeSummary strong { color: #2e3947; }
+.tagConfirmationHint { color: #697786; font-size: 12px; }
+.tagPickerDescription { color: #5c6978; font-size: 13px; line-height: 1.6; margin-bottom: 16px; }
+.tagPickerGroups { display: flex; flex-direction: column; gap: 18px; max-height: 45vh; overflow-y: auto; padding-right: 8px; }
+.tagPickerGroups fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.tagPickerGroups legend { color: #344153; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+.tagPickerGroups label { display: flex; align-items: flex-start; gap: 9px; padding: 9px; border-radius: 5px; font-size: 13px; color: #4c5b6a; cursor: pointer; }
+.tagPickerGroups label:hover { background: #f4f8fc; }
+.tagPickerGroups input { margin-top: 3px; accent-color: #247fd2; }
+.tagPickerGroups small { display: block; color: #7c8894; font-size: 11px; margin-top: 3px; }
+.recodeTrigger:disabled, .granularityAction:disabled, .addResponseTag:disabled { cursor: not-allowed; opacity: .45; }
+.addResponseTag:focus-visible { outline: 2px solid #247fd2; outline-offset: 3px; }
+
+@media (max-width: 42rem) {
+  .responseSelectionToolbar, .responseSelectionActions { flex-wrap: wrap; }
+}
+
+.deleteThemeButton {
+  align-items: center;
+  display: inline-flex;
+  flex-shrink: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: #66717c;
+  cursor: pointer;
+  justify-content: center;
+  height: 30px;
+  width: 30px;
+  margin-left: 8px;
+}
+.deleteThemeButton:hover, .deleteThemeButton:focus-visible { background: #fff; color: #b42318; }
+.configurationForm { display: flex; flex-direction: column; gap: 16px; color: #465363; font-size: 13px; line-height: 1.6; }
+.configurationForm label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+.configurationForm input, .configurationForm select, .configurationForm textarea { border: 1px solid #bac5d1; border-radius: 4px; padding: 8px 10px; background: #fff; font: inherit; font-weight: 400; width: 100%; }
+.configurationForm input:focus, .configurationForm select:focus, .configurationForm textarea:focus { outline: 2px solid #247fd2; outline-offset: 2px; }
+.configurationForm small { font-weight: 400; color: #6a7684; }
+.configurationItemList { margin: 12px 0; padding: 12px 16px 12px 30px; border-radius: 5px; background: #f5f7fa; max-height: 140px; overflow-y: auto; }
