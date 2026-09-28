@@ -158,3 +158,44 @@
 
 .widgetFrame > article > header > h3, .settingsPreview > article > header > h3 { color:var(--advanced-title-color, #3f559a); }
 .widgetFrame[data-show-name=false] > article > header > h3, .settingsPreview[data-show-name=false] > article > header > h3 { visibility:hidden; }
+
+/* Segment comparison uses the regular Heat Map's controls and table styling. */
+.segmentDialog .tabs { margin-top:5px; }
+.segmentDialog .tabs button { line-height:24px; }
+.segmentSettings { position:static; display:block; height:auto; min-height:0; flex:1; background:white; font-size:12px; }
+.segmentSettings h3 { font-size:14px; font-weight:500; line-height:24px; margin:48px 0 21px; }
+.segmentSettings > input[aria-label="Widget name"] { margin-bottom:24px; }
+.segmentSettings .questionSelect { min-height:32px; height:32px; font-size:12px; border-color:#999; border-radius:0; }
+.segmentSettings > .secondary { margin-bottom:18px; }
+.segmentSettings .field { font-size:12px; }
+.segmentSettings .group { margin-top:16px; }
+.tableContainer { display:flex; flex-direction:column; height:100%; min-height:0; }
+.segmentTableScroll { font-size:inherit; }
+.segmentMatrixToggle { display:inline; border:0; padding:0; background:none; text-align:left; font:inherit; color:inherit; cursor:pointer; }
+.segmentMatrixToggle > span { padding-right:7px; }
+.segmentMatrixToggle:focus-visible { outline:2px solid #258ee8; outline-offset:2px; }
+@media(max-width:800px) {
+  .dialog > .segmentSettings { order:3; flex-shrink:0; overflow:visible; }
+}
+
+.widgetFrame[data-analysis=segments] > article, .settingsPreview[data-analysis=segments] > article { padding:10px; border-radius:7px; }
+.widgetFrame[data-analysis=segments] > article > header, .settingsPreview[data-analysis=segments] > article > header { padding:0 6px 10px; min-height:35px; border-color:#ddd; }
+.widgetFrame[data-analysis=segments] > article > header h3, .settingsPreview[data-analysis=segments] > article > header h3 { font-weight:500; color:var(--advanced-title-color, #1b3380); }
+.widgetFrame[data-analysis=segments] > article > div:last-of-type, .settingsPreview[data-analysis=segments] > article > div:last-of-type { padding:0; }
+.widgetFrame[data-show-name=false] > article > header h3, .settingsPreview[data-show-name=false] > article > header h3 { visibility:hidden; }
+
+.segmentFilterDialog { width:960px !important; height:auto; min-height:0; max-height:90vh; background:white; border-radius:7px; padding:24px !important; color:#687583; font-size:12px; }
+.segmentFilterCondition { display:grid; grid-template-columns:2fr 1fr 2fr auto; gap:16px; align-items:end; padding:16px; margin-bottom:16px; border:1px solid #d9dde2; }
+.segmentFilterCondition .field { margin:0; min-width:0; }
+.segmentFilterCondition > button { max-width:100px; font-size:12px; }
+@media(max-width:650px) { .segmentFilterCondition { grid-template-columns:1fr; } }
+
+.segmentFilterDialog[role=dialog] { position:fixed; overflow:auto; }
+.segmentFilterDialog > .segmentFilterDialog { position:static; width:100% !important; padding:0 !important; border-radius:0; background:white !important; }
+.segmentFilterHeader { padding:0 0 15px !important; border-bottom:1px solid #ddd; background:white !important; border-radius:0 !important; }
+.segmentFilterHeader h2 { height:auto !important; font-size:20px !important; font-weight:500 !important; }
+.segmentFilterContent { padding:24px 0 0 !important; gap:0 !important; }
+.segmentFilterFooter { padding:20px 0 0 !important; margin-top:20px; min-height:0 !important; }
+.segmentFilterDialog > .segmentFilterDialog::after { display:none; }
+.segmentFilterDialog .segmentFilterContent > .secondary { align-self:flex-start; border:0; padding-left:0; }
+.segmentFilterDialog > button { border:0; }

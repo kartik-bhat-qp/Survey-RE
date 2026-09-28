@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { heatmapAnswerSlots, type AdvancedHeatmapConfig, type HeatmapQuestion } from '@/data/advanced-heatmap';
 import { supportsAdvancedHeatmap } from './HeatmapSetup';
 import styles from './AdvancedHeatmap.module.css';
+import regular from '../heat-map/HeatMapBaseline.module.css';
 
 const WuSelect = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => ({ default: m.WuSelect })), { ssr: false });
 const WuToggle = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => ({ default: m.WuToggle })), { ssr: false });
@@ -54,7 +55,7 @@ export function HeatmapLabels({ questions, draft, update }: Props) {
     })}</ul>;
   }
   return <>
-    <div className={styles.field}><span>Questions</span>
+    <div className={draft.mode === 'segments' ? regular.field : styles.field}><span>{draft.mode === 'segments' ? 'Manage rows (questions)' : 'Questions'}</span>
       <WuSelect aria-label="Select questions" multiple variant="outlined" className={styles.questionSelect} maxHeight={300} maxContentWidth="410px"
         accessorKey={{ value: 'value', label: 'label' }}
         data={questionOptions.filter(q => q.label.toLowerCase().includes(questionSearch.toLowerCase()))}

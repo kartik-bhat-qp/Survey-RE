@@ -17,21 +17,11 @@ import { DesignColorPicker } from '@/components/dashboards/DesignColorPicker';
 import { HeatMapSelect } from './HeatMapSelect';
 import { HeatMapEditIntro } from './HeatMapEditIntro';
 
+import { Field, Toggle, Select, Scope, ReversePicker, Thresholds, EmptyWeightingPicker } from './HeatMapSettingsControls';
+
 type SettingsTab = 'General' | 'Analytics' | 'Rows & Columns' | 'Design';
 const tabs: SettingsTab[] = ['General', 'Analytics', 'Rows & Columns', 'Design'];
 const toggleItem = (items: string[], id: string) => items.includes(id) ? items.filter(item => item !== id) : [...items, id];
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return <label className={styles.field}><span>{label}</span>{children}</label>;
-}
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
-  return <label className={styles.toggle}><span>{label}</span><input type="checkbox" role="switch" aria-label={label} checked={checked} onChange={event => onChange(event.target.checked)} /><span aria-hidden className={styles.switch} /></label>;
-}
-function Select({ label, value, options, onChange }: { label: string; value: string | number; options: (string | number)[]; onChange: (value: string) => void }) {
-  return <Field label={label}><HeatMapSelect label={label} value={value} options={options} onChange={onChange} formatOption={option => label === 'Decimal precision' ? `${option} (${Number(option) === 0 ? '0' : `0.${'1234'.slice(0, Number(option))}`})` : String(option)} /></Field>;
-}
-function Scope({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
-  return <fieldset className={styles.scope}><legend>{label}</legend><div>{options.map((option, index) => <button key={option} aria-label={`${label}: ${option}`} title={option} aria-pressed={value === option} onClick={() => onChange(option)}>{['▦', '▣', '⊘'][index]}<span>{option}</span></button>)}</div></fieldset>;
-}
 
 interface HeatMapBaselineProps {
   dashboardDesign?: DashboardDesign;
@@ -77,9 +67,6 @@ export function HeatMapBaseline({ dashboardDesign, dashboardFilter, embedded = f
   const [insightDraft, setInsightDraft] = useState('');
   const [downloadMenu, setDownloadMenu] = useState(false);
   const [notice, setNotice] = useState('');
-  const [reverseSearch, setReverseSearch] = useState('');
-  const [reversePickerOpen, setReversePickerOpen] = useState(false);
-  const [weightingPickerOpen, setWeightingPickerOpen] = useState(false);
 
   useEffect(() => {
     // Hydrate only after the server-rendered default snapshot has mounted.
@@ -202,14 +189,12 @@ export function HeatMapBaseline({ dashboardDesign, dashboardFilter, embedded = f
         <Toggle label="Response count" checked={settings.responseCount} onChange={value => update('responseCount', value)} />
         <Toggle label="Overall average" checked={settings.overallAverage} onChange={value => update('overallAverage', value)} />
         <Select label="Show mean values in range" value={settings.range} options={['Default', '0–5', '0–10']} onChange={value => update('range', value as HeatMapSettings['range'])} />
-        <div className={styles.reverseField}><span>Reverse weightage for questions</span><button aria-label="Reverse weightage for questions" aria-expanded={reversePickerOpen} className={styles.reverseTrigger} onClick={() => setReversePickerOpen(!reversePickerOpen)}>{settings.reversed.length ? questions.filter(question => settings.reversed.includes(question.id)).map(question => question.title).join(', ') : 'Add question'}<span aria-hidden>▾</span></button>{reversePickerOpen && <div className={styles.reverseOptions}><input aria-label="Search reverse weightage questions" placeholder="Search" value={reverseSearch} onChange={event => setReverseSearch(event.target.value)} />{questions.filter(question => question.title.toLowerCase().includes(reverseSearch.toLowerCase())).map(question => <label key={question.id}><input type="checkbox" checked={settings.reversed.includes(question.id)} onChange={() => update('reversed', toggleItem(settings.reversed, question.id))} />{question.title}</label>)}</div>}</div>
-        <div className={styles.thresholdHeading}><span>Assign threshold values</span><HeatMapSelect label="Assign threshold values" value={settings.bands} options={[2, 3, 4, 5]} onChange={value => setSettings(current => ({ ...current, bands: Number(value), thresholds: equalThresholds(Number(value)) }))} /></div>
-        <div className={styles.thresholdSlider} style={{ background: `linear-gradient(to right, ${Array.from({ length: settings.bands }, (_, index) => `${design.colorSettings.colors[Math.min(index, design.colorSettings.colors.length - 1)]} ${index ? settings.thresholds[index - 1] : 0}%, ${design.colorSettings.colors[Math.min(index, design.colorSettings.colors.length - 1)]} ${settings.thresholds[index] ?? 100}%`).join(', ')})` }}>{settings.thresholds.map((threshold, index) => <input key={index} type="range" aria-label={`Threshold ${index + 1}`} min="0" max="100" step="0.1" value={threshold} onChange={event => { const value = Math.max((settings.thresholds[index - 1] ?? 0) + .1, Math.min((settings.thresholds[index + 1] ?? 100) - .1, Number(event.target.value))); update('thresholds', settings.thresholds.map((existing, boundary) => boundary === index ? value : existing)); }} />)}</div>
-        <div className={styles.bands}>{Array.from({ length: settings.bands }, (_, index) => { const from = index ? settings.thresholds[index - 1] : 0; const to = settings.thresholds[index] ?? 100; const names = settings.bands === 2 ? ['Unfavorable', 'Neutral'] : settings.bands === 3 ? ['Unfavorable', 'Neutral', 'Favorable'] : settings.bands === 4 ? ['Highly unfavorable', 'Unfavorable', 'Favorable', 'Highly favorable'] : ['Highly unfavorable', 'Unfavorable', 'Neutral', 'Favorable', 'Highly favorable']; return <div key={index}><span>{names[index]} <b>{settings.source !== 'single' && settings.bands === 2 ? '33.3' : (to - from).toFixed(1)}%</b><small>({from}–{to})</small></span></div>; })}</div>
+        <ReversePicker questions={questions.map(q=>({id:q.id,title:q.title}))} selected={settings.reversed} onChange={value=>update('reversed',value)}/>
+        <Thresholds bands={settings.bands} thresholds={settings.thresholds} colors={design.colorSettings.colors} onBandsChange={bands=>setSettings(current=>({...current,bands,thresholds:equalThresholds(bands)}))} onThresholdsChange={value=>update('thresholds',value)} legacyTwoBandLabels={settings.source!=='single'&&settings.bands===2}/>
         <Toggle label="Widget stats" checked={settings.widgetStats} onChange={value => update('widgetStats', value)} />
         {settings.widgetStats && <div className={styles.nested}><Toggle label="Response count statistic" checked={settings.statsResponseCount} onChange={value => update('statsResponseCount', value)} /><Field label="Statistic label"><input value={settings.statsLabel} onChange={event => update('statsLabel', event.target.value)} /></Field></div>}
         <h3>Weighting schemes</h3><Scope label="Scheme type" value={settings.weighting} options={['Dashboard', 'Widget', 'None']} onChange={value => update('weighting', value as HeatMapSettings['weighting'])} />
-        {settings.weighting === 'Widget' && <div className={styles.reverseField}><button className={styles.reverseTrigger} aria-label="Weighting scheme" aria-expanded={weightingPickerOpen} onClick={() => setWeightingPickerOpen(!weightingPickerOpen)}>-Select-<span aria-hidden>▾</span></button>{weightingPickerOpen && <div className={styles.reverseOptions}><input aria-label="Search weighting schemes" placeholder="Search" /><p>No results found.</p></div>}</div>}
+        {settings.weighting === 'Widget' && <EmptyWeightingPicker/>}
       </>}
       {activeTab === 'Rows & Columns' && <>
         <Field label="Manage rows (questions)"><button aria-expanded={rowPicker} onClick={() => setRowPicker(!rowPicker)}>{questions[0]?.title ?? 'Select questions'}{questions.length > 1 ? ` +${questions.length}` : ''} ▾</button></Field>

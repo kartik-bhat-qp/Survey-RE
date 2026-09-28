@@ -1,0 +1,68 @@
+(node:27061) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/prabalgupta/Documents/work/Survey-RE/src/data/advanced-heatmap.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/prabalgupta/Documents/work/Survey-RE/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ whole matrix selection is atomic and de-duplicated; other rows survive deselection (1.940958ms)
+✔ distribution and mean share valid response base and exclude unanswered records (0.373416ms)
+✔ custom 0/100 weights produce top-box percentage; reverse applies to each statement (0.135625ms)
+✔ nominal codes cannot silently become scores; explicit mapping enables them (0.115625ms)
+✔ empty groups yield no data, not zero; excluding answers updates base (0.292916ms)
+✔ six respondent segments work with four-option rows without index alignment (0.355667ms)
+✔ multi-select uses a fixed respondent base and per-respondent scoring (0.120708ms)
+✔ pooled matrix mean respects unequal response bases (0.091916ms)
+✔ both modes use the same deterministic respondent-level synthetic fixture (10.63575ms)
+✔ unmapped scores retain the answered base in cells and matrix summaries (0.194583ms)
+✔ one table uses fixed positional columns across different question labels (0.650083ms)
+✔ single-table matrix distribution totals pool frequencies and preserve percent/count bases (0.240917ms)
+✔ custom metrics are opt-in and require explicit weights even for rating scales (0.154ms)
+✔ metric filters distinguish strict and inclusive boundaries using unrounded scores (0.134959ms)
+✔ filters support custom scales and pause without the metric or in segment mode (0.085875ms)
+✔ row filtering preserves distributions and pooled matrix totals, and recomputes after weight changes (0.4545ms)
+✔ six/four options stay aligned by original position through exclusions and renaming (0.222333ms)
+✔ default widget is deterministic, independent and has no automatic custom metric (0.210709ms)
+✔ matrix parent pools included statements and has no duplicate Total child (2.238ms)
+✔ matrix filter keeps matching children reachable without displaying a failing parent score (0.193625ms)
+✔ widget respondent filters run before distributions and custom metrics (0.208875ms)
+✔ filter scopes isolate widget criteria and fail closed for unmapped dashboard criteria (0.145959ms)
+✔ multiple filter conditions support AND/OR without counting unanswered rows as matches (0.098875ms)
+✔ legacy merged labels are ignored: original columns and rows remain independent (0.089625ms)
+✔ segment ranges, reversal, overall mean, thresholds and custom groups (0.36225ms)
+(node:27062) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/prabalgupta/Documents/work/Survey-RE/src/data/mock-ai-widgets.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/prabalgupta/Documents/work/Survey-RE/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ every default widget has one equal-width column and desktop rows are paired (0.675209ms)
+✔ mobile stacks every fixed widget without losing order (0.826292ms)
+✔ settings isolation includes dashboard, tab and widget identities (0.083375ms)
+✔ retirement removes only obsolete dynamic heat-map records and keeps fixed settings (0.610709ms)
+(node:27063) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/prabalgupta/Documents/work/Survey-RE/src/data/heat-map-baseline.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/prabalgupta/Documents/work/Survey-RE/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ current saved production snapshot keeps the 1,3,2,4,5 defect and 100 response base (1.267625ms)
+✔ changing selection click order does not sort displayed production columns (0.095083ms)
+✔ all five recorded scores resolve to distinct expected colors; counts retain observed red (0.124084ms)
+✔ threshold boundary changes affect only the corresponding score band (0.075625ms)
+✔ historical fixture preserves multiple matrix parents and ten leaf rows (0.464125ms)
+✔ production-verified five-point normalization and reversal preserve exact means (0.146375ms)
+✔ malformed persisted state cannot inject names as types or corrupt thresholds (0.695083ms)
+✔ all configurable settings survive JSON save/reopen without changing unrelated defaults (1.247708ms)
+✔ equal band construction yields complete monotonic intervals for every offered band count (0.2325ms)
+✔ custom colors do not mutate default palettes or independent fixture instances (0.233417ms)
+✔ current mixed-question snapshot keeps matrix, single, multi and dropdown together (0.357875ms)
+✔ removing every selected row does not change survey or available questions (0.234459ms)
+✔ mixed fixture matches precision-four production leaves and aggregate semantics (0.505625ms)
+✔ source picker preserves observed inventory and disclosure-only rows (0.164208ms)
+✔ audited direct questions retain production precision and empty-response conventions (0.509959ms)
+✔ known ordinal cohorts support AND/OR and Is not without invented cross-question responses (0.574417ms)
+✔ dashboard inherited design follows verified font sizes and live custom palette without overwriting widget override (0.330625ms)
+✔ dashboard Q5/status/date filters use verified cohorts and reject unavailable inputs (7.930042ms)
+✔ scope selection isolates dashboard/widget filters and Combined intersects without hiding unavailable filters (0.178917ms)
+ℹ tests 48
+ℹ suites 0
+ℹ pass 48
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 163.908583
