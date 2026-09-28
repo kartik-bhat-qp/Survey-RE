@@ -155,3 +155,5 @@
     width: 100%;
   }
 }
+
+.compact .section { margin-bottom:14px; }.compact .section p,.compact .section ul { margin-top:4px;margin-bottom:4px;line-height:1.35; }.compact .sectionTitle { font-size:var(--dashboard-widget-body-size,13px);margin-bottom:4px; }

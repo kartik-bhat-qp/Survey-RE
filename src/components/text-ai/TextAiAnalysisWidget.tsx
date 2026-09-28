@@ -1,26 +1,48 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
-import { StandardLoader } from '@/components/ui/StandardLoader';
-import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
-import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
-import { useWickUILib } from '@/components/ui/useWickUILib';
-import type { TextAiAnalysisRow, TextAiAnalysisWidget } from '@/data/mock-text-ai-widget-data';
+import { useMemo, useState } from "react";
+import {
+  defaultTextAiWidgetSettings,
+  matchesTextAiFilters,
+  type TextAiWidgetSettingsProps,
+} from "@/data/text-ai-widget-settings";
+import type { IWuTableColumnDef } from "@npm-questionpro/wick-ui-lib";
+import { StandardLoader } from "@/components/ui/StandardLoader";
+import { TextAiEmergingBadge } from "@/components/text-ai/TextAiEmergingBadge";
+import { TextAiWidgetMenu } from "@/components/text-ai/TextAiWidgetMenu";
+import { useWickUILib } from "@/components/ui/useWickUILib";
+import type {
+  TextAiAnalysisRow,
+  TextAiAnalysisWidget,
+} from "@/data/mock-text-ai-widget-data";
 import {
   DEFAULT_TEXT_AI_WIDGET_TOP_N,
   limitTextAiWidgetItems,
   type TextAiWidgetTopN,
-} from '@/data/mock-text-ai-widget-settings';
-import styles from './TextAiAnalysisWidget.module.css';
+} from "@/data/mock-text-ai-widget-settings";
+import styles from "./TextAiAnalysisWidget.module.css";
+
+const EMPTY_RESPONSE_FILTERS: NonNullable<
+  TextAiWidgetSettingsProps["responseFilters"]
+> = [];
+
+const byColumn: Record<string, number> = {
+  Responses: 0,
+  Themes: 1,
+  "Sub-themes": 2,
+  Insights: 3,
+  Tags: 4,
+  "Collected on": 5,
+};
 
 const PAGE_SIZE_OPTIONS = [
-  { value: '50', label: '50' },
-  { value: '100', label: '100' },
-  { value: '200', label: '200' },
+  { value: "10", label: "10" },
+  { value: "25", label: "25" },
+  { value: "50", label: "50" },
+  { value: "100", label: "100" },
 ];
 
-interface TextAiAnalysisWidgetProps {
+interface TextAiAnalysisWidgetProps extends TextAiWidgetSettingsProps {
   widget: TextAiAnalysisWidget;
   onDelete?: () => void;
 }
@@ -30,9 +52,9 @@ function SubtopicPill({
   tone,
 }: {
   label: string;
-  tone: TextAiAnalysisRow['subtopicTone'];
+  tone: TextAiAnalysisRow["subtopicTone"];
 }) {
-  const isPositive = tone === 'positive';
+  const isPositive = tone === "positive";
   return (
     <span
       className={`${styles.subtopicPill} ${
@@ -41,7 +63,7 @@ function SubtopicPill({
       title={label}
     >
       <span
-        className={isPositive ? 'wm-check' : 'wm-sentiment-neutral'}
+        className={isPositive ? "wm-check" : "wm-sentiment-neutral"}
         aria-hidden
       />
       <span className={styles.subtopicLabel}>{label}</span>
@@ -52,18 +74,38 @@ function SubtopicPill({
 export function TextAiAnalysisWidgetCard({
   widget,
   onDelete,
+  settings,
+  onSettingsChange,
+  onOpenSettings,
+  responseFilters = EMPTY_RESPONSE_FILTERS,
+  preview,
 }: TextAiAnalysisWidgetProps) {
+  const s =
+    settings ?? defaultTextAiWidgetSettings("text-viewer", widget.question);
   const wick = useWickUILib();
-  const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
-  const [search, setSearch] = useState('');
+  const [topN, setTopN] = useState<TextAiWidgetTopN>(
+    DEFAULT_TEXT_AI_WIDGET_TOP_N,
+  );
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[1]);
+  const [localPageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[3]);
+  const pageSize = settings
+    ? (PAGE_SIZE_OPTIONS.find(
+        (option) => Number(option.value) === s.pageSize,
+      ) ?? PAGE_SIZE_OPTIONS[3])
+    : localPageSize;
 
   const pageSizeNum = Number(pageSize.value);
 
   const filteredRows = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const sourceRows = limitTextAiWidgetItems(widget.rows, topN);
+    const sourceRows = limitTextAiWidgetItems(widget.rows, topN)
+      .filter((row) => matchesTextAiFilters(row, responseFilters))
+      .sort((a, b) =>
+        s.dateOrder === "Newest first"
+          ? (b.collectedOn ?? "").localeCompare(a.collectedOn ?? "")
+          : (a.collectedOn ?? "").localeCompare(b.collectedOn ?? ""),
+      );
     if (!term) return sourceRows;
     return sourceRows.filter(
       (row) =>
@@ -71,9 +113,9 @@ export function TextAiAnalysisWidgetCard({
         row.topic.toLowerCase().includes(term) ||
         row.subtopic.toLowerCase().includes(term) ||
         row.insight.toLowerCase().includes(term) ||
-        row.tags.some((tag) => tag.toLowerCase().includes(term))
+        row.tags.some((tag) => tag.toLowerCase().includes(term)),
     );
-  }, [search, topN, widget.rows]);
+  }, [search, topN, widget.rows, responseFilters, s.dateOrder]);
 
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSizeNum));
   const safePage = Math.min(page, pageCount - 1);
@@ -85,48 +127,74 @@ export function TextAiAnalysisWidgetCard({
   const rangeStart = filteredRows.length === 0 ? 0 : safePage * pageSizeNum + 1;
   const rangeEnd = Math.min((safePage + 1) * pageSizeNum, filteredRows.length);
 
-  const columns: IWuTableColumnDef<TextAiAnalysisRow>[] = [
-    {
-      accessorKey: 'value',
-      header: 'Value',
-      enableSorting: true,
-      cell: ({ row }) => <span className={styles.valueCell}>{row.original.value}</span>,
-    },
-    {
-      accessorKey: 'topic',
-      header: 'Topics',
-      enableSorting: true,
-      cell: ({ row }) => (
-        <span className={styles.topicCell}>
-          <span>{row.original.topic}</span>
-          {row.original.topicEmerging ? <TextAiEmergingBadge /> : null}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'subtopic',
-      header: 'Subtopics',
-      enableSorting: true,
-      cell: ({ row }) => (
-        <div className={styles.subtopicCell}>
-          <SubtopicPill label={row.original.subtopic} tone={row.original.subtopicTone} />
-          {row.original.subtopicEmerging ? <TextAiEmergingBadge /> : null}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'insight',
-      header: 'Insights',
-      cell: ({ row }) => <span className={styles.insightCell}>{row.original.insight}</span>,
-    },
-    {
-      accessorKey: 'tags',
-      header: 'Tags',
-      cell: ({ row }) => (
-        <span className={styles.tagsCell}>{row.original.tags.join(', ')}</span>
-      ),
-    },
-  ];
+  const columns = useMemo<IWuTableColumnDef<TextAiAnalysisRow>[]>(
+    () => [
+      {
+        accessorKey: "value",
+        header: "Responses",
+        enableSorting: true,
+        cell: ({ row }) => (
+          <span className={styles.valueCell}>{row.original.value}</span>
+        ),
+      },
+      {
+        accessorKey: "topic",
+        header: "Themes",
+        enableSorting: true,
+        cell: ({ row }) => (
+          <span className={styles.topicCell}>
+            <span>{row.original.topic}</span>
+            {row.original.topicEmerging ? <TextAiEmergingBadge /> : null}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "subtopic",
+        header: "Sub-themes",
+        enableSorting: true,
+        cell: ({ row }) => (
+          <div className={styles.subtopicCell}>
+            {s.highlightSentiment ? (
+              <SubtopicPill
+                label={row.original.subtopic}
+                tone={row.original.subtopicTone}
+              />
+            ) : (
+              <span>{row.original.subtopic}</span>
+            )}
+            {row.original.subtopicEmerging ? <TextAiEmergingBadge /> : null}
+          </div>
+        ),
+      },
+      {
+        accessorKey: "insight",
+        header: "Insights",
+        cell: ({ row }) => (
+          <span className={styles.insightCell}>{row.original.insight}</span>
+        ),
+      },
+      {
+        accessorKey: "tags",
+        header: "Tags",
+        cell: ({ row }) => (
+          <span className={styles.tagsCell}>
+            {row.original.tags.join(", ")}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "collectedOn",
+        header: "Collected on",
+        enableSorting: true,
+        cell: ({ row }) => <span>{row.original.collectedOn ?? "—"}</span>,
+      },
+    ],
+    [s.highlightSentiment],
+  );
+  const visibleColumns = useMemo(
+    () => s.columns.map((label) => columns[byColumn[label]]).filter(Boolean),
+    [s.columns, columns],
+  );
 
   if (!wick) {
     return (
@@ -141,9 +209,11 @@ export function TextAiAnalysisWidgetCard({
   return (
     <article className={styles.card}>
       <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
-        <h2 className={styles.cardTitle}>{widget.question}</h2>
+        <h2 className={styles.cardTitle}>{s.showName ? s.name : ""}</h2>
         <TextAiWidgetMenu
           widgetTitle={widget.question}
+          onOpenSettings={onOpenSettings}
+          preview={preview}
           topN={topN}
           onTopNChange={(nextTopN) => {
             setTopN(nextTopN);
@@ -176,7 +246,7 @@ export function TextAiAnalysisWidgetCard({
             Icon={<span className="wm-chevron-left" />}
           />
           <span className={styles.pageRange}>
-            {rangeStart} - {rangeEnd || pageSizeNum}
+            {rangeStart} - {rangeEnd}
           </span>
           <WuButton
             variant="iconOnly"
@@ -188,11 +258,15 @@ export function TextAiAnalysisWidgetCard({
           />
           <WuSelect
             data={PAGE_SIZE_OPTIONS}
-            accessorKey={{ value: 'value', label: 'label' }}
+            accessorKey={{ value: "value", label: "label" }}
             value={pageSize}
             onSelect={(option) => {
               if (!option) return;
-              setPageSize(option as (typeof PAGE_SIZE_OPTIONS)[number]);
+              if (settings)
+                onSettingsChange?.({
+                  pageSize: Number((option as { value: string }).value),
+                });
+              else setPageSize(option as (typeof PAGE_SIZE_OPTIONS)[number]);
               setPage(0);
             }}
             variant="outlined"
@@ -201,14 +275,20 @@ export function TextAiAnalysisWidgetCard({
         </div>
       </div>
 
-      <div className={styles.tableWrap}>
+      <div className={`${styles.tableWrap} ${s.wrap ? "" : styles.truncated}`}>
         <WuTable
           data={pageRows as unknown[]}
-          columns={columns as unknown as IWuTableColumnDef<unknown>[]}
+          columns={visibleColumns as unknown as IWuTableColumnDef<unknown>[]}
           sort={{ enabled: true }}
           filterText=""
         />
       </div>
+      {s.showBase && (
+        <p className={styles.baseNote}>
+          Matching analyzed responses: {filteredRows.length} of{" "}
+          {widget.rows.length}
+        </p>
+      )}
     </article>
   );
 }

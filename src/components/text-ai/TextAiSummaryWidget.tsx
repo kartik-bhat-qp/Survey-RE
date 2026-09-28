@@ -1,16 +1,13 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
+import { defaultTextAiWidgetSettings, type TextAiWidgetSettingsProps } from '@/data/text-ai-widget-settings';
 import dynamic from 'next/dynamic';
 import type {
   TextAiSummaryType,
   TextAiSummaryVariant,
   TextAiSummaryWidget,
 } from '@/data/mock-text-ai-summary-widget';
-import {
-  DEFAULT_TEXT_AI_WIDGET_TOP_N,
-  type TextAiWidgetTopN,
-} from '@/data/mock-text-ai-widget-settings';
 import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
 import styles from './TextAiSummaryWidget.module.css';
 
@@ -19,27 +16,25 @@ const WuSelect = dynamic(
   { ssr: false }
 );
 
-interface TextAiSummaryWidgetCardProps {
+interface TextAiSummaryWidgetCardProps extends TextAiWidgetSettingsProps {
   widget: TextAiSummaryWidget;
   onDelete?: () => void;
 }
 
 export function TextAiSummaryWidgetCard({
   widget,
-  onDelete,
+  onDelete, settings, onSettingsChange, onOpenSettings, preview,
 }: TextAiSummaryWidgetCardProps) {
   const reportBodyRef = useRef<HTMLDivElement>(null);
-  const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
+  const s=settings??defaultTextAiWidgetSettings('text-summary',widget.question);
   const defaultSummaryType =
     widget.summaryTypes.find((summaryType) => summaryType.isDefault) ?? widget.summaryTypes[0];
-  const [selectedSummaryType, setSelectedSummaryType] = useState<TextAiSummaryType>(
-    defaultSummaryType.id
-  );
+  const selectedSummaryType=s.summaryMode;
   const activeSummary =
     widget.summaryTypes.find((summaryType) => summaryType.id === selectedSummaryType) ??
     defaultSummaryType;
   function handleSummaryTypeChange(nextSummaryType: TextAiSummaryType): void {
-    setSelectedSummaryType(nextSummaryType);
+    onSettingsChange?.({summaryMode:nextSummaryType});
     reportBodyRef.current?.scrollTo({ top: 0 });
   }
 
@@ -47,7 +42,7 @@ export function TextAiSummaryWidgetCard({
     <article className={styles.card}>
       <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
         <div className={styles.cardHeaderMain}>
-          <h2 className={styles.cardTitle}>{widget.question}</h2>
+          <h2 className={styles.cardTitle}>{s.showName?s.name:''}</h2>
           <div className={styles.summaryTypeControl}>
             <WuSelect
               data={widget.summaryTypes}
@@ -65,21 +60,21 @@ export function TextAiSummaryWidgetCard({
         </div>
         <TextAiWidgetMenu
           widgetTitle={widget.question}
-          topN={topN}
-          onTopNChange={setTopN}
+          onOpenSettings={onOpenSettings}
+          preview={preview}
           onDelete={onDelete}
         />
       </header>
 
       <div
         ref={reportBodyRef}
-        className={styles.reportBody}
+        className={`${styles.reportBody} ${s.compact?styles.compact:''}`}
         role="region"
         aria-label={`${widget.question} ${activeSummary.label} report`}
         aria-live="polite"
         tabIndex={0}
       >
-        {activeSummary.sections.map((section) => (
+        {activeSummary.sections.filter(section=>/caveat|source/i.test(section.heading)||!s.hiddenSections.includes(section.heading)).map((section) => (
           <section className={styles.section} key={section.heading}>
             <h3 className={styles.sectionTitle}>{section.heading}</h3>
             {section.paragraphs.map((paragraph, index) => (

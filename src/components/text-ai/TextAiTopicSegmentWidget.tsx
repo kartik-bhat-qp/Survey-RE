@@ -1,19 +1,24 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
-import { StandardLoader } from '@/components/ui/StandardLoader';
-import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
-import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
-import { useWickUILib } from '@/components/ui/useWickUILib';
-import { TextAiSentimentResponsesModal } from '@/components/text-ai/TextAiSentimentResponsesModal';
+import { Fragment, useEffect, useMemo, useState } from "react";
+import {
+  defaultTextAiWidgetSettings,
+  selectTextAiItems,
+  type TextAiWidgetSettings,
+  type TextAiWidgetSettingsProps,
+} from "@/data/text-ai-widget-settings";
+import { useWuShowToast } from "@npm-questionpro/wick-ui-lib";
+import { StandardLoader } from "@/components/ui/StandardLoader";
+import { TextAiEmergingBadge } from "@/components/text-ai/TextAiEmergingBadge";
+import { TextAiWidgetMenu } from "@/components/text-ai/TextAiWidgetMenu";
+import { useWickUILib } from "@/components/ui/useWickUILib";
+import { TextAiSentimentResponsesModal } from "@/components/text-ai/TextAiSentimentResponsesModal";
 import {
   TEXT_AI_SEGMENT_LABELS,
   type TextAiSegmentKey,
   type TextAiVerbatimModalContext,
-} from '@/data/mock-text-ai-sentiment-verbatims';
+} from "@/data/mock-text-ai-sentiment-verbatims";
 import {
-  formatTopicSegmentPercentage,
   GENDER_COLUMN_LABELS,
   GENDER_COMPARISON_LETTERS,
   getGenderSignificanceMarkers,
@@ -26,24 +31,26 @@ import {
   type TextAiTopicSegmentRow,
   type TextAiTopicSegmentWidget,
   type TextAiGenderKey,
-} from '@/data/mock-text-ai-topic-segment-widget';
+} from "@/data/mock-text-ai-topic-segment-widget";
 import {
   DEFAULT_TEXT_AI_WIDGET_TOP_N,
   limitTextAiWidgetItems,
   type TextAiWidgetTopN,
-} from '@/data/mock-text-ai-widget-settings';
-import styles from './TextAiTopicSegmentWidget.module.css';
+} from "@/data/mock-text-ai-widget-settings";
+import styles from "./TextAiTopicSegmentWidget.module.css";
 
-interface TextAiTopicSegmentWidgetProps {
+interface TextAiTopicSegmentWidgetProps extends TextAiWidgetSettingsProps {
   widget: TextAiTopicSegmentWidget;
   onDelete?: () => void;
 }
 
-const TEXT_AI_STAT_TEST_SEGMENTS: TextAiSegmentKey[] = [...TEXT_AI_TOPIC_SEGMENT_KEYS];
+const TEXT_AI_STAT_TEST_SEGMENTS: TextAiSegmentKey[] = [
+  ...TEXT_AI_TOPIC_SEGMENT_KEYS,
+];
 
 function resolveVisibleSegmentKeys(
   widget: TextAiTopicSegmentWidget,
-  showAllForStatTesting: boolean
+  showAllForStatTesting: boolean,
 ): TextAiTopicSegmentKey[] {
   if (showAllForStatTesting) return TEXT_AI_TOPIC_SEGMENT_KEYS;
   return widget.visibleSegmentKeys?.length
@@ -59,8 +66,10 @@ function SegmentCell({
   showChiSquare,
   dimmed,
   onCountClick,
+  settings,
 }: {
   cell: TextAiTopicSegmentCell;
+  settings: TextAiWidgetSettings;
   barClassName: string;
   maxPercentage: number;
   significanceMarkers?: { higherThan: string; lowerThan: string };
@@ -72,49 +81,66 @@ function SegmentCell({
   const hasMarkers =
     showChiSquare &&
     significanceMarkers &&
-    (significanceMarkers.higherThan.length > 0 || significanceMarkers.lowerThan.length > 0);
+    (significanceMarkers.higherThan.length > 0 ||
+      significanceMarkers.lowerThan.length > 0);
 
   return (
-    <div className={`${styles.segmentCell} ${dimmed ? styles.segmentCellDisabled : ''}`}>
-      <div className={styles.metricRow}>
-        {onCountClick ? (
+    <div
+      className={`${styles.segmentCell} ${dimmed ? styles.segmentCellDisabled : ""}`}
+    >
+      <div
+        className={styles.metricRow}
+        style={{ visibility: settings.labels ? undefined : "hidden" }}
+      >
+        {settings.metric !== "Percentage" &&
+          (onCountClick ? (
+            <button
+              type="button"
+              className={styles.countBtn}
+              onClick={onCountClick}
+              aria-label={`View ${cell.count.toLocaleString()} responses`}
+            >
+              {cell.count.toLocaleString()}
+            </button>
+          ) : (
+            <span className={styles.count}>{cell.count.toLocaleString()}</span>
+          ))}
+        {settings.metric !== "Count" && (
           <button
             type="button"
-            className={styles.countBtn}
+            className={styles.percentage}
             onClick={onCountClick}
-            aria-label={`View ${cell.count.toLocaleString()} responses`}
+            aria-label={`View ${cell.count.toLocaleString()} responses (${cell.percentage.toFixed(settings.precision)}%)`}
           >
-            {cell.count.toLocaleString()}
+            {cell.percentage.toFixed(settings.precision)}%
+            {hasMarkers ? (
+              <span className={styles.significanceMarkers}>
+                {significanceMarkers.higherThan ? (
+                  <sup
+                    className={styles.comparisonHigher}
+                    title={`Significantly higher than ${significanceMarkers.higherThan}`}
+                  >
+                    {significanceMarkers.higherThan}
+                  </sup>
+                ) : null}
+                {significanceMarkers.lowerThan ? (
+                  <sup
+                    className={styles.comparisonLower}
+                    title={`Significantly lower than ${significanceMarkers.lowerThan}`}
+                  >
+                    {significanceMarkers.lowerThan}
+                  </sup>
+                ) : null}
+              </span>
+            ) : null}
           </button>
-        ) : (
-          <span className={styles.count}>{cell.count.toLocaleString()}</span>
         )}
-        <span className={styles.percentage}>
-          {formatTopicSegmentPercentage(cell.percentage)}
-          {hasMarkers ? (
-            <span className={styles.significanceMarkers}>
-              {significanceMarkers.higherThan ? (
-                <sup
-                  className={styles.comparisonHigher}
-                  title={`Significantly higher than ${significanceMarkers.higherThan}`}
-                >
-                  {significanceMarkers.higherThan}
-                </sup>
-              ) : null}
-              {significanceMarkers.lowerThan ? (
-                <sup
-                  className={styles.comparisonLower}
-                  title={`Significantly lower than ${significanceMarkers.lowerThan}`}
-                >
-                  {significanceMarkers.lowerThan}
-                </sup>
-              ) : null}
-            </span>
-          ) : null}
-        </span>
       </div>
       <div className={styles.barTrack} aria-hidden>
-        <div className={`${styles.barFill} ${barClassName}`} style={{ width: barWidth }} />
+        <div
+          className={`${styles.barFill} ${barClassName}`}
+          style={{ width: barWidth }}
+        />
       </div>
     </div>
   );
@@ -131,8 +157,10 @@ function TopicSegmentRow({
   activeSegments,
   visibleSegmentKeys,
   onCountClick,
+  settings,
 }: {
   row: TextAiTopicSegmentRow;
+  settings: TextAiWidgetSettings;
   maxPercentage: number;
   isExpanded?: boolean;
   onToggle?: () => void;
@@ -142,18 +170,24 @@ function TopicSegmentRow({
   activeSegments: ReadonlySet<TextAiSegmentKey>;
   visibleSegmentKeys: readonly TextAiTopicSegmentKey[];
   parentTopicLabel?: string | null;
-  onCountClick?: (segment: TextAiSegmentKey, cell: TextAiTopicSegmentCell) => void;
+  onCountClick?: (
+    segment: TextAiSegmentKey,
+    cell: TextAiTopicSegmentCell,
+  ) => void;
 }) {
-  function handleCountClick(segment: TextAiSegmentKey, cell: TextAiTopicSegmentCell) {
+  function handleCountClick(
+    segment: TextAiSegmentKey,
+    cell: TextAiTopicSegmentCell,
+  ) {
     if (cell.count <= 0) return;
     onCountClick?.(segment, cell);
   }
   const hasSubtopics = topicRowHasSubtopics(row);
   const showExpandControl = isExpandable && hasSubtopics;
   const { genderChiSquare: chi } = row;
-  const showOverall = visibleSegmentKeys.includes('overall');
+  const showOverall = visibleSegmentKeys.includes("overall");
   const visibleGenderKeys = TEXT_AI_GENDER_KEYS.filter((key) =>
-    visibleSegmentKeys.includes(key)
+    visibleSegmentKeys.includes(key),
   );
 
   return (
@@ -170,13 +204,18 @@ function TopicSegmentRow({
               <span className={styles.topicLeading}>
                 <span
                   className={`wm-chevron-right ${styles.topicChevron} ${
-                    isExpanded ? styles.topicChevronExpanded : ''
+                    isExpanded ? styles.topicChevronExpanded : ""
                   }`}
                   aria-hidden
                 />
               </span>
               <span className={styles.topicLabel}>
-                <span>{row.topic}</span>
+                <span>
+                  {settings.showParent && row.parentTopic
+                    ? `${row.parentTopic} / `
+                    : ""}
+                  {row.topic}
+                </span>
                 {row.emerging ? <TextAiEmergingBadge /> : null}
               </span>
             </span>
@@ -184,8 +223,15 @@ function TopicSegmentRow({
         ) : (
           <span className={styles.topicRowInner}>
             <span className={styles.topicLeading} aria-hidden />
-            <span className={isSubtopic ? styles.subtopicLabel : styles.topicLabel}>
-              <span>{row.topic}</span>
+            <span
+              className={isSubtopic ? styles.subtopicLabel : styles.topicLabel}
+            >
+              <span>
+                {settings.showParent && row.parentTopic
+                  ? `${row.parentTopic} / `
+                  : ""}
+                {row.topic}
+              </span>
               {row.emerging ? <TextAiEmergingBadge /> : null}
             </span>
           </span>
@@ -194,12 +240,15 @@ function TopicSegmentRow({
       {showOverall ? (
         <td>
           <SegmentCell
+            settings={settings}
             cell={row.overall}
             barClassName={styles.barOverall}
             maxPercentage={maxPercentage}
-            dimmed={showChiSquare && !activeSegments.has('overall')}
+            dimmed={showChiSquare && !activeSegments.has("overall")}
             onCountClick={
-              onCountClick ? () => handleCountClick('overall', row.overall) : undefined
+              onCountClick
+                ? () => handleCountClick("overall", row.overall)
+                : undefined
             }
           />
         </td>
@@ -209,20 +258,22 @@ function TopicSegmentRow({
         const comparisons = enabled
           ? chi.pairwiseComparisons.filter(
               (pair) =>
-                activeSegments.has(pair.groupA) && activeSegments.has(pair.groupB)
+                activeSegments.has(pair.groupA) &&
+                activeSegments.has(pair.groupB),
             )
           : [];
         const markers = enabled
           ? getGenderSignificanceMarkers(genderKey, row, comparisons)
-          : { higherThan: '', lowerThan: '' };
+          : { higherThan: "", lowerThan: "" };
         return (
           <td key={genderKey}>
             <SegmentCell
+              settings={settings}
               cell={row[genderKey]}
               barClassName={
-                genderKey === 'female'
+                genderKey === "female"
                   ? styles.barFemale
-                  : genderKey === 'otherGender'
+                  : genderKey === "otherGender"
                     ? styles.barOtherGender
                     : styles.barMale
               }
@@ -231,7 +282,9 @@ function TopicSegmentRow({
               showChiSquare={showChiSquare && enabled}
               dimmed={showChiSquare && !enabled}
               onCountClick={
-                onCountClick ? () => handleCountClick(genderKey, row[genderKey]) : undefined
+                onCountClick
+                  ? () => handleCountClick(genderKey, row[genderKey])
+                  : undefined
               }
             />
           </td>
@@ -250,8 +303,10 @@ function TopicSegmentGroup({
   activeSegments,
   visibleSegmentKeys,
   onCountClick,
+  settings,
 }: {
   row: TextAiTopicSegmentRow;
+  settings: TextAiWidgetSettings;
   maxPercentage: number;
   expandedRowIds: Set<string>;
   onToggle: (rowId: string) => void;
@@ -262,7 +317,7 @@ function TopicSegmentGroup({
     row: TextAiTopicSegmentRow,
     parentTopicLabel: string | null,
     segment: TextAiSegmentKey,
-    cell: TextAiTopicSegmentCell
+    cell: TextAiTopicSegmentCell,
   ) => void;
 }) {
   const isExpanded = expandedRowIds.has(row.id);
@@ -270,6 +325,7 @@ function TopicSegmentGroup({
   return (
     <>
       <TopicSegmentRow
+        settings={settings}
         row={row}
         maxPercentage={maxPercentage}
         isExpanded={isExpanded}
@@ -283,6 +339,7 @@ function TopicSegmentGroup({
       {isExpanded &&
         row.subtopics?.map((subtopic) => (
           <TopicSegmentRow
+            settings={settings}
             key={subtopic.id}
             row={subtopic}
             maxPercentage={maxPercentage}
@@ -291,7 +348,9 @@ function TopicSegmentGroup({
             showChiSquare={showChiSquare}
             activeSegments={activeSegments}
             visibleSegmentKeys={visibleSegmentKeys}
-            onCountClick={(segment, cell) => onCountClick(subtopic, row.topic, segment, cell)}
+            onCountClick={(segment, cell) =>
+              onCountClick(subtopic, row.topic, segment, cell)
+            }
           />
         ))}
     </>
@@ -302,7 +361,9 @@ function GenderColumnHeader({ genderKey }: { genderKey: TextAiGenderKey }) {
   return (
     <>
       {GENDER_COLUMN_LABELS[genderKey]}
-      <sup className={styles.headerLetter}>{GENDER_COMPARISON_LETTERS[genderKey]}</sup>
+      <sup className={styles.headerLetter}>
+        {GENDER_COMPARISON_LETTERS[genderKey]}
+      </sup>
     </>
   );
 }
@@ -310,25 +371,33 @@ function GenderColumnHeader({ genderKey }: { genderKey: TextAiGenderKey }) {
 export function TextAiTopicSegmentWidgetCard({
   widget,
   onDelete,
+  settings,
+  onSettingsChange,
+  onOpenSettings,
+  preview,
 }: TextAiTopicSegmentWidgetProps) {
+  const s =
+    settings ??
+    defaultTextAiWidgetSettings("comparative-chart", widget.question);
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
-  const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
+  const [topN, setTopN] = useState<TextAiWidgetTopN>(
+    DEFAULT_TEXT_AI_WIDGET_TOP_N,
+  );
   const [expandedRowIds, setExpandedRowIds] = useState<Set<string>>(new Set());
   const [statTestingApplied, setStatTestingApplied] = useState(false);
   const [activeSegments, setActiveSegments] = useState<Set<TextAiSegmentKey>>(
-    () => new Set(TEXT_AI_STAT_TEST_SEGMENTS)
+    () => new Set(TEXT_AI_STAT_TEST_SEGMENTS),
   );
   const [verbatimModalOpen, setVerbatimModalOpen] = useState(false);
-  const [verbatimContext, setVerbatimContext] = useState<TextAiVerbatimModalContext | null>(
-    null
-  );
+  const [verbatimContext, setVerbatimContext] =
+    useState<TextAiVerbatimModalContext | null>(null);
 
   function openVerbatimModal(
     row: TextAiTopicSegmentRow,
     parentTopicLabel: string | null,
     segment: TextAiSegmentKey,
-    cell: TextAiTopicSegmentCell
+    cell: TextAiTopicSegmentCell,
   ) {
     setVerbatimContext({
       rowId: row.id,
@@ -341,25 +410,55 @@ export function TextAiTopicSegmentWidgetCard({
     setVerbatimModalOpen(true);
   }
 
-  const showChiSquare = statTestingApplied;
-  const visibleSegmentKeys = resolveVisibleSegmentKeys(widget, showChiSquare);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setExpandedRowIds(
+      new Set(s.expanded ? widget.rows.map((row) => row.id) : []),
+    );
+  }, [s.expanded, widget.rows]);
+  const showChiSquare = settings
+    ? s.statTesting && s.segments.length >= 2
+    : statTestingApplied;
+  const visibleSegmentKeys: TextAiTopicSegmentKey[] = settings
+    ? [
+        ...(s.showOverall ? ["overall" as const] : []),
+        ...(s.segments as TextAiTopicSegmentKey[]),
+      ]
+    : resolveVisibleSegmentKeys(widget, showChiSquare);
   const visibleGenderKeys = TEXT_AI_GENDER_KEYS.filter((key) =>
-    visibleSegmentKeys.includes(key)
+    visibleSegmentKeys.includes(key),
   );
-  const showOverall = visibleSegmentKeys.includes('overall');
+  const showOverall = visibleSegmentKeys.includes("overall");
   const overallOnly =
-    visibleSegmentKeys.length === 1 && visibleSegmentKeys[0] === 'overall';
+    visibleSegmentKeys.length === 1 && visibleSegmentKeys[0] === "overall";
 
-  const visibleRows = useMemo(
-    () => limitTextAiWidgetItems(widget.rows, topN),
-    [widget.rows, topN]
-  );
+  const visibleRows = useMemo(() => {
+    const rows = settings
+      ? selectTextAiItems(
+          widget.rows,
+          s,
+          (row) => row.topic,
+          (row) => row.overall.count,
+        )
+      : limitTextAiWidgetItems(widget.rows, topN);
+    return s.grouped
+      ? [...rows].sort((a, b) =>
+          (a.parentTopic ?? "").localeCompare(b.parentTopic ?? ""),
+        )
+      : rows;
+  }, [widget.rows, topN, settings, s]);
 
   const maxPercentage = useMemo(
     () => getTopicSegmentMaxPercentage(visibleRows, visibleSegmentKeys),
     // visibleSegmentKeys is derived from widget.visibleSegmentKeys + showChiSquare
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [visibleRows, widget.visibleSegmentKeys, showChiSquare]
+    [
+      visibleRows,
+      widget.visibleSegmentKeys,
+      showChiSquare,
+      s.segments,
+      s.showOverall,
+    ],
   );
 
   function toggleRow(rowId: string) {
@@ -383,13 +482,23 @@ export function TextAiTopicSegmentWidgetCard({
   }
 
   function toggleStatTesting(): void {
+    if (settings) {
+      onSettingsChange?.({
+        statTesting: !showChiSquare,
+        segments:
+          s.segments.length >= 2
+            ? s.segments
+            : ["male", "female", "otherGender"],
+      });
+      return;
+    }
     setStatTestingApplied((isApplied) => {
       const nextApplied = !isApplied;
       if (nextApplied) {
         setActiveSegments(new Set(TEXT_AI_STAT_TEST_SEGMENTS));
-        showToast({ message: 'Stat testing applied', variant: 'success' });
+        showToast({ message: "Stat testing applied", variant: "success" });
       } else {
-        showToast({ message: 'Stat testing disabled', variant: 'success' });
+        showToast({ message: "Stat testing disabled", variant: "success" });
       }
       return nextApplied;
     });
@@ -408,18 +517,20 @@ export function TextAiTopicSegmentWidgetCard({
     <article className={styles.card}>
       <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
         <div className={styles.cardHeaderMain}>
-          <h2 className={styles.cardTitle}>{widget.question}</h2>
+          <h2 className={styles.cardTitle}>{s.showName ? s.name : ""}</h2>
           <button
             type="button"
-            className={`${styles.chiToggle} ${showChiSquare ? styles.chiToggleActive : ''}`}
+            className={`${styles.chiToggle} ${showChiSquare ? styles.chiToggleActive : ""}`}
             onClick={toggleStatTesting}
             aria-pressed={showChiSquare}
           >
-            {statTestingApplied ? 'Disable Stat Testing' : 'Stat testing'}
+            {showChiSquare ? "Disable Stat Testing" : "Stat testing"}
           </button>
         </div>
         <TextAiWidgetMenu
           widgetTitle={widget.question}
+          onOpenSettings={onOpenSettings}
+          preview={preview}
           topN={topN}
           onTopNChange={setTopN}
           onDelete={onDelete}
@@ -428,7 +539,7 @@ export function TextAiTopicSegmentWidgetCard({
 
       <div className={styles.tableWrap}>
         <table
-          className={`${styles.table} ${overallOnly ? styles.tableOverallOnly : ''}`}
+          className={`${styles.table} ${overallOnly ? styles.tableOverallOnly : ""}`}
         >
           <thead>
             <tr>
@@ -436,7 +547,7 @@ export function TextAiTopicSegmentWidgetCard({
               {showOverall ? (
                 <th
                   className={
-                    showChiSquare && !activeSegments.has('overall')
+                    showChiSquare && !activeSegments.has("overall")
                       ? styles.columnHeaderDisabled
                       : undefined
                   }
@@ -446,8 +557,10 @@ export function TextAiTopicSegmentWidgetCard({
                       <input
                         type="checkbox"
                         className={styles.headerCheckbox}
-                        checked={activeSegments.has('overall')}
-                        onChange={(e) => toggleSegment('overall', e.target.checked)}
+                        checked={activeSegments.has("overall")}
+                        onChange={(e) =>
+                          toggleSegment("overall", e.target.checked)
+                        }
                         aria-label="Include Overall in stat testing"
                       />
                     ) : null}
@@ -461,7 +574,9 @@ export function TextAiTopicSegmentWidgetCard({
                   <th
                     key={genderKey}
                     className={
-                      showChiSquare && !enabled ? styles.columnHeaderDisabled : undefined
+                      showChiSquare && !enabled
+                        ? styles.columnHeaderDisabled
+                        : undefined
                     }
                   >
                     <span className={styles.headerWithToggle}>
@@ -470,7 +585,9 @@ export function TextAiTopicSegmentWidgetCard({
                           type="checkbox"
                           className={styles.headerCheckbox}
                           checked={enabled}
-                          onChange={(e) => toggleSegment(genderKey, e.target.checked)}
+                          onChange={(e) =>
+                            toggleSegment(genderKey, e.target.checked)
+                          }
                           aria-label={`Include ${GENDER_COLUMN_LABELS[genderKey]} in stat testing`}
                         />
                       ) : null}
@@ -484,36 +601,70 @@ export function TextAiTopicSegmentWidgetCard({
             </tr>
           </thead>
           <tbody>
-            {visibleRows.map((row) => (
-              <TopicSegmentGroup
-                key={row.id}
-                row={row}
-                maxPercentage={maxPercentage}
-                expandedRowIds={expandedRowIds}
-                onToggle={toggleRow}
-                showChiSquare={showChiSquare}
-                activeSegments={activeSegments}
-                visibleSegmentKeys={visibleSegmentKeys}
-                onCountClick={openVerbatimModal}
-              />
+            {!visibleRows.length && (
+              <tr>
+                <td colSpan={1 + visibleSegmentKeys.length}>
+                  No matching categories.
+                </td>
+              </tr>
+            )}
+            {visibleRows.map((row, index) => (
+              <Fragment key={row.id}>
+                {s.grouped &&
+                  row.parentTopic &&
+                  (index === 0 ||
+                    visibleRows[index - 1].parentTopic !== row.parentTopic) && (
+                    <tr>
+                      <th
+                        colSpan={visibleSegmentKeys.length + 1}
+                        className={styles.parentHeading}
+                      >
+                        {row.parentTopic}
+                      </th>
+                    </tr>
+                  )}
+                <TopicSegmentGroup
+                  settings={s}
+                  key={row.id}
+                  row={row}
+                  maxPercentage={maxPercentage}
+                  expandedRowIds={expandedRowIds}
+                  onToggle={toggleRow}
+                  showChiSquare={showChiSquare}
+                  activeSegments={
+                    new Set(
+                      [...activeSegments].filter((key) =>
+                        visibleSegmentKeys.includes(key),
+                      ),
+                    )
+                  }
+                  visibleSegmentKeys={visibleSegmentKeys}
+                  onCountClick={openVerbatimModal}
+                />
+              </Fragment>
             ))}
           </tbody>
         </table>
       </div>
 
+      {settings && (
+        <p className={styles.baseNote}>
+          Percentages retain the source response base; categories may overlap.
+        </p>
+      )}
       {showChiSquare ? (
         <div className={styles.chiLegend} aria-label="Stat testing note">
           <p className={styles.chiLegendTitle}>Stat testing note</p>
           <p className={styles.chiLegendText}>
-            Superscript letters identify the comparison columns: Male <sup>a</sup>,
-            Female <sup>b</sup>, and Other gender <sup>c</sup>. Green letters indicate a
-            significantly higher value than the referenced column; red letters indicate a
-            significantly lower value.
+            Superscript letters identify the comparison columns: Male{" "}
+            <sup>a</sup>, Female <sup>b</sup>, and Other gender <sup>c</sup>.
+            Green letters indicate a significantly higher value than the
+            referenced column; red letters indicate a significantly lower value.
           </p>
           <p className={styles.chiLegendText}>
-            Uncheck a column to exclude it from stat testing. Excluded columns are
-            dimmed and their pairwise significance markers are hidden until the column is
-            selected again.
+            Uncheck a column to exclude it from stat testing. Excluded columns
+            are dimmed and their pairwise significance markers are hidden until
+            the column is selected again.
           </p>
           <p className={`${styles.chiLegendText} ${styles.chiLegendNote}`}>
             Bases below 30 are not included in stat testing.

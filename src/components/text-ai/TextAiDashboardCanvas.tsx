@@ -1,6 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactElement } from 'react';
+import { TextAiConfiguredWidget } from './TextAiConfiguredWidget';
+import { EMPTY_TEXT_AI_FILTER, type TextAiResponseFilter, type TextAiSettingsKind, type TextAiWidgetSettingsProps } from '@/data/text-ai-widget-settings';
+import { TEXT_AI_SUBTHEME_STACKBAR_ROWS } from '@/data/mock-text-ai-subtheme-stackbar';
 import type { ReactNode } from 'react';
 import ReactGridLayout, {
   WidthProvider,
@@ -71,6 +74,7 @@ interface TextAiCanvasWidget {
 export interface TextAiAddedWidget { id: string; chartType: TextAiWidgetChartTypeId; question: string; }
 
 interface TextAiDashboardCanvasProps {
+  dashboardFilter?: TextAiResponseFilter;
   addedWidgets?: TextAiAddedWidget[];
   dashboardId: number;
   design?: DashboardDesign;
@@ -328,6 +332,7 @@ function filterAnalysisWidgetsForDashboard(
 
 export function TextAiDashboardCanvas({
   dashboardId,
+  dashboardFilter = EMPTY_TEXT_AI_FILTER,
   design = DEFAULT_DASHBOARD_DESIGN,
   selectedQuestion,
   questionIndex,
@@ -341,6 +346,13 @@ export function TextAiDashboardCanvas({
   const isMobile = useIsMobile();
   const [isPositioning, setIsPositioning] = useState(false);
   const [removedWidgetIds, setRemovedWidgetIds] = useState<Set<string>>(() => new Set());
+  const [deleteError,setDeleteError]=useState('');
+  useEffect(()=>{
+    try{const ids=JSON.parse(localStorage.getItem(`text-ai-removed-widgets:${dashboardId}`)??'[]');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if(Array.isArray(ids))setRemovedWidgetIds(new Set(ids.filter((v:unknown)=>typeof v==='string')));
+    }catch{/* Ignore corrupt removal records. */}
+  },[dashboardId]);
   const isApproved = (name: string, candidate: boolean) =>
     !candidate || themePreferences.approvedEmergingNames.includes(name);
   const isEmerging = (name: string, candidate: boolean | undefined) =>
@@ -390,11 +402,9 @@ export function TextAiDashboardCanvas({
   );
 
   function removeWidget(widgetId: string): void {
-    setRemovedWidgetIds((prev) => {
-      const next = new Set(prev);
-      next.add(widgetId);
-      return next;
-    });
+    const next=new Set(removedWidgetIds);next.add(widgetId);
+    try{localStorage.setItem(`text-ai-removed-widgets:${dashboardId}`,JSON.stringify([...next]));setRemovedWidgetIds(next);setDeleteError('');}
+    catch{setDeleteError('The widget could not be deleted because browser storage is unavailable.');}
   }
 
   function renderAddedWidget(widget: TextAiAddedWidget): TextAiCanvasWidget {
@@ -405,7 +415,7 @@ export function TextAiDashboardCanvas({
     if (widget.chartType === 'subtheme-stacked-bar') return { id: widget.id, kind: 'subtheme-stackbar', content: <TextAiSubthemeStackbarWidget question={question} themePreferences={themePreferences} onDelete={onDelete} /> };
     if (widget.chartType === 'subtheme-comparative-chart') {
       const base = visibleTopicSegmentWidgets[0];
-      const rows = base.rows.flatMap(row => row.subtopics ?? []).map(row => ({ ...row, subtopics: undefined }));
+      const rows = base.rows.flatMap(parent => (parent.subtopics ?? []).map(row => ({ ...row, parentTopic: parent.topic, subtopics: undefined })));
       return { id: widget.id, kind: 'subtheme-comparative', content: <TextAiTopicSegmentWidgetCard widget={{ ...base, id: widget.id, question, rows, visibleSegmentKeys: ['overall'] }} onDelete={onDelete} /> };
     }
     return { id: widget.id, kind: 'overview', content: <TextAiOverviewWidget kind={widget.chartType as TextAiOverviewKind} question={question} themePreferences={themePreferences} onDelete={onDelete} /> };
@@ -511,7 +521,19 @@ export function TextAiDashboardCanvas({
       };
     }),
   ];
-  const canvasWidgets = allCanvasWidgets.filter(
+  function configureWidget(entry: TextAiCanvasWidget): TextAiCanvasWidget {
+    if(entry.kind==='kpi-by-theme'||entry.kind==='subtheme-trend') return entry;
+    const element=entry.content as ReactElement<TextAiWidgetSettingsProps & {kind?:TextAiOverviewKind;question?:string;widget?:TextAiTopicSegmentWidget & TextAiSummaryWidget}>;
+    const kind:TextAiSettingsKind=entry.kind==='overview'?element.props.kind! : entry.kind==='analysis'?'text-viewer':entry.kind==='summary'?'text-summary':entry.kind==='subtheme-stackbar'?'subtheme-stacked-bar':entry.kind==='subtheme-comparative'?'subtheme-comparative-chart':'comparative-chart';
+    const title=element.props.question??element.props.widget?.question??selectedQuestion.text;
+    const rows=element.props.widget?.rows??[];
+    const stackRows=TEXT_AI_SUBTHEME_STACKBAR_ROWS.filter(row=>isApproved(row.label,Boolean(row.emerging)));
+    const items=kind.includes('comparative')?rows.map(row=>({id:row.id,label:row.topic})):stackRows.map(row=>({id:row.id,label:row.label}));
+    const subthemes=stackRows.flatMap(parent=>parent.subthemes.filter(row=>isApproved(row.label,Boolean(parent.emerging||row.emerging))).map(row=>({id:row.id,label:`${parent.label} / ${row.label}`,parentId:parent.id})));
+    const identity=addedWidgets.some(w=>w.id===entry.id)||visibleAddedTopicSegmentWidgets.some(w=>`topic-segment-${w.id}`===entry.id)?entry.id:`${entry.id}:${selectedQuestion.id}`;
+    return {...entry,content:<TextAiConfiguredWidget key={identity} dashboardId={dashboardId} widgetId={identity} kind={kind} title={title} design={design} dashboardFilter={dashboardFilter} items={items} parents={stackRows.map(row=>({id:row.id,label:row.label}))} subthemes={subthemes} sections={[...new Set(element.props.widget?.summaryTypes?.flatMap(v=>v.sections.map(section=>section.heading))??[])]}>{element}</TextAiConfiguredWidget>};
+  }
+  const canvasWidgets = allCanvasWidgets.map(configureWidget).filter(
     (widget) => !removedWidgetIds.has(widget.id)
   ).sort((a, b) => Number(b.kind === 'topic-segment') - Number(a.kind === 'topic-segment'));
   const canvasWidgetIds = canvasWidgets.map((widget) => widget.id).join('|');
@@ -558,6 +580,7 @@ export function TextAiDashboardCanvas({
   if (isMobile) {
     return (
       <div className={styles.canvas} style={designStyle} data-dashboard-theme={design.theme}>
+        {deleteError&&<p role="alert">{deleteError}</p>}
         <div className={styles.mobileWidgetStack}>
           {canvasWidgets.map((widget) => (
             <div className={styles.mobileWidget} key={widget.id}>
@@ -575,6 +598,7 @@ export function TextAiDashboardCanvas({
       style={designStyle}
       data-dashboard-theme={design.theme}
     >
+      {deleteError&&<p role="alert">{deleteError}</p>}
       <div className={styles.layoutStage}>
         <div className={styles.gridGuide} aria-hidden>
           {Array.from({ length: TEXT_AI_GRID_GUIDE_CELL_COUNT }, (_, index) => (

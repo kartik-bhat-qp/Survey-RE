@@ -2,6 +2,7 @@
 import type { TextAiAddedWidget } from '@/components/text-ai/TextAiDashboardCanvas';
 
 import { use, useEffect, useState } from 'react';
+import { EMPTY_TEXT_AI_FILTER, type TextAiResponseFilter } from '@/data/text-ai-widget-settings';
 import Link from 'next/link';
 import { DEFAULT_DASHBOARD_DESIGN, getTextAiDashboardDesign, saveTextAiDashboardDesign, type DashboardDesign } from '@/data/dashboard-design';
 import { useRouter } from 'next/navigation';
@@ -53,6 +54,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const wick = useWickUILib();
   const dashboard = getTextAiDashboardById(numericId);
   const initialQuestions = resolveDashboardQuestions(numericId, dashboard?.questions);
+  const [responseFilter,setResponseFilter]=useState<TextAiResponseFilter>({...EMPTY_TEXT_AI_FILTER});
   const [name, setName] = useState(dashboard?.name ?? 'Untitled');
   const [availableQuestions, setAvailableQuestions] =
     useState<TextAiDashboardQuestion[]>(initialQuestions);
@@ -86,6 +88,29 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const [addedSubthemeTrendWidgets, setAddedSubthemeTrendWidgets] = useState<
     TextAiSubthemeTrendWidgetInstance[]
   >([]);
+  const [collectionReady,setCollectionReady]=useState(false);
+  const [collectionError,setCollectionError]=useState('');
+  useEffect(()=>{
+    try {
+      const saved=JSON.parse(localStorage.getItem(`text-ai-widget-collection:v1:${numericId}`)??'null');
+      if(saved&&typeof saved==='object') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if(Array.isArray(saved.widgets))setAddedWidgets(saved.widgets.filter((v:TextAiAddedWidget)=>v&&typeof v.id==='string'&&typeof v.question==='string'&&['gauge','theme-stacked-bar','subtheme-stacked-bar','bubble-chart','text-viewer','trend-line','subtheme-comparative-chart','text-summary'].includes(v.chartType)));
+        if(Array.isArray(saved.comparisons))setAddedTopicSegmentWidgets(saved.comparisons.filter((v:{id:string;question:string})=>v&&typeof v.id==='string'&&typeof v.question==='string').map((v:{id:string;question:string})=>({...createTextAiComparativeChartWidget(v.question),id:v.id})));
+        if(Array.isArray(saved.questions))setAvailableQuestions(saved.questions.filter((v:TextAiDashboardQuestion)=>v&&typeof v.id==='string'&&typeof v.text==='string'));
+        if(saved.selected&&typeof saved.selected.id==='string'&&typeof saved.selected.text==='string')setSelectedQuestion(saved.selected);
+      }
+    } catch { /* Invalid collection keeps the existing default dashboard. */ }
+    setCollectionReady(true);
+  },[numericId]);
+  useEffect(()=>{
+    if(!collectionReady)return;
+    try {localStorage.setItem(`text-ai-widget-collection:v1:${numericId}`,JSON.stringify({widgets:addedWidgets,comparisons:addedTopicSegmentWidgets.map(({id,question})=>({id,question})),questions:availableQuestions,selected:selectedQuestion}));}
+    catch {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCollectionError('New widgets could not be saved in this browser. Keep this page open to retain them.');
+    }
+  },[numericId,collectionReady,addedWidgets,addedTopicSegmentWidgets,availableQuestions,selectedQuestion]);
   const [themePreferences, setThemePreferences] = useState<TextAiThemePreferences>({
     approvedEmergingNames: [],
     emergingApprovedAtByName: {},
@@ -153,7 +178,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     question: TextAiAnalysisQuestion,
     chartTypeId: TextAiWidgetChartTypeId
   ): void {
-    const dashboardQuestion: TextAiDashboardQuestion = {
+    const dashboardQuestion: TextAiDashboardQuestion = availableQuestions.find(entry=>entry.text===question.text) ?? {
       id: `dashboard-${numericId}-${question.code}-${Date.now()}`,
       text: question.text,
       creditsUsed: 880,
@@ -202,6 +227,8 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     <div className="flex flex-col h-full min-h-0">
       <TextAiDashboardToolbar
         key={numericId}
+        responseFilter={responseFilter}
+        onResponseFilterChange={setResponseFilter}
         name={name}
         onNameChange={setName}
         onAddWidget={() => setAddWidgetOpen(true)}
@@ -216,8 +243,10 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         processedResponseIds={processedResponseIds}
         onProcessResponses={handleProcessResponses}
       />
+      {collectionError&&<p role="alert">{collectionError}</p>}
       <TextAiDashboardCanvas
         dashboardId={numericId}
+        dashboardFilter={responseFilter}
         selectedQuestion={selectedQuestion}
         questionIndex={availableQuestions.findIndex(
           (question) => question.id === selectedQuestion.id

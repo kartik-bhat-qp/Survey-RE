@@ -1,6 +1,7 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
+import { defaultTextAiWidgetSettings, selectTextAiItems, type TextAiWidgetSettings, type TextAiWidgetSettingsProps } from '@/data/text-ai-widget-settings';
 import { StandardLoader } from '@/components/ui/StandardLoader';
 import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
 import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
@@ -32,7 +33,7 @@ const SENTIMENT_BUCKETS: {
   { key: 'veryPositive', label: 'Very positive', color: '#31964a' },
 ];
 
-interface TextAiSubthemeStackbarWidgetProps {
+interface TextAiSubthemeStackbarWidgetProps extends TextAiWidgetSettingsProps {
   question: string;
   onDelete?: () => void;
   themePreferences: TextAiThemePreferences;
@@ -43,11 +44,13 @@ function SentimentStackbar({
   label,
   activeBuckets,
   compact = false,
+  settings,
 }: {
   distribution: TextAiSentimentDistribution;
   label: string;
   activeBuckets: Set<TextAiSentimentBucket>;
   compact?: boolean;
+  settings:TextAiWidgetSettings;
 }) {
   const visibleBuckets = SENTIMENT_BUCKETS.filter((bucket) =>
     activeBuckets.has(bucket.key)
@@ -93,11 +96,13 @@ function SentimentStackbar({
             style={{
               backgroundColor: `var(--dashboard-sentiment-${bucket.key}, ${bucket.color})`,
               color: `var(--dashboard-sentiment-${bucket.key}-text, #111111)`,
-              width: `${(value / visibleTotal) * 100}%`,
+              width: settings.orientation==='Vertical'?'100%':`${value}%`,
+              height:settings.orientation==='Vertical'?`${value}%`:undefined,
+              flexShrink:0,
             }}
-            title={`${bucket.label}: ${value}%`}
+            title={`${bucket.label}: ${value.toFixed(settings.precision)}%`}
           >
-            {value >= 6 ? `${value}%` : null}
+            {settings.labels && value >= 6 ? `${value.toFixed(settings.precision)}%` : null}
           </span>
         );
       })}
@@ -108,8 +113,9 @@ function SentimentStackbar({
 export function TextAiSubthemeStackbarWidget({
   question,
   onDelete,
-  themePreferences,
+  themePreferences, settings, onOpenSettings, preview,
 }: TextAiSubthemeStackbarWidgetProps) {
+  const s=settings??defaultTextAiWidgetSettings('subtheme-stacked-bar',question);
   const widgetId = useId();
   const wick = useWickUILib();
   const [topN, setTopN] = useState<TextAiWidgetTopN>(DEFAULT_TEXT_AI_WIDGET_TOP_N);
@@ -119,6 +125,10 @@ export function TextAiSubthemeStackbarWidget({
   const [activeSentimentBuckets, setActiveSentimentBuckets] = useState<
     Set<TextAiSentimentBucket>
   >(() => new Set(SENTIMENT_BUCKETS.map((bucket) => bucket.key)));
+  useEffect(()=>{
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setExpandedThemeIds(new Set(s.expanded?TEXT_AI_SUBTHEME_STACKBAR_ROWS.map(row=>row.id):[]));
+  },[s.expanded]);
   const visibleThemes = useMemo(() => {
     const filtered = TEXT_AI_SUBTHEME_STACKBAR_ROWS.flatMap((theme) => {
       const themeCandidate = Boolean(theme.emerging);
@@ -166,8 +176,9 @@ export function TextAiSubthemeStackbarWidget({
       ];
     });
 
-    return limitTextAiWidgetItems(filtered, topN);
-  }, [themePreferences, topN]);
+    const parents=filtered.filter(row=>!s.parentIds.length||s.parentIds.includes(row.id)).map(row=>({...row,subthemes:row.subthemes.filter(child=>!s.subthemeIds.length||s.subthemeIds.includes(child.id)).slice(0,s.childLimit||undefined)}));
+    return settings?selectTextAiItems(parents,s,row=>row.label,row=>Object.values(row.sentiment).reduce((a,b)=>a+b,0)):limitTextAiWidgetItems(parents,topN);
+  }, [themePreferences, topN, settings, s]);
 
   function toggleTheme(themeId: string): void {
     setExpandedThemeIds((current) => {
@@ -202,7 +213,7 @@ export function TextAiSubthemeStackbarWidget({
 
   if (!wick) {
     return (
-      <article className={styles.card}>
+      <article className={`${styles.card} ${s.orientation==='Vertical'?styles.vertical:''}`}>
         <StandardLoader message="Loading widget…" />
       </article>
     );
@@ -214,9 +225,9 @@ export function TextAiSubthemeStackbarWidget({
     visibleThemes.every((theme) => expandedThemeIds.has(theme.id));
 
   return (
-    <article className={styles.card}>
+    <article className={`${styles.card} ${s.orientation==='Vertical'?styles.vertical:''}`}>
       <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
-        <h2 className={styles.cardTitle}>{question}</h2>
+        <h2 className={styles.cardTitle}>{s.showName?s.name:''}</h2>
         <div className={styles.headerActions}>
           <WuButton
             variant="secondary"
@@ -228,6 +239,8 @@ export function TextAiSubthemeStackbarWidget({
           </WuButton>
           <TextAiWidgetMenu
             widgetTitle={question}
+            onOpenSettings={onOpenSettings}
+            preview={preview}
             topN={topN}
             onTopNChange={setTopN}
             onDelete={onDelete}
@@ -241,6 +254,7 @@ export function TextAiSubthemeStackbarWidget({
       </div>
 
       <div className={styles.rows}>
+        {!visibleThemes.length&&<p>No matching themes.</p>}
         {visibleThemes.map((theme) => {
           const expanded = expandedThemeIds.has(theme.id);
           const subthemeRegionId = `${widgetId}-subtheme-stackbar-${theme.id}`;
@@ -266,6 +280,7 @@ export function TextAiSubthemeStackbarWidget({
                   distribution={theme.sentiment}
                   label={theme.label}
                   activeBuckets={activeSentimentBuckets}
+                  settings={s}
                 />
               </div>
 
@@ -287,6 +302,7 @@ export function TextAiSubthemeStackbarWidget({
                         distribution={subtheme.sentiment}
                         label={subtheme.label}
                         activeBuckets={activeSentimentBuckets}
+                  settings={s}
                         compact
                       />
                     </div>
@@ -298,7 +314,7 @@ export function TextAiSubthemeStackbarWidget({
         })}
       </div>
 
-      <footer className={styles.legend} aria-label="Sentiment legend">
+      {s.legend&&<footer className={styles.legend} aria-label="Sentiment legend">
         {SENTIMENT_BUCKETS.map((bucket) => {
           const selected = activeSentimentBuckets.has(bucket.key);
 
@@ -322,7 +338,7 @@ export function TextAiSubthemeStackbarWidget({
             </button>
           );
         })}
-      </footer>
+      </footer>}
     </article>
   );
 }

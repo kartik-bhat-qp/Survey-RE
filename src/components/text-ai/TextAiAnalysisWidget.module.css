@@ -200,3 +200,5 @@
   background: color-mix(in srgb, var(--dashboard-sentiment-positive, #99d493) 20%, white);
   color: color-mix(in srgb, var(--dashboard-sentiment-positive, #2e7d32) 50%, black);
 }
+
+.truncated .valueCell,.truncated .insightCell{display:block;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.baseNote{font-size:11px;color:#74808c;padding:8px 16px;margin:0;}

@@ -236,3 +236,5 @@
     padding-inline: 12px;
   }
 }
+
+.vertical .themeRow,.vertical .subthemeRow { grid-template-columns:minmax(160px,1fr) 100px; }.vertical .stackbar { flex-direction:column-reverse;height:190px;width:70px; }.vertical .segment { width:100%;min-height:0; }.vertical .stackbarCompact{height:150px;}

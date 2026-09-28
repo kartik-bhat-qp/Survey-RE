@@ -1,6 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { TextAiResponseFilterFields } from './TextAiConfiguredWidget';
+import { EMPTY_TEXT_AI_FILTER, type TextAiResponseFilter } from '@/data/text-ai-widget-settings';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { StandardLoader } from '@/components/ui/StandardLoader';
@@ -39,6 +41,8 @@ const MOCK_PENDING_RESPONSES = MOCK_TEXT_AI_FILTER_RESPONSES.slice(0, TEXT_AI_PE
   .map((response) => ({ ...response, id: `pending-${response.id}` }));
 
 interface TextAiDashboardToolbarProps {
+  responseFilter?:TextAiResponseFilter;
+  onResponseFilterChange?:(filter:TextAiResponseFilter)=>void;
   name: string;
   onNameChange: (name: string) => void;
   onAddWidget?: () => void;
@@ -54,6 +58,7 @@ interface TextAiDashboardToolbarProps {
 
 export function TextAiDashboardToolbar({
   name,
+  responseFilter=EMPTY_TEXT_AI_FILTER, onResponseFilterChange,
   onNameChange,
   onAddWidget,
   onOpenSettings,
@@ -67,6 +72,7 @@ export function TextAiDashboardToolbar({
 }: TextAiDashboardToolbarProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
+  const [responseFilterOpen,setResponseFilterOpen]=useState(false);
   const [nameState, setNameState] = useState(name);
   const [theme, setTheme] = useState<TextAiFilterOption | null>(null);
   const [subtheme, setSubtheme] = useState<TextAiFilterOption | null>(null);
@@ -176,7 +182,7 @@ export function TextAiDashboardToolbar({
               variant="iconOnly"
               size="sm"
               aria-label="Filter dashboard"
-              onClick={() => showToast({ message: 'Filter', variant: 'success' })}
+              onClick={() => setResponseFilterOpen(value=>!value)}
               Icon={<span className="wm-filter-alt" />}
             />
             <WuButton
@@ -250,6 +256,7 @@ export function TextAiDashboardToolbar({
           </div>
         </div>
 
+        {responseFilterOpen&&<section className={styles.responseFilterPanel} aria-label="Dashboard response filters"><h3>Response filters</h3><TextAiResponseFilterFields value={responseFilter} onChange={value=>onResponseFilterChange?.(value)}/><button type="button" onClick={()=>onResponseFilterChange?.({...EMPTY_TEXT_AI_FILTER})}>Reset filters</button></section>}
         <div className={styles.filterRow}>
           <div className={styles.filters}>
             <div className={styles.inlineFilter}>

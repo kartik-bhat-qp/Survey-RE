@@ -404,3 +404,9 @@
 .chiLegendNote {
   font-style: italic;
 }
+
+.baseNote{font-size:11px;color:#74808c;padding:8px 16px;margin:0;border-top:1px solid #eee;}
+
+.parentHeading{background:#edf2f7!important;color:var(--dashboard-accent)!important;padding:10px 16px!important;text-align:left!important;font-weight:500;}
+
+button.percentage{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;}

@@ -38,6 +38,7 @@ export const GENDER_COLUMN_LABELS: Record<TextAiGenderKey, string> = {
 export const TEXT_AI_SIGNIFICANCE_MIN_COUNT = 30;
 
 export interface TextAiTopicSegmentRow {
+  parentTopic?: string;
   emerging?: boolean;
   id: string;
   topic: string;

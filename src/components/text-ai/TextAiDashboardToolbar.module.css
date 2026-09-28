@@ -266,3 +266,5 @@
     margin-left: 0;
   }
 }
+
+.responseFilterPanel{margin:12px 24px;padding:16px;border:1px solid #dbe2ea;border-radius:4px;background:#fafbfc;max-width:540px;font-size:12px;}.responseFilterPanel h3{font-size:14px;margin:0 0 12px;}.responseFilterPanel button{background:white;border:1px solid #ccd5df;border-radius:3px;padding:5px 10px;color:#566575;}

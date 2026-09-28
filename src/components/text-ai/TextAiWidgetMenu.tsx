@@ -29,6 +29,8 @@ const WuMenuItem = dynamic(
 
 interface TextAiWidgetMenuProps {
   widgetTitle?: string;
+  onOpenSettings?: () => void;
+  preview?: boolean;
   topN?: TextAiWidgetTopN;
   onTopNChange?: (topN: TextAiWidgetTopN) => void;
   displayState?: TextAiWidgetDisplayState;
@@ -42,6 +44,8 @@ const MENU_ITEM_CLASS =
 
 export function TextAiWidgetMenu({
   widgetTitle = 'this widget',
+  onOpenSettings,
+  preview = false,
   topN = DEFAULT_TEXT_AI_WIDGET_TOP_N,
   onTopNChange,
   displayState,
@@ -56,7 +60,8 @@ export function TextAiWidgetMenu({
 
   function handleSettings(): void {
     setMenuOpen(false);
-    setSettingsOpen(true);
+    if (onOpenSettings) onOpenSettings();
+    else setSettingsOpen(true);
   }
 
   function handleSaveSettings(next: TextAiWidgetDisplayState): void {
@@ -76,6 +81,8 @@ export function TextAiWidgetMenu({
     onDelete?.();
     showToast({ message: 'Widget deleted', variant: 'success' });
   }
+
+  if (preview) return null;
 
   return (
     <>

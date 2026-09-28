@@ -3,6 +3,8 @@ import type { IWuSelectOption } from '@npm-questionpro/wick-ui-lib';
 export type TextAiSubtopicTone = 'neutral' | 'positive';
 
 export interface TextAiAnalysisRow {
+  /** Synthetic collected date for this prototype response fixture. */
+  collectedOn?: string;
   id: number;
   value: string;
   topic: string;
@@ -260,6 +262,7 @@ function enrichAnalysisRows(rows: TextAiAnalysisRow[]): TextAiAnalysisRow[] {
     );
     return {
       ...row,
+      collectedOn: new Date(Date.UTC(2026, 3, row.id)).toISOString().slice(0,10),
       topicEmerging,
       subtopicEmerging: Boolean(
         topicEmerging ||
