@@ -1,0 +1,91 @@
+{
+  "method": "Native template copy; preserve native text, styles, background and decorative cover illustration. Remove cover placeholder text and stale Figma link.",
+  "keep": [
+    {
+      "id": "filmstrip-slide-0-g145dcb058cc_0_35",
+      "text": "BuildwithAIBusinessIntelligence"
+    },
+    {
+      "id": "filmstrip-slide-1-g30a02577f3c_0_5",
+      "text": "Introduction&problemDashboardauthorscurrentlychooseaquestion-basedoradvancedwidgetandconfigureitmanu"
+    },
+    {
+      "id": "filmstrip-slide-2-g86f1215a00_0_12",
+      "text": "1.OpenaBIdashboardandchooseAddwidget→BuildwithAI.2.EnterawidgetnameandclickNext.3.Selectonesurveyfro"
+    },
+    {
+      "id": "filmstrip-slide-9-g8709499aee_5_33",
+      "text": "Businessrules:setupOnesurvey,multiplequestionsNameisrequired;whitespacealonecannotadvance.Usethestan"
+    },
+    {
+      "id": "filmstrip-slide-10-g86f1215a00_0_64",
+      "text": "●Createwidgetaddsoneplaceholderimmediatelyandclosesthebuilder;thereisnopasteorpreviewcheckpoint.Thec"
+    },
+    {
+      "id": "filmstrip-slide-11-g86f1215898_1_32",
+      "text": "DeferredscopeDeferredbeyondthisprototypeNoliveAIcalls,generatedHTML/CSS/JavaScript,productionAPIsche"
+    },
+    {
+      "id": "filmstrip-slide-12-gfdf248c7ff_0_5",
+      "text": "●AddwidgetincludesBuildwithAIalongsideQuestionbasedandAdvancedwidgets.Usetheexistinglight-blueAIicon"
+    },
+    {
+      "id": "filmstrip-slide-13-gfdf248c7ff_0_0",
+      "text": "PrototypeacceptancecriteriaAcceptancecriteriaAblanknameblocksNext;selectingasurveyandatleastonequest"
+    },
+    {
+      "id": "filmstrip-slide-14-g13441c123f6_0_1",
+      "text": "LiveprototypeandreviewpathPrototypeaccess&reviewOpenhttps://survey-re.vercel.app/dashboards/1(oropen"
+    }
+  ],
+  "remove": [
+    {
+      "id": "filmstrip-slide-3-g3a0a603077c_0_145",
+      "text": "UserPersonas"
+    },
+    {
+      "id": "filmstrip-slide-4-g34d73c10ae2_0_0",
+      "text": "TrustedbrandsPersonalityExtrovertIntrovertAnalyticalCreativeLoyalFicklePassiveActiveGoals●{{Goals}}N"
+    },
+    {
+      "id": "filmstrip-slide-5-g3c5e094be57_1_0",
+      "text": "TrustedbrandsPersonalityExtrovertIntrovertAnalyticalCreativeLoyalFicklePassiveActiveGoals●{{Goals1}}"
+    },
+    {
+      "id": "filmstrip-slide-6-g3a0a603077c_0_0",
+      "text": "UserStories"
+    },
+    {
+      "id": "filmstrip-slide-7-g3a0a603077c_0_5",
+      "text": "Name:{{PersonaName}}Jobtitle:{{JobTitle}}Age:{{Age}}1.{{StoryList}}"
+    },
+    {
+      "id": "filmstrip-slide-8-g3c5e094be57_1_127",
+      "text": "Name:{{PersonaName1}}Jobtitle:{{JobTitle1}}Age:{{Age1}}1.{{StoryList1}}"
+    },
+    {
+      "id": "filmstrip-slide-15-g3c6d0c60111_0_4",
+      "text": "●{{JobsList}}JobstoBeDone"
+    },
+    {
+      "id": "filmstrip-slide-16-g3c599b074b0_0_0",
+      "text": "Versions"
+    },
+    {
+      "id": "filmstrip-slide-17-g3c599b074b0_0_4",
+      "text": "V1–{{Version1Title}}●{{V1List}}"
+    },
+    {
+      "id": "filmstrip-slide-18-g3c599b074b0_0_99",
+      "text": "V2–{{Version2Title}}●{{V2List}}"
+    },
+    {
+      "id": "filmstrip-slide-19-g3c5e094be57_0_0",
+      "text": "V3–{{Version3Title}}●{{V3List}}"
+    },
+    {
+      "id": "filmstrip-slide-20-g3c599b074b0_0_104",
+      "text": "Thankyou!"
+    }
+  ]
+}

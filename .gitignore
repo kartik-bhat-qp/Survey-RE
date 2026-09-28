@@ -47,3 +47,10 @@ next-env.d.ts
 
 # Local verification logs and isolated preview runtime
 /.task-tmp/
+
+# Local heat-map baseline QA runtime and logs
+/.local/
+
+# Local agent scratch scripts, caches and verification logs
+/.codex-tmp/
+/.task-work/

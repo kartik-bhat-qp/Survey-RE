@@ -1,0 +1,3 @@
+Browser tab: 859029683, Title: "PRD: Template - Google Slides", URL: "https://docs.google.com/presentation/u/0/d/1TdA4-yRzdqmVPT5FeOW1jRGQ5FrGV4xzpgaBtWAyHqg/htmlpresent".
+There has been no change in the accessibility tree.
+The focused UI element is 0 AXWebArea PRD: Template - Google Slides, URL: docs.google.com/presentation/u/0/d/1TdA4-yRzdqmVPT5FeOW1jRGQ5FrGV4xzpgaBtWAyHqg/htmlpresent

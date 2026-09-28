@@ -1,0 +1,82 @@
+[
+  {
+    "id": "g145dcb058cc_0_35",
+    "n": 1,
+    "text": "1AdvancedHeatmapBusinessIntelligenceOpenprototype"
+  },
+  {
+    "id": "g30a02577f3c_0_5",
+    "n": 2,
+    "text": "2IntroductionBIusersneedtocompareseveralmatrixandchoicequestionsandapplytheirownscoringlogicinoneconsistentview.AdvancedHeatmapcombinesanswerdistributionsandsegmentcomparisons,withconfigurablecustommetrics,filtersandanswerlabels."
+  },
+  {
+    "id": "g8709499aee_5_33",
+    "n": 3,
+    "text": "3ProblemsOneworkflow,twoanalysismodelsMatrixHeatmapprovidesanswerdistributionsforonematrix.HeatMapChartsupportsseveralquestionsbutdisplaysmeansforrespondentsegments.Usersneedbothanalysesacrossmixedquestionswithoutconfusingansweroptionswithrespondentgroups."
+  },
+  {
+    "id": "gfdf248c7ff_0_5",
+    "n": 4,
+    "text": "4●Supported:multiplematrices,single-select,multi-selectandratingchoicequestionsfromonesurvey.●Analysis:AnswerdistributionandSegmentcomparison,switchableaftercreation.●Controls:custommetrics,resultfilters,answerlabels,livepreviewanddesignsettings.●Excluded:text,rankingandotherunsupportedtypes;cross-surveyanalysis;cross-chartmetricreuse.●Existingheatmapwidgetsremainunchanged.TheprototypeincludesonedefaultAdvancedHeatmapperdashboard.Scope"
+  },
+  {
+    "id": "g86f1215a00_0_64",
+    "n": 5,
+    "text": "5●Selectmultiplewholematricesandchoicequestionsinonewidget.●ChooseAnswerdistributionorSegmentcomparison;switchlaterinAnalytics.●Addanamedcustommetricwitheditableoriginal-answerweights.●Rename,excludeormergeanswerlabels;filterandpreviewresults.●Usethestandardwidgetheader,three-dotmenuandsettingspanel.Solution"
+  },
+  {
+    "id": "g86f1215a00_0_12",
+    "n": 6,
+    "text": "61.Afterdeployment,openhttps://survey-re.vercel.app/→Dashboards→openadashboard.2.InspectthedefaultAdvancedHeatmap,orchooseAddwidget→Advancedwidgets→AdvancedHeatmap.3.SelectNext→survey→questions(wholematricesorchoices)→Next.4.ChooseAnswerdistributionorSegmentcomparison→Createwidget.5.Open⋮→Settings.ConfigureGeneral,Analytics,LabelsandDesignwhilepreviewingresults.6.Applytocommit;Cancelorclosetodiscard.SwitchanalysisinAnalyticstocomparebothviews.Prototypewalkthrough"
+  },
+  {
+    "id": "g86f1215898_1_32",
+    "n": 7,
+    "text": "7SelectionrulesQuestionselectionanddisplay●Selectatleastonesupportedquestionfromonesurvey;amatrixcheckboxincludesallstatements.●Showquestionname,type,checkbox,searchand“selectedoutofavailable”counter.●Keepfootercheckpoints:Widget→Survey→Question→Analysis.●Changingsurveyclearsselection;unsupportedquestiontypesarevisiblebutunavailable.●Matricesstartcollapsedandexpandtoshowstatementswithinthesametable."
+  },
+  {
+    "id": "g3c6d0c60111_0_4",
+    "n": 8,
+    "text": "8●Columnsfolloworiginalanswerpositions;maximumcolumns=largestselectedoptioncount.●Shorterscalesshowadash.Mixedscalesusegenericlabels,notassumedequivalence.●Choosecountsorpercentages;showtherespondentortotal-selectionbaseexplicitly.●Multi-selectrespondentpercentagescanexceed100%;emptycellsremainneutral.●Matrixsummariespoolvalidstatementanswers;neveraveragerowmeans.Answerdistributionrules"
+  },
+  {
+    "id": "g3c599b074b0_0_4",
+    "n": 9,
+    "text": "9Segmentcomparisonrules●Eachcolumnisarespondentgroupdefinedbyaquestionormatrixstatement.●Everyrowaveragesvalidanswersfromthatsamegroup;optioncountsneednotmatch.●Thesegment-definingquestionfollowsthesamerule.●Multi-selectgroupscanoverlap;theircountsarenotadditive.●Nominalanswercodesarenotsatisfactionscoreswithoutmeaningfulweights."
+  },
+  {
+    "id": "g3c599b074b0_0_99",
+    "n": 10,
+    "text": "10Custommetrics●Offbydefault:columnhidden,weightsblank;nameeditableinAnalytics.●Everyincludedoriginalanswerneedsafiniteweight;missingweightsblockApply.●Single-select/matrices:sum(count×weight)÷validanswers,usingMatrixHeatmapweightlogic.●Multi-select:meanselectedweightsperrespondent,thenmeanrespondents.●Distributionaddsametriccolumn;Segmentcomparisonscoreseachsegment’spairedanswers.●Omitmissing/excludedanswers.Emptybasesshowunavailable;reverse=min+max−weight."
+  },
+  {
+    "id": "g3c5e094be57_0_0",
+    "n": 11,
+    "text": "11Filterbycustommetric●ActiveonlyinAnswerdistributionwithavalidcustommetric.●Compareunroundedscores:below,atmost,above,atleastorinclusivebetween.●Acceptfinitedecimals,includingnegativevalues;rejectblankthresholdsorreversedranges.●Hideresultrows,notrespondents;basesandmatrixtotalsremainunchanged.●Testparentsandchildrenindependently;keepacontext-onlyparentwhenachildpasses.●Missingscoresnevermatch.Showcondition,matchingcount,Clearfilterandno-resultsstate.●Retainfiltersettingsacrossmode/metricchanges;re-evaluateafterweightsorexclusionschange."
+  },
+  {
+    "id": "h6ac4269131736c5d_1_11",
+    "n": 12,
+    "text": "12AnswerlabelsAnswer-levelcontrols●Rename,reorder,excludeandmergeanswerlabelsonly;donotmergequestions.●KeepquestionselectionandsearchinsidetheLabelsdropdown.●Preserveoriginal-answerIDsandweightswhenlabelsarerenamedormerged.●Mergedsingle-selectcountssum;multi-selectcountsdeduplicaterespondents.●Excludedanswersleavethevalidbaseandmetric;unmatchedoptionpositionsremainadash."
+  },
+  {
+    "id": "h6ac4269131736c5d_1_5",
+    "n": 13,
+    "text": "13●Open⋮→Settingsforanenlargedlivepreviewbesidethestandardpanel.●General:Dashboard,Widget,CombinedorNofilters;Is/IsnotwithAND/ORappliesbeforecalculations.●Analytics:switchanalysis,setprecision/colors,andconfigureCustommetrics.●Labels:selectquestionsinasearchablecheckboxdropdown;manageanswersonly.●Applycommitschanges;Cancelorclosediscardsthem.Modeswitchespreserveconfiguration.Settingsandfilters"
+  },
+  {
+    "id": "h6ac4269131736c5d_1_17",
+    "n": 14,
+    "text": "14WorkedexampleCustommetricona0–100scale●Answercounts:Poor30,Average33,Good25,Excellent24;validbase=112.●Weights0,0,100,100→(25+24)×100÷112=43.75(display43.8).●ExcludePoor→49×100÷82=59.7561(display59.8).●MergeGood+Excellent→countscombine;originalweightskeepthemetricunchanged.●Filter“atleast80”hidesthisrow;“below80”retainsit.Usetheunroundedscore."
+  },
+  {
+    "id": "gfdf248c7ff_0_0",
+    "n": 15,
+    "text": "15FunctionalandcalculationacceptanceAcceptancecriteria●Multiplematriceswithunequalrows/optionsandmixedchoicequestionsrendercorrectlyinbothmodes.●Counts,percentages,weights,mergesandpooledmatrixtotalsmatchsourcecalculations.●Exactfilterboundaries,missingscoresandnoresultsbehaveasspecified;matchingchildrenremainreachable.●Whole-matrixselection,expandablerows,modeswitching,livepreview,ApplyandCancelworkendtoend.●Nativecontrols,titletypography,three-dotmenu,dividerandsettings-panellayoutmatchexistingwidgets."
+  },
+  {
+    "id": "g13441c123f6_0_1",
+    "n": 16,
+    "text": "16Interactivereference,notproductiondataPrototypeboundaries●TargetURL:https://survey-re.vercel.app/—AdvancedHeatmapwasnotyetdeployedthereon28September2026.●Walkthroughdirectionsdescribetheintendedpathaftertheprototypeisdeployed.●Prototypedataissynthetic;sessionsettingsresetonreload.Unmappedfiltersshowunavailable.●Backendpersistence,date/status/systemfiltersandexportsarenotdemonstrated.●Productionintegrationandreleasevalidationremainseparatefromprototypeapproval."
+  }
+]
