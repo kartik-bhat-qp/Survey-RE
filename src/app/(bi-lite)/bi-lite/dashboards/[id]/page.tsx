@@ -11,16 +11,17 @@ import { DashboardFocusedPreview } from '@/components/dashboards/DashboardFocuse
 import { DashboardPowerPointExportModal } from '@/components/dashboards/DashboardPowerPointExportModal';
 import { DashboardSettingsModal } from '@/components/dashboards/DashboardSettingsModal';
 import { DashboardShareModal } from '@/components/dashboards/DashboardShareModal';
+import type { AdvancedHeatmapConfig } from '@/data/advanced-heatmap';
 import { AdvancedWidgetModal } from '@/components/dashboards/AdvancedWidgetModal';
 import { QuestionBasedWidgetModal } from '@/components/dashboards/QuestionBasedWidgetModal';
 import { SelectWidgetModal } from '@/components/dashboards/SelectWidgetModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
 import {
-  DEFAULT_DESIGN_TYPOGRAPHY,
   type DesignTypographyOptions,
 } from '@/components/dashboards/DashboardDesignSettingsTab';
 import { getDashboardById } from '@/data/get-dashboard-by-id';
+import { useDashboardDesign } from '@/hooks/useDashboardDesign';
 import { useDashboardSharing } from '@/hooks/useDashboardSharing';
 import { biLitePath } from '@/lib/bi-lite-paths';
 import {
@@ -56,11 +57,13 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
   const [questionBasedWidgetOpen, setQuestionBasedWidgetOpen] = useState(false);
   const [questionBasedPresetSurvey, setQuestionBasedPresetSurvey] =
     useState<SurveyListItem | null>(null);
+  const [advancedHeatmaps, setAdvancedHeatmaps] = useState<(AdvancedHeatmapConfig & { tabId: string })[]>([]);
+  const [activeWidgetTab, setActiveWidgetTab] = useState('tab-1');
   const [advancedWidgetOpen, setAdvancedWidgetOpen] = useState(false);
   const [hasAddedWidget, setHasAddedWidget] = useState(false);
-  const [designTypography, setDesignTypography] = useState<DesignTypographyOptions>(
-    DEFAULT_DESIGN_TYPOGRAPHY
-  );
+  const [dashboardDesign, setDashboardDesign] = useDashboardDesign(numericId);
+  const designTypography = dashboardDesign.typography;
+  const setDesignTypography = (typography: DesignTypographyOptions) => setDashboardDesign({ ...dashboardDesign, typography });
   const [insightRefreshFrequency, setInsightRefreshFrequency] =
     useState<AiInsightRefreshFrequency>(() => {
       if (typeof window === 'undefined') return DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY;
@@ -130,7 +133,10 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         name={name}
         onNameChange={setName}
         showPresentation
-        onAddWidget={() => setAddWidgetOpen(true)}
+        onAddWidget={() => {
+          if (activeWidgetTab.startsWith('report-')) { showToast({ message: 'Select a dashboard tab to add a widget. External report tabs cannot contain widgets.', variant: 'info' }); return; }
+          setAddWidgetOpen(true);
+        }}
         onOpenSettings={() => { setSettingsTab('general'); setSettingsOpen(true); }}
         onOpenShare={() => setShareOpen(true)}
         onExportPowerPoint={() => setPowerPointExportOpen(true)}
@@ -169,6 +175,8 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         onSharedLinksChange={(links) => setSharing((previous) => ({ ...previous, links }))}
         onNameChange={setName}
         appliedDesignTypography={designTypography}
+        appliedDesign={dashboardDesign}
+        onDesignChange={setDashboardDesign}
         onDesignTypographyChange={setDesignTypography}
         insightRefreshFrequency={insightRefreshFrequency}
         onInsightRefreshFrequencyChange={updateInsightRefreshFrequency}
@@ -211,6 +219,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
       />
 
       <AdvancedWidgetModal
+        onAdvancedHeatmapCreated={config => setAdvancedHeatmaps(items => [...items, { ...config, tabId: activeWidgetTab }])}
         open={advancedWidgetOpen}
         onOpenChange={setAdvancedWidgetOpen}
         surveyId={
@@ -231,6 +240,12 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
       />
 
       <DashboardDetailTabBar
+        dashboardName={name}
+        advancedHeatmaps={advancedHeatmaps}
+        onAdvancedHeatmapChange={config => setAdvancedHeatmaps(items => items.map(item => item.id === config.id ? { ...config, tabId: item.tabId } : item))}
+        onActiveTabChange={setActiveWidgetTab}
+        dashboardDesign={dashboardDesign}
+        dashboardId={numericId}
         designTypography={designTypography}
         insightRefreshFrequency={insightRefreshFrequency}
         globalInsightRefreshVersion={globalInsightRefreshVersion}

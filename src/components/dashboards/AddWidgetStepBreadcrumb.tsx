@@ -13,11 +13,13 @@ const STEPS: { id: AddWidgetStep; label: string; icon: string }[] = [
 
 interface AddWidgetStepBreadcrumbProps {
   currentStep: AddWidgetStep;
+  chartLabel?: string;
   onStepClick?: (step: AddWidgetStep) => void;
 }
 
 export function AddWidgetStepBreadcrumb({
   currentStep,
+  chartLabel = 'Chart',
   onStepClick,
 }: AddWidgetStepBreadcrumbProps) {
   const currentIndex = STEPS.findIndex((s) => s.id === currentStep);
@@ -36,6 +38,7 @@ export function AddWidgetStepBreadcrumb({
             )}
             <button
               type="button"
+              aria-current={isActive ? 'step' : undefined}
               disabled={!isClickable}
               onClick={() => isClickable && onStepClick(step.id)}
               className={`${styles.stepButton} ${
@@ -47,7 +50,7 @@ export function AddWidgetStepBreadcrumb({
               }`}
             >
               <span className={`${step.icon} text-base`} />
-              <span className={styles.stepLabel}>{step.label}</span>
+              <span className={styles.stepLabel}>{step.id === 'chart' ? chartLabel : step.label}</span>
             </button>
           </span>
         );

@@ -1,5 +1,7 @@
 'use client';
 
+import type { BuiltWidget } from '@/data/ai-widget-builder';
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactGridLayout, {
   WidthProvider,
@@ -24,13 +26,22 @@ import {
   type DesignTypographyOptions,
 } from '@/components/dashboards/DashboardDesignSettingsTab';
 import { DashboardAiInsightsPanel } from '@/components/dashboards/DashboardAiInsightsPanel';
+import type { DashboardActiveFilter } from '@/data/mock-dashboard-filters';
+import type { DashboardDesign } from '@/data/dashboard-design';
 import type { AmChartTypography } from '@/components/charts/amcharts/theme';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
 import { stackLayoutSingleColumn } from '@/lib/ai-dashboard-layout';
+import { adaptHeatmapQuestions, createDefaultAdvancedHeatmap, type AdvancedHeatmapConfig } from '@/data/advanced-heatmap';
+import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
+import { BuiltWidgetCard } from './ai-builder/BuiltWidgetCard';
+import { AdvancedHeatmapWidget } from './advanced-heatmap/AdvancedHeatmapWidget';
+import { HeatMapBaseline } from '@/components/dashboards/heat-map/HeatMapBaseline';
+import { heatMapWidgetStorageKey, discardRetiredHeatMapCollections } from '@/data/heat-map-baseline';
 import { DashboardWidgetCard } from '@/components/dashboards/widgets/DashboardWidgetCard';
 import { AiWidgetRenderer } from '@/components/dashboards/widgets/AiWidgetRenderer';
+import { TimeSeriesDashboardCard } from '@/components/dashboards/widgets/TimeSeriesDashboardCard';
 import { WordCloudDashboardCard } from '@/components/dashboards/widgets/WordCloudDashboardCard';
 import {
   createDashboardWidgetInsightThread,
@@ -71,6 +82,14 @@ function renderResizeHandle(
 }
 
 interface AiDashboardCanvasProps {
+  builtWidgets?: BuiltWidget[];
+  onBuiltWidgetChange?: (widget: BuiltWidget) => void;
+  advancedHeatmaps?: AdvancedHeatmapConfig[];
+  onAdvancedHeatmapChange?: (config: AdvancedHeatmapConfig) => void;
+  dashboardId?: number;
+  dashboardTabId?: string;
+  dashboardDesign?: DashboardDesign;
+  dashboardFilter?: DashboardActiveFilter;
   designTypography?: DesignTypographyOptions;
   insightRefreshFrequency?: AiInsightRefreshFrequency;
   globalInsightRefreshVersion?: number;
@@ -85,6 +104,12 @@ interface AiDashboardCanvasProps {
 }
 
 export function AiDashboardCanvas({
+  builtWidgets = [], onBuiltWidgetChange,
+  advancedHeatmaps: addedAdvancedHeatmaps = [], onAdvancedHeatmapChange,
+  dashboardId = 0,
+  dashboardTabId = 'tab-1',
+  dashboardDesign,
+  dashboardFilter,
   designTypography = DEFAULT_DESIGN_TYPOGRAPHY,
   insightRefreshFrequency = DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY,
   globalInsightRefreshVersion = 0,
@@ -98,6 +123,8 @@ export function AiDashboardCanvas({
   footer,
 }: AiDashboardCanvasProps) {
   const { showToast } = useWuShowToast();
+  const [defaultAdvancedHeatmap, setDefaultAdvancedHeatmap] = useState(() => createDefaultAdvancedHeatmap(adaptHeatmapQuestions(getQuestionsBySurvey(1))));
+  const advancedHeatmaps = useMemo(() => [defaultAdvancedHeatmap, ...addedAdvancedHeatmaps.filter(w => w.id !== defaultAdvancedHeatmap.id)], [defaultAdvancedHeatmap, addedAdvancedHeatmaps]);
   const isMobile = useIsMobile();
   const showLicenseRestrictions = useBiLicenseRestrictions();
   const [desktopLayout, setDesktopLayout] = useState<Layout>(AI_DASHBOARD_LAYOUT);
@@ -114,16 +141,29 @@ export function AiDashboardCanvas({
   );
   const previousGlobalRefreshVersion = useRef(globalInsightRefreshVersion);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const previousAdvancedCount = useRef(advancedHeatmaps.length);
+  useEffect(() => {
+    if (advancedHeatmaps.length > previousAdvancedCount.current) {
+      const id = advancedHeatmaps.at(-1)?.id;
+      if (id) requestAnimationFrame(() => canvasRef.current?.querySelector(`[data-widget-id="${id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+    }
+    previousAdvancedCount.current = advancedHeatmaps.length;
+  }, [advancedHeatmaps]);
 
-  const displayLayout = useMemo(
-    () => (isMobile ? stackLayoutSingleColumn(desktopLayout) : desktopLayout),
-    [isMobile, desktopLayout]
-  );
-
-  const widgetById = useMemo(
-    () => new Map(AI_DASHBOARD_WIDGETS.map((widget) => [widget.id, widget])),
-    []
-  );
+  useEffect(() => {
+    try { discardRetiredHeatMapCollections(window.localStorage); } catch { /* Read-only/blocked storage does not affect fixed widgets. */ }
+  }, []);
+  const displayLayout = useMemo(() => {
+    const layout = [...desktopLayout];
+    for (const widget of [...advancedHeatmaps, ...builtWidgets]) {
+      if (!layout.some(item => item.i === widget.id)) {
+        const index = layout.length;
+        layout.push({ i: widget.id, x: index % 2, y: Math.floor(index / 2), w: 1, h: 1, minW: 1, maxW: 1, minH: 1 });
+      }
+    }
+    return isMobile ? stackLayoutSingleColumn(layout) : layout;
+  }, [isMobile, desktopLayout, advancedHeatmaps, builtWidgets]);
+  const widgetById = useMemo(() => new Map(AI_DASHBOARD_WIDGETS.map(widget => [widget.id, widget])), []);
 
   const handleLayoutChange = useCallback(
     (nextLayout: Layout) => {
@@ -323,12 +363,16 @@ export function AiDashboardCanvas({
         draggableCancel={`.${styles.resizeHandle}, .dashboard-widget-actions`}
       >
         {displayLayout.map((item) => {
+          const built = builtWidgets.find(widget => widget.id === item.i);
+          if (built) return <div key={built.id} className={styles.gridItem} data-widget-id={built.id}><BuiltWidgetCard widget={built} onChange={readOnly ? undefined : onBuiltWidgetChange} dashboardFilter={dashboardFilter} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /></div>;
+          const advanced = advancedHeatmaps.find(widget => widget.id === item.i);
+          if (advanced) return <div key={advanced.id} className={styles.gridItem} data-widget-id={advanced.id}><AdvancedHeatmapWidget config={advanced} onChange={next => { if (next.id === defaultAdvancedHeatmap.id) setDefaultAdvancedHeatmap(next); else onAdvancedHeatmapChange?.(next); }} dashboardFilter={dashboardFilter} dashboardDesign={dashboardDesign} /></div>;
           const widget = widgetById.get(item.i);
           if (!widget) return null;
 
           return (
-            <div key={widget.id} className={styles.gridItem}>
-              {widget.type === 'wordcloud' ? <WordCloudDashboardCard shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /> : <>
+            <div key={widget.id} className={styles.gridItem} data-widget-id={widget.id}>
+              {!renderWidget && (widget.type === 'segment-trend' || widget.type === 'scoring-trend' || widget.type === 'response-timeline') ? <TimeSeriesDashboardCard key={`${dashboardId}:${dashboardTabId}:${widget.id}`} kind={widget.type} title={widget.title} widgetId={widget.id} selection={dashboardFilter?.dateSelection} typography={chartTypography} storageKey={`survey-re:time-series:${dashboardId}:${dashboardTabId}:${widget.id}`} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} readOnly={readOnly} onOpenInsights={readOnly ? undefined : () => setActiveInsightWidgetId(widget.id)} insightCount={insightThreads[widget.id]?.items.length ?? 0} /> : widget.type === 'heat-map' && !renderWidget ? <HeatMapBaseline dashboardDesign={dashboardDesign} dashboardFilter={dashboardFilter} key={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} embedded readOnly={readOnly} initialName={widget.title} storageKey={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} /> : widget.type === 'wordcloud' ? <WordCloudDashboardCard shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /> : <>
               <DashboardWidgetCard
                 title={widget.title}
                 dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle}
@@ -345,6 +389,7 @@ export function AiDashboardCanvas({
                 }
               >
                 {renderWidget ? renderWidget(widget) : <AiWidgetRenderer
+                  dateSelection={dashboardFilter?.dateSelection}
                   widgetId={widget.id}
                   type={widget.type}
                   typography={chartTypography}
@@ -356,9 +401,6 @@ export function AiDashboardCanvas({
         })}
       </GridLayoutWithWidth>
       {footer}
-      {!readOnly && <button type="button" className={styles.aiFab} aria-label="AI assistant">
-        <span className="wc-ai" />
-      </button>}
 
       {!readOnly && activeInsightWidgetId ? (() => {
         const activeWidget = widgetById.get(activeInsightWidgetId);

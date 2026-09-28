@@ -1,4 +1,4 @@
-.trigger { align-items: center; background: white; border: 1px solid #ddd; border-radius: 3px; color: #545e6b; cursor: pointer; display: flex; font: inherit; font-size: 12px; gap: 8px; height: 32px; min-width: 176px; padding: 0 10px; }
+.trigger { align-items: center; background: white; border: 1px solid #ddd; border-radius: 3px; color: #545e6b; cursor: pointer; display: flex; font: inherit; font-size: 12px; gap: 8px; height: 32px; min-width: 176px; white-space: nowrap; padding: 0 10px; }
 .trigger > span:last-child { margin-left: auto; }
 .popover { background: white; border: 1px solid #4688d5; border-radius: 0 16px 16px 16px; box-shadow: 0 4px 12px #0002; color: #545e6b; max-height: calc(100dvh - 80px) !important; max-width: calc(100vw - 24px); overflow: auto; padding: 16px !important; width: 530px !important; }
 /* The app's global menu cap also targets popovers; a two-month calendar needs its full height. */
@@ -18,9 +18,10 @@
 .dayButton:hover { background: #eef5fc; }
 .dayButton:focus-visible { outline: 2px solid #4688d5; outline-offset: -2px; }
 .today .dayButton { border-color: #4688d5; }
-.selected .dayButton { background: #e4effb; }
+.selected .dayButton { background: #4688d5; color: white; }
 .rangeEdge .dayButton { background: #4688d5; color: white; }
 .rangeMiddle { background: #eef5fc; }
+.rangeMiddle .dayButton { background: #eef5fc; color: #455468; }
 .navigation { display: flex; inset: 0 0 auto; justify-content: space-between; pointer-events: none; position: absolute; z-index: 1; }
 .previous, .next { align-items: center; background: white; border: 0; color: #545e6b; cursor: pointer; display: flex; height: 32px; justify-content: center; pointer-events: auto; width: 24px; }
 .previous { transform: rotate(180deg); }
@@ -31,3 +32,6 @@
 .footer > button:last-child { height: 26px; min-width: 80px; }
 .error { color: #b42318; font-size: 12px; margin-top: 8px; }
 @media (max-width: 600px) { .popover { width: 330px !important; } .footer { flex-wrap: wrap; justify-content: flex-end; } .dateInputs { flex-basis: 100%; } .dateInputs input { flex: 1; } }
+/* Calendar portals must remain above widget settings and nested segment dialogs. */
+.popover { z-index: 200 !important; }
+:global([data-radix-popper-content-wrapper]):has(> .popover) { z-index: 200 !important; }

@@ -200,3 +200,5 @@
     padding: 14px;
   }
 }
+
+.aiCard{background:#f4f9ff;border-color:#d4e3f7}.aiIcon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:64px;height:64px;font-size:48px;color:#1b87e6;line-height:1}.modal:has(.aiCard){max-width:min(1040px,calc(100vw - 1.5rem))!important}

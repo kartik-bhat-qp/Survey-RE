@@ -53,7 +53,13 @@ export interface ResponseInfoData {
   maxResponseSeconds: number;
 }
 
+export interface TimeSeriesChartOptions {
+  kind: 'segment-trend' | 'scoring-trend' | 'response-timeline';
+  dataLabels: string; axisTitles: boolean; xTitle: string; yTitle: string;
+  highlightHighest: boolean; minimum?: number; maximum?: number; tooltip: 'Default' | 'Custom' | 'None'; tooltipTitle?:boolean; tooltipCount?:boolean; tooltipPercentage?:boolean;
+}
 export interface AiWidgetChartPayload {
+  timeSeriesOptions?: TimeSeriesChartOptions;
   ageBarItems: ColoredChartDataPoint[];
   npsBenchmarkItems: NpsBenchmarkDataPoint[];
   npsBenchmarkResponseCount: number;
@@ -91,6 +97,6 @@ export type MatrixAmChartWidgetType =
 export type AmChartWidgetType =
   | Exclude<
       AiWidgetType,
-      'response-info' | 'tabular' | 'stat-highlight' | 'leaderboard' | 'stat-metric'
+      'response-info' | 'tabular' | 'stat-highlight' | 'leaderboard' | 'stat-metric' | 'heat-map'
     >
   | MatrixAmChartWidgetType;

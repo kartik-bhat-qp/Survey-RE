@@ -496,7 +496,8 @@ function createSegmentTrendChart(
   root: am5.Root,
   rows: AiWidgetChartPayload['segmentTrendRows'],
   seriesConfig: SegmentTrendSeriesConfig[],
-  typography?: AmChartTypography
+  typography?: AmChartTypography,
+  options?: AiWidgetChartPayload['timeSeriesOptions']
 ): void {
   const chart = root.container.children.push(
     am5xy.XYChart.new(root, {
@@ -523,7 +524,9 @@ function createSegmentTrendChart(
     fill: am5.color(0x9b9b9b),
     ...chartText(typography, 10),
     oversizedBehavior: 'truncate',
-    maxWidth: 72,
+    maxWidth: options ? (rows.length <= 12 ? 150 : 72) : 100,
+    rotation: options ? -45 : 0,
+    centerX: options ? am5.p100 : am5.p50,
   });
 
   const xAxis = chart.xAxes.push(
@@ -548,41 +551,49 @@ function createSegmentTrendChart(
 
   const yAxis = chart.yAxes.push(
     am5xy.ValueAxis.new(root, {
-      min: 0,
-      max: 1000,
-      strictMinMax: true,
+      min: options?.minimum ?? (options?.kind === 'scoring-trend' ? undefined : 0),
+      max: options?.maximum,
+      extraMax: .12,
+      strictMinMax: options?.maximum !== undefined,
       renderer: yRenderer,
     })
   );
 
+  if (options?.axisTitles) {
+    xAxis.children.push(am5.Label.new(root, { text: options.xTitle || 'Date', x: am5.p50, centerX: am5.p50, ...chartText(typography, 12) }));
+    yAxis.children.unshift(am5.Label.new(root, { text: options.yTitle || 'Value', rotation: -90, y: am5.p50, centerX: am5.p50, ...chartText(typography, 12) }));
+  }
   seriesConfig.forEach((config) => {
     const series = chart.series.push(
-      am5xy.LineSeries.new(root, {
+      (options?.kind === 'response-timeline' ? am5xy.StepLineSeries : am5xy.LineSeries).new(root, {
         name: config.name,
         xAxis,
         yAxis,
         valueYField: config.field,
         categoryXField: 'category',
         stroke: am5.color(config.color),
+        connect: false,
+        tooltip: options?.tooltip === 'None' ? undefined : am5.Tooltip.new(root, { labelText: options?.tooltip === 'Custom' ? [options.tooltipTitle ? `{categoryX} · ${config.name}` : '', options.tooltipCount ? `Count: {${config.field}Count}` : '', options.tooltipPercentage ? `{${config.field}Percent}%` : ''].filter(Boolean).join('\n') : rows.some(row => row.coverage) ? `{categoryX}\n{coverage}\n${config.name}: {valueY}` : `{categoryX}\n${config.name}: {valueY}` }),
       })
     );
 
     series.strokes.template.setAll({ strokeWidth: 2 });
     series.set('fill', am5.color(config.color));
+    if (options?.kind === 'response-timeline') series.fills.template.setAll({ visible:true, fillOpacity:.25 });
 
-    series.bullets.push(() =>
+    if (options?.kind !== 'response-timeline') series.bullets.push((_root, _series, item) =>
       am5.Bullet.new(root, {
         locationY: 1,
         sprite: am5.Circle.new(root, {
-          radius: 5,
-          fill: am5.color(config.color),
+          radius: options ? 7 : 5,
+          fill: am5.color(options?.highlightHighest && item.get('valueY') === Math.max(...rows.map(r=>Number(r[config.field])||0)) ? '#f09a32' : config.color),
           stroke: am5.color(0xffffff),
           strokeWidth: 1,
         }),
       })
     );
 
-    series.bullets.push(() =>
+    if (options?.dataLabels !== 'None' && !(options?.kind === 'response-timeline' && rows.length > 60)) series.bullets.push(() =>
       am5.Bullet.new(root, {
         locationY: 1,
         sprite: am5.Label.new(root, {
@@ -590,7 +601,7 @@ function createSegmentTrendChart(
           populateText: true,
           centerX: am5.p50,
           centerY: am5.p100,
-          dy: -10,
+          dy: options?.dataLabels === 'Below' || options?.dataLabels === 'Inside Top' ? 20 : -10,
           ...chartText(typography, 11),
           fill: am5.color(0x000000),
         }),
@@ -600,10 +611,12 @@ function createSegmentTrendChart(
     series.data.setAll(rows);
   });
 
+  if (!options || options.kind === 'segment-trend') {
   const legend = chart.children.push(
     am5.Legend.new(root, {
       centerX: am5.p50,
       x: am5.p50,
+      useDefaultMarker: true,
       marginTop: 8,
     })
   );
@@ -613,10 +626,11 @@ function createSegmentTrendChart(
   });
   legend.valueLabels.template.set('forceHidden', true);
   legend.markers.template.setAll({
-    width: 12,
-    height: 12,
+    width: options ? 20 : 12,
+    height: options ? 20 : 12,
   });
   legend.data.setAll(chart.series.values);
+  }
 
   chart.appear(400, 50);
 }
@@ -1175,7 +1189,8 @@ export function buildChart(
         root,
         payload.segmentTrendRows,
         payload.segmentTrendSeries,
-        typography
+        typography,
+        payload.timeSeriesOptions
       );
       break;
     case 'pictorial':

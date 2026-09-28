@@ -1,18 +1,25 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
   DASHBOARD_FILTER_QUESTIONS,
   type DashboardSavedFilter,
+  type DashboardActiveFilter,
+  type DashboardFilterQuestion,
 } from '@/data/mock-dashboard-filters';
 import styles from './DashboardFiltersPanel.module.css';
+import { ReportingYearDateFilter } from './ReportingYearDateFilter';
+import { isReportingYear, type DashboardDateSelection, type ReportingYear } from '@/data/reporting-year';
 
 type FilterMode = 'extended' | 'compact';
 
 interface DashboardFiltersPanelProps {
+  dashboardId?: number;
   open: boolean;
+  onFilterChange?: (filter: DashboardActiveFilter) => void;
+  extraQuestions?: DashboardFilterQuestion[];
   onManageFilters: () => void;
   onSaveFilter: (filter: DashboardSavedFilter) => void;
 }
@@ -85,9 +92,12 @@ function SaveFilterModal({
 }
 
 export function DashboardFiltersPanel({
+  dashboardId = 0,
   open,
   onManageFilters,
   onSaveFilter,
+  onFilterChange,
+  extraQuestions,
 }: DashboardFiltersPanelProps) {
   const { showToast } = useWuShowToast();
   const [mode, setMode] = useState<FilterMode>('extended');
@@ -97,11 +107,28 @@ export function DashboardFiltersPanel({
   const [value, setValue] = useState('');
   const [responseStatus, setResponseStatus] = useState('all');
   const [dateRange, setDateRange] = useState('');
+  const [dateSelection, setDateSelection] = useState<DashboardDateSelection>({ startDate: '', endDate: '' });
+  const reportingYearsKey = `survey-re:dashboard:${dashboardId}:reporting-years:v1`;
+  const [reportingYears, setReportingYears] = useState<ReportingYear[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored: unknown = JSON.parse(window.localStorage.getItem(reportingYearsKey) ?? '[]');
+      return Array.isArray(stored) ? stored.filter(isReportingYear) : [];
+    } catch { return []; }
+  });
+
+  function changeDateSelection(selection: DashboardDateSelection) {
+    setDateSelection(selection);
+    setDateRange(selection.startDate && selection.endDate ? `${selection.startDate} – ${selection.endDate}` : '');
+  }
   const [saveOpen, setSaveOpen] = useState(false);
 
+  const questions = useMemo(() => [...DASHBOARD_FILTER_QUESTIONS, ...(extraQuestions ?? [])], [extraQuestions]);
+  useEffect(() => { onFilterChange?.({ hasCriteria, questionId, operator, value, responseStatus, dateRange, dateSelection }); }, [onFilterChange, hasCriteria, questionId, operator, value, responseStatus, dateRange, dateSelection]);
+
   const question = useMemo(
-    () => DASHBOARD_FILTER_QUESTIONS.find((item) => item.id === questionId),
-    [questionId]
+    () => questions.find((item) => item.id === questionId),
+    [questionId, questions]
   );
 
   if (!open) return null;
@@ -113,6 +140,7 @@ export function DashboardFiltersPanel({
     setOperator('is');
     setResponseStatus('all');
     setDateRange('');
+    setDateSelection({ startDate: '', endDate: '' });
   };
 
   return (
@@ -120,7 +148,7 @@ export function DashboardFiltersPanel({
       <section className={`${styles.panel} ${mode === 'compact' ? styles.compact : ''}`} aria-label="Dashboard filters">
         <div className={styles.topRow}>
           <div className={styles.primaryActions}>
-            {hasCriteria ? (
+            {hasCriteria || responseStatus !== 'all' || dateRange ? (
               <button type="button" className={styles.textButton} onClick={reset}>
                 <span className="wm-refresh" aria-hidden /> Reset
               </button>
@@ -162,16 +190,26 @@ export function DashboardFiltersPanel({
               <option value="terminated">Terminated</option>
             </select>
           </label>
-          <label>
+          <div className={styles.dateControl}>
             <span>Filter by date</span>
-            <input
-              type="text"
-              value={dateRange}
-              onChange={(event) => setDateRange(event.target.value)}
-              placeholder="Select date range"
-              aria-label="Filter by date"
-            />
-          </label>
+            <ReportingYearDateFilter selection={dateSelection} years={reportingYears} onChange={changeDateSelection} onSave={year => {
+              const next = reportingYears.some(saved => saved.id === year.id)
+                ? reportingYears.map(saved => saved.id === year.id ? year : saved)
+                : [...reportingYears, year];
+              setReportingYears(next);
+              try {
+                window.localStorage.setItem(reportingYearsKey, JSON.stringify(next));
+                showToast({ message: `Reporting year '${year.name}' saved`, variant: 'success' });
+              } catch { showToast({ message: 'Reporting year applied for this session. Browser storage is unavailable.', variant: 'info' }); }
+            }} onDelete={year => {
+              const next = reportingYears.filter(saved => saved.id !== year.id);
+              setReportingYears(next);
+              try {
+                window.localStorage.setItem(reportingYearsKey, JSON.stringify(next));
+                showToast({ message: `Reporting year '${year.name}' deleted`, variant: 'success' });
+              } catch { showToast({ message: 'Deleted for this session. Browser storage is unavailable.', variant: 'info' }); }
+            }} />
+          </div>
           <div className={styles.modeSwitch} role="group" aria-label="Filter display mode">
             <button type="button" className={mode === 'extended' ? styles.activeMode : ''} onClick={() => setMode('extended')}>
               Extended mode
@@ -181,6 +219,7 @@ export function DashboardFiltersPanel({
             </button>
           </div>
         </div>
+
 
         {mode === 'extended' ? (
           <div className={styles.criteriaArea}>
@@ -213,7 +252,7 @@ export function DashboardFiltersPanel({
                       }}
                     >
                       <option value="">-Select-</option>
-                      {DASHBOARD_FILTER_QUESTIONS.map((item) => (
+                      {questions.map((item) => (
                         <option key={item.id} value={item.id}>{item.label}</option>
                       ))}
                     </select>

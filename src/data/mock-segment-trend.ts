@@ -6,7 +6,7 @@ export interface SegmentTrendSeriesConfig {
 
 export interface SegmentTrendDataRow {
   category: string;
-  [seriesField: string]: string | number;
+  [seriesField: string]: string | number | null;
 }
 
 export const SEGMENT_TREND_SERIES: SegmentTrendSeriesConfig[] = [

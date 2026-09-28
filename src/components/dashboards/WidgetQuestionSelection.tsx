@@ -31,6 +31,10 @@ interface WidgetQuestionSelectionProps {
   /** When set with multiSelect, rows can be toggled independently. */
   selectedQuestionIds?: number[];
   multiSelect?: boolean;
+  wholeQuestionsOnly?: boolean;
+  unavailableQuestionIds?: number[];
+  showSelectionCount?: boolean;
+  onSelectionChange?: (ids: number[]) => void;
   onSelectQuestion?: (question: SurveyQuestion) => void;
   onToggleQuestion?: (question: SurveyQuestion, selected: boolean) => void;
   /** Question ids hidden from the picker (e.g. already chosen as primary). */
@@ -42,6 +46,10 @@ export function WidgetQuestionSelection({
   selectedQuestionId = null,
   selectedQuestionIds = [],
   multiSelect = false,
+  wholeQuestionsOnly = false,
+  unavailableQuestionIds = [],
+  showSelectionCount = false,
+  onSelectionChange,
   onSelectQuestion,
   onToggleQuestion,
   excludeQuestionIds = [],
@@ -50,6 +58,7 @@ export function WidgetQuestionSelection({
   const [expandedParentIds, setExpandedParentIds] = useState<Set<number>>(() => new Set());
 
   const excludedIds = useMemo(() => new Set(excludeQuestionIds), [excludeQuestionIds]);
+  const unavailableIds = useMemo(() => new Set(unavailableQuestionIds), [unavailableQuestionIds]);
   const selectedIds = useMemo(() => new Set(selectedQuestionIds), [selectedQuestionIds]);
 
   const questions = useMemo(
@@ -58,8 +67,8 @@ export function WidgetQuestionSelection({
   );
 
   const displayQuestions = useMemo(
-    () => flattenQuestionsForPicker(questions, expandedParentIds),
-    [questions, expandedParentIds]
+    () => wholeQuestionsOnly ? questions : flattenQuestionsForPicker(questions, expandedParentIds),
+    [questions, expandedParentIds, wholeQuestionsOnly]
   );
 
   const toggleExpand = useCallback((parentId: number) => {
@@ -74,26 +83,29 @@ export function WidgetQuestionSelection({
     });
   }, []);
 
-  const allVisibleSelected =
-    multiSelect &&
-    displayQuestions.length > 0 &&
-    displayQuestions.every((q) => selectedIds.has(q.parentQuestionId ?? q.id));
-
-  const toggleAllVisible = useCallback(
-    (checked: boolean): void => {
-      if (!onToggleQuestion) return;
-      const seen = new Set<number>();
-      for (const question of displayQuestions) {
-        const key = question.parentQuestionId ?? question.id;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const isSelected = selectedIds.has(key);
-        if (checked && !isSelected) onToggleQuestion(question, true);
-        if (!checked && isSelected) onToggleQuestion(question, false);
-      }
-    },
-    [displayQuestions, onToggleQuestion, selectedIds]
-  );
+  const selectableVisible = useMemo(() => displayQuestions.filter(q => !unavailableIds.has(q.parentQuestionId ?? q.id) && q.text.toLowerCase().includes(search.toLowerCase())), [displayQuestions, unavailableIds, search]);
+  const allVisibleSelected = multiSelect && selectableVisible.length > 0 && selectableVisible.every(q => selectedIds.has(q.parentQuestionId ?? q.id));
+  const toggleQuestion = useCallback((question: SurveyQuestion, checked: boolean) => {
+    const key = question.parentQuestionId ?? question.id;
+    if (unavailableIds.has(key)) return;
+    if (onSelectionChange) {
+      const next = new Set(selectedIds);
+      if (checked) next.add(key); else next.delete(key);
+      onSelectionChange([...next]);
+    } else onToggleQuestion?.(question, checked);
+  }, [onSelectionChange, onToggleQuestion, selectedIds, unavailableIds]);
+  const toggleAllVisible = useCallback((checked: boolean) => {
+    const next = new Set(selectedIds);
+    const seen = new Set<number>();
+    for (const question of selectableVisible) {
+      const key = question.parentQuestionId ?? question.id;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (checked) next.add(key); else next.delete(key);
+      if (!onSelectionChange && selectedIds.has(key) !== checked) onToggleQuestion?.(question, checked);
+    }
+    onSelectionChange?.([...next]);
+  }, [selectableVisible, selectedIds, onSelectionChange, onToggleQuestion]);
 
   const columns: IWuTableColumnDef<SurveyQuestion>[] = useMemo(() => {
     const questionColumns: IWuTableColumnDef<SurveyQuestion>[] = [
@@ -111,7 +123,7 @@ export function WidgetQuestionSelection({
         cell: ({ row }) => {
           const question = row.original;
           const isSubRow = question.parentQuestionId !== undefined;
-          const isExpandable = questionHasExpandableRows(question);
+          const isExpandable = !wholeQuestionsOnly && questionHasExpandableRows(question);
           const isExpanded = expandedParentIds.has(question.id);
           const selectionKey = question.parentQuestionId ?? question.id;
           const isSelected = multiSelect
@@ -144,10 +156,11 @@ export function WidgetQuestionSelection({
               <button
                 type="button"
                 className={styles.questionLink}
+                disabled={unavailableIds.has(selectionKey)}
                 style={isSelected ? { fontWeight: 600 } : undefined}
                 onClick={() => {
                   if (multiSelect) {
-                    onToggleQuestion?.(question, !selectedIds.has(selectionKey));
+                    toggleQuestion(question, !selectedIds.has(selectionKey));
                     return;
                   }
                   onSelectQuestion?.(question);
@@ -162,6 +175,7 @@ export function WidgetQuestionSelection({
       {
         accessorKey: 'type',
         header: 'Type',
+        cell: ({ row }) => <span>{row.original.type}{unavailableIds.has(row.original.id) && <small className={styles.unavailable}>Unavailable</small>}</span>,
         enableSorting: true,
         size: 140,
       },
@@ -191,8 +205,9 @@ export function WidgetQuestionSelection({
           return (
             <div className={styles.checkboxCell}>
               <WuCheckbox
+                disabled={unavailableIds.has(selectionKey)}
                 checked={checked}
-                onChange={(nextChecked) => onToggleQuestion?.(question, nextChecked)}
+                onChange={(nextChecked) => toggleQuestion(question, nextChecked)}
                 aria-label={`Select ${question.code}`}
               />
             </div>
@@ -207,7 +222,9 @@ export function WidgetQuestionSelection({
     expandedParentIds,
     multiSelect,
     onSelectQuestion,
-    onToggleQuestion,
+    toggleQuestion,
+    unavailableIds,
+    wholeQuestionsOnly,
     selectedIds,
     selectedQuestionId,
     toggleAllVisible,
@@ -219,13 +236,14 @@ export function WidgetQuestionSelection({
       <div className={styles.searchRow}>
         <WuInput
           variant="outlined"
-          placeholder="Search by Question nar"
+          placeholder="Search by question name"
           Icon={<span className="wm-search" />}
           iconPosition="left"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className={styles.searchInput}
         />
+        {showSelectionCount && <span className={styles.selectionCount} aria-live="polite">{questions.filter(q => !unavailableIds.has(q.id) && selectedIds.has(q.id)).length} out of {questions.filter(q => !unavailableIds.has(q.id)).length}</span>}
       </div>
       <div className={styles.tableArea}>
         <WuTable

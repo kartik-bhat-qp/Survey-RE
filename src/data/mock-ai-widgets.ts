@@ -1,9 +1,9 @@
 import type { Layout } from 'react-grid-layout';
-import { COMPARATIVE_BAR_LAYOUT_W } from '@/data/dashboard-grid-config';
 
 export type AiWidgetType =
   | 'map'
   | 'response-info'
+  | 'response-timeline'
   | 'bar'
   | 'pie'
   | 'line'
@@ -22,7 +22,8 @@ export type AiWidgetType =
   | 'stat-metric'
   | 'comparative-bar'
   | 'segment-trend'
-  | 'wordcloud';
+  | 'wordcloud'
+  | 'heat-map';
 
 export interface AiWidgetConfig {
   id: string;
@@ -41,47 +42,23 @@ export const AI_DASHBOARD_WIDGETS: AiWidgetConfig[] = [
   { id: 'w-mean', type: 'stat-metric', title: 'Mean' },
   { id: 'w-comparative-bar', type: 'comparative-bar', title: 'Comparative Bar' },
   { id: 'w-segment-trend', type: 'segment-trend', title: 'Segment Trend' },
+  { id: 'w-scoring-trend', type: 'scoring-trend', title: 'Scoring Trend' },
+  { id: 'w-response-timeline', type: 'response-timeline', title: 'Response Timeline' },
   { id: 'w-comments-wordcloud', type: 'wordcloud', title: 'Suggestions / comments' },
+  { id: 'w-heat-map', type: 'heat-map', title: 'Heat Map Chart' },
 ];
 
 /** Desktop column count — mobile uses a single column via AiDashboardCanvas. */
 export const AI_DASHBOARD_GRID_COLS = 2;
 
-/** Initial grid positions — each item is 500×500px (1×1 at rowHeight 500, margin 20). */
-export const AI_DASHBOARD_LAYOUT: Layout = [
-  { i: 'w-map', x: 0, y: 0, w: DEFAULT_W, h: DEFAULT_H, minW: 1, minH: 1 },
-  { i: 'w-response', x: 1, y: 0, w: DEFAULT_W, h: DEFAULT_H, minW: 1, minH: 1 },
-  { i: 'w-bar', x: 0, y: 1, w: DEFAULT_W, h: DEFAULT_H, minW: 1, minH: 1 },
-  { i: 'w-nps-benchmark', x: 1, y: 1, w: DEFAULT_W, h: DEFAULT_H, minW: 1, minH: 1 },
-  { i: 'w-mean', x: 0, y: 2, w: DEFAULT_W, h: DEFAULT_H, minW: 1, minH: 1 },
-  {
-    i: 'w-comparative-bar',
-    x: 0,
-    y: 3,
-    w: COMPARATIVE_BAR_LAYOUT_W,
-    h: DEFAULT_H,
-    minW: 1,
-    minH: 1,
-  },
-  {
-    i: 'w-segment-trend',
-    x: 0,
-    y: 4,
-    w: AI_DASHBOARD_GRID_COLS,
-    h: DEFAULT_H,
-    minW: 1,
-    minH: 1,
-  },
-  {
-    i: 'w-comments-wordcloud',
-    x: 0,
-    y: 5,
-    w: AI_DASHBOARD_GRID_COLS,
-    h: DEFAULT_H,
-    minW: 1,
-    minH: 1,
-  },
-];
+/** Two equal-width desktop columns. Every widget occupies exactly one column. */
+export function createDashboardLayout(widgets: readonly AiWidgetConfig[]): Layout {
+  return widgets.map((widget, index) => ({
+    i: widget.id, x: index % AI_DASHBOARD_GRID_COLS, y: Math.floor(index / AI_DASHBOARD_GRID_COLS),
+    w: DEFAULT_W, h: DEFAULT_H, minW: 1, maxW: 1, minH: 1,
+  }));
+}
+export const AI_DASHBOARD_LAYOUT: Layout = createDashboardLayout(AI_DASHBOARD_WIDGETS);
 
 export function createSeededRandom(seed: number): () => number {
   let state = seed;

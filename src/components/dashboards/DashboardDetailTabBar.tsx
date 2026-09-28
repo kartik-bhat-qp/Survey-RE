@@ -1,11 +1,17 @@
 'use client';
 
+import type { BuiltWidget } from '@/data/ai-widget-builder';
+
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import type { AdvancedHeatmapConfig } from '@/data/advanced-heatmap';
 import { AiDashboardCanvas } from '@/components/dashboards/AiDashboardCanvas';
 import { DashboardExternalReportPanel } from '@/components/dashboards/DashboardExternalReportPanel';
 import { NewReportTabModal } from '@/components/dashboards/NewReportTabModal';
+import { DashboardInsightsHub } from '@/components/dashboards/DashboardInsightsHub';
+import type { DashboardActiveFilter } from '@/data/mock-dashboard-filters';
+import type { DashboardDesign } from '@/data/dashboard-design';
 import type { DesignTypographyOptions } from '@/components/dashboards/DashboardDesignSettingsTab';
 import type { DashboardReportPickItem } from '@/data/mock-dashboard-report-tabs';
 import type { AiInsightRefreshFrequency } from '@/data/mock-dashboard-ai-insights';
@@ -52,6 +58,15 @@ const MENU_ITEM_CLASS =
   'flex w-full justify-start rounded-[4px] px-3 py-2 text-[13px] font-normal text-[#1f2a44] hover:bg-[#eef3f8]';
 
 interface DashboardDetailTabBarProps {
+  builtWidgets?: BuiltWidget[];
+  onBuiltWidgetChange?: (widget: BuiltWidget) => void;
+  advancedHeatmaps?: (AdvancedHeatmapConfig & { tabId: string })[];
+  onAdvancedHeatmapChange?: (config: AdvancedHeatmapConfig) => void;
+  onActiveTabChange?: (tabId: string) => void;
+  dashboardId: number;
+  dashboardName?: string;
+  dashboardDesign?: DashboardDesign;
+  dashboardFilter?: DashboardActiveFilter;
   designTypography: DesignTypographyOptions;
   insightRefreshFrequency: AiInsightRefreshFrequency;
   globalInsightRefreshVersion: number;
@@ -62,6 +77,12 @@ interface DashboardDetailTabBarProps {
 }
 
 export function DashboardDetailTabBar({
+  builtWidgets = [], onBuiltWidgetChange,
+  advancedHeatmaps = [], onAdvancedHeatmapChange, onActiveTabChange,
+  dashboardId,
+  dashboardName = 'Dashboard',
+  dashboardDesign,
+  dashboardFilter,
   designTypography,
   insightRefreshFrequency,
   globalInsightRefreshVersion,
@@ -73,6 +94,7 @@ export function DashboardDetailTabBar({
   const { showToast } = useWuShowToast();
   const [tabs, setTabs] = useState<DashboardTab[]>(INITIAL_TABS);
   const [activeTabId, setActiveTabId] = useState(INITIAL_TABS[0].id);
+  const selectTab = (id: string) => { setActiveTabId(id); onActiveTabChange?.(id); };
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [tabMenuOpenId, setTabMenuOpenId] = useState<string | null>(null);
@@ -94,7 +116,7 @@ export function DashboardDetailTabBar({
       reportName: report.name,
     };
     setTabs((prev) => [...prev, nextTab]);
-    setActiveTabId(nextTab.id);
+    selectTab(nextTab.id);
   }
 
   function handleAddTab(): void {
@@ -106,7 +128,7 @@ export function DashboardDetailTabBar({
       kind: 'canvas',
     };
     setTabs((prev) => [...prev, nextTab]);
-    setActiveTabId(nextTab.id);
+    selectTab(nextTab.id);
     showToast({ message: `${nextTab.label} added`, variant: 'success' });
   }
 
@@ -121,13 +143,9 @@ export function DashboardDetailTabBar({
       showToast({ message: 'At least one tab is required', variant: 'error' });
       return;
     }
-    setTabs((prev) => {
-      const next = prev.filter((item) => item.id !== tab.id);
-      if (activeTabId === tab.id) {
-        setActiveTabId(next[0]?.id ?? '');
-      }
-      return next;
-    });
+    const remainingTabs = tabs.filter(item => item.id !== tab.id);
+    setTabs(remainingTabs);
+    if (activeTabId === tab.id) selectTab(remainingTabs[0]?.id ?? '');
     showToast({ message: `${tab.label} deleted`, variant: 'success' });
   }
 
@@ -142,7 +160,15 @@ export function DashboardDetailTabBar({
           />
         ) : (
           <AiDashboardCanvas
+            builtWidgets={builtWidgets.filter(widget => widget.tabId === activeTab.id)}
+            onBuiltWidgetChange={onBuiltWidgetChange}
+            advancedHeatmaps={advancedHeatmaps.filter(widget => widget.tabId === activeTab.id)}
+            onAdvancedHeatmapChange={onAdvancedHeatmapChange}
+            key={activeTab.id}
+            dashboardId={dashboardId}
+            dashboardTabId={activeTab.id}
             designTypography={designTypography}
+            dashboardDesign={dashboardDesign} dashboardFilter={dashboardFilter}
             insightRefreshFrequency={insightRefreshFrequency}
             globalInsightRefreshVersion={globalInsightRefreshVersion}
             globalInsightRefreshTargetWidgetIds={globalInsightRefreshTargetWidgetIds}
@@ -202,7 +228,7 @@ export function DashboardDetailTabBar({
                   role="tab"
                   aria-selected={isActive}
                   className={styles.tabLabel}
-                  onClick={() => setActiveTabId(tab.id)}
+                  onClick={() => selectTab(tab.id)}
                 >
                   {isExternalReport ? (
                     <WuTooltip content="External report" position="top">
@@ -248,6 +274,7 @@ export function DashboardDetailTabBar({
             );
           })}
         </div>
+        <DashboardInsightsHub key={dashboardId} dashboardName={dashboardName} tabName={activeTab.label} />
       </div>
 
       <NewReportTabModal

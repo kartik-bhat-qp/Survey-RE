@@ -19,7 +19,7 @@ const WuTooltip = dynamic(
   { ssr: false }
 );
 
-export type WidgetPickerType = 'question-based' | 'advanced';
+export type WidgetPickerType = 'question-based' | 'advanced' | 'build-ai';
 
 interface SelectWidgetModalProps {
   open: boolean;
@@ -32,6 +32,7 @@ interface SelectWidgetModalProps {
   /** Skips survey picker and opens the question list for the dashboard survey. */
   onContinueWithSurvey?: () => void;
   onSelectAdvanced?: () => void;
+  onSelectAi?: () => void;
 }
 
 const QUESTION_BASED_DISABLED_MESSAGE =
@@ -48,6 +49,7 @@ export function SelectWidgetModal({
   onSelectQuestionBased,
   onContinueWithSurvey,
   onSelectAdvanced,
+  onSelectAi,
 }: SelectWidgetModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
@@ -68,6 +70,7 @@ export function SelectWidgetModal({
       showToast({ message: QUESTION_BASED_DISABLED_MESSAGE, variant: 'error' });
       return;
     }
+    if (type === 'build-ai') { handleOpenChange(false); onSelectAi?.(); return; }
     onSelectType?.(type);
     if (type === 'question-based') {
       handleOpenChange(false);
@@ -210,6 +213,10 @@ export function SelectWidgetModal({
               </p>
             </div>
           </div>
+          {onSelectAi && <button type="button" className={`${styles.card} ${styles.aiCard}`} onClick={() => handleSelect('build-ai')}>
+            <span className={`wc-ai ${styles.aiIcon}`} aria-hidden="true" />
+            <div className={styles.cardText}><div className={styles.cardTitle}>Build with AI</div><p className={styles.cardDescription}>Describe your idea. Create a custom widget from your survey data.</p></div>
+          </button>}
         </div>
 
         <button

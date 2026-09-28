@@ -24,21 +24,22 @@ interface SharedDashboardDateFilterProps {
 /** Production's compact calendar layout, using the installed WickUI primitives. */
 export function SharedDashboardDateFilter({ startDate, endDate, onChange }: SharedDashboardDateFilterProps) {
   const [open, setOpen] = useState(false);
+  return <WuPopover open={open} onOpenChange={setOpen} align="start" sideOffset={-1}
+    className={styles.popover} aria-label="Date range" Trigger={<button type="button" className={styles.trigger} aria-label="Date range">
+      <span className="wm-date-range" aria-hidden /><span>{startDate && endDate ? `${displayDate(startDate)} – ${displayDate(endDate)}` : 'Select date range'}</span>
+      <span className="wm-arrow-drop-down" aria-hidden />
+    </button>}>
+    {open && <DateRangeCalendar startDate={startDate} endDate={endDate} onChange={range => { onChange(range); setOpen(false); }} />}
+  </WuPopover>;
+}
+
+/** Calendar body shared by standalone and reporting-year menus. */
+export function DateRangeCalendar({ startDate, endDate, onChange }: SharedDashboardDateFilterProps) {
   const [draftStart, setDraftStart] = useState(startDate);
   const [draftEnd, setDraftEnd] = useState(endDate);
   const [preset, setPreset] = useState('Custom range');
-  const [month, setMonth] = useState(() => new Date());
-  const isMobile = useIsMobile();
+  const [month, setMonth] = useState(() => asDate(startDate) ?? new Date());
   const invalid = !!(draftStart && draftEnd && draftStart > draftEnd);
-
-  function changeOpen(next: boolean) {
-    if (next) {
-      setDraftStart(startDate); setDraftEnd(endDate); setPreset('Custom range');
-      const first = asDate(startDate) ?? new Date();
-      setMonth(startDate ? first : new Date(first.getFullYear(), first.getMonth() - 1, 1));
-    }
-    setOpen(next);
-  }
 
   function selectPreset(value: string) {
     setPreset(value);
@@ -63,34 +64,43 @@ export function SharedDashboardDateFilter({ startDate, endDate, onChange }: Shar
     setDraftStart(asString(start)); setDraftEnd(asString(end)); setMonth(start);
   }
 
-  return <WuPopover open={open} onOpenChange={changeOpen} align="start" sideOffset={-1}
-    className={styles.popover} aria-label="Date range" Trigger={<button type="button" className={styles.trigger} aria-label="Date range">
-      <span className="wm-date-range" aria-hidden /><span>{startDate && endDate ? `${displayDate(startDate)} - ${displayDate(endDate)}` : 'Select date range'}</span>
-      <span className="wm-arrow-drop-down" aria-hidden />
-    </button>}>
+  return <>
     <WuSelect aria-label="Date preset" variant="outlined" data={PRESETS} accessorKey={{ value: 'value', label: 'label' }}
       value={PRESETS.find((option) => option.value === preset)} onSelect={(option) => selectPreset((option as { value: string }).value)} />
-    <WuCalender className={styles.calendar} mode="range" numberOfMonths={isMobile ? 1 : 2}
-      month={month} onMonthChange={setMonth} captionLayout="dropdown"
-      startMonth={new Date(2020, 0, 1)} endMonth={new Date(new Date().getFullYear() + 1, 11, 31)}
-      selected={draftStart ? { from: asDate(draftStart), to: asDate(draftEnd) } : undefined}
-      onSelect={(range) => { setDraftStart(asString(range?.from)); setDraftEnd(asString(range?.to)); setPreset('Custom range'); }}
-      classNames={{
-        months: styles.months, month: styles.month, month_caption: styles.monthCaption,
-        month_grid: styles.monthGrid, weekdays: styles.weekdays, weekday: styles.weekday,
-        day: styles.day, day_button: styles.dayButton, selected: styles.selected,
-        range_start: styles.rangeEdge, range_end: styles.rangeEdge, range_middle: styles.rangeMiddle,
-        today: styles.today, nav: styles.navigation, button_previous: styles.previous, button_next: styles.next,
-        dropdowns: styles.dropdowns, dropdown: styles.dropdown, caption_label: styles.captionLabel,
-      }} />
+    <DashboardCalendar startDate={draftStart} endDate={draftEnd} month={month} onMonthChange={setMonth}
+      onChange={(start, end) => { setDraftStart(start); setDraftEnd(end); setPreset('Custom range'); }} />
     <footer className={styles.footer}>
       <div className={styles.dateInputs}>
-        <input type="date" aria-label="Start date" value={draftStart} onInput={(event) => { setDraftStart(event.currentTarget.value); setPreset('Custom range'); }} />
-        <input type="date" aria-label="End date" value={draftEnd} onInput={(event) => { setDraftEnd(event.currentTarget.value); setPreset('Custom range'); }} />
+        <input type="date" aria-label="Start date" value={draftStart} onInput={(event) => { setDraftStart(event.currentTarget.value); const date = asDate(event.currentTarget.value); if (date) setMonth(date); setPreset('Custom range'); }} />
+        <input type="date" aria-label="End date" value={draftEnd} onInput={(event) => { setDraftEnd(event.currentTarget.value); const date = asDate(event.currentTarget.value); if (date) setMonth(date); setPreset('Custom range'); }} />
       </div>
-      <button type="button" className={styles.reset} onClick={() => { onChange({ startDate: '', endDate: '' }); setOpen(false); }}><span className="wm-refresh" aria-hidden />Reset</button>
-      <WuButton size="sm" disabled={!draftStart || !draftEnd || invalid} onClick={() => { onChange({ startDate: draftStart, endDate: draftEnd }); setOpen(false); }}>Apply</WuButton>
+      <button type="button" className={styles.reset} onClick={() => { onChange({ startDate: '', endDate: '' }); }}><span className="wm-refresh" aria-hidden />Reset</button>
+      <WuButton size="sm" disabled={!draftStart || !draftEnd || invalid} onClick={() => { onChange({ startDate: draftStart, endDate: draftEnd }); }}>Apply</WuButton>
     </footer>
     {invalid && <p role="alert" className={styles.error}>The start date must be on or before the end date.</p>}
-  </WuPopover>;
+  </>;
+}
+
+
+export function DashboardCalendar({ startDate, endDate, month, onMonthChange, onChange, single = false }: {
+  startDate: string; endDate?: string; month: Date; onMonthChange: (month: Date) => void;
+  onChange: (start: string, end: string) => void; single?: boolean;
+}) {
+  const isMobile = useIsMobile();
+  const common = {
+    className: styles.calendar, numberOfMonths: single || isMobile ? 1 : 2, month, onMonthChange,
+    captionLayout: 'dropdown' as const, startMonth: new Date(2020, 0, 1), endMonth: new Date(2098, 11, 31),
+    classNames: {
+      months: styles.months, month: styles.month, month_caption: styles.monthCaption,
+      month_grid: styles.monthGrid, weekdays: styles.weekdays, weekday: styles.weekday,
+      day: styles.day, day_button: styles.dayButton, selected: styles.selected,
+      range_start: styles.rangeEdge, range_end: styles.rangeEdge, range_middle: styles.rangeMiddle,
+      today: styles.today, nav: styles.navigation, button_previous: styles.previous, button_next: styles.next,
+      dropdowns: styles.dropdowns, dropdown: styles.dropdown, caption_label: styles.captionLabel,
+    },
+  };
+  return single
+    ? <WuCalender {...common} mode="single" selected={asDate(startDate)} onSelect={date => onChange(asString(date), '')} />
+    : <WuCalender {...common} mode="range" selected={startDate ? { from: asDate(startDate), to: asDate(endDate ?? '') } : undefined}
+        onSelect={range => onChange(asString(range?.from), asString(range?.to))} />;
 }

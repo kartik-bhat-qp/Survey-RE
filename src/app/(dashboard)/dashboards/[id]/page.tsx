@@ -1,27 +1,31 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { DashboardDetailTabBar } from '@/components/dashboards/DashboardDetailTabBar';
 import { DashboardDetailToolbar } from '@/components/dashboards/DashboardDetailToolbar';
+import { HEAT_MAP_DASHBOARD_FILTER_QUESTIONS, type DashboardActiveFilter } from '@/data/mock-dashboard-filters';
 import { DashboardFiltersPanel } from '@/components/dashboards/DashboardFiltersPanel';
 import { DashboardFocusedPreview } from '@/components/dashboards/DashboardFocusedPreview';
 import { DashboardPowerPointExportModal } from '@/components/dashboards/DashboardPowerPointExportModal';
 import { DashboardSettingsModal } from '@/components/dashboards/DashboardSettingsModal';
 import { DashboardShareModal } from '@/components/dashboards/DashboardShareModal';
+import type { AdvancedHeatmapConfig } from '@/data/advanced-heatmap';
 import { AdvancedWidgetModal } from '@/components/dashboards/AdvancedWidgetModal';
 import { QuestionBasedWidgetModal } from '@/components/dashboards/QuestionBasedWidgetModal';
+import { BuilderDialog } from '@/components/dashboards/ai-builder/BuilderDialog';
+import type { BuiltWidget } from '@/data/ai-widget-builder';
 import { SelectWidgetModal } from '@/components/dashboards/SelectWidgetModal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
 import {
-  DEFAULT_DESIGN_TYPOGRAPHY,
   type DesignTypographyOptions,
 } from '@/components/dashboards/DashboardDesignSettingsTab';
 import { getDashboardById } from '@/data/get-dashboard-by-id';
+import { useDashboardDesign } from '@/hooks/useDashboardDesign';
 import { useDashboardSharing } from '@/hooks/useDashboardSharing';
 import { useBiProductBasePath, withBiProductBasePath } from '@/hooks/useBiProductBasePath';
 import {
@@ -67,11 +71,39 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
   const [questionBasedWidgetOpen, setQuestionBasedWidgetOpen] = useState(false);
   const [questionBasedPresetSurvey, setQuestionBasedPresetSurvey] =
     useState<SurveyListItem | null>(null);
+  const [advancedHeatmaps, setAdvancedHeatmaps] = useState<(AdvancedHeatmapConfig & { tabId: string })[]>([]);
+  const [activeWidgetTab, setActiveWidgetTab] = useState('tab-1');
+  const [aiBuilderOpen, setAiBuilderOpen] = useState(false);
+  const [builtWidgets, setBuiltWidgets] = useState<BuiltWidget[]>([]);
   const [advancedWidgetOpen, setAdvancedWidgetOpen] = useState(false);
+  useEffect(() => {
+    let session: string | undefined;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const controller = new AbortController();
+    async function checkSession() {
+      try {
+        const response = await fetch('/api/ai-widget-session', { cache: 'no-store', signal: controller.signal });
+        if (!response.ok) return;
+        const result: unknown = await response.json();
+        if (cancelled || !result || typeof result !== 'object' || !('session' in result) || typeof result.session !== 'string') return;
+        if (session && session !== result.session) {
+          setBuiltWidgets([]);
+          setAiBuilderOpen(false);
+        }
+        session = result.session;
+      } catch { /* Recheck when the local server is reachable again. */ }
+      finally { if (!cancelled) timer = setTimeout(checkSession, 5000); }
+    }
+    void checkSession();
+    return () => { cancelled = true; controller.abort(); clearTimeout(timer); };
+  }, []);
+
   const [hasAddedWidget, setHasAddedWidget] = useState(false);
-  const [designTypography, setDesignTypography] = useState<DesignTypographyOptions>(
-    DEFAULT_DESIGN_TYPOGRAPHY
-  );
+  const [dashboardFilter, setDashboardFilter] = useState<DashboardActiveFilter>();
+  const [dashboardDesign, setDashboardDesign] = useDashboardDesign(numericId);
+  const designTypography = dashboardDesign.typography;
+  const setDesignTypography = (typography: DesignTypographyOptions) => setDashboardDesign({ ...dashboardDesign, typography });
   const [insightRefreshFrequency, setInsightRefreshFrequency] =
     useState<AiInsightRefreshFrequency>(() => {
       if (typeof window === 'undefined') return DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY;
@@ -140,7 +172,10 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         name={name}
         onNameChange={setName}
         showPresentation
-        onAddWidget={() => setAddWidgetOpen(true)}
+        onAddWidget={() => {
+          if (activeWidgetTab.startsWith('report-')) { showToast({ message: 'Select a dashboard tab to add a widget. External report tabs cannot contain widgets.', variant: 'info' }); return; }
+          setAddWidgetOpen(true);
+        }}
         onOpenSettings={() => { setSettingsTab('general'); setSettingsOpen(true); }}
         onOpenShare={() => setShareOpen(true)}
         onExportPowerPoint={() => setPowerPointExportOpen(true)}
@@ -151,6 +186,9 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
 
       <div id="dashboard-filter-panel">
         <DashboardFiltersPanel
+          dashboardId={numericId}
+          onFilterChange={setDashboardFilter}
+          extraQuestions={HEAT_MAP_DASHBOARD_FILTER_QUESTIONS}
           open={filtersOpen}
           onManageFilters={() => {
             setFiltersOpen(false);
@@ -198,6 +236,8 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         onSharedLinksChange={(links) => setSharing((previous) => ({ ...previous, links }))}
         onNameChange={setName}
         appliedDesignTypography={designTypography}
+        appliedDesign={dashboardDesign}
+        onDesignChange={setDashboardDesign}
         onDesignTypographyChange={setDesignTypography}
         insightRefreshFrequency={insightRefreshFrequency}
         onInsightRefreshFrequencyChange={updateInsightRefreshFrequency}
@@ -238,9 +278,15 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
           setQuestionBasedWidgetOpen(true);
         }}
         onSelectAdvanced={() => setAdvancedWidgetOpen(true)}
+        onSelectAi={() => setAiBuilderOpen(true)}
       />
 
+      {aiBuilderOpen && <BuilderDialog tabId={activeWidgetTab} onClose={() => setAiBuilderOpen(false)} onSave={widget => { setBuiltWidgets(items => [...items, widget]); setAiBuilderOpen(false); setHasAddedWidget(true); showToast({ message: 'Placeholder widget added. Available in Advanced widgets for this session.', variant: 'success' }); }} />}
+
       <AdvancedWidgetModal
+        builtWidgets={builtWidgets}
+        onReuseBuiltWidget={widget => { setBuiltWidgets(items => [...items, { ...widget, id: `ai-${crypto.randomUUID()}`, tabId: activeWidgetTab }]); setAdvancedWidgetOpen(false); }}
+        onAdvancedHeatmapCreated={config => setAdvancedHeatmaps(items => [...items, { ...config, tabId: activeWidgetTab }])}
         open={advancedWidgetOpen}
         onOpenChange={setAdvancedWidgetOpen}
         surveyId={
@@ -261,6 +307,15 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
       />
 
       <DashboardDetailTabBar
+        builtWidgets={builtWidgets}
+        onBuiltWidgetChange={widget => setBuiltWidgets(items => items.map(item => item.id === widget.id ? widget : item))}
+        dashboardName={name}
+        advancedHeatmaps={advancedHeatmaps}
+        onAdvancedHeatmapChange={config => setAdvancedHeatmaps(items => items.map(item => item.id === config.id ? { ...config, tabId: item.tabId } : item))}
+        onActiveTabChange={setActiveWidgetTab}
+        dashboardDesign={dashboardDesign}
+        dashboardFilter={dashboardFilter}
+        dashboardId={numericId}
         designTypography={designTypography}
         insightRefreshFrequency={insightRefreshFrequency}
         globalInsightRefreshVersion={globalInsightRefreshVersion}

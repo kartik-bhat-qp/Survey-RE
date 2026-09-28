@@ -1,7 +1,7 @@
 .root {
   display: flex;
   flex-direction: column;
-  padding: 20px 24px 8px;
+  padding: 32px;
 }
 
 .nameField {

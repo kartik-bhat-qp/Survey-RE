@@ -56,25 +56,6 @@
   color: #1b87e6;
 }
 
-.aiFab {
-  align-items: center;
-  background: #1b87e6;
-  border: none;
-  border-radius: 50%;
-  bottom: 24px;
-  box-shadow: 0 4px 12px rgba(27, 135, 230, 0.45);
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  font-size: 28px;
-  height: 52px;
-  justify-content: center;
-  position: fixed;
-  right: 24px;
-  width: 52px;
-  z-index: 20;
-}
-
 .canvasMobile {
   padding: 12px;
   padding-bottom: 5.5rem;
@@ -88,11 +69,4 @@
     max-width: 100%;
   }
 
-  .aiFab {
-    bottom: 4.5rem;
-    font-size: 24px;
-    height: 48px;
-    right: 16px;
-    width: 48px;
-  }
 }

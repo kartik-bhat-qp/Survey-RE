@@ -1,6 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
+import { ReportingYearTrend } from './ReportingYearTrend';
+import type { DashboardDateSelection } from '@/data/reporting-year';
+import { HeatMapBaseline } from '@/components/dashboards/heat-map/HeatMapBaseline';
 import { BiAmChart } from '@/components/charts/amcharts/BiAmChart';
 import type { AiWidgetChartPayload } from '@/components/charts/amcharts/types';
 import type { AmChartTypography } from '@/components/charts/amcharts/theme';
@@ -58,6 +61,7 @@ function isAmChartType(type: AiWidgetType): type is DashboardAmChartType {
 }
 
 interface AiWidgetRendererProps {
+  dateSelection?: DashboardDateSelection;
   widgetId: string;
   type: AiWidgetType;
   typography?: AmChartTypography;
@@ -66,7 +70,7 @@ interface AiWidgetRendererProps {
   meanValue?: string;
 }
 
-function buildChartPayload(widgetId: string): AiWidgetChartPayload {
+export function buildChartPayload(widgetId: string): AiWidgetChartPayload {
   const rand = createSeededRandom(widgetId.split('').reduce((a, c) => a + c.charCodeAt(0), 0));
 
   const labels = ['18-24', '25-34', '35-44', '45-54', '55-64', 'Above 64'];
@@ -172,6 +176,7 @@ function buildChartPayload(widgetId: string): AiWidgetChartPayload {
 }
 
 export function AiWidgetRenderer({
+  dateSelection,
   widgetId,
   type,
   typography,
@@ -180,6 +185,10 @@ export function AiWidgetRenderer({
   meanValue,
 }: AiWidgetRendererProps) {
   const chartPayload = useMemo(() => data ?? buildChartPayload(widgetId), [data, widgetId]);
+
+  if ((type === 'segment-trend' || type === 'scoring-trend' || type === 'response-timeline') && !data) {
+    return <ReportingYearTrend kind={type} selection={dateSelection} payload={chartPayload} widgetId={chartInstanceId ?? widgetId} typography={typography} />;
+  }
 
   if (type === 'benchmark') {
     return <NpsBenchmarkWidget widgetId={chartInstanceId ?? widgetId} chartPayload={chartPayload} />;
@@ -203,6 +212,10 @@ export function AiWidgetRenderer({
   }
 
   switch (type) {
+    case 'heat-map':
+      return data
+        ? <div role="status" className={styles.heatMapUnavailable}><strong>Heat map data unavailable for this shared response set.</strong><p>The production-baseline fixture is not mapped to these filters.</p></div>
+        : <HeatMapBaseline embedded readOnly showWidgetHeader={false} storageKey={`survey-re:heat-map-preview:${widgetId}`} />;
     case 'response-info':
       return <ResponseInfoWidget data={chartPayload.responseInfo} />;
 

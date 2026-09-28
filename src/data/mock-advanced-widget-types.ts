@@ -7,6 +7,7 @@ export type AdvancedWidgetTypeId =
   | 'response-info'
   | 'comparative-bar'
   | 'heat-map'
+  | 'advanced-heatmap'
   | 'cross-tab'
   | 'segment-trend'
   | 'segment-bar'
@@ -54,6 +55,7 @@ export const ADVANCED_WIDGET_TYPES: AdvancedWidgetType[] = [
     imageSrc: IMG.comparativeBar,
     showDiamond: true,
   },
+  { id: 'advanced-heatmap', name: 'Advanced Heatmap', imageSrc: IMG.heatMap },
   {
     id: 'heat-map',
     name: 'Heat map',

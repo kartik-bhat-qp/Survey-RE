@@ -31,6 +31,7 @@ interface DashboardWidgetCardProps {
   children: React.ReactNode;
   dragHandleClassName?: string;
   showDiamond?: boolean;
+  showInsights?: boolean;
   insightCount?: number;
   onOpenInsights?: () => void;
   actions?: React.ReactNode;
@@ -43,6 +44,7 @@ export function DashboardWidgetCard({
   children,
   dragHandleClassName,
   showDiamond = false,
+  showInsights = true,
   insightCount = 0,
   onOpenInsights,
   actions,
@@ -63,7 +65,7 @@ export function DashboardWidgetCard({
           onPointerDown={(event) => event.stopPropagation()}
           onTouchStart={(event) => event.stopPropagation()}
         >{actions !== undefined ? actions : <>
-          <button
+          {showInsights && <button
             type="button"
             className={`${styles.actionBtn} ${styles.insightButton}`}
             aria-label={`Insights${insightCount > 0 ? `, ${insightCount} available` : ''}`}
@@ -71,7 +73,7 @@ export function DashboardWidgetCard({
           >
             <span className="wm-lightbulb" aria-hidden="true" />
             {insightCount > 0 ? <span className={styles.insightBadge}>{insightCount}</span> : null}
-          </button>
+          </button>}
           {showDiamond && (
             <WuTooltip content={DIAMOND_TOOLTIP} position="bottom">
               <button

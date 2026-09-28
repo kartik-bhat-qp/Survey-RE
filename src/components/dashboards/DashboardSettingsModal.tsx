@@ -23,6 +23,7 @@ import {
   type DesignSelectOption,
 } from '@/components/dashboards/DashboardDesignSettingsTab';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { DEFAULT_DASHBOARD_DESIGN, normalizeDashboardDesign, type DashboardDesign, type DesignColorSettings } from '@/data/dashboard-design';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import type { SharedUrlLink } from '@/data/mock-shared-urls';
 import {
@@ -68,6 +69,8 @@ interface DashboardSettingsModalProps {
   onNameChange: (name: string) => void;
   onDuplicate?: () => void;
   onDelete?: () => void;
+  appliedDesign?: DashboardDesign;
+  onDesignChange?: (design: DashboardDesign) => void;
   appliedDesignTypography?: DesignTypographyOptions;
   onDesignTypographyChange?: (typography: DesignTypographyOptions) => void;
   activeTab: string;
@@ -342,6 +345,8 @@ export function DashboardSettingsModal({
   onNameChange,
   onDuplicate,
   onDelete,
+  appliedDesign,
+  onDesignChange,
   appliedDesignTypography = DEFAULT_DESIGN_TYPOGRAPHY,
   onDesignTypographyChange,
   activeTab,
@@ -391,6 +396,20 @@ export function DashboardSettingsModal({
   const [designFontStyle, setDesignFontStyle] = useState(appliedDesignTypography.fontStyle);
   const [designFontFamily, setDesignFontFamily] = useState(appliedDesignTypography.fontFamily);
   const [hasUnsavedDesignChanges, setHasUnsavedDesignChanges] = useState(false);
+  const [designColors, setDesignColors] = useState<DesignColorSettings>(appliedDesign ?? DEFAULT_DASHBOARD_DESIGN);
+  useEffect(() => {
+    if (!open || !appliedDesign) return;
+    queueMicrotask(() => {
+      setDesignTheme(DESIGN_THEME_OPTIONS.find(option => option.value === appliedDesign.theme) ?? DESIGN_THEME_OPTIONS[0]);
+      setDesignPalette(DESIGN_PALETTE_OPTIONS.find(option => option.value === appliedDesign.palette) ?? DESIGN_PALETTE_OPTIONS[0]);
+      setDesignSentiment(DESIGN_SENTIMENT_OPTIONS.find(option => option.value === appliedDesign.sentiment) ?? DESIGN_SENTIMENT_OPTIONS[0]);
+      setDesignColors(appliedDesign);
+      setDesignFontSize(appliedDesign.typography.fontSize);
+      setDesignFontStyle(appliedDesign.typography.fontStyle);
+      setDesignFontFamily(appliedDesign.typography.fontFamily);
+      setHasUnsavedDesignChanges(false);
+    });
+  }, [open, appliedDesign]);
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -459,7 +478,8 @@ export function DashboardSettingsModal({
   }, [accessibilityShortcutsEnabled, changeDashboardFontSizeByShortcut]);
 
   const handleSaveDesignSettings = useCallback(() => {
-    onDesignTypographyChange?.({
+    onDesignChange?.(normalizeDashboardDesign({ ...designColors, theme: designTheme.value, palette: designPalette.value, sentiment: designSentiment.value, typography: { fontSize: designFontSize, fontStyle: designFontStyle, fontFamily: designFontFamily } }));
+    if (!onDesignChange) onDesignTypographyChange?.({
       fontSize: designFontSize,
       fontStyle: designFontStyle,
       fontFamily: designFontFamily,
@@ -473,6 +493,7 @@ export function DashboardSettingsModal({
     });
     handleOpenChange(false);
   }, [
+    designColors, designTheme, designPalette, designSentiment, onDesignChange,
     designFontFamily,
     designFontSize,
     designFontStyle,
@@ -561,6 +582,8 @@ export function DashboardSettingsModal({
         Trigger: 'Design',
         Content: (
           <DashboardDesignSettingsTab
+            colorSettings={designColors}
+            onColorSettingsChange={colors => { setDesignColors(colors); setHasUnsavedDesignChanges(true); }}
             designTheme={designTheme}
             designPalette={designPalette}
             designSentiment={designSentiment}
@@ -611,6 +634,7 @@ export function DashboardSettingsModal({
       dashboardId,
       sharedLinks,
       onSharedLinksChange,
+      designColors,
       designFontFamily,
       designFontSize,
       designFontStyle,

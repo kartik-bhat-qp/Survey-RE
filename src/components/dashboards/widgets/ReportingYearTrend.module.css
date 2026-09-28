@@ -1,0 +1,13 @@
+.widget { display:flex; flex-direction:column; height:100%; min-height:0; }
+.toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:6px 10px 0; }
+.toolbar label { display:flex; align-items:center; gap:8px; color:#7b8796; font-size:11px; }
+.toolbar select { background:white; border:1px solid #cfd9e4; color:#435b74; border-radius:3px; font-size:11px; padding:5px 8px; }
+.badge { display:flex; align-items:center; gap:8px; border:1px solid #c7dbf1; border-radius:3px; color:#2c659d; background:#eff6ff; font-size:10px; padding:4px 7px; cursor:help; }
+.calendar { font-size:11px; color:#63768a; }
+.caption { display:flex; justify-content:space-between; gap:10px; margin:9px 10px 0; font-size:10px; color:#7e8c9e; }
+.chart { flex:1; min-height:120px; }
+.details { flex-shrink:0; font-size:10px; color:#536e89; margin:0 10px 6px; max-height:150px; overflow:auto; }
+.details summary { cursor:pointer; padding:6px 0; }
+.details table { width:100%; border-collapse:collapse; }
+.details th, .details td { padding:6px; border-bottom:1px solid #e4eaf1; text-align:left; }
+.details th { color:#354f6c; font-weight:500; background:#f7f9fc; }

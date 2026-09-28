@@ -10,6 +10,8 @@
 }
 
 .panel.compact { min-height: 92px; }
+.dateControl { display:flex; align-items:center; gap:8px; }
+.dateControl > span { color:#788493; font-size:11px; white-space:nowrap; }
 .topRow, .commonRow { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
 .primaryActions { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
 .textButton, .aiButton, .manageButton, .addCriteria, .addOr {

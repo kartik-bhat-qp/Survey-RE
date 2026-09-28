@@ -5,8 +5,7 @@
   display: flex;
   flex-shrink: 0;
   gap: 0.5rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: visible;
   padding: 0.5rem 0.75rem;
 }
 
@@ -22,8 +21,11 @@
 .tabs {
   align-items: center;
   display: flex;
+  flex: 1;
   gap: 0.375rem;
   min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .tab {
@@ -120,7 +122,6 @@
 
 @media (min-width: 640px) {
   .tabBar {
-    overflow-x: visible;
     padding: 0.5rem 1rem;
   }
 }

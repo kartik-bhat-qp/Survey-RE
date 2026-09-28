@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { AdvancedWidgetChartSelect } from '@/components/dashboards/AdvancedWidgetChartSelect';
 import {
@@ -17,34 +17,52 @@ import {
   resolvePickerSelection,
   type SurveyQuestion,
 } from '@/data/mock-survey-questions';
-import { DEFAULT_DASHBOARD_SURVEY } from '@/data/mock-survey-folders';
+import { AiDataSourceSelection } from '@/components/dashboards/AiDataSourceSelection';
+import { DEFAULT_DASHBOARD_SURVEY, type SurveyListItem } from '@/data/mock-survey-folders';
 import { useWickUILib } from '@/components/ui/useWickUILib';
+import { adaptHeatmapQuestions, createAdvancedHeatmapConfig, type AdvancedHeatmapConfig, type AnalysisMode } from '@/data/advanced-heatmap';
+import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
+import { AddWidgetStepBreadcrumb } from './AddWidgetStepBreadcrumb';
+import { HeatmapQuestionPicker, HeatmapAnalysisPicker } from './advanced-heatmap/HeatmapSetup';
+import type { BuiltWidget } from '@/data/ai-widget-builder';
+import builderStyles from './ai-builder/Builder.module.css';
 import styles from './AdvancedWidgetModal.module.css';
 
 type ModalStep =
   | AdvancedWidgetStep
+  | 'heatmap-survey'
+  | 'heatmap-questions'
+  | 'heatmap-analysis'
   | 'primary-question'
   | 'driver-question';
 
 interface AdvancedWidgetModalProps {
+  builtWidgets?: BuiltWidget[];
+  onReuseBuiltWidget?: (widget: BuiltWidget) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Survey used when picking primary / driver questions for Driver analysis. */
   surveyId?: number;
   onWidgetAdded?: () => void;
+  onAdvancedHeatmapCreated?: (config: AdvancedHeatmapConfig) => void;
 }
 
 function breadcrumbStepFor(step: ModalStep): AdvancedWidgetStep {
+  if (step === 'heatmap-survey') return 'chart';
+  if (step === 'heatmap-questions') return 'chart';
+  if (step === 'heatmap-analysis') return 'details';
   if (step === 'primary-question') return 'chart';
   if (step === 'driver-question') return 'details';
   return step;
 }
 
 export function AdvancedWidgetModal({
+  builtWidgets = [], onReuseBuiltWidget,
   open,
   onOpenChange,
   surveyId = DEFAULT_DASHBOARD_SURVEY.id,
   onWidgetAdded,
+  onAdvancedHeatmapCreated,
 }: AdvancedWidgetModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
@@ -56,8 +74,16 @@ export function AdvancedWidgetModal({
   const [primaryQuestion, setPrimaryQuestion] = useState<SurveyQuestion | null>(null);
   const [driverQuestions, setDriverQuestions] = useState<SurveyQuestion[]>([]);
 
+  const [heatmapSurvey, setHeatmapSurvey] = useState<SurveyListItem | null>(null);
+  const [heatmapRows, setHeatmapRows] = useState<string[]>([]);
+  const [heatmapMode, setHeatmapMode] = useState<AnalysisMode>('distribution');
+  const heatmapQuestions = useMemo(() => adaptHeatmapQuestions(getQuestionsBySurvey(heatmapSurvey?.id ?? surveyId)), [heatmapSurvey?.id, surveyId]);
+
   const resetState = useCallback(() => {
     setStep('widget');
+    setHeatmapSurvey(null);
+    setHeatmapRows([]);
+    setHeatmapMode('distribution');
     setWidgetName('');
     setSelectedTypeId(DEFAULT_ADVANCED_WIDGET_TYPE_ID);
     setPrimaryQuestion(null);
@@ -84,6 +110,7 @@ export function AdvancedWidgetModal({
       return;
     }
     if (target === 'chart') {
+      if (selectedTypeId === 'advanced-heatmap') { setStep('heatmap-survey'); return; }
       if (selectedTypeId === 'driver-analysis') {
         setDriverQuestions([]);
         setStep('primary-question');
@@ -127,7 +154,19 @@ export function AdvancedWidgetModal({
 
   function handleNext(): void {
     const selectedType = ADVANCED_WIDGET_TYPES.find((t) => t.id === selectedTypeId);
+    if (step === 'heatmap-questions') { setStep('heatmap-analysis'); return; }
+    if (step === 'heatmap-analysis') {
+      onAdvancedHeatmapCreated?.(createAdvancedHeatmapConfig(heatmapSurvey!.id, widgetName, heatmapRows, heatmapMode, heatmapQuestions, `advanced-heatmap-${crypto.randomUUID()}`));
+      showToast({ message: 'Advanced Heatmap created for this session', variant: 'success' });
+      handleClose(); return;
+    }
     if (step === 'widget') {
+      if (selectedTypeId === 'advanced-heatmap') { setStep('heatmap-survey'); return; }
+      if (selectedTypeId === 'heat-map') {
+        showToast({ message: 'This prototype includes one fixed Heat Map Chart on each dashboard tab. Configure that widget from its Settings menu.', variant: 'info' });
+        handleClose();
+        return;
+      }
       if (selectedTypeId === 'driver-analysis') {
         setPrimaryQuestion(null);
         setDriverQuestions([]);
@@ -163,6 +202,9 @@ export function AdvancedWidgetModal({
   }
 
   function handleBack(): void {
+    if (step === 'heatmap-analysis') { setStep('heatmap-questions'); return; }
+    if (step === 'heatmap-questions') { setStep('heatmap-survey'); return; }
+    if (step === 'heatmap-survey') { setStep('widget'); return; }
     if (step === 'driver-question') {
       setDriverQuestions([]);
       setStep('primary-question');
@@ -187,10 +229,10 @@ export function AdvancedWidgetModal({
   const isDriverQuestionFlow =
     step === 'primary-question' || step === 'driver-question';
   const nextLabel =
-    step === 'details' || step === 'driver-question' ? 'Finish' : 'Next';
+    step === 'heatmap-analysis' ? 'Create widget' : step === 'details' || step === 'driver-question' ? 'Finish' : 'Next';
   const showNext =
-    !isDriverQuestionFlow || step === 'driver-question';
-  const nextDisabled = step === 'driver-question' && driverQuestions.length === 0;
+    step !== 'heatmap-survey' && (!isDriverQuestionFlow || step === 'driver-question');
+  const nextDisabled = (step === 'driver-question' && driverQuestions.length === 0) || (step === 'heatmap-questions' && heatmapRows.length === 0);
   const modalTitle =
     step === 'primary-question'
       ? 'Select primary question'
@@ -213,7 +255,8 @@ export function AdvancedWidgetModal({
     >
       <WuModalHeader className={styles.modalTitle}>{modalTitle}</WuModalHeader>
 
-      <WuModalContent className={styles.stepContent}>
+      <WuModalContent className={`${styles.stepContent} ${step === 'heatmap-analysis' ? styles.analysisStep : ''}`}>
+        {step === 'widget' && builtWidgets.length > 0 && <section className={builderStyles.library}><h3>Built with AI <span className={builderStyles.muted}>· This session</span></h3>{builtWidgets.map(widget => <div key={widget.id} className={builderStyles.libraryRow}><span>{widget.settings.name}<small className={builderStyles.muted}> · {widget.source.name}</small></span><button className={builderStyles.secondary} onClick={() => onReuseBuiltWidget?.(widget)}>Add to this tab</button></div>)}</section>}
         {step === 'widget' && (
           <AdvancedWidgetChartSelect
             widgetName={widgetName}
@@ -238,6 +281,9 @@ export function AdvancedWidgetModal({
             onToggleQuestion={handleDriverQuestionToggle}
           />
         )}
+        {step === 'heatmap-survey' && <AiDataSourceSelection selectedSurveyId={heatmapSurvey?.id ?? null} onSelectSurvey={survey => { if (survey.id !== heatmapSurvey?.id) setHeatmapRows([]); setHeatmapSurvey(survey); setStep('heatmap-questions'); }} />}
+        {step === 'heatmap-questions' && <HeatmapQuestionPicker surveyId={heatmapSurvey?.id ?? surveyId} questions={heatmapQuestions} selected={heatmapRows} onChange={setHeatmapRows} />}
+        {step === 'heatmap-analysis' && <div style={{ padding: 24 }}><h3>Choose how to analyze your questions</h3><HeatmapAnalysisPicker mode={heatmapMode} onChange={setHeatmapMode} /><p style={{ color: '#6b7888', fontSize: 13 }}>You can switch analysis types later in Analytics.</p></div>}
         {step === 'chart' && (
           <p className={styles.stepPlaceholder}>
             Configure chart settings for{' '}
@@ -254,10 +300,10 @@ export function AdvancedWidgetModal({
 
       <WuModalFooter>
         <div className={styles.wizardFooter}>
-          <AdvancedWidgetStepBreadcrumb
+          {selectedTypeId === 'advanced-heatmap' ? <AddWidgetStepBreadcrumb chartLabel="Analysis" currentStep={step === 'heatmap-survey' ? 'survey' : step === 'heatmap-questions' ? 'question' : step === 'heatmap-analysis' ? 'chart' : 'widget'} onStepClick={target => setStep(target === 'survey' ? 'heatmap-survey' : target === 'question' ? 'heatmap-questions' : 'widget')} /> : <AdvancedWidgetStepBreadcrumb
             currentStep={breadcrumbStepFor(step)}
             onStepClick={handleBreadcrumbClick}
-          />
+          />}
           <div className={styles.wizardActions}>
             <WuButton variant="secondary" onClick={handleBack}>
               Back

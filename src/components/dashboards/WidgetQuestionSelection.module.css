@@ -119,3 +119,8 @@
     min-height: 360px;
   }
 }
+
+.searchRow { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.selectionCount { margin-left: auto; white-space: nowrap; color: #545e6b; font-size: 13px; }
+.questionLink:disabled { color: #999; cursor: default; text-decoration: none; }
+.unavailable { display: block; color: #999; font-size: 11px; }

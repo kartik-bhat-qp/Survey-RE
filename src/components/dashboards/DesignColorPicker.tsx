@@ -17,7 +17,7 @@ function toHex(h: number, s: number, v: number) {
 }
 const clamp = (n: number) => Math.max(0, Math.min(1, n));
 
-export function DesignColorPicker({ value, label, onChange }: { value: string; label: string; onChange: (color: string) => void }) {
+export function DesignColorPicker({ value, label, onChange, variant }: { value: string; label: string; onChange: (color: string) => void; variant?: 'heat-map' }) {
   const [hex, setHex] = useState(value);
   const [hsv, setHsv] = useState(() => toHsv(value));
   const update = (next: typeof hsv) => {
@@ -31,7 +31,7 @@ export function DesignColorPicker({ value, label, onChange }: { value: string; l
   };
   return <Popover.Root onOpenChange={open => { if (open) { setHex(value); setHsv(toHsv(value)); } }}>
     <Popover.Trigger asChild><button type="button" className={styles.swatch} style={{ backgroundColor: value }} aria-label={label} title={`${label}: ${value}`} /></Popover.Trigger>
-    <Popover.Portal><Popover.Content className={styles.picker} sideOffset={6} align="end" aria-label={`${label} picker`}>
+    <Popover.Portal><Popover.Content className={`${styles.picker} ${variant === 'heat-map' ? styles.heatMapPicker : ''}`} sideOffset={6} align="end" aria-label={`${label} picker`}>
       <input aria-label={`${label} hex`} className={styles.hex} value={hex.toUpperCase()} maxLength={7} onChange={event => {
         const next = event.target.value; setHex(next);
         if (isDesignColor(next)) { setHsv(toHsv(next)); onChange(next.toLowerCase()); }
