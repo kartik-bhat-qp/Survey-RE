@@ -15,6 +15,7 @@ import type { DashboardDesign } from '@/data/dashboard-design';
 import type { DesignTypographyOptions } from '@/components/dashboards/DashboardDesignSettingsTab';
 import type { DashboardReportPickItem } from '@/data/mock-dashboard-report-tabs';
 import type { AiInsightRefreshFrequency } from '@/data/mock-dashboard-ai-insights';
+import type { AiWidgetConfig } from '@/data/mock-ai-widgets';
 import styles from './DashboardDetailTabBar.module.css';
 
 const WuButton = dynamic(
@@ -74,6 +75,8 @@ interface DashboardDetailTabBarProps {
   globalInsightRefreshFailedWidgetIds?: string[];
   lastAiInsightsRefreshAt: string;
   onInsightsRefreshed?: (widgetId: string, refreshedAt: string) => void;
+  /** Widgets added from the Add widget flow. */
+  addedWidgets?: AiWidgetConfig[];
 }
 
 export function DashboardDetailTabBar({
@@ -90,6 +93,7 @@ export function DashboardDetailTabBar({
   globalInsightRefreshFailedWidgetIds,
   lastAiInsightsRefreshAt,
   onInsightsRefreshed,
+  addedWidgets,
 }: DashboardDetailTabBarProps) {
   const { showToast } = useWuShowToast();
   const [tabs, setTabs] = useState<DashboardTab[]>(INITIAL_TABS);
@@ -175,6 +179,8 @@ export function DashboardDetailTabBar({
             globalInsightRefreshFailedWidgetIds={globalInsightRefreshFailedWidgetIds}
             lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
             onInsightsRefreshed={onInsightsRefreshed}
+            addedWidgets={addedWidgets}
+            dashboardName={dashboardName}
           />
         )}
       </div>

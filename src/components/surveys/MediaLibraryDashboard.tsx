@@ -23,6 +23,10 @@ import {
   type MediaLibraryShareMode,
   type MediaLibraryView,
 } from '@/data/mock-media-library';
+import {
+  essentialsMediaUploadShouldBeBlocked,
+  runEssentialsPhishingReview,
+} from '@/data/mock-essentials-phishing-review';
 import styles from './MediaLibraryDashboard.module.css';
 
 const WuSelect = dynamic(
@@ -313,6 +317,11 @@ export function MediaLibraryDashboard({ surveyId: _surveyId }: MediaLibraryDashb
   }
 
   function startUpload(names: string[]): void {
+    if (essentialsMediaUploadShouldBeBlocked()) {
+      runEssentialsPhishingReview(showToast);
+      return;
+    }
+
     const items: UploadItem[] = names.map((name) => {
       uploadSeqRef.current += 1;
       return {

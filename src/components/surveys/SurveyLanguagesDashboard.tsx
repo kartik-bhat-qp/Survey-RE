@@ -5,12 +5,18 @@ import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { AddLanguageVersionDropdown } from '@/components/surveys/AddLanguageVersionDropdown';
+import { CreateCustomLanguageModal } from '@/components/surveys/CreateCustomLanguageModal';
 import { ManualTranslationsPanel } from '@/components/surveys/ManualTranslationsPanel';
 import { QuestionRichTextField } from '@/components/surveys/QuestionRichTextField';
 import { getSurveyById } from '@/data/get-survey-by-id';
 import { getSurveyDetail } from '@/data/mock-survey-detail';
 import {
+  collectSurveyTranslationStrings,
+  downloadSurveyTranslationTemplate,
+} from '@/data/mock-survey-language-translations';
+import {
   createSurveyLanguageFromOption,
+  getCustomLanguageStatusLabel,
   getDefaultSurveyLanguages,
   getSurveyLanguageDisplayName,
   getSurveyLanguageStatusLabel,
@@ -54,6 +60,7 @@ export function SurveyLanguagesDashboard({
   const [changeLanguageWithinSurvey, setChangeLanguageWithinSurvey] = useState(false);
   const [screenerQuestion, setScreenerQuestion] = useState(SCREENER_QUESTION_LABEL);
   const [deleteTarget, setDeleteTarget] = useState<SurveyLanguageVersion | null>(null);
+  const [createCustomOpen, setCreateCustomOpen] = useState(false);
 
   const questions = useMemo(() => {
     const survey = getSurveyById(surveyId);
@@ -91,6 +98,26 @@ export function SurveyLanguagesDashboard({
       message: `${toAdd.length} language${toAdd.length === 1 ? '' : 's'} added`,
       variant: 'success',
     });
+  }
+
+  function handleCreateCustomLanguage(language: SurveyLanguageVersion): void {
+    setLanguages((prev) => [...prev, language]);
+    showToast({
+      message: `${language.name} added`,
+      variant: 'success',
+    });
+  }
+
+  async function handleDownloadTemplate(language: SurveyLanguageVersion): Promise<void> {
+    try {
+      await downloadSurveyTranslationTemplate(
+        collectSurveyTranslationStrings(questions),
+        `${language.code}-translation-template.xlsx`
+      );
+      showToast({ message: 'Translation template downloaded', variant: 'success' });
+    } catch {
+      showToast({ message: 'Unable to download template', variant: 'error' });
+    }
   }
 
   function handleToggleEnabled(languageId: string, enabled: boolean): void {
@@ -220,6 +247,7 @@ export function SurveyLanguagesDashboard({
                 <AddLanguageVersionDropdown
                   addedIds={selectedLanguageIds}
                   onSave={handleAddLanguages}
+                  onCreateCustomLanguage={() => setCreateCustomOpen(true)}
                 />
                 {embedded ? (
                   <div className={styles.embeddedNav}>
@@ -325,6 +353,11 @@ export function SurveyLanguagesDashboard({
                           <div className={styles.addedLanguageCell}>
                             <span className={styles.addedLanguageName}>
                               {getSurveyLanguageDisplayName(language)}
+                              {language.isCustom ? (
+                                <span className="ml-2 inline-flex rounded-full bg-[#e8f4fd] px-2 py-0.5 font-['Fira_Sans',sans-serif] text-[0.625rem] font-bold uppercase tracking-wide text-[#1b87e6]">
+                                  Custom
+                                </span>
+                              ) : null}
                             </span>
                             <div className={styles.inlineToggle}>
                               <WuToggle
@@ -342,6 +375,10 @@ export function SurveyLanguagesDashboard({
                       <td className={styles.colStatus}>
                         {language.isDefault ? (
                           getSurveyLanguageStatusLabel(language.status)
+                        ) : language.isCustom ? (
+                          <span className={styles.progressLabel}>
+                            {getCustomLanguageStatusLabel(language)}
+                          </span>
                         ) : (
                           <div className={styles.statusRow}>
                             <div className={styles.progressBlock}>
@@ -436,6 +473,69 @@ export function SurveyLanguagesDashboard({
                               </button>
                             </WuTooltip>
                           </div>
+                        ) : language.isCustom ? (
+                          <div className={styles.actions}>
+                            <WuTooltip content="Preview" position="top">
+                              <button
+                                type="button"
+                                className={styles.actionBtn}
+                                aria-label={`Preview ${language.name}`}
+                                onClick={() => handleAction('Preview', language)}
+                              >
+                                <span className="wm-visibility" aria-hidden />
+                              </button>
+                            </WuTooltip>
+                            <WuTooltip content="Link" position="top">
+                              <button
+                                type="button"
+                                className={styles.actionBtn}
+                                aria-label={`Copy link for ${language.name}`}
+                                onClick={() => handleAction('Link', language)}
+                              >
+                                <span className="wm-link" aria-hidden />
+                              </button>
+                            </WuTooltip>
+                            <WuTooltip content="Download template" position="top">
+                              <button
+                                type="button"
+                                className={styles.actionBtn}
+                                aria-label={`Download template for ${language.name}`}
+                                onClick={() => void handleDownloadTemplate(language)}
+                              >
+                                <span className="wm-download" aria-hidden />
+                              </button>
+                            </WuTooltip>
+                            <WuTooltip content="Import" position="top">
+                              <button
+                                type="button"
+                                className={styles.actionBtn}
+                                aria-label={`Import translations for ${language.name}`}
+                                onClick={() => handleAction('Import', language)}
+                              >
+                                <span className="wm-upload" aria-hidden />
+                              </button>
+                            </WuTooltip>
+                            <WuTooltip content="Edit settings" position="top">
+                              <button
+                                type="button"
+                                className={styles.actionBtn}
+                                aria-label={`Edit settings for ${language.name}`}
+                                onClick={() => handleAction('Edit settings', language)}
+                              >
+                                <span className="wm-settings" aria-hidden />
+                              </button>
+                            </WuTooltip>
+                            <WuTooltip content="Delete language" position="top">
+                              <button
+                                type="button"
+                                className={styles.actionBtn}
+                                aria-label={`Delete ${getSurveyLanguageDisplayName(language)}`}
+                                onClick={() => setDeleteTarget(language)}
+                              >
+                                <span className="wm-delete" aria-hidden />
+                              </button>
+                            </WuTooltip>
+                          </div>
                         ) : (
                           <div className={styles.actions}>
                             <WuTooltip content="Delete language" position="top">
@@ -473,6 +573,14 @@ export function SurveyLanguagesDashboard({
         }
         confirmLabel="Remove"
         onConfirm={handleConfirmDelete}
+      />
+
+      <CreateCustomLanguageModal
+        open={createCustomOpen}
+        onOpenChange={setCreateCustomOpen}
+        languages={languages}
+        questions={questions}
+        onCreate={handleCreateCustomLanguage}
       />
     </div>
   );

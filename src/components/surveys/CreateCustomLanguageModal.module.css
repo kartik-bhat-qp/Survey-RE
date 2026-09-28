@@ -1,0 +1,11 @@
+.languageSelect {
+  min-width: 0;
+  width: 100%;
+}
+
+/* Portaled menu — match list width to the open trigger (overrides globals max-content). */
+:global(body):has(.languageSelect :global(.wu-select-trigger[data-state='open']))
+  :global(.wu-select-content) {
+  min-width: var(--radix-dropdown-menu-trigger-width) !important;
+  width: var(--radix-dropdown-menu-trigger-width) !important;
+}

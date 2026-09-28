@@ -35,3 +35,14 @@
 /* Calendar portals must remain above widget settings and nested segment dialogs. */
 .popover { z-index: 200 !important; }
 :global([data-radix-popper-content-wrapper]):has(> .popover) { z-index: 200 !important; }
+
+.wrap {
+  display: inline-flex;
+  min-width: 176px;
+}
+
+.wrap :global(button) {
+  font-size: 12px;
+  height: 32px;
+  min-width: 176px;
+}

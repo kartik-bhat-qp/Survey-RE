@@ -83,10 +83,10 @@ export function WidgetQuestionSelection({
     });
   }, []);
 
-  const selectableVisible = useMemo(() => displayQuestions.filter(q => !unavailableIds.has(q.parentQuestionId ?? q.id) && q.text.toLowerCase().includes(search.toLowerCase())), [displayQuestions, unavailableIds, search]);
-  const allVisibleSelected = multiSelect && selectableVisible.length > 0 && selectableVisible.every(q => selectedIds.has(q.parentQuestionId ?? q.id));
+  const selectableVisible = useMemo(() => displayQuestions.filter(q => !unavailableIds.has(q.id) && q.text.toLowerCase().includes(search.toLowerCase())), [displayQuestions, unavailableIds, search]);
+  const allVisibleSelected = multiSelect && selectableVisible.length > 0 && selectableVisible.every(q => selectedIds.has(q.id));
   const toggleQuestion = useCallback((question: SurveyQuestion, checked: boolean) => {
-    const key = question.parentQuestionId ?? question.id;
+    const key = question.id;
     if (unavailableIds.has(key)) return;
     if (onSelectionChange) {
       const next = new Set(selectedIds);
@@ -98,7 +98,7 @@ export function WidgetQuestionSelection({
     const next = new Set(selectedIds);
     const seen = new Set<number>();
     for (const question of selectableVisible) {
-      const key = question.parentQuestionId ?? question.id;
+      const key = question.id;
       if (seen.has(key)) continue;
       seen.add(key);
       if (checked) next.add(key); else next.delete(key);
@@ -125,9 +125,9 @@ export function WidgetQuestionSelection({
           const isSubRow = question.parentQuestionId !== undefined;
           const isExpandable = !wholeQuestionsOnly && questionHasExpandableRows(question);
           const isExpanded = expandedParentIds.has(question.id);
-          const selectionKey = question.parentQuestionId ?? question.id;
+          const selectionKey = question.id;
           const isSelected = multiSelect
-            ? selectedIds.has(selectionKey)
+            ? selectedIds.has(question.id)
             : selectedQuestionId === question.id;
 
           return (
@@ -200,7 +200,7 @@ export function WidgetQuestionSelection({
         ),
         cell: ({ row }) => {
           const question = row.original;
-          const selectionKey = question.parentQuestionId ?? question.id;
+          const selectionKey = question.id;
           const checked = selectedIds.has(selectionKey);
           return (
             <div className={styles.checkboxCell}>

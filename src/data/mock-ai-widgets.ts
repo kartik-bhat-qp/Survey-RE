@@ -23,12 +23,26 @@ export type AiWidgetType =
   | 'comparative-bar'
   | 'segment-trend'
   | 'wordcloud'
-  | 'heat-map';
+  | 'heat-map'
+  | 'driver-analysis';
+
+/** Driver-analysis selections captured when the widget is added. */
+export interface DriverAnalysisWidgetConfig {
+  primaryQuestionCode: string;
+  primaryQuestionText: string;
+  /** Driver items from the selected driver questions (matrix rows expanded). */
+  drivers: Array<{
+    id: string;
+    code: string;
+    name: string;
+  }>;
+}
 
 export interface AiWidgetConfig {
   id: string;
   type: AiWidgetType;
   title: string;
+  driverAnalysis?: DriverAnalysisWidgetConfig;
 }
 
 const DEFAULT_W = 1;

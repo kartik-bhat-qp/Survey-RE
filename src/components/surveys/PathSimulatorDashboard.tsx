@@ -490,7 +490,7 @@ export function PathSimulatorDashboard({ surveyId }: PathSimulatorDashboardProps
     <div className={styles.root}>
       <header className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
-          <h1 className={styles.pageTitle}>All paths</h1>
+          <h1 className={styles.pageTitle}>Path simulator</h1>
           <label className={styles.startLabel} htmlFor="path-sim-start">
             Starting question
           </label>

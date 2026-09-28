@@ -8,6 +8,7 @@ import { AppHeaderContent } from '@/components/header/AppHeaderContent';
 import { HeaderDataCenter } from '@/components/header/HeaderDataCenter';
 import { SurveyFooterBrandSync } from '@/components/surveys/SurveyFooterBrandSync';
 import { SurveysAppHeaderContent } from '@/components/surveys/SurveysAppHeaderContent';
+import { EssentialsAccountUnderReviewBanner } from '@/components/surveys/EssentialsAccountUnderReviewBanner';
 import { useSurveyFooterBrand } from '@/components/surveys/useSurveyFooterBrand';
 import { useMounted } from '@/hooks/useMounted';
 import { formatSurveySuiteFooterCopy } from '@/lib/survey-suite-footer-brand';
@@ -60,6 +61,7 @@ export function ResearchSuiteShell({ children }: { children: React.ReactNode }) 
         )}
       </header>
       <div className={styles.body}>
+        {mounted ? <EssentialsAccountUnderReviewBanner /> : null}
         <div className={styles.content}>{children}</div>
         <GlobalFooter copy={footerCopy} />
       </div>

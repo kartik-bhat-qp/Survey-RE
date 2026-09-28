@@ -28,7 +28,7 @@ export const LISTENAI_PLACE_NOT_LAST_TOAST =
   'Conversation cannot be the last question in the survey';
 
 /** Credits shown on the Conversation question workspace footer. */
-export const LISTENAI_CREDITS_PER_CONVERSATION = 0.4;
+export const LISTENAI_CREDITS_PER_CONVERSATION = 1;
 export const LISTENAI_CREDITS_REMAINING = 4820;
 
 /** Approx. conversations remaining from credit balance (floored). */

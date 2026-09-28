@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { useEssentialsAccountActionsLocked } from '@/hooks/useEssentialsAccountUnderReview';
+import { ESSENTIALS_ACCOUNT_LOCKED_TOAST } from '@/data/mock-essentials-phishing-review';
 import styles from './SurveysHeaderBar.module.css';
 
 const WuAppHeaderSearch = dynamic(
@@ -26,6 +28,7 @@ const WuMenuItem = dynamic(
 export function SurveysHeaderActions({ compact }: { compact?: boolean }) {
   const router = useRouter();
   const { showToast } = useWuShowToast();
+  const accountLocked = useEssentialsAccountActionsLocked();
 
   return (
     <div className={compact ? `${styles.bar} ${styles.barCompact}` : styles.bar}>
@@ -73,7 +76,15 @@ export function SurveysHeaderActions({ compact }: { compact?: boolean }) {
           >
             BI Lite
           </WuMenuItem>
-          <WuMenuItem onSelect={() => router.push('/surveys/create')}>
+          <WuMenuItem
+            onSelect={() => {
+              if (accountLocked) {
+                showToast({ message: ESSENTIALS_ACCOUNT_LOCKED_TOAST, variant: 'error' });
+                return;
+              }
+              router.push('/surveys/create');
+            }}
+          >
             New survey creation flow
           </WuMenuItem>
           <WuMenuItem onSelect={() => router.push('/signup')}>

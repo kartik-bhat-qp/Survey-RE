@@ -34,7 +34,7 @@ import {
   type AiInsightRefreshFrequency,
   type DashboardInsightRegenerationResult,
 } from '@/data/mock-dashboard-ai-insights';
-import { AI_DASHBOARD_WIDGETS } from '@/data/mock-ai-widgets';
+import { AI_DASHBOARD_WIDGETS, type AiWidgetConfig } from '@/data/mock-ai-widgets';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
@@ -64,6 +64,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
   const [dashboardDesign, setDashboardDesign] = useDashboardDesign(numericId);
   const designTypography = dashboardDesign.typography;
   const setDesignTypography = (typography: DesignTypographyOptions) => setDashboardDesign({ ...dashboardDesign, typography });
+  const [addedWidgets, setAddedWidgets] = useState<AiWidgetConfig[]>([]);
   const [insightRefreshFrequency, setInsightRefreshFrequency] =
     useState<AiInsightRefreshFrequency>(() => {
       if (typeof window === 'undefined') return DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY;
@@ -226,7 +227,10 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
           resolveDashboardSurvey(dashboard.surveyId, dashboard.surveyName ?? 'QuestionPro - RE')
             .id
         }
-        onWidgetAdded={() => setHasAddedWidget(true)}
+        onWidgetAdded={(widget) => {
+          setHasAddedWidget(true);
+          if (widget) setAddedWidgets((current) => [...current, widget]);
+        }}
       />
 
       <QuestionBasedWidgetModal
@@ -257,6 +261,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
             current.filter((failedWidgetId) => failedWidgetId !== widgetId)
           )
         }
+        addedWidgets={addedWidgets}
       />
     </div>
   );

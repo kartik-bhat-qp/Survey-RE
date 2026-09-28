@@ -626,6 +626,44 @@
   text-overflow: unset;
 }
 
+.conditionSubjectStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.conditionLoop {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+  gap: 0.25rem;
+  height: 1.875rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.conditionLoopIcon {
+  color: #1d4ed8;
+  flex-shrink: 0;
+  font-size: 0.875rem;
+}
+
+.loopedQuestionBadge {
+  align-items: center;
+  background: #eff6ff;
+  border-radius: 999px;
+  color: #1d4ed8;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  height: 1.25rem;
+  justify-content: center;
+  line-height: 1;
+  width: 1.25rem;
+}
+
 .conditionSubjectPlaceholder {
   display: block;
   min-height: 2.25rem;

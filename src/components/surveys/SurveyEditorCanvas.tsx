@@ -70,6 +70,15 @@ import {
   readBlankSurveyDraft,
 } from '@/data/mock-survey-creation-flow';
 import { isClientOnlySurveyId } from '@/lib/client-only-survey-ids';
+import {
+  AI_LENS_FOCUS_QUESTION_EVENT,
+  isAiLensSurvey,
+  type AiLensFocusQuestionDetail,
+} from '@/data/mock-ai-lens';
+import {
+  ESSENTIALS_ACCOUNT_LOCKED_TOAST,
+  essentialsAccountActionsLocked,
+} from '@/data/mock-essentials-phishing-review';
 import { generatedSurveyToSections } from '@/lib/ai-survey-generation';
 import { requestAiSurveyGeneration } from '@/lib/request-ai-survey-generation';
 import {
@@ -78,8 +87,19 @@ import {
   type SurveyAiGenerationResult,
 } from '@/data/mock-survey-ai-agent';
 import { getQuestionTypePreview } from '@/data/mock-add-question-previews';
-import { SectionBlockOptionsButton, type SectionBlockMenuAction } from '@/components/surveys/SectionBlockOptionsButton';
+import {
+  SectionBlockOptionsButton,
+  type SectionBlockMenuAction,
+} from '@/components/surveys/SectionBlockOptionsButton';
 import { BlockFlowModal } from '@/components/surveys/BlockFlowModal';
+import { LoopingModal } from '@/components/surveys/LoopingModal';
+import {
+  buildLoopReferenceOptions,
+  getDefaultLoopRef,
+  type LoopingState,
+  type QuestionLoopContext,
+} from '@/data/mock-looping';
+import { toCriteriaQuestionsFromEditor } from '@/data/mock-survey-questions';
 import { SurveyWorkspaceQuickTools } from '@/components/surveys/SurveyWorkspaceQuickTools';
 import { ReorderQuestionsModal } from '@/components/surveys/ReorderQuestionsModal';
 import { LookupTableBulkConversionModal } from '@/components/surveys/LookupTableBulkConversionModal';
@@ -265,6 +285,11 @@ const WuButton = dynamic(
 
 const WuCheckbox = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCheckbox })),
+  { ssr: false }
+);
+
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
 
@@ -714,6 +739,7 @@ function SectionBlockBar({
   sectionChecked,
   onSectionCheckChange,
   showOptions,
+  loopingActive = false,
   onAction,
   heading = false,
 }: {
@@ -722,6 +748,7 @@ function SectionBlockBar({
   sectionChecked: boolean;
   onSectionCheckChange: (checked: boolean) => void;
   showOptions: boolean;
+  loopingActive?: boolean;
   onAction: (action: SectionBlockMenuAction) => void;
   heading?: boolean;
 }) {
@@ -743,6 +770,18 @@ function SectionBlockBar({
       </div>
       {showOptions ? (
         <div className={styles.sectionBarActions}>
+          {loopingActive ? (
+            <WuTooltip content="Looping" position="bottom">
+              <button
+                type="button"
+                className={styles.sectionLoopingBtn}
+                aria-label={`Edit looping for ${title}`}
+                onClick={() => onAction('looping')}
+              >
+                <span className="wm-autorenew" aria-hidden />
+              </button>
+            </WuTooltip>
+          ) : null}
           <button
             type="button"
             className={styles.sectionCollapseBtn}
@@ -1442,6 +1481,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
   const [agentSeedPrompt, setAgentSeedPrompt] = useState<string | null>(null);
   const pendingAiSectionsRef = useRef<SurveySection[] | null>(null);
   const [blockFlowOpen, setBlockFlowOpen] = useState(false);
+  const [loopingSectionId, setLoopingSectionId] = useState<string | null>(null);
+  const [loopingBySectionId, setLoopingBySectionId] = useState<
+    Record<string, LoopingState>
+  >({});
   const [lookupTableBulkConversionConflicts, setLookupTableBulkConversionConflicts] = useState<
     LookupTableConversionLogicConflict[]
   >([]);
@@ -1465,6 +1508,31 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     },
     [showToast]
   );
+
+  useEffect(() => {
+    if (!isAiLensSurvey(detail.survey.id)) return;
+
+    const onFocusQuestion = (event: Event) => {
+      const custom = event as CustomEvent<AiLensFocusQuestionDetail>;
+      const detailPayload = custom.detail;
+      if (!detailPayload?.sectionId || !detailPayload?.questionId) return;
+
+      const questionKey = `${detailPayload.sectionId}:${detailPayload.questionId}`;
+      setSelectedQuestionKey(questionKey);
+
+      window.setTimeout(() => {
+        const el = document.getElementById(
+          `survey-question-${detailPayload.sectionId}-${detailPayload.questionId}`
+        );
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 80);
+
+      toast(`Opened ${detailPayload.code} in survey builder`);
+    };
+
+    window.addEventListener(AI_LENS_FOCUS_QUESTION_EVENT, onFocusQuestion);
+    return () => window.removeEventListener(AI_LENS_FOCUS_QUESTION_EVENT, onFocusQuestion);
+  }, [detail.survey.id, toast]);
 
   useEffect(() => {
     setSelectedQuestionKey(null);
@@ -2123,6 +2191,28 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     [sections]
   );
 
+  // Logic that references a looped question also needs to say which loop it means.
+  // Key by criteria question id (not code) so duplicate codes across blocks don't leak.
+  const logicLoopContexts = useMemo(() => {
+    const contexts: Record<number, QuestionLoopContext> = {};
+    const currentSectionId = logicTarget?.sectionId ?? null;
+    sections.forEach((section) => {
+      const looping = loopingBySectionId[section.id];
+      if (!looping?.enabled) return;
+      const sameBlock = section.id === currentSectionId;
+      const context: QuestionLoopContext = {
+        blockTitle: section.title,
+        sameBlock,
+        options: buildLoopReferenceOptions(looping, sameBlock),
+        defaultRef: getDefaultLoopRef(sameBlock),
+      };
+      toCriteriaQuestionsFromEditor(detail.survey.id, section.questions).forEach((question) => {
+        contexts[question.id] = context;
+      });
+    });
+    return contexts;
+  }, [detail.survey.id, loopingBySectionId, logicTarget?.sectionId, sections]);
+
   const settingsQuestionKey = settingsTarget
     ? `${settingsTarget.sectionId}:${settingsTarget.questionId}`
     : null;
@@ -2667,7 +2757,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           showToast({ message: `Randomize questions in ${section.title}`, variant: 'success' });
           return;
         case 'looping':
-          showToast({ message: `Looping for ${section.title}`, variant: 'success' });
+          setLoopingSectionId(section.id);
           return;
         case 'block-flow':
           setBlockFlowOpen(true);
@@ -2681,12 +2771,16 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             return;
           }
           setSections((prev) => prev.filter((item) => item.id !== sectionId));
+          setLoopingBySectionId((prev) => {
+            const { [sectionId]: _removed, ...rest } = prev;
+            return rest;
+          });
           showToast({ message: `${section.title} deleted`, variant: 'success' });
           return;
         }
       }
     },
-    [sections, setBlockFlowOpen, setSections, showToast]
+    [sections, setBlockFlowOpen, setLoopingSectionId, setSections, showToast]
   );
 
   const handleQuestionMenuAction = useCallback(
@@ -3191,6 +3285,10 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       typeLabel: string,
       typeId: string
     ) => {
+      if (essentialsAccountActionsLocked()) {
+        showToast({ message: ESSENTIALS_ACCOUNT_LOCKED_TOAST, variant: 'error' });
+        return;
+      }
       if (typeId === 'select-one') {
         const ts = Date.now();
         const newId = `q-new-${ts}`;
@@ -4364,6 +4462,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     handleSectionCheckChange(section.id, checked)
                   }
                   showOptions={showBlockOptions}
+                  loopingActive={Boolean(loopingBySectionId[section.id]?.enabled)}
                   onAction={(action) => handleSectionBlockMenuAction(section.id, action)}
                   heading
                 />
@@ -5471,6 +5570,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                       handleSectionCheckChange(section.id, checked)
                     }
                     showOptions={showBlockOptions}
+                    loopingActive={Boolean(loopingBySectionId[section.id]?.enabled)}
                     onAction={(action) => handleSectionBlockMenuAction(section.id, action)}
                   />
                 </footer>
@@ -5579,7 +5679,9 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
           }}
           question={logicQuestion}
           allQuestions={allQuestions}
+          sections={sections}
           surveyId={detail.survey.id}
+          loopContextByQuestionId={logicLoopContexts}
           initialState={getQuestionLogic(logicQuestionKey, logicQuestion)}
           onSave={(state) =>
             handleLogicSave(logicTarget.sectionId, logicTarget.questionId, state)
@@ -5679,6 +5781,27 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       />
 
       <BlockFlowModal open={blockFlowOpen} onOpenChange={setBlockFlowOpen} />
+
+      <LoopingModal
+        open={loopingSectionId !== null}
+        onOpenChange={(open) => {
+          if (!open) setLoopingSectionId(null);
+        }}
+        section={sections.find((item) => item.id === loopingSectionId) ?? null}
+        sections={sections}
+        initialState={
+          loopingSectionId ? loopingBySectionId[loopingSectionId] ?? null : null
+        }
+        onSave={(sectionId, nextState) => {
+          setLoopingBySectionId((prev) => {
+            if (!nextState) {
+              const { [sectionId]: _removed, ...rest } = prev;
+              return rest;
+            }
+            return { ...prev, [sectionId]: nextState };
+          });
+        }}
+      />
 
       <ReorderQuestionsModal
         open={reorderTarget !== null}

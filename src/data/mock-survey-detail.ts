@@ -29,6 +29,10 @@ import {
   SURVEY_REVIEW_MODE_SURVEY_ID,
   createSurveyReviewModeSections,
 } from '@/data/mock-survey-review-mode';
+import {
+  QUESTIONPRO_AI_LENS_SURVEY_ID,
+  createAiLensSurveySections,
+} from '@/data/mock-ai-lens';
 
 export type SurveyQuestionInputKind = 'radio' | 'checkbox';
 
@@ -967,6 +971,14 @@ export function getSurveyDetail(survey: Survey): SurveyDetail {
       survey,
       editorTitle: getSurveyEditorTitle(survey),
       sections: createSurveyReviewModeSections(),
+    };
+  }
+
+  if (survey.id === QUESTIONPRO_AI_LENS_SURVEY_ID) {
+    return {
+      survey,
+      editorTitle: getSurveyEditorTitle(survey),
+      sections: createAiLensSurveySections(),
     };
   }
 

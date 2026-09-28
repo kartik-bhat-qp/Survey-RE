@@ -140,6 +140,8 @@ export interface CriterionCondition {
   value: string;
   valueEnd: string;
   connector: ConditionConnector;
+  /** Which loop of a looped block the question refers to, e.g. `loop:any`. */
+  loopRef: string | null;
 }
 
 export interface Criterion {
@@ -203,6 +205,7 @@ export function newCondition(): CriterionCondition {
     value: '',
     valueEnd: '',
     connector: 'AND',
+    loopRef: null,
   };
 }
 
@@ -293,6 +296,7 @@ export function serializeConditions(conditions: CriterionCondition[]): string {
       value: cond.value,
       valueEnd: cond.valueEnd,
       connector: cond.connector,
+      loopRef: cond.loopRef,
     }))
   );
 }
@@ -316,6 +320,7 @@ export function templateToCriterionConditions(
       value: cond.value,
       valueEnd: cond.valueEnd ?? '',
       connector: cond.connector,
+      loopRef: null,
     };
   });
 }

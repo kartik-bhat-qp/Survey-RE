@@ -129,16 +129,16 @@ export default function SurveyEditorLayout({ children }: { children: React.React
     <SurveyEditorPhaseProvider surveyId={surveyId}>
       <SurveyEditorBulkEditProvider>
         <SurveyWorkspaceSectionsProvider>
-          <TestResponsesProvider>
-            <SurveyAnalyticsViewProvider
-              initialTab="dashboard"
-              initialSubView="responses"
-            >
-              <SurveyDistributeViewProvider surveyId={surveyId}>
+          <SurveyAnalyticsViewProvider
+            initialTab="dashboard"
+            initialSubView="responses"
+          >
+            <SurveyDistributeViewProvider surveyId={surveyId}>
+              <TestResponsesProvider>
                 <SurveyEditorLayoutBody>{children}</SurveyEditorLayoutBody>
-              </SurveyDistributeViewProvider>
-            </SurveyAnalyticsViewProvider>
-          </TestResponsesProvider>
+              </TestResponsesProvider>
+            </SurveyDistributeViewProvider>
+          </SurveyAnalyticsViewProvider>
         </SurveyWorkspaceSectionsProvider>
       </SurveyEditorBulkEditProvider>
     </SurveyEditorPhaseProvider>

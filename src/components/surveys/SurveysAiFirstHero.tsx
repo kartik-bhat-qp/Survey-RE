@@ -7,6 +7,8 @@ import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { SurveyCreationAiThinkingOverlay } from '@/components/surveys/SurveyCreationAiThinkingOverlay';
 import { SurveyCreationTemplatePicker } from '@/components/surveys/SurveyCreationTemplatePicker';
 import { AudioInputButton } from '@/components/ui/AudioInputButton';
+import { useEssentialsAccountActionsLocked } from '@/hooks/useEssentialsAccountUnderReview';
+import { ESSENTIALS_ACCOUNT_LOCKED_TOAST } from '@/data/mock-essentials-phishing-review';
 import { NEW_AI_SURVEY_ID } from '@/data/ai-survey-draft';
 import {
   createSurveyBriefFile,
@@ -36,6 +38,7 @@ type CreationMode = 'idea' | 'template' | 'scratch';
 export function SurveysAiFirstHero() {
   const router = useRouter();
   const { showToast } = useWuShowToast();
+  const accountLocked = useEssentialsAccountActionsLocked();
   const promptFormRef = useRef<HTMLFormElement>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,6 +60,10 @@ export function SurveysAiFirstHero() {
   async function handleSubmit(event?: React.FormEvent) {
     event?.preventDefault();
     if (mode !== 'idea' || isAiDrafting) return;
+    if (accountLocked) {
+      showToast({ message: ESSENTIALS_ACCOUNT_LOCKED_TOAST, variant: 'error' });
+      return;
+    }
 
     if (!trimmedPrompt) {
       showToast({ message: 'Describe what you want to learn to continue', variant: 'error' });
@@ -155,6 +162,10 @@ export function SurveysAiFirstHero() {
   }
 
   function handleBlankSurveyCreate(name: string) {
+    if (accountLocked) {
+      showToast({ message: ESSENTIALS_ACCOUNT_LOCKED_TOAST, variant: 'error' });
+      return;
+    }
     saveBlankSurveyDraft(name);
     showToast({ message: 'Blank survey created', variant: 'success' });
     router.push(`/surveys/${NEW_BLANK_SURVEY_ID}`);
@@ -184,6 +195,10 @@ export function SurveysAiFirstHero() {
 
   async function handleTemplateSelect(template: SurveyCreationTemplate) {
     if (isAiDrafting) return;
+    if (accountLocked) {
+      showToast({ message: ESSENTIALS_ACCOUNT_LOCKED_TOAST, variant: 'error' });
+      return;
+    }
 
     setSelectedTemplateId(template.id);
     setAiOverlayVariant('building');

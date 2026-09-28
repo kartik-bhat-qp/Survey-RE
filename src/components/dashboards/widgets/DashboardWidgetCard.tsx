@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
@@ -28,25 +28,34 @@ const WuMenuItem = dynamic(
 interface DashboardWidgetCardProps {
   onOpenSettings?: () => void;
   title: string;
-  children: React.ReactNode;
+  /** Optional line under the title (e.g. the primary question for driver analysis). */
+  subtitle?: ReactNode;
+  /** Native tooltip for a truncated subtitle. */
+  subtitleTitle?: string;
+  children: ReactNode;
   dragHandleClassName?: string;
   showDiamond?: boolean;
   showInsights?: boolean;
   insightCount?: number;
   onOpenInsights?: () => void;
-  actions?: React.ReactNode;
+  /** Rendered before the insight / menu buttons (e.g. Diagnose / Predict). */
+  headerExtra?: ReactNode;
+  actions?: ReactNode;
   shared?: boolean;
 }
 
 export function DashboardWidgetCard({
   onOpenSettings,
   title,
+  subtitle,
+  subtitleTitle,
   children,
   dragHandleClassName,
   showDiamond = false,
   showInsights = true,
   insightCount = 0,
   onOpenInsights,
+  headerExtra,
   actions,
   shared = false,
 }: DashboardWidgetCardProps) {
@@ -58,13 +67,21 @@ export function DashboardWidgetCard({
   return (
     <article className={`${styles.card} ${shared ? styles.shared : ''}`}>
       <header className={`${styles.header} ${dragHandleClassName ?? ''}`.trim()}>
-        <h3 className={styles.title}>{title}</h3>
+        <div className={styles.titleBlock}>
+          <h3 className={styles.title}>{title}</h3>
+          {subtitle ? (
+            <p className={styles.subtitle} title={subtitleTitle}>
+              {subtitle}
+            </p>
+          ) : null}
+        </div>
         <div
           className={`${styles.actions} dashboard-widget-actions`}
           onMouseDown={(event) => event.stopPropagation()}
           onPointerDown={(event) => event.stopPropagation()}
           onTouchStart={(event) => event.stopPropagation()}
         >{actions !== undefined ? actions : <>
+          {headerExtra}
           {showInsights && <button
             type="button"
             className={`${styles.actionBtn} ${styles.insightButton}`}

@@ -19,6 +19,8 @@ import {
 } from '@/data/mock-survey-questions';
 import { AiDataSourceSelection } from '@/components/dashboards/AiDataSourceSelection';
 import { DEFAULT_DASHBOARD_SURVEY, type SurveyListItem } from '@/data/mock-survey-folders';
+import type { AiWidgetConfig } from '@/data/mock-ai-widgets';
+import { driverAnalysisWidgetTitle } from '@/data/mock-driver-analysis';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import { adaptHeatmapQuestions, createAdvancedHeatmapConfig, type AdvancedHeatmapConfig, type AnalysisMode } from '@/data/advanced-heatmap';
 import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
@@ -36,6 +38,41 @@ type ModalStep =
   | 'primary-question'
   | 'driver-question';
 
+/** One picker row chosen as a driver (parent question or matrix sub-row). */
+interface DriverQuestionSelection {
+  selectionId: number;
+  questionId: number;
+  code: string;
+  name: string;
+  matrixRows?: string[];
+}
+
+function toDriverSelections(
+  items: DriverQuestionSelection[]
+): NonNullable<AiWidgetConfig['driverAnalysis']>['drivers'] {
+  const drivers: NonNullable<AiWidgetConfig['driverAnalysis']>['drivers'] = [];
+
+  for (const item of items) {
+    if (item.matrixRows && item.matrixRows.length > 0) {
+      item.matrixRows.forEach((row, index) => {
+        drivers.push({
+          id: `${item.questionId}-row-${index}`,
+          code: item.code,
+          name: row,
+        });
+      });
+      continue;
+    }
+    drivers.push({
+      id: String(item.selectionId),
+      code: item.code,
+      name: item.name,
+    });
+  }
+
+  return drivers;
+}
+
 interface AdvancedWidgetModalProps {
   builtWidgets?: BuiltWidget[];
   onReuseBuiltWidget?: (widget: BuiltWidget) => void;
@@ -43,7 +80,8 @@ interface AdvancedWidgetModalProps {
   onOpenChange: (open: boolean) => void;
   /** Survey used when picking primary / driver questions for Driver analysis. */
   surveyId?: number;
-  onWidgetAdded?: () => void;
+  /** `widget` is passed for widget types the canvas can render. */
+  onWidgetAdded?: (widget?: AiWidgetConfig) => void;
   onAdvancedHeatmapCreated?: (config: AdvancedHeatmapConfig) => void;
 }
 
@@ -72,7 +110,7 @@ export function AdvancedWidgetModal({
     DEFAULT_ADVANCED_WIDGET_TYPE_ID
   );
   const [primaryQuestion, setPrimaryQuestion] = useState<SurveyQuestion | null>(null);
-  const [driverQuestions, setDriverQuestions] = useState<SurveyQuestion[]>([]);
+  const [driverQuestions, setDriverQuestions] = useState<DriverQuestionSelection[]>([]);
 
   const [heatmapSurvey, setHeatmapSurvey] = useState<SurveyListItem | null>(null);
   const [heatmapRows, setHeatmapRows] = useState<string[]>([]);
@@ -123,16 +161,25 @@ export function AdvancedWidgetModal({
 
   function finishDriverAnalysis(
     primary: SurveyQuestion,
-    drivers: SurveyQuestion[]
+    drivers: DriverQuestionSelection[]
   ): void {
-    const selectedType = ADVANCED_WIDGET_TYPES.find((t) => t.id === selectedTypeId);
-    const name = widgetName.trim() || selectedType?.name || 'Driver analysis';
-    const driverCodes = drivers.map((q) => q.code).join(', ');
+    const name = widgetName.trim() || driverAnalysisWidgetTitle(primary);
+    const driverItems = toDriverSelections(drivers);
+    const driverCodes = [...new Set(driverItems.map((d) => d.code))].join(', ');
     showToast({
       message: `Widget "${name}" added · Primary: ${primary.code} · Drivers: ${driverCodes}`,
       variant: 'success',
     });
-    onWidgetAdded?.();
+    onWidgetAdded?.({
+      id: `w-driver-analysis-${Date.now()}`,
+      type: 'driver-analysis',
+      title: name,
+      driverAnalysis: {
+        primaryQuestionCode: primary.code,
+        primaryQuestionText: primary.text,
+        drivers: driverItems,
+      },
+    });
     handleClose();
   }
 
@@ -144,11 +191,28 @@ export function AdvancedWidgetModal({
   }
 
   function handleDriverQuestionToggle(question: SurveyQuestion, selected: boolean): void {
-    const { question: resolved } = resolvePickerSelection(question);
+    const isSubRow = question.parentQuestionId !== undefined;
+    const item: DriverQuestionSelection = {
+      selectionId: question.id,
+      questionId: question.parentQuestionId ?? question.id,
+      code: question.code,
+      name: question.text,
+      matrixRows: isSubRow ? undefined : question.matrixRows,
+    };
     setDriverQuestions((prev) => {
-      const without = prev.filter((q) => q.id !== resolved.id);
-      if (!selected) return without;
-      return [...without, resolved];
+      if (!selected) {
+        return prev.filter((q) => q.selectionId !== item.selectionId);
+      }
+      const withoutConflict = prev.filter((q) => {
+        if (q.selectionId === item.selectionId) return false;
+        if (isSubRow) {
+          // Drop whole-parent selection for this matrix.
+          return q.selectionId !== item.questionId;
+        }
+        // Selecting the parent replaces any prior parent or sub-row picks.
+        return q.questionId !== item.questionId;
+      });
+      return [...withoutConflict, item];
     });
   }
 
@@ -276,7 +340,7 @@ export function AdvancedWidgetModal({
           <WidgetQuestionSelection
             surveyId={surveyId}
             multiSelect
-            selectedQuestionIds={driverQuestions.map((q) => q.id)}
+            selectedQuestionIds={driverQuestions.map((q) => q.selectionId)}
             excludeQuestionIds={primaryQuestion ? [primaryQuestion.id] : []}
             onToggleQuestion={handleDriverQuestionToggle}
           />

@@ -14,6 +14,7 @@ import {
 } from '@/components/surveys/PublishLicenseConflictModal';
 import { useSurveyFooterBrand } from '@/components/surveys/useSurveyFooterBrand';
 import { useSurveyWorkspaceSections } from '@/components/surveys/SurveyWorkspaceSectionsContext';
+import { useEssentialsSurveyReviewing } from '@/hooks/useEssentialsAccountUnderReview';
 import {
   collectSurveyLicenseConflicts,
   getUserPlanLicense,
@@ -23,12 +24,19 @@ import {
   SURVEY_WORKSPACE_TOOLS,
   type SurveyWorkspaceTool,
 } from '@/components/surveys/survey-workspace-tools';
+import { surveyHasDesignTab } from '@/data/mock-survey-design';
 import {
   readSurveyApprovalState,
   subscribeSurveyApprovalState,
   surveyHasApprovalTab,
   writeSurveyApprovalState,
 } from '@/data/mock-survey-approval';
+import { isAiLensSurvey, MOCK_AI_LENS_FINDINGS, summarizeAiLensFindings } from '@/data/mock-ai-lens';
+import {
+  ESSENTIALS_SURVEY_REVIEWING_TOOLTIP,
+  essentialsPublishShouldBeBlocked,
+  runEssentialsPhishingReview,
+} from '@/data/mock-essentials-phishing-review';
 import styles from './SurveyEditorWorkspaceToolbar.module.css';
 
 const WuSecondaryNavbar = dynamic(
@@ -41,6 +49,11 @@ const WuTooltip = dynamic(
   { ssr: false }
 );
 
+const WuLoader = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuLoader })),
+  { ssr: false }
+);
+
 const SURVEY_VERSION_TOOLTIP = 'Survey Version';
 const PATH_SIMULATOR_TOOLTIP = 'Path Simulator';
 
@@ -48,7 +61,7 @@ type PublishMode = 'draft' | 'publish';
 
 function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null {
   if (tool === 'workspace') return `/surveys/${surveyId}`;
-  if (tool === 'design') return `/surveys/${surveyId}/design`;
+  if (tool === 'design' && surveyHasDesignTab(surveyId)) return `/surveys/${surveyId}/design`;
   if (tool === 'media-library') return `/surveys/${surveyId}/media-library`;
   if (tool === 'advance-quotas') return `/surveys/${surveyId}/advance-quotas`;
   if (tool === 'settings') return `/surveys/${surveyId}/settings`;
@@ -90,7 +103,14 @@ export function SurveyEditorWorkspaceToolbar({
     useState<PublishLicenseModalView>('conflicts');
   const [licenseConflicts, setLicenseConflicts] = useState<SurveyLicenseConflict[]>([]);
   const [draftConfirmOpen, setDraftConfirmOpen] = useState(false);
+  const surveyReviewing = useEssentialsSurveyReviewing();
   const requiresApproval = surveyHasApprovalTab(surveyId);
+
+  const blockEssentialsPublish = useCallback((): boolean => {
+    if (!essentialsPublishShouldBeBlocked(sections, surveyId)) return false;
+    setLicenseModalOpen(false);
+    return runEssentialsPhishingReview(showToast);
+  }, [sections, showToast, surveyId]);
 
   useEffect(() => {
     if (!requiresApproval) return;
@@ -124,11 +144,12 @@ export function SurveyEditorWorkspaceToolbar({
   }, []);
 
   const handleConfirmPublish = useCallback(() => {
+    if (blockEssentialsPublish()) return;
     setMode('publish');
     setLicenseModalOpen(false);
     setLicenseModalView('conflicts');
     showToast({ message: 'Survey published', variant: 'success' });
-  }, [showToast]);
+  }, [blockEssentialsPublish, showToast]);
 
   const handleDeleteLicensedQuestion = useCallback(
     (conflict: SurveyLicenseConflict) => {
@@ -171,6 +192,21 @@ export function SurveyEditorWorkspaceToolbar({
 
     if (next === 'publish') {
       if (requiresApproval) return;
+      if (blockEssentialsPublish()) return;
+
+      if (isAiLensSurvey(surveyId)) {
+        const summary = summarizeAiLensFindings(MOCK_AI_LENS_FINDINGS);
+        if (summary.allOpen > 0 && !sessionStorage.getItem('ai-lens-publish-anyway')) {
+          window.dispatchEvent(new Event('questionpro-ai-lens-open'));
+          showToast({
+            message:
+              'Outstanding Survey Expert findings. Resolve them in Survey Expert, or choose Publish anyway.',
+            variant: 'info',
+          });
+          return;
+        }
+        sessionStorage.removeItem('ai-lens-publish-anyway');
+      }
 
       const conflicts = collectSurveyLicenseConflicts(
         sections,
@@ -204,6 +240,30 @@ export function SurveyEditorWorkspaceToolbar({
     },
     [router, showToast, surveyId]
   );
+
+  useEffect(() => {
+    if (!isAiLensSurvey(surveyId)) return;
+    const onPublishAnyway = () => {
+      sessionStorage.setItem('ai-lens-publish-anyway', '1');
+      const conflicts = collectSurveyLicenseConflicts(
+        sections,
+        getUserPlanLicense(footerBrand),
+        logicByQuestionKey
+      );
+      if (conflicts.length > 0) {
+        setLicenseConflicts(conflicts);
+        setLicenseModalView('conflicts');
+        setLicenseModalOpen(true);
+        return;
+      }
+      setLicenseConflicts([]);
+      setLicenseModalView('publish-confirm');
+      setLicenseModalOpen(true);
+    };
+    window.addEventListener('questionpro-ai-lens-publish-anyway', onPublishAnyway);
+    return () =>
+      window.removeEventListener('questionpro-ai-lens-publish-anyway', onPublishAnyway);
+  }, [footerBrand, logicByQuestionKey, sections, surveyId]);
 
   const links = useMemo(
     () =>
@@ -241,12 +301,15 @@ export function SurveyEditorWorkspaceToolbar({
     [activeTool, handleToolClick, surveyId]
   );
 
+  const showAiLens = isAiLensSurvey(surveyId);
+
   const showPublishArea =
     activeTool !== 'advance-quotas' &&
     activeTool !== 'settings' &&
     activeTool !== 'media-library' &&
     activeTool !== 'design';
   const showDesignPreview = activeTool === 'design';
+  const showMediaLibraryPreview = activeTool === 'media-library';
 
   const isPathSimulator = pathname === `/surveys/${surveyId}/path-simulator`;
 
@@ -271,14 +334,26 @@ export function SurveyEditorWorkspaceToolbar({
   );
 
   const previewButton = (
-    <WuTooltip content="Preview survey" position="bottom">
+    <WuTooltip
+      content={surveyReviewing ? ESSENTIALS_SURVEY_REVIEWING_TOOLTIP : 'Preview survey'}
+      position="bottom"
+    >
       <button
         type="button"
-        className={styles.previewBtn}
-        aria-label="Preview survey"
-        onClick={() => showToast({ message: 'Preview survey', variant: 'success' })}
+        className={`${styles.previewBtn} ${surveyReviewing ? styles.previewBtnReviewing : ''}`}
+        aria-label={surveyReviewing ? ESSENTIALS_SURVEY_REVIEWING_TOOLTIP : 'Preview survey'}
+        aria-busy={surveyReviewing}
+        disabled={surveyReviewing}
+        onClick={() => {
+          if (surveyReviewing) return;
+          showToast({ message: 'Preview survey', variant: 'success' });
+        }}
       >
-        <span className="wm-visibility" aria-hidden />
+        {surveyReviewing ? (
+          <WuLoader variant="spinner" size="sm" color="#ffffff" aria-hidden />
+        ) : (
+          <span className="wm-visibility" aria-hidden />
+        )}
       </button>
     </WuTooltip>
   );
@@ -289,18 +364,34 @@ export function SurveyEditorWorkspaceToolbar({
         {showPublishArea ? (
           <div className={styles.publishArea}>
             <SurveyWorkspaceToolIcons />
-            <WuTooltip content={SURVEY_VERSION_TOOLTIP} position="bottom">
-              <button
-                type="button"
-                className={styles.toolbarIconBtn}
-                aria-label={SURVEY_VERSION_TOOLTIP}
-                onClick={() =>
-                  showToast({ message: SURVEY_VERSION_TOOLTIP, variant: 'success' })
-                }
-              >
-                <span className="wm-history" aria-hidden />
-              </button>
-            </WuTooltip>
+            {showAiLens ? (
+              <WuTooltip content="Survey Expert" position="bottom">
+                <button
+                  type="button"
+                  className={styles.reviewBtn}
+                  aria-label="Survey Expert"
+                  onClick={() =>
+                    window.dispatchEvent(new Event('questionpro-ai-lens-open'))
+                  }
+                >
+                  <span className={`wc-ai ${styles.reviewAiIcon}`} aria-hidden />
+                  Survey Expert
+                </button>
+              </WuTooltip>
+            ) : (
+              <WuTooltip content={SURVEY_VERSION_TOOLTIP} position="bottom">
+                <button
+                  type="button"
+                  className={styles.surveyVersionBtn}
+                  aria-label={SURVEY_VERSION_TOOLTIP}
+                  onClick={() =>
+                    showToast({ message: SURVEY_VERSION_TOOLTIP, variant: 'success' })
+                  }
+                >
+                  <span className="wm-history" aria-hidden />
+                </button>
+              </WuTooltip>
+            )}
             <TestResponsesTrigger />
             <div className={styles.statusToggle} role="group" aria-label="Survey status">
               <button
@@ -342,6 +433,8 @@ export function SurveyEditorWorkspaceToolbar({
             {pathSimulatorButton}
             {previewButton}
           </div>
+        ) : showMediaLibraryPreview ? (
+          <div className={styles.publishArea}>{previewButton}</div>
         ) : showDesignPreview ? (
           <div className={styles.publishArea}>
             <TestResponsesTrigger />

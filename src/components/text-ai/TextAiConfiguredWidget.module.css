@@ -254,7 +254,8 @@
   background: white;
   padding: 16px;
 }
-button:focus-visible {
+.dialog button:focus-visible,
+.surface button:focus-visible {
   outline: 2px solid #1b87e6;
   outline-offset: 3px;
 }

@@ -5,7 +5,6 @@ import {
   SURVEY_DESIGN_PREVIEW,
   getSurveyDesignFontFamily,
   getSurveyDesignTheme,
-  getSurveyDesignThemeHero,
   type SurveyDesignCustomizeSettings,
   type SurveyDesignBehaviorSettings,
   type SurveyDesignPreviewDevice,
@@ -19,7 +18,6 @@ interface SurveyDesignPreviewProps {
   customize: SurveyDesignCustomizeSettings;
   behavior: SurveyDesignBehaviorSettings;
   device: SurveyDesignPreviewDevice;
-  onDeviceChange: (device: SurveyDesignPreviewDevice) => void;
 }
 
 function getBackgroundStyle(
@@ -29,7 +27,7 @@ function getBackgroundStyle(
 ): CSSProperties {
   if (customize.backgroundStyle === 'gradient') {
     return {
-      background: `linear-gradient(180deg, ${themeBackground} 0%, ${accentColor}18 100%)`,
+      background: `linear-gradient(180deg, ${themeBackground} 0%, ${accentColor}12 100%)`,
     };
   }
 
@@ -44,7 +42,118 @@ function getBackgroundStyle(
   return { backgroundColor: themeBackground };
 }
 
-function SurveyDesignPreviewToolbar({
+export function SurveyDesignPreview({
+  layout,
+  themeId,
+  customize,
+  behavior,
+  device,
+}: SurveyDesignPreviewProps) {
+  const theme = getSurveyDesignTheme(themeId);
+  const preview = SURVEY_DESIGN_PREVIEW;
+  const cssVars = {
+    '--survey-design-bg': theme.backgroundColor,
+    '--survey-design-header': theme.headerColor,
+    '--survey-design-accent': theme.optionAccentColor,
+    '--survey-design-button': theme.buttonColor,
+    '--survey-design-font': getSurveyDesignFontFamily(customize.fontFamily),
+  } as CSSProperties;
+
+  const shellClass =
+    device === 'tablet'
+      ? `${styles.monitorShell} ${styles.monitorShellTablet}`
+      : device === 'mobile'
+        ? `${styles.monitorShell} ${styles.monitorShellMobile}`
+        : styles.monitorShell;
+
+  return (
+    <div className={styles.previewPane}>
+      <div className={styles.previewStage}>
+        <div className={shellClass}>
+          <div className={styles.monitorBezel}>
+            <div className={styles.surveyShell} style={{ ...cssVars, ...getBackgroundStyle(customize, theme.backgroundColor, theme.accentColor) }}>
+              <header className={styles.surveyHeader}>
+                <span className={styles.surveyHeaderTitle}>{preview.surveyTitle}</span>
+                <button type="button" className={styles.surveyHeaderClose} aria-hidden tabIndex={-1}>
+                  <span className="wm-logout" />
+                </button>
+              </header>
+
+              {customize.showProgressBar ? (
+                <div className={styles.progressBar} aria-hidden>
+                  <div className={styles.progressBarFill} />
+                </div>
+              ) : null}
+
+              <div className={styles.surveyBody}>
+                <div className={styles.surveyCanvas}>
+                  <div className={styles.questionCard}>
+                    {behavior.showRequiredIndicator ? (
+                      <p className={styles.requiredNote}>Questions marked with a * are required</p>
+                    ) : null}
+
+                    <div className={styles.questionTitleRow}>
+                      <h2 className={styles.questionTitle}>
+                        {behavior.showRequiredIndicator ? (
+                          <span className={styles.requiredMark} aria-hidden>
+                            *{' '}
+                          </span>
+                        ) : null}
+                        {preview.questionText}
+                      </h2>
+                      <span className={`wm-help-outline ${styles.helpIcon}`} aria-hidden />
+                    </div>
+
+                    <ul className={styles.optionList}>
+                      {preview.options.map((option) => (
+                        <li key={option}>
+                          <label className={styles.optionLabel}>
+                            <input
+                              type="radio"
+                              name="design-preview-option"
+                              className={styles.optionRadio}
+                              defaultChecked={option === 'Yes'}
+                              readOnly
+                            />
+                            <span>{option}</span>
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {layout === 'focus' ? (
+                  <div className={styles.focusFooter}>
+                    <span
+                      className={`${styles.backBtn} ${
+                        behavior.allowBackNavigation ? '' : styles.backBtnDisabled
+                      }`}
+                      aria-hidden
+                    >
+                      <span className="wm-arrow-back" />
+                    </span>
+                    <button type="button" className={styles.nextBtn}>
+                      Next
+                    </button>
+                  </div>
+                ) : (
+                  <div className={styles.focusFooter}>
+                    <button type="button" className={styles.nextBtn}>
+                      Submit
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function SurveyDesignPreviewToolbar({
   device,
   onDeviceChange,
 }: {
@@ -72,155 +181,6 @@ function SurveyDesignPreviewToolbar({
             <span className={item.icon} aria-hidden />
           </button>
         ))}
-      </div>
-    </div>
-  );
-}
-
-export function SurveyDesignPreview({
-  layout,
-  themeId,
-  customize,
-  behavior,
-  device,
-  onDeviceChange,
-}: SurveyDesignPreviewProps) {
-  const theme = getSurveyDesignTheme(themeId);
-  const preview = SURVEY_DESIGN_PREVIEW;
-  const hero =
-    layout === 'visual'
-      ? getSurveyDesignThemeHero(theme.hero === 'none' ? 'sky' : theme.hero)
-      : undefined;
-  const cssVars = {
-    '--survey-design-bg': theme.backgroundColor,
-    '--survey-design-header': theme.headerColor,
-    '--survey-design-topbar': theme.topBarColor,
-    '--survey-design-accent': theme.optionAccentColor,
-    '--survey-design-button': theme.buttonColor,
-    '--survey-design-text': theme.textColor,
-    '--survey-design-muted': theme.mutedColor,
-    '--survey-design-surface': theme.surfaceColor,
-    '--survey-design-font': getSurveyDesignFontFamily(customize.fontFamily),
-  } as CSSProperties;
-
-  const monitorClass =
-    device === 'tablet'
-      ? `${styles.monitorShell} ${styles.monitorShellTablet}`
-      : device === 'mobile'
-        ? `${styles.monitorShell} ${styles.monitorShellMobile}`
-        : styles.monitorShell;
-
-  const shellClass = `${styles.surveyShell} ${
-    layout === 'accessible' ? styles.surveyShellAccessible : ''
-  }`;
-
-  return (
-    <div className={styles.previewPane}>
-      <SurveyDesignPreviewToolbar device={device} onDeviceChange={onDeviceChange} />
-      <div className={styles.previewStage}>
-        <div className={monitorClass}>
-          <div className={styles.monitorBezel}>
-            <div
-              className={shellClass}
-              style={{
-                ...cssVars,
-                ...getBackgroundStyle(customize, theme.backgroundColor, theme.accentColor),
-              }}
-            >
-              <div className={styles.topBar} aria-hidden />
-              <header className={styles.surveyHeader}>
-                <span className={styles.surveyHeaderTitle}>{preview.surveyTitle}</span>
-                <button
-                  type="button"
-                  className={styles.surveyHeaderClose}
-                  aria-hidden
-                  tabIndex={-1}
-                >
-                  <span className="wm-logout" />
-                </button>
-              </header>
-
-              {customize.showProgressBar ? (
-                <div className={styles.progressBar} aria-hidden>
-                  <div className={styles.progressBarFill} />
-                </div>
-              ) : null}
-
-              {hero ? (
-                <div className={styles.visualHero} style={{ background: hero }} aria-hidden />
-              ) : null}
-
-              <div className={styles.surveyBody}>
-                <div
-                  className={layout === 'focus' ? styles.surveyCanvasFocus : styles.surveyCanvas}
-                >
-                  <div className={styles.questionCard}>
-                    {behavior.showRequiredIndicator ? (
-                      <p className={styles.requiredNote}>
-                        Questions marked with a * are required
-                      </p>
-                    ) : null}
-
-                    <div className={styles.questionTitleRow}>
-                      <h2 className={styles.questionTitle}>
-                        {behavior.showRequiredIndicator ? (
-                          <span className={styles.requiredMark} aria-hidden>
-                            *{' '}
-                          </span>
-                        ) : null}
-                        {behavior.showQuestionNumbers ? '1. ' : null}
-                        {preview.questionText}
-                      </h2>
-                      <span className={`wm-info ${styles.helpIcon}`} aria-hidden />
-                    </div>
-
-                    <ul className={styles.optionList}>
-                      {preview.options.map((option) => {
-                        const checked = option === 'Yes';
-                        return (
-                          <li key={option}>
-                            <label className={styles.optionLabel}>
-                              <span
-                                className={
-                                  checked ? styles.radioChecked : styles.radio
-                                }
-                                aria-hidden
-                              >
-                                {checked ? <span className={styles.radioDot} /> : null}
-                              </span>
-                              <input
-                                type="radio"
-                                name="design-preview-option"
-                                className={styles.optionRadioInput}
-                                checked={checked}
-                                onChange={() => undefined}
-                              />
-                              <span>{option}</span>
-                            </label>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className={styles.focusFooter}>
-                  <span
-                    className={`${styles.backBtn} ${
-                      behavior.allowBackNavigation ? '' : styles.backBtnDisabled
-                    }`}
-                    aria-hidden
-                  >
-                    <span className="wm-arrow-back" />
-                  </span>
-                  <button type="button" className={styles.nextBtn}>
-                    Next
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

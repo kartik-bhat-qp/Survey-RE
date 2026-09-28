@@ -13,6 +13,7 @@ import {
   GRID_ROW_HEIGHT,
   MOBILE_GRID_MARGIN,
   MOBILE_GRID_ROW_HEIGHT,
+  DRIVER_ANALYSIS_LAYOUT_W,
 } from '@/data/dashboard-grid-config';
 import {
   AI_DASHBOARD_GRID_COLS,
@@ -28,6 +29,7 @@ import {
 import { DashboardAiInsightsPanel } from '@/components/dashboards/DashboardAiInsightsPanel';
 import type { DashboardActiveFilter } from '@/data/mock-dashboard-filters';
 import type { DashboardDesign } from '@/data/dashboard-design';
+import { DashboardResearchAgentPanel } from '@/components/dashboards/DashboardResearchAgentPanel';
 import type { AmChartTypography } from '@/components/charts/amcharts/theme';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -43,6 +45,7 @@ import { DashboardWidgetCard } from '@/components/dashboards/widgets/DashboardWi
 import { AiWidgetRenderer } from '@/components/dashboards/widgets/AiWidgetRenderer';
 import { TimeSeriesDashboardCard } from '@/components/dashboards/widgets/TimeSeriesDashboardCard';
 import { WordCloudDashboardCard } from '@/components/dashboards/widgets/WordCloudDashboardCard';
+import { DriverAnalysisDashboardCard } from '@/components/dashboards/widgets/DriverAnalysisDashboardCard';
 import {
   createDashboardWidgetInsightThread,
   DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY,
@@ -57,6 +60,8 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
 const GridLayoutWithWidth = WidthProvider(ReactGridLayout);
+
+const NO_ADDED_WIDGETS: AiWidgetConfig[] = [];
 
 const CHART_BODY_FONT_SIZE_BY_DESIGN_SIZE: Record<string, number> = {
   'extra-small': 11,
@@ -97,6 +102,10 @@ interface AiDashboardCanvasProps {
   globalInsightRefreshFailedWidgetIds?: string[];
   lastAiInsightsRefreshAt?: string;
   onInsightsRefreshed?: (widgetId: string, refreshedAt: string) => void;
+  /** Widgets added from the Add widget flow — appended below the seeded widgets. */
+  addedWidgets?: AiWidgetConfig[];
+  /** Dashboard name used in the Research agent opening summary. */
+  dashboardName?: string;
   readOnly?: boolean;
   renderWidget?: (widget: AiWidgetConfig) => React.ReactNode;
   renderWidgetActions?: (widget: AiWidgetConfig) => React.ReactNode;
@@ -117,6 +126,8 @@ export function AiDashboardCanvas({
   globalInsightRefreshFailedWidgetIds = [],
   lastAiInsightsRefreshAt = '2026-09-01T06:30:00.000Z',
   onInsightsRefreshed,
+  addedWidgets = NO_ADDED_WIDGETS,
+  dashboardName = 'this dashboard',
   readOnly = false,
   renderWidget,
   renderWidgetActions,
@@ -129,6 +140,7 @@ export function AiDashboardCanvas({
   const showLicenseRestrictions = useBiLicenseRestrictions();
   const [desktopLayout, setDesktopLayout] = useState<Layout>(AI_DASHBOARD_LAYOUT);
   const [activeInsightWidgetId, setActiveInsightWidgetId] = useState<string | null>(null);
+  const [researchAgentOpen, setResearchAgentOpen] = useState(false);
   const [refreshingWidgetId, setRefreshingWidgetId] = useState<string | null>(null);
   const [insightThreads, setInsightThreads] = useState<Record<string, DashboardWidgetInsightThread>>(
     () =>
@@ -163,7 +175,56 @@ export function AiDashboardCanvas({
     }
     return isMobile ? stackLayoutSingleColumn(layout) : layout;
   }, [isMobile, desktopLayout, advancedHeatmaps, builtWidgets]);
-  const widgetById = useMemo(() => new Map(AI_DASHBOARD_WIDGETS.map(widget => [widget.id, widget])), []);
+  const widgetById = useMemo(
+    () =>
+      new Map(
+        [...AI_DASHBOARD_WIDGETS, ...addedWidgets].map((widget) => [widget.id, widget])
+      ),
+    [addedWidgets]
+  );
+
+  const [previousAddedWidgets, setPreviousAddedWidgets] = useState<AiWidgetConfig[] | null>(null);
+  // Initialize newly supplied widgets before children render their insight controls.
+  if (addedWidgets !== previousAddedWidgets) {
+    setPreviousAddedWidgets(addedWidgets);
+    setDesktopLayout((current) => {
+      const missing = addedWidgets.filter(
+        (widget) => !current.some((item) => item.i === widget.id)
+      );
+      if (missing.length === 0) return current;
+      let nextY = current.reduce((lowest, item) => Math.max(lowest, item.y + item.h), 0);
+      return [
+        ...current,
+        ...missing.map((widget) => {
+          const item = {
+            i: widget.id,
+            x: 0,
+            y: nextY,
+            w: widget.type === 'driver-analysis' ? DRIVER_ANALYSIS_LAYOUT_W : AI_DASHBOARD_GRID_COLS,
+            h: 1,
+            minW: 1,
+            minH: 1,
+          };
+          nextY += 1;
+          return item;
+        }),
+      ];
+    });
+
+    setInsightThreads((current) => {
+      const missing = addedWidgets.filter((widget) => !current[widget.id]);
+      if (missing.length === 0) return current;
+      return {
+        ...current,
+        ...Object.fromEntries(
+          missing.map((widget) => [
+            widget.id,
+            createDashboardWidgetInsightThread(widget.id, lastAiInsightsRefreshAt),
+          ])
+        ),
+      };
+    });
+  }
 
   const handleLayoutChange = useCallback(
     (nextLayout: Layout) => {
@@ -372,7 +433,17 @@ export function AiDashboardCanvas({
 
           return (
             <div key={widget.id} className={styles.gridItem} data-widget-id={widget.id}>
-              {!renderWidget && (widget.type === 'segment-trend' || widget.type === 'scoring-trend' || widget.type === 'response-timeline') ? <TimeSeriesDashboardCard key={`${dashboardId}:${dashboardTabId}:${widget.id}`} kind={widget.type} title={widget.title} widgetId={widget.id} selection={dashboardFilter?.dateSelection} typography={chartTypography} storageKey={`survey-re:time-series:${dashboardId}:${dashboardTabId}:${widget.id}`} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} readOnly={readOnly} onOpenInsights={readOnly ? undefined : () => setActiveInsightWidgetId(widget.id)} insightCount={insightThreads[widget.id]?.items.length ?? 0} /> : widget.type === 'heat-map' && !renderWidget ? <HeatMapBaseline dashboardDesign={dashboardDesign} dashboardFilter={dashboardFilter} key={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} embedded readOnly={readOnly} initialName={widget.title} storageKey={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} /> : widget.type === 'wordcloud' ? <WordCloudDashboardCard shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /> : <>
+              {!renderWidget && (widget.type === 'segment-trend' || widget.type === 'scoring-trend' || widget.type === 'response-timeline') ? <TimeSeriesDashboardCard key={`${dashboardId}:${dashboardTabId}:${widget.id}`} kind={widget.type} title={widget.title} widgetId={widget.id} selection={dashboardFilter?.dateSelection} typography={chartTypography} storageKey={`survey-re:time-series:${dashboardId}:${dashboardTabId}:${widget.id}`} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} readOnly={readOnly} onOpenInsights={readOnly ? undefined : () => setActiveInsightWidgetId(widget.id)} insightCount={insightThreads[widget.id]?.items.length ?? 0} /> : widget.type === 'heat-map' && !renderWidget ? <HeatMapBaseline dashboardDesign={dashboardDesign} dashboardFilter={dashboardFilter} key={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} embedded readOnly={readOnly} initialName={widget.title} storageKey={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} /> : widget.type === 'wordcloud' ? <WordCloudDashboardCard shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /> : widget.type === 'driver-analysis' ? (
+                <DriverAnalysisDashboardCard
+                  title={widget.title}
+                  dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle}
+                  shared={readOnly}
+                  actions={renderWidgetActions?.(widget) ?? (readOnly ? null : undefined)}
+                  insightCount={insightThreads[widget.id]?.items.length ?? 0}
+                  onOpenInsights={readOnly ? undefined : () => setActiveInsightWidgetId(widget.id)}
+                  driverAnalysis={widget.driverAnalysis}
+                />
+              ) : <>
               <DashboardWidgetCard
                 title={widget.title}
                 dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle}
@@ -401,6 +472,25 @@ export function AiDashboardCanvas({
         })}
       </GridLayoutWithWidth>
       {footer}
+      {!readOnly && !researchAgentOpen ? (
+        <button
+          type="button"
+          className={styles.aiFab}
+          aria-label="Research agent"
+          title="Research agent"
+          onClick={() => setResearchAgentOpen(true)}
+        >
+          <span className="wc-ai" />
+        </button>
+      ) : null}
+
+      {!readOnly ? (
+        <DashboardResearchAgentPanel
+          open={researchAgentOpen}
+          dashboardName={dashboardName}
+          onClose={() => setResearchAgentOpen(false)}
+        />
+      ) : null}
 
       {!readOnly && activeInsightWidgetId ? (() => {
         const activeWidget = widgetById.get(activeInsightWidgetId);

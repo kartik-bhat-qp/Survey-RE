@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import styles from './SharedDashboardDateFilter.module.css';
 
-const WuPopover = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuPopover })), { ssr: false });
+const WuDateRangePicker = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuDateRangePicker })), { ssr: false });
 const WuCalender = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCalender })), { ssr: false });
 const WuSelect = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })), { ssr: false });
 const WuButton = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })), { ssr: false });
@@ -13,7 +13,6 @@ const WuButton = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) =
 const PRESETS = ['Custom range', 'Last week', 'Last month', 'Last quarter', 'Last year', 'Last 30 days', 'Last 90 days'].map((label) => ({ label, value: label }));
 const asDate = (value: string) => value ? new Date(`${value}T00:00:00`) : undefined;
 const asString = (date: Date | undefined) => date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : '';
-const displayDate = (value: string) => asDate(value)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
 interface SharedDashboardDateFilterProps {
   startDate: string;
@@ -21,16 +20,34 @@ interface SharedDashboardDateFilterProps {
   onChange: (range: { startDate: string; endDate: string }) => void;
 }
 
-/** Production's compact calendar layout, using the installed WickUI primitives. */
-export function SharedDashboardDateFilter({ startDate, endDate, onChange }: SharedDashboardDateFilterProps) {
-  const [open, setOpen] = useState(false);
-  return <WuPopover open={open} onOpenChange={setOpen} align="start" sideOffset={-1}
-    className={styles.popover} aria-label="Date range" Trigger={<button type="button" className={styles.trigger} aria-label="Date range">
-      <span className="wm-date-range" aria-hidden /><span>{startDate && endDate ? `${displayDate(startDate)} – ${displayDate(endDate)}` : 'Select date range'}</span>
-      <span className="wm-arrow-drop-down" aria-hidden />
-    </button>}>
-    {open && <DateRangeCalendar startDate={startDate} endDate={endDate} onChange={range => { onChange(range); setOpen(false); }} />}
-  </WuPopover>;
+/** Compact date-range control shared by dashboard and Text AI filters. */
+export function SharedDashboardDateFilter({
+  startDate,
+  endDate,
+  onChange,
+}: SharedDashboardDateFilterProps) {
+  const from = asDate(startDate);
+  const to = asDate(endDate);
+
+  return (
+    <div className={styles.wrap}>
+      <WuDateRangePicker
+        aria-label="Date range"
+        variant="outlined"
+        placeholder="Select date range"
+        value={from || to ? { from, to } : undefined}
+        minDate={new Date(2020, 0, 1)}
+        maxDate={new Date(new Date().getFullYear() + 1, 11, 31)}
+        onChange={(range) => {
+          onChange({
+            startDate: asString(range?.from),
+            endDate: asString(range?.to),
+          });
+        }}
+        onReset={() => onChange({ startDate: '', endDate: '' })}
+      />
+    </div>
+  );
 }
 
 /** Calendar body shared by standalone and reporting-year menus. */
