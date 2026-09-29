@@ -1,0 +1,35 @@
+(node:34201) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/prabalgupta/Documents/work/Survey-RE/src/data/reporting-year.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/prabalgupta/Documents/work/Survey-RE/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ a reporting year ends the day before its anniversary, including leap coverage (10.935625ms)
+✔ fiscal quarters are contiguous and cover the full year for first-day, mid-month and month-end starts (0.666667ms)
+✔ ordinary February–April remains two clipped calendar quarters (0.232875ms)
+✔ reporting calendar shifts quarter/year boundaries but preserves weekly/monthly boundaries and response totals (122.087458ms)
+✔ switching to calendar grouping preserves dates while changing periods (0.34475ms)
+✔ saved years reject malformed dates and arbitrary durations (0.098ms)
+✔ weekly buckets use the Sunday boundaries observed in production (0.326833ms)
+(node:34202) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34202) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/prabalgupta/Documents/work/Survey-RE/src/data/reporting-year.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/prabalgupta/Documents/work/Survey-RE/package.json.
+✔ daily, quarterly and yearly timeline counts preserve the same window and base (141.511792ms)
+✔ combined dates clip fiscal buckets and empty intersections stay empty (0.286667ms)
+✔ percentages and excluded values preserve denominator and missingness (1.262708ms)
+✔ scoring is response-weighted and does not average bucket means (24.891625ms)
+✔ segment dates and denominator dates independently restrict each bucket (0.736083ms)
+✔ combined scope with no widget date keeps the complete applied reporting year (0.320167ms)
+✔ each clicked period reconciles trend base, seven answer bars and exact respondent IDs (6.640541ms)
+✔ dashboard criteria, status, widget dates and slice criteria intersect at every level (0.603ms)
+✔ moving-average click retains the single clicked bucket, not the smoothing window (1.407958ms)
+✔ no matches, invalid slices, and threshold exclusion never broaden the response base (2.373375ms)
+✔ ten applied slices are supported independently of Overall and saved inactive slices (0.469209ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 390.311584

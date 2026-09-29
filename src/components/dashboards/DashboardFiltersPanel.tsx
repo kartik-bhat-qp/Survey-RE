@@ -10,13 +10,13 @@ import {
   type DashboardFilterQuestion,
 } from '@/data/mock-dashboard-filters';
 import styles from './DashboardFiltersPanel.module.css';
-import { ReportingYearDateFilter } from './ReportingYearDateFilter';
-import { isReportingYear, type DashboardDateSelection, type ReportingYear } from '@/data/reporting-year';
+import { SharedDashboardDateFilter } from './SharedDashboardDateFilter';
+import type { DashboardDateSelection } from '@/data/reporting-year';
 
 type FilterMode = 'extended' | 'compact';
 
 interface DashboardFiltersPanelProps {
-  dashboardId?: number;
+  reportingYearEnabled?: boolean;
   open: boolean;
   onFilterChange?: (filter: DashboardActiveFilter) => void;
   extraQuestions?: DashboardFilterQuestion[];
@@ -92,7 +92,7 @@ function SaveFilterModal({
 }
 
 export function DashboardFiltersPanel({
-  dashboardId = 0,
+  reportingYearEnabled = false,
   open,
   onManageFilters,
   onSaveFilter,
@@ -108,14 +108,6 @@ export function DashboardFiltersPanel({
   const [responseStatus, setResponseStatus] = useState('all');
   const [dateRange, setDateRange] = useState('');
   const [dateSelection, setDateSelection] = useState<DashboardDateSelection>({ startDate: '', endDate: '' });
-  const reportingYearsKey = `survey-re:dashboard:${dashboardId}:reporting-years:v1`;
-  const [reportingYears, setReportingYears] = useState<ReportingYear[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const stored: unknown = JSON.parse(window.localStorage.getItem(reportingYearsKey) ?? '[]');
-      return Array.isArray(stored) ? stored.filter(isReportingYear) : [];
-    } catch { return []; }
-  });
 
   function changeDateSelection(selection: DashboardDateSelection) {
     setDateSelection(selection);
@@ -192,23 +184,7 @@ export function DashboardFiltersPanel({
           </label>
           <div className={styles.dateControl}>
             <span>Filter by date</span>
-            <ReportingYearDateFilter selection={dateSelection} years={reportingYears} onChange={changeDateSelection} onSave={year => {
-              const next = reportingYears.some(saved => saved.id === year.id)
-                ? reportingYears.map(saved => saved.id === year.id ? year : saved)
-                : [...reportingYears, year];
-              setReportingYears(next);
-              try {
-                window.localStorage.setItem(reportingYearsKey, JSON.stringify(next));
-                showToast({ message: `Reporting year '${year.name}' saved`, variant: 'success' });
-              } catch { showToast({ message: 'Reporting year applied for this session. Browser storage is unavailable.', variant: 'info' }); }
-            }} onDelete={year => {
-              const next = reportingYears.filter(saved => saved.id !== year.id);
-              setReportingYears(next);
-              try {
-                window.localStorage.setItem(reportingYearsKey, JSON.stringify(next));
-                showToast({ message: `Reporting year '${year.name}' deleted`, variant: 'success' });
-              } catch { showToast({ message: 'Deleted for this session. Browser storage is unavailable.', variant: 'info' }); }
-            }} />
+            {reportingYearEnabled ? <span>Reporting year set in General settings</span> : <SharedDashboardDateFilter startDate={dateSelection.startDate} endDate={dateSelection.endDate} onChange={changeDateSelection} />}
           </div>
           <div className={styles.modeSwitch} role="group" aria-label="Filter display mode">
             <button type="button" className={mode === 'extended' ? styles.activeMode : ''} onClick={() => setMode('extended')}>

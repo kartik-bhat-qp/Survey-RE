@@ -121,7 +121,8 @@ function createHorizontalBarChart(
 function createAgeBarChart(
   root: am5.Root,
   data: ColoredChartDataPoint[],
-  typography?: AmChartTypography
+  typography?: AmChartTypography,
+  drilldown?: AiWidgetChartPayload['barDrilldown']
 ): void {
   const chart = root.container.children.push(
     am5xy.XYChart.new(root, {
@@ -151,8 +152,9 @@ function createAgeBarChart(
   const xAxis = chart.xAxes.push(
     am5xy.ValueAxis.new(root, {
       min: 0,
-      max: 25,
-      strictMinMax: true,
+      max: drilldown ? undefined : 25,
+      extraMax: drilldown ? .1 : 0,
+      strictMinMax: !drilldown,
       renderer: xRenderer,
     })
   );
@@ -195,6 +197,14 @@ function createAgeBarChart(
     cornerRadiusTR: 0,
     cornerRadiusBR: 0,
   });
+
+  if (drilldown) {
+    series.columns.template.setAll({ cursorOverStyle:'pointer', interactive:true, focusable:true, role:'button', ariaLabel:'{categoryY}: {count} responses, {valueX} percent. View matching responses.', tooltipText:'{categoryY}: {valueX}% ({count})' });
+    series.columns.template.events.on('click', event => {
+      const category = (event.target.dataItem?.dataContext as ColoredChartDataPoint | undefined)?.category;
+      if (category && drilldown.counts[category] > 0) drilldown.onSelect(category);
+    });
+  }
 
   series.columns.template.adapters.add('fill', (_fill, target) => {
     const ctx = target.dataItem?.dataContext as ColoredChartDataPoint | undefined;
@@ -497,7 +507,8 @@ function createSegmentTrendChart(
   rows: AiWidgetChartPayload['segmentTrendRows'],
   seriesConfig: SegmentTrendSeriesConfig[],
   typography?: AmChartTypography,
-  options?: AiWidgetChartPayload['timeSeriesOptions']
+  options?: AiWidgetChartPayload['timeSeriesOptions'],
+  onPointClick?: (category: string) => void
 ): void {
   const chart = root.container.children.push(
     am5xy.XYChart.new(root, {
@@ -581,17 +592,19 @@ function createSegmentTrendChart(
     series.set('fill', am5.color(config.color));
     if (options?.kind === 'response-timeline') series.fills.template.setAll({ visible:true, fillOpacity:.25 });
 
-    if (options?.kind !== 'response-timeline') series.bullets.push((_root, _series, item) =>
-      am5.Bullet.new(root, {
-        locationY: 1,
-        sprite: am5.Circle.new(root, {
-          radius: options ? 7 : 5,
-          fill: am5.color(options?.highlightHighest && item.get('valueY') === Math.max(...rows.map(r=>Number(r[config.field])||0)) ? '#f09a32' : config.color),
-          stroke: am5.color(0xffffff),
-          strokeWidth: 1,
-        }),
-      })
-    );
+    if (options?.kind !== 'response-timeline') series.bullets.push((_root, _series, item) => {
+      const row = item.dataContext as AiWidgetChartPayload['segmentTrendRows'][number];
+      const sprite = am5.Circle.new(root, {
+        radius: onPointClick ? 6 : options ? 7 : 5,
+        fill: am5.color(options?.highlightHighest && item.get('valueY') === Math.max(...rows.map(r=>Number(r[config.field])||0)) ? '#f09a32' : config.color),
+        stroke: am5.color(onPointClick ? config.color : 0xffffff), strokeWidth:1,
+        cursorOverStyle:onPointClick ? 'pointer' : 'default',
+        interactive:!!onPointClick, focusable:!!onPointClick, role:onPointClick ? 'button' : undefined,
+        ariaLabel:onPointClick ? `${row.category}: ${row[config.field]}. View answer distribution.` : undefined,
+      });
+      if (onPointClick) sprite.events.on('click',()=>onPointClick(row.category));
+      return am5.Bullet.new(root, {locationY:1,sprite});
+    });
 
     if (options?.dataLabels !== 'None' && !(options?.kind === 'response-timeline' && rows.length > 60)) series.bullets.push(() =>
       am5.Bullet.new(root, {
@@ -1138,7 +1151,7 @@ export function buildChart(
       createMapChart(root, payload.mapPoints);
       break;
     case 'bar':
-      createAgeBarChart(root, payload.ageBarItems, typography);
+      createAgeBarChart(root, payload.ageBarItems, typography, payload.barDrilldown);
       break;
     case 'image-bar':
       createHorizontalBarChart(root, payload.imageBars, true);
@@ -1190,7 +1203,8 @@ export function buildChart(
         payload.segmentTrendRows,
         payload.segmentTrendSeries,
         typography,
-        payload.timeSeriesOptions
+        payload.timeSeriesOptions,
+        payload.onTrendPointClick
       );
       break;
     case 'pictorial':

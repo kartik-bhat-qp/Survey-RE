@@ -1,12 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
   DATA_SLICER_LICENSE_LIMIT,
+  DATA_SLICER_CREATION_LIMIT,
+  DATA_SLICER_APPLIED_LIMIT,
   DATA_SLICER_LIMIT_TOOLTIP,
   MOCK_DATA_SLICERS,
   type DataSlicer,
@@ -35,7 +37,8 @@ const WuTooltip = dynamic(
   { ssr: false }
 );
 
-function CreateDataSlicerButton({ disabled }: { disabled: boolean }) {
+function CreateDataSlicerButton({ disabled, limit }: { disabled: boolean; limit:number }) {
+  const tooltip=limit===DATA_SLICER_LICENSE_LIMIT ? DATA_SLICER_LIMIT_TOOLTIP : `You can create up to ${limit} data slicers.`;
   const button = (
     <WuButton Icon={<span className="wm-add" />} disabled={disabled}>
       Create data slicer
@@ -47,23 +50,28 @@ function CreateDataSlicerButton({ disabled }: { disabled: boolean }) {
   }
 
   return (
-    <WuTooltip content={DATA_SLICER_LIMIT_TOOLTIP} position="bottom">
-      <span className={styles.createBtnWrap} aria-label={DATA_SLICER_LIMIT_TOOLTIP}>
+    <WuTooltip content={tooltip} position="bottom">
+      <span className={styles.createBtnWrap} aria-label={tooltip}>
         {button}
       </span>
     </WuTooltip>
   );
 }
 
-export function DashboardDataSlicersTab() {
+export function DashboardDataSlicersTab({ dataSlicers, onDataSlicersChange }: { dataSlicers?: DataSlicer[]; onDataSlicersChange?: (slices:DataSlicer[])=>void }) {
   const { showToast } = useWuShowToast();
   const showLicenseRestrictions = useBiLicenseRestrictions();
-  const [slicers, setSlicers] = useState<DataSlicer[]>(MOCK_DATA_SLICERS);
+  const [localSlicers, setLocalSlicers] = useState<DataSlicer[]>(MOCK_DATA_SLICERS);
+  const slicers=dataSlicers ?? localSlicers;
+  const setSlicers=useCallback((update:(previous:DataSlicer[])=>DataSlicer[])=>{
+    const next=update(slicers);
+    if(onDataSlicersChange) onDataSlicersChange(next); else setLocalSlicers(next);
+  },[slicers,onDataSlicersChange]);
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const atSlicerLimit =
-    showLicenseRestrictions && slicers.length >= DATA_SLICER_LICENSE_LIMIT;
+    slicers.length >= (showLicenseRestrictions ? DATA_SLICER_LICENSE_LIMIT : DATA_SLICER_CREATION_LIMIT);
 
   const filteredSlicers = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -123,6 +131,9 @@ export function DashboardDataSlicersTab() {
             <WuCheckbox
               checked={row.original.applyToDashboard}
               onChange={(checked) => {
+                if (checked && slicers.filter(s=>s.applyToDashboard).length>=DATA_SLICER_APPLIED_LIMIT) {
+                  showToast({message:`You can apply up to ${DATA_SLICER_APPLIED_LIMIT} data slicers.`,variant:'info'});return;
+                }
                 setSlicers((prev) =>
                   prev.map((s) =>
                     s.id === row.original.id ? { ...s, applyToDashboard: checked } : s
@@ -148,7 +159,7 @@ export function DashboardDataSlicersTab() {
         cell: () => null,
       },
     ],
-    [expandedId, showToast]
+    [expandedId, showToast, slicers, setSlicers]
   );
 
   return (
@@ -167,7 +178,7 @@ export function DashboardDataSlicersTab() {
       </div>
 
       <div className={styles.actionsRow}>
-        <CreateDataSlicerButton disabled={atSlicerLimit} />
+        <CreateDataSlicerButton disabled={atSlicerLimit} limit={showLicenseRestrictions ? DATA_SLICER_LICENSE_LIMIT : DATA_SLICER_CREATION_LIMIT} />
         <button
           type="button"
           className={styles.manageLink}
@@ -196,7 +207,7 @@ export function DashboardDataSlicersTab() {
                   ? 'Try adjusting your search'
                   : 'Create a data slicer to filter dashboard widgets'
               }
-              action={!search.trim() ? <CreateDataSlicerButton disabled={atSlicerLimit} /> : undefined}
+              action={!search.trim() ? <CreateDataSlicerButton disabled={atSlicerLimit} limit={showLicenseRestrictions ? DATA_SLICER_LICENSE_LIMIT : DATA_SLICER_CREATION_LIMIT} /> : undefined}
             />
           }
         />

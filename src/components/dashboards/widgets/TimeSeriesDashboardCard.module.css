@@ -47,3 +47,15 @@
 @media(max-width:850px) { .preview { display:none; } .panel { width:min(440px,100vw); } }
 .tooltipChecks { display:grid; gap:8px; margin-bottom:24px; }
 .tooltipChecks label { display:flex; gap:8px; align-items:center; }
+
+.visual > .sliceTabs { flex:none; min-height:32px; display:flex; overflow-x:auto; border-bottom:1px solid #ddd; gap:16px; }
+.sliceTabs button { flex:none; max-width:220px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; background:white; border:0; border-bottom:2px solid transparent; padding:6px 0; color:#555; font:inherit; font-size:12px; cursor:pointer; }
+.sliceTabs button[aria-selected=true] { color:#4b7ed1; border-bottom-color:#4b7ed1; }
+
+.visual:has([data-drill-level="distribution"]) > .sliceTabs, .visual:has([data-drill-level="responses"]) > .sliceTabs { display:none; }
+
+.visual:has([data-drill-level="distribution"]) > .stats, .visual:has([data-drill-level="responses"]) > .stats { display:none; }
+
+.scoringCard { border-color:#ccc; border-radius:7px; }
+.scoringCard > header { margin:0 8px; padding:8px; border-bottom-color:#ddd; }
+.scoringCard > header h3 { color:#292564; font-size:calc(var(--dashboard-widget-title-size, 24px) * .75); font-weight:500; }

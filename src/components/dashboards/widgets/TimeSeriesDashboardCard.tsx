@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import type { DashboardActiveFilter } from '@/data/mock-dashboard-filters';
+import { appliedDataSlicers, type DataSlicer } from '@/data/mock-data-slicers';
+import { ScoringTrendDrilldown } from './ScoringTrendDrilldown';
 import { DashboardWidgetCard } from './DashboardWidgetCard';
 import { BiAmChart } from '@/components/charts/amcharts/BiAmChart';
 import { buildChartPayload } from './AiWidgetRenderer';
@@ -11,13 +14,17 @@ import type { DashboardDateSelection } from '@/data/reporting-year';
 import type { AmChartTypography } from '@/components/charts/amcharts/theme';
 import styles from './TimeSeriesDashboardCard.module.css';
 
-export function TimeSeriesDashboardCard({ kind, title, widgetId, selection, typography, storageKey, dragHandleClassName, readOnly=false, onOpenInsights, insightCount=0 }: {
-  kind:TimeSeriesKind;title:string;widgetId:string;selection?:DashboardDateSelection;typography?:AmChartTypography;storageKey:string;dragHandleClassName?:string;readOnly?:boolean;onOpenInsights?:()=>void;insightCount?:number;
+export function TimeSeriesDashboardCard({ kind, title, widgetId, selection, dashboardFilter, dataSlicers=[], typography, storageKey, dragHandleClassName, readOnly=false, onOpenInsights, insightCount=0 }: {
+  dashboardFilter?:DashboardActiveFilter;dataSlicers?:DataSlicer[];kind:TimeSeriesKind;title:string;widgetId:string;selection?:DashboardDateSelection;typography?:AmChartTypography;storageKey:string;dragHandleClassName?:string;readOnly?:boolean;onOpenInsights?:()=>void;insightCount?:number;
 }) {
   const [settings,setSettings]=useState<TimeSeriesSettings>(()=>{
     const defaults=defaultTimeSeriesSettings(kind,title);
     try { const saved=localStorage.getItem(storageKey); const next=saved ? {...defaults,...JSON.parse(saved)} : defaults; if (!['Default','Custom','None'].includes(next.tooltip)) next.tooltip='Default'; return next; } catch {return defaults;}
   });
+  const [sliceId,setSliceId]=useState<number>();
+  const slices=appliedDataSlicers(dataSlicers);
+  const slice=slices.find(slice=>slice.id===sliceId);
+  const context=useMemo(()=>({dashboardFilter,slice}),[dashboardFilter,slice]);
   const [open,setOpen]=useState(false);
   const [tab,setTab]=useState('General');
   const [search,setSearch]=useState('');
@@ -26,16 +33,23 @@ export function TimeSeriesDashboardCard({ kind, title, widgetId, selection, typo
   function update<K extends keyof TimeSeriesSettings>(key:K,value:TimeSeriesSettings[K]) {
     setSettings(current=>{const next={...current,[key]:value};try { localStorage.setItem(storageKey,JSON.stringify(next)); } catch { /* Continue in session when storage is unavailable. */ } return next;});
   }
-  const result=useMemo(()=>timeSeriesData(kind,settings,selection),[kind,settings,selection]);
+  const result=useMemo(()=>timeSeriesData(kind,settings,selection,context),[kind,settings,selection,context]);
   const payload=useMemo(()=>({...buildChartPayload(widgetId),segmentTrendRows:result.rows,segmentTrendSeries:result.series,timeSeriesOptions:{kind,dataLabels:settings.dataLabels,axisTitles:settings.axisTitles,xTitle:settings.xTitle,yTitle:settings.yTitle,highlightHighest:settings.highlightHighest,minimum:settings.customAxis ? settings.minimum : undefined,maximum:settings.customAxis ? Math.max(settings.minimum+1,settings.maximum) : undefined,tooltip:settings.tooltip,tooltipTitle:settings.tooltipTitle,tooltipCount:settings.tooltipCount,tooltipPercentage:settings.tooltipPercentage}}),[widgetId,result,settings,kind]);
   const chartTypography: AmChartTypography | undefined = settings.design==='Widget' ? {fontWeight:'400',fontStyle:'normal',...typography,fontFamily:settings.fontFamily,fontSize:settings.fontSize} : typography;
-  const visual=(suffix:string)=><div className={styles.visual}>{result.rows.length ? <BiAmChart widgetId={`${widgetId}-${suffix}`} chartType="segment-trend" data={payload} typography={chartTypography} /> : <p className={styles.empty}>No matching results</p>}{settings.stats && <p className={styles.stats}>Response count <strong>{result.total.toLocaleString()}</strong></p>}</div>;
+  const visual=(suffix:string)=><div className={styles.visual}>
+    {kind==='scoring-trend' && slices.length>0 && <div className={styles.sliceTabs} role="tablist" aria-label="Data slices">
+      {[{id:undefined,name:'Overall',description:'All responses within the applicable filters'},...slices].map(item=><button type="button" role="tab" key={item.id??'overall'} title={item.description ?? item.name} aria-selected={slice?.id===item.id} onClick={()=>setSliceId(item.id)}>{item.name}</button>)}
+    </div>}
+    {kind==='scoring-trend' ? <ScoringTrendDrilldown key={JSON.stringify([settings,selection,context])} widgetId={`${widgetId}-${suffix}`} payload={payload} settings={settings} context={context} typography={chartTypography}/> : result.rows.length ? <BiAmChart widgetId={`${widgetId}-${suffix}`} chartType="segment-trend" data={payload} typography={chartTypography} /> : <p className={styles.empty}>No matching results</p>}
+    {settings.stats && <p className={styles.stats}>Response count <strong>{result.total.toLocaleString()}</strong></p>}
+  </div>;
+
   const toggle=(label:string,key:'showName'|'highlighted'|'axisTitles'|'highlightHighest'|'customAxis'|'movingAverage'|'exclude'|'stats'|'customMean'|'customDenominator'|'perSegmentDenominator')=><div className={styles.row}><span>{label}</span><button type="button" role="switch" aria-label={label} aria-checked={settings[key]} className={styles.toggle} onClick={()=>update(key,!settings[key])}><span /></button></div>;
   const select=<K extends keyof TimeSeriesSettings>(label:string,key:K,values:readonly string[])=><label className={styles.field}>{label}<select aria-label={label} value={String(settings[key])} onChange={e=>update(key,e.target.value as TimeSeriesSettings[K])}>{values.map(v=><option key={v}>{v}</option>)}</select></label>;
   const modes=<K extends keyof TimeSeriesSettings>(label:string,key:K,values:readonly string[],icons:readonly string[])=><div className={styles.row}><span>{label}</span><div className={styles.modes}>{values.map((v,i)=><button type="button" key={v} title={v} aria-label={`${label}: ${v}`} aria-pressed={settings[key]===v} onClick={()=>update(key,v as TimeSeriesSettings[K])}>{icons[i].startsWith('wm-') ? <span className={icons[i]} /> : icons[i]}</button>)}</div></div>;
   const number=(label:string,key:'windowSize'|'minimumResponses'|'minimum'|'maximum',min=0,max=100000)=><label className={styles.field}>{label}<input type="number" aria-label={label} value={settings[key]} min={min} max={max} onChange={e=>update(key,Math.max(min,Math.min(max,Number(e.target.value))))} /></label>;
   return <>
-    <DashboardWidgetCard title={settings.showName?settings.name:''} dragHandleClassName={dragHandleClassName} shared={readOnly} actions={readOnly?null:undefined} onOpenInsights={onOpenInsights} insightCount={insightCount} onOpenSettings={()=>{setTab('General');setOpen(true);}}>{visual('card')}</DashboardWidgetCard>
+    <DashboardWidgetCard className={kind==='scoring-trend' ? styles.scoringCard : undefined} title={settings.showName?settings.name:''} dragHandleClassName={dragHandleClassName} shared={readOnly} actions={readOnly?null:undefined} onOpenInsights={onOpenInsights} insightCount={insightCount} onOpenSettings={()=>{setTab('General');setOpen(true);}}>{visual('card')}</DashboardWidgetCard>
     <Dialog.Root open={open} onOpenChange={setOpen}><Dialog.Portal><Dialog.Overlay className={styles.overlay}/><Dialog.Content className={styles.dialog} aria-describedby={undefined}>
       <section className={styles.preview}><header><h3>{settings.showName&&settings.name}</h3><span className="wm-lightbulb" /></header>{visual('preview')}</section>
       <aside className={styles.panel}><header className={styles.panelHeader}><Dialog.Title>Settings</Dialog.Title><Dialog.Close aria-label="Close widget settings">×</Dialog.Close></header>

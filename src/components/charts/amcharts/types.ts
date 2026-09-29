@@ -60,6 +60,8 @@ export interface TimeSeriesChartOptions {
 }
 export interface AiWidgetChartPayload {
   timeSeriesOptions?: TimeSeriesChartOptions;
+  onTrendPointClick?: (category: string) => void;
+  barDrilldown?: { onSelect: (category: string) => void; counts: Record<string, number> };
   ageBarItems: ColoredChartDataPoint[];
   npsBenchmarkItems: NpsBenchmarkDataPoint[];
   npsBenchmarkResponseCount: number;

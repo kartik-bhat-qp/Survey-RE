@@ -1,11 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { DataSlicer } from '@/data/mock-data-slicers';
+
+import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type { IWuTabItem } from '@npm-questionpro/wick-ui-lib';
 import { DashboardDataSlicersTab } from '@/components/dashboards/DashboardDataSlicersTab';
 import { DashboardSharedUrlTab } from '@/components/dashboards/DashboardSharedUrlTab';
+import type { ReportingYearSettingsProps } from './ReportingYearSettings';
 import { DashboardGlobalSettingsTab } from '@/components/dashboards/DashboardGlobalSettingsTab';
 import { DashboardFiltersSettingsTab } from '@/components/dashboards/DashboardFiltersSettingsTab';
 import {
@@ -22,15 +25,12 @@ import {
   type DesignTypographyOptions,
   type DesignSelectOption,
 } from '@/components/dashboards/DashboardDesignSettingsTab';
-import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { DEFAULT_DASHBOARD_DESIGN, normalizeDashboardDesign, type DashboardDesign, type DesignColorSettings } from '@/data/dashboard-design';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import type { SharedUrlLink } from '@/data/mock-shared-urls';
 import {
   AI_INSIGHT_REFRESH_OPTIONS,
-  formatAiInsightDateTime,
   getAiInsightRefreshOption,
-  getNextAiInsightRefreshAt,
   type AiInsightRefreshFrequency,
   type AiInsightRefreshOption,
   type DashboardInsightRegenerationResult,
@@ -41,10 +41,6 @@ const WuTab = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTab })),
   { ssr: false }
 );
-const WuInput = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
-  { ssr: false }
-);
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false }
@@ -53,16 +49,26 @@ const WuToggle = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
   { ssr: false }
 );
-const WuPopover = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuPopover })),
-  { ssr: false }
-);
 const WuSelect = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
   { ssr: false }
 );
 
-interface DashboardSettingsModalProps {
+// Compact forms use less space; tables and design previews keep room to expand.
+const SETTINGS_TAB_WIDTHS: Record<string, string> = {
+  general: '680px',
+  'global-settings': '680px',
+  'data-slicers': '1000px',
+  design: '1100px',
+  weightings: '680px',
+  'ai-settings': '900px',
+  filters: '800px',
+  'shared-url': '1250px',
+};
+
+interface DashboardSettingsModalProps extends ReportingYearSettingsProps {
+  dataSlicers?:DataSlicer[];
+  onDataSlicersChange?:(slices:DataSlicer[])=>void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   dashboardName: string;
@@ -97,78 +103,75 @@ function SettingsPlaceholder({ label }: { label: string }) {
 }
 
 function GeneralTab({
-  dashboardName,
-  onNameChange,
-  onDuplicate,
-  onDeleteRequest,
+  children,
   accessibilityShortcutsEnabled,
   onAccessibilityShortcutsChange,
-  insightRefreshFrequency,
-  onInsightRefreshFrequencyChange,
-  lastAiInsightsRefreshAt,
 }: {
-  dashboardName: string;
-  onNameChange: (name: string) => void;
-  onDuplicate: () => void;
-  onDeleteRequest: () => void;
+  children: ReactNode;
   accessibilityShortcutsEnabled: boolean;
   onAccessibilityShortcutsChange: (enabled: boolean) => void;
-  insightRefreshFrequency: AiInsightRefreshFrequency;
-  onInsightRefreshFrequencyChange: (frequency: AiInsightRefreshFrequency) => void;
-  lastAiInsightsRefreshAt: string;
 }) {
-  const { showToast } = useWuShowToast();
-  const [name, setName] = useState(dashboardName);
-  const [showAccessibilityShortcuts, setShowAccessibilityShortcuts] = useState(false);
-  const selectedRefreshOption = getAiInsightRefreshOption(insightRefreshFrequency);
-  const nextRefreshAt = getNextAiInsightRefreshAt(
-    lastAiInsightsRefreshAt,
-    insightRefreshFrequency
-  );
-
-  const handleNameBlur = (): void => {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setName(dashboardName);
-      return;
-    }
-    if (trimmed !== dashboardName) {
-      onNameChange(trimmed);
-      showToast({
-        message: `Dashboard renamed to '${trimmed}'`,
-        variant: 'success',
-      });
-    }
-  };
+  const shortcutsHelpId = useId();
 
   return (
     <div className={styles.generalPanel}>
-      <WuInput
-        Label="Dashboard name"
-        variant="outlined"
-        value={name}
-        maxLength={100}
-        onChange={(e) => setName(e.target.value)}
-        onBlur={handleNameBlur}
-      />
-      <section className={styles.refreshFrequencySection} aria-labelledby="ai-insight-refresh-title">
-        <div className={styles.refreshFrequencyCopy}>
-          <h3 id="ai-insight-refresh-title">AI insight refresh frequency</h3>
-          <p>
-            Automatically refresh AI-generated widget insights using the latest dashboard data.
-            Previous AI runs and user-submitted insights remain available.
-          </p>
-          <span>
-            Last dashboard run {formatAiInsightDateTime(lastAiInsightsRefreshAt)} · Next scheduled{' '}
-            {formatAiInsightDateTime(nextRefreshAt)}
+      <div className={styles.generalGrid}>
+        <div className={styles.generalPrimary}>{children}</div>
+        <div className={styles.generalSecondary}>
+      <div className={styles.accessibilityRow}>
+        <div className={styles.settingLabelRow}><span className={styles.accessibilityLabel}>Accessibility shortcuts</span>
+          <span className={styles.generalHelp} tabIndex={0} aria-label="About accessibility shortcuts" aria-describedby={shortcutsHelpId}>
+            <span className="wm-info" aria-hidden />
+            <span id={shortcutsHelpId} role="tooltip" className={styles.generalHelpTooltip}>Increase dashboard font size: Alt + Shift + Up. Decrease: Alt + Shift + Down.</span>
           </span>
         </div>
+        <div className={styles.accessibilityControls}>
+          <WuToggle
+            checked={accessibilityShortcutsEnabled}
+            onChange={onAccessibilityShortcutsChange}
+            aria-label="Enable accessibility shortcuts"
+          />
+
+        </div>
+      </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AiSettingsTab({
+  insightRefreshFrequency,
+  onInsightRefreshFrequencyChange,
+  regenerating,
+  regenerationResult,
+  onRetryFailedInsights,
+}: {
+  insightRefreshFrequency: AiInsightRefreshFrequency;
+  onInsightRefreshFrequencyChange: (frequency: AiInsightRefreshFrequency) => void;
+  regenerating: boolean;
+  regenerationResult: DashboardInsightRegenerationResult | null;
+  onRetryFailedInsights: () => void;
+}) {
+  const { showToast } = useWuShowToast();
+  const refreshOption = getAiInsightRefreshOption(insightRefreshFrequency);
+
+  return (
+    <div className={styles.aiSettingsPanel}>
+      <div className={styles.generalPanel}><div className={styles.generalSecondary}>
+      <section className={styles.refreshFrequencySection} aria-labelledby="ai-insight-refresh-title">
+        <div className={styles.refreshFrequencyCopy}>
+          <h3 id="ai-insight-refresh-title">AI insight frequency</h3>
+          <p className={styles.settingDescription}>Choose how often insights refresh; previous runs stay available.</p>
+        </div>
+        <div className={styles.refreshFrequencyControls}>
         <div className={styles.refreshFrequencySelect}>
           <WuSelect
             aria-label="AI insight refresh frequency"
             data={AI_INSIGHT_REFRESH_OPTIONS}
             accessorKey={{ value: 'value', label: 'label' }}
-            value={selectedRefreshOption}
+            value={refreshOption}
             onSelect={(option) => {
               const nextOption = option as AiInsightRefreshOption;
               onInsightRefreshFrequencyChange(nextOption.value);
@@ -180,119 +183,11 @@ function GeneralTab({
             variant="outlined"
           />
         </div>
-      </section>
-      <div className={styles.actions}>
-        <WuButton
-          variant="secondary"
-          className={styles.duplicateBtn}
-          Icon={<span className="wm-content-copy" />}
-          onClick={onDuplicate}
-        >
-          Duplicate dashboard
-        </WuButton>
-        <WuButton
-          variant="secondary"
-          className={styles.deleteBtn}
-          Icon={<span className="wm-delete" />}
-          onClick={onDeleteRequest}
-        >
-          Delete dashboard
-        </WuButton>
-      </div>
-      <div className={styles.accessibilityRow}>
-        <span className={styles.accessibilityLabel}>Accessibility shortcuts</span>
-        <div className={styles.accessibilityControls}>
-          <WuToggle
-            checked={accessibilityShortcutsEnabled}
-            onChange={onAccessibilityShortcutsChange}
-            aria-label="Enable accessibility shortcuts"
-          />
-          <WuPopover
-            open={showAccessibilityShortcuts}
-            onOpenChange={setShowAccessibilityShortcuts}
-            side="right"
-            align="start"
-            className={styles.shortcutPopover}
-            Trigger={
-              <WuButton
-                type="button"
-                variant="iconOnly"
-                aria-label="Show accessibility shortcuts"
-                aria-expanded={showAccessibilityShortcuts}
-                className={styles.shortcutHelpButton}
-              >
-                <span className="wm-help" aria-hidden="true" />
-              </WuButton>
-            }
-          >
-            <div className={styles.shortcutContent}>
-              <p className={styles.shortcutTitle}>Available shortcuts</p>
-              <div className={styles.shortcutList}>
-                <div className={styles.shortcutItem}>
-                  <span>Increase dashboard font size</span>
-                  <kbd>Alt + Shift + Up</kbd>
-                </div>
-                <div className={styles.shortcutItem}>
-                  <span>Decrease dashboard font size</span>
-                  <kbd>Alt + Shift + Down</kbd>
-                </div>
-              </div>
-            </div>
-          </WuPopover>
-        </div>
-      </div>
-    </div>
-  );
-}
 
-function AiSettingsTab({
-  insightRefreshFrequency,
-  lastAiInsightsRefreshAt,
-  regenerating,
-  regenerationResult,
-  onRetryFailedInsights,
-}: {
-  insightRefreshFrequency: AiInsightRefreshFrequency;
-  lastAiInsightsRefreshAt: string;
-  regenerating: boolean;
-  regenerationResult: DashboardInsightRegenerationResult | null;
-  onRetryFailedInsights: () => void;
-}) {
-  const refreshOption = getAiInsightRefreshOption(insightRefreshFrequency);
-  const nextRefreshAt = getNextAiInsightRefreshAt(
-    lastAiInsightsRefreshAt,
-    insightRefreshFrequency
-  );
-
-  return (
-    <div className={styles.aiSettingsPanel}>
-      <section className={styles.aiRegenerateCard}>
-        <div className={styles.aiRegenerateHeader}>
-          <div>
-            <h3>Regenerate insights</h3>
-            <p>
-              Refresh every AI-generated insight in this dashboard using the latest widget data.
-              Each current AI insight and its engagement will move to Past runs. User-submitted
-              insights remain unchanged.
-            </p>
-          </div>
-          <span className={styles.preservationBadge}>Keeps past runs</span>
         </div>
-        <dl className={styles.refreshMetadata}>
-          <div>
-            <dt>Automatic schedule</dt>
-            <dd>{refreshOption.label}</dd>
-          </div>
-          <div>
-            <dt>Last dashboard run</dt>
-            <dd>{formatAiInsightDateTime(lastAiInsightsRefreshAt)}</dd>
-          </div>
-          <div>
-            <dt>Next scheduled</dt>
-            <dd>{formatAiInsightDateTime(nextRefreshAt)}</dd>
-          </div>
-        </dl>
       </section>
+      </div></div>
+
       {regenerating ? (
         <div className={styles.regeneratingNotice} role="status">
           <span className="wm-autorenew" aria-hidden="true" />
@@ -339,12 +234,11 @@ function AiSettingsTab({
 }
 
 export function DashboardSettingsModal({
+  reportingYearSetting, onReportingYearChange,
+  dataSlicers, onDataSlicersChange,
   open,
   onOpenChange,
   dashboardName,
-  onNameChange,
-  onDuplicate,
-  onDelete,
   appliedDesign,
   onDesignChange,
   appliedDesignTypography = DEFAULT_DESIGN_TYPOGRAPHY,
@@ -356,7 +250,6 @@ export function DashboardSettingsModal({
   onSharedLinksChange,
   insightRefreshFrequency,
   onInsightRefreshFrequencyChange,
-  lastAiInsightsRefreshAt,
   failedInsightWidgetIds = [],
   onRegenerateInsights,
   onRetryFailedInsights,
@@ -364,7 +257,6 @@ export function DashboardSettingsModal({
 }: DashboardSettingsModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [regenerateConfirmOpen, setRegenerateConfirmOpen] = useState(false);
   const [regeneratingInsights, setRegeneratingInsights] = useState(false);
   const [regenerationResult, setRegenerationResult] =
@@ -414,7 +306,6 @@ export function DashboardSettingsModal({
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
       if (!nextOpen) {
-        setDeleteConfirmOpen(false);
         onTabChange('general');
       }
       onOpenChange(nextOpen);
@@ -424,7 +315,7 @@ export function DashboardSettingsModal({
 
   const handleApplyGlobalSettings = useCallback(() => {
     showToast({
-      message: 'Global settings applied to existing widgets',
+      message: 'Settings applied to existing widgets',
       variant: 'success',
     });
   }, [showToast]);
@@ -502,21 +393,6 @@ export function DashboardSettingsModal({
     showToast,
   ]);
 
-  const handleDuplicate = useCallback(() => {
-    const copyName = `${dashboardName.trim() || 'Untitled'} (Copy)`;
-    onDuplicate?.();
-    showToast({
-      message: `'${dashboardName}' copied successfully to '${copyName}'`,
-      variant: 'success',
-    });
-    handleOpenChange(false);
-  }, [dashboardName, handleOpenChange, onDuplicate, showToast]);
-
-  const handleDeleteConfirm = useCallback(() => {
-    onDelete?.();
-    handleOpenChange(false);
-  }, [handleOpenChange, onDelete]);
-
   const handleRegenerateInsights = useCallback(() => {
     setRegeneratingInsights(true);
     window.setTimeout(() => {
@@ -553,29 +429,20 @@ export function DashboardSettingsModal({
         value: 'general',
         Trigger: 'General',
         Content: (
+          <div className={styles.mergedGeneral}>
           <GeneralTab
-            key={dashboardName}
-            dashboardName={dashboardName}
-            onNameChange={onNameChange}
-            onDuplicate={handleDuplicate}
-            onDeleteRequest={() => setDeleteConfirmOpen(true)}
             accessibilityShortcutsEnabled={accessibilityShortcutsEnabled}
             onAccessibilityShortcutsChange={setAccessibilityShortcutsEnabled}
-            insightRefreshFrequency={insightRefreshFrequency}
-            onInsightRefreshFrequencyChange={onInsightRefreshFrequencyChange}
-            lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
-          />
+          >
+            <DashboardGlobalSettingsTab reportingYearSetting={reportingYearSetting} onReportingYearChange={onReportingYearChange} />
+          </GeneralTab>
+          </div>
         ),
-      },
-      {
-        value: 'global-settings',
-        Trigger: 'Global settings',
-        Content: <DashboardGlobalSettingsTab />,
       },
       {
         value: 'data-slicers',
         Trigger: 'Data slicers',
-        Content: <DashboardDataSlicersTab />,
+        Content: <DashboardDataSlicersTab dataSlicers={dataSlicers} onDataSlicersChange={onDataSlicersChange} />,
       },
       {
         value: 'design',
@@ -610,7 +477,7 @@ export function DashboardSettingsModal({
         Content: (
           <AiSettingsTab
             insightRefreshFrequency={insightRefreshFrequency}
-            lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
+            onInsightRefreshFrequencyChange={onInsightRefreshFrequencyChange}
             regenerating={regeneratingInsights}
             regenerationResult={displayedRegenerationResult}
             onRetryFailedInsights={handleRetryFailedInsights}
@@ -641,16 +508,13 @@ export function DashboardSettingsModal({
       designPalette,
       designSentiment,
       designTheme,
-      handleDuplicate,
       insightRefreshFrequency,
-      lastAiInsightsRefreshAt,
-      displayedRegenerationResult,
+          displayedRegenerationResult,
       handleRetryFailedInsights,
-      onNameChange,
-      onInsightRefreshFrequencyChange,
+          onInsightRefreshFrequencyChange,
       regeneratingInsights,
       updateDesignSelect,
-      savedFilters,
+      savedFilters, dataSlicers, onDataSlicersChange, reportingYearSetting, onReportingYearChange,
     ]
   );
 
@@ -668,7 +532,7 @@ export function DashboardSettingsModal({
           onOpenChange={handleOpenChange}
           className={`${styles.modal} ${activeTab === 'shared-url' ? styles.sharedLinksModal : ''}`}
           variant="action"
-          maxWidth={activeTab === 'shared-url' ? '1250px' : undefined}
+          maxWidth={SETTINGS_TAB_WIDTHS[activeTab] ?? '1000px'}
           maxHeight={activeTab === 'shared-url' ? 'min(685px, calc(100dvh - 64px))' : 'min(90dvh, calc(100dvh - 2rem))'}
         >
           <WuModalHeader className={`${styles.header} ${styles.modalTitle}`}>
@@ -679,16 +543,16 @@ export function DashboardSettingsModal({
             <div className={styles.tabRoot}>
               <WuTab
                 items={tabs}
-                value={activeTab}
+                value={activeTab === 'global-settings' ? 'general' : activeTab}
                 onValueChange={onTabChange}
               />
             </div>
           </WuModalContent>
 
-          {activeTab === 'global-settings' ? (
+          {(activeTab === 'general' || activeTab === 'global-settings') ? (
             <WuModalFooter className={styles.globalFooter}>
               <WuButton onClick={handleApplyGlobalSettings}>
-                Apply to existing widgets
+                Save
               </WuButton>
             </WuModalFooter>
           ) : activeTab === 'design' ? (
@@ -706,30 +570,32 @@ export function DashboardSettingsModal({
                 onClick={() => setRegenerateConfirmOpen(true)}
                 disabled={regeneratingInsights}
               >
-                {regeneratingInsights ? 'Regenerating…' : 'Regenerate insights'}
+                {regeneratingInsights ? 'Regenerating…' : 'Regenerate'}
               </WuButton>
             </WuModalFooter>
           ) : null}
         </WuModal>
       ) : null}
 
-      <ConfirmModal
-        open={deleteConfirmOpen}
-        onOpenChange={setDeleteConfirmOpen}
-        title="Delete dashboard"
-        description={`Are you sure you want to delete this dashboard '${dashboardName}'?`}
-        confirmLabel="Delete"
-        variant="critical"
-        onConfirm={handleDeleteConfirm}
-      />
-      <ConfirmModal
-        open={regenerateConfirmOpen}
+      {regenerateConfirmOpen ? <WuModal
+        open
         onOpenChange={setRegenerateConfirmOpen}
-        title="Regenerate dashboard insights"
-        description="All AI-generated insights will be refreshed using the latest dashboard data. Each current AI insight, its comments, and its likes will move to Past runs. User-submitted insights remain unchanged, and failed widgets keep their current AI insight."
-        confirmLabel="Regenerate insights"
-        onConfirm={handleRegenerateInsights}
-      />
+        variant="action"
+        maxWidth="600px"
+        aria-label="Regenerate insights"
+        className={styles.regenerateConfirm}
+      >
+        <WuModalHeader>Regenerate insights</WuModalHeader>
+        <WuModalContent className={styles.regenerateConfirmContent}>
+          <p>Are you sure you want to regenerate insights?</p>
+          <p>Existing AI insights, comments, and likes will remain available under Past runs in each widget.</p>
+        </WuModalContent>
+        <WuModalFooter>
+          <WuButton variant="secondary" onClick={() => setRegenerateConfirmOpen(false)}>Cancel</WuButton>
+          <WuButton onClick={() => { setRegenerateConfirmOpen(false); handleRegenerateInsights(); }}>Regenerate</WuButton>
+        </WuModalFooter>
+      </WuModal> : null}
+
     </>
   );
 }

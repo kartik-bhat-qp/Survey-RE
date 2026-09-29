@@ -1,5 +1,7 @@
 'use client';
 
+import { MOCK_DATA_SLICERS, type DataSlicer } from '@/data/mock-data-slicers';
+
 import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -25,6 +27,8 @@ import {
   type DesignTypographyOptions,
 } from '@/components/dashboards/DashboardDesignSettingsTab';
 import { getDashboardById } from '@/data/get-dashboard-by-id';
+import { useDashboardReportingYear } from '@/hooks/useDashboardReportingYear';
+import { resolveReportingYearSelection } from '@/data/dashboard-reporting-year';
 import { useDashboardDesign } from '@/hooks/useDashboardDesign';
 import { useDashboardSharing } from '@/hooks/useDashboardSharing';
 import { useBiProductBasePath, withBiProductBasePath } from '@/hooks/useBiProductBasePath';
@@ -100,7 +104,16 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
   }, []);
 
   const [hasAddedWidget, setHasAddedWidget] = useState(false);
+  const [dataSlicers,setDataSlicers]=useState<DataSlicer[]>(MOCK_DATA_SLICERS);
   const [dashboardFilter, setDashboardFilter] = useState<DashboardActiveFilter>();
+  const [reportingYearSetting, setReportingYearSetting] = useDashboardReportingYear(numericId);
+  const effectiveDates = resolveReportingYearSelection(dashboardFilter?.dateSelection, reportingYearSetting);
+  const effectiveDashboardFilter: DashboardActiveFilter = {
+    hasCriteria: false, questionId: '', operator: 'is', value: '', responseStatus: 'all',
+    ...dashboardFilter,
+    dateSelection: effectiveDates,
+    dateRange: effectiveDates.startDate && effectiveDates.endDate ? `${effectiveDates.startDate} – ${effectiveDates.endDate}` : '',
+  };
   const [dashboardDesign, setDashboardDesign] = useDashboardDesign(numericId);
   const designTypography = dashboardDesign.typography;
   const setDesignTypography = (typography: DesignTypographyOptions) => setDashboardDesign({ ...dashboardDesign, typography });
@@ -187,7 +200,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
 
       <div id="dashboard-filter-panel">
         <DashboardFiltersPanel
-          dashboardId={numericId}
+          reportingYearEnabled={reportingYearSetting.enabled}
           onFilterChange={setDashboardFilter}
           extraQuestions={HEAT_MAP_DASHBOARD_FILTER_QUESTIONS}
           open={filtersOpen}
@@ -226,7 +239,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         onSettingsChange={(settings) => setSharing((previous) => ({ ...previous, settings }))}
         onOpenSharedLinks={() => { setShareOpen(false); setSettingsTab('shared-url'); setSettingsOpen(true); }} />
 
-      <DashboardSettingsModal
+      <DashboardSettingsModal reportingYearSetting={reportingYearSetting} onReportingYearChange={setReportingYearSetting} dataSlicers={dataSlicers} onDataSlicersChange={setDataSlicers}
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         dashboardName={name}
@@ -310,7 +323,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         onAddWidget={() => setHasAddedWidget(true)}
       />
 
-      <DashboardDetailTabBar
+      <DashboardDetailTabBar dataSlicers={dataSlicers}
         builtWidgets={builtWidgets}
         onBuiltWidgetChange={widget => setBuiltWidgets(items => items.map(item => item.id === widget.id ? widget : item))}
         dashboardName={name}
@@ -318,7 +331,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         onAdvancedHeatmapChange={config => setAdvancedHeatmaps(items => items.map(item => item.id === config.id ? { ...config, tabId: item.tabId } : item))}
         onActiveTabChange={setActiveWidgetTab}
         dashboardDesign={dashboardDesign}
-        dashboardFilter={dashboardFilter}
+        dashboardFilter={effectiveDashboardFilter}
         dashboardId={numericId}
         designTypography={designTypography}
         insightRefreshFrequency={insightRefreshFrequency}

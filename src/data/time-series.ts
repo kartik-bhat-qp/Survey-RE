@@ -1,3 +1,5 @@
+import type { DashboardActiveFilter } from './mock-dashboard-filters';
+import type { DataSlicer, SlicerField } from './mock-data-slicers';
 import { reportingBuckets, type DashboardDateSelection, type ReportingInterval } from './reporting-year';
 
 export type TimeSeriesKind = 'segment-trend' | 'scoring-trend' | 'response-timeline';
@@ -30,13 +32,13 @@ export function effectiveTimeWindow(dashboard: DashboardDateSelection | undefine
 }
 
 /** Synthetic fixture: all metrics use the same daily eligible response counts. */
-export function timeSeriesData(kind: TimeSeriesKind, settings: TimeSeriesSettings, dashboard?: DashboardDateSelection) {
+export function timeSeriesData(kind: TimeSeriesKind, settings: TimeSeriesSettings, dashboard?: DashboardDateSelection, context?: ScoringFilterContext) {
   const selection = effectiveTimeWindow(dashboard, settings);
   const buckets = reportingBuckets(selection, settings.interval);
   const series = kind === 'segment-trend' ? settings.segments.map((s,i)=>({field:s.id,name:s.name,color:i ? '#90bef2' : settings.color})) : [{field:'value',name:kind === 'scoring-trend' ? settings.scoring : 'Responses',color:settings.color}];
   const rows = buckets.map(bucket => {
     const total = bucket.segment1 + bucket.segment2;
-    const row: Record<string,string|number|null> & { category:string } = { category:bucket.label, coverage:`${bucket.startDate} – ${bucket.endDate}`, responses:total };
+    const row: Record<string,string|number|null> & { category:string } = { category:bucket.label, coverage:`${bucket.startDate} – ${bucket.endDate}`, startDate:bucket.startDate, endDate:bucket.endDate, responses:total };
     if (kind === 'segment-trend') {
       const count = (segment:TimeSeriesSegment) => {
         const start=segment.dates?.startDate && segment.dates.startDate > bucket.startDate ? segment.dates.startDate : bucket.startDate;
@@ -58,12 +60,15 @@ export function timeSeriesData(kind: TimeSeriesKind, settings: TimeSeriesSetting
       });
     } else if (kind === 'response-timeline') { row.value = total; row.valueCount=total; row.valuePercent=100; }
     else {
-      let sum = 0, base = 0, positive = 0, negative = 0;
-      for (let t=Date.parse(bucket.startDate); t<=Date.parse(bucket.endDate); t+=86400000) {
-        const day = Math.floor(t/86400000), counts=[3+day%11,4+day%17];
-        counts.forEach((n,i)=>{ const score=(day+i*3)%7+1; base+=n; sum+=n*(settings.customMean ? settings.scores[score-1] : score); if(score>=6) positive+=n; if(score<=4) negative+=n; });
-      }
-      row.value = !base || (settings.exclude && base<settings.minimumResponses) ? null : settings.scoring === 'Mean' ? sum/base : settings.scoring === 'Net promoter score' ? 100*(positive-negative)/base : 100*positive/base;
+      const records = scoringResponses(bucket, settings, context);
+      const base = records.length;
+      const sum = records.reduce((value, record) => value + (settings.customMean ? settings.scores[record.answer - 1] : record.answer), 0);
+      const positive = records.filter(record => record.answer >= 6).length;
+      const negative = records.filter(record => record.answer <= 4).length;
+      row.responses = base;
+      row.value = !base || (settings.exclude && base < settings.minimumResponses) ? null : settings.scoring === 'Mean' ? sum/base : settings.scoring === 'Net promoter score' ? 100*(positive-negative)/base : 100*positive/base;
+      row.valueCount = base;
+
     }
     return row;
   });
@@ -79,5 +84,56 @@ export function timeSeriesData(kind: TimeSeriesKind, settings: TimeSeriesSetting
     }
     return result;
   });
-  return {rows:smoothed,series,selection,total:buckets.reduce((sum,b)=>sum+b.segment1+b.segment2,0)};
+  return {rows:smoothed,series,selection,total:rows.reduce((sum,row)=>sum+Number(row.responses),0)};
+}
+
+
+export interface ScoringFilterContext { dashboardFilter?: DashboardActiveFilter; slice?: DataSlicer; }
+export interface ScoringResponse {
+  id: string;
+  date: string;
+  answer: number;
+  attributes: Record<SlicerField | 'country' | 'single', string>;
+}
+export const SCORING_ANSWER_LABELS = ['1 - Sad', '2', '3', '4', '5', '6', '7 - Happy'];
+
+/** Synthetic respondent fixture. Trend, distribution and detail all use these exact records. */
+export function scoringResponses(window: DashboardDateSelection, settings: TimeSeriesSettings, context?: ScoringFilterContext): ScoringResponse[] {
+  const start = Date.parse(window.startDate), end = Date.parse(window.endDate);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || end - start > 3660 * 86400000) return [];
+  const records: ScoringResponse[] = [];
+  const filter = settings.filter === 'Dashboard' || settings.filter === 'Combined' ? context?.dashboardFilter : undefined;
+  for (let t=start;t<=end;t+=86400000) {
+    const day = Math.floor(t/86400000), date = new Date(t).toISOString().slice(0,10);
+    [3+day%11,4+day%17].forEach((count,group)=>{
+      for (let i=0;i<count;i++) {
+        const n=day+group*19+i, answer=(day+group*3)%7+1;
+        const attributes: ScoringResponse['attributes'] = {
+          gender: ['Female','Male','Other'][n%3], country: ['Canada','India','United Kingdom','United States'][n%4],
+          region: ['Northeast','West','South','Midwest'][n%4], age: ['25–34','35–44','18–24','45–54','55+'][n%5],
+          beverage: n%2 ? 'Coca-Cola' : 'Other', income: n%3 ? 'Other' : 'Top quartile',
+          device: n%2 ? 'Smartphone primary' : 'Desktop', nps: n%11>=9 ? 'Promoter' : n%11>=7 ? 'Passive' : 'Detractor',
+          wave: n%2 ? '2' : '1', status: i===count-1 ? 'terminated' : i<Math.floor(count/4) ? 'partial' : 'completed',
+          recentPurchase: n%3 ? 'Yes' : 'No', emailOptIn: n%2 ? 'Yes' : 'No',
+          single: ['Very poor','Poor','Neutral','Good','Excellent'][n%5],
+        };
+        if (context?.slice && !context.slice.criteria) continue; // Never silently broaden an undefined slice.
+        if (Object.entries(context?.slice?.criteria ?? {}).some(([key,value])=>attributes[key as SlicerField]!==value)) continue;
+        if (filter?.responseStatus && filter.responseStatus!=='all' && attributes.status!==filter.responseStatus) continue;
+        if (filter?.hasCriteria && filter.value) {
+          const actual = attributes[filter.questionId as keyof typeof attributes];
+          if (actual === undefined || (filter.operator==='is-not' ? actual===filter.value : actual!==filter.value)) continue;
+        }
+        records.push({id:`R-${date.replaceAll('-','')}-${group}-${String(i+1).padStart(2,'0')}`,date,answer,attributes});
+      }
+    });
+  }
+  return records;
+}
+
+export function scoringDistribution(records: readonly ScoringResponse[]) {
+  return SCORING_ANSWER_LABELS.map((category,index)=>{
+    const count=records.filter(record=>record.answer===index+1).length;
+    return { category, answer:index+1, count, value:records.length ? Number((100*count/records.length).toFixed(1)) : 0 };
+  });
 }

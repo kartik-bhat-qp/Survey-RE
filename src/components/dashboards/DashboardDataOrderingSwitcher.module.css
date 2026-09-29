@@ -8,3 +8,6 @@
   min-width: 36px;
   padding: 0 !important;
 }
+
+.group :global(button) { color:#667080; }
+.group :global(button[aria-pressed='true']) { background:#edf0f4; color:#38475a; }

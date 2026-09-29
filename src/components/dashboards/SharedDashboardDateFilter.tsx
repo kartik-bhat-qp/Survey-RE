@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { reportingYearEnd } from '@/data/reporting-year';
 import styles from './SharedDashboardDateFilter.module.css';
 
 const WuDateRangePicker = dynamic(() => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuDateRangePicker })), { ssr: false });
@@ -52,12 +53,12 @@ export function SharedDashboardDateFilter({
 }
 
 /** Calendar body shared by standalone and reporting-year menus. */
-export function DateRangeCalendar({ startDate, endDate, onChange }: SharedDashboardDateFilterProps) {
+export function DateRangeCalendar({ startDate, endDate, onChange, hidePresets = false, reportingYear = false, onReset }: SharedDashboardDateFilterProps & { hidePresets?: boolean; reportingYear?: boolean; onReset?: () => void }) {
   const [draftStart, setDraftStart] = useState(startDate);
   const [draftEnd, setDraftEnd] = useState(endDate);
   const [preset, setPreset] = useState('Custom range');
   const [month, setMonth] = useState(() => asDate(startDate) ?? new Date());
-  const invalid = !!(draftStart && draftEnd && draftStart > draftEnd);
+  const invalid = !!(draftStart && draftEnd && draftStart > draftEnd) || (reportingYear && (draftStart < '2020-01-01' || draftStart > '2098-12-31'));
 
   function selectPreset(value: string) {
     setPreset(value);
@@ -83,16 +84,21 @@ export function DateRangeCalendar({ startDate, endDate, onChange }: SharedDashbo
   }
 
   return <>
-    <WuSelect aria-label="Date preset" variant="outlined" data={PRESETS} accessorKey={{ value: 'value', label: 'label' }}
-      value={PRESETS.find((option) => option.value === preset)} onSelect={(option) => selectPreset((option as { value: string }).value)} />
+    {!hidePresets && <WuSelect aria-label="Date preset" variant="outlined" data={PRESETS} accessorKey={{ value: 'value', label: 'label' }}
+      value={PRESETS.find((option) => option.value === preset)} onSelect={(option) => selectPreset((option as { value: string }).value)} />}
     <DashboardCalendar startDate={draftStart} endDate={draftEnd} month={month} onMonthChange={setMonth}
+      reportingYear={reportingYear}
       onChange={(start, end) => { setDraftStart(start); setDraftEnd(end); setPreset('Custom range'); }} />
     <footer className={styles.footer}>
       <div className={styles.dateInputs}>
-        <input type="date" aria-label="Start date" value={draftStart} onInput={(event) => { setDraftStart(event.currentTarget.value); const date = asDate(event.currentTarget.value); if (date) setMonth(date); setPreset('Custom range'); }} />
-        <input type="date" aria-label="End date" value={draftEnd} onInput={(event) => { setDraftEnd(event.currentTarget.value); const date = asDate(event.currentTarget.value); if (date) setMonth(date); setPreset('Custom range'); }} />
+        <label>{reportingYear && <span>Start date</span>}
+        <input type="date" aria-label="Start date" min="2020-01-01" max="2098-12-31" value={draftStart} onInput={(event) => { setDraftStart(event.currentTarget.value); if (reportingYear) setDraftEnd(reportingYearEnd(event.currentTarget.value)); const date = asDate(event.currentTarget.value); if (date) setMonth(date); setPreset('Custom range'); }} />
+        </label>
+        <label>{reportingYear && <span>End date (automatic)</span>}
+        <input type="date" aria-label={reportingYear ? 'End date (automatic)' : 'End date'} readOnly={reportingYear} value={draftEnd} onInput={(event) => { if (reportingYear) return; setDraftEnd(event.currentTarget.value); const date = asDate(event.currentTarget.value); if (date) setMonth(date); setPreset('Custom range'); }} />
+        </label>
       </div>
-      <button type="button" className={styles.reset} onClick={() => { onChange({ startDate: '', endDate: '' }); }}><span className="wm-refresh" aria-hidden />Reset</button>
+      <button type="button" className={styles.reset} onClick={() => { if (onReset) onReset(); else onChange({ startDate: '', endDate: '' }); }}><span className="wm-refresh" aria-hidden />Reset</button>
       <WuButton size="sm" disabled={!draftStart || !draftEnd || invalid} onClick={() => { onChange({ startDate: draftStart, endDate: draftEnd }); }}>Apply</WuButton>
     </footer>
     {invalid && <p role="alert" className={styles.error}>The start date must be on or before the end date.</p>}
@@ -100,13 +106,13 @@ export function DateRangeCalendar({ startDate, endDate, onChange }: SharedDashbo
 }
 
 
-export function DashboardCalendar({ startDate, endDate, month, onMonthChange, onChange, single = false }: {
+export function DashboardCalendar({ startDate, endDate, month, onMonthChange, onChange, single = false, reportingYear = false }: {
   startDate: string; endDate?: string; month: Date; onMonthChange: (month: Date) => void;
-  onChange: (start: string, end: string) => void; single?: boolean;
+  onChange: (start: string, end: string) => void; single?: boolean; reportingYear?: boolean;
 }) {
   const isMobile = useIsMobile();
   const common = {
-    className: styles.calendar, numberOfMonths: single || isMobile ? 1 : 2, month, onMonthChange,
+    className: styles.calendar, numberOfMonths: single || reportingYear || isMobile ? 1 : 2, month, onMonthChange,
     captionLayout: 'dropdown' as const, startMonth: new Date(2020, 0, 1), endMonth: new Date(2098, 11, 31),
     classNames: {
       months: styles.months, month: styles.month, month_caption: styles.monthCaption,
@@ -120,5 +126,6 @@ export function DashboardCalendar({ startDate, endDate, month, onMonthChange, on
   return single
     ? <ReportingCalendar {...common} mode="single" selected={asDate(startDate)} onSelect={date => onChange(asString(date), '')} />
     : <ReportingCalendar {...common} mode="range" selected={startDate ? { from: asDate(startDate), to: asDate(endDate ?? '') } : undefined}
-        onSelect={range => onChange(asString(range?.from), asString(range?.to))} />;
+        onDayClick={reportingYear ? date => { const start = asString(date); onChange(start, reportingYearEnd(start)); } : undefined}
+        onSelect={reportingYear ? undefined : range => onChange(asString(range?.from), asString(range?.to))} />;
 }

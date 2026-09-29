@@ -1,32 +1,26 @@
 # Reporting year prototype
 
-Implemented 28 September 2026 in the existing Survey-RE dashboard filter flow.
+Updated 29 September 2026. Open `/dashboards/1` → Dashboard settings → General → Reporting year.
 
-Open `/dashboards/1` → Filter → Filter by date → Create reporting year.
+## Dashboard configuration
 
-- Choose a start date; end date is automatic, one calendar year later minus one day.
-- A name is required; FY plus the start/end years is shown only as a placeholder. A leap-day start ends on 28 February the following year.
-- Create or edit a year in a compact calendar pop-up with brief guidance, a single-month start-date picker with previous/next navigation and an automatic end date. Arbitrary start days are supported; month-end quarter boundaries clamp without cumulative drift.
-- Saved reporting years are dashboard-scoped and persist in localStorage; applying one is explicit. The currently applied selection is session state, not an automatic default after reload.
-- A compact menu offers Date range and saved Reporting years with edit buttons, followed by Create reporting year at the bottom of that section. The applied option alone is highlighted. An FY badge and tooltip explain the reporting cycle; no persistent FY panel or banner is shown. Applying Date range returns to calendar grouping.
-- The time-series examples demonstrate Daily (Response Timeline), Weekly, Monthly, Quarterly and Yearly regrouping on deterministic synthetic daily counts. Weekly/monthly boundaries remain calendar based. Quarter/year boundaries follow the applied reporting year. Dates are available in chart tooltips; intervals are configured in Settings → Analytics.
-- Ordinary custom dates and existing quick ranges remain available through the existing date picker.
+- Each dashboard has one reporting year, initially 1 January–31 December of the current year. There is no enabled/disabled state in the interface.
+- Click the bordered date field to open a single-month calendar. Choose the start date with the calendar or Start date field; End date (automatic) is read-only and covers exactly twelve calendar months, inclusive.
+- Apply saves the period and updates affected widgets. Dismissing the picker without Apply preserves the saved values.
+- Reset inside the picker immediately restores January–December of the current year. No external Reset, name field, editor title, Custom Range dropdown, Edit/Delete icons, or toggle is shown.
+- The configuration persists per dashboard in localStorage. An existing active custom period is preserved. Missing, invalid, or previously disabled configurations use the calendar-year default.
+- Brief guidance appears below the label. Dashboard date filtering directs users to General because the reporting year supplies the dashboard's active date window.
 
-This is a prototype, not a production analytics integration. Segment Trend, Scoring Trend and Response Timeline are wired to reporting-year aggregation; the other existing mock widgets, static insights, exports and widget-filter override controls are not converted to a shared data engine by this change. Reporting years can be created, reapplied, edited and deleted in place. Editing the active year updates its filter and aggregation; editing an inactive year preserves the current selection. Shared/server persistence remains outside this iteration. Existing unrelated working-tree edits were preserved.
+## Widget behavior
 
-Validation: TypeScript check, targeted ESLint, six calendar/aggregation tests, and Chrome UI checks for creation, Feb-start quarterly/yearly grouping, calendar fallback, ordinary Feb–Apr partial quarters, frequency preservation on reapply and saved-year persistence after reload.
+Segment Trend, Scoring Trend and Response Timeline use the effective dashboard dates. Daily (Response Timeline), weekly and monthly intervals retain calendar boundaries; quarters and years align to the reporting year's start. Changing the reporting year preserves widget frequency and other settings. Existing widget filter-scope behavior is preserved.
 
-Automated cases cover April starts, mid-month starts, January 31, February 29, contiguous quarters, partial calendar quarters, invariant response totals across intervals, and invalid saved-year rejection.
+The practical example is 1 April 2026–31 March 2027: Q1 April–June, Q2 July–September, Q3 October–December, Q4 January–March. Arbitrary start days are supported; month-end boundaries clamp without cumulative drift. A leap-day start ends on 28 February the following year.
 
-Refinement validation: manual selection and calendar highlighting, inactive-year edits preserving manual dates, active-year edits updating quarter grouping, create/cancel, saved edits after reload, TypeScript and targeted ESLint.
+The data remains a deterministic local fixture; other existing mock widgets, exports and server/shared persistence are outside this local implementation. See [production comparison](production-parity.md) for inspected widget controls and fidelity limits. Earlier screenshots and creation/enable/delete workflows represent superseded iterations.
 
-Validation of the final refinement: blank and whitespace-only names disable saving, a valid name enables saving, and previous/next navigation keeps a single month visible.
+## Validation
 
-Current screenshots: [single-month creation](screenshots/create-reporting-year.png), [compact menu](screenshots/compact-date-menu.png), [manual calendar](screenshots/manual-date-range.png), [edit calendar](screenshots/edit-reporting-year.png). The saved-year preview screenshot represents the superseded first iteration.
+22 automated cases cover default/reset configuration, existing active-year preservation, inclusive annual periods, leap days, month-end clamping, contiguous quarters, response-total invariance, weighted means, combined-date clipping, empty intersections, and scoring-trend drilldown/segment response reconciliation.
 
-
-## Production-aligned time-series refinement
-
-Helper text is one short sentence. Hover/focus the FY badge for the reporting-year tooltip; the separate info icon is removed. Segment Trend, Scoring Trend and Response Timeline now expose their time-frequency controls in right-hand Settings panels with chart previews. See [production comparison and remaining fidelity limits](production-parity.md). The original Segment Trend toolbar/table has been removed.
-
-Deletion: Each saved reporting year has a Delete action with confirmation. Cancel preserves the saved year and selection. Deleting an inactive year preserves the current selection. Deleting the active year retains its exact dates as a manual range and restores calendar quarter/year grouping. The deletion persists after reload.
+Browser checks cover previous/next navigation, selecting a start date, automatic end dates, Apply, Reset, a single-month layout, and the bordered date field. The PRD uses the same default, edit, reset, and filter-interaction rules.

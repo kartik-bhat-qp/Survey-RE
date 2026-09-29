@@ -1,0 +1,34 @@
+.drilldown { position:relative; height:100%; min-height:0; overflow:hidden; color:#555; }
+.breadcrumbs { height:38px; display:flex; align-items:center; border-bottom:1px solid #ddd; gap:6px; color:#555; font-size:12px; padding:0 2px; }
+.breadcrumbs button { cursor:pointer; }
+.level { height:100%; min-height:0; display:flex; flex-direction:column; padding-top:8px; }
+.chart { flex:1; min-height:110px; }
+.hint { flex:none; color:#777; font-size:11px; text-align:center; margin:4px 0 0; }
+.detailHeading { font-size:13px; font-weight:500; margin:0 0 4px; outline:none; }
+.context { flex:none; font-size:11px; margin:0 0 5px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color:#777; }
+.note { flex:none; margin:0 0 5px; font-size:11px; color:#777; }
+.stats { flex:none; font-size:12px; margin:6px 0 0; display:flex; gap:5px; align-items:center; }
+.stats span { margin-left:auto; font-size:11px; color:#777; }
+.responseView { min-height:0; flex:1; display:flex; flex-direction:column; }
+.responseToolbar { display:flex; align-items:center; gap:8px; padding:5px 0 10px; flex-wrap:wrap; font-size:12px; }
+.search { display:flex; align-items:center; flex:1; min-width:100px; gap:5px; border-bottom:1px solid #bbb; }
+.search input { width:100%; height:30px; font:inherit; background:white; border:0; outline:none; }
+.search:focus-within { border-color:#4b7ed1; }
+.pagination { display:flex; align-items:center; gap:4px; white-space:nowrap; }
+.pagination button,.sort { display:flex; gap:4px; align-items:center; padding:5px; border:0; background:white; color:#555; font:inherit; cursor:pointer; }
+.pagination button:disabled { opacity:.35; cursor:default; }
+.tableWrap { overflow:auto; flex:1; min-height:0; }
+.tableWrap table { width:100%; border-collapse:collapse; font-size:12px; text-align:left; }
+.tableWrap th { position:sticky; top:0; background:#e8e8e8; font-weight:400; z-index:1; }
+.tableWrap th,.tableWrap td { padding:12px 9px; border-bottom:1px solid #ddd; white-space:nowrap; }
+.tableWrap tbody tr:hover { background:#f5f7fa; }
+.status { text-transform:capitalize; }
+.empty { margin:auto; padding:20px; text-align:center; color:#777; }
+.srOnly { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.srOnly:focus-within { position:static; width:auto; height:auto; clip-path:none; }
+@media(prefers-reduced-motion:reduce) { .drilldown * { animation-duration:0s!important; transition-duration:0s!important; } }
+
+.detailHeader { display:flex; flex:none; align-items:center; gap:6px; margin-bottom:3px; }
+.detailHeader h4 { margin:0; }
+.detailHeader > button { border:0; background:white; color:#555; padding:3px 4px; cursor:pointer; font-size:14px; }
+.detailHeader > button:hover { background:#f0f3f7; }

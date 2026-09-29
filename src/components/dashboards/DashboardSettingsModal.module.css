@@ -1,8 +1,9 @@
 .modal {
   font-family: 'Fira Sans', sans-serif;
-  max-width: min(1280px, calc(100vw - 1.5rem)) !important;
+  max-width:100%;
+  transition:max-width 180ms ease;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
 }
 
@@ -64,16 +65,17 @@
 }
 
 .tabRoot :global([role='tab']) {
-  color: #545e6b;
-  font-size: 14px;
+  color: oklch(0.478 0.0244 255);
+  font-size: 12px;
   font-weight: 400;
-  padding: 12px 14px;
+  line-height:16px;
+  padding: 8px 16px;
   white-space: nowrap;
 }
 
 .tabRoot :global([role='tab'][data-state='active']) {
-  color: #1b87e6;
-  font-weight: 500;
+  color: oklch(0.616 0.1696 251.2);
+  font-weight: 400;
 }
 
 .tabRoot :global([role='tabpanel']) {
@@ -107,7 +109,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-width: 640px;
+  max-width: none;
 }
 
 .refreshFrequencySection {
@@ -481,3 +483,84 @@
 .sharedLinksModal .tabRoot :global([role='tabpanel'][data-state='active']) { display: flex; }
 .sharedLinksModal .tabRoot :global([role='tabpanel'] .dashboard-settings-shared-url-panel) { display: flex; }
 @media (max-width: 720px) { .sharedLinksModal .content { padding: 16px !important; } }
+
+.mergedGeneral { display:flex; flex-direction:column; gap:24px; }
+
+.generalPanel {
+  --settings-columns:minmax(0, 1fr) var(--settings-select-width);
+  --settings-column-gap:24px;
+  --settings-row-gap:24px;
+  --settings-select-width:112px;
+  --settings-text-color:#545e6b;
+  font-family:'Fira Sans', sans-serif;
+  font-size:12px;
+  font-weight:400;
+  line-height:20px;
+  color:var(--settings-text-color);
+}
+.generalGrid { display:flex; flex-direction:column; gap:var(--settings-row-gap); width:100%; max-width:594px; }
+.generalPrimary { min-width:0; width:100%; }
+.generalSecondary { min-width:0; width:100%; display:flex; flex-direction:column; gap:var(--settings-row-gap); }
+.generalSecondary .refreshFrequencySection, .generalSecondary .accessibilityRow { display:grid; grid-template-columns:var(--settings-columns); align-items:start; gap:var(--settings-column-gap); min-height:32px; margin:0; padding:0; border:0; background:transparent; }
+.generalSecondary .refreshFrequencyCopy { display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
+.generalSecondary .refreshFrequencyCopy h3, .generalSecondary .accessibilityLabel { font:inherit; line-height:20px; color:var(--settings-text-color); margin:0; }
+.generalSecondary .refreshFrequencySelect { width:var(--settings-select-width); max-width:100%; }
+.refreshFrequencyControls { display:flex; align-items:center; gap:12px; min-width:0; }
+.generalSecondary .actions { order:3; flex-direction:row; flex-wrap:wrap; gap:12px; padding-top:20px; border-top:1px solid #e5e7eb; }
+.generalSecondary .accessibilityRow { margin-top:0; }
+.generalHelp { position:relative; display:inline-flex; font-size:16px; color:#61758b; cursor:help; }
+.generalHelpTooltip { display:none; position:absolute; z-index:20; right:0; top:calc(100% + 8px); width:280px; background:#25384c; color:white; font-size:11px; line-height:1.5; padding:10px; border-radius:4px; }
+.generalHelp:hover .generalHelpTooltip, .generalHelp:focus-within .generalHelpTooltip { display:block; }
+
+.generalSecondary .refreshFrequencyCopy .generalHelp { display:inline-flex; margin:0; font-size:16px; color:#61758b; }
+.generalSecondary .refreshFrequencyCopy .generalHelpTooltip { display:none; margin:0; color:white; }
+.generalSecondary .refreshFrequencyCopy .generalHelp:hover .generalHelpTooltip,
+.generalSecondary .refreshFrequencyCopy .generalHelp:focus-within .generalHelpTooltip { display:block; }
+.generalSecondary .refreshFrequencyCopy .generalHelp > span[aria-hidden] { font-size:16px; margin:0; color:inherit; line-height:1; }
+
+.dashboardNameRow { display:flex; align-items:flex-end; gap:12px; }
+.dashboardNameInput { flex:0 1 560px; min-width:0; }
+.dashboardNameActions { display:flex; gap:4px; flex-shrink:0; }
+.dashboardIconAction { position:relative; display:flex; align-items:center; justify-content:center; width:34px; height:34px; border:0; border-radius:4px; background:transparent; color:#5277ac; font-size:18px; cursor:pointer; }
+.dashboardIconAction:hover { background:#eef4fc; }
+.dashboardDeleteAction { color:#c74646; }
+.dashboardDeleteAction:hover { background:#fff1f1; }
+.dashboardIconAction:focus-visible { outline:2px solid #4688d5; outline-offset:2px; }
+.actionTooltip { display:none; position:absolute; z-index:20; right:0; top:calc(100% + 6px); white-space:nowrap; padding:6px 9px; background:#25384c; color:white; border-radius:4px; font-size:11px; font-weight:400; }
+.dashboardIconAction:hover .actionTooltip, .dashboardIconAction:focus-visible .actionTooltip { display:block; }
+
+/* Keep the native pointer-responsive outer border and production tab divider. */
+.header, .globalFooter, .tabRoot :global([role="tablist"]) { border:0 !important; }
+
+.generalPanel .refreshFrequencySelect button { font-family:inherit; font-size:12px; font-weight:400; }
+.generalHelpTooltip { left:0; right:auto; }
+@media(max-width:640px) {
+  .generalPanel { --settings-columns:minmax(120px, 40%) minmax(0, 1fr); --settings-column-gap:16px; }
+}
+
+/* General dropdowns keep their option icons, with no expand/collapse chevron. */
+.generalPanel :global(.wu-select-trigger) { justify-content:flex-start; gap:0; padding-inline:8px; }
+.generalPanel :global(.wu-select-trigger > .wm-arrow-drop-down) { display:none; }
+
+.settingLabelRow { display:flex; align-items:center; gap:8px; }
+.generalSecondary .refreshFrequencyCopy .settingDescription { margin:0; font-size:11px; font-weight:400; line-height:16px; color:#778595; }
+.refreshFrequencyControls { justify-self:start; }
+.accessibilityControls { justify-self:end; }
+
+/* Label lines share the controls’ 32px first row; helper text follows below. */
+.generalSecondary .refreshFrequencyCopy h3, .generalSecondary .accessibilityLabel { line-height:32px; }
+.generalSecondary .settingLabelRow, .generalSecondary .accessibilityControls { min-height:32px; }
+
+/* Production tab spacing, typography, and bottom divider. */
+.tabRoot { padding:32px 32px 0; }
+.tabRoot :global([role="tablist"]) { padding:0; min-height:32px; }
+.tabRoot :global([aria-label="tablistWrapper"]) { border-bottom:1px solid oklch(0.882 0 0); }
+.tabRoot :global([role="tabpanel"]) { padding:24px 0 32px; }
+.sharedLinksModal .tabRoot { padding:0; }
+@media(max-width:639px) { .tabRoot { padding:24px 16px 0; } }
+
+@media(prefers-reduced-motion:reduce) { .modal { transition:none; } }
+
+.regenerateConfirm { font-family:'Fira Sans', sans-serif; }
+.regenerateConfirmContent { padding:32px !important; gap:4px !important; font-size:14px; line-height:24px; color:#545e6b; }
+.regenerateConfirmContent p { margin:0; }

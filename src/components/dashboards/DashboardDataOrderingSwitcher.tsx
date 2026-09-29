@@ -21,8 +21,8 @@ const DATA_ORDERING_OPTIONS: {
   Icon: ReactNode;
 }[] = [
   { value: 'none', label: 'Default', Icon: <DataOrderingDefaultIcon /> },
-  { value: 'descending', label: 'Descending', Icon: <DataOrderingDescendingIcon /> },
   { value: 'ascending', label: 'Ascending', Icon: <DataOrderingAscendingIcon /> },
+  { value: 'descending', label: 'Descending', Icon: <DataOrderingDescendingIcon /> },
 ];
 
 interface DashboardDataOrderingSwitcherProps {

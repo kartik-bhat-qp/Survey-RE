@@ -1,5 +1,7 @@
 'use client';
 
+import type { DataSlicer } from '@/data/mock-data-slicers';
+
 import type { BuiltWidget } from '@/data/ai-widget-builder';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -87,6 +89,7 @@ function renderResizeHandle(
 }
 
 interface AiDashboardCanvasProps {
+  dataSlicers?:DataSlicer[];
   builtWidgets?: BuiltWidget[];
   onBuiltWidgetChange?: (widget: BuiltWidget) => void;
   advancedHeatmaps?: AdvancedHeatmapConfig[];
@@ -113,6 +116,7 @@ interface AiDashboardCanvasProps {
 }
 
 export function AiDashboardCanvas({
+  dataSlicers,
   builtWidgets = [], onBuiltWidgetChange,
   advancedHeatmaps: addedAdvancedHeatmaps = [], onAdvancedHeatmapChange,
   dashboardId = 0,
@@ -433,7 +437,7 @@ export function AiDashboardCanvas({
 
           return (
             <div key={widget.id} className={styles.gridItem} data-widget-id={widget.id}>
-              {!renderWidget && (widget.type === 'segment-trend' || widget.type === 'scoring-trend' || widget.type === 'response-timeline') ? <TimeSeriesDashboardCard key={`${dashboardId}:${dashboardTabId}:${widget.id}`} kind={widget.type} title={widget.title} widgetId={widget.id} selection={dashboardFilter?.dateSelection} typography={chartTypography} storageKey={`survey-re:time-series:${dashboardId}:${dashboardTabId}:${widget.id}`} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} readOnly={readOnly} onOpenInsights={readOnly ? undefined : () => setActiveInsightWidgetId(widget.id)} insightCount={insightThreads[widget.id]?.items.length ?? 0} /> : widget.type === 'heat-map' && !renderWidget ? <HeatMapBaseline dashboardDesign={dashboardDesign} dashboardFilter={dashboardFilter} key={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} embedded readOnly={readOnly} initialName={widget.title} storageKey={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} /> : widget.type === 'wordcloud' ? <WordCloudDashboardCard shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /> : widget.type === 'driver-analysis' ? (
+              {!renderWidget && (widget.type === 'segment-trend' || widget.type === 'scoring-trend' || widget.type === 'response-timeline') ? <TimeSeriesDashboardCard key={`${dashboardId}:${dashboardTabId}:${widget.id}`} kind={widget.type} title={widget.title} widgetId={widget.id} selection={dashboardFilter?.dateSelection} dashboardFilter={dashboardFilter} dataSlicers={dataSlicers} typography={chartTypography} storageKey={`survey-re:time-series:${dashboardId}:${dashboardTabId}:${widget.id}`} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} readOnly={readOnly} onOpenInsights={readOnly ? undefined : () => setActiveInsightWidgetId(widget.id)} insightCount={insightThreads[widget.id]?.items.length ?? 0} /> : widget.type === 'heat-map' && !renderWidget ? <HeatMapBaseline dashboardDesign={dashboardDesign} dashboardFilter={dashboardFilter} key={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} embedded readOnly={readOnly} initialName={widget.title} storageKey={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} /> : widget.type === 'wordcloud' ? <WordCloudDashboardCard shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /> : widget.type === 'driver-analysis' ? (
                 <DriverAnalysisDashboardCard
                   title={widget.title}
                   dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle}

@@ -26,6 +26,7 @@ const WuMenuItem = dynamic(
 );
 
 interface DashboardWidgetCardProps {
+  className?: string;
   onOpenSettings?: () => void;
   title: string;
   /** Optional line under the title (e.g. the primary question for driver analysis). */
@@ -45,6 +46,7 @@ interface DashboardWidgetCardProps {
 }
 
 export function DashboardWidgetCard({
+  className,
   onOpenSettings,
   title,
   subtitle,
@@ -65,7 +67,7 @@ export function DashboardWidgetCard({
   const [filterType, setFilterType] = useState<DashboardWidgetFilterType>('Dashboard');
 
   return (
-    <article className={`${styles.card} ${shared ? styles.shared : ''}`}>
+    <article className={`${styles.card} ${shared ? styles.shared : ''} ${className ?? ''}`}>
       <header className={`${styles.header} ${dragHandleClassName ?? ''}`.trim()}>
         <div className={styles.titleBlock}>
           <h3 className={styles.title}>{title}</h3>

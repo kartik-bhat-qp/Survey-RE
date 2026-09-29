@@ -24,7 +24,8 @@
 .rangeMiddle .dayButton { background: #eef5fc; color: #455468; }
 .navigation { display: flex; inset: 0 0 auto; justify-content: space-between; pointer-events: none; position: absolute; z-index: 1; }
 .previous, .next { align-items: center; background: white; border: 0; color: #545e6b; cursor: pointer; display: flex; height: 32px; justify-content: center; pointer-events: auto; width: 24px; }
-.previous { transform: rotate(180deg); }
+.previous { transform: none; }
+.previous svg, .next svg { width:14px; height:14px; }
 .footer { align-items: center; display: flex; gap: 12px; margin-top: 16px; }
 .dateInputs { display: flex; flex: 1; gap: 8px; }
 .dateInputs input { border: 1px solid #ddd; border-radius: 3px; color: #545e6b; font: inherit; font-size: 11px; height: 26px; min-width: 0; padding: 2px 4px; width: 120px; }
@@ -40,6 +41,13 @@
   display: inline-flex;
   min-width: 176px;
 }
+.reportingYearPopover .calendar { margin-top:0; }
+.reportingYearPopover { width:320px !important; }
+.reportingYearPopover .footer { flex-wrap:wrap; justify-content:flex-end; }
+.reportingYearPopover .dateInputs { flex-basis:100%; gap:12px; }
+.dateInputs label { display:flex; flex-direction:column; min-width:0; gap:5px; }
+.reportingYearPopover .dateInputs label { flex:1; font-size:11px; }
+.reportingYearPopover .dateInputs input { width:100%; }
 
 .wrap :global(button) {
   font-size: 12px;

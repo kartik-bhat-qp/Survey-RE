@@ -1,5 +1,7 @@
 'use client';
 
+import type { DataSlicer } from '@/data/mock-data-slicers';
+
 import type { BuiltWidget } from '@/data/ai-widget-builder';
 
 import { useState } from 'react';
@@ -59,6 +61,7 @@ const MENU_ITEM_CLASS =
   'flex w-full justify-start rounded-[4px] px-3 py-2 text-[13px] font-normal text-[#1f2a44] hover:bg-[#eef3f8]';
 
 interface DashboardDetailTabBarProps {
+  dataSlicers?:DataSlicer[];
   builtWidgets?: BuiltWidget[];
   onBuiltWidgetChange?: (widget: BuiltWidget) => void;
   advancedHeatmaps?: (AdvancedHeatmapConfig & { tabId: string })[];
@@ -80,6 +83,7 @@ interface DashboardDetailTabBarProps {
 }
 
 export function DashboardDetailTabBar({
+  dataSlicers,
   builtWidgets = [], onBuiltWidgetChange,
   advancedHeatmaps = [], onAdvancedHeatmapChange, onActiveTabChange,
   dashboardId,
@@ -163,7 +167,7 @@ export function DashboardDetailTabBar({
             category={activeTab.reportCategory}
           />
         ) : (
-          <AiDashboardCanvas
+          <AiDashboardCanvas dataSlicers={dataSlicers}
             builtWidgets={builtWidgets.filter(widget => widget.tabId === activeTab.id)}
             onBuiltWidgetChange={onBuiltWidgetChange}
             advancedHeatmaps={advancedHeatmaps.filter(widget => widget.tabId === activeTab.id)}

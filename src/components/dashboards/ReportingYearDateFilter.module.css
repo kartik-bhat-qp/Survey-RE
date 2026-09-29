@@ -39,3 +39,44 @@
 .error { color:#b42318; font-size:12px; margin-top:10px; }
 .menu button:focus-visible, .header button:focus-visible { outline:2px solid #4688d5; outline-offset:-2px; }
 @media(max-width:600px) { .calendarPopover { width:340px !important; } .trigger { max-width:280px; } .dateRow { gap:8px; } .nameField { flex-wrap:wrap; } .nameField input { flex-basis:100%; margin-left:0; } }
+.settings { display:grid; grid-template-columns:var(--settings-columns); align-items:start; gap:var(--settings-column-gap); min-height:32px; margin-bottom:var(--settings-row-gap); font:inherit; color:var(--settings-text-color); }
+.enableRow { display:flex; align-items:center; gap:8px; margin-bottom:12px; cursor:pointer; }
+.enableRow input { accent-color:#2677ba; width:16px; height:16px; }
+.settingsSummary { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.settingsSummary small { display:block; margin-top:3px; color:#778595; }
+.settingsSummary button { border:0; background:transparent; color:#2677ba; cursor:pointer; font:inherit; }
+.settingsEditor { width:340px; max-width:100%; border:1px solid #d7e0ea; border-radius:6px; padding:14px; margin-top:14px; }
+.settingsEditor button:disabled { opacity:.5; cursor:not-allowed; }
+
+.badgeHint { position:relative; display:inline-flex; }
+.badgeTooltip { display:none; position:absolute; z-index:10; left:0; top:calc(100% + 6px); width:260px; padding:8px 10px; border-radius:4px; background:#25384c; color:white; font-size:11px; line-height:1.5; box-shadow:0 3px 12px #22395724; }
+.badgeHint:hover .badgeTooltip, .badgeHint:focus-within .badgeTooltip { display:block; }
+
+.settingsSummary .editButton { font-size:16px; margin-right:0; }
+.settingsSummary .editButton:focus-visible { outline:2px solid #4688d5; outline-offset:2px; }
+
+.settingsHeading { display:flex; flex-direction:column; align-items:flex-start; gap:4px; margin:0; }
+.reportingCheckbox { accent-color:#2677ba; width:16px; height:16px; margin:0; flex-shrink:0; cursor:pointer; }
+.settingsCalendar { padding:16px !important; z-index:1000; }
+
+.infoIcon { display:inline-flex; align-items:center; color:#61758b; font-size:16px; cursor:help; }
+
+.savedDateRange { white-space:nowrap; }
+
+.settingsHeading { font:inherit; line-height:20px; color:var(--settings-text-color); }
+.settingsHeading > strong { font-weight:400; }
+
+.settingsSummary .savedDateButton { padding:0; color:inherit; white-space:nowrap; text-align:left; }
+.savedDateButton:hover { text-decoration:underline; text-underline-offset:3px; }
+.reportingYearTrigger { justify-self:end; width:max-content; min-height:32px; border:1px solid #ddd; border-radius:3px; padding:0 10px; background:white; color:inherit; font:inherit; white-space:nowrap; cursor:pointer; }
+.reportingYearTrigger:hover { border-color:#4688d5; text-decoration:none; }
+.savedDateButton:focus-visible { outline:2px solid #4688d5; outline-offset:4px; border-radius:2px; }
+
+.settingsSummary { justify-self:end; flex-wrap:nowrap; width:max-content; }
+.settingsDescription { margin:0; max-width:340px; font-size:11px; font-weight:400; line-height:16px; color:#778595; }
+
+.settingsHeading > strong { line-height:32px; }
+.settingsSummary { min-height:32px; }
+.settingsSummary .resetButton { padding:0; white-space:nowrap; }
+.settingsSummary .resetButton:disabled { color:#9aa3ad; cursor:default; }
+.settingsSummary .resetButton:focus-visible { outline:2px solid #4688d5; outline-offset:4px; }
