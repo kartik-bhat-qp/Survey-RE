@@ -68,7 +68,7 @@
 
 .settingsSummary .savedDateButton { padding:0; color:inherit; white-space:nowrap; text-align:left; }
 .savedDateButton:hover { text-decoration:underline; text-underline-offset:3px; }
-.reportingYearTrigger { justify-self:end; width:max-content; min-height:32px; border:1px solid #ddd; border-radius:3px; padding:0 10px; background:white; color:inherit; font:inherit; white-space:nowrap; cursor:pointer; }
+.reportingYearTrigger { justify-self:end; width:max-content; min-height:32px; border:1px solid #9b9b9b; border-radius:3px; padding:0 10px; background:white; color:inherit; font:inherit; white-space:nowrap; cursor:pointer; }
 .reportingYearTrigger:hover { border-color:#4688d5; text-decoration:none; }
 .savedDateButton:focus-visible { outline:2px solid #4688d5; outline-offset:4px; border-radius:2px; }
 
