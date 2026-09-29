@@ -205,8 +205,6 @@ export function countFilledLoops(state: LoopingState): number {
 
 /** Matches when the condition is true in at least one loop. */
 export const LOOP_REF_ANY = 'loop:any';
-/** Matches only when the condition is true in every loop. */
-export const LOOP_REF_ALL = 'loop:all';
 /** The loop currently being shown — only valid inside the same looped block. */
 export const LOOP_REF_CURRENT = 'loop:current';
 
@@ -251,10 +249,7 @@ export function buildLoopReferenceOptions(
   if (sameBlock) {
     options.push({ value: LOOP_REF_CURRENT, label: 'Current loop' });
   }
-  options.push(
-    { value: LOOP_REF_ANY, label: 'Any loop' },
-    { value: LOOP_REF_ALL, label: 'All loops' }
-  );
+  options.push({ value: LOOP_REF_ANY, label: 'Any loop' });
   state.rows.forEach((row, index) => {
     const label = loopRowLabel(row);
     options.push({

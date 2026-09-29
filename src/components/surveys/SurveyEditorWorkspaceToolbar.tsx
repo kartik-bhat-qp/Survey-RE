@@ -24,7 +24,6 @@ import {
   SURVEY_WORKSPACE_TOOLS,
   type SurveyWorkspaceTool,
 } from '@/components/surveys/survey-workspace-tools';
-import { surveyHasDesignTab } from '@/data/mock-survey-design';
 import {
   readSurveyApprovalState,
   subscribeSurveyApprovalState,
@@ -120,7 +119,7 @@ function statusMenuDotClass(mode: PublishMode): string {
 
 function getToolHref(tool: SurveyWorkspaceTool, surveyId: number): string | null {
   if (tool === 'workspace') return `/surveys/${surveyId}`;
-  if (tool === 'design' && surveyHasDesignTab(surveyId)) return `/surveys/${surveyId}/design`;
+  if (tool === 'design') return `/surveys/${surveyId}/design`;
   if (tool === 'media-library') return `/surveys/${surveyId}/media-library`;
   if (tool === 'advance-quotas') return `/surveys/${surveyId}/advance-quotas`;
   if (tool === 'settings') return `/surveys/${surveyId}/settings`;

@@ -11,6 +11,7 @@ import {
   SURVEY_DESIGN_FONT_FAMILY_OPTIONS,
   SURVEY_DESIGN_THEMES,
   SURVEY_LAYOUT_OPTIONS,
+  SURVEY_LAYOUT_RETIRING_NOTICE,
   normalizeSurveyDesignSettings,
   surveyDesignSettingsStorageKey,
   type SurveyDesignBehaviorSettings,
@@ -34,6 +35,11 @@ const WuSelect = dynamic(
 
 const WuTab = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTab })),
+  { ssr: false }
+);
+
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
 
@@ -267,6 +273,29 @@ export function SurveyDesignDashboard({ surveyId }: SurveyDesignDashboardProps) 
                       <span className={styles.layoutCheck} aria-hidden>
                         <span className="wm-check" />
                       </span>
+                    ) : null}
+                    {layout.sunsetting ? (
+                      <WuTooltip
+                        Content={
+                          <span className={styles.sunsetTooltip}>
+                            <span className={styles.sunsetTooltipTitle}>
+                              {SURVEY_LAYOUT_RETIRING_NOTICE.title}
+                            </span>
+                            <span className={styles.sunsetTooltipBody}>
+                              {SURVEY_LAYOUT_RETIRING_NOTICE.body}
+                            </span>
+                          </span>
+                        }
+                        position={{ side: 'top' }}
+                        showArrow
+                      >
+                        <span
+                          className={styles.sunsetBadge}
+                          aria-label={SURVEY_LAYOUT_RETIRING_NOTICE.title}
+                        >
+                          <span className="wm-wb-twilight" aria-hidden />
+                        </span>
+                      </WuTooltip>
                     ) : null}
                     <span className={`${layout.icon} ${styles.layoutCardIcon}`} aria-hidden />
                     <span className={styles.layoutCardLabel}>{layout.label}</span>

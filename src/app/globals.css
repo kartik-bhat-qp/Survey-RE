@@ -271,3 +271,13 @@
   background: #c1c7d0;
   border-radius: 999px;
 }
+
+/*
+ * WuModal (Radix Dialog) sets `pointer-events: none` on <body> while open.
+ * WuMenu / WuDropdown popups (Base UI) portal to <body> and inherit it, so
+ * their items can't be clicked inside a modal unless re-enabled here.
+ */
+[class*="_wuMenuPositioner_"],
+[class*="_wuDropdownPositioner_"] {
+  pointer-events: auto;
+}

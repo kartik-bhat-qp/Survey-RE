@@ -1,5 +1,3 @@
-import { DEEPDIVE_V2_SURVEY_ID } from '@/data/mock-deepdive-question-settings';
-
 export type SurveyLayoutId = 'classic' | 'focus' | 'visual' | 'accessible';
 export type SurveyDesignPanelTabId = 'themes' | 'customize' | 'settings';
 export type SurveyDesignPreviewDevice = 'desktop' | 'tablet' | 'mobile';
@@ -9,6 +7,7 @@ export interface SurveyLayoutOption {
   label: string;
   description: string;
   icon: string;
+  sunsetting?: boolean;
 }
 
 export interface SurveyDesignTheme {
@@ -59,6 +58,7 @@ export const SURVEY_LAYOUT_OPTIONS: SurveyLayoutOption[] = [
     label: 'Focus',
     description: 'One question per page',
     icon: 'wm-filter-center-focus',
+    sunsetting: true,
   },
   {
     id: 'visual',
@@ -75,7 +75,7 @@ export const SURVEY_LAYOUT_OPTIONS: SurveyLayoutOption[] = [
 ];
 
 export const SURVEY_LAYOUT_RETIRING_NOTICE = {
-  title: 'Depricating after 12/31/2026',
+  title: 'Deprecating after 12/31/2026',
   body: 'This mode will not be available after 12/31/2026. Existing surveys will not be impacted with this change.',
 };
 
@@ -141,10 +141,6 @@ export const DEFAULT_SURVEY_DESIGN_SETTINGS: SurveyDesignSettings = {
   customize: DEFAULT_SURVEY_DESIGN_CUSTOMIZE,
   behavior: DEFAULT_SURVEY_DESIGN_BEHAVIOR,
 };
-
-export function surveyHasDesignTab(surveyId: number): boolean {
-  return surveyId === DEEPDIVE_V2_SURVEY_ID;
-}
 
 export function surveyDesignSettingsStorageKey(surveyId: number): string {
   return `survey-design-settings-v1-${surveyId}`;
