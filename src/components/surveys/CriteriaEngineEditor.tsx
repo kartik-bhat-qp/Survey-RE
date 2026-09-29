@@ -50,6 +50,9 @@ import {
 } from '@/data/mock-criteria-engine';
 import {
   getLoopRefLabel,
+  isSpecificLoopRef,
+  parseSpecificLoopRefs,
+  toggleSpecificLoopRef,
   type QuestionLoopContext,
 } from '@/data/mock-looping';
 import { MultiValueInput } from '@/components/surveys/MultiValueInput';
@@ -1068,7 +1071,7 @@ export function CriteriaEngineEditor({
                                 {loopContext.blockTitle}
                               </div>
                               {loopContext.options
-                                .filter((option) => !/^loop:\d+$/.test(option.value))
+                                .filter((option) => !isSpecificLoopRef(option.value))
                                 .map((option) => (
                                   <WuMenuItem
                                     key={option.value}
@@ -1085,20 +1088,30 @@ export function CriteriaEngineEditor({
                               <div className={styles.operatorMenuHeader} role="presentation">
                                 Specific loop
                               </div>
-                              {loopContext.options
-                                .filter((option) => /^loop:\d+$/.test(option.value))
-                                .map((option) => (
-                                  <WuMenuItem
-                                    key={option.value}
-                                    onSelect={() =>
-                                      handleUpdateCondition(criterion.id, cond.id, {
-                                        loopRef: option.value,
-                                      })
-                                    }
-                                  >
-                                    {option.label}
-                                  </WuMenuItem>
-                                ))}
+                              {(() => {
+                                const selectedLoopRefs = parseSpecificLoopRefs(cond.loopRef);
+                                return loopContext.options
+                                  .filter((option) => isSpecificLoopRef(option.value))
+                                  .map((option) => (
+                                    <WuMenuCheckboxItem
+                                      key={option.value}
+                                      checked={selectedLoopRefs.includes(option.value)}
+                                      closeOnClick={false}
+                                      onCheckedChange={() =>
+                                        handleUpdateCondition(criterion.id, cond.id, {
+                                          loopRef: toggleSpecificLoopRef(
+                                            cond.loopRef,
+                                            option.value,
+                                            loopContext.options,
+                                            loopContext.defaultRef
+                                          ),
+                                        })
+                                      }
+                                    >
+                                      {option.label}
+                                    </WuMenuCheckboxItem>
+                                  ));
+                              })()}
                             </WuMenu>
                             ) : null}
                             </div>
