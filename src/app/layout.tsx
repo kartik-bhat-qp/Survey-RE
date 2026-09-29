@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { WickPopupScrollUnlock } from "@/components/WickPopupScrollUnlock";
 
 export const metadata: Metadata = {
   title: "BI Stats",
@@ -18,6 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-full flex flex-col font-sans">
+        <WickPopupScrollUnlock />
         {children}
       </body>
     </html>
