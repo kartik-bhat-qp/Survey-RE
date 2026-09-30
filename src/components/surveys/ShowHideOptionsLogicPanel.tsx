@@ -39,7 +39,7 @@ const WuTooltip = dynamic(
 );
 
 const DEFAULT_VISIBILITY_DEPRECATION_TOOLTIP =
-  'This option will not be available after Aug 30 2026';
+  'This option will not be available after Dec 30 2026';
 
 interface ShowHideOptionsLogicPanelProps {
   state: ShowHideOptionsState;

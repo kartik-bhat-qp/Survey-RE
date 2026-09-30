@@ -1,0 +1,18 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.label {
+  color: #1f2937;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+}

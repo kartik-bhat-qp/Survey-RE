@@ -266,11 +266,46 @@ export function getDefaultLoopRef(sameBlock: boolean): string {
   return sameBlock ? LOOP_REF_CURRENT : LOOP_REF_ANY;
 }
 
+const SPECIFIC_LOOP_REF_PATTERN = /^loop:\d+$/;
+const LOOP_REF_LIST_SEPARATOR = ',';
+
+export function isSpecificLoopRef(value: string): boolean {
+  return SPECIFIC_LOOP_REF_PATTERN.test(value);
+}
+
+/** Specific loops selected in a condition; multiple loops are stored comma-joined. */
+export function parseSpecificLoopRefs(loopRef: string | null): string[] {
+  if (!loopRef) return [];
+  return loopRef.split(LOOP_REF_LIST_SEPARATOR).filter(isSpecificLoopRef);
+}
+
+/** Toggles one specific loop, falling back to `fallbackRef` when none remain selected. */
+export function toggleSpecificLoopRef(
+  loopRef: string | null,
+  toggledRef: string,
+  options: LoopReferenceOption[],
+  fallbackRef: string
+): string {
+  const selected = new Set(parseSpecificLoopRefs(loopRef));
+  if (selected.has(toggledRef)) selected.delete(toggledRef);
+  else selected.add(toggledRef);
+  if (selected.size === 0) return fallbackRef;
+  return options
+    .map((option) => option.value)
+    .filter((value) => selected.has(value))
+    .join(LOOP_REF_LIST_SEPARATOR);
+}
+
 export function getLoopRefLabel(
   options: LoopReferenceOption[],
   loopRef: string | null
 ): string {
   if (!loopRef) return options[0]?.label ?? 'Any loop';
+  const specific = parseSpecificLoopRefs(loopRef);
+  if (specific.length > 1) {
+    const numbers = specific.map((value) => value.slice('loop:'.length));
+    return `Loops ${numbers.join(', ')}`;
+  }
   return options.find((option) => option.value === loopRef)?.label ?? 'Any loop';
 }
 

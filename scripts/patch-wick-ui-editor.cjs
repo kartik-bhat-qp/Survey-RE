@@ -34,32 +34,17 @@ if (!fs.existsSync(target)) {
 let source = fs.readFileSync(target, 'utf8');
 const before = source;
 
-const useEditorBlock = `k = Se({
-    editable: !c,
-    autofocus: d ? "end" : !1,
-    extensions: Ue,
-    content: R(o || ""),
-    onUpdate: ({ editor: v }) => {
-      t && t(R(v.getHTML()));
-    }
-  });`;
-
-const useEditorPatched = `k = Se({
-    editable: !c,
-    autofocus: d ? "end" : !1,
-    extensions: Ue,
-    content: R(o || ""),
-    immediatelyRender: !0,
-    shouldRerenderOnTransaction: !0,
-    onUpdate: ({ editor: v }) => {
-      t && t(R(v.getHTML()));
-    }
-  });`;
+// The minified sanitizer name changes between releases (R, z, ...), so match it loosely.
+const useEditorBlock =
+  /(= Se\(\{\n\s*editable: !c,\n\s*autofocus: d \? "end" : !1,\n\s*extensions: Ue,\n(\s*)content: \w+\(o \|\| ""\),\n)/;
 
 if (source.includes('immediatelyRender: !0')) {
   // already patched
-} else if (source.includes(useEditorBlock)) {
-  source = source.replace(useEditorBlock, useEditorPatched);
+} else if (useEditorBlock.test(source)) {
+  source = source.replace(
+    useEditorBlock,
+    '$1$2immediatelyRender: !0,\n$2shouldRerenderOnTransaction: !0,\n'
+  );
 } else {
   console.warn('[patch-wick-ui-editor] useEditor block not found — skipped');
 }
@@ -85,6 +70,10 @@ const replacements = [
     'tableAttrs: s.editor.getAttributes("table")',
     'tableAttrs: s.editor?.getAttributes("table")',
   ],
+  ['t.imageAttrs.src', 't.imageAttrs?.src'],
+  ['t.imageAttrs.alt', 't.imageAttrs?.alt'],
+  ['t.linkAttrs.href', 't.linkAttrs?.href'],
+  ['t.linkAttrs.alt', 't.linkAttrs?.alt'],
 ];
 
 for (const [from, to] of replacements) {
