@@ -251,13 +251,8 @@ export function readPersistedSurveySectionsForReview(surveyId: number): SurveySe
   return sections;
 }
 
-export function findEssentialsPhishingPhrases(
-  sections: SurveySection[],
-  extraText = ''
-): string[] {
-  const haystack = normalizeScanText(
-    `${collectSurveyPublishText(sections)} ${extraText} ${collectLiveWorkspaceQuestionText()}`
-  );
+function findPhishingPhrasesInText(text: string): string[] {
+  const haystack = normalizeScanText(text);
   const phrases = ESSENTIALS_PHISHING_REVIEW_PHRASES.filter((phrase) =>
     containsPhishingPhrase(haystack, phrase)
   );
@@ -265,6 +260,22 @@ export function findEssentialsPhishingPhrases(
     .filter((pattern) => pattern.test(haystack))
     .map((pattern) => pattern.source);
   return Array.from(new Set([...phrases, ...patterns]));
+}
+
+export function findEssentialsPhishingPhrases(
+  sections: SurveySection[],
+  extraText = ''
+): string[] {
+  return findPhishingPhrasesInText(
+    `${collectSurveyPublishText(sections)} ${extraText} ${collectLiveWorkspaceQuestionText()}`
+  );
+}
+
+/** Distribute compose: scan invitation copy (subject, email body, SMS) only. */
+export function essentialsMessageShouldBeBlocked(messageParts: string[]): boolean {
+  if (getSurveyFooterBrand() !== 'essentials') return false;
+  if (readEssentialsAccountUnderReview()) return true;
+  return findPhishingPhrasesInText(messageParts.join(' ')).length > 0;
 }
 
 export function surveyHasEssentialsPhishingLanguage(

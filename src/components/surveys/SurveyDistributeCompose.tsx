@@ -41,6 +41,12 @@ import {
   RESEARCH_AGENT_DISTRIBUTE_BASE_CONTEXT_TOKENS,
   type SurveyAiGenerationResult,
 } from '@/data/mock-survey-ai-agent';
+import {
+  ESSENTIALS_SURVEY_REVIEWING_TOOLTIP,
+  essentialsMessageShouldBeBlocked,
+  runEssentialsPhishingReview,
+} from '@/data/mock-essentials-phishing-review';
+import { useEssentialsSurveyReviewing } from '@/hooks/useEssentialsAccountUnderReview';
 import styles from './SurveyDistributeCompose.module.css';
 
 const WuSelect = dynamic(
@@ -109,6 +115,22 @@ export function SurveyEmailComposePanel({
   const smsSegmentUsage = useMemo(() => getSmsSegmentUsage(smsBody), [smsBody]);
   const bodyIsHtml = useMemo(() => composeBodyHasRenderableHtml(body), [body]);
   const bodyContainsBlob = useMemo(() => composeHtmlContainsUnsupportedBlob(body), [body]);
+  const messageReviewing = useEssentialsSurveyReviewing();
+  const sendDisabledReason = bodyContainsBlob
+    ? COMPOSE_BLOB_UNSUPPORTED_MESSAGE
+    : messageReviewing
+      ? ESSENTIALS_SURVEY_REVIEWING_TOOLTIP
+      : undefined;
+
+  function blockEssentialsPhishingMessage(): boolean {
+    const messageParts = [
+      emailEnabled ? subject : '',
+      emailEnabled ? body : '',
+      smsEnabled ? smsBody : '',
+    ];
+    if (!essentialsMessageShouldBeBlocked(messageParts)) return false;
+    return runEssentialsPhishingReview(showToast);
+  }
 
   function notifyIfBlobUnsupported(content: string): boolean {
     if (!composeHtmlContainsUnsupportedBlob(content)) {
@@ -136,6 +158,8 @@ export function SurveyEmailComposePanel({
       return;
     }
 
+    if (blockEssentialsPhishingMessage()) return;
+
     if (!selectedList && recipientEmails.length === 0) {
       showToast({ message: 'Add at least one list or email address', variant: 'error' });
       return;
@@ -157,6 +181,8 @@ export function SurveyEmailComposePanel({
       showToast({ message: COMPOSE_BLOB_UNSUPPORTED_MESSAGE, variant: 'error' });
       return;
     }
+
+    if (blockEssentialsPhishingMessage()) return;
 
     showToast({ message: 'Schedule invitation', variant: 'info' });
   }
@@ -509,31 +535,27 @@ export function SurveyEmailComposePanel({
 
             <div className={styles.composeFooter}>
               <div className={styles.footerActions}>
-                <WuTooltip
-                  content={bodyContainsBlob ? COMPOSE_BLOB_UNSUPPORTED_MESSAGE : undefined}
-                  position="top"
-                >
+                <WuTooltip content={sendDisabledReason} position="top">
                   <span className={styles.sendBtnWrap}>
                     <button
                       type="button"
                       className={styles.sendBtn}
                       onClick={handleSend}
-                      disabled={bodyContainsBlob}
+                      disabled={Boolean(sendDisabledReason)}
+                      aria-busy={messageReviewing}
                     >
                       Send
                     </button>
                   </span>
                 </WuTooltip>
-                <WuTooltip
-                  content={bodyContainsBlob ? COMPOSE_BLOB_UNSUPPORTED_MESSAGE : undefined}
-                  position="top"
-                >
+                <WuTooltip content={sendDisabledReason} position="top">
                   <span className={styles.sendBtnWrap}>
                     <button
                       type="button"
                       className={styles.scheduleBtn}
                       onClick={handleSchedule}
-                      disabled={bodyContainsBlob}
+                      disabled={Boolean(sendDisabledReason)}
+                      aria-busy={messageReviewing}
                     >
                       Schedule
                     </button>
