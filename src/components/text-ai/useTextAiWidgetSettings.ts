@@ -15,6 +15,7 @@ export function useTextAiWidgetSettings(
   kind: TextAiSettingsKind,
   title: string,
   readOnly: boolean,
+  persist = true,
 ) {
   const [settings, setSettings] = useState(() =>
     defaultTextAiWidgetSettings(kind, title),
@@ -25,7 +26,7 @@ export function useTextAiWidgetSettings(
   useEffect(() => {
     let next = defaultTextAiWidgetSettings(kind, title);
     try {
-      next = normalizeTextAiWidgetSettings(
+      if (persist) next = normalizeTextAiWidgetSettings(
         JSON.parse(localStorage.getItem(key) ?? "null"),
         kind,
         title,
@@ -37,7 +38,7 @@ export function useTextAiWidgetSettings(
     ready.current = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSettings(next);
-  }, [key, kind, title]);
+  }, [key, kind, title, persist]);
   const update = useCallback(
     (patch: Partial<TextAiWidgetSettings>) => {
       if (readOnly || !ready.current) return;
@@ -60,7 +61,7 @@ export function useTextAiWidgetSettings(
       }
       const next = normalizeTextAiWidgetSettings(candidate, kind, title);
       try {
-        if (!saveTextAiWidgetSettings(localStorage, key, next))
+        if (persist && !saveTextAiWidgetSettings(localStorage, key, next))
           throw Error("Storage write failed");
         saved.current = next;
         setSettings(next);
@@ -71,7 +72,7 @@ export function useTextAiWidgetSettings(
         );
       }
     },
-    [key, kind, title, readOnly],
+    [key, kind, title, readOnly, persist],
   );
   return { settings, error, setError, update };
 }

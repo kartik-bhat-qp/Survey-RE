@@ -309,7 +309,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         }
         onWidgetAdded={(widget) => {
           setHasAddedWidget(true);
-          if (widget) setAddedWidgets((current) => [...current, widget]);
+          if (widget) setAddedWidgets((current) => [...current, widget.questionStack ? {...widget,questionStack:{...widget.questionStack,tabId:activeWidgetTab}} : widget]);
         }}
       />
 
@@ -319,6 +319,7 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
           setQuestionBasedWidgetOpen(open);
           if (!open) setQuestionBasedPresetSurvey(null);
         }}
+        onStackWidgetAdded={widget=>setAddedWidgets(current=>[...current,{...widget,questionStack:widget.questionStack?{...widget.questionStack,tabId:activeWidgetTab}:undefined}])}
         presetSurvey={questionBasedPresetSurvey}
         onAddWidget={() => setHasAddedWidget(true)}
       />

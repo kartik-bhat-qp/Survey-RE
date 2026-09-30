@@ -1,0 +1,77 @@
+[
+  [
+    "g30a02577f3c_0_5",
+    "g38a1465038d_0_4",
+    "Organizations need additional individual BI workspaces for separate projects. Users contact their CSM to purchase capacity; any organization user can then create a workspace when capacity is available.\nKeep one included individual workspace for every user and exactly one organization workspace. Additional organization workspaces cannot be purchased.\nThis PRD defines the purchase-to-quota handoff, creation, deletion and quota enforcement. Current allocation is owner-confirmed on 30 September 2026; the new flow is a planned requirement."
+  ],
+  [
+    "g86f1215a00_0_12",
+    "g86f1215a00_0_19",
+    "User needs and scope\nIncluded allocation and purchased quota\nCreate Workspace and unavailable states\nDeletion and reusable capacity\nAdmin API contract and integrity\nAcceptance criteria and prototype walkthrough"
+  ],
+  [
+    "g8709499aee_5_33",
+    "g8709499aee_5_34",
+    "Users, purchase and allocation"
+  ],
+  [
+    "g8709499aee_5_33",
+    "g3cee4e92f19_0_0",
+    "One included workspace per user; purchased slots shared across the organization"
+  ],
+  [
+    "g8709499aee_5_33",
+    "g3cee4e92f19_0_1",
+    "Organization user: contact the CSM for more capacity, then create and own an additional individual workspace. The creator need not be the purchaser or organization administrator.\nCSM and admin team: complete the purchase outside BI and update the organization entitlement exposed by the admin API. BI does not collect payment.\nReserve one individual workspace for each user. Used purchased slots = sum of each user\u2019s workspaces beyond their first. Available slots = purchased slots minus used slots, with a minimum of zero.\nKeep exactly one organization workspace, outside this quota. Sharing an existing individual workspace does not create or consume another slot."
+  ],
+  [
+    "g86f1215a00_0_64",
+    "g34d6f23b3a5_0_2",
+    "Create Workspace"
+  ],
+  [
+    "g86f1215a00_0_64",
+    "g38e394f423a_0_24",
+    "Load the organization\u2019s authoritative quota when opening the BI Workspaces page. Enable Create Workspace only when confirmed remaining capacity is greater than zero.\nAt zero capacity, disable the button and show this tooltip on hover and keyboard focus: \u201cPlease reach out to your CSM for purchasing additional workspaces.\u201d Repeat the guidance as visible helper text.\nCreate opens a name dialog for an individual workspace only. Require a trimmed, nonempty name; Cancel consumes nothing. On success, add the workspace to the creator\u2019s list and refresh capacity.\nWhile quota is loading or unavailable, disable creation and show the relevant checking/retry state. An API failure must never be presented as proof that a purchase is required. Existing workspace access remains available."
+  ],
+  [
+    "g86f1215898_1_32",
+    "g86fb383e73_0_466",
+    "Delete and reuse capacity"
+  ],
+  [
+    "g86f1215898_1_32",
+    "g86fb383e73_0_468",
+    "Protect every user\u2019s last individual workspace"
+  ],
+  [
+    "g86f1215898_1_32",
+    "g3c58e6d0cde_15_1",
+    "A user with more than one individual workspace can delete an eligible owned workspace. Protect the last remaining individual workspace; the original workspace is not permanently pinned if another remains. Preserve existing authorization and content-deletion safeguards.\nAsk for confirmation with the workspace name and deletion consequences. Cancel or failed deletion must leave workspace count and capacity unchanged.\nAfter successful deletion, return one slot to the organization pool. Any organization user may use it; it is not reserved for the person who deleted it.\nExample: two users each have one included workspace, plus two purchased slots. Alex uses both slots. Alex deletes one additional workspace; Kartik can use the returned slot. The organization workspace remains one."
+  ],
+  [
+    "gfdf248c7ff_0_5",
+    "gfdf248c7ff_0_7",
+    "Admin API and integrity requirements"
+  ],
+  [
+    "gfdf248c7ff_0_5",
+    "gfdf248c7ff_0_6",
+    "Admin provides organization entitlement. Agree whether its limit includes baseline allocation or only purchased extras; normalize once and never count the organization workspace against individual capacity. Field names and endpoint are still to be agreed.\nBI needs total entitlement, organization-wide usage and remaining capacity, including workspaces the current user cannot see. Never infer quota from the visible list alone. Refresh after creation, successful deletion and entitlement updates.\nThe server must atomically validate membership, authorization and remaining quota when creating. Two users competing for the final slot cannot both succeed. Retry safely without duplicate creation or double release. A conflict preserves the entered name and refreshes availability.\nEnforce the per-user minimum during deletion and prevent extra organization workspaces server-side. Confirm membership changes, entitlement reductions, deletion completion and legacy allocation before production rollout."
+  ],
+  [
+    "gfdf248c7ff_0_0",
+    "gfdf248c7ff_0_1",
+    "AC-01 through AC-10"
+  ],
+  [
+    "gfdf248c7ff_0_0",
+    "g3c58e6d0cde_15_3",
+    "AC-01/02: Each user retains at least one individual workspace. Exactly one organization workspace exists; no purchase or creation option increases that count.\nAC-03/04: Any organization user can consume a purchased slot. Zero capacity disables Create Workspace and exposes the exact CSM tooltip by hover and keyboard.\nAC-05/06: Successful creation consumes one slot; Cancel, invalid input and failed requests consume none. Quota loading/failure blocks creation without a false upsell.\nAC-07/08: The last individual workspace cannot be deleted. Successful eligible deletion returns one shared slot; Cancel or failure returns none.\nAC-09/10: Final-slot races and repeated requests never oversubscribe or duplicate. Purchase/deletion refreshes use organization-wide data; shared access never double-counts usage."
+  ],
+  [
+    "g13441c123f6_0_1",
+    "g3c58e6d0cde_15_5",
+    "Open Survey-RE directly: https://survey-re.vercel.app/ \u2192 Workspaces.\nCreate a named workspace using the available slot. Confirm the remaining count reaches zero and Create Workspace shows the CSM guidance.\nDelete an owned workspace and confirm creation becomes available again. Delete down to one and verify the final individual workspace is protected.\nOpen Prototype scenarios. Switch between Kartik and Alex; simulate a purchase, another user consuming capacity, and loading/unavailable API responses. Verify Retry and the fixed organization workspace.\nThe implemented local review is http://localhost:3000/workspaces. Synthetic state resets on reload. No real purchase, admin API, durable storage or server concurrency is implemented; production release and hosted deployment are not claimed."
+  ]
+]

@@ -274,3 +274,7 @@
 :global(body):has(.dialog) :global(.wu-select-content) {
   z-index: 131 !important;
 }
+
+.surface[data-widget-settings-kind="kpi-by-theme"],
+.surface[data-widget-settings-kind="kpi-by-theme"] > article { height: auto; }
+.preview:has([data-widget-settings-kind="kpi-by-theme"]) { overflow: auto; background: transparent; box-shadow: none; }

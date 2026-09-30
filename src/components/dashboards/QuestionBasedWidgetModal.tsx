@@ -1,5 +1,8 @@
 'use client';
 
+import { StackWidgetSetup } from '@/components/stacks/StackWidgetSetup';
+import type { QuestionStack } from '@/data/question-stacks';
+import type { AiWidgetConfig } from '@/data/mock-ai-widgets';
 import { useCallback, useState } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import type { WickUILib } from '@/components/ui/useWickUILib';
@@ -29,7 +32,7 @@ import type { SurveyListItem } from '@/data/mock-survey-folders';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import styles from './QuestionBasedWidgetModal.module.css';
 
-type ModalStep = 'survey' | 'question' | 'chart';
+type ModalStep = 'survey' | 'question' | 'chart' | 'stack';
 
 function usesMatrixWholeChartStep(
   question: SurveyQuestion,
@@ -53,6 +56,7 @@ interface QuestionBasedWidgetModalProps {
   onOpenChange: (open: boolean) => void;
   /** When set, opens directly on the question list for this survey. */
   presetSurvey?: SurveyListItem | null;
+  onStackWidgetAdded?: (widget:AiWidgetConfig)=>void;
   onAddWidget?: (survey: SurveyListItem, question: SurveyQuestion) => void;
 }
 
@@ -61,6 +65,7 @@ interface QuestionBasedWidgetModalBodyProps {
   presetSurvey: SurveyListItem | null;
   startAtQuestionStep: boolean;
   onClose: () => void;
+  onStackWidgetAdded?: (widget:AiWidgetConfig)=>void;
   onAddWidget?: (survey: SurveyListItem, question: SurveyQuestion) => void;
 }
 
@@ -70,6 +75,7 @@ function QuestionBasedWidgetModalBody({
   startAtQuestionStep,
   onClose,
   onAddWidget,
+  onStackWidgetAdded,
 }: QuestionBasedWidgetModalBodyProps) {
   const { WuModalContent, WuModalFooter, WuButton } = wick;
   const { showToast } = useWuShowToast();
@@ -79,6 +85,7 @@ function QuestionBasedWidgetModalBody({
   const [selectedSurvey, setSelectedSurvey] = useState<SurveyListItem | null>(
     startAtQuestionStep ? presetSurvey : null
   );
+  const [selectedStack,setSelectedStack]=useState<QuestionStack|null>(null);
   const [selectedQuestion, setSelectedQuestion] = useState<SurveyQuestion | null>(null);
   const [widgetName, setWidgetName] = useState('');
   const [selectedChartTypeId, setSelectedChartTypeId] = useState<SingleSelectChartTypeId>(
@@ -172,8 +179,10 @@ function QuestionBasedWidgetModalBody({
   return (
     <>
       <WuModalContent className={styles.stepContent}>
+        {step==='stack'&&selectedStack&&<StackWidgetSetup stack={selectedStack} onBack={()=>setStep('survey')} onSave={widget=>{onStackWidgetAdded?.(widget);showToast({message:'Question Stack widget added',variant:'success'});onClose();}}/>}
         {step === 'survey' && (
           <AiDataSourceSelection
+            onSelectQuestionStack={stack=>{setSelectedStack(stack);setStep('stack');}}
             selectedSurveyId={selectedSurvey?.id ?? null}
             onSelectSurvey={handleSurveySelect}
           />
@@ -206,7 +215,7 @@ function QuestionBasedWidgetModalBody({
         ) : null}
       </WuModalContent>
 
-      <WuModalFooter>
+      {step!=='stack'&&<WuModalFooter>
         <div className={styles.wizardFooter}>
           <AddWidgetStepBreadcrumb
             currentStep={breadcrumbStep}
@@ -246,7 +255,7 @@ function QuestionBasedWidgetModalBody({
             )}
           </div>
         </div>
-      </WuModalFooter>
+      </WuModalFooter>}
     </>
   );
 }
@@ -256,6 +265,7 @@ export function QuestionBasedWidgetModal({
   onOpenChange,
   presetSurvey = null,
   onAddWidget,
+  onStackWidgetAdded,
 }: QuestionBasedWidgetModalProps) {
   const wick = useWickUILib();
   const startAtQuestionStep = presetSurvey !== null;
@@ -296,6 +306,7 @@ export function QuestionBasedWidgetModal({
         presetSurvey={presetSurvey}
         startAtQuestionStep={startAtQuestionStep}
         onClose={handleClose}
+        onStackWidgetAdded={onStackWidgetAdded}
         onAddWidget={onAddWidget}
       />
     </WuModal>

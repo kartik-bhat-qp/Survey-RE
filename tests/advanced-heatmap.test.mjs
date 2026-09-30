@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { stripTypeScriptTypes } from 'node:module';
 import { filterHeatmapResponses, heatmapRespondentFilterError, EMPTY_METRIC_FILTER, metricFilterError, matchesMetricFilter, heatmapRowGroups, heatmapResultRows, adaptHeatmapQuestions, createAdvancedHeatmapConfig, createHeatmapResponses, scoreCell, distributionCell, segmentResponses, summaryCell, distributionColumns, toggleQuestionRows } from '../src/data/advanced-heatmap.ts';
-import { getQuestionsBySurvey } from '../src/data/mock-survey-questions.ts';
+const questionSource = readFileSync(new URL('../src/data/mock-survey-questions.ts', import.meta.url), 'utf8')
+  .replace("'./question-stacks'", JSON.stringify(new URL('../src/data/question-stacks.ts', import.meta.url).href));
+const { getQuestionsBySurvey } = await import(`data:text/javascript,${encodeURIComponent(stripTypeScriptTypes(questionSource))}`);
 const questions = adaptHeatmapQuestions(getQuestionsBySurvey(1));
 const matrix = questions.find(q => q.code === 'Q11');
 const nominal = questions.find(q => q.code === 'Q1');

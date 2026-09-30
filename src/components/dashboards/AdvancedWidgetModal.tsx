@@ -1,5 +1,8 @@
 'use client';
 
+import { StackSourcePicker } from '@/components/stacks/StackSourcePicker';
+import { StackWidgetSetup } from '@/components/stacks/StackWidgetSetup';
+import type { QuestionStack } from '@/data/question-stacks';
 import { useCallback, useMemo, useState } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { AdvancedWidgetChartSelect } from '@/components/dashboards/AdvancedWidgetChartSelect';
@@ -32,6 +35,8 @@ import styles from './AdvancedWidgetModal.module.css';
 
 type ModalStep =
   | AdvancedWidgetStep
+  | 'stack-source'
+  | 'stack-setup'
   | 'heatmap-survey'
   | 'heatmap-questions'
   | 'heatmap-analysis'
@@ -86,6 +91,7 @@ interface AdvancedWidgetModalProps {
 }
 
 function breadcrumbStepFor(step: ModalStep): AdvancedWidgetStep {
+  if(step==='stack-source'||step==='stack-setup')return 'chart';
   if (step === 'heatmap-survey') return 'chart';
   if (step === 'heatmap-questions') return 'chart';
   if (step === 'heatmap-analysis') return 'details';
@@ -104,6 +110,7 @@ export function AdvancedWidgetModal({
 }: AdvancedWidgetModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
+  const [selectedStack,setSelectedStack]=useState<QuestionStack|null>(null);
   const [step, setStep] = useState<ModalStep>('widget');
   const [widgetName, setWidgetName] = useState('');
   const [selectedTypeId, setSelectedTypeId] = useState<AdvancedWidgetTypeId>(
@@ -119,6 +126,7 @@ export function AdvancedWidgetModal({
 
   const resetState = useCallback(() => {
     setStep('widget');
+    setSelectedStack(null);
     setHeatmapSurvey(null);
     setHeatmapRows([]);
     setHeatmapMode('distribution');
@@ -320,6 +328,9 @@ export function AdvancedWidgetModal({
       <WuModalHeader className={styles.modalTitle}>{modalTitle}</WuModalHeader>
 
       <WuModalContent className={`${styles.stepContent} ${step === 'heatmap-analysis' ? styles.analysisStep : ''}`}>
+        {step==='widget'&&<div style={{padding:'16px 24px'}}><WuButton variant="outline" onClick={()=>setStep('stack-source')}>Create from Question Stack</WuButton></div>}
+        {step==='stack-source'&&<StackSourcePicker onSelect={stack=>{setSelectedStack(stack);setStep('stack-setup');}}/>}
+        {step==='stack-setup'&&selectedStack&&<StackWidgetSetup advanced stack={selectedStack} onBack={()=>setStep('stack-source')} onSave={widget=>{onWidgetAdded?.(widget);showToast({message:'Question Stack widget added',variant:'success'});handleClose();}}/>}
         {step === 'widget' && builtWidgets.length > 0 && <section className={builderStyles.library}><h3>Built with AI <span className={builderStyles.muted}>· This session</span></h3>{builtWidgets.map(widget => <div key={widget.id} className={builderStyles.libraryRow}><span>{widget.settings.name}<small className={builderStyles.muted}> · {widget.source.name}</small></span><button className={builderStyles.secondary} onClick={() => onReuseBuiltWidget?.(widget)}>Add to this tab</button></div>)}</section>}
         {step === 'widget' && (
           <AdvancedWidgetChartSelect
@@ -345,7 +356,7 @@ export function AdvancedWidgetModal({
             onToggleQuestion={handleDriverQuestionToggle}
           />
         )}
-        {step === 'heatmap-survey' && <AiDataSourceSelection selectedSurveyId={heatmapSurvey?.id ?? null} onSelectSurvey={survey => { if (survey.id !== heatmapSurvey?.id) setHeatmapRows([]); setHeatmapSurvey(survey); setStep('heatmap-questions'); }} />}
+        {step === 'heatmap-survey' && <AiDataSourceSelection onSelectQuestionStack={stack=>{setSelectedStack(stack);setStep('stack-setup');}} selectedSurveyId={heatmapSurvey?.id ?? null} onSelectSurvey={survey => { if (survey.id !== heatmapSurvey?.id) setHeatmapRows([]); setHeatmapSurvey(survey); setStep('heatmap-questions'); }} />}
         {step === 'heatmap-questions' && <HeatmapQuestionPicker surveyId={heatmapSurvey?.id ?? surveyId} questions={heatmapQuestions} selected={heatmapRows} onChange={setHeatmapRows} />}
         {step === 'heatmap-analysis' && <div style={{ padding: 24 }}><h3>Choose how to analyze your questions</h3><HeatmapAnalysisPicker mode={heatmapMode} onChange={setHeatmapMode} /><p style={{ color: '#6b7888', fontSize: 13 }}>You can switch analysis types later in Analytics.</p></div>}
         {step === 'chart' && (
@@ -360,9 +371,10 @@ export function AdvancedWidgetModal({
             Review widget details and finish adding your widget to the dashboard.
           </p>
         )}
+        {step==='stack-source'&&<div style={{padding:16}}><WuButton variant="secondary" onClick={()=>setStep('widget')}>Back</WuButton></div>}
       </WuModalContent>
 
-      <WuModalFooter>
+      {step!=='stack-setup'&&step!=='stack-source'&&<WuModalFooter>
         <div className={styles.wizardFooter}>
           {selectedTypeId === 'advanced-heatmap' ? <AddWidgetStepBreadcrumb chartLabel="Analysis" currentStep={step === 'heatmap-survey' ? 'survey' : step === 'heatmap-questions' ? 'question' : step === 'heatmap-analysis' ? 'chart' : 'widget'} onStepClick={target => setStep(target === 'survey' ? 'heatmap-survey' : target === 'question' ? 'heatmap-questions' : 'widget')} /> : <AdvancedWidgetStepBreadcrumb
             currentStep={breadcrumbStepFor(step)}
@@ -379,7 +391,7 @@ export function AdvancedWidgetModal({
             ) : null}
           </div>
         </div>
-      </WuModalFooter>
+      </WuModalFooter>}
     </WuModal>
   );
 }

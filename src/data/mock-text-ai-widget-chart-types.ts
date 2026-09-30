@@ -51,7 +51,7 @@ export const TEXT_AI_WIDGET_CHART_TYPES: TextAiWidgetChartType[] = [
   { id: 'text-summary', label: 'Text Summary', imageSrc: TEXT_AI.textSummary },
   {
     id: 'kpi-by-theme',
-    label: 'KPI by Theme',
+    label: 'Impact on KPI',
     imageSrc: ADVANCED.driverAnalysis,
   },
   {

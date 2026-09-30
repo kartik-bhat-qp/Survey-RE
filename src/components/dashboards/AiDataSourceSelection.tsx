@@ -1,5 +1,8 @@
 'use client';
 
+import { StackSourcePicker } from '@/components/stacks/StackSourcePicker';
+import type { QuestionStack } from '@/data/question-stacks';
+import stackStyles from '@/components/stacks/Stacks.module.css';
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
@@ -28,6 +31,7 @@ const WuTable = dynamic(
 
 const DATA_SOURCE_OPTIONS = [{ value: 'surveys', label: 'Surveys' }];
 interface AiDataSourceSelectionProps {
+  onSelectQuestionStack?: (stack:QuestionStack)=>void;
   selectedSurveyId: number | null;
   onSelectSurvey: (survey: SurveyListItem) => void;
 }
@@ -37,9 +41,11 @@ function folderItemClass(isSelected: boolean): string {
 }
 
 export function AiDataSourceSelection({
+  onSelectQuestionStack,
   selectedSurveyId,
   onSelectSurvey,
 }: AiDataSourceSelectionProps) {
+  const [sourceTab,setSourceTab]=useState<'surveys'|'stacks'>('surveys');
   const [folderId, setFolderId] = useState('demo-2026');
   const [search, setSearch] = useState('');
   const [dataSource] = useState(DATA_SOURCE_OPTIONS[0]);
@@ -84,7 +90,9 @@ export function AiDataSourceSelection({
   const isSharedSelected = folderId === SHARED_SURVEY_FOLDER_ID;
 
   return (
-    <div className={styles.root}>
+    <>
+    {onSelectQuestionStack&&<div className={stackStyles.tabs} role="tablist" aria-label="Data source"><button role="tab" aria-selected={sourceTab==='surveys'} onClick={()=>setSourceTab('surveys')}>Surveys</button><button role="tab" aria-selected={sourceTab==='stacks'} onClick={()=>setSourceTab('stacks')}>Stacks</button></div>}
+    {sourceTab==='stacks'&&onSelectQuestionStack?<StackSourcePicker onSelect={onSelectQuestionStack}/>:<div className={styles.root}>
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
           <WuSelect
@@ -144,6 +152,7 @@ export function AiDataSourceSelection({
           />
         </div>
       </div>
-    </div>
+    </div>}
+    </>
   );
 }

@@ -128,7 +128,6 @@ export function TextAiSubthemeTrendWidget({
       <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
         <div className={styles.titleBlock}>
           <h2 className={styles.cardTitle}>{question}</h2>
-          <span className={styles.widgetLabel}>Sub-theme trend</span>
         </div>
         <TextAiWidgetMenu
           widgetTitle={`${question} Sub-theme trend`}

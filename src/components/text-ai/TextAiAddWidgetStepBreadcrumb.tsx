@@ -2,27 +2,31 @@
 
 import styles from './TextAiAddWidgetStepBreadcrumb.module.css';
 
-export type TextAiAddWidgetStep = 'question' | 'chart';
+export type TextAiAddWidgetStep = 'question' | 'chart' | 'kpi';
 
 const STEPS: { id: TextAiAddWidgetStep; label: string; icon: string }[] = [
   { id: 'question', label: 'Question', icon: 'wm-chat' },
   { id: 'chart', label: 'Chart', icon: 'wm-pie-chart' },
+  { id: 'kpi', label: 'KPI', icon: 'wm-poll' },
 ];
 
 interface TextAiAddWidgetStepBreadcrumbProps {
   currentStep: TextAiAddWidgetStep;
+  includeKpi?: boolean;
   onStepClick?: (step: TextAiAddWidgetStep) => void;
 }
 
 export function TextAiAddWidgetStepBreadcrumb({
   currentStep,
+  includeKpi = false,
   onStepClick,
 }: TextAiAddWidgetStepBreadcrumbProps) {
-  const currentIndex = STEPS.findIndex((step) => step.id === currentStep);
+  const steps = STEPS.filter(step => includeKpi || step.id !== 'kpi');
+  const currentIndex = steps.findIndex((step) => step.id === currentStep);
 
   return (
     <nav className={styles.nav} aria-label="Add widget progress">
-      {STEPS.map((step, index) => {
+      {steps.map((step, index) => {
         const isActive = step.id === currentStep;
         const isComplete = index < currentIndex;
         const isClickable = isComplete && onStepClick;

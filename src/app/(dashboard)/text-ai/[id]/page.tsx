@@ -28,7 +28,7 @@ import {
   createTextAiComparativeChartWidget,
   type TextAiTopicSegmentWidget,
 } from '@/data/mock-text-ai-topic-segment-widget';
-import type { TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
+import { type TextAiKpiId, type TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
 import type { TextAiSubthemeTrendWidgetInstance } from '@/data/mock-text-ai-subtheme-trend';
 import {
   getTextAiThemePreferences,
@@ -176,8 +176,14 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
 
   function handleAddWidget(
     question: TextAiAnalysisQuestion,
-    chartTypeId: TextAiWidgetChartTypeId
+    chartTypeId: TextAiWidgetChartTypeId,
+    kpi?: { id: TextAiKpiId; name: string }
   ): void {
+    if (chartTypeId === 'kpi-by-theme') {
+      if (!kpi) return;
+      setAddedKpiWidgets(previous => [{ id: `kpi-by-theme-${question.code}-${Date.now()}`, question: question.text, kpiId: kpi.id, name: kpi.name }, ...previous]);
+      return;
+    }
     const dashboardQuestion: TextAiDashboardQuestion = availableQuestions.find(entry=>entry.text===question.text) ?? {
       id: `dashboard-${numericId}-${question.code}-${Date.now()}`,
       text: question.text,
@@ -200,16 +206,6 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
 
     if (!['comparative-chart', 'kpi-by-theme', 'subtheme-trend'].includes(chartTypeId)) {
       setAddedWidgets(prev => [{ id: `${chartTypeId}-${Date.now()}`, chartType: chartTypeId, question: question.text }, ...prev]);
-    }
-
-    if (chartTypeId === 'kpi-by-theme') {
-      setAddedKpiWidgets((prev) => [
-        {
-          id: `kpi-by-theme-${question.code}-${Date.now()}`,
-          question: question.text,
-        },
-        ...prev,
-      ]);
     }
 
     if (chartTypeId === 'subtheme-trend') {
@@ -254,6 +250,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         addedWidgets={addedWidgets}
         addedTopicSegmentWidgets={addedTopicSegmentWidgets}
         addedKpiWidgets={addedKpiWidgets}
+        onKpiChange={(widgetId,kpiId)=>setAddedKpiWidgets(previous=>previous.map(widget=>widget.id===widgetId?{...widget,kpiId}:widget))}
         addedSubthemeTrendWidgets={addedSubthemeTrendWidgets}
         themePreferences={themePreferences}
         design={design}

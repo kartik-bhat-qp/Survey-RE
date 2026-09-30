@@ -15,10 +15,9 @@ import {
   getReadableDesignColor,
   type DashboardDesign,
 } from "@/data/dashboard-design";
-import { getDashboardTypographyCssVars } from "@/components/dashboards/DashboardDesignSettingsTab";
+import { getTextAiTypographyCssVars } from "@/components/text-ai/text-ai-typography";
 import {
   activeTextAiFilters,
-  defaultTextAiWidgetSettings,
   textAiWidgetSettingsKey,
   TEXT_AI_VIEWER_COLUMNS,
   type TextAiResponseFilter,
@@ -27,6 +26,8 @@ import {
   type TextAiWidgetSettingsProps,
 } from "@/data/text-ai-widget-settings";
 import { useTextAiWidgetSettings } from "./useTextAiWidgetSettings";
+import { TextAiKpiQuestionField } from "./TextAiKpiQuestionField";
+import type { TextAiKpiId } from "@/data/mock-text-ai-kpi-by-theme";
 import styles from "./TextAiConfiguredWidget.module.css";
 
 const WuSelect = dynamic(
@@ -97,6 +98,7 @@ export function TextAiConfiguredWidget({
   sections = [],
   children,
   readOnly = false,
+  kpiBinding,
 }: {
   dashboardId: number;
   widgetId: string;
@@ -110,6 +112,7 @@ export function TextAiConfiguredWidget({
   sections?: string[];
   children: ReactElement<TextAiWidgetSettingsProps>;
   readOnly?: boolean;
+  kpiBinding?: { question: string; id: TextAiKpiId; onChange: (id: TextAiKpiId) => void };
 }) {
   const key = textAiWidgetSettingsKey(dashboardId, widgetId);
   const { settings, error, setError, update } = useTextAiWidgetSettings(
@@ -117,6 +120,7 @@ export function TextAiConfiguredWidget({
     kind,
     title,
     readOnly,
+    kind !== "kpi-by-theme",
   );
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("General");
@@ -136,7 +140,7 @@ export function TextAiConfiguredWidget({
         }
       : design;
   const style: CSSProperties = {
-    ...getDashboardTypographyCssVars(effectiveDesign.typography),
+    ...getTextAiTypographyCssVars(effectiveDesign.typography),
     ...getDashboardDesignColorVars(effectiveDesign),
   };
   if (s.designScope === "Widget")
@@ -156,7 +160,7 @@ export function TextAiConfiguredWidget({
       }),
     );
   const filters = activeTextAiFilters(s, dashboardFilter);
-  const unavailable = filters.length > 0 && kind !== "text-viewer";
+  const unavailable = filters.length > 0 && kind !== "text-viewer" && kind !== "kpi-by-theme";
   const render = (preview: boolean) => (
     <div
       style={style}
@@ -188,7 +192,7 @@ export function TextAiConfiguredWidget({
   const isComparison = kind.includes("comparative");
   const isStack = kind.includes("stacked-bar");
   const selectable = isComparison || isStack || kind === "bubble-chart";
-  const hasLabels = kind !== "text-summary" && kind !== "text-viewer";
+  const hasLabels = kind !== "text-summary" && kind !== "text-viewer" && kind !== "kpi-by-theme";
   const tabs = [
     "General",
     "Analytics",
@@ -327,6 +331,11 @@ export function TextAiConfiguredWidget({
   }
   const renderAnalytics = () => (
     <>
+      {kind === "kpi-by-theme" && <>
+        {kpiBinding && <TextAiKpiQuestionField value={kpiBinding.id} onChange={kpiBinding.onChange} showDetails={false} />}
+        {select("Show themes", "display", ["All", "Top 3", "Top 5", "Top 10", "Top 15", "Top 20"])}
+        {toggle("Show Overall baseline", "showOverall")}
+      </>}
       {hasLabels &&
         kind !== "bubble-chart" &&
         select("Decimal precision", "precision", [0, 1, 2, 3, 4, 5])}
@@ -509,7 +518,7 @@ export function TextAiConfiguredWidget({
       <Dialog.Root open={open} onOpenChange={setOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className={styles.overlay} />
-          <Dialog.Content className={styles.dialog}>
+          <Dialog.Content className={styles.dialog} aria-describedby={undefined}>
             <div className={styles.preview}>{render(true)}</div>
             <aside className={styles.panel}>
               <header className={styles.panelHeader}>
@@ -518,9 +527,6 @@ export function TextAiConfiguredWidget({
                   ×
                 </Dialog.Close>
               </header>
-              <Dialog.Description className={styles.description}>
-                {kind.replaceAll("-", " ")} · Changes save automatically
-              </Dialog.Description>
               <div
                 role="tablist"
                 aria-label="Widget settings"
@@ -755,23 +761,11 @@ export function TextAiConfiguredWidget({
                   </>
                 )}
               </div>
-              <footer className={styles.footer}>
-                {error ? (
-                  <p role="alert" className={styles.error}>
-                    {error}
-                  </p>
-                ) : (
-                  <p role="status">Saved on this browser</p>
-                )}
-                <button
-                  type="button"
-                  onClick={() =>
-                    update(defaultTextAiWidgetSettings(kind, title))
-                  }
-                >
-                  Reset widget settings
-                </button>
-              </footer>
+              {error && (
+                <footer className={styles.footer}>
+                  <p role="alert" className={styles.error}>{error}</p>
+                </footer>
+              )}
             </aside>
           </Dialog.Content>
         </Dialog.Portal>

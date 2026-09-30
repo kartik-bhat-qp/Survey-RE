@@ -1,8 +1,8 @@
 .card {
-  border-radius: var(--dashboard-card-radius, 4px);
+  border-radius: var(--text-ai-card-radius, 8px);
   box-shadow: var(--dashboard-card-shadow, none);
   background: #fff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(0, 0, 0, 0.2);
   color: #545e6b;
   display: flex;
   flex-direction: column;
@@ -20,8 +20,11 @@
   flex: 0 0 auto;
   gap: 12px;
   justify-content: space-between;
-  min-height: 56px;
-  padding: 8px 16px;
+
+  padding: 5px 16px;
+
+  min-height: 44px;
+  box-sizing: border-box;
 }
 
 .titleBlock {
@@ -31,9 +34,9 @@
 
 .cardTitle {
   color: var(--dashboard-accent, #1b3380);
-  font-size: var(--dashboard-widget-title-size, 18px);
-  font-weight: var(--dashboard-widget-font-weight, 500);
-  line-height: 24px;
+  font-size: var(--dashboard-widget-title-size, 16px);
+  font-weight: var(--dashboard-widget-title-weight, 500);
+  line-height: 1.5;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -43,7 +46,7 @@
 .widgetLabel {
   color: #7b8491;
   display: block;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7857);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 0.8462);
   line-height: 16px;
 }
 
@@ -71,7 +74,7 @@
 
 .axisLabel {
   fill: #8b95a1;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7143);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 0.8462);
 }
 
 .gridLine {
@@ -156,20 +159,20 @@
 
 .legendLabel {
   color: #3f4b5a;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.8571);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 0.9231);
   font-weight: var(--dashboard-widget-font-weight, 600);
   line-height: 16px;
 }
 
 .legendParent {
   color: #8b95a1;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7857);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 0.8462);
   line-height: 14px;
 }
 
 .emptyState {
   color: #7b8491;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.9286);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 1.0000);
   padding: 32px 0;
   text-align: center;
 }

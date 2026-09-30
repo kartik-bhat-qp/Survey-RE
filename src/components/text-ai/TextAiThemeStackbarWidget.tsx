@@ -105,7 +105,6 @@ export function TextAiThemeStackbarWidget({
       <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
         <div className={styles.titleBlock}>
           <h2 className={styles.cardTitle}>{question}</h2>
-          <span className={styles.widgetLabel}>Theme</span>
         </div>
         <TextAiWidgetMenu
           widgetTitle={question}

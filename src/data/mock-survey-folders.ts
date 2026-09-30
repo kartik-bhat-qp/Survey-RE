@@ -94,6 +94,7 @@ export const MOCK_SURVEYS: SurveyListItem[] = [
     takeNextIdBlock(SURVEYS_PER_FOLDER),
     SURVEYS_PER_FOLDER
   ),
+  { id: 9901, folderId: 'demo-2026', name: 'Customer experience — Question Stack demo', creationDate: '2026-09-30T10:00:00Z', completedResponses: 109 },
 ];
 
 export function getSurveysByFolder(folderId: string): SurveyListItem[] {

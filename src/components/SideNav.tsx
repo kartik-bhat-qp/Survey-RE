@@ -39,7 +39,7 @@ const ANALYTICS_NAV: NavItem[] = [
 ];
 
 const DATA_NAV: NavItem[] = [
-  { label: 'Survey stacks', href: '/survey-stacks', icon: <span className="wm-layers" /> },
+  { label: 'Stacks', href: '/survey-stacks', icon: <span className="wm-layers" /> },
   { label: 'Weightings', href: '/weightings', icon: <span className="wm-balance" /> },
   { label: 'Datasets', href: '/datasets', icon: <span className="wm-table-chart" /> },
   { label: 'Exports', href: '/exports', icon: <span className="wm-download" /> },

@@ -98,7 +98,7 @@ export function TextAiWidgetMenu({
             variant="iconOnly"
             size="sm"
             aria-label="Widget menu"
-            Icon={<span className="wm-more-vert" />}
+            Icon={<span className="wm-more-vert" style={{ fontSize: 16 }} />}
           />
         }
       >

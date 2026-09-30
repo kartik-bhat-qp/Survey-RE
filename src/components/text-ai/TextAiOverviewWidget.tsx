@@ -122,7 +122,6 @@ export function TextAiOverviewWidget({
       <header className={`${styles.header} text-ai-widget-drag-handle`}>
         <div>
           <h2>{s.showName ? s.name : ""}</h2>
-          <span>{TITLES[kind]}</span>
         </div>
         <TextAiWidgetMenu
           widgetTitle={s.name}

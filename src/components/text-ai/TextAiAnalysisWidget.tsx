@@ -75,7 +75,6 @@ export function TextAiAnalysisWidgetCard({
   widget,
   onDelete,
   settings,
-  onSettingsChange,
   onOpenSettings,
   responseFilters = EMPTY_RESPONSE_FILTERS,
   preview,
@@ -88,7 +87,7 @@ export function TextAiAnalysisWidgetCard({
   );
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const [localPageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[3]);
+  const localPageSize = PAGE_SIZE_OPTIONS[3];
   const pageSize = settings
     ? (PAGE_SIZE_OPTIONS.find(
         (option) => Number(option.value) === s.pageSize,
@@ -140,7 +139,7 @@ export function TextAiAnalysisWidgetCard({
       {
         accessorKey: "topic",
         header: "Themes",
-        enableSorting: true,
+        enableSorting: false,
         cell: ({ row }) => (
           <span className={styles.topicCell}>
             <span>{row.original.topic}</span>
@@ -151,7 +150,7 @@ export function TextAiAnalysisWidgetCard({
       {
         accessorKey: "subtopic",
         header: "Sub-themes",
-        enableSorting: true,
+        enableSorting: false,
         cell: ({ row }) => (
           <div className={styles.subtopicCell}>
             {s.highlightSentiment ? (
@@ -243,35 +242,29 @@ export function TextAiAnalysisWidgetCard({
             aria-label="Previous page"
             disabled={safePage === 0}
             onClick={() => setPage((p) => Math.max(0, p - 1))}
-            Icon={<span className="wm-chevron-left" />}
+            Icon={<span className="wm-arrow-back-ios-new" />}
           />
-          <span className={styles.pageRange}>
-            {rangeStart} - {rangeEnd}
-          </span>
+          <WuSelect
+            data={Array.from({ length: pageCount }, (_, index) => ({
+              value: String(index),
+              label: `${filteredRows.length ? index * pageSizeNum + 1 : 0} - ${Math.min((index + 1) * pageSizeNum, filteredRows.length)}`,
+            }))}
+            accessorKey={{ value: "value", label: "label" }}
+            value={{ value: String(safePage), label: `${rangeStart} - ${rangeEnd}` }}
+            onSelect={(option) => { if (option) setPage(Number((option as { value: string }).value)); }}
+            variant="flat"
+            aria-label="Response page"
+            className={styles.pageRange}
+          />
           <WuButton
             variant="iconOnly"
             size="sm"
             aria-label="Next page"
             disabled={safePage >= pageCount - 1}
             onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-            Icon={<span className="wm-chevron-right" />}
+            Icon={<span className="wm-arrow-forward-ios" />}
           />
-          <WuSelect
-            data={PAGE_SIZE_OPTIONS}
-            accessorKey={{ value: "value", label: "label" }}
-            value={pageSize}
-            onSelect={(option) => {
-              if (!option) return;
-              if (settings)
-                onSettingsChange?.({
-                  pageSize: Number((option as { value: string }).value),
-                });
-              else setPageSize(option as (typeof PAGE_SIZE_OPTIONS)[number]);
-              setPage(0);
-            }}
-            variant="outlined"
-            className={styles.pageSizeSelect}
-          />
+
         </div>
       </div>
 

@@ -1,3 +1,4 @@
+import { STACK_DEMO_QUESTIONS, STACK_DEMO_SURVEY_ID } from './question-stacks';
 export type SurveyQuestionType =
   | 'Single Select'
   | 'Multiple Select'
@@ -141,6 +142,7 @@ function buildQuestionsForSurvey(surveyId: number): SurveyQuestion[] {
 const questionsBySurvey = new Map<number, SurveyQuestion[]>();
 
 export function getQuestionsBySurvey(surveyId: number): SurveyQuestion[] {
+  if (surveyId === STACK_DEMO_SURVEY_ID) return [...STACK_DEMO_QUESTIONS.map(q => ({...q, type: 'Single Select' as const})), ...buildQuestionsForSurvey(surveyId)];
   if (!questionsBySurvey.has(surveyId)) {
     questionsBySurvey.set(surveyId, buildQuestionsForSurvey(surveyId));
   }

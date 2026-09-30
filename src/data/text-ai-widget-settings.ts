@@ -1,4 +1,5 @@
 export type TextAiSettingsKind =
+  | "kpi-by-theme"
   | "gauge"
   | "theme-stacked-bar"
   | "subtheme-stacked-bar"

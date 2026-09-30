@@ -183,7 +183,7 @@ export function DashboardDetailTabBar({
             globalInsightRefreshFailedWidgetIds={globalInsightRefreshFailedWidgetIds}
             lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
             onInsightsRefreshed={onInsightsRefreshed}
-            addedWidgets={addedWidgets}
+            addedWidgets={addedWidgets?.filter(widget=>!widget.questionStack?.tabId||widget.questionStack.tabId===activeTab.id)}
             dashboardName={dashboardName}
           />
         )}

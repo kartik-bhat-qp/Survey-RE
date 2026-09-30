@@ -1,8 +1,8 @@
 .card {
-  border-radius: var(--dashboard-card-radius, 4px);
+  border-radius: var(--text-ai-card-radius, 8px);
   box-shadow: var(--dashboard-card-shadow, none);
   background: #fff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(0, 0, 0, 0.2);
   color: #545e6b;
   display: flex;
   flex-direction: column;
@@ -20,8 +20,11 @@
   flex: 0 0 auto;
   gap: 12px;
   justify-content: space-between;
-  min-height: 56px;
-  padding: 8px 16px;
+
+  padding: 5px 16px;
+
+  min-height: 44px;
+  box-sizing: border-box;
 }
 
 .titleBlock {
@@ -31,9 +34,9 @@
 
 .cardTitle {
   color: var(--dashboard-accent, #1b3380);
-  font-size: var(--dashboard-widget-title-size, 18px);
-  font-weight: var(--dashboard-widget-font-weight, 500);
-  line-height: 24px;
+  font-size: var(--dashboard-widget-title-size, 16px);
+  font-weight: var(--dashboard-widget-title-weight, 500);
+  line-height: 1.5;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -43,7 +46,7 @@
 .widgetLabel {
   color: #7b8491;
   display: block;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7857);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 0.8462);
   line-height: 16px;
 }
 
@@ -64,7 +67,7 @@
 
 .table th {
   color: #8b95a1;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7857);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 0.8462);
   font-weight: var(--dashboard-widget-font-weight, 500);
   letter-spacing: 0.04em;
   line-height: 16px;
@@ -102,7 +105,7 @@
   align-items: center;
   color: #3f4b5a;
   display: flex;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.9286);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 1.0000);
   font-weight: var(--dashboard-widget-font-weight, 600);
   gap: 8px;
   line-height: 18px;
@@ -167,7 +170,7 @@
 .coeffLabel {
   color: #8b95a1;
   flex: 0 0 auto;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7857);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 0.8462);
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -179,7 +182,7 @@
 }
 
 .netCell {
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.9286);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 1.0000);
   font-weight: var(--dashboard-widget-font-weight, 600);
 }
 
@@ -193,7 +196,7 @@
 
 .countCell {
   color: #8b95a1;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.8571);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 0.9231);
 }
 
 .axisRow {
@@ -211,7 +214,7 @@
 .axisScale {
   color: #a0a8b2;
   display: flex;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7143);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 0.8462);
   font-variant-numeric: tabular-nums;
   justify-content: space-between;
   line-height: 14px;
@@ -226,7 +229,7 @@
   border-top: 1px solid #edf0f3;
   color: #8b95a1;
   flex: 0 0 auto;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 0.7857);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 0.8462);
   line-height: 16px;
   padding: 10px 16px 12px;
 }

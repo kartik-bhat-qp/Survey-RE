@@ -25,6 +25,8 @@ export interface TextAiKpiResponse {
   sentiment: TextAiKpiSentiment;
   tags: TextAiKpiThemeTag[];
   answers: Partial<Record<TextAiKpiId, number>>;
+  collectedOn?: string;
+  analysisStatus?: 'completed' | 'pending' | 'failed';
 }
 
 export interface TextAiKpiSentimentDistribution {
@@ -38,9 +40,12 @@ export interface TextAiKpiThemeResult {
   label: string;
   parentTheme?: string;
   responseCount: number;
-  score: number;
-  netImpact: number;
-  delta: number;
+  score: number | null;
+  impact: number | null;
+  excludingScore: number | null;
+  comparisonCount: number;
+  responseShare: number;
+  unavailableReason: 'No matching responses' | 'No comparison group' | null;
   tone: TextAiKpiDeltaTone;
   lowSample: boolean;
   sentiment: TextAiKpiSentimentDistribution;
@@ -51,7 +56,10 @@ export interface TextAiKpiThemeResult {
 export interface TextAiKpiAnalysis {
   definition: TextAiKpiDefinition;
   pairedResponseCount: number;
-  overallScore: number;
+  overallScore: number | null;
+  sourceResponseCount: number;
+  scoredResponseCount: number;
+  coverage: number | null;
   sentiment: TextAiKpiSentimentDistribution;
   rows: TextAiKpiThemeResult[];
 }
@@ -59,6 +67,8 @@ export interface TextAiKpiAnalysis {
 export interface TextAiKpiWidgetInstance {
   id: string;
   question: string;
+  kpiId?: TextAiKpiId;
+  name?: string;
 }
 
 interface ThemeDefinition {
@@ -264,6 +274,8 @@ function createResponses(): TextAiKpiResponse[] {
       sentiment,
       tags,
       answers: createAnswerSet(rating, responseIndex),
+      collectedOn: `2026-09-${String(1 + (responseIndex % 28)).padStart(2, '0')}`,
+      analysisStatus: 'completed',
     };
   });
 }
@@ -274,172 +286,131 @@ function uniqueResponses(responses: readonly TextAiKpiResponse[]): TextAiKpiResp
   return [...new Map(responses.map((response) => [response.id, response])).values()];
 }
 
-function calculateScore(
-  definition: TextAiKpiDefinition,
-  responses: readonly TextAiKpiResponse[]
-): number {
-  const values = responses.flatMap((response) => {
-    const value = response.answers[definition.id];
-    return value === undefined ? [] : [value];
-  });
-  if (values.length === 0) return 0;
+/** Only complete, nonblank analyzed text with a finite in-range KPI enters the base. */
+function hasValidAnswer(definition: TextAiKpiDefinition, response: TextAiKpiResponse): boolean {
+  const value = response.answers[definition.id];
+  return typeof value === 'number' && Number.isFinite(value) &&
+    value >= definition.scaleMin && value <= definition.scaleMax &&
+    (definition.kind !== 'nps' || Number.isInteger(value));
+}
 
+function calculateScore(definition: TextAiKpiDefinition, responses: readonly TextAiKpiResponse[]): number | null {
+  if (!responses.length) return null;
+  const values = responses.map(response => response.answers[definition.id]!);
   if (definition.kind === 'nps') {
-    const promoters = values.filter((value) => value >= 9).length;
-    const detractors = values.filter((value) => value <= 6).length;
-    return ((promoters - detractors) / values.length) * 100;
+    return 100 * (values.filter(value => value >= 9).length - values.filter(value => value <= 6).length) / values.length;
   }
-  if (definition.kind === 'top-box') {
-    const satisfied = values.filter((value) => value >= 4).length;
-    return (satisfied / values.length) * 100;
-  }
+  if (definition.kind === 'top-box') return 100 * values.filter(value => value >= 4).length / values.length;
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-function calculateSentiment(
-  responses: readonly TextAiKpiResponse[]
-): TextAiKpiSentimentDistribution {
-  if (responses.length === 0) return { positive: 0, neutral: 0, negative: 0 };
-  const count = (sentiment: TextAiKpiSentiment) =>
-    responses.filter((response) => response.sentiment === sentiment).length;
-  return {
-    positive: (count('positive') / responses.length) * 100,
-    neutral: (count('neutral') / responses.length) * 100,
-    negative: (count('negative') / responses.length) * 100,
-  };
-}
-
-function resolveDeltaTone(
-  definition: TextAiKpiDefinition,
-  delta: number,
-  responseCount: number
-): TextAiKpiDeltaTone {
-  if (responseCount < LOW_SAMPLE_THRESHOLD) return 'neutral';
-  const threshold = definition.kind === 'mean' ? 0.05 : definition.kind === 'nps' ? 2 : 1;
-  if (delta > threshold) return 'positive';
-  if (delta < -threshold) return 'negative';
-  return 'neutral';
-}
-
-function calculateNetImpact(delta: number, responseCount: number): number {
-  return Math.round(delta * responseCount * 0.08 * 10) / 10;
+function calculateSentiment(responses: readonly TextAiKpiResponse[]): TextAiKpiSentimentDistribution {
+  const share = (sentiment: TextAiKpiSentiment) => responses.length
+    ? 100 * responses.filter(response => response.sentiment === sentiment).length / responses.length : 0;
+  return { positive: share('positive'), neutral: share('neutral'), negative: share('negative') };
 }
 
 function createResult(
-  id: string,
-  label: string,
-  definition: TextAiKpiDefinition,
-  overallScore: number,
-  responses: readonly TextAiKpiResponse[],
-  options?: {
-    parentTheme?: string;
-    subthemes?: TextAiKpiThemeResult[];
-  }
+  id: string, label: string, definition: TextAiKpiDefinition,
+  base: readonly TextAiKpiResponse[], responses: readonly TextAiKpiResponse[],
+  options?: { parentTheme?: string; subthemes?: TextAiKpiThemeResult[] }
 ): TextAiKpiThemeResult {
-  const deduplicated = uniqueResponses(responses);
-  const score = calculateScore(definition, deduplicated);
-  const delta = score - overallScore;
-  const netImpact = calculateNetImpact(delta, deduplicated.length);
+  const matched = uniqueResponses(responses);
+  const ids = new Set(matched.map(response => response.id));
+  const remaining = base.filter(response => !ids.has(response.id));
+  const overallScore = calculateScore(definition, base);
+  const excludingScore = calculateScore(definition, remaining);
+  const unavailableReason = !matched.length ? 'No matching responses' : !remaining.length ? 'No comparison group' : null;
+  const impact = unavailableReason || overallScore === null || excludingScore === null ? null : overallScore - excludingScore;
   return {
-    id,
-    label,
-    parentTheme: options?.parentTheme,
-    responseCount: deduplicated.length,
-    score,
-    netImpact,
-    delta,
-    tone: resolveDeltaTone(definition, delta, deduplicated.length),
-    lowSample: deduplicated.length < LOW_SAMPLE_THRESHOLD,
-    sentiment: calculateSentiment(deduplicated),
-    responses: deduplicated,
-    subthemes: options?.subthemes,
+    id, label, parentTheme: options?.parentTheme,
+    responseCount: matched.length, responseShare: base.length ? 100 * matched.length / base.length : 0,
+    score: calculateScore(definition, matched), excludingScore, comparisonCount: remaining.length,
+    impact, unavailableReason,
+    tone: impact === null || Math.abs(impact) < 1e-10 ? 'neutral' : impact > 0 ? 'positive' : 'negative',
+    lowSample: matched.length > 0 && (matched.length < LOW_SAMPLE_THRESHOLD || remaining.length < LOW_SAMPLE_THRESHOLD),
+    sentiment: calculateSentiment(matched), responses: matched, subthemes: options?.subthemes,
   };
 }
 
-export function getTextAiKpiAnalysis(kpiId: TextAiKpiId): TextAiKpiAnalysis {
-  const definition =
-    TEXT_AI_KPI_DEFINITIONS.find((candidate) => candidate.id === kpiId) ??
-    TEXT_AI_KPI_DEFINITIONS[0];
-  const pairedResponses = TEXT_AI_KPI_RESPONSES.filter(
-    (response) => response.answers[definition.id] !== undefined
-  );
-  const overallScore = calculateScore(definition, pairedResponses);
+export interface TextAiKpiResponseFilter { query?: string; start?: string; end?: string }
 
-  const rows = THEME_DEFINITIONS.map((theme, themeIndex) => {
-    const themeResponses = pairedResponses.filter((response) =>
-      response.tags.some((tag) => tag.theme === theme.name)
-    );
-    const subthemes = theme.subthemes.map((subtheme, subthemeIndex) => {
-      const responses = themeResponses.filter((response) =>
-        response.tags.some(
-          (tag) => tag.theme === theme.name && tag.subtheme === subtheme
-        )
-      );
-      return createResult(
-        `theme-${themeIndex}-subtheme-${subthemeIndex}`,
-        subtheme,
-        definition,
-        overallScore,
-        responses,
-        { parentTheme: theme.name }
-      );
-    });
-    return createResult(
-      `theme-${themeIndex}`,
-      theme.name,
-      definition,
-      overallScore,
-      themeResponses,
-      { subthemes }
-    );
+export function analyzeTextAiKpiResponses(
+  kpiId: TextAiKpiId,
+  responses: readonly TextAiKpiResponse[],
+  filter: TextAiKpiResponseFilter | readonly TextAiKpiResponseFilter[] = {}
+): TextAiKpiAnalysis {
+  const definition = TEXT_AI_KPI_DEFINITIONS.find(candidate => candidate.id === kpiId) ?? TEXT_AI_KPI_DEFINITIONS[1];
+  const filters: readonly TextAiKpiResponseFilter[] = Array.isArray(filter) ? filter : [filter as TextAiKpiResponseFilter];
+  const source = uniqueResponses(responses).filter(response => filters.every(condition => {
+    const query = condition.query?.trim().toLowerCase() ?? '';
+    return (!query || response.text.toLowerCase().includes(query)) &&
+      (!condition.start || Boolean(response.collectedOn && response.collectedOn >= condition.start)) &&
+      (!condition.end || Boolean(response.collectedOn && response.collectedOn <= condition.end));
+  }));
+  const scored = source.filter(response => hasValidAnswer(definition, response));
+  const base = scored.filter(response => response.text.trim() && (!response.analysisStatus || response.analysisStatus === 'completed'));
+  // Parent membership is a union by response ID. Multiple tags never inflate counts.
+  const themes = new Map<string, Set<string>>();
+  source.forEach(response => response.tags.forEach(tag => {
+    if (!themes.has(tag.theme)) themes.set(tag.theme, new Set());
+    if (tag.subtheme) themes.get(tag.theme)!.add(tag.subtheme);
+  }));
+  const rows = [...themes].map(([theme, children]) => {
+    const matched = base.filter(response => response.tags.some(tag => tag.theme === theme));
+    const subthemes = [...children].map(subtheme => createResult(
+      JSON.stringify([theme, subtheme]), subtheme, definition, base,
+      matched.filter(response => response.tags.some(tag => tag.theme === theme && tag.subtheme === subtheme)),
+      { parentTheme: theme }
+    ));
+    return createResult(JSON.stringify([theme]), theme, definition, base, matched, { subthemes });
   });
-
   return {
-    definition,
-    pairedResponseCount: pairedResponses.length,
-    overallScore,
-    sentiment: calculateSentiment(pairedResponses),
-    rows,
+    definition, pairedResponseCount: base.length, sourceResponseCount: source.length,
+    scoredResponseCount: scored.length, coverage: scored.length ? 100 * base.length / scored.length : null,
+    overallScore: calculateScore(definition, base), sentiment: calculateSentiment(base), rows,
   };
 }
 
-export function getDefaultTextAiKpiId(): TextAiKpiId {
-  return TEXT_AI_KPI_DEFINITIONS.reduce(
-    (best, definition) => {
-      const pairedCount = TEXT_AI_KPI_RESPONSES.filter(
-        (response) => response.answers[definition.id] !== undefined
-      ).length;
-      return pairedCount > best.pairedCount
-        ? { id: definition.id, pairedCount }
-        : best;
-    },
-    { id: TEXT_AI_KPI_DEFINITIONS[0].id, pairedCount: -1 }
-  ).id;
+export function getTextAiKpiAnalysis(kpiId: TextAiKpiId, filter: TextAiKpiResponseFilter | readonly TextAiKpiResponseFilter[] = {}): TextAiKpiAnalysis {
+  return analyzeTextAiKpiResponses(kpiId, TEXT_AI_KPI_RESPONSES, filter);
 }
 
-export function formatTextAiKpiScore(
-  definition: TextAiKpiDefinition,
-  score: number
-): string {
-  if (definition.kind === 'nps') return String(Math.round(score));
+export function getDefaultTextAiKpiId(): TextAiKpiId { return 'nps'; }
+
+export function formatTextAiKpiScore(definition: TextAiKpiDefinition, score: number | null): string {
+  if (score === null) return '—';
+  if (definition.kind === 'nps') return score.toFixed(1);
   if (definition.kind === 'top-box') return `${score.toFixed(1)}%`;
   return `${score.toFixed(2)} / ${definition.scaleMax}`;
 }
 
-export function formatTextAiKpiDelta(
-  definition: TextAiKpiDefinition,
-  delta: number
-): string {
-  const prefix = delta > 0 ? '+' : '';
-  if (definition.kind === 'nps') return `${prefix}${Math.round(delta)}`;
-  if (definition.kind === 'top-box') return `${prefix}${delta.toFixed(1)} pts`;
-  return `${prefix}${delta.toFixed(2)}`;
+export function getTextAiKpiImpactUnit(definition: TextAiKpiDefinition): string {
+  return definition.kind === 'nps' ? 'NPS points' : definition.kind === 'top-box' ? 'percentage points' : 'scale points';
 }
 
-export function formatTextAiKpiAnswer(
-  definition: TextAiKpiDefinition,
-  value: number
-): string {
-  if (definition.kind === 'nps') return `${value} / 10`;
+export function formatTextAiKpiDelta(definition: TextAiKpiDefinition, delta: number | null): string {
+  if (delta === null) return '—';
+  const rounded = Number(delta.toFixed(definition.kind === 'mean' ? 2 : 1));
+  return `${rounded > 0 ? '+' : ''}${rounded.toFixed(definition.kind === 'mean' ? 2 : 1)}`;
+}
+
+export function formatTextAiKpiAnswer(definition: TextAiKpiDefinition, value: number): string {
   return `${value} / ${definition.scaleMax}`;
+}
+
+export type TextAiKpiSortColumn = 'theme' | 'impact' | 'score' | 'responses' | 'share';
+export interface TextAiKpiSort { column: TextAiKpiSortColumn; direction: 'ascending' | 'descending' }
+
+/** Sort each hierarchy level independently; unavailable numeric values stay last. */
+export function sortTextAiKpiRows(rows: readonly TextAiKpiThemeResult[], sort: TextAiKpiSort): TextAiKpiThemeResult[] {
+  const value = (row: TextAiKpiThemeResult): number | null => sort.column === 'impact' ? row.impact : sort.column === 'score' ? row.score : sort.column === 'responses' ? row.responseCount : row.responseShare;
+  return [...rows].sort((a, b) => {
+    const direction = sort.direction === 'ascending' ? 1 : -1;
+    if (sort.column === 'theme') return a.label.localeCompare(b.label) * direction;
+    const av = value(a), bv = value(b);
+    if (av === null && bv !== null) return 1;
+    if (bv === null && av !== null) return -1;
+    return ((av ?? 0) - (bv ?? 0)) * direction || a.label.localeCompare(b.label);
+  });
 }

@@ -1,17 +1,17 @@
 .card {
-  border-radius: var(--dashboard-card-radius, 4px);
+  border-radius: var(--text-ai-card-radius, 8px);
   box-shadow: var(--dashboard-card-shadow, none);
   background: #fff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(0, 0, 0, 0.2);
   color: #545e6b;
   display: flex;
   flex: 0 0 auto;
   flex-direction: column;
   font-family: var(--dashboard-widget-font-family, 'Fira Sans', sans-serif);
   font-style: var(--dashboard-widget-font-style, normal);
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 1.0000);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 1.0000);
   font-weight: var(--dashboard-widget-font-weight, 400);
-  line-height: 24px;
+  line-height: 1.7;
   min-width: 0;
   overflow: hidden;
 }
@@ -23,8 +23,11 @@
   flex: 0 0 auto;
   gap: 12px;
   justify-content: space-between;
-  min-height: 48px;
-  padding: 8px 16px;
+
+  padding: 5px 16px;
+
+  min-height: 44px;
+  box-sizing: border-box;
 }
 
 .cardHeaderMain {
@@ -39,9 +42,9 @@
 .cardTitle {
   color: var(--dashboard-accent, #1b3380);
   flex: 1 1 20rem;
-  font-size: var(--dashboard-widget-title-size, 18px);
-  font-weight: var(--dashboard-widget-font-weight, 500);
-  line-height: 32px;
+  font-size: var(--dashboard-widget-title-size, 16px);
+  font-weight: var(--dashboard-widget-title-weight, 500);
+  line-height: 1.5;
   margin: 0;
   min-width: 0;
 }
@@ -63,13 +66,13 @@
   box-sizing: border-box;
   color: #545e6b;
   flex: 1;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 1.0000);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 1.0000);
   font-weight: var(--dashboard-widget-font-weight, 400);
   height: clamp(24rem, 52vh, 34rem);
-  line-height: 24px;
+  line-height: 1.7;
   min-height: 0;
   overflow-y: auto;
-  padding: 1.75rem 1.5rem 2.25rem;
+  padding: 16px;
   scrollbar-gutter: stable;
   scrollbar-color: #8d8d8d transparent;
   scrollbar-width: thin;
@@ -101,12 +104,12 @@
 
 .sectionTitle {
   color: #545e6b;
-  font-size: calc(var(--dashboard-widget-body-size, 14px) * 1.0000);
-  font-weight: var(--dashboard-widget-font-weight, 500);
+  font-size: calc(var(--dashboard-widget-body-size, 13px) * 1.0000);
+  font-weight: 700;
   letter-spacing: 0.01em;
-  line-height: 24px;
+  line-height: 1.7;
   margin: 0 0 0.75rem;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .section p {
@@ -137,12 +140,12 @@
 
 @media (min-width: 640px) {
   .cardHeader {
-    padding: 8px 16px;
+    padding: 5px 16px;
   }
 
   .reportBody {
-    font-size: calc(var(--dashboard-widget-body-size, 14px) * 1.0000);
-    padding: 2rem 2rem 2.5rem;
+    font-size: calc(var(--dashboard-widget-body-size, 13px) * 1.0000);
+    padding: 16px;
   }
 }
 

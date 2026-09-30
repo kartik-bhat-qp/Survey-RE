@@ -1,3 +1,4 @@
+import type { QuestionStackWidgetConfig } from './question-stacks';
 import type { Layout } from 'react-grid-layout';
 
 export type AiWidgetType =
@@ -43,6 +44,7 @@ export interface AiWidgetConfig {
   type: AiWidgetType;
   title: string;
   driverAnalysis?: DriverAnalysisWidgetConfig;
+  questionStack?: QuestionStackWidgetConfig;
 }
 
 const DEFAULT_W = 1;

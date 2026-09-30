@@ -448,6 +448,9 @@ export function TextAiTopicSegmentWidgetCard({
       : rows;
   }, [widget.rows, topN, settings, s]);
 
+  const expandableRows = visibleRows.filter(topicRowHasSubtopics);
+  const allExpanded = expandableRows.length > 0 && expandableRows.every((row) => expandedRowIds.has(row.id));
+
   const maxPercentage = useMemo(
     () => getTopicSegmentMaxPercentage(visibleRows, visibleSegmentKeys),
     // visibleSegmentKeys is derived from widget.visibleSegmentKeys + showChiSquare
@@ -480,6 +483,8 @@ export function TextAiTopicSegmentWidgetCard({
       </article>
     );
   }
+
+  const { WuButton } = wick;
 
   function toggleStatTesting(): void {
     if (settings) {
@@ -527,6 +532,14 @@ export function TextAiTopicSegmentWidgetCard({
             {showChiSquare ? "Disable Stat Testing" : "Stat testing"}
           </button>
         </div>
+        <div className={styles.headerActions}>
+          {expandableRows.length > 0 && <WuButton
+            variant="iconOnly" size="sm"
+            aria-label={allExpanded ? "Collapse all sub-themes" : "Expand all sub-themes"}
+            title={allExpanded ? "Collapse all" : "Expand all"}
+            Icon={<span className={allExpanded ? "wm-shadow-minus" : "wm-shadow-add"} style={{ fontSize: 16 }} aria-hidden />}
+            onClick={() => setExpandedRowIds(allExpanded ? new Set() : new Set(expandableRows.map((row) => row.id)))}
+          />}
         <TextAiWidgetMenu
           widgetTitle={widget.question}
           onOpenSettings={onOpenSettings}
@@ -535,6 +548,7 @@ export function TextAiTopicSegmentWidgetCard({
           onTopNChange={setTopN}
           onDelete={onDelete}
         />
+        </div>
       </header>
 
       <div className={styles.tableWrap}>
@@ -543,7 +557,7 @@ export function TextAiTopicSegmentWidgetCard({
         >
           <thead>
             <tr>
-              <th>Topic</th>
+              <th>Theme</th>
               {showOverall ? (
                 <th
                   className={

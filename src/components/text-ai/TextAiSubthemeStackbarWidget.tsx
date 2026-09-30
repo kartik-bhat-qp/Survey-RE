@@ -230,13 +230,13 @@ export function TextAiSubthemeStackbarWidget({
         <h2 className={styles.cardTitle}>{s.showName?s.name:''}</h2>
         <div className={styles.headerActions}>
           <WuButton
-            variant="secondary"
+            variant="iconOnly"
             size="sm"
             aria-label={allThemesExpanded ? 'Collapse all themes' : 'Expand all themes'}
+            title={allThemesExpanded ? 'Collapse all' : 'Expand all'}
+            Icon={<span className={allThemesExpanded ? 'wm-shadow-minus' : 'wm-shadow-add'} aria-hidden />}
             onClick={toggleAllThemes}
-          >
-            {allThemesExpanded ? 'Collapse all' : 'Expand all'}
-          </WuButton>
+          />
           <TextAiWidgetMenu
             widgetTitle={question}
             onOpenSettings={onOpenSettings}

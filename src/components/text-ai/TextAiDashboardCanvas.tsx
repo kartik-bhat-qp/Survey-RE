@@ -38,10 +38,10 @@ import {
 } from '@/data/mock-text-ai-widget-data';
 import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import type { TextAiThemePreferences } from '@/data/text-ai-theme-preferences';
-import type { TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
+import type { TextAiKpiId, TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
 import type { TextAiSubthemeTrendWidgetInstance } from '@/data/mock-text-ai-subtheme-trend';
 import { DEFAULT_DASHBOARD_DESIGN, getDashboardDesignColorVars, type DashboardDesign } from '@/data/dashboard-design';
-import { getDashboardTypographyCssVars } from '@/components/dashboards/DashboardDesignSettingsTab';
+import { getTextAiTypographyCssVars } from '@/components/text-ai/text-ai-typography';
 import styles from './TextAiDashboardCanvas.module.css';
 
 import 'react-grid-layout/css/styles.css';
@@ -82,8 +82,9 @@ interface TextAiDashboardCanvasProps {
   questionIndex: number;
   /** Widgets added via Add widget (e.g. comparative chart). Shown above default widgets. */
   addedTopicSegmentWidgets?: TextAiTopicSegmentWidget[];
-  /** KPI correlation widgets added through the TextAI widget gallery. */
+  /** KPI impact widgets added through the TextAI widget gallery. */
   addedKpiWidgets?: TextAiKpiWidgetInstance[];
+  onKpiChange?: (widgetId: string, kpiId: TextAiKpiId) => void;
   /** Sub-theme trend widgets added through the TextAI widget gallery. */
   addedSubthemeTrendWidgets?: TextAiSubthemeTrendWidgetInstance[];
   themePreferences: TextAiThemePreferences;
@@ -92,7 +93,7 @@ interface TextAiDashboardCanvasProps {
 const INITIAL_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
   overview: 8,
   'subtheme-comparative': 8,
-  'kpi-by-theme': 8,
+  'kpi-by-theme': 13,
   'subtheme-trend': 8,
   'topic-segment': 9,
   'subtheme-stackbar': 8,
@@ -103,7 +104,7 @@ const INITIAL_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
 const MIN_WIDGET_HEIGHTS: Record<TextAiCanvasWidgetKind, number> = {
   overview: 6,
   'subtheme-comparative': 6,
-  'kpi-by-theme': 8,
+  'kpi-by-theme': 1,
   'subtheme-trend': 8,
   'topic-segment': 5,
   'subtheme-stackbar': 6,
@@ -116,10 +117,10 @@ function createInitialLayout(widgets: TextAiCanvasWidget[], previous: Layout = [
   let x = 0;
   let rowHeight = 0;
   return widgets.map(widget => {
-    const fullWidth = widget.kind === 'topic-segment';
+    const fullWidth = widget.kind === 'topic-segment' || widget.kind === 'kpi-by-theme';
     if (fullWidth && x !== 0) { y += rowHeight; x = 0; rowHeight = 0; }
     const height = previous.find(item => item.i === widget.id)?.h ?? INITIAL_WIDGET_HEIGHTS[widget.kind];
-    const item = { i: widget.id, x, y, w: fullWidth ? 12 : 6, h: height, minW: fullWidth ? 12 : 6, maxW: fullWidth ? 12 : 6, minH: MIN_WIDGET_HEIGHTS[widget.kind] };
+    const item = { isResizable: widget.kind !== 'kpi-by-theme', i: widget.id, x, y, w: fullWidth ? 12 : 6, h: height, minW: fullWidth ? 12 : 6, maxW: fullWidth ? 12 : 6, minH: MIN_WIDGET_HEIGHTS[widget.kind] };
     rowHeight = Math.max(rowHeight, height);
     if (fullWidth || x === 6) { y += rowHeight; x = 0; rowHeight = 0; } else x = 6;
     return item;
@@ -339,10 +340,11 @@ export function TextAiDashboardCanvas({
   addedTopicSegmentWidgets = [],
   addedWidgets = [],
   addedKpiWidgets = [],
+  onKpiChange,
   addedSubthemeTrendWidgets = [],
   themePreferences,
 }: TextAiDashboardCanvasProps) {
-  const designStyle = { ...getDashboardTypographyCssVars(design.typography), ...getDashboardDesignColorVars(design) };
+  const designStyle = { ...getTextAiTypographyCssVars(design.typography), ...getDashboardDesignColorVars(design) };
   const isMobile = useIsMobile();
   const [isPositioning, setIsPositioning] = useState(false);
   const [removedWidgetIds, setRemovedWidgetIds] = useState<Set<string>>(() => new Set());
@@ -403,7 +405,8 @@ export function TextAiDashboardCanvas({
 
   function removeWidget(widgetId: string): void {
     const next=new Set(removedWidgetIds);next.add(widgetId);
-    try{localStorage.setItem(`text-ai-removed-widgets:${dashboardId}`,JSON.stringify([...next]));setRemovedWidgetIds(next);setDeleteError('');}
+    if (widgetId.startsWith('kpi-widget-')) { setRemovedWidgetIds(next); return; }
+    try{localStorage.setItem(`text-ai-removed-widgets:${dashboardId}`,JSON.stringify([...next].filter(id => !id.startsWith('kpi-widget-'))));setRemovedWidgetIds(next);setDeleteError('');}
     catch{setDeleteError('The widget could not be deleted because browser storage is unavailable.');}
   }
 
@@ -430,11 +433,18 @@ export function TextAiDashboardCanvas({
         id,
         kind: 'kpi-by-theme' as const,
         content: (
+          <TextAiConfiguredWidget dashboardId={dashboardId} widgetId={id} kind="kpi-by-theme"
+            title={widget.name ?? 'Impact on KPI'} design={design} dashboardFilter={dashboardFilter}
+            kpiBinding={{ question: widget.question, id: widget.kpiId ?? 'nps', onChange: kpiId => onKpiChange?.(widget.id, kpiId) }}>
           <TextAiKpiByThemeWidget
             key={widget.id}
             question={widget.question}
+            kpiId={widget.kpiId}
+            onContentHeightChange={height => reportKpiHeight(id, height)}
+            responseFilter={dashboardFilter}
             onDelete={() => removeWidget(id)}
           />
+          </TextAiConfiguredWidget>
         ),
       };
     }),
@@ -558,6 +568,15 @@ export function TextAiDashboardCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasWidgetIds]);
 
+  function reportKpiHeight(id: string, pixels: number): void {
+    const h = (Math.ceil(pixels) + TEXT_AI_GRID_MARGIN[1]) / (TEXT_AI_GRID_ROW_HEIGHT + TEXT_AI_GRID_MARGIN[1]);
+    setDesktopLayout(previous => {
+      const item = previous.find(item => item.i === id);
+      if (!item || Math.abs(item.h - h) < 0.001) return previous;
+      return previous.map(item => item.i === id ? { ...item, h, minH: 1, isResizable: false } : item);
+    });
+  }
+
   const widgetById = new Map(canvasWidgets.map((widget) => [widget.id, widget]));
 
   const notifyWidgetResize = useCallback(() => {
@@ -566,7 +585,7 @@ export function TextAiDashboardCanvas({
 
   const handleLayoutChange = useCallback((nextLayout: Layout) => {
     setDesktopLayout(nextLayout.map((item) => ({ ...item })));
-  }, []);
+  }, [setDesktopLayout]);
 
   function startPositioning(): void {
     setIsPositioning(true);

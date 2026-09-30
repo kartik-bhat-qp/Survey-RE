@@ -5,8 +5,8 @@
   height: 100%;
   overflow: hidden;
   background: white;
-  border: 1px solid #d5d8dc;
-  border-radius: var(--dashboard-card-radius, 4px);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: var(--text-ai-card-radius, 8px);
   box-shadow: var(--dashboard-card-shadow, none);
   font-family: var(--dashboard-widget-font-family);
   font-style: var(--dashboard-widget-font-style, normal);
@@ -20,16 +20,19 @@
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid #e5e7eb;
-  padding: 10px 16px;
+  padding: 5px 16px;
+
+  min-height: 44px;
+  box-sizing: border-box;
 }
 .header h2 {
   margin: 0;
-  font-size: var(--dashboard-widget-title-size, 20px);
+  font-size: var(--dashboard-widget-title-size, 16px);
   color: var(--dashboard-accent);
-  font-weight: var(--dashboard-widget-font-weight, 500);
-  line-height: 1.35;
+  font-weight: var(--dashboard-widget-title-weight, 500);
+  line-height: 1.5;
 }
-.header span {
+.header > div > span {
   font-size: 12px;
   color: #7b8491;
 }
@@ -51,10 +54,10 @@
 .trend text {
   fill: currentColor;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12px;
 }
 .gauge .metric {
-  font-size: 36px;
+  font-size: var(--dashboard-widget-metric-size, 32px);
 }
 .legend {
   display: flex;

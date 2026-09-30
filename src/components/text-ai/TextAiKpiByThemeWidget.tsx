@@ -1,241 +1,65 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
-import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
-  formatTextAiKpiAnswer,
-  formatTextAiKpiDelta,
-  getDefaultTextAiKpiId,
-  getTextAiKpiAnalysis,
-  type TextAiKpiDefinition,
-  type TextAiKpiSentiment,
-  type TextAiKpiThemeResult,
+  formatTextAiKpiAnswer, formatTextAiKpiDelta,
+  formatTextAiKpiScore, getTextAiKpiAnalysis, getTextAiKpiImpactUnit,
+  type TextAiKpiId, type TextAiKpiDefinition, type TextAiKpiSentiment,
+  type TextAiKpiThemeResult, type TextAiKpiResponseFilter,
+  sortTextAiKpiRows, type TextAiKpiSort, type TextAiKpiSortColumn,
 } from '@/data/mock-text-ai-kpi-by-theme';
-import { formatThemeNetImpact } from '@/data/mock-text-ai-theme-impact';
-import {
-  limitTextAiWidgetItems,
-  type TextAiWidgetTopN,
-} from '@/data/mock-text-ai-widget-settings';
+import { limitTextAiWidgetItems, parseTextAiWidgetTopN } from '@/data/mock-text-ai-widget-settings';
+import { defaultTextAiWidgetSettings, type TextAiWidgetSettingsProps } from '@/data/text-ai-widget-settings';
 import styles from './TextAiKpiByThemeWidget.module.css';
 
-interface TextAiKpiByThemeWidgetProps {
+const WuButton = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => ({ default: m.WuButton })), { ssr: false });
+
+// Load the dialog and its accessible title together, avoiding a title-less first render.
+const ResponsesDialog = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => {
+  return function ResponsesDialogContent({ children, onClose, title = 'Supporting responses' }: { children: ReactNode; onClose: () => void; title?: string }) {
+    return <m.WuModal open onOpenChange={open => { if (!open) onClose(); }} size="md" className={styles.modal}>
+      <m.WuModalHeader className={styles.modalTitle}>{title}</m.WuModalHeader>
+      <m.WuModalContent className={styles.modalContent}>{children}</m.WuModalContent>
+    </m.WuModal>;
+  };
+}), { ssr: false });
+
+interface TextAiKpiByThemeWidgetProps extends TextAiWidgetSettingsProps {
   question: string;
+  onContentHeightChange?: (height: number) => void;
+  kpiId?: TextAiKpiId;
+  responseFilter?: TextAiKpiResponseFilter;
   onDelete?: () => void;
 }
-
 interface DrilldownContext {
   row: TextAiKpiThemeResult;
   definition: TextAiKpiDefinition;
+  overallScore: number | null;
+}
+const SENTIMENT_LABELS: Record<TextAiKpiSentiment, string> = { positive: 'Positive', neutral: 'Neutral', negative: 'Negative' };
+
+function describeImpact(row: TextAiKpiThemeResult, definition: TextAiKpiDefinition, overall: number | null): string {
+  if (row.unavailableReason) return row.unavailableReason + '. Impact is unavailable.';
+  return `Overall KPI is ${formatTextAiKpiScore(definition, overall)}. Without responses mentioning ${row.label}, it is ${formatTextAiKpiScore(definition, row.excludingScore)}. The difference is ${formatTextAiKpiDelta(definition, row.impact)} ${getTextAiKpiImpactUnit(definition)}.`;
 }
 
-type KpiSortKey =
-  | 'responses'
-  | 'netImpact'
-  | 'delta'
-  | 'sentiment';
-
-interface KpiSortState {
-  key: KpiSortKey;
-  direction: 'ascending' | 'descending';
-}
-
-const SENTIMENT_LABELS: Record<TextAiKpiSentiment, string> = {
-  positive: 'Positive',
-  neutral: 'Neutral',
-  negative: 'Negative',
-};
-
-function getSortValue(row: TextAiKpiThemeResult, key: KpiSortKey): string | number {
-  if (key === 'responses') return row.responseCount;
-  if (key === 'netImpact') return row.netImpact;
-  if (key === 'delta') return row.delta;
-  return row.sentiment.positive;
-}
-
-function sortKpiRows(
-  rows: readonly TextAiKpiThemeResult[],
-  sortState: KpiSortState | null
-): TextAiKpiThemeResult[] {
-  if (!sortState) return [...rows];
-  const multiplier = sortState.direction === 'ascending' ? 1 : -1;
-  return [...rows].sort((left, right) => {
-    const leftValue = getSortValue(left, sortState.key);
-    const rightValue = getSortValue(right, sortState.key);
-    return (Number(leftValue) - Number(rightValue)) * multiplier;
-  });
-}
-
-function SortableHeader({
-  label,
-  sortKey,
-  sortState,
-  onSort,
-  className,
-  align = 'left',
-}: {
-  label: string;
-  sortKey: KpiSortKey;
-  sortState: KpiSortState | null;
-  onSort: (key: KpiSortKey) => void;
-  className?: string;
-  align?: 'left' | 'right';
+function ImpactBar({ row, definition, extent, onClick, overall }: {
+  row: TextAiKpiThemeResult; definition: TextAiKpiDefinition; extent: number; onClick: () => void; overall: number | null;
 }) {
-  const active = sortState?.key === sortKey;
-  const ariaSort = active ? sortState.direction : 'none';
-  return (
-    <th
-      className={className}
-      aria-sort={ariaSort}
-      style={align === 'right' ? { textAlign: 'right' } : undefined}
-    >
-      <button
-        type="button"
-        className={`${styles.sortButton} ${active ? styles.sortButtonActive : ''} ${
-          align === 'right' ? styles.sortButtonRight : ''
-        }`}
-        onClick={() => onSort(sortKey)}
-      >
-        <span>{label}</span>
-        <span className={styles.sortIndicator} aria-hidden>
-          {active ? (sortState?.direction === 'ascending' ? '↑' : '↓') : '↕'}
-        </span>
-      </button>
-    </th>
-  );
-}
-
-function SentimentBar({ row }: { row: TextAiKpiThemeResult }) {
-  return (
-    <div className={styles.sentimentCell}>
-      <div
-        className={styles.sentimentBar}
-        role="img"
-        aria-label={`${row.sentiment.positive.toFixed(0)}% positive, ${row.sentiment.neutral.toFixed(0)}% neutral, ${row.sentiment.negative.toFixed(0)}% negative`}
-      >
-        <span
-          className={styles.sentimentPositive}
-          style={{ width: `${row.sentiment.positive}%` }}
-        />
-        <span
-          className={styles.sentimentNeutral}
-          style={{ width: `${row.sentiment.neutral}%` }}
-        />
-        <span
-          className={styles.sentimentNegative}
-          style={{ width: `${row.sentiment.negative}%` }}
-        />
-      </div>
-      <span className={styles.sentimentValue}>
-        {row.sentiment.positive.toFixed(0)}% positive
+  const value = row.impact ?? 0;
+  return <button type="button" className={styles.impactButton} onClick={onClick}
+    title={describeImpact(row, definition, overall)} aria-label={describeImpact(row, definition, overall) + ' View calculation and responses.'}>
+    {row.impact === null ? <span className={styles.unavailable}>{row.unavailableReason}</span> : <>
+      <span className={styles.barTrack} aria-hidden="true">
+        <span className={styles.zeroLine} />
+        <span className={`${styles.impactBar} ${value < 0 ? styles.barNegative : styles.barPositive}`}
+          style={{ left: `${value < 0 ? 50 - Math.abs(value) / extent * 50 : 50}%`, width: `${Math.abs(value) / extent * 50}%` }} />
       </span>
-    </div>
-  );
-}
-
-function DeltaVisual({
-  row,
-  definition,
-}: {
-  row: TextAiKpiThemeResult;
-  definition: TextAiKpiDefinition;
-}) {
-  const maximumDelta =
-    definition.kind === 'mean'
-      ? definition.scaleMax - definition.scaleMin
-      : definition.kind === 'nps'
-        ? 200
-        : 100;
-  const width = Math.min(100, (Math.abs(row.delta) / maximumDelta) * 100);
-  const formatted = formatTextAiKpiDelta(definition, row.delta);
-  const isPositive = row.delta > 0;
-  const isNegative = row.delta < 0;
-
-  return (
-    <div
-      className={styles.deltaTrack}
-      role="img"
-      aria-label={`${row.label} impact per mention: ${formatted}`}
-    >
-      <div className={styles.deltaNegative}>
-        {isNegative ? (
-          <>
-            <span className={`${styles.coeffLabel} ${styles.deltaNegative}`}>
-              {formatted}
-            </span>
-            <span className={styles.negativeBar} style={{ width: `${width}%` }} />
-          </>
-        ) : null}
-      </div>
-      <span className={styles.deltaAxis} aria-hidden />
-      <div className={styles.deltaPositive}>
-        {isPositive ? (
-          <>
-            <span className={styles.positiveBar} style={{ width: `${width}%` }} />
-            <span className={`${styles.coeffLabel} ${styles.deltaPositive}`}>
-              {formatted}
-            </span>
-          </>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function KpiResultRow({
-  row,
-  definition,
-  onDrilldown,
-}: {
-  row: TextAiKpiThemeResult;
-  definition: TextAiKpiDefinition;
-  onDrilldown: (row: TextAiKpiThemeResult) => void;
-}) {
-  return (
-    <tr>
-      <td className={styles.themeCell}>
-        <button
-          type="button"
-          className={styles.subthemeLink}
-          onClick={() => onDrilldown(row)}
-          aria-label={`View responses for sub-theme ${row.label}`}
-        >
-          <span className={styles.subthemeName}>{row.label}</span>
-          {row.parentTheme ? (
-            <span className={styles.parentTheme}>{row.parentTheme}</span>
-          ) : null}
-        </button>
-      </td>
-      <td className={styles.countCell}>
-        <button
-          type="button"
-          className={styles.countLink}
-          onClick={() => onDrilldown(row)}
-          aria-label={`View ${row.responseCount} matched responses for ${row.label}`}
-        >
-          {row.responseCount.toLocaleString('en-US')}
-        </button>
-        {row.lowSample ? <span className={styles.lowSample}>Low sample</span> : null}
-      </td>
-      <td
-        className={`${styles.netCell} ${
-          row.netImpact > 0
-            ? styles.netPositive
-            : row.netImpact < 0
-              ? styles.netNegative
-              : ''
-        }`}
-      >
-        {formatThemeNetImpact(row.netImpact)}
-      </td>
-      <td className={styles.deltaCell}>
-        <DeltaVisual row={row} definition={definition} />
-      </td>
-      <td className={styles.sentimentCellWrap}>
-        <SentimentBar row={row} />
-      </td>
-    </tr>
-  );
+      <strong className={value < 0 ? styles.netNegative : value > 0 ? styles.netPositive : ''}>{formatTextAiKpiDelta(definition, row.impact)}</strong>
+    </>}
+  </button>;
 }
 
 function TextAiKpiResponsesModal({
@@ -245,7 +69,6 @@ function TextAiKpiResponsesModal({
   context: DrilldownContext | null;
   onClose: () => void;
 }) {
-  const wick = useWickUILib();
   const [search, setSearch] = useState('');
   const filteredResponses = useMemo(() => {
     if (!context) return [];
@@ -258,39 +81,33 @@ function TextAiKpiResponsesModal({
     );
   }, [context, search]);
 
-  if (!context || !wick) return null;
-  const { WuModal, WuModalHeader, WuModalContent } = wick;
+  if (!context) return null;
 
   return (
-    <WuModal
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          setSearch('');
-          onClose();
-        }
-      }}
-      size="md"
-      className={styles.modal}
-    >
-      <WuModalHeader className={styles.modalTitle}>Supporting responses</WuModalHeader>
-      <WuModalContent className={styles.modalContent}>
+    <ResponsesDialog onClose={onClose}>
         <div className={styles.modalContext}>
           <div>
-            <span className={styles.modalEyebrow}>Sub-theme</span>
+            <span className={styles.modalEyebrow}>{context.row.parentTheme ? 'Subtheme' : 'Theme'}</span>
             <strong>{context.row.label}</strong>
             {context.row.parentTheme ? (
               <span className={styles.modalParentTheme}>{context.row.parentTheme}</span>
             ) : null}
           </div>
           <div>
-            <span className={styles.modalEyebrow}>Net impact</span>
-            <strong>{formatThemeNetImpact(context.row.netImpact)}</strong>
+            <span className={styles.modalEyebrow}>Observed impact</span>
+            <strong>{formatTextAiKpiDelta(context.definition, context.row.impact)} {getTextAiKpiImpactUnit(context.definition)}</strong>
           </div>
           <div>
             <span className={styles.modalEyebrow}>Matched responses</span>
             <strong>{context.row.responseCount.toLocaleString('en-US')}</strong>
           </div>
+        </div>
+        <div className={styles.calculation}>
+          <strong>How this is calculated</strong>
+          <p>{describeImpact(context.row, context.definition, context.overallScore)}</p>
+          <p>KPI among these respondents: {formatTextAiKpiScore(context.definition, context.row.score)}.
+            Comparison group: {context.row.comparisonCount.toLocaleString('en-US')} responses.</p>
+          <p>This is an observed difference, not a prediction of improvement. Searching below only filters this list.</p>
         </div>
         <div className={styles.modalQuestion}>
           <span className={styles.modalEyebrow}>KPI question</span>
@@ -307,7 +124,7 @@ function TextAiKpiResponsesModal({
             placeholder="Search responses"
             aria-label="Search supporting responses"
           />
-          <span>{filteredResponses.length.toLocaleString('en-US')} responses</span>
+          <span>{filteredResponses.length.toLocaleString('en-US')} {filteredResponses.length === 1 ? 'response' : 'responses'}</span>
         </div>
         <div className={styles.responseList}>
           {filteredResponses.map((response) => {
@@ -355,115 +172,127 @@ function TextAiKpiResponsesModal({
             <p className={styles.emptyState}>No responses match your search.</p>
           ) : null}
         </div>
-      </WuModalContent>
-    </WuModal>
+    </ResponsesDialog>
   );
 }
 
-export function TextAiKpiByThemeWidget({
-  question,
-  onDelete,
-}: TextAiKpiByThemeWidgetProps) {
+export function TextAiKpiByThemeWidget({ question, kpiId = 'nps', responseFilter, onDelete, settings, onOpenSettings, responseFilters, preview, onContentHeightChange }: TextAiKpiByThemeWidgetProps) {
+  const cardRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (preview || !onContentHeightChange || !cardRef.current) return;
+    const card = cardRef.current;
+    const observer = new ResizeObserver(() => onContentHeightChange(card.getBoundingClientRect().height));
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [preview, onContentHeightChange]);
+  const selectedKpi = kpiId;
+  const s = settings ?? defaultTextAiWidgetSettings('kpi-by-theme', 'Impact on KPI');
   const [drilldown, setDrilldown] = useState<DrilldownContext | null>(null);
-  const [topN, setTopN] = useState<TextAiWidgetTopN>(10);
-  const [sortState, setSortState] = useState<KpiSortState>({
-    key: 'responses',
-    direction: 'descending',
-  });
-  const analysis = useMemo(() => getTextAiKpiAnalysis(getDefaultTextAiKpiId()), []);
-  const subthemeRows = useMemo(
-    () => analysis.rows.flatMap((row) => row.subthemes ?? []),
-    [analysis.rows]
-  );
-  const sortedRows = sortKpiRows(subthemeRows, sortState);
-  const visibleRows = limitTextAiWidgetItems(sortedRows, topN);
-
-  function handleSort(key: KpiSortKey): void {
-    setSortState((current) => ({
-      key,
-      direction:
-        current?.key === key && current.direction === 'ascending'
-          ? 'descending'
-          : 'ascending',
-    }));
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const topN = parseTextAiWidgetTopN(s.display === 'All' ? 'all' : s.display.replace('Top ', ''));
+  useEffect(() => {
+    // A change to the settings default resets the local disclosure state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setExpanded(new Set());
+  }, [s.expanded]);
+  const [sort, setSort] = useState<TextAiKpiSort>({ column: 'impact', direction: 'ascending' });
+  const analysis = useMemo(() => getTextAiKpiAnalysis(selectedKpi, responseFilters ?? responseFilter), [selectedKpi, responseFilter, responseFilters]);
+  const { definition } = analysis;
+  const visibleRows = limitTextAiWidgetItems(sortTextAiKpiRows(analysis.rows, sort), topN);
+  const isExpanded = (id: string) => s.expanded ? !expanded.has(id) : expanded.has(id);
+  const allExpanded = visibleRows.length > 0 && visibleRows.every(row => isExpanded(row.id));
+  const allRows = analysis.rows.flatMap(row => [row, ...(row.subthemes ?? [])]);
+  const maxImpact = Math.max(...allRows.map(row => Math.abs(row.impact ?? 0)), 0);
+  // One symmetric scale for parents and children, unchanged by expansion or sorting.
+  const step = definition.kind === 'mean' ? 0.1 : 5;
+  const extent = Math.max(step, Math.ceil(maxImpact / step) * step);
+  const unit = getTextAiKpiImpactUnit(definition);
+  const impactLabel = `Impact (${definition.kind === 'top-box' ? 'pp' : 'pts'})`;
+  const scoreLabel = definition.kind === 'nps' ? 'NPS' : definition.kind === 'top-box' ? 'CSAT' : 'Mean rating';
+  const title = s.name;
+  const openResponses = (row: TextAiKpiThemeResult) => setDrilldown({ row, definition, overallScore: analysis.overallScore });
+  function toggle(id: string) {
+    setExpanded(current => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   }
-
-  return (
-    <>
-      <article className={styles.card}>
-        <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
-          <div className={styles.cardHeaderMain}>
-            <div className={styles.titleBlock}>
-              <h2 className={styles.cardTitle}>{question}</h2>
-              <span className={styles.widgetLabel}>KPI by Theme</span>
-            </div>
-          </div>
-          <TextAiWidgetMenu
-            widgetTitle={`${question} KPI by Theme`}
-            topN={topN}
-            onTopNChange={setTopN}
-            onDelete={onDelete}
-          />
-        </header>
-
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className={styles.subthemeHeading}>Sub-theme</th>
-                <SortableHeader
-                  label="n"
-                  sortKey="responses"
-                  sortState={sortState}
-                  onSort={handleSort}
-                  className={styles.countHeading}
-                  align="right"
-                />
-                <SortableHeader
-                  label="Net impact"
-                  sortKey="netImpact"
-                  sortState={sortState}
-                  onSort={handleSort}
-                  className={styles.netHeading}
-                  align="right"
-                />
-                <SortableHeader
-                  label="Impact per mention"
-                  sortKey="delta"
-                  sortState={sortState}
-                  onSort={handleSort}
-                  className={styles.deltaHeading}
-                />
-                <SortableHeader
-                  label="Sentiment"
-                  sortKey="sentiment"
-                  sortState={sortState}
-                  onSort={handleSort}
-                  className={styles.sentimentHeading}
-                  align="right"
-                />
-              </tr>
-            </thead>
-            <tbody>
-              {visibleRows.map((row) => (
-                <KpiResultRow
-                  key={row.id}
-                  row={row}
-                  definition={analysis.definition}
-                  onDrilldown={(selectedRow) =>
-                    setDrilldown({ row: selectedRow, definition: analysis.definition })
-                  }
-                />
-              ))}
-            </tbody>
-          </table>
+  function sortHeading(column: TextAiKpiSortColumn, label: string, description?: string) {
+    const active = sort.column === column;
+    return <button type="button" className={styles.sortButton} onClick={() => setSort({ column, direction: active && sort.direction === 'ascending' ? 'descending' : 'ascending' })}
+      aria-label={`Sort by ${label}`} title={description ?? `Sort ${active && sort.direction === 'ascending' ? 'descending' : 'ascending'}`}>
+      {label}<span aria-hidden="true" className={`${styles.sortIcons} ${active ? styles.sortedIcons : ''}`}>
+        {(!active || sort.direction !== 'ascending') && <span className={`wm-arrow-drop-down ${styles.sortDown}`} />}
+        {(!active || sort.direction !== 'descending') && <span className={`wm-arrow-drop-up ${styles.sortUp}`} />}
+      </span>
+    </button>;
+  }
+  function renderRow(row: TextAiKpiThemeResult, child = false) {
+    return <tr key={row.id} className={child ? styles.childRow : undefined}>
+      <th scope="row" className={styles.themeCell}>
+        <div className={styles.themeLabel}>
+          {!child && Boolean(row.subthemes?.length) ? <button type="button" className={styles.expandButton}
+            aria-label={`${isExpanded(row.id) ? 'Collapse' : 'Expand'} ${row.label}`} aria-expanded={isExpanded(row.id)} onClick={() => toggle(row.id)}>
+            <span aria-hidden="true" className={`wm-chevron-right ${isExpanded(row.id) ? styles.expandedChevron : ''}`} />
+          </button> : <span className={styles.indent} />}
+          <button type="button" className={styles.themeLink} onClick={() => openResponses(row)}>{row.label}</button>
         </div>
-      </article>
+      </th>
+      <td><ImpactBar row={row} definition={definition} extent={extent} overall={analysis.overallScore} onClick={() => openResponses(row)} /></td>
+      <td className={styles.scoreCell}>{formatTextAiKpiScore(definition, row.score)}</td>
+      <td className={styles.countCell}>
+        <button type="button" className={styles.countLink} aria-label={`View ${row.responseCount} responses for ${row.label}`} onClick={() => openResponses(row)}>{row.responseCount.toLocaleString('en-US')}</button>
+        {row.lowSample && <span className={styles.lowSample} title="Fewer than 30 responses in this group or the comparison group. Interpret cautiously.">Small sample</span>}
+      </td>
+      <td className={styles.scoreCell}>{row.responseShare.toFixed(1)}%</td>
+    </tr>;
+  }
+  return <>
+    <article ref={cardRef} className={styles.card} aria-label="Impact on KPI widget">
+      <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
+        <h2 className={styles.cardTitle}>{s.showName ? title : ''}</h2>
+        <div className={styles.headerActions}>
+          <WuButton variant="iconOnly" size="sm" disabled={!visibleRows.length}
+            aria-label={allExpanded ? 'Collapse all themes' : 'Expand all themes'} title={allExpanded ? 'Collapse all' : 'Expand all'}
+            Icon={<span className={allExpanded ? 'wm-shadow-minus' : 'wm-shadow-add'} aria-hidden />}
+            onClick={() => setExpanded(allExpanded !== s.expanded ? new Set() : new Set(visibleRows.map(row => row.id)))} />
+          <TextAiWidgetMenu widgetTitle={title} onOpenSettings={onOpenSettings} onDelete={onDelete} preview={preview} />
+        </div>
+      </header>
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead><tr>
+            <th scope="col" className={styles.themeHeading} aria-sort={sort.column === 'theme' ? sort.direction : undefined}>{sortHeading('theme', 'Theme / subtheme')}</th>
+            <th scope="col" className={styles.impactHeading} aria-sort={sort.column === 'impact' ? sort.direction : undefined}>{sortHeading('impact', impactLabel, `${definition.label}: overall KPI minus KPI excluding this theme, in ${unit}. Bars share a symmetric scale from −${extent} to +${extent}.`)}</th>
+            <th scope="col" className={styles.scoreHeading} aria-sort={sort.column === 'score' ? sort.direction : undefined} title="KPI among the respondents in this row">{sortHeading('score', scoreLabel)}</th>
+            <th scope="col" className={styles.countHeading} aria-sort={sort.column === 'responses' ? sort.direction : undefined}>{sortHeading('responses', 'Responses')}</th>
+            <th scope="col" className={styles.shareHeading} aria-sort={sort.column === 'share' ? sort.direction : undefined}>{sortHeading('share', 'Share of base')}</th>
+          </tr></thead>
+          <tbody>
 
-      <TextAiKpiResponsesModal
-        context={drilldown}
-        onClose={() => setDrilldown(null)}
-      />
-    </>
-  );
+            {analysis.pairedResponseCount === 0 ? <tr><td colSpan={5} className={styles.emptyState}>No eligible responses. Change the KPI in widget settings or adjust dashboard filters.</td></tr> : visibleRows.map(row => <Fragment key={row.id}>{renderRow(row)}{isExpanded(row.id) && sortTextAiKpiRows(row.subthemes ?? [], sort).map(child => renderRow(child, true))}</Fragment>)}
+          </tbody>
+          {s.showOverall && <tfoot>
+            <tr className={styles.overallRow}>
+              <th scope="row"><button type="button" className={styles.overallButton} onClick={() => setDetailsOpen(true)} title="Baseline across all eligible analyzed responses, not a sum of themes. View coverage and calculation details.">Overall</button></th>
+              <td className={styles.baselineCell}><span title="Baseline for comparison; overall impact is not defined.">—</span></td>
+              <td className={styles.scoreCell}>{formatTextAiKpiScore(definition, analysis.overallScore)}</td>
+              <td className={styles.countCell}>{analysis.pairedResponseCount.toLocaleString('en-US')}</td>
+              <td className={styles.scoreCell}>{analysis.pairedResponseCount ? '100.0%' : '—'}</td>
+            </tr>
+          </tfoot>}
+        </table>
+      </div>
+    </article>
+    {detailsOpen && <ResponsesDialog title="About this analysis" onClose={() => setDetailsOpen(false)}>
+      <div className={styles.settingsForm}>
+        <p><strong>Analyzed text question:</strong> {question}</p>
+        <p><strong>KPI question:</strong> {definition.code} · {definition.question}</p>
+        <p><strong>Overall:</strong> {formatTextAiKpiScore(definition, analysis.overallScore)} across {analysis.pairedResponseCount.toLocaleString('en-US')} unique responses with analyzed, nonblank text and a valid KPI. The selected response filters apply to the entire calculation.</p>
+        <p><strong>Text coverage:</strong> {analysis.coverage === null ? 'Unavailable' : `${analysis.coverage.toFixed(1)}%`} of {analysis.scoredResponseCount.toLocaleString('en-US')} valid KPI responses have analyzed text. {analysis.sourceResponseCount - analysis.pairedResponseCount} source responses are excluded because the KPI is missing/invalid or text is blank/unanalyzed.</p>
+        <p><strong>Impact:</strong> overall KPI − KPI excluding responses mentioning this theme. Click an impact to inspect both values and the supporting responses.</p>
+        <p>Each row’s {scoreLabel} is the KPI among its respondents. Subthemes use the same overall base. Themes can overlap, so their counts, shares and impacts do not add up. Observed differences do not predict the effect of fixing an issue.</p>
+        <p className={styles.prototypeNote}>Sample data: synthetic restaurant feedback, shared across question selections in this prototype.</p>
+      </div>
+    </ResponsesDialog>}
+    {drilldown && <TextAiKpiResponsesModal key={`${selectedKpi}-${drilldown.row.id}`} context={drilldown} onClose={() => setDrilldown(null)} />}
+  </>;
 }

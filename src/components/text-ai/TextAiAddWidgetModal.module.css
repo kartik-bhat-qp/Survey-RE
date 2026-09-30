@@ -282,3 +282,8 @@
     min-width: 0;
   }
 }
+
+.kpiStep { padding: 16px 24px; max-width: 680px; margin: 0 auto; font-size: 13px; line-height: 1.6; }
+.kpiStep h3 { font-size: 16px; font-weight: 500; margin: 0 0 16px; }
+.kpiStep > p { margin-bottom: 18px; }
+.prototypeNote { color: #6e7682; font-size: 12px; }
