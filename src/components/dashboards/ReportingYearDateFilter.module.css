@@ -82,7 +82,6 @@
 .settingsSummary .resetButton:focus-visible { outline:2px solid #4688d5; outline-offset:4px; }
 .monthHeading { display:flex; align-items:center; gap:7px; min-height:32px; }
 .monthControls { justify-self:end; display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
-.monthSelect { width:var(--settings-select-width, 151px); height:32px; border:1px solid #9b9b9b; border-radius:3px; padding:0 10px; appearance:none; background:white; color:inherit; font:inherit; cursor:pointer; }
-.monthSelect:hover { border-color:#4688d5; }
-.monthSelect:focus-visible { outline:2px solid #4688d5; outline-offset:2px; }
+.monthSelect { width:var(--settings-select-width, 151px); max-width:100%; }
+.monthSelect > div { width:100%; }
 .monthControls > p { white-space:nowrap; }
