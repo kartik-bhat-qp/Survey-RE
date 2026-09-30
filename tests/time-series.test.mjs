@@ -53,6 +53,35 @@ test('combined scope with no widget date keeps the complete applied reporting ye
   assert.equal(result.selection.endDate,'2027-01-31');assert.equal(result.rows.length,4);
 });
 
+test('a month-only April reporting year preserves calendar months and quarterly response bases in every trend widget',()=>{
+  const year={id:'april',name:'FY',startDate:'2026-04-01',endDate:'2027-03-31'};
+  const dashboard={...year,reportingYear:year};
+  for(const kind of ['segment-trend','scoring-trend','response-timeline']) {
+    const defaults={...defaultTimeSeriesSettings(kind,kind),precision:5};
+    const monthly=timeSeriesData(kind,{...defaults,interval:'Monthly'},dashboard);
+    const quarterly=timeSeriesData(kind,{...defaults,interval:'Quarterly'},dashboard);
+    assert.equal(monthly.rows.length,12);
+    assert.equal(monthly.rows[0].category,'Apr 2026');
+    assert.equal(monthly.rows[0].coverage,'2026-04-01 – 2026-04-30');
+    assert.equal(monthly.rows.at(-1).coverage,'2027-03-01 – 2027-03-31');
+    assert.equal(monthly.total,quarterly.total);
+    quarterly.rows.forEach((quarter,i)=>{
+      const group=monthly.rows.slice(i*3,i*3+3);
+      assert.equal(group.reduce((sum,row)=>sum+row.responses,0),quarter.responses);
+      if(kind==='scoring-trend') {
+        const weighted=group.reduce((sum,row)=>sum+row.value*row.responses,0)/quarter.responses;
+        assert.ok(Math.abs(weighted-quarter.value)<.00002);
+      }
+    });
+    const weekly=timeSeriesData(kind,{...defaults,interval:'Weekly'},dashboard);
+    const calendarWeekly=timeSeriesData(kind,{...defaults,interval:'Weekly'},year);
+    assert.deepEqual(weekly.rows,calendarWeekly.rows);
+    assert.equal(weekly.total,monthly.total);
+    const clipped=timeSeriesData(kind,{...defaults,interval:'Monthly',filter:'Combined',widgetDates:{startDate:'2026-04-12',endDate:'2026-05-15'}},dashboard);
+    assert.deepEqual(clipped.rows.map(row=>row.coverage),['2026-04-12 – 2026-04-30','2026-05-01 – 2026-05-15']);
+  }
+});
+
 const { scoringResponses, scoringDistribution } = await import('data:text/javascript;base64,' + Buffer.from(stripTypeScriptTypes(source)).toString('base64'));
 const { MOCK_DATA_SLICERS, DATA_SLICER_APPLIED_LIMIT, DATA_SLICER_CREATION_LIMIT, appliedDataSlicers } = await import('../src/data/mock-data-slicers.ts');
 

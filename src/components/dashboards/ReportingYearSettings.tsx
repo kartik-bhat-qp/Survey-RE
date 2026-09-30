@@ -1,31 +1,34 @@
 'use client';
-import { useState } from 'react';
-import * as Popover from '@radix-ui/react-popover';
-import { DateRangeCalendar } from './SharedDashboardDateFilter';
-import { formatReportingDate, reportingYearLabel } from '@/data/reporting-year';
-import { defaultReportingYearSetting, normalizeReportingYearSetting, type DashboardReportingYearSetting } from '@/data/dashboard-reporting-year';
+import { useId } from 'react';
+import { formatReportingDate } from '@/data/reporting-year';
+import { normalizeReportingYearSetting, reportingYearForMonth, type DashboardReportingYearSetting, type ReportingStartMonth } from '@/data/dashboard-reporting-year';
 import styles from './ReportingYearDateFilter.module.css';
-import calendarStyles from './SharedDashboardDateFilter.module.css';
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 export interface ReportingYearSettingsProps {
   reportingYearSetting?: DashboardReportingYearSetting;
   onReportingYearChange?: (setting: DashboardReportingYearSetting) => void;
 }
 export function ReportingYearSettings({ reportingYearSetting, onReportingYearChange }: ReportingYearSettingsProps) {
-  const [editing, setEditing] = useState(false);
+  const helpId = useId();
   const year = normalizeReportingYearSetting(reportingYearSetting).year!;
   return <section className={styles.settings} aria-label="Reporting year settings">
-    <div className={styles.settingsHeading}><strong>Reporting year</strong><p className={styles.settingsDescription}>Align quarters and years to this 12-month period.</p></div>
-    <Popover.Root open={editing} onOpenChange={setEditing}>
-      <Popover.Trigger asChild><button type="button" className={`${styles.savedDateButton} ${styles.reportingYearTrigger}`} aria-label={`Reporting year: ${formatReportingDate(year.startDate)} – ${formatReportingDate(year.endDate)}`}>{formatReportingDate(year.startDate)} – {formatReportingDate(year.endDate)}</button></Popover.Trigger>
-      <Popover.Portal><Popover.Content className={`${calendarStyles.popover} ${calendarStyles.reportingYearPopover}`} align="end" sideOffset={8} aria-label="Reporting year calendar">
-        <DateRangeCalendar startDate={year.startDate} endDate={year.endDate} reportingYear hidePresets
-          onReset={() => { onReportingYearChange?.(defaultReportingYearSetting()); setEditing(false); }}
-          onChange={({ startDate, endDate }) => {
-            onReportingYearChange?.({ enabled:true, year:{ id:year.id, name:reportingYearLabel(startDate), startDate, endDate } });
-            setEditing(false);
-          }} />
-      </Popover.Content></Popover.Portal>
-    </Popover.Root>
+    <div className={styles.settingsHeading}>
+      <div className={styles.monthHeading}><span>Reporting year</span>
+        <span className={styles.badgeHint} tabIndex={0} aria-label="About reporting year" aria-describedby={helpId}>
+          <span className={`wm-info ${styles.infoIcon}`} aria-hidden />
+          <span id={helpId} role="tooltip" className={styles.badgeTooltip}>Uses the first day of the selected month and runs for 12 months.</span>
+        </span>
+      </div>
+      <p className={styles.settingsDescription}>Align quarters and years to the start month.</p>
+    </div>
+    <div className={styles.monthControls}>
+      <select className={styles.monthSelect} aria-label="Reporting year start month" value={Number(year.startDate.slice(5,7))} onChange={event => {
+        const next = reportingYearForMonth(Number(event.target.value) as ReportingStartMonth, Number(year.startDate.slice(0,4)), year.id);
+        onReportingYearChange?.({ enabled:true, year:next });
+      }}>{MONTHS.map((month,index)=><option value={index+1} key={month}>{month}</option>)}</select>
+      <p className={styles.settingsDescription}>{formatReportingDate(year.startDate)} – {formatReportingDate(year.endDate)}</p>
+    </div>
   </section>;
 }
