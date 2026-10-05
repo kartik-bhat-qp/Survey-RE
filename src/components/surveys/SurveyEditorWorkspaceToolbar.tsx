@@ -522,8 +522,9 @@ export function SurveyEditorWorkspaceToolbar({
             <TestResponsesTrigger />
             <WuMenu
               align="end"
-              position={{ side: 'bottom', align: 'end', sideOffset: 6 }}
-              slots={{ popup: { width: '17.5rem' } }}
+              side="bottom"
+              sideOffset={6}
+              className={styles.statusMenu}
               Trigger={
                 <button
                   type="button"

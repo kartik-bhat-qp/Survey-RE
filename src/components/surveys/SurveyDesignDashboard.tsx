@@ -276,7 +276,7 @@ export function SurveyDesignDashboard({ surveyId }: SurveyDesignDashboardProps) 
                     ) : null}
                     {layout.sunsetting ? (
                       <WuTooltip
-                        Content={
+                        content={
                           <span className={styles.sunsetTooltip}>
                             <span className={styles.sunsetTooltipTitle}>
                               {SURVEY_LAYOUT_RETIRING_NOTICE.title}
@@ -286,7 +286,7 @@ export function SurveyDesignDashboard({ surveyId }: SurveyDesignDashboardProps) 
                             </span>
                           </span>
                         }
-                        position={{ side: 'top' }}
+                        position="top"
                         showArrow
                       >
                         <span

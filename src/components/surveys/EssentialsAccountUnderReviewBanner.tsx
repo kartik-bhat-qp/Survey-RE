@@ -1,6 +1,6 @@
 'use client';
 
-import dynamic from 'next/dynamic';
+import { WarningNotice } from '@/components/ui/WarningNotice';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useEssentialsAccountActionsLocked } from '@/hooks/useEssentialsAccountUnderReview';
 import {
@@ -8,11 +8,6 @@ import {
   ESSENTIALS_ACCOUNT_REVIEW_SUPPORT_LABEL,
 } from '@/data/mock-essentials-phishing-review';
 import styles from './EssentialsAccountUnderReviewBanner.module.css';
-
-const WuAlert = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuAlert })),
-  { ssr: false }
-);
 
 export function EssentialsAccountUnderReviewBanner() {
   const underReview = useEssentialsAccountActionsLocked();
@@ -22,8 +17,7 @@ export function EssentialsAccountUnderReviewBanner() {
 
   return (
     <div className={styles.bar} role="status" aria-live="polite">
-      <WuAlert
-        variant="warning"
+      <WarningNotice
         className={styles.alert}
         Icon={<span className={`wm-warning ${styles.icon}`} aria-hidden />}
       >
@@ -43,7 +37,7 @@ export function EssentialsAccountUnderReviewBanner() {
             {ESSENTIALS_ACCOUNT_REVIEW_SUPPORT_LABEL}
           </button>
         </span>
-      </WuAlert>
+      </WarningNotice>
     </div>
   );
 }

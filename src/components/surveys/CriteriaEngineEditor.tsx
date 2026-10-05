@@ -1096,8 +1096,8 @@ export function CriteriaEngineEditor({
                                     <WuMenuCheckboxItem
                                       key={option.value}
                                       checked={selectedLoopRefs.includes(option.value)}
-                                      closeOnClick={false}
-                                      onCheckedChange={() =>
+                                      preventCloseOnSelect
+                                      onSelect={() =>
                                         handleUpdateCondition(criterion.id, cond.id, {
                                           loopRef: toggleSpecificLoopRef(
                                             cond.loopRef,

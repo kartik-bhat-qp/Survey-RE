@@ -54,3 +54,6 @@ next-env.d.ts
 # Local agent scratch scripts, caches and verification logs
 /.codex-tmp/
 /.task-work/
+
+# Local preview caches, helper scripts and verification logs
+/.runtime/

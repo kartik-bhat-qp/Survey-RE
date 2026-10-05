@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { WarningNotice } from '@/components/ui/WarningNotice';
 import { SpotlightCriteriaModal } from '@/components/surveys/SpotlightCriteriaModal';
 import { SurveySettingsRichText } from '@/components/surveys/SurveySettingsRichText';
 import { usePersistedState } from '@/hooks/usePersistedState';
@@ -49,10 +50,6 @@ const WuInput = dynamic(
 );
 const WuToggle = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
-  { ssr: false }
-);
-const WuAlert = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuAlert })),
   { ssr: false }
 );
 const WuTooltip = dynamic(
@@ -312,13 +309,12 @@ export function SurveyFinishOptionsDashboard({
                     </button>
                   </WuTooltip>
                 </div>
-                <WuAlert
-                  variant="warning"
+                <WarningNotice
                   className={styles.logicWarning}
                   Icon={<span className="wm-warning" aria-hidden />}
                 >
                   {REVIEW_PRINT_LOGIC_WARNING}
-                </WuAlert>
+                </WarningNotice>
               </div>
             ) : null}
             <section className={styles.messageSection} aria-labelledby="thank-you-message-label">
