@@ -189,3 +189,25 @@
     margin-bottom: 12px;
   }
 }
+
+/* Optional confirmed selection for stacks; dashboard click-to-advance is unchanged. */
+.surveyChoice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #234693;
+  cursor: pointer;
+  line-height: 1.5;
+  min-width: 0;
+}
+.surveyChoice input { flex: 0 0 auto; margin-top: 3px; accent-color: #1e88e5; }
+.surveyChoice span { overflow-wrap: anywhere; }
+.surveyChoiceSelected { font-weight: 500; }
+
+.confirmedSources { height:min(560px,calc(100dvh - 220px)); min-height:300px; }
+.confirmedSources .sidebar { overflow:auto; background:white; }
+.confirmedSources .surveyPanel { overflow:auto; padding:24px; }
+.confirmedSources .tableArea tr:has(input:checked) { background:#eff7ff; }
+.confirmedSources .tableArea input[type=checkbox] { accent-color:#478bd5; width:16px; height:16px; }
+.confirmedSources .searchInput input { background:#f5f5f5; border:0; border-bottom:1px solid #ddd; }
+@media(max-width:639px){ .confirmedSources { height:auto; } }

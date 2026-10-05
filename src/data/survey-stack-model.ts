@@ -5,7 +5,7 @@ export interface MappedStackField {id:string;label:string;type?:SurveyQuestionTy
 export function compatibleFieldQuestions(field:MappedStackField,questions:SurveyQuestion[]){return questions.filter(q=>!field.type||(q.type===field.type&&(q.options?.length??0)===field.answers.length));}
 export function mapFieldQuestion(field:MappedStackField,sourceId:number,q:SurveyQuestion):MappedStackField{
  const first=!field.type;const answers=first?[...(q.options??[])]:field.answers;
- return {...field,type:first?q.type:field.type,answers,sources:{...field.sources,[sourceId]:{questionId:q.id,answers:answers.map((_,i)=>i<(q.options?.length??0)?i:-1)}}};
+ return {...field,label:first?q.text:field.label,type:first?q.type:field.type,answers,sources:{...field.sources,[sourceId]:{questionId:q.id,answers:answers.map((_,i)=>i<(q.options?.length??0)?i:-1)}}};
 }
 export function autoMapSource(field:MappedStackField,sourceId:number,questions:SurveyQuestion[]):MappedStackField{
  const eligible=compatibleFieldQuestions(field,questions);const q=eligible.find(q=>q.text===field.label)??eligible[0];

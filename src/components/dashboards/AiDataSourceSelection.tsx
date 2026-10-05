@@ -33,6 +33,11 @@ const DATA_SOURCE_OPTIONS = [{ value: 'surveys', label: 'Surveys' }];
 interface AiDataSourceSelectionProps {
   onSelectQuestionStack?: (stack:QuestionStack)=>void;
   selectedSurveyId: number | null;
+  /** Stack setup reuses this selector with explicit, confirmed selection. */
+  selectionMode?: 'single' | 'multiple';
+  initialFolderId?: string;
+  selectedSurveyIds?: number[];
+  excludedSurveyIds?: number[];
   onSelectSurvey: (survey: SurveyListItem) => void;
 }
 
@@ -44,22 +49,28 @@ export function AiDataSourceSelection({
   onSelectQuestionStack,
   selectedSurveyId,
   onSelectSurvey,
+  selectionMode,
+  initialFolderId = 'demo-2026',
+  selectedSurveyIds = [],
+  excludedSurveyIds = [],
 }: AiDataSourceSelectionProps) {
   const [sourceTab,setSourceTab]=useState<'surveys'|'stacks'>('surveys');
-  const [folderId, setFolderId] = useState('demo-2026');
+  const [folderId, setFolderId] = useState(initialFolderId);
   const [search, setSearch] = useState('');
   const [dataSource] = useState(DATA_SOURCE_OPTIONS[0]);
 
-  const surveys = useMemo(() => getSurveysByFolder(folderId), [folderId]);
+  const surveys = useMemo(() => getSurveysByFolder(folderId).filter(survey => !excludedSurveyIds.includes(survey.id)), [folderId, excludedSurveyIds]);
 
   const columns: IWuTableColumnDef<SurveyListItem>[] = [
+    ...(selectionMode === 'multiple' ? [{accessorKey:'id',header:'',cell:({row})=><input type="checkbox" checked={selectedSurveyIds.includes(row.original.id)} onChange={()=>onSelectSurvey(row.original)} aria-label={`Select ${row.original.name}`} />} satisfies IWuTableColumnDef<SurveyListItem>] : []),
     {
       accessorKey: 'name',
       header: 'Survey',
       filterable: true,
       enableSorting: true,
       cell: ({ row }) => {
-        const isSelected = selectedSurveyId === row.original.id;
+        const isSelected = selectionMode ? selectedSurveyIds.includes(row.original.id) : selectedSurveyId === row.original.id;
+        if (selectionMode === 'multiple') return <span>{row.original.name}</span>;
         return (
           <button
             type="button"
@@ -92,7 +103,7 @@ export function AiDataSourceSelection({
   return (
     <>
     {onSelectQuestionStack&&<div className={stackStyles.tabs} role="tablist" aria-label="Data source"><button role="tab" aria-selected={sourceTab==='surveys'} onClick={()=>setSourceTab('surveys')}>Surveys</button><button role="tab" aria-selected={sourceTab==='stacks'} onClick={()=>setSourceTab('stacks')}>Stacks</button></div>}
-    {sourceTab==='stacks'&&onSelectQuestionStack?<StackSourcePicker onSelect={onSelectQuestionStack}/>:<div className={styles.root}>
+    {sourceTab==='stacks'&&onSelectQuestionStack?<StackSourcePicker onSelect={onSelectQuestionStack}/>:<div className={`${styles.root} ${selectionMode?styles.confirmedSources:''}`}>
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
           <WuSelect
@@ -135,6 +146,7 @@ export function AiDataSourceSelection({
           <WuInput
             variant="outlined"
             placeholder="Search"
+            aria-label="Search surveys"
             Icon={<span className="wm-search" />}
             iconPosition="left"
             value={search}
@@ -149,6 +161,7 @@ export function AiDataSourceSelection({
             variant="unstyled"
             sort={{ enabled: true }}
             filterText={search}
+            NoDataContent="No surveys found. Try another search or folder."
           />
         </div>
       </div>

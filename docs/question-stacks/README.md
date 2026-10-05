@@ -18,3 +18,11 @@ Storage keys: `survey-re:question-stacks:v1` and `survey-re:created-survey-stack
 ## Production flow alignment — 30 September 2026
 
 [Production audit](production-parity.md) documents the observed Survey Stack flow and the shared pattern now applied to both stack types. Nine domain tests pass (`node --test tests/question-stacks.test.mjs tests/survey-stack-model.test.mjs`). Browser QA covers type choice, inline naming, minimum source/group selections, generated field rows, adding a third survey, replacement, save/reopen, inline mappings and duplicate-map save blocking. The earlier separate Survey Stack setup page and Question Stack mapping-step screenshots are historical; current views are `prototype-survey-stack-parity.png` and `prototype-question-stack-parity.png`.
+
+## UI QA — 1 October 2026
+
+The custom stack survey picker has been replaced by the dashboard's actual `AiDataSourceSelection` component. Creation cards, action widths, field inputs, source headings and inline answer grids have been corrected. Current verification details and screenshots are in [ui-qa.md](ui-qa.md); the earlier parity screenshots above are historical.
+
+## Current production alignment — 1 October 2026
+
+The [fresh audit](production-parity.md) supersedes the previous layout screenshots. Add survey now manages the complete selected source set, single selection uses native links, and both editors preserve drafts with a Cancel confirmation. Add metric group creates an inline row before question selection. Both use compact production-style columns and fixed bottom actions, with Save returning to the list and Update remaining in the editor. See the latest browser verification in [ui-qa.md](ui-qa.md).

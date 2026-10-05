@@ -19,3 +19,12 @@ test('inline answer mapping clears duplicate assignments only in the edited sour
  const [field]=seedStackFields([{id:10,name:'A'},{id:20,name:'B'}],get);const next=setFieldAnswer(field,20,0,1);
  assert.deepEqual(next.sources[20].answers,[1,-1]);assert.deepEqual(next.sources[10].answers,[0,1]);assert.deepEqual(field.sources[20].answers,[0,1]);
 });
+
+test('first question initializes an inline field; later selections retain its canonical label and scale',()=>{
+ const empty={id:'inline',label:'untitled',answers:[],sources:{}};
+ const initialized=mapFieldQuestion(empty,10,a);
+ assert.equal(initialized.label,a.text);assert.equal(initialized.type,a.type);assert.deepEqual(initialized.answers,a.options);
+ const second=mapFieldQuestion({...initialized,label:'Custom metric'},20,b);
+ assert.equal(second.label,'Custom metric');assert.deepEqual(second.answers,a.options);assert.deepEqual(second.sources[20].answers,[0,1]);
+ assert.deepEqual(empty,{id:'inline',label:'untitled',answers:[],sources:{}});
+});

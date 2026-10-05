@@ -122,7 +122,7 @@ export default function SurveyStacksPage() {
       cell: ({ row }) => (
         <Link
           href={row.original.kind === 'Question Stack' ? withBiProductBasePath(basePath, `/question-stacks/${row.original.id}`) : `${surveyStacksPath}/${row.original.id}`}
-          className="font-normal text-[#1b3380] no-underline hover:text-[#1b3380] hover:underline focus-visible:text-[#1b3380] focus-visible:underline"
+          className="block py-2 font-normal text-[#1b3380] no-underline hover:text-[#1b3380] hover:underline focus-visible:text-[#1b3380] focus-visible:underline"
         >
           {row.original.name}
         </Link>
@@ -160,11 +160,11 @@ export default function SurveyStacksPage() {
 
   return (
     <div className="min-h-[calc(100vh-46px)] bg-white font-['Fira_Sans',sans-serif] text-[#253449]">
-      <div className="flex h-[66px] items-center justify-between border-b border-[#e7eaf0] px-[15px]">
+      <div className={stackStyles.header}>
         <h1 className="text-[18px] font-semibold leading-none text-[#515b6b]">
           Stacks
         </h1>
-        {newType?<form className={stackStyles.inlineName} onSubmit={e=>{e.preventDefault();if(newName.trim())router.push(withBiProductBasePath(basePath,`${newType==='Question Stack'?'/question-stacks':'/survey-stacks'}/new?name=${encodeURIComponent(newName.trim())}`));}}><WuInput autoFocus aria-label="Stack name" placeholder="Stack name" value={newName} onChange={e=>setNewName(e.target.value)}/><WuButton type="submit" disabled={!newName.trim()}>Create {newType.toLowerCase()}</WuButton><WuButton variant="link" aria-label="Cancel new stack" onClick={()=>{setNewType(null);setNewName('');}}>×</WuButton></form>:<WuButton
+        {newType?<form className={stackStyles.inlineName} onSubmit={e=>{e.preventDefault();if(newName.trim())router.push(withBiProductBasePath(basePath,`${newType==='Question Stack'?'/question-stacks':'/survey-stacks'}/new?name=${encodeURIComponent(newName.trim())}`));}}><div className={stackStyles.nameInput}><WuInput autoFocus aria-label="Stack name" placeholder="Stack name" value={newName} onChange={e=>setNewName(e.target.value)}/></div><StackButton type="submit" disabled={!newName.trim()}>Create {newType}</StackButton><StackButton variant="link" aria-label="Cancel new stack" onClick={()=>{setNewType(null);setNewName('');}}>×</StackButton></form>:<WuButton
           onClick={()=>setChooseType(true)}
           className="inline-flex h-8 items-center gap-2 rounded-[4px] bg-[#1e88e5] px-3 text-[13px] font-medium text-white shadow-sm transition hover:bg-[#1976d2]"
           Icon={<span className="wm-add text-[16px]" aria-hidden="true" />}
@@ -175,7 +175,7 @@ export default function SurveyStacksPage() {
 
       {action&&<StackDialog title={action.kind==='rename'?'Rename stack':'Delete stack'} onClose={()=>setAction(null)} footer={<><StackButton variant="secondary" onClick={()=>setAction(null)}>Cancel</StackButton><StackButton disabled={action.kind==='rename'&&!actionName.trim()} onClick={applyAction}>{action.kind==='rename'?'Update':'Yes'}</StackButton></>}>{action.kind==='rename'?<StackInput aria-label="Stack name" value={actionName} onChange={e=>setActionName(e.target.value)}/>:<p>Delete “{action.stack.name}”? Widgets using this stack will need a new source.</p>}{actionError&&<p role="alert">{actionError}</p>}</StackDialog>}
       {error && <p role="alert" className={stackStyles.error}>{error}</p>}
-      {chooseType && <StackDialog title="Create new stack" onClose={()=>setChooseType(false)}><div className={stackStyles.choices}><button className={stackStyles.choice} onClick={()=>{setChooseType(false);setNewType('Question Stack');}}><span className="wm-layers"/><strong>Question Stack</strong><p>Group related questions from one survey into reusable metrics.</p></button><button className={stackStyles.choice} onClick={()=>{setChooseType(false);setNewType('Survey Stack');}}><span className="wm-layers"/><strong>Survey Stack</strong><p>Combine fields and answers across multiple surveys.</p></button></div></StackDialog>}
+      {chooseType && <StackDialog title="Create new stack" onClose={()=>setChooseType(false)}><div className={stackStyles.choices}><button className={stackStyles.choice} onClick={()=>{setChooseType(false);setNewType('Question Stack');}}><span className={stackStyles.choiceTitle}><span className="wm-layers" aria-hidden="true"/><strong>Question Stack</strong></span><p>Group related questions from one survey into reusable metrics.</p></button><button className={stackStyles.choice} onClick={()=>{setChooseType(false);setNewType('Survey Stack');}}><span className={stackStyles.choiceTitle}><span className="wm-layers" aria-hidden="true"/><strong>Survey Stack</strong></span><p>Combine fields and answers across multiple surveys.</p></button></div></StackDialog>}
       <section className="px-[31px] pt-[33px]">
         <WuInput
           type="search"

@@ -1,18 +1,22 @@
 'use client';
 import dynamic from 'next/dynamic';
-import type { ReactNode } from 'react';
-export const StackButton = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => m.WuButton), {ssr:false});
+import type { ComponentProps, ReactNode } from 'react';
+import styles from './Stacks.module.css';
+const WuButton = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => m.WuButton), {ssr:false});
+export function StackButton({className='',...props}:ComponentProps<typeof WuButton>){
+ return <WuButton {...props} className={`${styles.button} ${className}`}/>;
+}
 export const StackInput = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => m.WuInput), {ssr:false});
 export const StackDialog = dynamic(async () => {
   const { WuModal, WuModalHeader, WuModalContent, WuModalFooter } = await import('@npm-questionpro/wick-ui-lib');
-  return function StackDialogContent({title,onClose,children,footer,wide=false}: {title:string;onClose:()=>void;children:ReactNode;footer?:ReactNode;wide?:boolean}) {
-    return <WuModal open onOpenChange={open=>{if(!open)onClose();}} maxWidth={wide?'1100px':'650px'} variant="action"><WuModalHeader>{title}</WuModalHeader><WuModalContent style={{maxHeight:'70vh',overflow:'auto'}}>{children}</WuModalContent>{footer && <WuModalFooter>{footer}</WuModalFooter>}</WuModal>;
+  return function StackDialogContent({title,onClose,children,footer,wide=false,flush=false}: {title:string;onClose:()=>void;children:ReactNode;footer?:ReactNode;wide?:boolean;flush?:boolean}) {
+    return <WuModal open onOpenChange={open=>{if(!open)onClose();}} maxWidth={wide?'min(1200px, calc(100vw - 32px))':'min(650px, calc(100vw - 32px))'} maxHeight="calc(100dvh - 32px)" variant="action"><WuModalHeader>{title}</WuModalHeader><WuModalContent className={flush?styles.dialogFlush:styles.dialogBody}>{children}</WuModalContent>{footer && <WuModalFooter><div className={styles.dialogFooter}>{footer}</div></WuModalFooter>}</WuModal>;
   };
 }, {ssr:false});
 
 const WuSelect = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => m.WuSelect), {ssr:false});
 export function StackSelect({label,value,options,onChange,disabled=false,placeholder='---Select question---'}:{label:string;value:string;options:{value:string;label:string}[];onChange:(value:string)=>void;disabled?:boolean;placeholder?:string}){
- return <div role="group" aria-label={label}><WuSelect data={options} accessorKey={{value:'value',label:'label'}} value={options.find(o=>o.value===value)??null} onSelect={option=>{if(option&&typeof option==='object'&&!Array.isArray(option)&&'value' in option)onChange(String(option.value));}} disabled={disabled} placeholder={placeholder} variant="flat" className="w-full border-0 border-b border-[#aeb3b8] rounded-none bg-transparent text-[13px]"/></div>;
+ return <div role="group" aria-label={label} className={styles.select} title={options.find(o=>o.value===value)?.label}><WuSelect data={options} accessorKey={{value:'value',label:'label'}} value={options.find(o=>o.value===value)??null} onSelect={option=>{if(option&&typeof option==='object'&&!Array.isArray(option)&&'value' in option)onChange(String(option.value));}} disabled={disabled} placeholder={placeholder} variant="flat" className="w-full border-0 border-b border-[#aeb3b8] rounded-none bg-transparent text-[13px]"/></div>;
 }
 
 export function StackTypeIcon({type}:{type?:string}){
