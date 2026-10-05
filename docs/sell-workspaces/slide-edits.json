@@ -22,7 +22,7 @@
   [
     "g8709499aee_5_33",
     "g3cee4e92f19_0_1",
-    "Organization user: contact the CSM for more capacity, then create and own an additional individual workspace. The creator need not be the purchaser or organization administrator.\nCSM and admin team: complete the purchase outside BI and update the organization entitlement exposed by the admin API. BI does not collect payment.\nReserve one individual workspace for each user. Used purchased slots = sum of each user\u2019s workspaces beyond their first. Available slots = purchased slots minus used slots, with a minimum of zero.\nKeep exactly one organization workspace, outside this quota. Sharing an existing individual workspace does not create or consume another slot."
+    "Organization user: contact the CSM for more capacity, then create and own an additional individual workspace. The creator need not be the purchaser or organization administrator.\nCSM and admin team: complete the purchase outside BI and update the organization entitlement exposed by the admin API. BI does not collect payment.\nReserve one individual workspace for each user. Used purchased slots = sum of each user’s workspaces beyond their first. Available slots = purchased slots minus used slots, with a minimum of zero.\nKeep exactly one organization workspace, outside this quota. Sharing an existing individual workspace does not create or consume another slot."
   ],
   [
     "g86f1215a00_0_64",
@@ -32,7 +32,7 @@
   [
     "g86f1215a00_0_64",
     "g38e394f423a_0_24",
-    "Load the organization\u2019s authoritative quota when opening the BI Workspaces page. Enable Create Workspace only when confirmed remaining capacity is greater than zero.\nAt zero capacity, disable the button and show this tooltip on hover and keyboard focus: \u201cPlease reach out to your CSM for purchasing additional workspaces.\u201d Repeat the guidance as visible helper text.\nCreate opens a name dialog for an individual workspace only. Require a trimmed, nonempty name; Cancel consumes nothing. On success, add the workspace to the creator\u2019s list and refresh capacity.\nWhile quota is loading or unavailable, disable creation and show the relevant checking/retry state. An API failure must never be presented as proof that a purchase is required. Existing workspace access remains available."
+    "Load the organization’s authoritative quota when opening the BI Workspaces page. Enable Create Workspace only when confirmed remaining capacity is greater than zero.\nAt zero capacity, disable the button and show this tooltip on hover and keyboard focus: “Please reach out to your CSM for purchasing additional workspaces.” Repeat the guidance as visible helper text.\nCreate opens a name dialog for an individual workspace only. Require a trimmed, nonempty name; Cancel consumes nothing. On success, add the workspace to the creator’s list and refresh capacity.\nWhile quota is loading or unavailable, disable creation and show the relevant checking/retry state. An API failure must never be presented as proof that a purchase is required. Existing workspace access remains available."
   ],
   [
     "g86f1215898_1_32",
@@ -42,7 +42,7 @@
   [
     "g86f1215898_1_32",
     "g86fb383e73_0_468",
-    "Protect every user\u2019s last individual workspace"
+    "Protect every user’s last individual workspace"
   ],
   [
     "g86f1215898_1_32",
@@ -72,6 +72,6 @@
   [
     "g13441c123f6_0_1",
     "g3c58e6d0cde_15_5",
-    "Open Survey-RE directly: https://survey-re.vercel.app/ \u2192 Workspaces.\nCreate a named workspace using the available slot. Confirm the remaining count reaches zero and Create Workspace shows the CSM guidance.\nDelete an owned workspace and confirm creation becomes available again. Delete down to one and verify the final individual workspace is protected.\nOpen Prototype scenarios. Switch between Kartik and Alex; simulate a purchase, another user consuming capacity, and loading/unavailable API responses. Verify Retry and the fixed organization workspace.\nThe implemented local review is http://localhost:3000/workspaces. Synthetic state resets on reload. No real purchase, admin API, durable storage or server concurrency is implemented; production release and hosted deployment are not claimed."
+    "Open Survey-RE directly: https://survey-re.vercel.app/ → Workspaces.\nCreate a named workspace using the available slot. Confirm the remaining count reaches zero and Create Workspace shows the CSM guidance.\nDelete an owned workspace and confirm creation becomes available again. Delete down to one and verify the final individual workspace is protected.\nReview quota use across two organization users, entitlement changes, and loading/unavailable states. Verify Retry and the fixed organization workspace."
   ]
 ]

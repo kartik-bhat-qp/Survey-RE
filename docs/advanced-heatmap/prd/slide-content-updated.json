@@ -1,66 +1,66 @@
 [
   {
     "id": "filmstrip-slide-0-g145dcb058cc_0_35",
-    "text": "AdvancedHeatmapBusinessIntelligenceOpenprototype"
+    "text": "1 of 16\n\nAdvanced Heatmap\n\nBusiness Intelligence\n\nOpen prototype"
   },
   {
     "id": "filmstrip-slide-1-g30a02577f3c_0_5",
-    "text": "IntroductionBIusersneedtocompareseveralmatrixandchoicequestionsandapplytheirownscoringlogicinoneconsistentview.AdvancedHeatmapcombinesanswerdistributionsandsegmentcomparisons,withconfigurablecustommetrics,filtersandanswerlabels."
+    "text": "2 of 16\n\nIntroduction\n\nBI users need to compare several matrix and choice questions and apply their own scoring logic in one consistent view.\n\n​\n\nAdvanced Heatmap combines answer distributions and segment comparisons, with configurable custom metrics, filters and answer labels.\n\n​\n\n​\n\n​\n\n​\n\n​\n\n​\n\n​\n\n​\n\n​"
   },
   {
     "id": "filmstrip-slide-2-g8709499aee_5_33",
-    "text": "ProblemsOneworkflow,twoanalysismodelsMatrixHeatmapprovidesanswerdistributionsforonematrix.HeatMapChartsupportsseveralquestionsbutdisplaysmeansforrespondentsegments.Usersneedbothanalysesacrossmixedquestionswithoutconfusingansweroptionswithrespondentgroups."
+    "text": "3 of 16\n\nProblems\n\nOne workflow, two analysis models\n\nMatrix Heatmap provides answer distributions for one matrix. Heat Map Chart supports several questions but displays means for respondent segments. Users need both analyses across mixed questions without confusing answer options with respondent groups.\n\n​\n\n​"
   },
   {
     "id": "filmstrip-slide-3-gfdf248c7ff_0_5",
-    "text": "●Supported:multiplematrices,single-select,multi-selectandratingchoicequestionsfromonesurvey.●Analysis:AnswerdistributionandSegmentcomparison,switchableaftercreation.●Controls:custommetrics,resultfilters,answerlabels,livepreviewandregularHeatMapsegmentcontrols.●Deferred:labelmergingandbaseselector;unsupportedtypes,cross-surveyanalysisandcross-chartmetricreuse.●Existingheatmapwidgetsremainunchanged.TheprototypeincludesonedefaultAdvancedHeatmapperdashboard.Scope"
+    "text": "4 of 16\n\nScope\n\nSupported: multiple matrices, single-select, multi-select and rating choice questions from one survey.\nAnalysis: Answer distribution and Segment comparison, switchable after creation.\nControls: custom metrics, result filters, answer labels, live preview and regular Heat Map segment controls.\nDeferred: label merging and base selector; unsupported types, cross-survey analysis and cross-chart metric reuse.\nExisting heatmap widgets remain unchanged."
   },
   {
     "id": "filmstrip-slide-4-g86f1215a00_0_64",
-    "text": "●Selectmultiplewholematricesandchoicequestionsinonewidget.●ChooseAnswerdistributionorSegmentcomparison;switchlaterinAnalytics.●Addanamedcustommetricwitheditableoriginal-answerweights.●Rename,reorderorexcludeanswerlabels;filterandpreviewresults.●Usethestandardwidgetheader,three-dotmenuandsettingspanel.Solution"
+    "text": "5 of 16\nSelect multiple whole matrices and choice questions in one widget.\nChoose Answer distribution or Segment comparison; switch later in Analytics.\nAdd a named custom metric with editable original-answer weights.\nRename, reorder or exclude answer labels; filter and preview results.\nUse the standard widget header, three-dot menu and settings panel.\n\n​\n\nSolution"
   },
   {
     "id": "filmstrip-slide-5-g86f1215a00_0_12",
-    "text": "1.Afterdeployment,openhttps://survey-re.vercel.app/→Dashboards→openadashboard.2.InspectthedefaultAdvancedHeatmap,orchooseAddwidget→Advancedwidgets→AdvancedHeatmap.3.SelectNext→survey→questions(wholematricesorchoices)→Next.4.ChooseAnswerdistributionorSegmentcomparison→Createwidget.5.Open⋮→Settings.ConfigureGeneral,Analytics,LabelsandDesignwhilepreviewingresults.6.Applytocommit;Cancelorclosetodiscard.SwitchanalysisinAnalyticstocomparebothviews.Prototypewalkthrough"
+    "text": "6 of 16\n\nPrototype walkthrough\n\nOpen https://survey-re.vercel.app/ → Dashboards → open a dashboard.\nInspect the default Advanced Heatmap, or choose Add widget → Advanced widgets → Advanced Heatmap.\nSelect Next → survey → questions (whole matrices or choices) → Next.\nChoose Answer distribution or Segment comparison → Create widget.\nOpen ⋮ → Settings. Configure General, Analytics, Labels and Design while previewing results.\nApply to commit; Cancel or close to discard. Switch analysis in Analytics to compare both views."
   },
   {
     "id": "filmstrip-slide-6-g86f1215898_1_32",
-    "text": "SelectionrulesQuestionselectionanddisplay●Selectatleastonesupportedquestionfromonesurvey;amatrixcheckboxincludesallstatements.●Showquestionname,type,checkbox,searchand“selectedoutofavailable”counter.●Keepfootercheckpoints:Widget→Survey→Question→Analysis.●Changingsurveyclearsselection;unsupportedquestiontypesarevisiblebutunavailable.●Matricesstartcollapsedandexpandtoshowstatementswithinthesametable."
+    "text": "7 of 16\n\nSelection rules\n\nQuestion selection and display\n\nSelect at least one supported question from one survey; a matrix checkbox includes all statements.\nShow question name, type, checkbox, search and “selected out of available” counter.\nKeep footer checkpoints: Widget → Survey → Question → Analysis.\nChanging survey clears selection; unsupported question types are visible but unavailable.\nMatrices start collapsed and expand to show statements within the same table."
   },
   {
     "id": "filmstrip-slide-7-g3c6d0c60111_0_4",
-    "text": "●Columnsfolloworiginalanswerpositions;maximumcolumns=largestselectedoptioncount.●Shorterscalesshowadash.Mixedscalesusegenericlabels,notassumedequivalence.●Choosecountsorpercentages;useafixedvalid-respondentbase.Nobaseselector.●Multi-selectrespondentpercentagescanexceed100%;emptycellsremainneutral.●Matrixsummariespoolvalidstatementanswers;neveraveragerowmeans.Answerdistributionrules"
+    "text": "8 of 16\n\nAnswer distribution rules\n\nColumns follow original answer positions; maximum columns = largest selected option count.\nShorter scales show a dash. Mixed scales use generic labels, not assumed equivalence.\nChoose counts or percentages; use a fixed valid-respondent base. No base selector.\nMulti-select respondent percentages can exceed 100%; empty cells remain neutral.\nMatrix summaries pool valid statement answers; never average row means."
   },
   {
     "id": "filmstrip-slide-8-g3c599b074b0_0_4",
-    "text": "Segmentcomparisonrules●Columnsareselectablerespondentsegments;create,rename,editorremovenamedAND/ORgroups.●Eachrowaveragesthatsegment’svalidanswers.RetainOverall,responsecountsandoverallaverage.●Retain0–4decimals,Default/0–5/0–10meanrangesandindependentquestionreversal.●Retain2–5thresholdbands,editablecutoffsandresponsestatistics;overlappingsegmentsarenotadditive.●Custommetricskeeptheirownscale.Nominalanswersrequireweights;codeaveragesarenotratings."
+    "text": "9 of 16\n\nSegment comparison rules\n\nColumns are selectable respondent segments; create, rename, edit or remove named AND/OR groups.\nEach row averages that segment’s valid answers. Retain Overall, response counts and overall average.\nRetain 0–4 decimals, Default/0–5/0–10 mean ranges and independent question reversal.\nRetain 2–5 threshold bands, editable cutoffs and response statistics; overlapping segments are not additive.\nCustom metrics keep their own scale. Nominal answers require weights; code averages are not ratings."
   },
   {
     "id": "filmstrip-slide-9-g3c599b074b0_0_99",
-    "text": "Custommetrics●Offbydefault:columnhidden,weightsblank;nameeditableinAnalytics.●Everyincludedoriginalanswerneedsafiniteweight;missingweightsblockApply.●Single-select/matrices:sum(count×weight)÷validanswers,usingMatrixHeatmapweightlogic.●Multi-select:meanselectedweightsperrespondent,thenmeanrespondents.●Distributionaddsametriccolumn;Segmentcomparisonscoreseachsegment’spairedanswers.●Omitmissing/excludedanswers.Emptybasesshowunavailable;reverse=min+max−weight."
+    "text": "10 of 16\n\nCustom metrics\n\nOff by default: column hidden, weights blank; name editable in Analytics.\nEvery included original answer needs a finite weight; missing weights block Apply.\nSingle-select/matrices: sum(count × weight) ÷ valid answers, using Matrix Heatmap weight logic.\nMulti-select: mean selected weights per respondent, then mean respondents.\nDistribution adds a metric column; Segment comparison scores each segment’s paired answers.\nOmit missing/excluded answers. Empty bases show unavailable; reverse = min + max − weight."
   },
   {
     "id": "filmstrip-slide-10-g3c5e094be57_0_0",
-    "text": "Filterbycustommetric●ActiveonlyinAnswerdistributionwithavalidcustommetric.●Compareunroundedscores:below,atmost,above,atleastorinclusivebetween.●Acceptfinitedecimals,includingnegativevalues;rejectblankthresholdsorreversedranges.●Hideresultrows,notrespondents;basesandmatrixtotalsremainunchanged.●Testparentsandchildrenindependently;keepacontext-onlyparentwhenachildpasses.●Missingscoresnevermatch.Showcondition,matchingcount,Clearfilterandno-resultsstate.●Retainfiltersettingsacrossmode/metricchanges;re-evaluateafterweightsorexclusionschange."
+    "text": "11 of 16\n\nFilter by custom metric\n\nActive only in Answer distribution with a valid custom metric.\nCompare unrounded scores: below, at most, above, at least or inclusive between.\nAccept finite decimals, including negative values; reject blank thresholds or reversed ranges.\nHide result rows, not respondents; bases and matrix totals remain unchanged.\nTest parents and children independently; keep a context-only parent when a child passes.\nMissing scores never match. Show condition, matching count, Clear filter and no-results state.\nRetain filter settings across mode/metric changes; re-evaluate after weights or exclusions change."
   },
   {
     "id": "filmstrip-slide-11-h6ac4269131736c5d_1_11",
-    "text": "AnswerlabelsAnswer-levelcontrols●Rename,reorderandexcludeanswerlabelsonly.Labelmergingisdeferred.●KeepquestionselectionandsearchinsidetheLabelsdropdown.●Preserveoriginal-answerIDsandweightswhenlabelsarerenamedorreordered.●Multi-selectpercentagesuserespondentsansweringtherow;totalsmayexceed100%.●Excludedanswersleavethevalidbaseandmetric;unmatchedoptionpositionsremainadash."
+    "text": "12 of 16\n\nAnswer labels\n\nAnswer-level controls\n\nRename, reorder and exclude answer labels only. Label merging is deferred.\nKeep question selection and search inside the Labels dropdown.\nPreserve original-answer IDs and weights when labels are renamed or reordered.\nMulti-select percentages use respondents answering the row; totals may exceed 100%.\nExcluded answers leave the valid base and metric; unmatched option positions remain a dash."
   },
   {
     "id": "filmstrip-slide-12-h6ac4269131736c5d_1_5",
-    "text": "●Open⋮→Settingsforanenlargedlivepreviewbesidethestandardpanel.●General:Dashboard,Widget,CombinedorNofilters;Is/IsnotwithAND/ORappliesbeforecalculations.●Analytics:switchanalysis;retainregularHeatMapcontrolsandconfigureCustommetrics.●Labels:selectquestions;manageanswerlabelsinDistributionandsegmentsinSegmentcomparison.●Applycommitschanges;Cancelorclosediscardsthem.Modeswitchespreserveconfiguration.Settingsandfilters"
+    "text": "13 of 16\nOpen ⋮ → Settings for an enlarged live preview beside the standard panel.\nGeneral: Dashboard, Widget, Combined or No filters; Is/Is not with AND/OR applies before calculations.\nAnalytics: switch analysis; retain regular Heat Map controls and configure Custom metrics.\nLabels: select questions; manage answer labels in Distribution and segments in Segment comparison.\nApply commits changes; Cancel or close discards them. Mode switches preserve configuration.\n\nSettings and filters"
   },
   {
     "id": "filmstrip-slide-13-h6ac4269131736c5d_1_17",
-    "text": "WorkedexampleCustommetricona0–100scale●Answercounts:Poor30,Average33,Good25,Excellent24;validbase=112.●Weights0,0,100,100→(25+24)×100÷112=43.75(display43.8).●ExcludePoor→49×100÷82=59.7561(display59.8).●RenameGoodorExcellent→labelschange;thecustommetricremainsunchanged.●Filter“atleast80”hidesthisrow;“below80”retainsit.Usetheunroundedscore."
+    "text": "14 of 16\n\nWorked example\n\nCustom metric on a 0–100 scale\n\nAnswer counts: Poor 30, Average 33, Good 25, Excellent 24; valid base = 112.\nWeights 0, 0, 100, 100 → (25 + 24) × 100 ÷ 112 = 43.75 (display 43.8).\nExclude Poor → 49 × 100 ÷ 82 = 59.7561 (display 59.8).\nRename Good or Excellent → labels change; the custom metric remains unchanged.\nFilter “at least 80” hides this row; “below 80” retains it. Use the unrounded score."
   },
   {
     "id": "filmstrip-slide-14-gfdf248c7ff_0_0",
-    "text": "FunctionalandcalculationacceptanceAcceptancecriteria●Multiplematriceswithunequalrows/optionsandmixedchoicequestionsrendercorrectlyinbothmodes.●Counts,percentages,weights,pooledtotalsandsegmentcontrolsmatchcalculationtests;nomerge/baseselector.●Exactfilterboundaries,missingscoresandnoresultsbehaveasspecified;matchingchildrenremainreachable.●Whole-matrixselection,expandablerows,modeswitching,livepreview,ApplyandCancelworkendtoend.●Nativecontrols,titletypography,three-dotmenu,dividerandsettings-panellayoutmatchexistingwidgets."
+    "text": "15 of 16\n\nAcceptance criteria\n\nFunctional and calculation acceptance\n\nMultiple matrices with unequal rows/options and mixed choice questions render correctly in both modes.\nCounts, percentages, weights, pooled totals and segment controls match calculation tests; no merge/base selector.\nExact filter boundaries, missing scores and no results behave as specified; matching children remain reachable.\nWhole-matrix selection, expandable rows, mode switching, live preview, Apply and Cancel work end to end.\nNative controls, title typography, three-dot menu, divider and settings-panel layout match existing widgets."
   },
   {
     "id": "filmstrip-slide-15-g13441c123f6_0_1",
-    "text": "Interactivereference,notproductiondataPrototypeboundaries●TargetURL:https://survey-re.vercel.app/—AdvancedHeatmapwasnotyetdeployedthereon28September2026.●Walkthroughdirectionsdescribetheintendedpathaftertheprototypeisdeployed.●Prototypedataissynthetic;sessionsettingsresetonreload.Unmappedfiltersshowunavailable.●Prototypegaps:weightingexecution,date/status/systemfilters,persistence,sourceeditingandexports.●Productionintegrationandreleasevalidationremainseparatefromprototypeapproval."
+    "text": "16 of 16\n\nReview and acceptance\n\nAdvanced Heatmap review checklist\n\nOpen Survey-RE directly: https://survey-re.vercel.app/\nFollow the Prototype walkthrough to review Advanced Heatmap.\nReview source selection, row/column mappings, metric configuration and filter behavior.\nConfirm weighting, date/status/system filters, configuration persistence, source editing and exports against the requirements.\nValidate calculations and access rules against the acceptance criteria."
   }
 ]

@@ -1,12 +1,9 @@
 # BI — Sell Workspaces
 
-Status: Complete local draft requirements; native Slides population pending browser approval, 30 September 2026. Product owner: Prabal Gupta.
+Status: Draft product requirements. Product owner: Prabal Gupta.
 
-Incomplete native Slides draft (content transfer blocked by automatic approval review): https://docs.google.com/presentation/d/1Ub3owBRjkEXuxM-5D8Ei46yUxoCr7F-5BxTVhRCpKxI/edit
 
-Target folder: BI Documents under 45-BI, https://drive.google.com/drive/folders/1oeQRZNwBjy2R4HcRXaxpYci0g_HeJLt4. Moving the private draft there awaits confirmation of inherited access.
 
-Template family: PRD: Template; copied the nine-slide Interactive Saved Filters reference to preserve native layouts. Keep the BI cover illustration and footer logo, replace all source-specific text and hyperlinks.
 
 Organizations need additional individual BI workspaces for separate projects. Users contact their CSM to purchase capacity; any organization user can then create a workspace when capacity is available.
 Keep one included individual workspace for every user and exactly one organization workspace. Additional organization workspaces cannot be purchased.
@@ -62,14 +59,12 @@ AC-09/10: Final-slot races and repeated requests never oversubscribe or duplicat
 Open Survey-RE directly: https://survey-re.vercel.app/ → Workspaces.
 Create a named workspace using the available slot. Confirm the remaining count reaches zero and Create Workspace shows the CSM guidance.
 Delete an owned workspace and confirm creation becomes available again. Delete down to one and verify the final individual workspace is protected.
-Open Prototype scenarios. Switch between Kartik and Alex; simulate a purchase, another user consuming capacity, and loading/unavailable API responses. Verify Retry and the fixed organization workspace.
-The implemented local review is http://localhost:3000/workspaces. Synthetic state resets on reload. No real purchase, admin API, durable storage or server concurrency is implemented; production release and hosted deployment are not claimed.
+Review quota use across two organization users, entitlement changes, and loading/unavailable states. Verify Retry and the fixed organization workspace.
 
 ## Implementation assumptions and open decisions
 
 - Purchased quota is a shared pool above the one-per-user baseline. Do not allow unprovisioned users’ baseline slots to be consumed by other users.
-- Existing workspace permissions remain. Prototype deletion is owner-only; no new ability to delete a colleague’s workspace is granted.
-- Prototype names are capped at 100 characters; confirm the existing production naming rule.
+- Existing workspace permissions remain. Deletion is owner-only; no new ability to delete a colleague’s workspace is granted.
+- Confirm the workspace-name length limit against the existing naming rule.
 - Admin/BI teams must agree payload semantics, freshness, atomic quota ownership, idempotency, membership changes and legacy entitlements. These are integration decisions, not invented API endpoints.
 - Releasing a slot follows successful deletion; async cleanup/tombstone behavior must be specified. Billing/refunds, transfer of ownership, membership management and purchasing organization workspaces are out of scope.
-- No production behavior was verified or changed in this task.

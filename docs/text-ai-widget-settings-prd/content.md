@@ -12,7 +12,7 @@
 ## Scope
 - Gauge, Theme stacked bar, Sub-theme stacked bar, Trend line, Comparative chart, Sub-theme comparative chart, Text Viewer, Bubble chart and Text Summary.
 - Shared name, filter scope, relevant analytical/display settings and design inheritance.
-- Exclude new scoring models, weighting, statistical engines, AI processing and summary regeneration. Prototype-only KPI by Theme and Sub-theme trend remain unchanged.
+- Exclude new scoring models, weighting, statistical engines, AI processing and summary regeneration. Preserve unrelated widget types and behavior.
 
 ## Prototype walkthrough
 1. Open https://survey-re.vercel.app/ → TextAI → open a dashboard. Reference route: /text-ai/1.
@@ -22,7 +22,7 @@
 5. Design: inherit Dashboard styling or choose Widget overrides for typography and colors.
 6. Close the drawer; verify the card, reopen and reload to confirm persistence. Use Reset widget settings to restore defaults.
 7. Add widget → choose the source question → select a chart → add it; configure the new card independently.
-8. Repeat the widget-specific checks below. Use Text Viewer to test response text/date filters; aggregate sample-data limitations are explicit.
+8. Repeat the widget-specific checks below. Use Text Viewer to test response text/date filters; verify the selected response-filter behavior.
 
 ## Widget settings and walkthrough checks
 - Gauge → Gauge / Sentiment Donut: precision, count/percentage/both, base and legend. Verify six sentiments keep their colors and proportions.
@@ -41,7 +41,7 @@
 - Apply filters to analyzed responses. Combined means dashboard AND widget filters; None bypasses both.
 - Filter and sort before Top N/manual display selection. Category visibility never changes coding or silently renormalizes percentages.
 - Disclose response/mention/assignment bases; overlapping themes are not unique respondents.
-- Inherit dashboard design by default. Widget overrides remain local; sentiment colors retain the same six category identities.
+- Inherit dashboard design by default. Overrides apply only to the configured widget; sentiment colors retain the same six category identities.
 - Save valid edits immediately and independently by dashboard/widget. Invalid dates, blank names and axis min ≥ max are rejected; save failures retain last saved values.
 - Reset restores widget defaults and dashboard design inheritance. Supported copy/duplicate flows retain independent settings.
 - Keep existing access rules: editors configure; viewers cannot edit. Supported exports/shared rendering reflect saved settings.
@@ -57,9 +57,9 @@
 - Existing baseline presentation remains unchanged on opening Settings; dashboard design inheritance and widget overrides work.
 - Product integration must verify persisted permissions, applicable exports and shared rendering before production release.
 
-## Prototype boundaries
-- Browser-local persistence and synthetic fixtures demonstrate the interaction, not production data processing.
+## Review and acceptance
+- Verify that saved settings retain their configured values.
 - Text Viewer applies text/date filters. Aggregate widgets show unavailable results while response filters are active; None restores baseline.
-- Gauge counts are synthetic assignments. Trend averages are illustrative. Neither certifies production calculation.
+- Verify gauge counts and trend averages against the selected source and filters.
 - Server persistence, aggregate response recalculation, permissions and export/shared-view parity require product integration.
-- The live URL is the intended review destination; feature deployment should be verified separately.
+- Use the published Survey-RE link for the walkthrough.
