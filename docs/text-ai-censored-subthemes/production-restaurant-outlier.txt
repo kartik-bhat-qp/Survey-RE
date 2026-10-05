@@ -1,0 +1,1548 @@
+- banner:
+  - button "product-switcher":
+    - link "wc-logo":
+      - /url: https://bi.questionpro.com
+      - generic "wc-logo": 
+    - generic: Business Intelligence
+    - generic: 
+  - navigation:
+    - link "Workspaces":
+      - /url: /workspaces
+      - paragraph: Workspaces
+    - generic: 
+    - link "Default 2":
+      - /url: /workspaces/348
+      - paragraph: Default 2
+    - generic: 
+    - link "TextAI":
+      - /url: /workspaces/348/text-ai/dashboards
+      - paragraph: TextAI
+    - generic: 
+    - link "Restaurant feedback":
+      - /url: /workspaces/348/text-ai/dashboards/4065
+      - paragraph: Restaurant feedback
+    - generic: 
+    - paragraph: Theme configuration
+  - list:
+    - button "dropdown-trigger":
+      - generic: 
+  - list:
+    - button "dropdown-trigger":
+      - generic: PG
+- complementary:
+  - button "menu-icon Toggle Sidebar":
+    - generic "menu-icon"
+    - generic: Toggle Sidebar
+  - separator
+  - generic: Analytics
+  - list:
+    - link " Dashboards":
+      - /url: /workspaces/348/dashboards?pagenumber=1
+      - generic: 
+      - generic: Dashboards
+    - link " TextAI":
+      - /url: /workspaces/348/text-ai/dashboards
+      - generic: 
+      - generic: TextAI
+    - link " Reports":
+      - /url: /workspaces/348/reports
+      - generic: 
+      - generic: Reports
+  - generic: Data
+  - list:
+    - link " Survey stacks":
+      - /url: /workspaces/348/survey-stacks
+      - generic: 
+      - generic: Survey stacks
+    - link " Weightings":
+      - /url: /workspaces/348/weightings
+      - generic: 
+      - generic: Weightings
+    - link " Datasets":
+      - /url: /workspaces/348/datasets
+      - generic: 
+      - generic: Datasets
+    - link " Exports":
+      - /url: /workspaces/348/exports
+      - generic: 
+      - generic: Exports
+  - separator
+  - list:
+    - link " Admin":
+      - /url: /admin
+      - generic: 
+      - generic: Admin
+    - link " Settings":
+      - /url: /settings
+      - generic: 
+      - generic: Settings
+- main:
+  - main:
+    - document:
+      - generic: 
+      - textbox "Search themes or responses..."
+      - button " Filter":
+        - generic: 
+        - generic: Filter
+      - button "Theme history":
+        - generic: 
+      - button "Theme configuration settings":
+        - generic: 
+      - button "":
+        - generic: 
+      - button "Recode" [disabled]
+      - text: My code frame
+      - generic: "81"
+      - generic: "1500"
+      - button "New sub-theme"
+      - button "New theme"
+      - generic: 
+      - generic: Customer Experience Feedback Analysis
+      - generic: 17.87%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Customer Experience Feedback Analysis
+      - generic: 12.07%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience Improvement
+      - generic: 3%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience Differentiation
+      - generic: 1.6%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Service Experience Analysis
+      - generic: 0.73%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience Feedback Gaps
+      - generic: 0.53%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience Feedback Analysis
+      - generic: 0%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Staff Service Interaction Analysis
+      - generic: 17.13%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Staff Friendliness and Professionalism
+      - generic: 9.33%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Staff Interaction and Courtesy
+      - generic: 5.07%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Staff Service Attitude Analysis
+      - generic: 3%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Overall Experience
+      - generic: 14.47%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Customer Dining Experience Challenges
+      - generic: 2.87%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Wait Time Experience
+      - generic: 2.07%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Fast Service Expectations and Delivery
+      - generic: 1.73%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Parking Availability Challenges
+      - generic: 1.67%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Breakfast Menu Customization and Appeal
+      - generic: 0.93%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience Issues
+      - generic: 0.87%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Brand Expectation Misalignment Issues
+      - generic: 0.8%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Missing Food Items in Meal Orders
+      - generic: 0.8%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Service Flow Consistency Issues
+      - generic: 0.53%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer App Engagement and Feedback
+      - generic: 0.53%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Menu Clarity and Accessibility Issues
+      - generic: 0.47%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Food Quality and Service Analysis
+      - generic: 0.4%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience Disruptions
+      - generic: 0.4%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Service Interactions
+      - generic: 0.27%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Table Cleanliness and Hygiene Issues
+      - generic: 0.2%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Food Quality and Safety Concerns
+      - generic: 0.13%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Food Freshness and Temperature Concerns
+      - generic: 13.6%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Food Freshness and Quality Concerns
+      - generic: 4.27%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Fries Quality Concerns
+      - generic: 2.73%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Food Quality and Preparation Standards
+      - generic: 2.67%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Coffee Quality Feedback
+      - generic: 2.53%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Food Temperature and Service Issues
+      - generic: 2.07%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: French Fries Temperature Consistency
+      - generic: 0.67%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Coffee Flavor Preferences and Issues
+      - generic: 0.27%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Service Speed and Efficiency Analysis
+      - generic: 11.47%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Service Speed and Efficiency
+      - generic: 7.13%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Service Speed Optimization
+      - generic: 3.27%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Service Efficiency Analysis
+      - generic: 0.93%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Checkout Process Efficiency
+      - generic: 0.27%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Drive-Thru Customer Experience Challenges
+      - generic: 9.4%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Drive-Thru Delay Issues
+      - generic: 2.93%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Drive-Thru Wait Time Analysis
+      - generic: 2.73%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Drive-Thru Customer Experience Efficiency
+      - generic: 2.73%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Drive-Thru Operations and Customer Feedback
+      - generic: 0.93%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Cash-Only Checkout Operations
+      - generic: 0.4%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Wait Times Analysis
+      - generic: 0%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Customer Experience Management
+      - generic: 8.87%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Customer Service Quality Analysis
+      - generic: 3%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Service Interactions
+      - generic: 2.53%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience Improvement Suggestions
+      - generic: 2.27%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience Volume Management
+      - generic: 0.8%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Permanently lost customers
+      - paragraph: track the responses for which customers are likely lost forever
+      - generic: 0.4%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Customer Experience and Restaurant Design
+      - generic: 7.6%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Restaurant Ambiance and Design Assessment
+      - generic: 2.53%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Interior Space and Cleanliness Issues
+      - generic: 2.53%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Order Processing Delays in Restaurant Experience
+      - generic: 1.4%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience in Family Dining
+      - generic: 0.67%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Staff Conduct and Customer Experience
+      - generic: 0.47%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience and Condiment Misrepresentation
+      - generic: 0.13%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Order Fulfillment Accuracy Challenges
+      - generic: 7.6%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Incorrect Order Fulfillment Issues
+      - generic: 5.47%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Order Accuracy Issues in Restaurant Operations
+      - generic: 1.8%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Order Accuracy Challenges
+      - generic: 0.8%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Order Accuracy Challenges
+      - generic: 0%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Restaurant Cleanliness and Safety Concerns
+      - generic: 6.8%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Cleanliness and Organization in Dining Environment
+      - generic: 5.8%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Food Safety Concerns in Restaurants
+      - generic: 1%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Customer Experience and Manager Performance
+      - generic: 5.53%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Customer Experience and Homeless Presence
+      - generic: 3.47%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Manager Performance Deficiencies
+      - generic: 2.07%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Customer Location and Accessibility Challenges
+      - generic: 5.33%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Location Accessibility and Visibility
+      - generic: 3.13%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Space Limitations
+      - generic: 2.27%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Food Quality and Customer Preferences
+      - generic: 3.4%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Food Quality and Consistency Issues
+      - generic: 2.8%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Burger Texture and Customer Preferences
+      - generic: 0.6%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Customer Pricing Concerns
+      - generic: 2.67%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Pricing Concerns and Customer Feedback
+      - generic: 2.07%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Price Perception and Consumer Feedback
+      - generic: 0.6%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Customer Experience Pain Points and Improvement
+      - generic: 2.13%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Customer Experience Insights
+      - generic: 1.07%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience Pain Points
+      - generic: 0.73%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience Improvement
+      - generic: 0.33%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Restroom Cleanliness and Access Issues
+      - generic: 1.93%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Restroom Access Issues and Protocols
+      - generic: 1.13%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Cleanliness Standards in Restrooms
+      - generic: 0.8%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Late-Night Service Availability Issues
+      - generic: 1.87%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Late-Night Service Availability Issues
+      - generic: 1.8%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Peak Traffic Congestion Analysis
+      - generic: 0.07%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Customer Experience Improvement Gaps
+      - generic: 0.93%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Customer Service Experience Issues
+      - generic: 0.67%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience Challenges
+      - generic: 0.2%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Service Expectation Gaps
+      - generic: 0.07%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Customer Experience Challenges in Restaurants
+      - generic: 0.27%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Customer Experience Gaps in Restaurant Visits
+      - generic: 0.2%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Emotional Engagement Issues
+      - generic: 0.07%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Experience Improvement Strategies
+      - generic: 0%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer Trust and Service Experience
+      - generic: 0%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Explore raw data
+      - button "Select... ":
+        - paragraph: Select...
+        - generic: 
+      - button "wm-open-in-full":
+        - generic "wm-open-in-full": 
+      - paragraph: Theme coverage
+      - 'generic "Untagged: 6.8% (102 responses)"'
+      - 'generic "1 sub-themes: 54.27% (814 responses)"'
+      - 'generic "2 sub-themes: 30.6% (459 responses)"'
+      - 'generic "3 sub-themes: 6.93% (104 responses)"'
+      - 'generic "4 sub-themes: 1% (15 responses)"'
+      - 'generic "5 sub-themes: 0.4% (6 responses)"'
+      - generic: Untagged
+      - generic: 6.8%
+      - generic: (102/1500)
+      - generic: 1 sub-themes
+      - generic: 54.27%
+      - generic: (814/1500)
+      - generic: 2 sub-themes
+      - generic: 30.6%
+      - generic: (459/1500)
+      - generic: 3 sub-themes
+      - generic: 6.93%
+      - generic: (104/1500)
+      - generic: 4 sub-themes
+      - generic: 1%
+      - generic: (15/1500)
+      - generic: 5 sub-themes
+      - generic: 0.4%
+      - generic: (6/1500)
+      - navigation:
+        - button "Previous page" [disabled]:
+          - generic: 
+        - button "menu-trigger":
+          - generic: 1 - 100
+          - generic "wm-arrow-drop-down": 
+        - button "Next page":
+          - generic: 
+      - paragraph: 1500 items
+      - button "wm-sort Newest first":
+        - generic "wm-sort": 
+        - text: Newest first
+      - checkbox
+      - paragraph: Some one there was smelly
+      - checkbox
+      - paragraph: It's good for an emergency.
+      - checkbox
+      - paragraph: "\"Ran out of straws\"? Suspect"
+      - text: Customer Experience and Condiment Misrepresentation
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The place has character
+      - text: Customer Experience Differentiation
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: 1.09 soda any size!
+      - text: Pricing Concerns and Customer Feedback
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Very fast service
+      - text: Service Speed and Efficiency
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Good costumer service
+      - text: Staff Interaction and Courtesy
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Ok food ok price
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Price Perception and Consumer Feedback
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Use the app, so much free stuff.
+      - checkbox
+      - paragraph: Ice cream broken al the time
+      - text: Food Temperature and Service Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Small but nice place
+      - text: Restaurant Ambiance and Design Assessment
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The best one, super clean
+      - text: Restaurant Ambiance and Design Assessment
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Fast n delicious
+      - text: Service Speed and Efficiency
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Hot friez, reliably!
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: French Fries Temperature Consistency
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Great service. English speaking.
+      - text: Staff Interaction and Courtesy
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Good Ice Cream SundayÃ¯Â¿Â½Ã¯
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer Coffee Quality Feedback
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Closed for construction as of 5/20/21
+      - text: Location Accessibility and Visibility
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Clean food was fresh
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Cleanliness and Organization in Dining Environment
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Trying to be helpful
+      - text: Staff Friendliness and Professionalism
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Limited parking and alot of traffic
+      - text: Parking Availability Challenges
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Very small, unorganized and dirty.
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Interior Space and Cleanliness Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Saw a bunch of rats inside.
+      - text: Food Safety Concerns in Restaurants
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Quick with great deals
+      - text: Service Speed Optimization
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Kids love ice cream
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer Dining Experience Challenges
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Great f00d and love the work
+      - text: Staff Interaction and Courtesy
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Great as normal
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer Experience Differentiation
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Drive Through fast and efficient.
+      - text: Drive-Thru Customer Experience Efficiency
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Great place with delicious food
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer Dining Experience Challenges
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Great coffee with a special shot Ã¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿Â½
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer Coffee Quality Feedback
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Clean, friendly staff, quick.
+      - text: Staff Friendliness and Professionalism
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Mcdoubles for life! Please....
+      - text: Burger Texture and Customer Preferences
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: It's McDonald's, simple, fast and cheap.
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer Experience Differentiation
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Great fast service.
+      - text: Service Speed Optimization
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: McDonald is gross. I just ran in to pee
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Cleanliness and Organization in Dining Environment
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The manager was very nice
+      - text: Manager Performance Deficiencies
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Great for all family members.
+      - text: Customer Experience in Family Dining
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Drive thru too slow
+      - text: Drive-Thru Delay Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer Wait Time Experience
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Typical McDonald's food. Nothing special.
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer Experience Differentiation
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Mcdouble was nice and hot
+      - text: Food Temperature and Service Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: This McDonald's is the best in all the valley
+      - text: Customer Experience Improvement
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Very good location and good service.
+      - text: Customer Service Quality Analysis
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Location Accessibility and Visibility
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: It's macdonald's what can I say? Good
+      - text: Customer Experience Improvement
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: there fast to serve you
+      - text: Service Speed Optimization
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Good staff. Lots of homeless.
+      - text: Staff Friendliness and Professionalism
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer Experience and Homeless Presence
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Average. Fries were cold and soggy.
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Fries Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The parking and driving space in the parking lot is terrible.
+      - text: Location Accessibility and Visibility
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: horrible service fire the b,i,t,c,h
+      - text: Staff Service Attitude Analysis
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Convenient fast food on the go.
+      - text: Fast Service Expectations and Delivery
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Small but great staff.
+      - text: Staff Friendliness and Professionalism
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: ItÃ¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿
+      - checkbox
+      - paragraph: I want my. BIG. MAC. NOW. I. SAY. Lol
+      - text: Fast Service Expectations and Delivery
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Great people and very fast.
+      - text: Staff Friendliness and Professionalism
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Service Speed Optimization
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: This company screws the world with its artery choking grease burgers.
+      - text: Brand Expectation Misalignment Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Food Quality and Consistency Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: A little dirty. Tables never clean.
+      - text: Interior Space and Cleanliness Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Good service fast and friendly
+      - text: Service Speed Optimization
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Love the manager lol
+      - checkbox
+      - paragraph: Order fresh chicken hot and fresh Ã¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The workers are no help and are rude
+      - text: Staff Service Attitude Analysis
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The staffs are very kind and helpful.
+      - text: Staff Friendliness and Professionalism
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Good service but slow
+      - text: Customer Experience Improvement Suggestions
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Service Speed and Efficiency
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Too many homeless people close by.
+      - text: Customer Experience and Homeless Presence
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Welcoming and willing to accommodate most of the timeÃ¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿
+      - text: Staff Interaction and Courtesy
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Local mccy d. So it always a good experience
+      - text: Customer Experience Improvement
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Excellent place food fast..
+      - text: Food Quality and Preparation Standards
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Fast Service Expectations and Delivery
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Very nice customer service
+      - text: Customer Service Interactions
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Very quick and friendly service.
+      - text: Staff Friendliness and Professionalism
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Service Speed and Efficiency
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: This place is sooo busy, all the time
+      - text: Customer Wait Time Experience
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Great place! Restrooms are clean!
+      - text: Customer Experience Improvement
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Cleanliness and Organization in Dining Environment
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: MAKE AMERICA FAT AGAIN . . . Oh I forgot America is already obese.
+      - checkbox
+      - paragraph: Attendant didn't listen to what I ordered.
+      - text: Staff Interaction and Courtesy
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Order Accuracy Issues in Restaurant Operations
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I just happen to love McDonald's
+      - text: Customer Experience Improvement
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Its fast food. What else can you say?
+      - text: Fast Service Expectations and Delivery
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Beebe enough parking, very cramped little place, Location Location Location though...
+      - text: Location Accessibility and Visibility
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Parking Availability Challenges
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Interior Space and Cleanliness Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: It's pretty good but not good
+      - text: Customer Experience Challenges
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Convient, probably would avoid if it wasn't right there.
+      - text: Location Accessibility and Visibility
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Didn't let me use my coupon
+      - text: Pricing Concerns and Customer Feedback
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Checkout Process Efficiency
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Always A GREAT place to eat
+      - text: Customer Experience Improvement
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: No tomatoes! Did not inform when ordering.
+      - text: Missing Food Items in Meal Orders
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Incorrect Order Fulfillment Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Dirty. Tight parking lot. Too many homeless people.
+      - text: Customer Space Limitations
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer Experience and Homeless Presence
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Cleanliness and Organization in Dining Environment
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Great food at reasonable prices
+      - text: Food Quality and Consistency Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Pricing Concerns and Customer Feedback
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Typical McDonald's. Could be aa bit ccleaner.
+      - text: Cleanliness and Organization in Dining Environment
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Like the promo and the attention here in Burbank San Fernando blvd
+      - text: Customer Experience Improvement
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Always fast friendly service :]
+      - text: Staff Friendliness and Professionalism
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Service Speed and Efficiency
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: One of the premier sites for Latin dancing in Southern California.
+      - checkbox
+      - paragraph: Loud obxious mgrs screaming out orders
+      - text: Staff Interaction and Courtesy
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Good and fast great mcdonald's
+      - text: Service Speed and Efficiency
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The meth epidemic going on outside wasn't happening.
+      - text: Customer Experience and Homeless Presence
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: It's McDonald's, however, very, very slow service.
+      - text: Service Flow Consistency Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Menu card is growing very fast...
+      - text: Menu Clarity and Accessibility Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: the staff and management are all very friendly and professional
+      - text: Staff Friendliness and Professionalism
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: It's McDonald's. This is an excellent example of McDonald's. Nuf said
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer Experience Differentiation
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Doesnt matter where you go, always tastes awful
+      - text: Food Quality and Consistency Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: It came back! Hooray!!
+      - text: Order Accuracy Issues in Restaurant Operations
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Very fast congratulations. Good team.
+      - text: Staff Friendliness and Professionalism
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Service Speed and Efficiency
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The burgers just keeps getting smaller and smaller And the price higher and higher
+      - text: Food Quality and Consistency Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Pricing Concerns and Customer Feedback
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Great service it was pretty quick.
+      - text: Service Speed and Efficiency
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The burger looked nothing like the pictures
+      - text: Brand Expectation Misalignment Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Food Freshness and Quality Concerns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Small place but clean and fast
+      - text: Service Speed and Efficiency
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Interior Space and Cleanliness Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Nice specialty coffee drinks! Ã¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿Â½
+      - text: Customer Coffee Quality Feedback
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: No restroom bad serviceÃ¯Â¿Â½Ã¯Â¿Â½Ã¯Â¿
+      - text: Customer Service Experience Issues
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Restroom Access Issues and Protocols
+      - button "wm-close":
+        - generic "wm-close": 
+  - link "QuestionPro Admin":
+    - /url: https://www.questionpro.com/a/showUpgradeUser.do?payment=RecurringOrder
+  - generic: "#Business Intelligence v202"
+  - button "":
+    - generic: 

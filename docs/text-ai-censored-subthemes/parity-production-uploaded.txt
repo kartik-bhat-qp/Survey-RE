@@ -1,0 +1,473 @@
+- banner:
+  - button "product-switcher":
+    - link "wc-logo":
+      - /url: https://bi.questionpro.com
+      - generic "wc-logo": 
+    - generic: Business Intelligence
+    - generic: 
+  - navigation:
+    - link "Workspaces":
+      - /url: /workspaces
+      - paragraph: Workspaces
+    - generic: 
+    - link "Default 2":
+      - /url: /workspaces/348
+      - paragraph: Default 2
+    - generic: 
+    - link "TextAI":
+      - /url: /workspaces/348/text-ai/dashboards
+      - paragraph: TextAI
+    - generic: 
+    - link "CODEX QA Emerging Upload Codebook Dashboard — 2026-09-10":
+      - /url: /workspaces/348/text-ai/dashboards/9464
+      - paragraph: CODEX QA Emerging Upload Codebook Dashboard — 2026-09-10
+    - generic: 
+    - paragraph: Theme configuration
+  - list:
+    - button "dropdown-trigger":
+      - generic: 
+  - list:
+    - button "dropdown-trigger":
+      - generic: PG
+- complementary:
+  - button "menu-icon Toggle Sidebar":
+    - generic "menu-icon"
+    - generic: Toggle Sidebar
+  - separator
+  - generic: Analytics
+  - list:
+    - link " Dashboards":
+      - /url: /workspaces/348/dashboards?pagenumber=1
+      - generic: 
+      - generic: Dashboards
+    - link " TextAI":
+      - /url: /workspaces/348/text-ai/dashboards
+      - generic: 
+      - generic: TextAI
+    - link " Reports":
+      - /url: /workspaces/348/reports
+      - generic: 
+      - generic: Reports
+  - generic: Data
+  - list:
+    - link " Survey stacks":
+      - /url: /workspaces/348/survey-stacks
+      - generic: 
+      - generic: Survey stacks
+    - link " Weightings":
+      - /url: /workspaces/348/weightings
+      - generic: 
+      - generic: Weightings
+    - link " Datasets":
+      - /url: /workspaces/348/datasets
+      - generic: 
+      - generic: Datasets
+    - link " Exports":
+      - /url: /workspaces/348/exports
+      - generic: 
+      - generic: Exports
+  - separator
+  - list:
+    - link " Admin":
+      - /url: /admin
+      - generic: 
+      - generic: Admin
+    - link " Settings":
+      - /url: /settings
+      - generic: 
+      - generic: Settings
+- main:
+  - main:
+    - document:
+      - generic: 
+      - textbox "Search themes or responses..."
+      - button " Filter":
+        - generic: 
+        - generic: Filter
+      - button "Theme history":
+        - generic: 
+      - button "Theme configuration settings":
+        - generic: 
+      - button "":
+        - generic: 
+      - button "Recode"
+      - text: My code frame
+      - generic: "10"
+      - generic: "40"
+      - button "New sub-theme"
+      - button "New theme"
+      - generic: 
+      - generic: Outlier Parent Topic
+      - generic: 47.5%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Outlier
+      - paragraph: Texts that don't match any taxonomy topic
+      - generic: 47.5%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Gibberish
+      - paragraph: Texts identified as gibberish or non-meaningful.
+      - generic: 0%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: N/A
+      - paragraph: Empty, non-substantive, or non-applicable responses identified.
+      - generic: 0%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Support experience
+      - generic: 22.5%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Agent helpfulness
+      - paragraph: Staff listening, clarity, professionalism, empathy, and ability to explain a solution.
+      - generic: 12.5%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Resolution and follow-up
+      - paragraph: First-contact resolution, unresolved cases, follow-up timing, and confirmation that an issue is fixed.
+      - generic: 12.5%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Delivery operations
+      - generic: 22.5%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Shipping speed
+      - paragraph: Delivery timing, missed delivery windows, courier delays, early arrivals, and condition on arrival.
+      - generic: 15%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Order tracking
+      - paragraph: Tracking links, shipment status updates, carrier information, and delivery notifications.
+      - generic: 12.5%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Energy monitoring
+      - generic: 10%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Inaccurate energy readings
+      - paragraph: Reports that displayed energy consumption does not match the device’s actual power use, including incorrect idle status and underestimated overnight electricity usage.
+      - generic: 5%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Usage history
+      - paragraph: Requests and limitations related to viewing electricity consumption over time, including hourly detail and access to enough historical data for weekly comparisons.
+      - generic: 5%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Energy automation
+      - generic: 5%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Energy-saving automation failures
+      - paragraph: Problems with automated energy-saving functions, including schedules that fail to reduce standby power and settings that turn off after firmware updates.
+      - generic: 5%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Explore raw data
+      - button "Select... ":
+        - paragraph: Select...
+        - generic: 
+      - button "wm-open-in-full":
+        - generic "wm-open-in-full": 
+      - paragraph: Theme coverage
+      - 'generic "1 sub-themes: 85% (34 responses)"'
+      - 'generic "2 sub-themes: 15% (6 responses)"'
+      - generic: 1 sub-themes
+      - generic: 85%
+      - generic: (34/40)
+      - generic: 2 sub-themes
+      - generic: 15%
+      - generic: (6/40)
+      - navigation:
+        - button "Previous page" [disabled]:
+          - generic: 
+        - button "menu-trigger":
+          - generic: 1 - 40
+          - generic "wm-arrow-drop-down": 
+        - button "Next page" [disabled]:
+          - generic: 
+      - paragraph: 40 items
+      - button "wm-sort Newest first":
+        - generic "wm-sort": 
+        - text: Newest first
+      - checkbox
+      - paragraph: Delivery was fast and the support response was excellent.
+      - text: Agent helpfulness
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Shipping speed
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The agent was helpful, but the tracking page still showed an old status.
+      - text: Agent helpfulness
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Order tracking
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The courier delayed my order but support provided a clear update.
+      - text: Agent helpfulness
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Shipping speed
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Support fixed the pairing issue quickly and followed up later.
+      - text: Resolution and follow-up
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The replacement shipment arrived on time and tracking worked perfectly.
+      - text: Shipping speed
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Order tracking
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The larger text option makes the room selector impossible to use.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Voice control reads every decorative icon before the actual device controls.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The accessibility labels use device IDs instead of friendly names.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: High-contrast mode still hides the battery percentage.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Screen-reader focus jumps back to the top whenever a device is renamed.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The monthly energy report double-counted two connected appliances.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My electricity tariff changes by hour but the app assumes one flat rate.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The battery reserve setting ignores the percentage I selected.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Energy history only shows one day, which is not useful for comparing weeks.
+      - text: Usage history
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The solar surplus automation does not start my water heater.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I want alerts when an appliance suddenly starts consuming unusual power.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Peak-time automation failed and all appliances ran during the expensive period.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The energy-saving mode turns itself off after every firmware update.
+      - text: Energy-saving automation failures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Please add carbon-impact reporting for each connected appliance.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The device uses far more electricity overnight than the energy estimate shows.
+      - text: Inaccurate energy readings
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Battery optimization keeps charging during peak-rate hours.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Solar charging status is missing even though the panel is connected.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The smart plug schedule does not reduce standby power as promised.
+      - text: Energy-saving automation failures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I need hourly electricity usage so I can understand why my bill increased.
+      - text: Usage history
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The new energy dashboard says the device is idle while it is still drawing power.
+      - text: Inaccurate energy readings
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Keyboard navigation skips the payment options and traps focus in the address form.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The color contrast is too low to read order status information.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Text becomes clipped when I increase the system font size for low vision.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Voice control cannot activate the checkout button, making the app inaccessible hands-free.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The app has no screen-reader labels on the main navigation buttons.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The agent followed up the next morning and confirmed everything was working.
+      - text: Resolution and follow-up
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Shipping was fast, although the tracking link opened the wrong carrier page.
+      - text: Shipping speed
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Order tracking
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The representative was polite but the case remained unresolved.
+      - text: Agent helpfulness
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Resolution and follow-up
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Support resolved my billing question during the first conversation.
+      - text: Resolution and follow-up
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I waited a week for support to follow up after the first chat.
+      - text: Resolution and follow-up
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The support agent listened carefully and explained the fix in plain language.
+      - text: Agent helpfulness
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Order tracking was accurate and the delivery notification was useful.
+      - text: Order tracking
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The courier missed the promised delivery window by three days.
+      - text: Shipping speed
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Tracking stopped updating after dispatch, so I did not know when it would arrive.
+      - text: Order tracking
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The delivery arrived two days early and the package was undamaged.
+      - text: Shipping speed
+      - button "wm-close":
+        - generic "wm-close": 
+  - link "QuestionPro Admin":
+    - /url: https://www.questionpro.com/a/showUpgradeUser.do?payment=RecurringOrder
+  - generic: "#Business Intelligence v202"
+  - button "":
+    - generic: 

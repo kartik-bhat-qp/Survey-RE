@@ -5,6 +5,7 @@ import type {
 import { MOCK_TEXT_AI_ANALYSIS_QUESTIONS } from '@/data/mock-text-ai-questions';
 
 export type TextAiRecodeAction =
+  | 'configuration-saved'
   | 'granularity-changed'
   | 'recode-run'
   | 'response-tagged'

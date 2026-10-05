@@ -5,9 +5,9 @@ import styles from './TextAiAddWidgetStepBreadcrumb.module.css';
 export type TextAiAddWidgetStep = 'question' | 'chart' | 'kpi';
 
 const STEPS: { id: TextAiAddWidgetStep; label: string; icon: string }[] = [
-  { id: 'question', label: 'Question', icon: 'wm-chat' },
-  { id: 'chart', label: 'Chart', icon: 'wm-pie-chart' },
-  { id: 'kpi', label: 'KPI', icon: 'wm-poll' },
+  { id: 'chart', label: 'Widget', icon: 'wm-pie-chart' },
+  { id: 'question', label: 'Data source', icon: 'wm-chat' },
+  { id: 'kpi', label: 'KPI setup', icon: 'wm-poll' },
 ];
 
 interface TextAiAddWidgetStepBreadcrumbProps {

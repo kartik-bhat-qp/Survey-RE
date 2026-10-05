@@ -283,7 +283,14 @@
   }
 }
 
-.kpiStep { padding: 16px 24px; max-width: 680px; margin: 0 auto; font-size: 13px; line-height: 1.6; }
+.kpiStep { padding: 16px 24px; width: 100%; max-width: 680px; margin: 0; text-align: left; font-size: 13px; line-height: 1.6; }
 .kpiStep h3 { font-size: 16px; font-weight: 500; margin: 0 0 16px; }
 .kpiStep > p { margin-bottom: 18px; }
 .prototypeNote { color: #6e7682; font-size: 12px; }
+
+.stepHeading { font-size: 16px; font-weight: 500; color: #555; margin: 0; }
+
+.pagination { display: flex; align-items: center; gap: 10px; }
+.pagination button { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 0; background: transparent; color: #1b87e6; cursor: pointer; font-size: 18px; }
+.pagination button:disabled { color: #aaa; cursor: default; }
+.pagination button:focus-visible { outline: 2px solid #1b87e6; outline-offset: 2px; }

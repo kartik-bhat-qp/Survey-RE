@@ -26,8 +26,8 @@ import {
   type TextAiWidgetSettingsProps,
 } from "@/data/text-ai-widget-settings";
 import { useTextAiWidgetSettings } from "./useTextAiWidgetSettings";
-import { TextAiKpiQuestionField } from "./TextAiKpiQuestionField";
-import type { TextAiKpiId } from "@/data/mock-text-ai-kpi-by-theme";
+import { TextAiKpiSettingsFields } from "./TextAiKpiSetupFields";
+import type { TextAiKpiConfig } from "@/data/mock-text-ai-kpi-by-theme";
 import styles from "./TextAiConfiguredWidget.module.css";
 
 const WuSelect = dynamic(
@@ -112,7 +112,7 @@ export function TextAiConfiguredWidget({
   sections?: string[];
   children: ReactElement<TextAiWidgetSettingsProps>;
   readOnly?: boolean;
-  kpiBinding?: { question: string; id: TextAiKpiId; onChange: (id: TextAiKpiId) => void };
+  kpiBinding?: { config: TextAiKpiConfig; onChange: (config: TextAiKpiConfig) => void };
 }) {
   const key = textAiWidgetSettingsKey(dashboardId, widgetId);
   const { settings, error, setError, update } = useTextAiWidgetSettings(
@@ -332,7 +332,7 @@ export function TextAiConfiguredWidget({
   const renderAnalytics = () => (
     <>
       {kind === "kpi-by-theme" && <>
-        {kpiBinding && <TextAiKpiQuestionField value={kpiBinding.id} onChange={kpiBinding.onChange} showDetails={false} />}
+        {kpiBinding && <TextAiKpiSettingsFields value={kpiBinding.config} onChange={kpiBinding.onChange} />}
         {select("Show themes", "display", ["All", "Top 3", "Top 5", "Top 10", "Top 15", "Top 20"])}
         {toggle("Show Overall baseline", "showOverall")}
       </>}

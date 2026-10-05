@@ -1,0 +1,1371 @@
+- banner:
+  - button "product-switcher":
+    - link "wc-logo":
+      - /url: https://bi.questionpro.com
+      - generic "wc-logo": 
+    - generic: Business Intelligence
+    - generic: 
+  - navigation:
+    - link "Workspaces":
+      - /url: /workspaces
+      - paragraph: Workspaces
+    - generic: 
+    - link "Demo":
+      - /url: /workspaces/2657
+      - paragraph: Demo
+    - generic: 
+    - link "TextAI":
+      - /url: /workspaces/2657/text-ai/dashboards
+      - paragraph: TextAI
+    - generic: 
+    - link "Question 160164738":
+      - /url: /workspaces/2657/text-ai/dashboards/4614
+      - paragraph: Question 160164738
+    - generic: 
+    - paragraph: Theme configuration
+  - list:
+    - button "dropdown-trigger":
+      - generic: 
+  - list:
+    - button "dropdown-trigger":
+      - generic: PG
+- complementary:
+  - button "menu-icon Toggle Sidebar":
+    - generic "menu-icon"
+    - generic: Toggle Sidebar
+  - separator
+  - generic: Analytics
+  - list:
+    - link " Dashboards":
+      - /url: /workspaces/2657/dashboards?pagenumber=1
+      - generic: 
+      - generic: Dashboards
+    - link " TextAI":
+      - /url: /workspaces/2657/text-ai/dashboards
+      - generic: 
+      - generic: TextAI
+    - link " Reports":
+      - /url: /workspaces/2657/reports
+      - generic: 
+      - generic: Reports
+  - generic: Data
+  - list:
+    - link " Survey stacks":
+      - /url: /workspaces/2657/survey-stacks
+      - generic: 
+      - generic: Survey stacks
+    - link " Weightings":
+      - /url: /workspaces/2657/weightings
+      - generic: 
+      - generic: Weightings
+    - link " Datasets":
+      - /url: /workspaces/2657/datasets
+      - generic: 
+      - generic: Datasets
+    - link " Exports":
+      - /url: /workspaces/2657/exports
+      - generic: 
+      - generic: Exports
+  - separator
+  - list:
+    - link " Admin":
+      - /url: /admin
+      - generic: 
+      - generic: Admin
+    - link " Settings":
+      - /url: /settings
+      - generic: 
+      - generic: Settings
+- main:
+  - main:
+    - document:
+      - generic: 
+      - textbox "Search themes or responses..."
+      - button " Filter":
+        - generic: 
+        - generic: Filter
+      - button "Theme history":
+        - generic: 
+      - button "Theme configuration settings":
+        - generic: 
+      - button "":
+        - generic: 
+      - generic: Recode in progress…
+      - text: My code frame
+      - generic: "42"
+      - generic: "1500"
+      - button "New sub-theme"
+      - button "New theme"
+      - generic: 
+      - generic: Overall product rating
+      - generic: 25.4%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Overall product rating
+      - paragraph: Comments focused on overall product ratings, often short assessments signaling average, poor, or below-average evaluations.
+      - generic: 19.87%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Test product rating
+      - generic: 5.53%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Ride operation and pacing
+      - generic: 24.73%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Ride safety procedures
+      - paragraph: Content about ride-specific safety procedures, protocols, and perceived risks associated with operation and enforcement.
+      - generic: 7.53%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Overall ride condition
+      - paragraph: Tracking the overall condition of the ride including general maintenance and vehicle comfort.
+      - generic: 6.27%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Ride pace settings
+      - paragraph: Discussion of ride pacing and speed settings, and how pace interacts with safety and guest perception.
+      - generic: 4%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Ride pacing and speed
+      - paragraph: Comments about ride pacing and perceived slowness or speed, and how pacing affects excitement and perception.
+      - generic: 2.67%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Ride maintenance procedures
+      - paragraph: Mentions of ride maintenance activities and procedures, noting upkeep practices for operational readiness.
+      - generic: 2.6%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Vehicle ride dynamics
+      - paragraph: Discussion of vehicle ride dynamics and performance, focusing on operational behavior and any reported issues.
+      - generic: 2.27%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Machine operation smoothness
+      - paragraph: Mentions of machine or operational smoothness, including comments about slow or overly smooth operation that may reduce excitement.
+      - generic: 1.53%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Vehicle condition and maintenance
+      - generic: 19.67%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Ride atmosphere and maintenance
+      - paragraph: Discussion of ride ambience and upkeep, combining enjoyment, entertainment and atmosphere with perceptions of maintenance and engagement.
+      - generic: 8.47%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Ride motion characteristics
+      - paragraph: Focus on ride motion characteristics, particularly speed and how it influences the ride experience.
+      - generic: 5.6%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Equipment maintenance standards
+      - paragraph: Topic addressing equipment maintenance standards, reliability, upkeep quality, and perceived adherence to maintenance protocols.
+      - generic: 4.4%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Overall vehicle condition rating
+      - paragraph: Brief assessments of overall vehicle condition, typically short ratings or single-word impressions of condition.
+      - generic: 2.6%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Event promotion strategy
+      - generic: 18.4%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Venue crowding and capacity
+      - paragraph: Concerns about crowding and venue capacity, including overcrowding, attendance levels, density, and throughput issues.
+      - generic: 14.8%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Event promotion strategy
+      - paragraph: Topic about event promotion tactics emphasizing excitement, presence, and appeal to boost perceived experience.
+      - generic: 2.27%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Event entertainment and atmosphere
+      - paragraph: Comments on event entertainment and atmosphere, centering on fun, enjoyment, and the positive experiential aspects of events.
+      - generic: 2.27%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: How did you hear about us
+      - paragraph: A sub-theme that tracks the performance of various communication channels used for promotion and their effectiveness
+      - generic: 0%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Onboard safety communication
+      - generic: 13.2%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Safety concern reports
+      - paragraph: Reports and perceptions of safety concerns, including repeated mentions of threats and the communication of those issues.
+      - generic: 9.6%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Onboard safety communication
+      - paragraph: Discussion of how onboard safety is communicated to passengers, covering perceptions of threat communication and mixed expectations.
+      - generic: 2.07%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Customer churn drivers
+      - paragraph: Themes linking safety or experience issues to risk of customer churn, reputational threats, and detractor behavior.
+      - generic: 1.67%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Play experience and engagement
+      - generic: 8.53%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Ride experience factors
+      - paragraph: Exploration of factors that shape ride enjoyment, highlighting boredom versus fun and elements that affect engagement.
+      - generic: 4.2%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: User engagement with content
+      - paragraph: Comments highlighting low engagement with content, boredom complaints, and lack of enjoyment or excitement.
+      - generic: 1.6%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Excitement level feedback
+      - paragraph: Feedback focused on excitement level, noting how thrilling or unexciting the experience feels to users.
+      - generic: 1.6%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Play experience attributes
+      - paragraph: Attributes that define play experience, such as perceived fun, value, and enjoyment drivers.
+      - generic: 1.2%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Product attribute distinctiveness
+      - generic: 7.33%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Product attribute distinctiveness
+      - paragraph: Descriptions of mixed or conflicting emotional responses to product attributes, noting lack of clear distinction and contradictory feelings.
+      - generic: 3.13%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Overall product impression
+      - paragraph: Strong overall impressions or reactions to the product, often negative or indicating clear dislike or strong sentiment.
+      - generic: 2.2%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Product features versus expectations
+      - paragraph: Comparisons of product features against expectations, focusing on mismatches, underwhelming elements, and conflicting evaluations.
+      - generic: 1.13%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Product usage experience
+      - paragraph: Reports of poor product usage experience, short statements indicating bad or unsatisfactory use encounters.
+      - generic: 1%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Guest services enhancement requests
+      - generic: 4.4%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Customer upsell campaigns
+      - paragraph: Content about customer upsell and engagement campaigns, noting opportunities for conversion, advocacy, and follow-up enhancement.
+      - generic: 2.07%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Service change requests
+      - paragraph: Requests for service changes or improvements, expressing urgency or suggestions for actions to address needs.
+      - generic: 1.2%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Guest services and amenities
+      - paragraph: Feedback about guest services and amenities, highlighting dissatisfaction, expectation gaps, and impact on enjoyment.
+      - generic: 1.13%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Customer feedback options
+      - generic: 3.2%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Survey response options
+      - paragraph: Discussion of survey response options and neutral or ambivalent answer choices like indifferent or dissatisfied selections.
+      - generic: 1.4%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Brief feedback comments
+      - paragraph: Brief feedback comments, often a single positive or negative word or short endorsement lacking detail.
+      - generic: 0.93%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Service interaction feedback
+      - paragraph: Feedback about service interactions that are below average or underwhelming, noting mediocre experiences and gaps.
+      - generic: 0.87%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Performance feedback comments
+      - generic: 3%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Short feedback responses
+      - paragraph: Short, minimal feedback responses that are neutral or brief and lack detailed explanation.
+      - generic: 1.53%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Performance feedback content redundancy
+      - paragraph: Notes on redundant or repetitive performance feedback, addressing lack of specificity, praise repetition, and shallow detail.
+      - generic: 1.47%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Toy play mechanics design
+      - generic: 2.93%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Play mechanics for toys
+      - paragraph: Comments on play mechanics for toys, concentrating on factors that influence fun and excitement in toy design.
+      - generic: 1.07%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Event program mix
+      - paragraph: Observations about the mix of programs or offerings at events and how that mix affects overall enjoyment.
+      - generic: 1%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Entertainment value balance
+      - paragraph: Discussion of entertainment value balance, weighing perceived entertainment against cost or value delivered.
+      - generic: 0.87%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Product look and feel
+      - generic: 1.87%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: General product comments
+      - paragraph: General product comments capturing overall impressions and sentiment without deep specificity.
+      - generic: 0.93%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Product look and feel
+      - paragraph: Descriptions of product look and feel focused on positive sensations, strong impressions, and experiential aspects.
+      - generic: 0.93%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Outlier Parent Topic
+      - generic: 0.2%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: N/A
+      - paragraph: Empty, non-substantive, or non-applicable responses identified.
+      - generic: 0.2%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Value for money
+      - generic: 0%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Explore raw data
+      - button "Select... ":
+        - paragraph: Select...
+        - generic: 
+      - button "wm-open-in-full":
+        - generic "wm-open-in-full": 
+      - paragraph: Theme coverage
+      - 'generic "Untagged: 15.6% (234 responses)"'
+      - 'generic "1 sub-themes: 39.07% (586 responses)"'
+      - 'generic "2 sub-themes: 37.4% (561 responses)"'
+      - 'generic "3 sub-themes: 7.93% (119 responses)"'
+      - generic: Untagged
+      - generic: 15.6%
+      - generic: (234/1500)
+      - generic: 1 sub-themes
+      - generic: 39.07%
+      - generic: (586/1500)
+      - generic: 2 sub-themes
+      - generic: 37.4%
+      - generic: (561/1500)
+      - generic: 3 sub-themes
+      - generic: 7.93%
+      - generic: (119/1500)
+      - navigation:
+        - button "Previous page" [disabled]:
+          - generic: 
+        - button "menu-trigger":
+          - generic: 1 - 100
+          - generic "wm-arrow-drop-down": 
+        - button "Next page":
+          - generic: 
+      - paragraph: 1500 items
+      - button "wm-sort Newest first":
+        - generic "wm-sort": 
+        - text: Newest first
+      - checkbox
+      - paragraph: I had a poor experience on the ride. It was well-maintained and exciting.
+      - text: Product usage experience
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Didn't like it.
+      - text: Overall product impression
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer upsell campaigns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was poor. It felt boring and exciting.
+      - checkbox
+      - paragraph: My experience on the ride was below average. It was unsafe but also crowded.
+      - text: Venue crowding and capacity
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Safety concern reports
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Not great.
+      - text: Overall product impression
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer upsell campaigns
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Very bad.
+      - text: Customer churn drivers
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Test product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was average. It was smooth but also well-maintained.
+      - text: Equipment maintenance standards
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was poor. It felt slow and well-maintained.
+      - text: Product attribute distinctiveness
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was below average. It seemed exciting and fun.
+      - text: Service interaction feedback
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was poor. It seemed well-maintained and exciting.
+      - text: Product attribute distinctiveness
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Not bad.
+      - text: Customer upsell campaigns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Test product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was poor. It seemed slow and fun.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was good. It was smooth but also smooth.
+      - text: Performance feedback content redundancy
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Product look and feel
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Very bad.
+      - text: Customer churn drivers
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Test product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was below average. It was slow but also crowded.
+      - text: Venue crowding and capacity
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Test product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: So-so
+      - text: User engagement with content
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Test product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was average. It seemed exciting and boring.
+      - text: Product features versus expectations
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Quite nice.
+      - text: Performance feedback content redundancy
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Event program mix
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a good experience on the ride. It was well-maintained and smooth.
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Fine
+      - checkbox
+      - paragraph: Awesome
+      - text: Ride atmosphere and maintenance
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Guest services and amenities
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was good. It was slow but also exciting.
+      - text: Ride pace settings
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride pacing and speed
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Bad
+      - text: Brief feedback comments
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Could be better.
+      - text: Service change requests
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was poor. It seemed fun and well-maintained.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was poor. It seemed unsafe and boring.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Onboard safety communication
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was average. It felt fun and unsafe.
+      - text: Safety concern reports
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Event entertainment and atmosphere
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Onboard safety communication
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Could be better.
+      - text: Service change requests
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: It was okay.
+      - text: Short feedback responses
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a below average experience on the ride. It was smooth and smooth.
+      - text: Machine operation smoothness
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Service interaction feedback
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was good. It seemed crowded and fun.
+      - text: Venue crowding and capacity
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Test product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was excellent. It was unsafe but also fun.
+      - text: Safety concern reports
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Product look and feel
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was below average. It seemed boring and fun.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Product features versus expectations
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was average. It felt boring and well-maintained.
+      - text: Overall vehicle condition rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer upsell campaigns
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was excellent. It was unsafe but also boring.
+      - text: Ride experience factors
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Onboard safety communication
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was poor. It was exciting but also slow.
+      - text: Ride pace settings
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride pacing and speed
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Onboard safety communication
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a excellent experience on the ride. It was exciting and exciting.
+      - text: Event promotion strategy
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Product look and feel
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was poor. It seemed crowded and smooth.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Venue crowding and capacity
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Machine operation smoothness
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was poor. It seemed well-maintained and unsafe.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer churn drivers
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a good experience on the ride. It was exciting and unsafe.
+      - text: Safety concern reports
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Onboard safety communication
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was excellent. It felt boring and boring.
+      - text: Ride experience factors
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was excellent. It was unsafe but also smooth.
+      - text: Safety concern reports
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Product attribute distinctiveness
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was poor. It seemed boring and crowded.
+      - text: Venue crowding and capacity
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: User engagement with content
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Not bad.
+      - text: Brief feedback comments
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was poor. It seemed smooth and smooth.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Performance feedback content redundancy
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a good experience on the ride. It was smooth and slow.
+      - text: Ride pace settings
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a good experience on the ride. It was slow and unsafe.
+      - text: Safety concern reports
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride pace settings
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was excellent. It seemed smooth and exciting.
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was below average. It seemed crowded and slow.
+      - text: Venue crowding and capacity
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride pace settings
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was poor. It seemed unsafe and boring.
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: It was fine.
+      - checkbox
+      - paragraph: The ride was below average. It felt smooth and unsafe.
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was excellent. It was boring but also fun.
+      - text: Product attribute distinctiveness
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Meh
+      - text: Short feedback responses
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was poor. It was fun but also boring.
+      - text: Product features versus expectations
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a good experience on the ride. It was fun and well-maintained.
+      - text: Ride maintenance procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was average. It was smooth but also slow.
+      - text: Ride pace settings
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was good. It was fun but also fun.
+      - text: Performance feedback content redundancy
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Average
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was below average. It seemed fun and smooth.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Play experience attributes
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was excellent. It felt slow and smooth.
+      - text: Ride atmosphere and maintenance
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride pace settings
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a poor experience on the ride. It was well-maintained and exciting.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a poor experience on the ride. It was crowded and well-maintained.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Venue crowding and capacity
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: It was fine.
+      - text: Ride atmosphere and maintenance
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a poor experience on the ride. It was slow and well-maintained.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride motion characteristics
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a good experience on the ride. It was boring and fun.
+      - text: Ride atmosphere and maintenance
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a below average experience on the ride. It was well-maintained and crowded.
+      - text: Venue crowding and capacity
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Fine
+      - text: Ride atmosphere and maintenance
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was poor. It seemed crowded and fun.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Venue crowding and capacity
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a average experience on the ride. It was crowded and fun.
+      - text: Ride atmosphere and maintenance
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Venue crowding and capacity
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was average. It seemed boring and slow.
+      - text: Ride motion characteristics
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was excellent. It seemed exciting and exciting.
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Performance feedback content redundancy
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was average. It felt smooth and boring.
+      - checkbox
+      - paragraph: My experience on the ride was below average. It was smooth but also fun.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride atmosphere and maintenance
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was poor. It seemed well-maintained and slow.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride motion characteristics
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was average. It felt crowded and unsafe.
+      - text: Venue crowding and capacity
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer churn drivers
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was average. It seemed unsafe and boring.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer churn drivers
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Good
+      - text: Ride atmosphere and maintenance
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a good experience on the ride. It was fun and boring.
+      - text: Ride atmosphere and maintenance
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a below average experience on the ride. It was well-maintained and exciting.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Overall ride condition
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Quite nice.
+      - text: Ride atmosphere and maintenance
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was excellent. It was exciting but also smooth.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was excellent. It felt fun and slow.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride atmosphere and maintenance
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride motion characteristics
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was good. It felt slow and boring.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride motion characteristics
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride experience factors
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was poor. It felt exciting and smooth.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was excellent. It felt smooth and exciting.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a poor experience on the ride. It was boring and exciting.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Product attribute distinctiveness
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was excellent. It seemed exciting and unsafe.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Onboard safety communication
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I had a average experience on the ride. It was exciting and crowded.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Venue crowding and capacity
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was poor. It seemed slow and exciting.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride motion characteristics
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was poor. It felt exciting and unsafe.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Onboard safety communication
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was poor. It seemed well-maintained and unsafe.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride maintenance procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Onboard safety communication
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was poor. It was boring but also smooth.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride experience factors
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Very bad.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer churn drivers
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The ride was poor. It felt well-maintained and exciting.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride safety procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride maintenance procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was below average. It seemed smooth and slow.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride motion characteristics
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was average. It was smooth but also well-maintained.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride maintenance procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Overall, the merry-go-round was average. It seemed slow and well-maintained.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride motion characteristics
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride maintenance procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: My experience on the ride was excellent. It was fun but also well-maintained.
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride atmosphere and maintenance
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Ride maintenance procedures
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Poor
+      - text: Overall product rating
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Customer churn drivers
+      - button "wm-close":
+        - generic "wm-close": 
+  - link "QuestionPro Admin":
+    - /url: https://www.questionpro.com/a/showUpgradeUser.do?payment=RecurringOrder
+  - generic: "#Business Intelligence v202"
+  - button "":
+    - generic: 

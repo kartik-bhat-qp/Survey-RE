@@ -1,0 +1,190 @@
+[
+  {
+    "slide": "g30a02577f3c_0_5",
+    "title": "Problem and product intent",
+    "titleShape": "g30a02577f3c_0_6",
+    "bodyShape": "g38a1465038d_0_4",
+    "body": [
+      "Theme frequency and sentiment do not show how respondents mentioning a topic score on an actual business outcome. Analysts need both the topic’s own KPI and its observed relationship to the overall KPI.",
+      "Add Impact on KPI to TextAI: one compact table of themes and expandable sub-themes, with observed impact, group KPI, response count and share of the eligible base.",
+      "Primary users: CX/EX analysts prioritizing investigation, and dashboard reviewers validating results against supporting responses. The table supports comparison; it does not predict the lift from fixing an issue.",
+      "Review draft • 30 September 2026. Requirements reflect the agreed Survey-RE prototype. Existing TextAI widgets provide the visual baseline; this feature is a proposed extension, not verified production functionality."
+    ]
+  },
+  {
+    "slide": "g86f1215a00_0_12",
+    "titleShape": "g86f1215a00_0_15",
+    "title": "Scope of this PRD",
+    "bodyShape": "g86f1215a00_0_19",
+    "body": [
+      "Response-to-KPI mapping and eligible analysis base",
+      "Score formulas, observed impact and worked example",
+      "Single-table presentation, sorting and expansion",
+      "Creation flow and consistent widget settings",
+      "Supporting responses, coverage and unavailable states",
+      "Production boundaries, acceptance checks and prototype walkthrough"
+    ]
+  },
+  {
+    "slide": "g8709499aee_5_33",
+    "titleShape": "g8709499aee_5_34",
+    "title": "Data contract",
+    "subtitleShape": "g3cee4e92f19_0_0",
+    "subtitle": "One text question + one KPI question",
+    "bodyShape": "g3cee4e92f19_0_1",
+    "body": [
+      "Bind stable source, text-question and KPI-question IDs. Join analyzed text and theme tags to the KPI answer using the same response ID within that source; never match by row order or infer KPI scores from sentiment.",
+      "B = unique responses passing the chosen response filters, with completed analysis, nonblank text and a valid selected KPI answer. Missing, invalid or out-of-range KPI answers and blank/pending/failed text are excluded.",
+      "T = responses in B tagged with a theme or sub-theme. R = B excluding T. Parent membership is the union of response IDs across its tags. Repeated tags never inflate counts.",
+      "Sub-themes use the same B as their parent, not a parent-only denominator. Responses can belong to multiple themes; shares and impacts must not be summed.",
+      "Production must discover eligible same-source KPI fields and use established scoring metadata. The prototype’s four questions are synthetic examples, not live field discovery."
+    ]
+  },
+  {
+    "slide": "h2f0ab398812e6590_1_0",
+    "title": "Calculation rules",
+    "subtitle": "Unweighted scores; round only for display",
+    "body": [
+      "NPS(S) = 100 × (promoters − detractors) / valid responses in S. Scores 9–10 are promoters, 0–6 detractors; 7–8 passives remain in the denominator. Require whole-number answers from 0 to 10.",
+      "CSAT(S) = 100 × satisfied responses / valid responses in S. This version uses scores 4–5 on a 1–5 scale. Mean(S) = sum of valid ratings / response count on the configured scale.",
+      "Overall = KPI(B). Theme KPI = KPI(T). Observed impact = KPI(B) − KPI(R). Equivalent: |T| / |B| × [KPI(T) − KPI(R)]. Positive and negative values show direction relative to the remaining responses.",
+      "Responses = |T|. Share of base = 100 × |T| / |B|. Text coverage = 100 × |B| / valid KPI responses after the same filters; show coverage in analysis details.",
+      "Display NPS/CSAT and impacts to 1 decimal; mean scores/impacts to 2; shares to 1. Impact units: NPS points, percentage points (CSAT), or scale points. Compute using full precision."
+    ],
+    "titleShape": "h2f0ab398812e6590_1_1",
+    "subtitleShape": "h2f0ab398812e6590_1_2",
+    "bodyShape": "h2f0ab398812e6590_1_3"
+  },
+  {
+    "slide": "h2f0ab398812e6590_1_6",
+    "title": "Worked example",
+    "subtitle": "Theme score and impact answer different questions",
+    "body": [
+      "Eligible base B: 1,000 responses, 600 promoters, 200 passives and 200 detractors. Overall NPS = 100 × (600 − 200) / 1,000 = +40.",
+      "Theme T: 200 responses, 60 promoters, 40 passives and 100 detractors. Theme NPS = 100 × (60 − 100) / 200 = −20. Share of base = 200 / 1,000 = 20%.",
+      "Remaining group R: 800 responses, 540 promoters, 160 passives and 100 detractors. NPS excluding the theme = 100 × (540 − 100) / 800 = +55.",
+      "Observed impact = +40 − (+55) = −15 NPS points. Cross-check: 20% × (−20 − 55) = −15.",
+      "Read the row as: respondents mentioning this theme have NPS −20; including them lowers this eligible base’s NPS by 15 points versus the remaining group. This is an observed difference, not a causal estimate or a promise of improvement."
+    ],
+    "titleShape": "h2f0ab398812e6590_1_7",
+    "subtitleShape": "h2f0ab398812e6590_1_8",
+    "bodyShape": "h2f0ab398812e6590_1_9"
+  },
+  {
+    "slide": "h2f0ab398812e6590_1_12",
+    "title": "Table and interactions",
+    "subtitle": "One widget header and one hierarchical table",
+    "body": [
+      "Default title: Impact on KPI. Columns: Theme / subtheme, Impact (pts or pp), selected KPI score, Responses, Share of base. Headers stay on one line. The score label and impact units update with the selected KPI.",
+      "Show a signed value with a horizontal diverging bar around zero. Use one symmetric scale across all theme and sub-theme results for the chosen KPI and filtered base. Numeric labels convey direction without relying on color.",
+      "Click any column header to toggle ascending/descending. Default: signed impact ascending, most negative first. Sort parents and children independently; children stay under their parent. Unavailable numeric values stay last.",
+      "Use the existing response-viewer sorting icons and production expand/collapse icons. Start collapsed; support per-theme and expand-all controls. Show themes limits parent rows after sorting, without changing calculation bases.",
+      "Overall stays at the bottom outside sorting: baseline KPI, eligible count and 100% share; impact is —. Rows extend to the card’s inner edges, with no side gutters or blank space below the footer. No subtitle, sample badge, eye icon or separate summary cards."
+    ],
+    "titleShape": "h2f0ab398812e6590_1_13",
+    "subtitleShape": "h2f0ab398812e6590_1_14",
+    "bodyShape": "h2f0ab398812e6590_1_15"
+  },
+  {
+    "slide": "h2f0ab398812e6590_1_18",
+    "title": "Create a widget",
+    "subtitle": "Select the KPI before adding the table",
+    "body": [
+      "TextAI dashboard → Add widget → choose an analyzed text question → choose Impact on KPI → Next → choose KPI question → Add widget. Retain the usual widget name controls.",
+      "Show eligible KPI questions in one dropdown, identified by field code and concise question label. Selection is required; Add stays disabled until a valid choice is made.",
+      "Back or breadcrumb navigation retains the draft selection. Cancel closes the flow and clears its draft. Creating the widget binds one text question to one KPI question.",
+      "Multiple outcomes: add separate widgets for the same text question and different KPI questions. Each widget calculates its own eligible base, because missing answers can differ. Do not place different KPIs into one pooled impact value.",
+      "Production requirement: preselect the only eligible KPI for confirmation; with none, explain why creation cannot continue. Unconfigured numeric fields are not automatically treated as NPS or CSAT. Eligibility and missing-field handling require live source integration."
+    ],
+    "titleShape": "h2f0ab398812e6590_1_19",
+    "subtitleShape": "h2f0ab398812e6590_1_20",
+    "bodyShape": "h2f0ab398812e6590_1_21"
+  },
+  {
+    "slide": "h2f0ab398812e6590_1_24",
+    "title": "Widget settings",
+    "subtitle": "Match the shared TextAI settings experience",
+    "body": [
+      "Use the existing live-preview settings surface. General contains Show name, Widget name and Filter options. Do not add the text-question summary or KPI selection here.",
+      "Analytics contains the KPI question dropdown, Show themes (All / Top 3 / 5 / 10 / 15 / 20) and Show Overall baseline. Changing the KPI recalculates the preview, base, scores, units and impacts.",
+      "Keep Analytics compact: no scoring-rule paragraphs, full question explanation, response-matching text, default-expansion toggle or theme-limit explanatory copy. Design uses the existing dashboard/widget colors and typography controls.",
+      "Filters: Dashboard uses dashboard conditions; Widget uses widget conditions; Combined requires both; None applies neither optional filter set. All calculations use the resulting base. Access permissions always apply in production, regardless of filter mode.",
+      "Do not display automatic-save notices, session/reset-on-reload notices or Reset widget settings. Surface actual errors only. Preserve shared control styling and settings behavior."
+    ],
+    "titleShape": "h2f0ab398812e6590_1_25",
+    "subtitleShape": "h2f0ab398812e6590_1_26",
+    "bodyShape": "h2f0ab398812e6590_1_27"
+  },
+  {
+    "slide": "g86f1215a00_0_64",
+    "titleShape": "g34d6f23b3a5_0_2",
+    "title": "Inspect the supporting evidence",
+    "bodyShape": "g38e394f423a_0_24",
+    "body": [
+      "Click a theme/sub-theme name, impact bar or response count to open the matching eligible responses. Show the selected KPI, group score, overall score, score excluding the group, impact and comparison count.",
+      "Each response shows its verbatim text, theme/sub-theme context and actual selected KPI answer. Sentiment may be shown as context; it does not determine the KPI.",
+      "Searching inside the response dialog filters only that list. It must not silently recalculate the widget’s base or impact. Closing returns to the current table state.",
+      "Click Overall to open analysis details: analyzed text question, KPI question, eligible count, text coverage, excluded-response count and calculation explanation.",
+      "The Overall baseline is the paired text-and-KPI population, which can differ from an all-survey KPI. Keep this explanation in details rather than adding permanent summary sections to the widget."
+    ]
+  },
+  {
+    "slide": "g86f1215898_1_32",
+    "titleShape": "g86fb383e73_0_466",
+    "title": "Empty, small and changing groups",
+    "subtitleShape": "g86fb383e73_0_468",
+    "subtitle": "Unavailable is different from zero",
+    "bodyShape": "g3c58e6d0cde_15_1",
+    "body": [
+      "With no eligible responses, show a clear empty state and unavailable KPI/impact values. Overall count is 0; share is —. Suggest changing the KPI or response filters.",
+      "With no matching theme responses or no remaining comparison group, impact is — with the reason. Do not substitute zero. A genuine zero difference stays 0.0 (or 0.00 for a mean).",
+      "Flag Small sample if a nonempty theme group or its remaining comparison group contains fewer than 30 responses. This is a caution threshold, not a significance test or confidence interval.",
+      "Apply response filters before scoring and counting; recompute B, T and R together. Collapsing rows, changing the display limit and sorting must not change the underlying scores.",
+      "Production: loading/error states must not show stale scores as the newly selected KPI. Deleted or inaccessible source fields require re-selection; never silently substitute another field. Final refresh and permission behavior requires integration validation."
+    ]
+  },
+  {
+    "slide": "gfdf248c7ff_0_5",
+    "titleShape": "gfdf248c7ff_0_7",
+    "title": "Scope and production boundary",
+    "bodyShape": "gfdf248c7ff_0_6",
+    "body": [
+      "In scope: one text-to-KPI binding per widget; unweighted NPS, defined CSAT and mean ratings; hierarchical impact table; sorting, expansion, shared settings, filtering and response drilldown.",
+      "Prototype: 1,500 synthetic responses shared across text-question selections. KPI widgets and their settings live only in page memory and reset on reload. No database or browser-storage entries are created for them. This session behavior is not a production persistence requirement.",
+      "Production work: stable field discovery, response-ID joins, analysis-status mapping, established filter/access semantics, persisted widget configuration and reliable refresh/error handling.",
+      "Confirm before production: supported scales and scoring metadata, lower-is-better direction, weighting policy, sample-size policy and dashboard theme-filter semantics. The current fixture is higher-is-better and unweighted; theme selector controls do not subset it.",
+      "Out of scope: regression driver scores, causal attribution, predicted KPI lift, additive decomposition across overlapping themes, arbitrary cross-source joins and automatic scoring of undefined numeric fields. No delivery date or production readiness is asserted."
+    ]
+  },
+  {
+    "slide": "gfdf248c7ff_0_0",
+    "titleShape": "gfdf248c7ff_0_2",
+    "title": "Acceptance criteria",
+    "subtitleShape": "gfdf248c7ff_0_1",
+    "subtitle": "Functional and visual release checks",
+    "bodyShape": "g3c58e6d0cde_15_3",
+    "body": [
+      "AC-01: Create requires a valid KPI; Back preserves choices and Cancel clears the draft. Multiple widgets maintain independent KPI bindings.",
+      "AC-02: Join by response ID; exclude invalid/blank/unfinished answers, deduplicate tags, and retain one common baseline for parent and child rows.",
+      "AC-03: Reproduce the worked example (40, −20, 55, −15, 200, 20%) and independently verify CSAT/mean formulas, units and display precision.",
+      "AC-04: Filter modes recompute the full base consistently. Sorts preserve hierarchy, keep unavailable values last and leave Overall at the bottom. Top-N and expansion affect display only.",
+      "AC-05: KPI switching updates preview and metric labels; drilldown IDs/counts reconcile with rows; dialog search does not change the calculation.",
+      "AC-06: Verify unavailable/zero/small-sample cases, keyboard focus and accessible control names. Match shared typography/icons; use flush header/footer edges, content-sized height and no removed notices. Production integration must pass separately from prototype checks."
+    ]
+  },
+  {
+    "slide": "g13441c123f6_0_1",
+    "titleShape": "g145dcb058cc_0_60",
+    "title": "Prototype walkthrough",
+    "subtitleShape": "g13441c123f6_0_3",
+    "subtitle": "Review the interaction and calculation together",
+    "bodyShape": "g3c58e6d0cde_15_5",
+    "body": [
+      "Open https://survey-re.vercel.app/ directly → TextAI → dashboard. Reference route: /text-ai/1. Add widget → text question → Impact on KPI → Next → KPI question → Add widget.",
+      "Select NPS, inspect the default order, expand a theme and sort each column. Confirm that children stay grouped and Overall stays at the bottom with no side gutters or blank footer space.",
+      "Open Settings: General has name/filter controls; Analytics has the KPI dropdown. Switch to CSAT, then a mean rating; check the score label, units, values and eligible count. Add a second widget to compare another KPI.",
+      "Try response/date filters, open an impact drilldown and inspect text with the KPI answer. Search the dialog, close it, then open Overall for coverage and methodology. Check an empty result and a small group.",
+      "Prototype validation: nine KPI formula/filter/sort tests pass; creation, KPI switching, filters, sorting, expansion, drilldowns and reload reset were browser-checked locally. Production data integration and system integration testing remain separate."
+    ]
+  }
+]

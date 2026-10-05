@@ -2,11 +2,12 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
 import {
   formatTextAiKpiAnswer, formatTextAiKpiDelta,
   formatTextAiKpiScore, getTextAiKpiAnalysis, getTextAiKpiImpactUnit,
-  type TextAiKpiId, type TextAiKpiDefinition, type TextAiKpiSentiment,
+  textAiKpiFormula, type TextAiKpiConfig, type TextAiKpiId, type TextAiKpiDefinition, type TextAiKpiSentiment,
   type TextAiKpiThemeResult, type TextAiKpiResponseFilter,
   sortTextAiKpiRows, type TextAiKpiSort, type TextAiKpiSortColumn,
 } from '@/data/mock-text-ai-kpi-by-theme';
@@ -30,6 +31,7 @@ interface TextAiKpiByThemeWidgetProps extends TextAiWidgetSettingsProps {
   question: string;
   onContentHeightChange?: (height: number) => void;
   kpiId?: TextAiKpiId;
+  config?: TextAiKpiConfig;
   responseFilter?: TextAiKpiResponseFilter;
   onDelete?: () => void;
 }
@@ -176,7 +178,7 @@ function TextAiKpiResponsesModal({
   );
 }
 
-export function TextAiKpiByThemeWidget({ question, kpiId = 'nps', responseFilter, onDelete, settings, onOpenSettings, responseFilters, preview, onContentHeightChange }: TextAiKpiByThemeWidgetProps) {
+export function TextAiKpiByThemeWidget({ question, kpiId = 'nps', config, responseFilter, onDelete, settings, onOpenSettings, responseFilters, preview, onContentHeightChange }: TextAiKpiByThemeWidgetProps) {
   const cardRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (preview || !onContentHeightChange || !cardRef.current) return;
@@ -189,6 +191,10 @@ export function TextAiKpiByThemeWidget({ question, kpiId = 'nps', responseFilter
   const s = settings ?? defaultTextAiWidgetSettings('kpi-by-theme', 'Impact on KPI');
   const [drilldown, setDrilldown] = useState<DrilldownContext | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDrilldown(null);
+  }, [config, responseFilters, responseFilter]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const topN = parseTextAiWidgetTopN(s.display === 'All' ? 'all' : s.display.replace('Top ', ''));
   useEffect(() => {
@@ -197,7 +203,7 @@ export function TextAiKpiByThemeWidget({ question, kpiId = 'nps', responseFilter
     setExpanded(new Set());
   }, [s.expanded]);
   const [sort, setSort] = useState<TextAiKpiSort>({ column: 'impact', direction: 'ascending' });
-  const analysis = useMemo(() => getTextAiKpiAnalysis(selectedKpi, responseFilters ?? responseFilter), [selectedKpi, responseFilter, responseFilters]);
+  const analysis = useMemo(() => getTextAiKpiAnalysis(selectedKpi, responseFilters ?? responseFilter, config), [selectedKpi, responseFilter, responseFilters, config]);
   const { definition } = analysis;
   const visibleRows = limitTextAiWidgetItems(sortTextAiKpiRows(analysis.rows, sort), topN);
   const isExpanded = (id: string) => s.expanded ? !expanded.has(id) : expanded.has(id);
@@ -209,7 +215,7 @@ export function TextAiKpiByThemeWidget({ question, kpiId = 'nps', responseFilter
   const extent = Math.max(step, Math.ceil(maxImpact / step) * step);
   const unit = getTextAiKpiImpactUnit(definition);
   const impactLabel = `Impact (${definition.kind === 'top-box' ? 'pp' : 'pts'})`;
-  const scoreLabel = definition.kind === 'nps' ? 'NPS' : definition.kind === 'top-box' ? 'CSAT' : 'Mean rating';
+  const scoreLabel = config?.name.trim() || (definition.kind === 'nps' ? 'NPS' : definition.kind === 'top-box' ? 'CSAT' : 'Mean rating');
   const title = s.name;
   const openResponses = (row: TextAiKpiThemeResult) => setDrilldown({ row, definition, overallScore: analysis.overallScore });
   function toggle(id: string) {
@@ -217,13 +223,12 @@ export function TextAiKpiByThemeWidget({ question, kpiId = 'nps', responseFilter
   }
   function sortHeading(column: TextAiKpiSortColumn, label: string, description?: string) {
     const active = sort.column === column;
-    return <button type="button" className={styles.sortButton} onClick={() => setSort({ column, direction: active && sort.direction === 'ascending' ? 'descending' : 'ascending' })}
-      aria-label={`Sort by ${label}`} title={description ?? `Sort ${active && sort.direction === 'ascending' ? 'descending' : 'ascending'}`}>
-      {label}<span aria-hidden="true" className={`${styles.sortIcons} ${active ? styles.sortedIcons : ''}`}>
+    return <span className={styles.headingContent}>{description && <Tooltip.Provider delayDuration={150}><Tooltip.Root><Tooltip.Trigger asChild><button type="button" className={styles.infoButton} aria-label={`About ${label}`}><span className="wm-info" aria-hidden /></button></Tooltip.Trigger><Tooltip.Portal><Tooltip.Content className={styles.headerTooltip} sideOffset={6}>{description}<Tooltip.Arrow /></Tooltip.Content></Tooltip.Portal></Tooltip.Root></Tooltip.Provider>}<button type="button" className={styles.sortButton} onClick={() => setSort({ column, direction: active && sort.direction === 'ascending' ? 'descending' : 'ascending' })} aria-label={`Sort by ${label}`}>
+      <span className={styles.headingLabel} title={label}>{label}</span><span aria-hidden="true" className={`${styles.sortIcons} ${active ? styles.sortedIcons : ''}`}>
         {(!active || sort.direction !== 'ascending') && <span className={`wm-arrow-drop-down ${styles.sortDown}`} />}
         {(!active || sort.direction !== 'descending') && <span className={`wm-arrow-drop-up ${styles.sortUp}`} />}
       </span>
-    </button>;
+    </button></span>;
   }
   function renderRow(row: TextAiKpiThemeResult, child = false) {
     return <tr key={row.id} className={child ? styles.childRow : undefined}>
@@ -261,10 +266,10 @@ export function TextAiKpiByThemeWidget({ question, kpiId = 'nps', responseFilter
         <table className={styles.table}>
           <thead><tr>
             <th scope="col" className={styles.themeHeading} aria-sort={sort.column === 'theme' ? sort.direction : undefined}>{sortHeading('theme', 'Theme / subtheme')}</th>
-            <th scope="col" className={styles.impactHeading} aria-sort={sort.column === 'impact' ? sort.direction : undefined}>{sortHeading('impact', impactLabel, `${definition.label}: overall KPI minus KPI excluding this theme, in ${unit}. Bars share a symmetric scale from −${extent} to +${extent}.`)}</th>
-            <th scope="col" className={styles.scoreHeading} aria-sort={sort.column === 'score' ? sort.direction : undefined} title="KPI among the respondents in this row">{sortHeading('score', scoreLabel)}</th>
+            <th scope="col" className={styles.impactHeading} aria-sort={sort.column === 'impact' ? sort.direction : undefined}>{sortHeading('impact', impactLabel, `Overall ${scoreLabel} minus ${scoreLabel} excluding responses mentioning this topic, in ${unit}. Negative values are associated with a lower KPI. This is an observed difference, not a predicted causal effect.`)}</th>
+            <th scope="col" className={styles.scoreHeading} aria-sort={sort.column === 'score' ? sort.direction : undefined} title="KPI among the respondents in this row">{sortHeading('score', scoreLabel, `${scoreLabel} among the unique respondents mentioning this topic. ${config ? textAiKpiFormula(config) : 'Calculated using the selected KPI question.'} Only matched analyzed text and included KPI answers enter the base.`)}</th>
             <th scope="col" className={styles.countHeading} aria-sort={sort.column === 'responses' ? sort.direction : undefined}>{sortHeading('responses', 'Responses')}</th>
-            <th scope="col" className={styles.shareHeading} aria-sort={sort.column === 'share' ? sort.direction : undefined}>{sortHeading('share', 'Share of base')}</th>
+            <th scope="col" className={styles.shareHeading} aria-sort={sort.column === 'share' ? sort.direction : undefined}>{sortHeading('share', 'Share of base', 'Unique responses mentioning this topic ÷ all eligible matched responses × 100. Subthemes use the same overall base. Topics can overlap, so shares may add up to more than 100%.')}</th>
           </tr></thead>
           <tbody>
 

@@ -1,0 +1,778 @@
+[
+  {
+    "id": "filmstrip-slide-0-g145dcb058cc_0_35",
+    "text": "ImpactonKPITextAIOpenSurvey-REprototype"
+  },
+  {
+    "id": "filmstrip-slide-0-g145dcb058cc_0_35-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-0-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-0-g145dcb058cc_0_29",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-0-g145dcb058cc_0_30",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-0-g145dcb058cc_0_34",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-0-g145dcb058cc_0_31",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-0-g145dcb058cc_0_32",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-0-g145dcb058cc_0_33",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-0-g145dcb058cc_0_36",
+    "text": "ImpactonKPITextAI"
+  },
+  {
+    "id": "filmstrip-slide-0-g145dcb058cc_0_36-paragraph-0",
+    "text": "ImpactonKPI"
+  },
+  {
+    "id": "filmstrip-slide-0-g145dcb058cc_0_36-paragraph-1",
+    "text": "TextAI"
+  },
+  {
+    "id": "filmstrip-slide-0-g16a83fb18bc_0_0",
+    "text": "OpenSurvey-REprototype"
+  },
+  {
+    "id": "filmstrip-slide-0-g16a83fb18bc_0_0-paragraph-0",
+    "text": "OpenSurvey-REprototype"
+  },
+  {
+    "id": "filmstrip-slide-0-h2f0ab398812e6590_1_72",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-1-g30a02577f3c_0_5",
+    "text": "ProblemandproductintentThemefrequencyandsentimentdonotshowhowrespondentsmentioningatopicscoreonanactualbusinessoutcome.Analystsneedboththetopic’sownKPIanditsobservedrelationshiptotheoverallKPI.AddImpactonKPItoTextAI:onecompacttableofthemesandexpandablesub-themes,withobservedimpact,groupKPI,responsecountandshareoftheeligiblebase.Primaryusers:CX/EXanalystsprioritizinginvestigation,anddashboardreviewersvalidatingresultsagainstsupportingresponses.Thetablesupportscomparison;itdoesnotpredicttheliftfromfixinganissue.Reviewdraft•30September2026.RequirementsreflecttheagreedSurvey-REprototype.ExistingTextAIwidgetsprovidethevisualbaseline;thisfeatureisaproposedextension,notverifiedproductionfunctionality."
+  },
+  {
+    "id": "filmstrip-slide-1-g30a02577f3c_0_5-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-1-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-1-g30a02577f3c_0_6",
+    "text": "Problemandproductintent"
+  },
+  {
+    "id": "filmstrip-slide-1-g30a02577f3c_0_6-paragraph-0",
+    "text": "Problemandproductintent"
+  },
+  {
+    "id": "filmstrip-slide-1-g30a02577f3c_0_6-paragraph-1",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-1-g30a02577f3c_0_6-paragraph-2",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-1-g38a1465038d_0_4",
+    "text": "Themefrequencyandsentimentdonotshowhowrespondentsmentioningatopicscoreonanactualbusinessoutcome.Analystsneedboththetopic’sownKPIanditsobservedrelationshiptotheoverallKPI.AddImpactonKPItoTextAI:onecompacttableofthemesandexpandablesub-themes,withobservedimpact,groupKPI,responsecountandshareoftheeligiblebase.Primaryusers:CX/EXanalystsprioritizinginvestigation,anddashboardreviewersvalidatingresultsagainstsupportingresponses.Thetablesupportscomparison;itdoesnotpredicttheliftfromfixinganissue.Reviewdraft•30September2026.RequirementsreflecttheagreedSurvey-REprototype.ExistingTextAIwidgetsprovidethevisualbaseline;thisfeatureisaproposedextension,notverifiedproductionfunctionality."
+  },
+  {
+    "id": "filmstrip-slide-1-g38a1465038d_0_4-paragraph-0",
+    "text": "Themefrequencyandsentimentdonotshowhowrespondentsmentioningatopicscoreonanactualbusinessoutcome.Analystsneedboththetopic’sownKPIanditsobservedrelationshiptotheoverallKPI."
+  },
+  {
+    "id": "filmstrip-slide-1-g38a1465038d_0_4-paragraph-1",
+    "text": "AddImpactonKPItoTextAI:onecompacttableofthemesandexpandablesub-themes,withobservedimpact,groupKPI,responsecountandshareoftheeligiblebase."
+  },
+  {
+    "id": "filmstrip-slide-1-g38a1465038d_0_4-paragraph-2",
+    "text": "Primaryusers:CX/EXanalystsprioritizinginvestigation,anddashboardreviewersvalidatingresultsagainstsupportingresponses.Thetablesupportscomparison;itdoesnotpredicttheliftfromfixinganissue."
+  },
+  {
+    "id": "filmstrip-slide-1-g38a1465038d_0_4-paragraph-3",
+    "text": "Reviewdraft•30September2026.RequirementsreflecttheagreedSurvey-REprototype.ExistingTextAIwidgetsprovidethevisualbaseline;thisfeatureisaproposedextension,notverifiedproductionfunctionality."
+  },
+  {
+    "id": "filmstrip-slide-1-g38a1465038d_0_4-paragraph-4",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-2-g86f1215a00_0_12",
+    "text": "Response-to-KPImappingandeligibleanalysisbaseScoreformulas,observedimpactandworkedexampleSingle-tablepresentation,sortingandexpansionCreationflowandconsistentwidgetsettingsSupportingresponses,coverageandunavailablestatesProductionboundaries,acceptancechecksandprototypewalkthroughScopeofthisPRD"
+  },
+  {
+    "id": "filmstrip-slide-2-g86f1215a00_0_12-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-2-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-2-g86f1215a00_0_19",
+    "text": "Response-to-KPImappingandeligibleanalysisbaseScoreformulas,observedimpactandworkedexampleSingle-tablepresentation,sortingandexpansionCreationflowandconsistentwidgetsettingsSupportingresponses,coverageandunavailablestatesProductionboundaries,acceptancechecksandprototypewalkthrough"
+  },
+  {
+    "id": "filmstrip-slide-2-g86f1215a00_0_19-paragraph-0",
+    "text": "Response-to-KPImappingandeligibleanalysisbase"
+  },
+  {
+    "id": "filmstrip-slide-2-g86f1215a00_0_19-paragraph-1",
+    "text": "Scoreformulas,observedimpactandworkedexample"
+  },
+  {
+    "id": "filmstrip-slide-2-g86f1215a00_0_19-paragraph-2",
+    "text": "Single-tablepresentation,sortingandexpansion"
+  },
+  {
+    "id": "filmstrip-slide-2-g86f1215a00_0_19-paragraph-3",
+    "text": "Creationflowandconsistentwidgetsettings"
+  },
+  {
+    "id": "filmstrip-slide-2-g86f1215a00_0_19-paragraph-4",
+    "text": "Supportingresponses,coverageandunavailablestates"
+  },
+  {
+    "id": "filmstrip-slide-2-g86f1215a00_0_19-paragraph-5",
+    "text": "Productionboundaries,acceptancechecksandprototypewalkthrough"
+  },
+  {
+    "id": "filmstrip-slide-2-g86f1215a00_0_19-paragraph-6",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-2-g86f1215a00_0_15",
+    "text": "ScopeofthisPRD"
+  },
+  {
+    "id": "filmstrip-slide-2-g86f1215a00_0_15-paragraph-0",
+    "text": "ScopeofthisPRD"
+  },
+  {
+    "id": "filmstrip-slide-3-g8709499aee_5_33",
+    "text": "DatacontractOnetextquestion+oneKPIquestionBindstablesource,text-questionandKPI-questionIDs.JoinanalyzedtextandthemetagstotheKPIanswerusingthesameresponseIDwithinthatsource;nevermatchbyroworderorinferKPIscoresfromsentiment.B=uniqueresponsespassingthechosenresponsefilters,withcompletedanalysis,nonblanktextandavalidselectedKPIanswer.Missing,invalidorout-of-rangeKPIanswersandblank/pending/failedtextareexcluded.T=responsesinBtaggedwithathemeorsub-theme.R=BexcludingT.ParentmembershipistheunionofresponseIDsacrossitstags.Repeatedtagsneverinflatecounts.Sub-themesusethesameBastheirparent,notaparent-onlydenominator.Responsescanbelongtomultiplethemes;sharesandimpactsmustnotbesummed.Productionmustdiscovereligiblesame-sourceKPIfieldsanduseestablishedscoringmetadata.Theprototype’sfourquestionsaresyntheticexamples,notlivefielddiscovery."
+  },
+  {
+    "id": "filmstrip-slide-3-g8709499aee_5_33-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-3-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-3-g8709499aee_5_34",
+    "text": "Datacontract"
+  },
+  {
+    "id": "filmstrip-slide-3-g8709499aee_5_34-paragraph-0",
+    "text": "Datacontract"
+  },
+  {
+    "id": "filmstrip-slide-3-g3cee4e92f19_0_0",
+    "text": "Onetextquestion+oneKPIquestion"
+  },
+  {
+    "id": "filmstrip-slide-3-g3cee4e92f19_0_0-paragraph-0",
+    "text": "Onetextquestion+oneKPIquestion"
+  },
+  {
+    "id": "filmstrip-slide-3-g3cee4e92f19_0_1",
+    "text": "Bindstablesource,text-questionandKPI-questionIDs.JoinanalyzedtextandthemetagstotheKPIanswerusingthesameresponseIDwithinthatsource;nevermatchbyroworderorinferKPIscoresfromsentiment.B=uniqueresponsespassingthechosenresponsefilters,withcompletedanalysis,nonblanktextandavalidselectedKPIanswer.Missing,invalidorout-of-rangeKPIanswersandblank/pending/failedtextareexcluded.T=responsesinBtaggedwithathemeorsub-theme.R=BexcludingT.ParentmembershipistheunionofresponseIDsacrossitstags.Repeatedtagsneverinflatecounts.Sub-themesusethesameBastheirparent,notaparent-onlydenominator.Responsescanbelongtomultiplethemes;sharesandimpactsmustnotbesummed.Productionmustdiscovereligiblesame-sourceKPIfieldsanduseestablishedscoringmetadata.Theprototype’sfourquestionsaresyntheticexamples,notlivefielddiscovery."
+  },
+  {
+    "id": "filmstrip-slide-3-g3cee4e92f19_0_1-paragraph-0",
+    "text": "Bindstablesource,text-questionandKPI-questionIDs.JoinanalyzedtextandthemetagstotheKPIanswerusingthesameresponseIDwithinthatsource;nevermatchbyroworderorinferKPIscoresfromsentiment."
+  },
+  {
+    "id": "filmstrip-slide-3-g3cee4e92f19_0_1-paragraph-1",
+    "text": "B=uniqueresponsespassingthechosenresponsefilters,withcompletedanalysis,nonblanktextandavalidselectedKPIanswer.Missing,invalidorout-of-rangeKPIanswersandblank/pending/failedtextareexcluded."
+  },
+  {
+    "id": "filmstrip-slide-3-g3cee4e92f19_0_1-paragraph-2",
+    "text": "T=responsesinBtaggedwithathemeorsub-theme.R=BexcludingT.ParentmembershipistheunionofresponseIDsacrossitstags.Repeatedtagsneverinflatecounts."
+  },
+  {
+    "id": "filmstrip-slide-3-g3cee4e92f19_0_1-paragraph-3",
+    "text": "Sub-themesusethesameBastheirparent,notaparent-onlydenominator.Responsescanbelongtomultiplethemes;sharesandimpactsmustnotbesummed."
+  },
+  {
+    "id": "filmstrip-slide-3-g3cee4e92f19_0_1-paragraph-4",
+    "text": "Productionmustdiscovereligiblesame-sourceKPIfieldsanduseestablishedscoringmetadata.Theprototype’sfourquestionsaresyntheticexamples,notlivefielddiscovery."
+  },
+  {
+    "id": "filmstrip-slide-3-g3cee4e92f19_0_1-paragraph-5",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-4-h2f0ab398812e6590_1_0",
+    "text": "CalculationrulesUnweightedscores;roundonlyfordisplayNPS(S)=100×(promoters−detractors)/validresponsesinS.Scores9–10arepromoters,0–6detractors;7–8passivesremaininthedenominator.Requirewhole-numberanswersfrom0to10.CSAT(S)=100×satisfiedresponses/validresponsesinS.Thisversionusesscores4–5ona1–5scale.Mean(S)=sumofvalidratings/responsecountontheconfiguredscale.Overall=KPI(B).ThemeKPI=KPI(T).Observedimpact=KPI(B)−KPI(R).Equivalent:|T|/|B|×[KPI(T)−KPI(R)].Positiveandnegativevaluesshowdirectionrelativetotheremainingresponses.Responses=|T|.Shareofbase=100×|T|/|B|.Textcoverage=100×|B|/validKPIresponsesafterthesamefilters;showcoverageinanalysisdetails.DisplayNPS/CSATandimpactsto1decimal;meanscores/impactsto2;sharesto1.Impactunits:NPSpoints,percentagepoints(CSAT),orscalepoints.Computeusingfullprecision."
+  },
+  {
+    "id": "filmstrip-slide-4-h2f0ab398812e6590_1_0-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-4-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-4-h2f0ab398812e6590_1_1",
+    "text": "Calculationrules"
+  },
+  {
+    "id": "filmstrip-slide-4-h2f0ab398812e6590_1_1-paragraph-0",
+    "text": "Calculationrules"
+  },
+  {
+    "id": "filmstrip-slide-4-h2f0ab398812e6590_1_2",
+    "text": "Unweightedscores;roundonlyfordisplay"
+  },
+  {
+    "id": "filmstrip-slide-4-h2f0ab398812e6590_1_2-paragraph-0",
+    "text": "Unweightedscores;roundonlyfordisplay"
+  },
+  {
+    "id": "filmstrip-slide-4-h2f0ab398812e6590_1_3",
+    "text": "NPS(S)=100×(promoters−detractors)/validresponsesinS.Scores9–10arepromoters,0–6detractors;7–8passivesremaininthedenominator.Requirewhole-numberanswersfrom0to10.CSAT(S)=100×satisfiedresponses/validresponsesinS.Thisversionusesscores4–5ona1–5scale.Mean(S)=sumofvalidratings/responsecountontheconfiguredscale.Overall=KPI(B).ThemeKPI=KPI(T).Observedimpact=KPI(B)−KPI(R).Equivalent:|T|/|B|×[KPI(T)−KPI(R)].Positiveandnegativevaluesshowdirectionrelativetotheremainingresponses.Responses=|T|.Shareofbase=100×|T|/|B|.Textcoverage=100×|B|/validKPIresponsesafterthesamefilters;showcoverageinanalysisdetails.DisplayNPS/CSATandimpactsto1decimal;meanscores/impactsto2;sharesto1.Impactunits:NPSpoints,percentagepoints(CSAT),orscalepoints.Computeusingfullprecision."
+  },
+  {
+    "id": "filmstrip-slide-4-h2f0ab398812e6590_1_3-paragraph-0",
+    "text": "NPS(S)=100×(promoters−detractors)/validresponsesinS.Scores9–10arepromoters,0–6detractors;7–8passivesremaininthedenominator.Requirewhole-numberanswersfrom0to10."
+  },
+  {
+    "id": "filmstrip-slide-4-h2f0ab398812e6590_1_3-paragraph-1",
+    "text": "CSAT(S)=100×satisfiedresponses/validresponsesinS.Thisversionusesscores4–5ona1–5scale.Mean(S)=sumofvalidratings/responsecountontheconfiguredscale."
+  },
+  {
+    "id": "filmstrip-slide-4-h2f0ab398812e6590_1_3-paragraph-2",
+    "text": "Overall=KPI(B).ThemeKPI=KPI(T).Observedimpact=KPI(B)−KPI(R).Equivalent:|T|/|B|×[KPI(T)−KPI(R)].Positiveandnegativevaluesshowdirectionrelativetotheremainingresponses."
+  },
+  {
+    "id": "filmstrip-slide-4-h2f0ab398812e6590_1_3-paragraph-3",
+    "text": "Responses=|T|.Shareofbase=100×|T|/|B|.Textcoverage=100×|B|/validKPIresponsesafterthesamefilters;showcoverageinanalysisdetails."
+  },
+  {
+    "id": "filmstrip-slide-4-h2f0ab398812e6590_1_3-paragraph-4",
+    "text": "DisplayNPS/CSATandimpactsto1decimal;meanscores/impactsto2;sharesto1.Impactunits:NPSpoints,percentagepoints(CSAT),orscalepoints.Computeusingfullprecision."
+  },
+  {
+    "id": "filmstrip-slide-4-h2f0ab398812e6590_1_3-paragraph-5",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-5-h2f0ab398812e6590_1_6",
+    "text": "WorkedexampleThemescoreandimpactanswerdifferentquestionsEligiblebaseB:1,000responses,600promoters,200passivesand200detractors.OverallNPS=100×(600−200)/1,000=+40.ThemeT:200responses,60promoters,40passivesand100detractors.ThemeNPS=100×(60−100)/200=−20.Shareofbase=200/1,000=20%.RemaininggroupR:800responses,540promoters,160passivesand100detractors.NPSexcludingthetheme=100×(540−100)/800=+55.Observedimpact=+40−(+55)=−15NPSpoints.Cross-check:20%×(−20−55)=−15.Readtherowas:respondentsmentioningthisthemehaveNPS−20;includingthemlowersthiseligiblebase’sNPSby15pointsversustheremaininggroup.Thisisanobserveddifference,notacausalestimateorapromiseofimprovement."
+  },
+  {
+    "id": "filmstrip-slide-5-h2f0ab398812e6590_1_6-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-5-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-5-h2f0ab398812e6590_1_7",
+    "text": "Workedexample"
+  },
+  {
+    "id": "filmstrip-slide-5-h2f0ab398812e6590_1_7-paragraph-0",
+    "text": "Workedexample"
+  },
+  {
+    "id": "filmstrip-slide-5-h2f0ab398812e6590_1_8",
+    "text": "Themescoreandimpactanswerdifferentquestions"
+  },
+  {
+    "id": "filmstrip-slide-5-h2f0ab398812e6590_1_8-paragraph-0",
+    "text": "Themescoreandimpactanswerdifferentquestions"
+  },
+  {
+    "id": "filmstrip-slide-5-h2f0ab398812e6590_1_9",
+    "text": "EligiblebaseB:1,000responses,600promoters,200passivesand200detractors.OverallNPS=100×(600−200)/1,000=+40.ThemeT:200responses,60promoters,40passivesand100detractors.ThemeNPS=100×(60−100)/200=−20.Shareofbase=200/1,000=20%.RemaininggroupR:800responses,540promoters,160passivesand100detractors.NPSexcludingthetheme=100×(540−100)/800=+55.Observedimpact=+40−(+55)=−15NPSpoints.Cross-check:20%×(−20−55)=−15.Readtherowas:respondentsmentioningthisthemehaveNPS−20;includingthemlowersthiseligiblebase’sNPSby15pointsversustheremaininggroup.Thisisanobserveddifference,notacausalestimateorapromiseofimprovement."
+  },
+  {
+    "id": "filmstrip-slide-5-h2f0ab398812e6590_1_9-paragraph-0",
+    "text": "EligiblebaseB:1,000responses,600promoters,200passivesand200detractors.OverallNPS=100×(600−200)/1,000=+40."
+  },
+  {
+    "id": "filmstrip-slide-5-h2f0ab398812e6590_1_9-paragraph-1",
+    "text": "ThemeT:200responses,60promoters,40passivesand100detractors.ThemeNPS=100×(60−100)/200=−20.Shareofbase=200/1,000=20%."
+  },
+  {
+    "id": "filmstrip-slide-5-h2f0ab398812e6590_1_9-paragraph-2",
+    "text": "RemaininggroupR:800responses,540promoters,160passivesand100detractors.NPSexcludingthetheme=100×(540−100)/800=+55."
+  },
+  {
+    "id": "filmstrip-slide-5-h2f0ab398812e6590_1_9-paragraph-3",
+    "text": "Observedimpact=+40−(+55)=−15NPSpoints.Cross-check:20%×(−20−55)=−15."
+  },
+  {
+    "id": "filmstrip-slide-5-h2f0ab398812e6590_1_9-paragraph-4",
+    "text": "Readtherowas:respondentsmentioningthisthemehaveNPS−20;includingthemlowersthiseligiblebase’sNPSby15pointsversustheremaininggroup.Thisisanobserveddifference,notacausalestimateorapromiseofimprovement."
+  },
+  {
+    "id": "filmstrip-slide-5-h2f0ab398812e6590_1_9-paragraph-5",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-6-h2f0ab398812e6590_1_12",
+    "text": "TableandinteractionsOnewidgetheaderandonehierarchicaltableDefaulttitle:ImpactonKPI.Columns:Theme/subtheme,Impact(ptsorpp),selectedKPIscore,Responses,Shareofbase.Headersstayononeline.ThescorelabelandimpactunitsupdatewiththeselectedKPI.Showasignedvaluewithahorizontaldivergingbararoundzero.Useonesymmetricscaleacrossallthemeandsub-themeresultsforthechosenKPIandfilteredbase.Numericlabelsconveydirectionwithoutrelyingoncolor.Clickanycolumnheadertotoggleascending/descending.Default:signedimpactascending,mostnegativefirst.Sortparentsandchildrenindependently;childrenstayundertheirparent.Unavailablenumericvaluesstaylast.Usetheexistingresponse-viewersortingiconsandproductionexpand/collapseicons.Startcollapsed;supportper-themeandexpand-allcontrols.Showthemeslimitsparentrowsaftersorting,withoutchangingcalculationbases.Overallstaysatthebottomoutsidesorting:baselineKPI,eligiblecountand100%share;impactis—.Rowsextendtothecard’sinneredges,withnosideguttersorblankspacebelowthefooter.Nosubtitle,samplebadge,eyeiconorseparatesummarycards."
+  },
+  {
+    "id": "filmstrip-slide-6-h2f0ab398812e6590_1_12-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-6-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-6-h2f0ab398812e6590_1_13",
+    "text": "Tableandinteractions"
+  },
+  {
+    "id": "filmstrip-slide-6-h2f0ab398812e6590_1_13-paragraph-0",
+    "text": "Tableandinteractions"
+  },
+  {
+    "id": "filmstrip-slide-6-h2f0ab398812e6590_1_14",
+    "text": "Onewidgetheaderandonehierarchicaltable"
+  },
+  {
+    "id": "filmstrip-slide-6-h2f0ab398812e6590_1_14-paragraph-0",
+    "text": "Onewidgetheaderandonehierarchicaltable"
+  },
+  {
+    "id": "filmstrip-slide-6-h2f0ab398812e6590_1_15",
+    "text": "Defaulttitle:ImpactonKPI.Columns:Theme/subtheme,Impact(ptsorpp),selectedKPIscore,Responses,Shareofbase.Headersstayononeline.ThescorelabelandimpactunitsupdatewiththeselectedKPI.Showasignedvaluewithahorizontaldivergingbararoundzero.Useonesymmetricscaleacrossallthemeandsub-themeresultsforthechosenKPIandfilteredbase.Numericlabelsconveydirectionwithoutrelyingoncolor.Clickanycolumnheadertotoggleascending/descending.Default:signedimpactascending,mostnegativefirst.Sortparentsandchildrenindependently;childrenstayundertheirparent.Unavailablenumericvaluesstaylast.Usetheexistingresponse-viewersortingiconsandproductionexpand/collapseicons.Startcollapsed;supportper-themeandexpand-allcontrols.Showthemeslimitsparentrowsaftersorting,withoutchangingcalculationbases.Overallstaysatthebottomoutsidesorting:baselineKPI,eligiblecountand100%share;impactis—.Rowsextendtothecard’sinneredges,withnosideguttersorblankspacebelowthefooter.Nosubtitle,samplebadge,eyeiconorseparatesummarycards."
+  },
+  {
+    "id": "filmstrip-slide-6-h2f0ab398812e6590_1_15-paragraph-0",
+    "text": "Defaulttitle:ImpactonKPI.Columns:Theme/subtheme,Impact(ptsorpp),selectedKPIscore,Responses,Shareofbase.Headersstayononeline.ThescorelabelandimpactunitsupdatewiththeselectedKPI."
+  },
+  {
+    "id": "filmstrip-slide-6-h2f0ab398812e6590_1_15-paragraph-1",
+    "text": "Showasignedvaluewithahorizontaldivergingbararoundzero.Useonesymmetricscaleacrossallthemeandsub-themeresultsforthechosenKPIandfilteredbase.Numericlabelsconveydirectionwithoutrelyingoncolor."
+  },
+  {
+    "id": "filmstrip-slide-6-h2f0ab398812e6590_1_15-paragraph-2",
+    "text": "Clickanycolumnheadertotoggleascending/descending.Default:signedimpactascending,mostnegativefirst.Sortparentsandchildrenindependently;childrenstayundertheirparent.Unavailablenumericvaluesstaylast."
+  },
+  {
+    "id": "filmstrip-slide-6-h2f0ab398812e6590_1_15-paragraph-3",
+    "text": "Usetheexistingresponse-viewersortingiconsandproductionexpand/collapseicons.Startcollapsed;supportper-themeandexpand-allcontrols.Showthemeslimitsparentrowsaftersorting,withoutchangingcalculationbases."
+  },
+  {
+    "id": "filmstrip-slide-6-h2f0ab398812e6590_1_15-paragraph-4",
+    "text": "Overallstaysatthebottomoutsidesorting:baselineKPI,eligiblecountand100%share;impactis—.Rowsextendtothecard’sinneredges,withnosideguttersorblankspacebelowthefooter.Nosubtitle,samplebadge,eyeiconorseparatesummarycards."
+  },
+  {
+    "id": "filmstrip-slide-6-h2f0ab398812e6590_1_15-paragraph-5",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-7-h2f0ab398812e6590_1_18",
+    "text": "CreateawidgetSelecttheKPIbeforeaddingthetableTextAIdashboard→Addwidget→chooseananalyzedtextquestion→chooseImpactonKPI→Next→chooseKPIquestion→Addwidget.Retaintheusualwidgetnamecontrols.ShoweligibleKPIquestionsinonedropdown,identifiedbyfieldcodeandconcisequestionlabel.Selectionisrequired;Addstaysdisableduntilavalidchoiceismade.Backorbreadcrumbnavigationretainsthedraftselection.Cancelclosestheflowandclearsitsdraft.CreatingthewidgetbindsonetextquestiontooneKPIquestion.Multipleoutcomes:addseparatewidgetsforthesametextquestionanddifferentKPIquestions.Eachwidgetcalculatesitsowneligiblebase,becausemissinganswerscandiffer.DonotplacedifferentKPIsintoonepooledimpactvalue.Productionrequirement:preselecttheonlyeligibleKPIforconfirmation;withnone,explainwhycreationcannotcontinue.UnconfigurednumericfieldsarenotautomaticallytreatedasNPSorCSAT.Eligibilityandmissing-fieldhandlingrequirelivesourceintegration."
+  },
+  {
+    "id": "filmstrip-slide-7-h2f0ab398812e6590_1_18-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-7-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-7-h2f0ab398812e6590_1_19",
+    "text": "Createawidget"
+  },
+  {
+    "id": "filmstrip-slide-7-h2f0ab398812e6590_1_19-paragraph-0",
+    "text": "Createawidget"
+  },
+  {
+    "id": "filmstrip-slide-7-h2f0ab398812e6590_1_20",
+    "text": "SelecttheKPIbeforeaddingthetable"
+  },
+  {
+    "id": "filmstrip-slide-7-h2f0ab398812e6590_1_20-paragraph-0",
+    "text": "SelecttheKPIbeforeaddingthetable"
+  },
+  {
+    "id": "filmstrip-slide-7-h2f0ab398812e6590_1_21",
+    "text": "TextAIdashboard→Addwidget→chooseananalyzedtextquestion→chooseImpactonKPI→Next→chooseKPIquestion→Addwidget.Retaintheusualwidgetnamecontrols.ShoweligibleKPIquestionsinonedropdown,identifiedbyfieldcodeandconcisequestionlabel.Selectionisrequired;Addstaysdisableduntilavalidchoiceismade.Backorbreadcrumbnavigationretainsthedraftselection.Cancelclosestheflowandclearsitsdraft.CreatingthewidgetbindsonetextquestiontooneKPIquestion.Multipleoutcomes:addseparatewidgetsforthesametextquestionanddifferentKPIquestions.Eachwidgetcalculatesitsowneligiblebase,becausemissinganswerscandiffer.DonotplacedifferentKPIsintoonepooledimpactvalue.Productionrequirement:preselecttheonlyeligibleKPIforconfirmation;withnone,explainwhycreationcannotcontinue.UnconfigurednumericfieldsarenotautomaticallytreatedasNPSorCSAT.Eligibilityandmissing-fieldhandlingrequirelivesourceintegration."
+  },
+  {
+    "id": "filmstrip-slide-7-h2f0ab398812e6590_1_21-paragraph-0",
+    "text": "TextAIdashboard→Addwidget→chooseananalyzedtextquestion→chooseImpactonKPI→Next→chooseKPIquestion→Addwidget.Retaintheusualwidgetnamecontrols."
+  },
+  {
+    "id": "filmstrip-slide-7-h2f0ab398812e6590_1_21-paragraph-1",
+    "text": "ShoweligibleKPIquestionsinonedropdown,identifiedbyfieldcodeandconcisequestionlabel.Selectionisrequired;Addstaysdisableduntilavalidchoiceismade."
+  },
+  {
+    "id": "filmstrip-slide-7-h2f0ab398812e6590_1_21-paragraph-2",
+    "text": "Backorbreadcrumbnavigationretainsthedraftselection.Cancelclosestheflowandclearsitsdraft.CreatingthewidgetbindsonetextquestiontooneKPIquestion."
+  },
+  {
+    "id": "filmstrip-slide-7-h2f0ab398812e6590_1_21-paragraph-3",
+    "text": "Multipleoutcomes:addseparatewidgetsforthesametextquestionanddifferentKPIquestions.Eachwidgetcalculatesitsowneligiblebase,becausemissinganswerscandiffer.DonotplacedifferentKPIsintoonepooledimpactvalue."
+  },
+  {
+    "id": "filmstrip-slide-7-h2f0ab398812e6590_1_21-paragraph-4",
+    "text": "Productionrequirement:preselecttheonlyeligibleKPIforconfirmation;withnone,explainwhycreationcannotcontinue.UnconfigurednumericfieldsarenotautomaticallytreatedasNPSorCSAT.Eligibilityandmissing-fieldhandlingrequirelivesourceintegration."
+  },
+  {
+    "id": "filmstrip-slide-7-h2f0ab398812e6590_1_21-paragraph-5",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-8-h2f0ab398812e6590_1_24",
+    "text": "WidgetsettingsMatchthesharedTextAIsettingsexperienceUsetheexistinglive-previewsettingssurface.GeneralcontainsShowname,WidgetnameandFilteroptions.Donotaddthetext-questionsummaryorKPIselectionhere.AnalyticscontainstheKPIquestiondropdown,Showthemes(All/Top3/5/10/15/20)andShowOverallbaseline.ChangingtheKPIrecalculatesthepreview,base,scores,unitsandimpacts.KeepAnalyticscompact:noscoring-ruleparagraphs,fullquestionexplanation,response-matchingtext,default-expansiontoggleortheme-limitexplanatorycopy.Designusestheexistingdashboard/widgetcolorsandtypographycontrols.Filters:Dashboardusesdashboardconditions;Widgetuseswidgetconditions;Combinedrequiresboth;Noneappliesneitheroptionalfilterset.Allcalculationsusetheresultingbase.Accesspermissionsalwaysapplyinproduction,regardlessoffiltermode.Donotdisplayautomatic-savenotices,session/reset-on-reloadnoticesorResetwidgetsettings.Surfaceactualerrorsonly.Preservesharedcontrolstylingandsettingsbehavior."
+  },
+  {
+    "id": "filmstrip-slide-8-h2f0ab398812e6590_1_24-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-8-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-8-h2f0ab398812e6590_1_25",
+    "text": "Widgetsettings"
+  },
+  {
+    "id": "filmstrip-slide-8-h2f0ab398812e6590_1_25-paragraph-0",
+    "text": "Widgetsettings"
+  },
+  {
+    "id": "filmstrip-slide-8-h2f0ab398812e6590_1_26",
+    "text": "MatchthesharedTextAIsettingsexperience"
+  },
+  {
+    "id": "filmstrip-slide-8-h2f0ab398812e6590_1_26-paragraph-0",
+    "text": "MatchthesharedTextAIsettingsexperience"
+  },
+  {
+    "id": "filmstrip-slide-8-h2f0ab398812e6590_1_27",
+    "text": "Usetheexistinglive-previewsettingssurface.GeneralcontainsShowname,WidgetnameandFilteroptions.Donotaddthetext-questionsummaryorKPIselectionhere.AnalyticscontainstheKPIquestiondropdown,Showthemes(All/Top3/5/10/15/20)andShowOverallbaseline.ChangingtheKPIrecalculatesthepreview,base,scores,unitsandimpacts.KeepAnalyticscompact:noscoring-ruleparagraphs,fullquestionexplanation,response-matchingtext,default-expansiontoggleortheme-limitexplanatorycopy.Designusestheexistingdashboard/widgetcolorsandtypographycontrols.Filters:Dashboardusesdashboardconditions;Widgetuseswidgetconditions;Combinedrequiresboth;Noneappliesneitheroptionalfilterset.Allcalculationsusetheresultingbase.Accesspermissionsalwaysapplyinproduction,regardlessoffiltermode.Donotdisplayautomatic-savenotices,session/reset-on-reloadnoticesorResetwidgetsettings.Surfaceactualerrorsonly.Preservesharedcontrolstylingandsettingsbehavior."
+  },
+  {
+    "id": "filmstrip-slide-8-h2f0ab398812e6590_1_27-paragraph-0",
+    "text": "Usetheexistinglive-previewsettingssurface.GeneralcontainsShowname,WidgetnameandFilteroptions.Donotaddthetext-questionsummaryorKPIselectionhere."
+  },
+  {
+    "id": "filmstrip-slide-8-h2f0ab398812e6590_1_27-paragraph-1",
+    "text": "AnalyticscontainstheKPIquestiondropdown,Showthemes(All/Top3/5/10/15/20)andShowOverallbaseline.ChangingtheKPIrecalculatesthepreview,base,scores,unitsandimpacts."
+  },
+  {
+    "id": "filmstrip-slide-8-h2f0ab398812e6590_1_27-paragraph-2",
+    "text": "KeepAnalyticscompact:noscoring-ruleparagraphs,fullquestionexplanation,response-matchingtext,default-expansiontoggleortheme-limitexplanatorycopy.Designusestheexistingdashboard/widgetcolorsandtypographycontrols."
+  },
+  {
+    "id": "filmstrip-slide-8-h2f0ab398812e6590_1_27-paragraph-3",
+    "text": "Filters:Dashboardusesdashboardconditions;Widgetuseswidgetconditions;Combinedrequiresboth;Noneappliesneitheroptionalfilterset.Allcalculationsusetheresultingbase.Accesspermissionsalwaysapplyinproduction,regardlessoffiltermode."
+  },
+  {
+    "id": "filmstrip-slide-8-h2f0ab398812e6590_1_27-paragraph-4",
+    "text": "Donotdisplayautomatic-savenotices,session/reset-on-reloadnoticesorResetwidgetsettings.Surfaceactualerrorsonly.Preservesharedcontrolstylingandsettingsbehavior."
+  },
+  {
+    "id": "filmstrip-slide-8-h2f0ab398812e6590_1_27-paragraph-5",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-9-g86f1215a00_0_64",
+    "text": "●Clickatheme/sub-themename,impactbarorresponsecounttoopenthematchingeligibleresponses.ShowtheselectedKPI,groupscore,overallscore,scoreexcludingthegroup,impactandcomparisoncount.●Eachresponseshowsitsverbatimtext,theme/sub-themecontextandactualselectedKPIanswer.Sentimentmaybeshownascontext;itdoesnotdeterminetheKPI.●Searchinginsidetheresponsedialogfiltersonlythatlist.Itmustnotsilentlyrecalculatethewidget’sbaseorimpact.Closingreturnstothecurrenttablestate.●ClickOveralltoopenanalysisdetails:analyzedtextquestion,KPIquestion,eligiblecount,textcoverage,excluded-responsecountandcalculationexplanation.●TheOverallbaselineisthepairedtext-and-KPIpopulation,whichcandifferfromanall-surveyKPI.Keepthisexplanationindetailsratherthanaddingpermanentsummarysectionstothewidget.Inspectthesupportingevidence"
+  },
+  {
+    "id": "filmstrip-slide-9-g86f1215a00_0_64-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-9-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-9-g38e394f423a_0_24",
+    "text": "●Clickatheme/sub-themename,impactbarorresponsecounttoopenthematchingeligibleresponses.ShowtheselectedKPI,groupscore,overallscore,scoreexcludingthegroup,impactandcomparisoncount.●Eachresponseshowsitsverbatimtext,theme/sub-themecontextandactualselectedKPIanswer.Sentimentmaybeshownascontext;itdoesnotdeterminetheKPI.●Searchinginsidetheresponsedialogfiltersonlythatlist.Itmustnotsilentlyrecalculatethewidget’sbaseorimpact.Closingreturnstothecurrenttablestate.●ClickOveralltoopenanalysisdetails:analyzedtextquestion,KPIquestion,eligiblecount,textcoverage,excluded-responsecountandcalculationexplanation.●TheOverallbaselineisthepairedtext-and-KPIpopulation,whichcandifferfromanall-surveyKPI.Keepthisexplanationindetailsratherthanaddingpermanentsummarysectionstothewidget."
+  },
+  {
+    "id": "filmstrip-slide-9-g38e394f423a_0_24-paragraph-0",
+    "text": "●Clickatheme/sub-themename,impactbarorresponsecounttoopenthematchingeligibleresponses.ShowtheselectedKPI,groupscore,overallscore,scoreexcludingthegroup,impactandcomparisoncount."
+  },
+  {
+    "id": "filmstrip-slide-9-g38e394f423a_0_24-paragraph-1",
+    "text": "●Eachresponseshowsitsverbatimtext,theme/sub-themecontextandactualselectedKPIanswer.Sentimentmaybeshownascontext;itdoesnotdeterminetheKPI."
+  },
+  {
+    "id": "filmstrip-slide-9-g38e394f423a_0_24-paragraph-2",
+    "text": "●Searchinginsidetheresponsedialogfiltersonlythatlist.Itmustnotsilentlyrecalculatethewidget’sbaseorimpact.Closingreturnstothecurrenttablestate."
+  },
+  {
+    "id": "filmstrip-slide-9-g38e394f423a_0_24-paragraph-3",
+    "text": "●ClickOveralltoopenanalysisdetails:analyzedtextquestion,KPIquestion,eligiblecount,textcoverage,excluded-responsecountandcalculationexplanation."
+  },
+  {
+    "id": "filmstrip-slide-9-g38e394f423a_0_24-paragraph-4",
+    "text": "●TheOverallbaselineisthepairedtext-and-KPIpopulation,whichcandifferfromanall-surveyKPI.Keepthisexplanationindetailsratherthanaddingpermanentsummarysectionstothewidget."
+  },
+  {
+    "id": "filmstrip-slide-9-g38e394f423a_0_24-paragraph-5",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-9-g34d6f23b3a5_0_2",
+    "text": "Inspectthesupportingevidence"
+  },
+  {
+    "id": "filmstrip-slide-9-g34d6f23b3a5_0_2-paragraph-0",
+    "text": "Inspectthesupportingevidence"
+  },
+  {
+    "id": "filmstrip-slide-9-g34d6f23b3a5_0_2-paragraph-1",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-9-g34d6f23b3a5_0_2-paragraph-2",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-10-g86f1215898_1_32",
+    "text": "Empty,smallandchanginggroupsUnavailableisdifferentfromzeroWithnoeligibleresponses,showaclearemptystateandunavailableKPI/impactvalues.Overallcountis0;shareis—.SuggestchangingtheKPIorresponsefilters.Withnomatchingthemeresponsesornoremainingcomparisongroup,impactis—withthereason.Donotsubstitutezero.Agenuinezerodifferencestays0.0(or0.00foramean).FlagSmallsampleifanonemptythemegrouporitsremainingcomparisongroupcontainsfewerthan30responses.Thisisacautionthreshold,notasignificancetestorconfidenceinterval.Applyresponsefiltersbeforescoringandcounting;recomputeB,TandRtogether.Collapsingrows,changingthedisplaylimitandsortingmustnotchangetheunderlyingscores.Production:loading/errorstatesmustnotshowstalescoresasthenewlyselectedKPI.Deletedorinaccessiblesourcefieldsrequirere-selection;neversilentlysubstituteanotherfield.Finalrefreshandpermissionbehaviorrequiresintegrationvalidation."
+  },
+  {
+    "id": "filmstrip-slide-10-g86f1215898_1_32-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-10-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-10-g86fb383e73_0_466",
+    "text": "Empty,smallandchanginggroups"
+  },
+  {
+    "id": "filmstrip-slide-10-g86fb383e73_0_466-paragraph-0",
+    "text": "Empty,smallandchanginggroups"
+  },
+  {
+    "id": "filmstrip-slide-10-g86fb383e73_0_468",
+    "text": "Unavailableisdifferentfromzero"
+  },
+  {
+    "id": "filmstrip-slide-10-g86fb383e73_0_468-paragraph-0",
+    "text": "Unavailableisdifferentfromzero"
+  },
+  {
+    "id": "filmstrip-slide-10-g3c58e6d0cde_15_1",
+    "text": "Withnoeligibleresponses,showaclearemptystateandunavailableKPI/impactvalues.Overallcountis0;shareis—.SuggestchangingtheKPIorresponsefilters.Withnomatchingthemeresponsesornoremainingcomparisongroup,impactis—withthereason.Donotsubstitutezero.Agenuinezerodifferencestays0.0(or0.00foramean).FlagSmallsampleifanonemptythemegrouporitsremainingcomparisongroupcontainsfewerthan30responses.Thisisacautionthreshold,notasignificancetestorconfidenceinterval.Applyresponsefiltersbeforescoringandcounting;recomputeB,TandRtogether.Collapsingrows,changingthedisplaylimitandsortingmustnotchangetheunderlyingscores.Production:loading/errorstatesmustnotshowstalescoresasthenewlyselectedKPI.Deletedorinaccessiblesourcefieldsrequirere-selection;neversilentlysubstituteanotherfield.Finalrefreshandpermissionbehaviorrequiresintegrationvalidation."
+  },
+  {
+    "id": "filmstrip-slide-10-g3c58e6d0cde_15_1-paragraph-0",
+    "text": "Withnoeligibleresponses,showaclearemptystateandunavailableKPI/impactvalues.Overallcountis0;shareis—.SuggestchangingtheKPIorresponsefilters."
+  },
+  {
+    "id": "filmstrip-slide-10-g3c58e6d0cde_15_1-paragraph-1",
+    "text": "Withnomatchingthemeresponsesornoremainingcomparisongroup,impactis—withthereason.Donotsubstitutezero.Agenuinezerodifferencestays0.0(or0.00foramean)."
+  },
+  {
+    "id": "filmstrip-slide-10-g3c58e6d0cde_15_1-paragraph-2",
+    "text": "FlagSmallsampleifanonemptythemegrouporitsremainingcomparisongroupcontainsfewerthan30responses.Thisisacautionthreshold,notasignificancetestorconfidenceinterval."
+  },
+  {
+    "id": "filmstrip-slide-10-g3c58e6d0cde_15_1-paragraph-3",
+    "text": "Applyresponsefiltersbeforescoringandcounting;recomputeB,TandRtogether.Collapsingrows,changingthedisplaylimitandsortingmustnotchangetheunderlyingscores."
+  },
+  {
+    "id": "filmstrip-slide-10-g3c58e6d0cde_15_1-paragraph-4",
+    "text": "Production:loading/errorstatesmustnotshowstalescoresasthenewlyselectedKPI.Deletedorinaccessiblesourcefieldsrequirere-selection;neversilentlysubstituteanotherfield.Finalrefreshandpermissionbehaviorrequiresintegrationvalidation."
+  },
+  {
+    "id": "filmstrip-slide-10-g3c58e6d0cde_15_1-paragraph-5",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-11-gfdf248c7ff_0_5",
+    "text": "●Inscope:onetext-to-KPIbindingperwidget;unweightedNPS,definedCSATandmeanratings;hierarchicalimpacttable;sorting,expansion,sharedsettings,filteringandresponsedrilldown.●Prototype:1,500syntheticresponsessharedacrosstext-questionselections.KPIwidgetsandtheirsettingsliveonlyinpagememoryandresetonreload.Nodatabaseorbrowser-storageentriesarecreatedforthem.Thissessionbehaviorisnotaproductionpersistencerequirement.●Productionwork:stablefielddiscovery,response-IDjoins,analysis-statusmapping,establishedfilter/accesssemantics,persistedwidgetconfigurationandreliablerefresh/errorhandling.●Confirmbeforeproduction:supportedscalesandscoringmetadata,lower-is-betterdirection,weightingpolicy,sample-sizepolicyanddashboardtheme-filtersemantics.Thecurrentfixtureishigher-is-betterandunweighted;themeselectorcontrolsdonotsubsetit.●Outofscope:regressiondriverscores,causalattribution,predictedKPIlift,additivedecompositionacrossoverlappingthemes,arbitrarycross-sourcejoinsandautomaticscoringofundefinednumericfields.Nodeliverydateorproductionreadinessisasserted.Scopeandproductionboundary"
+  },
+  {
+    "id": "filmstrip-slide-11-gfdf248c7ff_0_5-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-11-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-11-gfdf248c7ff_0_6",
+    "text": "●Inscope:onetext-to-KPIbindingperwidget;unweightedNPS,definedCSATandmeanratings;hierarchicalimpacttable;sorting,expansion,sharedsettings,filteringandresponsedrilldown.●Prototype:1,500syntheticresponsessharedacrosstext-questionselections.KPIwidgetsandtheirsettingsliveonlyinpagememoryandresetonreload.Nodatabaseorbrowser-storageentriesarecreatedforthem.Thissessionbehaviorisnotaproductionpersistencerequirement.●Productionwork:stablefielddiscovery,response-IDjoins,analysis-statusmapping,establishedfilter/accesssemantics,persistedwidgetconfigurationandreliablerefresh/errorhandling.●Confirmbeforeproduction:supportedscalesandscoringmetadata,lower-is-betterdirection,weightingpolicy,sample-sizepolicyanddashboardtheme-filtersemantics.Thecurrentfixtureishigher-is-betterandunweighted;themeselectorcontrolsdonotsubsetit.●Outofscope:regressiondriverscores,causalattribution,predictedKPIlift,additivedecompositionacrossoverlappingthemes,arbitrarycross-sourcejoinsandautomaticscoringofundefinednumericfields.Nodeliverydateorproductionreadinessisasserted."
+  },
+  {
+    "id": "filmstrip-slide-11-gfdf248c7ff_0_6-paragraph-0",
+    "text": "●Inscope:onetext-to-KPIbindingperwidget;unweightedNPS,definedCSATandmeanratings;hierarchicalimpacttable;sorting,expansion,sharedsettings,filteringandresponsedrilldown."
+  },
+  {
+    "id": "filmstrip-slide-11-gfdf248c7ff_0_6-paragraph-1",
+    "text": "●Prototype:1,500syntheticresponsessharedacrosstext-questionselections.KPIwidgetsandtheirsettingsliveonlyinpagememoryandresetonreload.Nodatabaseorbrowser-storageentriesarecreatedforthem.Thissessionbehaviorisnotaproductionpersistencerequirement."
+  },
+  {
+    "id": "filmstrip-slide-11-gfdf248c7ff_0_6-paragraph-2",
+    "text": "●Productionwork:stablefielddiscovery,response-IDjoins,analysis-statusmapping,establishedfilter/accesssemantics,persistedwidgetconfigurationandreliablerefresh/errorhandling."
+  },
+  {
+    "id": "filmstrip-slide-11-gfdf248c7ff_0_6-paragraph-3",
+    "text": "●Confirmbeforeproduction:supportedscalesandscoringmetadata,lower-is-betterdirection,weightingpolicy,sample-sizepolicyanddashboardtheme-filtersemantics.Thecurrentfixtureishigher-is-betterandunweighted;themeselectorcontrolsdonotsubsetit."
+  },
+  {
+    "id": "filmstrip-slide-11-gfdf248c7ff_0_6-paragraph-4",
+    "text": "●Outofscope:regressiondriverscores,causalattribution,predictedKPIlift,additivedecompositionacrossoverlappingthemes,arbitrarycross-sourcejoinsandautomaticscoringofundefinednumericfields.Nodeliverydateorproductionreadinessisasserted."
+  },
+  {
+    "id": "filmstrip-slide-11-gfdf248c7ff_0_6-paragraph-5",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-11-gfdf248c7ff_0_7",
+    "text": "Scopeandproductionboundary"
+  },
+  {
+    "id": "filmstrip-slide-11-gfdf248c7ff_0_7-paragraph-0",
+    "text": "Scopeandproductionboundary"
+  },
+  {
+    "id": "filmstrip-slide-12-gfdf248c7ff_0_0",
+    "text": "FunctionalandvisualreleasechecksAcceptancecriteriaAC-01:CreaterequiresavalidKPI;BackpreserveschoicesandCancelclearsthedraft.MultiplewidgetsmaintainindependentKPIbindings.AC-02:JoinbyresponseID;excludeinvalid/blank/unfinishedanswers,deduplicatetags,andretainonecommonbaselineforparentandchildrows.AC-03:Reproducetheworkedexample(40,−20,55,−15,200,20%)andindependentlyverifyCSAT/meanformulas,unitsanddisplayprecision.AC-04:Filtermodesrecomputethefullbaseconsistently.Sortspreservehierarchy,keepunavailablevalueslastandleaveOverallatthebottom.Top-Nandexpansionaffectdisplayonly.AC-05:KPIswitchingupdatespreviewandmetriclabels;drilldownIDs/countsreconcilewithrows;dialogsearchdoesnotchangethecalculation.AC-06:Verifyunavailable/zero/small-samplecases,keyboardfocusandaccessiblecontrolnames.Matchsharedtypography/icons;useflushheader/footeredges,content-sizedheightandnoremovednotices.Productionintegrationmustpassseparatelyfromprototypechecks."
+  },
+  {
+    "id": "filmstrip-slide-12-gfdf248c7ff_0_0-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-12-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-12-gfdf248c7ff_0_1",
+    "text": "Functionalandvisualreleasechecks"
+  },
+  {
+    "id": "filmstrip-slide-12-gfdf248c7ff_0_1-paragraph-0",
+    "text": "Functionalandvisualreleasechecks"
+  },
+  {
+    "id": "filmstrip-slide-12-gfdf248c7ff_0_2",
+    "text": "Acceptancecriteria"
+  },
+  {
+    "id": "filmstrip-slide-12-gfdf248c7ff_0_2-paragraph-0",
+    "text": "Acceptancecriteria"
+  },
+  {
+    "id": "filmstrip-slide-12-g3c58e6d0cde_15_3",
+    "text": "AC-01:CreaterequiresavalidKPI;BackpreserveschoicesandCancelclearsthedraft.MultiplewidgetsmaintainindependentKPIbindings.AC-02:JoinbyresponseID;excludeinvalid/blank/unfinishedanswers,deduplicatetags,andretainonecommonbaselineforparentandchildrows.AC-03:Reproducetheworkedexample(40,−20,55,−15,200,20%)andindependentlyverifyCSAT/meanformulas,unitsanddisplayprecision.AC-04:Filtermodesrecomputethefullbaseconsistently.Sortspreservehierarchy,keepunavailablevalueslastandleaveOverallatthebottom.Top-Nandexpansionaffectdisplayonly.AC-05:KPIswitchingupdatespreviewandmetriclabels;drilldownIDs/countsreconcilewithrows;dialogsearchdoesnotchangethecalculation.AC-06:Verifyunavailable/zero/small-samplecases,keyboardfocusandaccessiblecontrolnames.Matchsharedtypography/icons;useflushheader/footeredges,content-sizedheightandnoremovednotices.Productionintegrationmustpassseparatelyfromprototypechecks."
+  },
+  {
+    "id": "filmstrip-slide-12-g3c58e6d0cde_15_3-paragraph-0",
+    "text": "AC-01:CreaterequiresavalidKPI;BackpreserveschoicesandCancelclearsthedraft.MultiplewidgetsmaintainindependentKPIbindings."
+  },
+  {
+    "id": "filmstrip-slide-12-g3c58e6d0cde_15_3-paragraph-1",
+    "text": "AC-02:JoinbyresponseID;excludeinvalid/blank/unfinishedanswers,deduplicatetags,andretainonecommonbaselineforparentandchildrows."
+  },
+  {
+    "id": "filmstrip-slide-12-g3c58e6d0cde_15_3-paragraph-2",
+    "text": "AC-03:Reproducetheworkedexample(40,−20,55,−15,200,20%)andindependentlyverifyCSAT/meanformulas,unitsanddisplayprecision."
+  },
+  {
+    "id": "filmstrip-slide-12-g3c58e6d0cde_15_3-paragraph-3",
+    "text": "AC-04:Filtermodesrecomputethefullbaseconsistently.Sortspreservehierarchy,keepunavailablevalueslastandleaveOverallatthebottom.Top-Nandexpansionaffectdisplayonly."
+  },
+  {
+    "id": "filmstrip-slide-12-g3c58e6d0cde_15_3-paragraph-4",
+    "text": "AC-05:KPIswitchingupdatespreviewandmetriclabels;drilldownIDs/countsreconcilewithrows;dialogsearchdoesnotchangethecalculation."
+  },
+  {
+    "id": "filmstrip-slide-12-g3c58e6d0cde_15_3-paragraph-5",
+    "text": "AC-06:Verifyunavailable/zero/small-samplecases,keyboardfocusandaccessiblecontrolnames.Matchsharedtypography/icons;useflushheader/footeredges,content-sizedheightandnoremovednotices.Productionintegrationmustpassseparatelyfromprototypechecks."
+  },
+  {
+    "id": "filmstrip-slide-12-g3c58e6d0cde_15_3-paragraph-6",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-13-g13441c123f6_0_1",
+    "text": "ReviewtheinteractionandcalculationtogetherPrototypewalkthroughOpenhttps://survey-re.vercel.app/directly→TextAI→dashboard.Referenceroute:/text-ai/1.Addwidget→textquestion→ImpactonKPI→Next→KPIquestion→Addwidget.SelectNPS,inspectthedefaultorder,expandathemeandsorteachcolumn.ConfirmthatchildrenstaygroupedandOverallstaysatthebottomwithnosideguttersorblankfooterspace.OpenSettings:Generalhasname/filtercontrols;AnalyticshastheKPIdropdown.SwitchtoCSAT,thenameanrating;checkthescorelabel,units,valuesandeligiblecount.AddasecondwidgettocompareanotherKPI.Tryresponse/datefilters,openanimpactdrilldownandinspecttextwiththeKPIanswer.Searchthedialog,closeit,thenopenOverallforcoverageandmethodology.Checkanemptyresultandasmallgroup.Prototypevalidation:nineKPIformula/filter/sorttestspass;creation,KPIswitching,filters,sorting,expansion,drilldownsandreloadresetwerebrowser-checkedlocally.Productiondataintegrationandsystemintegrationtestingremainseparate."
+  },
+  {
+    "id": "filmstrip-slide-13-g13441c123f6_0_1-bg",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-13-g86f1215898_1_189",
+    "text": ""
+  },
+  {
+    "id": "filmstrip-slide-13-g13441c123f6_0_3",
+    "text": "Reviewtheinteractionandcalculationtogether"
+  },
+  {
+    "id": "filmstrip-slide-13-g13441c123f6_0_3-paragraph-0",
+    "text": "Reviewtheinteractionandcalculationtogether"
+  },
+  {
+    "id": "filmstrip-slide-13-g145dcb058cc_0_60",
+    "text": "Prototypewalkthrough"
+  },
+  {
+    "id": "filmstrip-slide-13-g145dcb058cc_0_60-paragraph-0",
+    "text": "Prototypewalkthrough"
+  },
+  {
+    "id": "filmstrip-slide-13-g3c58e6d0cde_15_5",
+    "text": "Openhttps://survey-re.vercel.app/directly→TextAI→dashboard.Referenceroute:/text-ai/1.Addwidget→textquestion→ImpactonKPI→Next→KPIquestion→Addwidget.SelectNPS,inspectthedefaultorder,expandathemeandsorteachcolumn.ConfirmthatchildrenstaygroupedandOverallstaysatthebottomwithnosideguttersorblankfooterspace.OpenSettings:Generalhasname/filtercontrols;AnalyticshastheKPIdropdown.SwitchtoCSAT,thenameanrating;checkthescorelabel,units,valuesandeligiblecount.AddasecondwidgettocompareanotherKPI.Tryresponse/datefilters,openanimpactdrilldownandinspecttextwiththeKPIanswer.Searchthedialog,closeit,thenopenOverallforcoverageandmethodology.Checkanemptyresultandasmallgroup.Prototypevalidation:nineKPIformula/filter/sorttestspass;creation,KPIswitching,filters,sorting,expansion,drilldownsandreloadresetwerebrowser-checkedlocally.Productiondataintegrationandsystemintegrationtestingremainseparate."
+  },
+  {
+    "id": "filmstrip-slide-13-g3c58e6d0cde_15_5-paragraph-0",
+    "text": "Openhttps://survey-re.vercel.app/directly→TextAI→dashboard.Referenceroute:/text-ai/1.Addwidget→textquestion→ImpactonKPI→Next→KPIquestion→Addwidget."
+  },
+  {
+    "id": "filmstrip-slide-13-g3c58e6d0cde_15_5-paragraph-1",
+    "text": "SelectNPS,inspectthedefaultorder,expandathemeandsorteachcolumn.ConfirmthatchildrenstaygroupedandOverallstaysatthebottomwithnosideguttersorblankfooterspace."
+  },
+  {
+    "id": "filmstrip-slide-13-g3c58e6d0cde_15_5-paragraph-2",
+    "text": "OpenSettings:Generalhasname/filtercontrols;AnalyticshastheKPIdropdown.SwitchtoCSAT,thenameanrating;checkthescorelabel,units,valuesandeligiblecount.AddasecondwidgettocompareanotherKPI."
+  },
+  {
+    "id": "filmstrip-slide-13-g3c58e6d0cde_15_5-paragraph-3",
+    "text": "Tryresponse/datefilters,openanimpactdrilldownandinspecttextwiththeKPIanswer.Searchthedialog,closeit,thenopenOverallforcoverageandmethodology.Checkanemptyresultandasmallgroup."
+  },
+  {
+    "id": "filmstrip-slide-13-g3c58e6d0cde_15_5-paragraph-4",
+    "text": "Prototypevalidation:nineKPIformula/filter/sorttestspass;creation,KPIswitching,filters,sorting,expansion,drilldownsandreloadresetwerebrowser-checkedlocally.Productiondataintegrationandsystemintegrationtestingremainseparate."
+  },
+  {
+    "id": "filmstrip-slide-13-g3c58e6d0cde_15_5-paragraph-5",
+    "text": ""
+  }
+]

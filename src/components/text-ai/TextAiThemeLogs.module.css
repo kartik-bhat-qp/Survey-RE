@@ -143,3 +143,9 @@
   font-size: 0.75rem;
   max-width: 25rem;
 }
+
+.historyControls { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: .75rem; }
+.historyControls > :first-child { width: 15rem; }
+.logDay { color: #38434e; font-size: .8rem; font-weight: 600; margin: .1rem 0 .8rem; }
+.logCard { border: 0; padding: .4rem 0 .8rem; }
+.logCard footer { border: 0; padding-top: 0; }

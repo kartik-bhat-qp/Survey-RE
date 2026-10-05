@@ -16,6 +16,7 @@ export interface TextAiThemePreferences {
   emergingApprovedAtByName: Record<string, string>;
   emergingThemeValidityDays: TextAiEmergingValidityDays;
   showThemesWithNoResponses: boolean;
+  showCensoredSubthemes: boolean;
 }
 
 const STORAGE_KEY_PREFIX = 'bi-stats-text-ai-theme-preferences';
@@ -26,6 +27,7 @@ const DEFAULT_PREFERENCES: TextAiThemePreferences = {
   emergingApprovedAtByName: {},
   emergingThemeValidityDays: 30,
   showThemesWithNoResponses: true,
+  showCensoredSubthemes: false,
 };
 
 function getStorageKey(dashboardId: number): string {
@@ -76,6 +78,7 @@ export function getTextAiThemePreferences(
       approvedEmergingNames,
       emergingApprovedAtByName,
       emergingThemeValidityDays,
+      showCensoredSubthemes: parsed.showCensoredSubthemes === true,
       showThemesWithNoResponses:
         typeof parsed.showThemesWithNoResponses === 'boolean'
           ? parsed.showThemesWithNoResponses

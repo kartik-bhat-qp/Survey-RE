@@ -1,0 +1,782 @@
+- banner:
+  - button "product-switcher":
+    - link "wc-logo":
+      - /url: https://bi.questionpro.com
+      - generic "wc-logo": 
+    - generic: Business Intelligence
+    - generic: 
+  - navigation:
+    - link "Workspaces":
+      - /url: /workspaces
+      - paragraph: Workspaces
+    - generic: 
+    - link "Default 2":
+      - /url: /workspaces/348
+      - paragraph: Default 2
+    - generic: 
+    - link "TextAI":
+      - /url: /workspaces/348/text-ai/dashboards
+      - paragraph: TextAI
+    - generic: 
+    - link "CODEX QA Emerging AI Codebook Dashboard — 2026-09-10":
+      - /url: /workspaces/348/text-ai/dashboards/9465
+      - paragraph: CODEX QA Emerging AI Codebook Dashboard — 2026-09-10
+    - generic: 
+    - paragraph: Theme configuration
+  - list:
+    - button "dropdown-trigger":
+      - generic: 
+  - list:
+    - button "dropdown-trigger":
+      - generic: PG
+- complementary:
+  - button "menu-icon Toggle Sidebar":
+    - generic "menu-icon"
+    - generic: Toggle Sidebar
+  - separator
+  - generic: Analytics
+  - list:
+    - link " Dashboards":
+      - /url: /workspaces/348/dashboards?pagenumber=1
+      - generic: 
+      - generic: Dashboards
+    - link " TextAI":
+      - /url: /workspaces/348/text-ai/dashboards
+      - generic: 
+      - generic: TextAI
+    - link " Reports":
+      - /url: /workspaces/348/reports
+      - generic: 
+      - generic: Reports
+  - generic: Data
+  - list:
+    - link " Survey stacks":
+      - /url: /workspaces/348/survey-stacks
+      - generic: 
+      - generic: Survey stacks
+    - link " Weightings":
+      - /url: /workspaces/348/weightings
+      - generic: 
+      - generic: Weightings
+    - link " Datasets":
+      - /url: /workspaces/348/datasets
+      - generic: 
+      - generic: Datasets
+    - link " Exports":
+      - /url: /workspaces/348/exports
+      - generic: 
+      - generic: Exports
+  - separator
+  - list:
+    - link " Admin":
+      - /url: /admin
+      - generic: 
+      - generic: Admin
+    - link " Settings":
+      - /url: /settings
+      - generic: 
+      - generic: Settings
+- main:
+  - main:
+    - document:
+      - generic: 
+      - textbox "Search themes or responses..."
+      - button " Filter":
+        - generic: 
+        - generic: Filter
+      - button "Theme history":
+        - generic: 
+      - button "Theme configuration settings":
+        - generic: 
+      - button "":
+        - generic: 
+      - button "Recode"
+      - text: My code frame
+      - generic: "13"
+      - generic: "140"
+      - button "New sub-theme"
+      - button "New theme"
+      - generic: 
+      - generic: Outlier Parent Topic
+      - generic: 83.57%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Outlier
+      - paragraph: Texts that don't match any taxonomy topic
+      - generic: 83.57%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Gibberish
+      - paragraph: Texts identified as gibberish or non-meaningful.
+      - generic: 0%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: N/A
+      - paragraph: Empty, non-substantive, or non-applicable responses identified.
+      - generic: 0%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Delivery and fulfillment
+      - generic: 6.43%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Delivery timing window
+      - paragraph: Concerns customers have about delivery timeframes, windows, arrival predictability, and scheduling flexibility for subscription shipments.
+      - generic: 3.57%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Temperature and handling
+      - paragraph: Handling and environmental concerns affecting perishable or temperature-sensitive items, such as cold-chain care and transit conditions.
+      - generic: 2.86%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Delivery communication updates
+      - paragraph: Updates and notifications about shipment status, tracking details, delivery alerts, and clarity of communication from carrier or company.
+      - generic: 2.14%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Packaging protection level
+      - paragraph: How well packaging protects contents from damage, crushing, moisture, and whether materials and cushioning are adequate for safe delivery.
+      - generic: 2.14%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Product quality and safety
+      - generic: 5.71%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Product quality attributes
+      - paragraph: Feedback on product condition and attributes like freshness, durability, scent, size, and whether the items meet expected quality standards.
+      - generic: 3.57%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Allergen and contamination
+      - paragraph: Issues related to allergens, foreign contamination, spoilage, or unexpected ingredients that could pose health risks to pets.
+      - generic: 1.43%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Toy safety risks
+      - paragraph: Safety concerns specific to toys and accessories, including choking hazards, breakage, toxic materials, and age-appropriate design.
+      - generic: 0.71%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Returns and account management
+      - generic: 4.29%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Refund operations process
+      - paragraph: Processes and customer experience around issuing refunds, timelines, eligibility, and how efficiently refunds are handled.
+      - generic: 2.14%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Replacement and pause
+      - paragraph: Policies and processes for replacing items, pausing or modifying subscriptions, and handling exchanges or reshipments.
+      - generic: 2.14%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Tax policy
+      - generic: 1.43%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Inheritance taxation
+      - paragraph: Views on taxing inherited wealth, including support for higher rates on very large inheritances to limit concentrated economic power and concerns that inheritance taxes impose an additional burden on families’ already-taxed savings.
+      - generic: 1.43%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Explore raw data
+      - button "Select... ":
+        - paragraph: Select...
+        - generic: 
+      - button "wm-open-in-full":
+        - generic "wm-open-in-full": 
+      - paragraph: Theme coverage
+      - 'generic "1 sub-themes: 94.29% (132 responses)"'
+      - 'generic "2 sub-themes: 5.71% (8 responses)"'
+      - generic: 1 sub-themes
+      - generic: 94.29%
+      - generic: (132/140)
+      - generic: 2 sub-themes
+      - generic: 5.71%
+      - generic: (8/140)
+      - navigation:
+        - button "Previous page" [disabled]:
+          - generic: 
+        - button "menu-trigger":
+          - generic: 1 - 100
+          - generic "wm-arrow-drop-down": 
+        - button "Next page":
+          - generic: 
+      - paragraph: 140 items
+      - button "wm-sort Newest first":
+        - generic "wm-sort": 
+        - text: Newest first
+      - checkbox
+      - paragraph: I want elected representatives to explain how public consultation changed a bill before its final vote.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Referendums should be reserved for major constitutional questions rather than used for every contested policy.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Citizens assemblies could help parliament consider difficult issues beyond the pressure of election campaigns.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: National standards are necessary to prevent basic public services from varying too widely between regions.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: More powers should move to regional governments when local conditions require different policy approaches.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Legislative committees should be able to summon ministers and request evidence about government decisions.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I prefer a clear governing majority because fragmented coalitions can make responsibility for decisions difficult to identify.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Coalition governments can represent more viewpoints if their agreements and compromises are made public.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Term limits can encourage political renewal but they may also remove experienced representatives voters still support.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I favor fixed legislative terms because governments should not call elections only when polling looks favorable.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Political debate about migration should compare practical policy choices without blaming entire communities.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Local governments need predictable national funding when they help newly arrived families settle.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Border enforcement should follow the law and preserve humane treatment of everyone involved.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Employers should not be able to use temporary visa dependence to exploit migrant workers.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Citizenship requirements should be clear and achievable for people who have lived lawfully in the country for years.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I support language education for newcomers because participation in civic life benefits the whole community.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Refugee protection is a shared international responsibility rather than a burden for neighboring countries alone.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Asylum decisions should be timely and fair with an independent appeal process.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The pace of immigration should take housing capacity and public services into account.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Immigration rules should offer clear lawful pathways for workers whose skills are needed.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Economic sanctions should be designed to limit harm to civilians while addressing the conduct of political leaders.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Peacekeeping missions should have clearly defined objectives and regular public reviews.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Parliament should debate treaty commitments before the executive binds the country to long term obligations.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I favor reducing dependence on any single trading partner even if diversification has some short term cost.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Lower trade barriers can benefit consumers but workers affected by industrial change need meaningful adjustment assistance.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: International trade agreements should include enforceable labor standards rather than focusing only on tariffs.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I prefer concentrating limited public resources on domestic needs before expanding overseas assistance.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Foreign aid should focus on humanitarian needs and have transparent evaluations of its effectiveness.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I support credible national defense spending but large military purchases should receive parliamentary scrutiny.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Diplomacy should be the first response to international disputes before leaders consider military action.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Participatory budgeting would let residents directly influence a portion of municipal spending.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Local councils should publish the reasons behind major planning approvals and rejected objections.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Rural road maintenance should receive a fair share of infrastructure spending rather than losing out to capital cities.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Public transport investment matters more to me than widening urban highways.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Vacant residential properties should face higher local taxes when the city has a severe housing shortage.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Local residents should have a voice in planning decisions but should not be able to block every new home.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Municipal governments should build more social housing instead of relying entirely on private developers.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Strict rent caps may discourage new housing construction so I prefer targeted rental assistance.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I favor stronger tenant protections so families are not displaced by sudden rent increases.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Cities should permit more apartments near transit stations to address housing shortages.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Defamation rules should protect reputations without preventing good faith criticism of public officials.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I support stronger oversight of police conduct alongside adequate resources for lawful crime investigation.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Access to legal aid is essential because constitutional rights mean little when ordinary people cannot enforce them.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Emergency executive powers should expire automatically unless the legislature votes to renew them.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I prefer parliamentary scrutiny of senior judicial appointments to giving politicians unrestricted appointment powers.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Judges should be appointed through transparent procedures that limit partisan influence.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Public broadcasters need independent oversight so they do not become mouthpieces for the governing party.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Journalists should be able to investigate ministers without fearing politically motivated prosecution.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Restrictions on protest should be narrowly defined so authorities cannot use public order as a blanket excuse.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Peaceful demonstrations should be protected even when their message is deeply unpopular with the government.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I oppose political interference in academic appointments because universities need intellectual independence.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Public funding for early childhood education would be a better investment than another prestige university project.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Teachers should have a stronger voice when lawmakers change examination requirements.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Civics classes should teach how institutions work and how to evaluate political claims without endorsing a party.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Vocational training deserves equal political attention to university expansion.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I prefer targeted scholarships to free university tuition for everyone including wealthy households.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: University tuition should be subsidized more heavily because higher education benefits society as well as graduates.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: National curriculum standards are useful but teachers should retain freedom in how they teach the material.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I favor school autonomy because local educators understand their communities better than a central ministry.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Public schools in poorer districts should receive extra funding to reduce unequal educational opportunities.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Long term eldercare deserves a stable public funding model instead of being left entirely to relatives.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Public health decisions should be explained by independent experts rather than shaped mainly by election campaigns.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I worry that rigid national price controls could discourage medical research and prefer targeted subsidies.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Government should negotiate medicine prices collectively to make essential treatments affordable.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Mental healthcare should receive the same attention in national policy as physical healthcare.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I would rather expand nurse training places than promise new hospitals without enough staff to operate them.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Rural clinics should receive dedicated public funding because equal healthcare access should not depend on location.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The national health budget should place more emphasis on preventive care than on treating avoidable illness later.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I favor a mixed health system where public coverage guarantees basic care and private providers offer additional choices.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Universal public health coverage should be a government responsibility regardless of a person's employment status.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Every election manifesto should explain how its proposed spending and tax cuts would be funded.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Borrowing for long lasting public infrastructure can be justified when future generations also benefit.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Reducing public debt should be a priority even if politicians have to postpone popular spending promises.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: A land value tax seems preferable to taxes that discourage people from working or constructing housing.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I oppose broad consumption tax increases because households with little income spend most of what they earn.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Lower business taxes could encourage investment but any reduction should come with a credible budget plan.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I favor a more progressive income tax system to finance essential public services.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The government should simplify income tax rules before introducing more deductions and special exemptions.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Inheritance taxes seem unfair to families who have already paid taxes while building their savings.
+      - text: Inheritance taxation
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I support higher tax rates on very large inheritances to reduce the concentration of economic power.
+      - text: Inheritance taxation
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Whistleblowers who report misuse of public funds deserve legal protection from retaliation.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Legislators should disclose their financial interests before voting on bills that could benefit them personally.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Government contracts should be awarded through open bidding rather than political connections.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: An independent ethics commissioner should investigate conflicts of interest involving elected officials.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Former cabinet ministers should face a cooling off period before accepting jobs with companies they regulated.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Lobbyists should register their meetings with ministers and disclose the legislation they seek to influence.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I am skeptical of taxpayer funded campaigns and would rather allow small private donations with full disclosure.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Public campaign financing could help independent candidates compete without depending on large donors.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I favor strict campaign spending limits because wealthy candidates should not dominate elections through advertising.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Political donations should be disclosed promptly so voters can judge who finances each party.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Election administrators should publish understandable ballot counting procedures before voting begins.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I support compulsory voting with an abstention option because broad participation strengthens democratic legitimacy.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I oppose compulsory voting because abstaining can be a legitimate expression of political dissatisfaction.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Early voting should be expanded because a single polling day is unnecessarily restrictive.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Election day should be a public holiday so work commitments do not prevent people from voting.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I worry that ranked ballots are confusing and would prefer a straightforward runoff between the leading candidates.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Ranked choice voting appeals to me because I could support a smaller party without abandoning my second preference.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Independent commissions should draw electoral boundaries so governing parties cannot choose their own voters.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I prefer constituency elections because voters need a clearly accountable local representative.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I favor proportional representation because smaller political parties should receive seats that reflect their share of votes.
+      - text: Outlier
+      - button "wm-close":
+        - generic "wm-close": 
+  - link "QuestionPro Admin":
+    - /url: https://www.questionpro.com/a/showUpgradeUser.do?payment=RecurringOrder
+  - generic: "#Business Intelligence v202"
+  - button "":
+    - generic: 

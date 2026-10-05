@@ -1,0 +1,12 @@
+.fields { display: flex; flex-direction: column; gap: 16px; font: 13px/1.5 'Fira Sans', Arial, sans-serif; color: #555; text-align: left; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.mappingTitle { font-size: 14px; font-weight: 500; margin-top: 4px; }
+.formula { font-size: 12px; margin: -10px 0 0; color: #697580; }
+.mapping { width: 100%; border-collapse: collapse; text-align: left; }
+.mapping th { background: #f5f5f5; font-weight: 500; }
+.mapping th, .mapping td { padding: 7px 10px; border-bottom: 1px solid #e5e5e5; }
+.mapping th:first-child { width: 42%; }
+.fields select, .mapping input[type='number'] { width: 100%; min-height: 33px; background: white; border: 1px solid #aaa; border-radius: 3px; color: #555; padding: 5px 8px; font: inherit; }
+.meanRow { display: flex; align-items: center; gap: 8px; }
+.meanRow label { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+.error { color: #b42318; margin: 0; font-size: 12px; }

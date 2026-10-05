@@ -20,8 +20,8 @@ import {
   TEXT_AI_WIDGET_CHART_TYPES,
   type TextAiWidgetChartTypeId,
 } from '@/data/mock-text-ai-widget-chart-types';
-import { TextAiKpiQuestionField } from './TextAiKpiQuestionField';
-import type { TextAiKpiId } from '@/data/mock-text-ai-kpi-by-theme';
+import { TextAiKpiSetupFields } from './TextAiKpiSetupFields';
+import { defaultTextAiKpiConfig, validateTextAiKpiConfig, type TextAiKpiConfig, type TextAiKpiSourceType } from '@/data/mock-text-ai-kpi-by-theme';
 import { truncate } from '@/data/mock-utils';
 import styles from './TextAiAddWidgetModal.module.css';
 
@@ -45,23 +45,30 @@ const WuTable = dynamic(
 interface TextAiAddWidgetModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddWidget?: (question: TextAiAnalysisQuestion, chartTypeId: TextAiWidgetChartTypeId, kpi?: { id: TextAiKpiId; name: string }) => void;
+  sourceType?: TextAiKpiSourceType;
+  questions?: TextAiAnalysisQuestion[];
+  onAddWidget?: (question: TextAiAnalysisQuestion, chartTypeId: TextAiWidgetChartTypeId, kpi?: TextAiKpiConfig) => void;
 }
 
 export function TextAiAddWidgetModal({
   open,
   onOpenChange,
   onAddWidget,
+  sourceType: initialSourceType = 'survey',
+  questions = MOCK_TEXT_AI_ANALYSIS_QUESTIONS,
 }: TextAiAddWidgetModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
-  const [step, setStep] = useState<TextAiAddWidgetStep>('question');
+  const [step, setStep] = useState<TextAiAddWidgetStep>('chart');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const pageSize = 10;
   const [selectedQuestion, setSelectedQuestion] = useState<TextAiAnalysisQuestion | null>(
     null
   );
   const [widgetName, setWidgetName] = useState('');
-  const [selectedKpi, setSelectedKpi] = useState<TextAiKpiId>();
+  const sourceType = initialSourceType;
+  const [kpiConfig, setKpiConfig] = useState<TextAiKpiConfig>(() => ({ ...defaultTextAiKpiConfig(), name: '', questionId: undefined, sourceType: initialSourceType }));
   const [descriptionEnabled, setDescriptionEnabled] = useState(false);
   const [widgetDescription, setWidgetDescription] = useState('');
   const [selectedChartTypeId, setSelectedChartTypeId] = useState<TextAiWidgetChartTypeId>(
@@ -69,9 +76,10 @@ export function TextAiAddWidgetModal({
   );
 
   function resetModalState(): void {
-    setStep('question');
-    setSelectedKpi(undefined);
+    setStep('chart');
+    setKpiConfig({ ...defaultTextAiKpiConfig(), name: '', questionId: undefined, sourceType: initialSourceType });
     setSearch('');
+    setPage(0);
     setSelectedQuestion(null);
     setWidgetName('');
     setDescriptionEnabled(false);
@@ -88,19 +96,21 @@ export function TextAiAddWidgetModal({
 
   const filteredQuestions = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return MOCK_TEXT_AI_ANALYSIS_QUESTIONS;
-    return MOCK_TEXT_AI_ANALYSIS_QUESTIONS.filter(
+    const available = questions;
+    if (!term) return available;
+    return available.filter(
       (question) =>
         question.code.toLowerCase().includes(term) ||
         question.text.toLowerCase().includes(term) ||
         question.type.toLowerCase().includes(term)
     );
-  }, [search]);
+  }, [search, questions]);
 
-  const rangeLabel =
-    filteredQuestions.length === 0
-      ? '0 - 0 of 0'
-      : `1 - ${filteredQuestions.length} of ${filteredQuestions.length}`;
+  const pageCount = Math.max(1, Math.ceil(filteredQuestions.length / pageSize));
+  const safePage = Math.min(page, pageCount - 1);
+  const rangeLabel = filteredQuestions.length
+    ? `${safePage * pageSize + 1} - ${Math.min((safePage + 1) * pageSize, filteredQuestions.length)} of ${filteredQuestions.length}`
+    : '0 - 0 of 0';
 
   const columns: IWuTableColumnDef<TextAiAnalysisQuestion>[] = useMemo(
     () => [
@@ -112,7 +122,7 @@ export function TextAiAddWidgetModal({
       },
       {
         accessorKey: 'text',
-        header: 'Questions',
+        header: sourceType === 'dataset' ? 'Variables' : 'Questions',
         enableSorting: true,
         size: 695,
         cell: ({ row }) => {
@@ -126,10 +136,8 @@ export function TextAiAddWidgetModal({
               }`}
               onClick={() => {
                 setSelectedQuestion(question);
-                setWidgetName('');
-                setSelectedKpi(undefined);
-                setSelectedChartTypeId(DEFAULT_TEXT_AI_WIDGET_CHART_TYPE_ID);
-                setStep('chart');
+                setKpiConfig(previous => ({ ...previous, textQuestionId: question.id }));
+                if (selectedChartTypeId === 'kpi-by-theme') setStep('kpi');
               }}
             >
               {truncate(question.text, 96)}
@@ -144,18 +152,18 @@ export function TextAiAddWidgetModal({
         size: 159,
       },
     ],
-    [selectedQuestion]
+    [selectedQuestion, sourceType, selectedChartTypeId]
   );
 
   function handleBreadcrumbClick(target: TextAiAddWidgetStep): void {
-    if (target === 'question' || (target === 'chart' && selectedQuestion)) setStep(target);
+    if (target === 'chart' || target === 'question') setStep(target);
   }
 
   function handleAddWidget(): void {
     if (!selectedQuestion) return;
-    if (selectedChartTypeId === 'kpi-by-theme' && !selectedKpi) return;
+    if (selectedChartTypeId === 'kpi-by-theme' && validateTextAiKpiConfig(kpiConfig)) return;
     onAddWidget?.(selectedQuestion, selectedChartTypeId,
-      selectedChartTypeId === 'kpi-by-theme' && selectedKpi ? { id: selectedKpi, name: widgetName.trim() || 'Impact on KPI' } : undefined);
+      selectedChartTypeId === 'kpi-by-theme' ? kpiConfig : undefined);
     const chartLabel =
       TEXT_AI_WIDGET_CHART_TYPES.find((type) => type.id === selectedChartTypeId)?.label ??
       'widget';
@@ -182,55 +190,52 @@ export function TextAiAddWidgetModal({
               <div className={styles.searchInput}>
                 <WuInput
                   variant="outlined"
-                  placeholder="Search by Question name"
+                  placeholder={sourceType === 'dataset' ? 'Search variables' : 'Search questions'}
                   value={search}
-                  onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                    setSearch(event.target.value)
-                  }
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                    setSearch(event.target.value); setPage(0);
+                  }}
                   Icon={<span className="wm-search" aria-hidden />}
-                  aria-label="Search by Question name"
+                  aria-label={sourceType === 'dataset' ? 'Search variables' : 'Search questions'}
                 />
               </div>
-              <span className={styles.rangeMeta}>
-                {rangeLabel}
-                <span className="wm-arrow-drop-down" aria-hidden />
-              </span>
+              <nav className={styles.pagination} aria-label="Question pages">
+                <button type="button" aria-label="Previous page" disabled={safePage === 0} onClick={() => setPage(safePage - 1)}><span className="wm-chevron-left" aria-hidden /></button>
+                <span className={styles.rangeMeta} aria-live="polite">{rangeLabel}</span>
+                <button type="button" aria-label="Next page" disabled={safePage >= pageCount - 1} onClick={() => setPage(safePage + 1)}><span className="wm-chevron-right" aria-hidden /></button>
+              </nav>
             </div>
             <div className={styles.tableArea}>
               <WuTable
                 data={filteredQuestions as unknown[]}
                 columns={columns as unknown as IWuTableColumnDef<unknown>[]}
                 variant="bordered"
+                pagination={{ pageIndex: safePage, pageSize }}
               />
             </div>
           </div>
         ) : step === 'kpi' ? (
           <div className={styles.kpiStep}>
-            <h3>{widgetName.trim() || 'Impact on KPI'}</h3>
-            <p><strong>Text question</strong><br />{selectedQuestion?.code} · {selectedQuestion?.text}</p>
-            <TextAiKpiQuestionField value={selectedKpi} onChange={setSelectedKpi} />
-            <p>Change the KPI later in General settings, or add another widget for a different KPI.</p>
-            <p className={styles.prototypeNote}>Session-only prototype: shared synthetic data, no live source connection. Added KPI widgets reset on reload.</p>
+            <h3>KPI setup</h3>
+            <TextAiKpiSetupFields value={kpiConfig} onChange={setKpiConfig} />
           </div>
         ) : (
           <div className={styles.chartStep}>
-            <p className={styles.questionContext}>
-              {selectedQuestion?.text ?? 'Select a question'}
-            </p>
+            <h3 className={styles.stepHeading}>Select widget</h3>
 
-            <div className={styles.nameField}>
+            {selectedChartTypeId !== 'kpi-by-theme' && <div className={styles.nameField}>
               <WuInput
                 variant="standard"
                 Label="Name"
                 labelPosition="top"
-                placeholder={selectedChartTypeId === 'kpi-by-theme' ? 'Impact on KPI' : selectedQuestion?.text ?? 'Widget name'}
+                placeholder={selectedQuestion?.text ?? 'Widget name'}
                 value={widgetName}
                 maxLength={100}
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                   setWidgetName(event.target.value)
                 }
               />
-            </div>
+            </div>}
 
             {selectedChartTypeId !== 'kpi-by-theme' && <div className={styles.descriptionRow}>
               <span className={styles.descriptionLabel}>Description</span>
@@ -291,21 +296,13 @@ export function TextAiAddWidgetModal({
             includeKpi={selectedChartTypeId === 'kpi-by-theme'}
             onStepClick={handleBreadcrumbClick}
           />
-          {step !== 'question' ? (
-            <div className={styles.wizardActions}>
-              <button
-                type="button"
-                className={styles.backLink}
-                onClick={() => setStep(step === 'kpi' ? 'chart' : 'question')}
-              >
-                Back
-              </button>
-              <WuButton onClick={() => step === 'chart' && selectedChartTypeId === 'kpi-by-theme' ? setStep('kpi') : handleAddWidget()}
-                disabled={!selectedQuestion || (step === 'kpi' && !selectedKpi)}>
-                {step === 'chart' && selectedChartTypeId === 'kpi-by-theme' ? 'Next' : 'Add widget'}
-              </WuButton>
-            </div>
-          ) : null}
+          <div className={styles.wizardActions}>
+            {step !== 'chart' && <button type="button" className={styles.backLink} onClick={() => setStep(step === 'kpi' ? 'question' : 'chart')}>Back</button>}
+            {!(step === 'question' && selectedChartTypeId === 'kpi-by-theme') && <WuButton disabled={step === 'question' ? !selectedQuestion : step === 'kpi' ? Boolean(validateTextAiKpiConfig(kpiConfig)) : false}
+              onClick={() => step === 'chart' ? setStep('question') : step === 'question' && selectedChartTypeId === 'kpi-by-theme' ? setStep('kpi') : handleAddWidget()}>
+              {step === 'kpi' || (step === 'question' && selectedChartTypeId !== 'kpi-by-theme') ? 'Add widget' : 'Next'}
+            </WuButton>}
+          </div>
         </div>
       </WuModalFooter>
     </WuModal>

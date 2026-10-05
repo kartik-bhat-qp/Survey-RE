@@ -220,12 +220,6 @@
   gap: 0.65rem;
 }
 
-.appliedGranularity {
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 0.68rem;
-  font-weight: 500;
-}
-
 .headerCount {
   align-items: center;
   background: rgba(255, 255, 255, 0.25);
@@ -252,7 +246,7 @@
 
 .codeFrameActions button:hover,
 .codeFrameActions button:focus-visible {
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .themeScrollArea {
@@ -322,9 +316,10 @@
   width: 100%;
 }
 
-.themeGroupToggle:hover,
-.themeGroupToggle:focus-visible {
-  background: rgba(255, 255, 255, 0.5);
+.themeGroupToggle:focus-visible,
+.themeCollapseButton:focus-visible {
+  outline: 2px solid #1565c0;
+  outline-offset: 2px;
   border-radius: 0.25rem;
 }
 
@@ -386,6 +381,7 @@
 }
 
 .subTheme {
+  background: #fff;
   align-items: center;
   border: 1px solid #e1e4e7;
   border-radius: 0.4rem;
@@ -398,22 +394,16 @@
   padding: 0.45rem 0.75rem;
 }
 
-.subTheme:hover,
-.subTheme:focus-within {
-  background: #fafcfe;
-  border-color: #c5d7e6;
-}
-
 .subThemeSelected {
-  background: #e9f6eb;
-  border-color: #4d9c5a;
-  box-shadow: 0 0 0 1px #4d9c5a;
+  background: #e8f5e9;
+  border-color: #66bb6a;
+  box-shadow: 0 0 0 2px rgba(102, 187, 106, 0.2);
 }
 
 .subThemeSelected:hover,
 .subThemeSelected:focus-within {
-  background: #e9f6eb;
-  border-color: #4d9c5a;
+  background: #e8f5e9;
+  border-color: #66bb6a;
 }
 
 .subThemeSelectButton {
@@ -458,30 +448,34 @@
   background: transparent;
   border: 0;
   border-radius: 0.25rem;
-  color: #687581;
+  color: #9e9e9e;
   cursor: pointer;
   display: inline-flex;
   flex-shrink: 0;
-  height: 1.75rem;
+  height: 2rem;
   justify-content: center;
   opacity: 0;
   padding: 0;
-  transition: background-color 120ms ease, color 120ms ease, opacity 120ms ease;
-  width: 1.75rem;
+  transition: background-color 150ms ease, color 150ms ease, opacity 150ms ease;
+  width: 2rem;
 }
 
 .subTheme:hover .editSubThemeButton,
 .subTheme:focus-within .editSubThemeButton {
-  background: #edf6fd;
-  color: #1674c5;
   opacity: 1;
 }
 
-.editSubThemeButton:hover,
-.editSubThemeButton:focus-visible {
-  background: #ddecf8;
-  color: #0e65ae;
+.editSubThemeButton:hover:not(:disabled),
+.editSubThemeButton:focus-visible:not(:disabled) {
+  background: #f5f5f5;
+  color: #424242;
   opacity: 1;
+}
+
+.editSubThemeButton.deleteActionButton:hover:not(:disabled),
+.editSubThemeButton.deleteActionButton:focus-visible:not(:disabled) {
+  background: #fce4e4;
+  color: #c62828;
 }
 
 .editSubThemeButton :global(.wm-edit) {
@@ -600,7 +594,7 @@
   display: grid;
   gap: 0.75rem;
   grid-template-rows: auto minmax(0, 1fr);
-  min-height: 24rem;
+  min-height: 0;
 }
 
 .settingsModalBody {
@@ -998,7 +992,8 @@
 
 .iconButton:hover,
 .iconButton:focus-visible {
-  background: #eef3f8;
+  background: #eee;
+  color: #4b5563;
 }
 
 .coverageSelect select {
@@ -1292,6 +1287,16 @@
   cursor: pointer;
   display: inline-flex;
   padding: 0;
+  opacity: 0.7;
+}
+
+.responseTag button:hover:not(:disabled),
+.responseTag button:focus-visible {
+  opacity: 1;
+}
+
+.responseTag button:disabled {
+  cursor: default;
 }
 
 .noResults {
@@ -1353,10 +1358,6 @@
   .utilityActions {
     flex-wrap: wrap;
     justify-content: flex-end;
-  }
-
-  .appliedGranularity {
-    display: none;
   }
 
   .utilityControls,
@@ -1495,3 +1496,155 @@
 .configurationForm input:focus, .configurationForm select:focus, .configurationForm textarea:focus { outline: 2px solid #247fd2; outline-offset: 2px; }
 .configurationForm small { font-weight: 400; color: #6a7684; }
 .configurationItemList { margin: 12px 0; padding: 12px 16px 12px 30px; border-radius: 5px; background: #f5f7fa; max-height: 140px; overflow-y: auto; }
+
+.censoredReviewList { max-height: 380px; overflow-y: auto; margin-top: 12px; }
+.censoredReviewList small { display: block; margin: 8px 0 0 24px; color: #64748b; }
+.censoredSearch { padding: 10px 12px; width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; margin: 14px 0; }
+.censoredReviewPaging { display: flex; justify-content: space-between; padding-top: 12px; }
+
+
+/* Match the production coding workspace, keeping censorship messaging compact. */
+.utilityBar { align-items: center; min-height: 2rem; }
+.searchBox { height: 2rem; font-size: 0.75rem; flex: 1; }
+.utilityActions { gap: 1rem; }
+.toolbarTextButton { align-items: center; background: transparent; border: 0; color: #626c76; cursor: pointer; display: inline-flex; font: inherit; font-size: 0.75rem; gap: 0.35rem; padding: 0.3rem 0; white-space: nowrap; }
+.toolbarTextButton:hover, .toolbarTextButton:focus-visible { background: #eee; color: #4b5563; }
+.recodeTrigger { color: #1686e4; font-size: 0.78rem; }
+.savedMessage { color: #33823d; font-size: 0.75rem; margin: 0; }
+.codeFrameHeader { min-height: 3.25rem; }
+.codeFrameTitle { font-size: 0.8rem; }
+.codeFrameActions { gap: 0.5rem; font-size: 0.75rem; }
+.codeFrameActions button { border: 1px solid rgba(255,255,255,.6); background: transparent; }
+.themeGroupHeader { min-height: 3rem; gap: 0.5rem; position: relative; padding: 0.45rem 0.75rem; cursor: pointer; transition: filter 150ms ease; }
+.themeGroupHeader:hover { filter: brightness(.97); }
+.themeGroupToggle { min-height: 2rem; flex: 1; width: auto; }
+.themeCollapseButton { background: transparent; border: 0; padding: 0; display: inline-flex; color: inherit; cursor: pointer; }
+.themeGroupLabel { font-size: 0.78rem; }
+.themeGroupPercentage { font-weight: 600; font-size: 0.7rem; }
+.themeEditActions { display: flex; flex-shrink: 0; gap: 2px; opacity: 0; pointer-events: none; transition: opacity 150ms ease; }
+.themeGroupHeader:hover .themeEditActions, .themeGroupHeader:focus-within .themeEditActions { opacity: 1; pointer-events: auto; }
+.themeEditActions .editSubThemeButton { color: #757575; }
+.themeEditActions .editSubThemeButton:hover:not(:disabled), .themeEditActions .editSubThemeButton:focus-visible:not(:disabled) { background: rgba(0,0,0,.06); color: #212121; }
+.themeEditActions .deleteActionButton:hover:not(:disabled), .themeEditActions .deleteActionButton:focus-visible:not(:disabled) { background: rgba(198,40,40,.1); color: #c62828; }
+.themeEditActions .editSubThemeButton { opacity: 1; }
+.editSubThemeButton:disabled { cursor: default; opacity: .35 !important; }
+.inlineThemeRename { display: flex; flex: 1; align-items: center; gap: 0.4rem; font-size: 0.75rem; }
+.inlineThemeRename input { width: 100%; border: 1px solid #1686e4; border-radius: 3px; padding: 5px 8px; font: inherit; }
+.inlineThemeRename button { border: 0; color: #1686e4; background: transparent; cursor: pointer; }
+.inlineThemeRename [role=alert] { color: #b42318; }
+.subTheme { position: relative; min-height: 3.9rem; padding: 0.5rem 0.75rem; cursor: pointer; transition: background 150ms ease; }
+.subThemeSelectButton { align-items: center; gap: 0.75rem; }
+.subThemeContent { display: flex; flex-direction: column; flex: 1; gap: 0.35rem; min-width: 0; }
+.subThemeMain { font-size: 13px; font-weight: 500; align-items: center; }
+.subThemeMain > span:first-child, .themeGroupName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.subThemeDescription { color: #757575; font-size: 0.68rem; font-weight: 400; line-height: 1.4; }
+.subThemePercentage { font-size: 0.7rem; }
+.subThemeMeta { position: absolute; top: 50%; right: 0.5rem; transform: translateY(-50%); background: linear-gradient(90deg, transparent, #fff 24px); padding-left: 24px; gap: 2px; opacity: 0; pointer-events: none; transition: opacity 150ms ease; }
+.subThemeSelected .subThemeMeta { background: linear-gradient(90deg, transparent, #e8f5e9 24px); }
+.subTheme:hover .subThemeMeta, .subTheme:focus-within .subThemeMeta { opacity: 1; pointer-events: auto; }
+.subThemeMeta .editSubThemeButton { opacity: 1; }
+.responseSelectionToolbar[hidden] { display: none; }
+.responseSelectionToolbar { background: white; min-height: 2.5rem; border: 0; font-size: 0.75rem; }
+.updateSentimentButton { color: #1686e4; background: transparent; border: 0; padding: 0.25rem 0.4rem; font-size: 0.75rem; min-height: 1.8rem; }
+.updateSentimentButton:hover:not(:disabled) { color: #0f74c9; background: #eef7fd; border: 0; }
+.updateSentimentButton:disabled { color: #9299a1; background: transparent; border: 0; }
+.responseCard { position: relative; cursor: default; transition: background 150ms ease; }
+.responseCardSelected { background: #e3f2fd; border-color: #90caf9; }
+.responseCard:hover { background: #fafafa; }
+.responseEditActions { position: absolute; bottom: 0.25rem; right: 0.4rem; min-height: 0; padding: 0; margin: 0; }
+.responseCardPending { padding-bottom: 1.75rem; }
+.addResponseTag { font-size: 0.68rem; padding: 0.2rem; }
+.censoredNote { display: flex; align-items: baseline; gap: 0.45rem; flex-shrink: 0; padding: 0.35rem 1rem; color: #73808e; font-size: 0.7rem; line-height: 1.4; }
+.censoredNote button { border: 0; padding: 0; background: transparent; color: #1686e4; cursor: pointer; font: inherit; flex-shrink: 0; }
+.censoredNote button:hover, .censoredNote button:focus-visible { text-decoration: underline; }
+.responseFilterNote { display: flex; align-items: center; gap: 0.5rem; padding: 0.2rem 1rem; font-size: 0.72rem; color: #687581; }
+.responseFilterNote button { border: 0; background: transparent; color: #1686e4; cursor: pointer; }
+.rawDataExpanded { grid-template-columns: minmax(0,1fr); }
+.rawDataExpanded .codeFramePanel { display: none; }
+.pagination { min-height: 3rem; font-size: 0.75rem; gap: 0.45rem; }
+.pageRangeSelect { height: 2rem; min-width: 6rem; font: inherit; color: #687480; background: white; border: 1px solid #d7dce1; border-radius: 3px; padding: 0 0.45rem; }
+.pagination .sortResponsesButton { display: inline-flex; align-items: center; gap: 0.4rem; color: #1686e4; width: auto; font: inherit; font-size: 0.7rem; padding: 0 0.4rem; white-space: nowrap; }
+.configurationFilterPanel { padding: 0.7rem 1rem; border: 1px solid #e2e7eb; border-radius: 4px; background: #f9fbfd; font-size: 0.75rem; }
+.dateFilter, .filterField { display: flex; flex-direction: column; gap: 0.3rem; }
+.filterField select { height: 2rem; border: 1px solid #cbd2da; border-radius: 3px; background: white; color: #626c76; padding: 0 0.45rem; }
+.selectionDeleteAction:disabled, .selectionTextAction:disabled { cursor: default; opacity: .45; }
+@media (max-width: 70rem) {
+  .utilityBar { flex-wrap: wrap; }
+  .utilityActions { gap: .65rem; flex-wrap: wrap; }
+  .codeFrameActions { gap: .35rem; }
+  .codeFrameActions button { padding: 0 .5rem; }
+}
+
+/* Production secondary controls retain a muted surface on hover. */
+.toolbarTextButton, .iconButton, .dashboardLink, .recodeTrigger { border-radius: 4px; transition: background 150ms ease, color 150ms ease; }
+.toolbarTextButton { min-height: 2rem; padding: 0.3rem 0.5rem; }
+.dashboardLink { height: 2rem; width: 2rem; }
+.dashboardLink:hover, .dashboardLink:focus-visible { background: #eee; color: #4b5563; }
+.settingsAction:hover:not(:disabled), .settingsAction:focus-visible { background: #eee !important; color: #4b5563 !important; }
+.recodeTrigger:hover:not(:disabled), .recodeTrigger:focus-visible:not(:disabled) { background: #eee; color: #126ebd; text-decoration: none; }
+.pagination button:not(:disabled):hover, .pagination button:not(:disabled):focus-visible { background: #eee; border-radius: 4px; }
+.coverageSelect select:hover, .pageRangeSelect:hover { background: #f5f5f5; }
+.responseFilterNote button:hover, .responseFilterNote button:focus-visible, .clearResponseSelection:hover, .clearResponseSelection:focus-visible { background: #eee; border-radius: 4px; }
+@media (hover: none) {
+  .themeEditActions, .subThemeMeta { opacity: 1; pointer-events: auto; }
+}
+
+.responseTag { padding: 2px 8px; gap: 3px; font-weight: 500; }
+.responseTags { margin-top: 6px; gap: 4px; }
+.responseCard { padding: 10px 12px; }
+
+.responseText input[type=checkbox], .selectAllResponses input[type=checkbox] {
+  appearance: none;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+  height: 16px;
+  width: 16px;
+  position: relative;
+  margin: 2px 0 0;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.responseText input[type=checkbox]:hover:not(:disabled), .selectAllResponses input[type=checkbox]:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #1b87e6;
+}
+.responseText input[type=checkbox]:checked, .selectAllResponses input[type=checkbox]:checked,
+.selectAllResponses input[type=checkbox]:indeterminate {
+  background: #1b87e6;
+  border-color: #1b87e6;
+}
+.responseText input[type=checkbox]:checked:hover:not(:disabled), .selectAllResponses input[type=checkbox]:checked:hover:not(:disabled),
+.selectAllResponses input[type=checkbox]:indeterminate:hover:not(:disabled) { background: #126ebd; }
+.responseText input[type=checkbox]:checked::after, .selectAllResponses input[type=checkbox]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.selectAllResponses input[type=checkbox]:indeterminate::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 6px;
+  width: 8px;
+  height: 2px;
+  border: 0;
+  background: #fff;
+  transform: none;
+}
+.responseText input[type=checkbox]:focus-visible, .selectAllResponses input[type=checkbox]:focus-visible {
+  outline: 2px solid #1b87e6;
+  outline-offset: 2px;
+}
+.responseText input[type=checkbox]:disabled, .selectAllResponses input[type=checkbox]:disabled { opacity: .5; cursor: default; }
+@media (forced-colors: active) {
+  .responseText input[type=checkbox], .selectAllResponses input[type=checkbox] { appearance: auto; }
+  .responseText input[type=checkbox]::after, .selectAllResponses input[type=checkbox]::after { content: none; }
+}

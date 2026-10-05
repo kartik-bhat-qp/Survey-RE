@@ -38,10 +38,12 @@ import {
 } from '@/data/mock-text-ai-widget-data';
 import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import type { TextAiThemePreferences } from '@/data/text-ai-theme-preferences';
-import type { TextAiKpiId, TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
+import { defaultTextAiKpiConfig, type TextAiKpiConfig, type TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
 import type { TextAiSubthemeTrendWidgetInstance } from '@/data/mock-text-ai-subtheme-trend';
 import { DEFAULT_DASHBOARD_DESIGN, getDashboardDesignColorVars, type DashboardDesign } from '@/data/dashboard-design';
 import { getTextAiTypographyCssVars } from '@/components/text-ai/text-ai-typography';
+import { CENSORED_CONFIGURATION_EVENT, getSharedOutlierResponses, visibleCensoredResponses } from '@/data/text-ai-censored-subthemes';
+import { parseTagAssignments, type TagAssignments } from '@/data/text-ai-tag-drafts';
 import styles from './TextAiDashboardCanvas.module.css';
 
 import 'react-grid-layout/css/styles.css';
@@ -84,7 +86,7 @@ interface TextAiDashboardCanvasProps {
   addedTopicSegmentWidgets?: TextAiTopicSegmentWidget[];
   /** KPI impact widgets added through the TextAI widget gallery. */
   addedKpiWidgets?: TextAiKpiWidgetInstance[];
-  onKpiChange?: (widgetId: string, kpiId: TextAiKpiId) => void;
+  onKpiChange?: (widgetId: string, config: TextAiKpiConfig) => void;
   /** Sub-theme trend widgets added through the TextAI widget gallery. */
   addedSubthemeTrendWidgets?: TextAiSubthemeTrendWidgetInstance[];
   themePreferences: TextAiThemePreferences;
@@ -349,6 +351,21 @@ export function TextAiDashboardCanvas({
   const [isPositioning, setIsPositioning] = useState(false);
   const [removedWidgetIds, setRemovedWidgetIds] = useState<Set<string>>(() => new Set());
   const [deleteError,setDeleteError]=useState('');
+  const [outlierAssignments, setOutlierAssignments] = useState<TagAssignments>({});
+  const [outlierLoadError, setOutlierLoadError] = useState('');
+  useEffect(() => {
+    const refresh = () => {
+      try {
+        const raw = localStorage.getItem(`bi-stats-text-ai-configuration-v2:${dashboardId}`);
+        const snapshot = raw ? JSON.parse(raw) : null;
+        setOutlierAssignments(parseTagAssignments(snapshot ? JSON.stringify(snapshot.assignments) : localStorage.getItem(`bi-stats-text-ai-tags-v1:${dashboardId}`)));
+        setOutlierLoadError('');
+      } catch { setOutlierLoadError('Saved Outlier responses could not be loaded. Reload to try again.'); }
+    };
+    refresh();
+    window.addEventListener(CENSORED_CONFIGURATION_EVENT, refresh); window.addEventListener('storage', refresh);
+    return () => { window.removeEventListener(CENSORED_CONFIGURATION_EVENT, refresh); window.removeEventListener('storage', refresh); };
+  }, [dashboardId]);
   useEffect(()=>{
     try{const ids=JSON.parse(localStorage.getItem(`text-ai-removed-widgets:${dashboardId}`)??'[]');
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -376,11 +393,16 @@ export function TextAiDashboardCanvas({
     selectedQuestion,
     questionFactor
   );
+  const outlierRows = outlierLoadError ? [] : visibleCensoredResponses(getSharedOutlierResponses(selectedQuestion.id, outlierAssignments), themePreferences.showCensoredSubthemes).map(response => ({
+    id: response.id, value: response.text, topic: response.subthemes.some(tag => tag.id.startsWith('outlier:')) ? 'Outlier Parent Topic' : response.subthemes.length ? 'Manually coded' : 'Untagged',
+    subtopic: response.subthemes.map(tag => tag.label).join(', ') || 'Untagged', subtopicTone: 'neutral' as const,
+    insight: '', tags: response.subthemes.map(tag => tag.label), collectedOn: '2026-10-05',
+  }));
   const analysisWidgets = adaptAnalysisWidgets(
     getTextAiDashboardWidgets(dashboardId),
     selectedQuestion,
     questionIndex
-  );
+  ).map(widget => ({ ...widget, rows: [...widget.rows, ...outlierRows] }));
   const visibleAddedTopicSegmentWidgets = addedTopicSegmentWidgets.map((widget) => ({
     ...widget,
     rows: filterTopicRowsForDashboard(
@@ -435,11 +457,12 @@ export function TextAiDashboardCanvas({
         content: (
           <TextAiConfiguredWidget dashboardId={dashboardId} widgetId={id} kind="kpi-by-theme"
             title={widget.name ?? 'Impact on KPI'} design={design} dashboardFilter={dashboardFilter}
-            kpiBinding={{ question: widget.question, id: widget.kpiId ?? 'nps', onChange: kpiId => onKpiChange?.(widget.id, kpiId) }}>
+            kpiBinding={{ config: widget.config ?? defaultTextAiKpiConfig(widget.kpiId), onChange: config => onKpiChange?.(widget.id, config) }}>
           <TextAiKpiByThemeWidget
             key={widget.id}
             question={widget.question}
             kpiId={widget.kpiId}
+            config={widget.config}
             onContentHeightChange={height => reportKpiHeight(id, height)}
             responseFilter={dashboardFilter}
             onDelete={() => removeWidget(id)}
@@ -600,6 +623,7 @@ export function TextAiDashboardCanvas({
     return (
       <div className={styles.canvas} style={designStyle} data-dashboard-theme={design.theme}>
         {deleteError&&<p role="alert">{deleteError}</p>}
+      {outlierLoadError&&<p role="alert">{outlierLoadError}</p>}
         <div className={styles.mobileWidgetStack}>
           {canvasWidgets.map((widget) => (
             <div className={styles.mobileWidget} key={widget.id}>
@@ -618,6 +642,7 @@ export function TextAiDashboardCanvas({
       data-dashboard-theme={design.theme}
     >
       {deleteError&&<p role="alert">{deleteError}</p>}
+      {outlierLoadError&&<p role="alert">{outlierLoadError}</p>}
       <div className={styles.layoutStage}>
         <div className={styles.gridGuide} aria-hidden>
           {Array.from({ length: TEXT_AI_GRID_GUIDE_CELL_COUNT }, (_, index) => (

@@ -1,7 +1,7 @@
 {
-  "title": "PRD: TextAI \u2014 Impact on KPI \u2014 Review draft",
+  "title": "PRD: TextAI — Impact on KPI — Review draft",
   "date": "2026-09-30",
-  "status": "Created; awaiting shared-folder move confirmation",
+  "status": "Updated in place; shared-folder move remains pending",
   "url": "https://docs.google.com/presentation/d/1F8QLc7_HfYYv_pRq5Mc9q5Suq_U9fdFUj4lZw26CreM/edit",
   "slideCount": 14,
   "template": "https://docs.google.com/presentation/d/1TdA4-yRzdqmVPT5FeOW1jRGQ5FrGV4xzpgaBtWAyHqg/edit",
@@ -22,7 +22,7 @@
     "Google identity verified from visible UI: prabal.gupta@questionpro.com; Chrome questionpro.com extension ab453961-a7c8-4c85-ae9d-5670c67e4a5b.",
     "No Google connector or direct API access used."
   ],
-  "pending": "Confirm immediately before moving to shared folder because inherited access changes. No roadmap or Shipyard links were modified in this task.",
+  "pending": "Shared-folder move still requires immediate confirmation before changing inherited access. Both requested links were added to Shipyard project documents on 4 October 2026.",
   "slideMapping": [
     {
       "role": "Cover",
@@ -36,7 +36,7 @@
       "method": "Duplicate exemplar and edit native text fields; retain layout/font hierarchy."
     },
     {
-      "role": "Scope of this PRD",
+      "role": "Scope of these requirements",
       "slideId": "g86f1215a00_0_12",
       "exemplar": "g86f1215a00_0_12",
       "method": "Duplicate exemplar and edit native text fields; retain layout/font hierarchy."
@@ -107,5 +107,45 @@
       "exemplar": "g13441c123f6_0_1",
       "method": "Duplicate exemplar and edit native text fields; retain layout/font hierarchy."
     }
-  ]
+  ],
+  "updatedAt": "2026-10-04",
+  "latestRevision": {
+    "date": "2026-10-04",
+    "scope": "Complete requirements reconciliation: widget-first flow, inherited-source question table, immediate KPI setup, configurable named metric, scoring mappings/precision, shared Analytics settings, table/tooltips, default/session lifecycle and acceptance criteria.",
+    "slideCount": 14,
+    "content": "content.json",
+    "audit": "revision-2026-10-04/saved-content-audit.json",
+    "visualReview": [
+      "revision-2026-10-04/review-01.jpg",
+      "revision-2026-10-04/review-08.jpg"
+    ],
+    "validation": [
+      "All 13 content slides match revised titles, subtitles and body paragraphs exactly once in saved HTML; cover retained.",
+      "All 14 saved slides visually reviewed with no clipping or duplicate content.",
+      "Existing deck edited through native browser UI; no Google connector/API used.",
+      "Chrome extension profile QuestionPro, browser ID 2, extensionInstanceId 8efe46aa-7d0e-4b03-a42e-629caad67975; visible Google account verified as prabal.gupta@questionpro.com.",
+      "Document saved to Drive; private sharing retained."
+    ]
+  },
+  "shipyard": {
+    "projectId": 494,
+    "url": "https://admin2.questionpro.com/cs/ui/gad/project-shipyard/projects/494",
+    "updatedAt": "2026-10-04",
+    "documents": [
+      {
+        "name": "PRD: TextAI — Impact on KPI",
+        "url": "https://docs.google.com/presentation/d/1F8QLc7_HfYYv_pRq5Mc9q5Suq_U9fdFUj4lZw26CreM/edit"
+      },
+      {
+        "name": "Survey-RE prototype",
+        "url": "https://survey-re.vercel.app/"
+      }
+    ],
+    "evidence": "shipyard-links.jpg"
+  },
+  "wording_cleanup": {
+    "date": "2026-10-04",
+    "status": "Saved in native PRD; product requirements and published walkthrough preserved. Local development and validation commentary removed.",
+    "record": "/Users/prabalgupta/Documents/work/outputs/prd-wording-cleanup-2026-10-04/completion.json"
+  }
 }

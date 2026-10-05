@@ -122,3 +122,80 @@ test('combined widget and dashboard filters intersect before computing KPI bases
   assert.equal(actual.rows[0].impact, null);
   assert.equal(analyzeTextAiKpiResponses('nps', data, []).pairedResponseCount, 4);
 });
+
+const { defaultTextAiKpiConfig, validateTextAiKpiConfig, formatTextAiKpiScore } = await import('../src/data/mock-text-ai-kpi-by-theme.ts');
+
+test('custom NPS mappings and exclusions change both the score and eligible base', () => {
+  const config = defaultTextAiKpiConfig('visit-rating', 'nps');
+  config.mappings = { 1: 'exclude', 2: 'detractor', 3: 'passive', 4: 'promoter', 5: 'promoter' };
+  const data = [1, 2, 3, 4, 5].map((v, i) => response(String(i), 8, i < 3 ? [tag()] : [], { answers: { 'visit-rating': v } }));
+  const result = analyzeTextAiKpiResponses('visit-rating', data, {}, config);
+  assert.equal(result.pairedResponseCount, 4);
+  assert.equal(result.overallScore, 25);
+  assert.equal(result.rows[0].score, -50);
+  assert.equal(result.rows[0].impact, -75);
+  assert.equal(result.rows[0].responseShare, 50);
+});
+
+test('configured CSAT and CES use the selected classifications, not hardcoded scale thresholds', () => {
+  const data = [1, 2, 3, 4, 5].map((v, i) => response(String(i), 8, i < 2 ? [tag()] : [], { answers: { csat: v } }));
+  for (const metric of ['csat', 'ces']) {
+    const config = defaultTextAiKpiConfig('csat', metric, 'percent-easy');
+    config.mappings = metric === 'csat' ? {1:'satisfied',2:'satisfied',3:'dissatisfied',4:'dissatisfied',5:'exclude'} : {1:'easy',2:'easy',3:'neutral',4:'difficult',5:'exclude'};
+    const result = analyzeTextAiKpiResponses('csat', data, {}, config);
+    assert.equal(result.overallScore, 50);
+    assert.equal(result.rows[0].score, 100);
+    assert.equal(result.rows[0].impact, 50);
+    assert.equal(formatTextAiKpiScore(result.definition, 50), '50.0%');
+  }
+});
+
+test('mean uses configured scores, preserves valid zero and excludes removed answers', () => {
+  const config = defaultTextAiKpiConfig('visit-rating', 'mean');
+  config.mappings = {1:0,2:10,3:20,4:30,5:'exclude'};
+  config.precision = 2;
+  const data = [1,2,3,4,5].map((v,i) => response(String(i), 8, i < 2 ? [tag()] : [], { answers: {'visit-rating':v} }));
+  const result = analyzeTextAiKpiResponses('visit-rating', data, {}, config);
+  assert.equal(result.overallScore, 15);
+  assert.equal(result.rows[0].score, 5);
+  assert.equal(result.rows[0].impact, -10);
+  assert.equal(result.pairedResponseCount, 4);
+  assert.equal(formatTextAiKpiScore(result.definition, 0), '0.00');
+});
+
+test('invalid drafts cannot be used for calculations', () => {
+  const config = defaultTextAiKpiConfig();
+  assert.ok(validateTextAiKpiConfig({...config,name:' '}));
+  assert.ok(validateTextAiKpiConfig({...config,questionId:undefined}));
+  assert.ok(validateTextAiKpiConfig({...config,mappings:{}}));
+  assert.ok(validateTextAiKpiConfig({...config,mappings:Object.fromEntries(Object.keys(config.mappings).map(v=>[v,'exclude']))}));
+  assert.ok(validateTextAiKpiConfig({...defaultTextAiKpiConfig('csat','mean'),mappings:{1:NaN,2:2,3:3,4:4,5:5}}));
+  assert.throws(()=>analyzeTextAiKpiResponses('nps',[],{},{...config,name:''}));
+});
+
+test('source and text-question selections bind independent prototype cohorts', () => {
+  const config = defaultTextAiKpiConfig();
+  const survey = getTextAiKpiAnalysis('nps', {}, config);
+  const dataset = getTextAiKpiAnalysis('nps', {}, {...config,sourceType:'dataset'});
+  const secondText = getTextAiKpiAnalysis('nps', {}, {...config,textQuestionId:2});
+  assert.ok(dataset.sourceResponseCount < survey.sourceResponseCount);
+  assert.ok(secondText.sourceResponseCount < survey.sourceResponseCount);
+  assert.equal(config.sourceType,'survey');
+});
+
+
+test('CES average and net-easy calculations have explicit, distinct results and units', () => {
+  const data = [1, 2, 3, 4, 5].map((v, i) => response(String(i), 8, i < 2 ? [tag()] : [], { answers: { csat: v } }));
+  const average = defaultTextAiKpiConfig('csat', 'ces');
+  const avg = analyzeTextAiKpiResponses('csat', data, {}, average);
+  assert.equal(avg.overallScore, 3);
+  assert.equal(avg.rows[0].score, 1.5);
+  assert.equal(avg.rows[0].impact, -1);
+  assert.equal(formatTextAiKpiScore(avg.definition, 3), '3.0');
+  const net = defaultTextAiKpiConfig('csat', 'ces', 'net-easy');
+  const result = analyzeTextAiKpiResponses('csat', data, {}, net);
+  assert.equal(result.overallScore, 0);
+  assert.equal(result.rows[0].score, -100);
+  near(result.rows[0].impact, -200 / 3);
+  assert.equal(formatTextAiKpiScore(result.definition, 0), '0.0');
+});

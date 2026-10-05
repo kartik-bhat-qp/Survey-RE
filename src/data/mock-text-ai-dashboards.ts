@@ -45,6 +45,11 @@ export interface TextAiDashboard {
 
 export const MOCK_TEXT_AI_DASHBOARDS: TextAiDashboard[] = [
   {
+    id: 23, name: "McDonald's feedback — Censored sub-themes", creationDate: '2026-10-05T09:00:00.000Z', commentCount: 12, status: 'Completed',
+    questions: [{ id: 'restaurant-feedback-q1', text: "How was your recent experience at McDonald's?", creditsUsed: 0 }],
+    creationPreferences: { codebookPreference: 'Generate with QuestionPro AI', dashboardLayout: 'Combined dashboard', dataSourceName: 'Restaurant feedback', dataSourceType: 'Dataset', outputLanguage: 'English', themeModelingPrompt: 'Understand food, service and restaurant experience. Group off-topic, abusive, malicious and spam content under Outlier / Censored.', questions: [{ code: 'Q1', text: "How was your recent experience at McDonald's?", context: 'Feedback about food, service, cleanliness and value at the restaurant.' }] },
+  },
+  {
     id: 1,
     name: 'Sartoris round 2',
     creationDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),

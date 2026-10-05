@@ -41,6 +41,7 @@ const MOCK_PENDING_RESPONSES = MOCK_TEXT_AI_FILTER_RESPONSES.slice(0, TEXT_AI_PE
   .map((response) => ({ ...response, id: `pending-${response.id}` }));
 
 interface TextAiDashboardToolbarProps {
+  focusedAnalysis?: boolean;
   responseFilter?:TextAiResponseFilter;
   onResponseFilterChange?:(filter:TextAiResponseFilter)=>void;
   name: string;
@@ -58,6 +59,7 @@ interface TextAiDashboardToolbarProps {
 
 export function TextAiDashboardToolbar({
   name,
+  focusedAnalysis = false,
   responseFilter=EMPTY_TEXT_AI_FILTER, onResponseFilterChange,
   onNameChange,
   onAddWidget,
@@ -178,7 +180,7 @@ export function TextAiDashboardToolbar({
           </div>
 
           <div className={styles.actions}>
-            <WuButton
+            {!focusedAnalysis && <><WuButton
               variant="iconOnly"
               size="sm"
               aria-label="Filter dashboard"
@@ -206,6 +208,7 @@ export function TextAiDashboardToolbar({
               onClick={() => showToast({ message: 'Share dashboard', variant: 'success' })}
               Icon={<span className="wm-share" />}
             />
+            </>}
             <WuMenu
               open={settingsMenuOpen}
               onOpenChange={setSettingsMenuOpen}
@@ -246,18 +249,18 @@ export function TextAiDashboardToolbar({
                 Theme configuration
               </WuMenuItem>
             </WuMenu>
-            <WuButton
+            {!focusedAnalysis && <WuButton
               className={styles.addWidgetBtn}
               onClick={onAddWidget}
               Icon={<span className="wm-add-2" />}
             >
               Add widget
-            </WuButton>
+            </WuButton>}
           </div>
         </div>
 
         {responseFilterOpen&&<section className={styles.responseFilterPanel} aria-label="Dashboard response filters"><h3>Response filters</h3><TextAiResponseFilterFields value={responseFilter} onChange={value=>onResponseFilterChange?.(value)}/><button type="button" onClick={()=>onResponseFilterChange?.({...EMPTY_TEXT_AI_FILTER})}>Reset filters</button></section>}
-        <div className={styles.filterRow}>
+        {!focusedAnalysis && <div className={styles.filterRow}>
           <div className={styles.filters}>
             <div className={styles.inlineFilter}>
               <span className={styles.filterLabel}>Themes</span>
@@ -315,7 +318,7 @@ export function TextAiDashboardToolbar({
                 Process now
               </WuButton>
             </div>
-        </div>
+        </div>}
       </header>
 
       <WuModal

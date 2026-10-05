@@ -12,6 +12,7 @@ export interface TextAiKpiDefinition {
   kind: TextAiKpiKind;
   scaleMin: number;
   scaleMax: number;
+  config?: TextAiKpiConfig;
 }
 
 export interface TextAiKpiThemeTag {
@@ -68,7 +69,61 @@ export interface TextAiKpiWidgetInstance {
   id: string;
   question: string;
   kpiId?: TextAiKpiId;
+  config?: TextAiKpiConfig;
   name?: string;
+}
+
+export type TextAiKpiMetric = 'nps' | 'csat' | 'ces' | 'mean';
+export type TextAiKpiSourceType = 'survey' | 'dataset';
+export type TextAiKpiMapping = 'promoter' | 'passive' | 'detractor' | 'satisfied' | 'dissatisfied' | 'easy' | 'neutral' | 'difficult' | 'exclude' | number;
+export interface TextAiKpiConfig {
+  name: string;
+  questionId?: TextAiKpiId;
+  metric: TextAiKpiMetric;
+  cesCalculation?: 'average' | 'percent-easy' | 'net-easy';
+  mappings: Record<string, TextAiKpiMapping>;
+  precision: number;
+  sourceType: TextAiKpiSourceType;
+  textQuestionId: number;
+}
+export const TEXT_AI_KPI_METRICS: { value: TextAiKpiMetric; label: string }[] = [
+  { value: 'nps', label: 'Net promoter score (NPS)' },
+  { value: 'csat', label: 'Customer satisfaction score (CSAT)' },
+  { value: 'ces', label: 'Customer effort score (CES)' },
+  { value: 'mean', label: 'Mean' },
+];
+export function getTextAiKpiOptions(id: TextAiKpiId): number[] {
+  const field = TEXT_AI_KPI_DEFINITIONS.find(d => d.id === id)!;
+  return Array.from({ length: field.scaleMax - field.scaleMin + 1 }, (_, i) => field.scaleMin + i);
+}
+export function defaultTextAiKpiConfig(questionId: TextAiKpiId = 'nps', metric?: TextAiKpiMetric, cesCalculation: TextAiKpiConfig['cesCalculation'] = 'average'): TextAiKpiConfig {
+  const field = TEXT_AI_KPI_DEFINITIONS.find(d => d.id === questionId)!;
+  const selected = metric ?? (field.kind === 'nps' ? 'nps' : field.kind === 'top-box' ? 'csat' : 'mean');
+  const values = getTextAiKpiOptions(questionId);
+  return { name: selected === 'mean' ? field.label : selected.toUpperCase(), questionId, metric: selected, cesCalculation, precision: selected === 'mean' ? 2 : 1,
+    sourceType: 'survey', textQuestionId: 1,
+    mappings: Object.fromEntries(values.map(value => [value, selected === 'mean' || (selected === 'ces' && cesCalculation === 'average') ? value : selected === 'nps'
+      ? (value >= field.scaleMax - 1 ? 'promoter' : value >= field.scaleMax - 3 ? 'passive' : 'detractor')
+      : selected === 'csat' ? (value >= field.scaleMax - 1 ? 'satisfied' : 'dissatisfied')
+      : value >= field.scaleMax - 1 ? 'easy' : value === field.scaleMax - 2 ? 'neutral' : 'difficult'])) };
+}
+export function validateTextAiKpiConfig(config: TextAiKpiConfig): string | null {
+  if (!config.name.trim()) return 'Enter a KPI name.';
+  if (!config.questionId) return `Select a KPI ${config.sourceType === 'dataset' ? 'variable' : 'question'}.`;
+  const numeric = config.metric === 'mean' || (config.metric === 'ces' && (config.cesCalculation ?? 'average') === 'average');
+  const allowed: TextAiKpiMapping[] = config.metric === 'nps' ? ['promoter', 'passive', 'detractor', 'exclude']
+    : config.metric === 'csat' ? ['satisfied', 'dissatisfied', 'exclude'] : ['easy', 'neutral', 'difficult', 'exclude'];
+  const mappings = getTextAiKpiOptions(config.questionId).map(v => config.mappings[v]);
+  if (mappings.some(v => numeric ? v !== 'exclude' && (typeof v !== 'number' || !Number.isFinite(v)) : !allowed.includes(v))) return 'Configure every response option.';
+  if (mappings.every(v => v === 'exclude')) return 'Include at least one response option.';
+  if (!Number.isInteger(config.precision) || config.precision < 0 || config.precision > 5) return 'Select a valid decimal precision.';
+  return null;
+}
+export function textAiKpiFormula(config: TextAiKpiConfig): string {
+  return config.metric === 'nps' ? '100 × (promoter responses − detractor responses) ÷ included responses. Passives count in the base.'
+    : config.metric === 'csat' ? '100 × satisfied responses ÷ included responses.'
+    : config.metric === 'ces' ? (config.cesCalculation === 'net-easy' ? '100 × (easy responses − difficult responses) ÷ included responses. Neutral responses count in the base.' : config.cesCalculation === 'percent-easy' ? '100 × easy responses ÷ included responses. Neutral and difficult responses count in the base.' : 'Sum of the configured effort scores ÷ included responses.')
+    : 'Sum of the configured answer scores ÷ included responses.';
 }
 
 interface ThemeDefinition {
@@ -291,12 +346,20 @@ function hasValidAnswer(definition: TextAiKpiDefinition, response: TextAiKpiResp
   const value = response.answers[definition.id];
   return typeof value === 'number' && Number.isFinite(value) &&
     value >= definition.scaleMin && value <= definition.scaleMax &&
-    (definition.kind !== 'nps' || Number.isInteger(value));
+    (definition.kind !== 'nps' || Number.isInteger(value)) &&
+    (!definition.config || (definition.config.mappings[value] !== undefined && definition.config.mappings[value] !== 'exclude'));
 }
 
 function calculateScore(definition: TextAiKpiDefinition, responses: readonly TextAiKpiResponse[]): number | null {
   if (!responses.length) return null;
   const values = responses.map(response => response.answers[definition.id]!);
+  if (definition.config) {
+    const config = definition.config;
+    const mapped = values.map(value => config.mappings[value]);
+    if (config.metric === 'mean' || (config.metric === 'ces' && (config.cesCalculation ?? 'average') === 'average')) return mapped.reduce<number>((sum, value) => sum + Number(value), 0) / mapped.length;
+    const count = (category: string) => mapped.filter(value => value === category).length;
+    return 100 * (config.metric === 'nps' ? count('promoter') - count('detractor') : count(config.metric === 'csat' ? 'satisfied' : 'easy') - (config.metric === 'ces' && config.cesCalculation === 'net-easy' ? count('difficult') : 0)) / mapped.length;
+  }
   if (definition.kind === 'nps') {
     return 100 * (values.filter(value => value >= 9).length - values.filter(value => value <= 6).length) / values.length;
   }
@@ -338,9 +401,12 @@ export interface TextAiKpiResponseFilter { query?: string; start?: string; end?:
 export function analyzeTextAiKpiResponses(
   kpiId: TextAiKpiId,
   responses: readonly TextAiKpiResponse[],
-  filter: TextAiKpiResponseFilter | readonly TextAiKpiResponseFilter[] = {}
+  filter: TextAiKpiResponseFilter | readonly TextAiKpiResponseFilter[] = {},
+  config?: TextAiKpiConfig
 ): TextAiKpiAnalysis {
-  const definition = TEXT_AI_KPI_DEFINITIONS.find(candidate => candidate.id === kpiId) ?? TEXT_AI_KPI_DEFINITIONS[1];
+  const field = TEXT_AI_KPI_DEFINITIONS.find(candidate => candidate.id === (config?.questionId ?? kpiId)) ?? TEXT_AI_KPI_DEFINITIONS[1];
+  const definition: TextAiKpiDefinition = config ? { ...field, label: config.name, kind: config.metric === 'mean' || (config.metric === 'ces' && (config.cesCalculation ?? 'average') === 'average') ? 'mean' : config.metric === 'nps' || (config.metric === 'ces' && config.cesCalculation === 'net-easy') ? 'nps' : 'top-box', config } : field;
+  if (config && validateTextAiKpiConfig(config)) throw new Error(validateTextAiKpiConfig(config)!);
   const filters: readonly TextAiKpiResponseFilter[] = Array.isArray(filter) ? filter : [filter as TextAiKpiResponseFilter];
   const source = uniqueResponses(responses).filter(response => filters.every(condition => {
     const query = condition.query?.trim().toLowerCase() ?? '';
@@ -372,27 +438,32 @@ export function analyzeTextAiKpiResponses(
   };
 }
 
-export function getTextAiKpiAnalysis(kpiId: TextAiKpiId, filter: TextAiKpiResponseFilter | readonly TextAiKpiResponseFilter[] = {}): TextAiKpiAnalysis {
-  return analyzeTextAiKpiResponses(kpiId, TEXT_AI_KPI_RESPONSES, filter);
+export function getTextAiKpiAnalysis(kpiId: TextAiKpiId, filter: TextAiKpiResponseFilter | readonly TextAiKpiResponseFilter[] = {}, config?: TextAiKpiConfig): TextAiKpiAnalysis {
+  // Deterministic, source-specific sample cohorts stand in for a response-ID join.
+  const responses = TEXT_AI_KPI_RESPONSES.filter((_, index) => (!config || config.sourceType === 'survey' || index % 2 === 0) && (!config || config.textQuestionId === 1 || index % (config.textQuestionId + 2) !== 0));
+  return analyzeTextAiKpiResponses(kpiId, responses, filter, config);
 }
 
 export function getDefaultTextAiKpiId(): TextAiKpiId { return 'nps'; }
 
 export function formatTextAiKpiScore(definition: TextAiKpiDefinition, score: number | null): string {
   if (score === null) return '—';
+  if (definition.config) return score.toFixed(definition.config.precision) + (definition.kind === 'top-box' ? '%' : '');
   if (definition.kind === 'nps') return score.toFixed(1);
   if (definition.kind === 'top-box') return `${score.toFixed(1)}%`;
   return `${score.toFixed(2)} / ${definition.scaleMax}`;
 }
 
 export function getTextAiKpiImpactUnit(definition: TextAiKpiDefinition): string {
+  if (definition.config?.metric === 'ces' && definition.config.cesCalculation === 'net-easy') return 'CES points';
   return definition.kind === 'nps' ? 'NPS points' : definition.kind === 'top-box' ? 'percentage points' : 'scale points';
 }
 
 export function formatTextAiKpiDelta(definition: TextAiKpiDefinition, delta: number | null): string {
   if (delta === null) return '—';
-  const rounded = Number(delta.toFixed(definition.kind === 'mean' ? 2 : 1));
-  return `${rounded > 0 ? '+' : ''}${rounded.toFixed(definition.kind === 'mean' ? 2 : 1)}`;
+  const precision = definition.config?.precision ?? (definition.kind === 'mean' ? 2 : 1);
+  const rounded = Number(delta.toFixed(precision));
+  return `${rounded > 0 ? '+' : ''}${rounded.toFixed(precision)}`;
 }
 
 export function formatTextAiKpiAnswer(definition: TextAiKpiDefinition, value: number): string {

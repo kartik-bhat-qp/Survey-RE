@@ -24,6 +24,7 @@ export type CodeFrameDrafts = Record<string, { before: ThemeGroup[]; after: Them
 export interface CodeFrameSummary {
   themesAdded: number;
   themesDeleted: number;
+  themesUpdated: number;
   subThemesAdded: number;
   subThemesDeleted: number;
   subThemesUpdated: number;
@@ -55,7 +56,7 @@ export function stageCodeFrame(drafts: CodeFrameDrafts, scope: string, baseline:
 }
 
 export function summarizeCodeFrameDrafts(drafts: CodeFrameDrafts): CodeFrameSummary {
-  const summary = { themesAdded: 0, themesDeleted: 0, subThemesAdded: 0, subThemesDeleted: 0, subThemesUpdated: 0, merges: 0, changes: 0 };
+  const summary = { themesAdded: 0, themesDeleted: 0, themesUpdated: 0, subThemesAdded: 0, subThemesDeleted: 0, subThemesUpdated: 0, merges: 0, changes: 0 };
   for (const { before, after } of Object.values(drafts)) {
     const original = new Map<string, SubTheme>(before.flatMap((group) => group.subThemes.map((sub) => [`${group.id}:${sub.id}`, sub] as const)));
     const current = new Map<string, SubTheme>(after.flatMap((group) => group.subThemes.map((sub) => [`${group.id}:${sub.id}`, sub] as const)));
@@ -69,18 +70,46 @@ export function summarizeCodeFrameDrafts(drafts: CodeFrameDrafts): CodeFrameSumm
     }
     summary.themesAdded += after.filter((group) => !before.some((item) => item.id === group.id)).length;
     summary.themesDeleted += before.filter((group) => !after.some((item) => item.id === group.id)).length;
+    summary.themesUpdated += after.filter(group => before.some(item => item.id === group.id && item.name !== group.name)).length;
     // Child removals are covered by a parent deletion or merge, not counted twice.
     summary.subThemesDeleted += before.filter((group) => after.some((item) => item.id === group.id))
       .flatMap((group) => group.subThemes.map((sub) => `${group.id}:${sub.id}`))
       .filter((id) => !current.has(id) && !mergedSources.has(id)).length;
   }
-  summary.changes = summary.themesAdded + summary.themesDeleted + summary.subThemesAdded + summary.subThemesDeleted + summary.subThemesUpdated + summary.merges;
+  summary.changes = summary.themesAdded + summary.themesDeleted + summary.themesUpdated + summary.subThemesAdded + summary.subThemesDeleted + summary.subThemesUpdated + summary.merges;
   return summary;
 }
 
 export function removeCodeFrameItems(groups: ThemeGroup[], themeIds: string[], subThemeIds: string[]): ThemeGroup[] {
   return groups.filter((group) => !themeIds.includes(group.id)).map((group) => ({ ...group,
     subThemes: group.subThemes.filter((sub) => !subThemeIds.includes(`${group.id}:${sub.id}`)) }));
+}
+
+export function moveCodeFrameItems(groups: ThemeGroup[], sourceIds: string[], parentId: string): { groups: ThemeGroup[]; tagIds: Record<string, string> } {
+  const parent = groups.find(group => group.id === parentId);
+  if (!parent) throw new Error('Select a destination theme.');
+  const sources = groups.flatMap(group => group.subThemes
+    .filter(sub => sourceIds.includes(`${group.id}:${sub.id}`) && group.id !== parentId)
+    .map(sub => ({ groupId: group.id, sub })));
+  if (!sources.length) throw new Error('Select a different destination theme.');
+  if (sources.some(({ groupId, sub }) => `${groupId}:${sub.id}` === 'outlier:censored')) throw new Error('Censored must remain under Outlier.');
+  const names = parent.subThemes.map(sub => sub.name);
+  const usedIds = new Set(parent.subThemes.map(sub => sub.id));
+  const tagIds: Record<string, string> = {};
+  const moved = sources.map(({ groupId, sub }) => {
+    const error = validateCodeFrameName(sub.name, names);
+    if (error) throw new Error(`${sub.name}: ${error}`);
+    names.push(sub.name);
+    let id = sub.id;
+    let suffix = 0;
+    while (usedIds.has(id)) id = `${groupId}-${sub.id}-${++suffix}`;
+    usedIds.add(id);
+    tagIds[`${groupId}:${sub.id}`] = `${parentId}:${id}`;
+    return { ...sub, id };
+  });
+  return { groups: groups.map(group => ({ ...group,
+    subThemes: [...group.subThemes.filter(sub => !tagIds[`${group.id}:${sub.id}`]), ...(group.id === parentId ? moved : [])],
+  })), tagIds };
 }
 
 export function mergeCodeFrameItems(groups: ThemeGroup[], sourceIds: string[], parentId: string, destination: SubTheme): ThemeGroup[] {

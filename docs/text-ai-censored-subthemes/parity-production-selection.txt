@@ -1,0 +1,358 @@
+- banner:
+  - button "product-switcher":
+    - link "wc-logo":
+      - /url: https://bi.questionpro.com
+      - generic "wc-logo": 
+    - generic: Business Intelligence
+    - generic: 
+  - navigation:
+    - link "Workspaces":
+      - /url: /workspaces
+      - paragraph: Workspaces
+    - generic: 
+    - link "Knowledgebase":
+      - /url: /workspaces/2665
+      - paragraph: Knowledgebase
+    - generic: 
+    - link "TextAI":
+      - /url: /workspaces/2665/text-ai/dashboards
+      - paragraph: TextAI
+    - generic: 
+    - link "KB-T01 | Advanced TextAI coding reference":
+      - /url: /workspaces/2665/text-ai/dashboards/9493
+      - paragraph: KB-T01 | Advanced TextAI coding reference
+    - generic: 
+    - paragraph: Theme configuration
+  - list:
+    - button "dropdown-trigger":
+      - generic: 
+  - list:
+    - button "dropdown-trigger":
+      - generic: PG
+- complementary:
+  - button "menu-icon Toggle Sidebar":
+    - generic "menu-icon"
+    - generic: Toggle Sidebar
+  - separator
+  - generic: Analytics
+  - list:
+    - link " Dashboards":
+      - /url: /workspaces/2665/dashboards?pagenumber=1
+      - generic: 
+      - generic: Dashboards
+    - link " TextAI":
+      - /url: /workspaces/2665/text-ai/dashboards
+      - generic: 
+      - generic: TextAI
+    - link " Reports":
+      - /url: /workspaces/2665/reports
+      - generic: 
+      - generic: Reports
+  - generic: Data
+  - list:
+    - link " Survey stacks":
+      - /url: /workspaces/2665/survey-stacks
+      - generic: 
+      - generic: Survey stacks
+    - link " Weightings":
+      - /url: /workspaces/2665/weightings
+      - generic: 
+      - generic: Weightings
+    - link " Datasets":
+      - /url: /workspaces/2665/datasets
+      - generic: 
+      - generic: Datasets
+    - link " Exports":
+      - /url: /workspaces/2665/exports
+      - generic: 
+      - generic: Exports
+  - separator
+  - list:
+    - link " Admin":
+      - /url: /admin
+      - generic: 
+      - generic: Admin
+    - link " Settings":
+      - /url: /settings
+      - generic: 
+      - generic: Settings
+- main:
+  - main:
+    - document:
+      - generic: 
+      - textbox "Search themes or responses..."
+      - button " Filter":
+        - generic: 
+        - generic: Filter
+      - button "Theme history":
+        - generic: 
+      - button "Theme configuration settings":
+        - generic: 
+      - button "":
+        - generic: 
+      - button "Recode"
+      - text: My code frame
+      - generic: "14"
+      - generic: "6"
+      - button "wm-filter-alt-off":
+        - generic "wm-filter-alt-off": 
+      - button "New sub-theme"
+      - button "New theme"
+      - generic: 
+      - generic: Reporting interface and features
+      - generic: 47.83%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Feature discoverability and guidance
+      - paragraph: "Focuses on how users discover and learn features: in-app guidance, tooltips, documentation, onboarding, and feature visibility."
+      - generic: 26.09%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Interface layout and navigation
+      - paragraph: Addresses the interface structure and navigation of the reporting system, including menus, dashboards, layout clarity, and ease of finding functions.
+      - generic: 17.39%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Report performance and stability
+      - paragraph: "Concerns report performance and stability: load times, reliability, crashes, data refresh speed, and consistent behavior under load."
+      - generic: 13.04%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Search and filter labels
+      - paragraph: Covers search and filter labeling within reports, including clarity of terms, accuracy of results, and intuitiveness of filter controls.
+      - generic: 13.04%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Delivery and pickup operations
+      - generic: 39.13%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Delivery and pickup logistics
+      - paragraph: "Covers the practical logistics of deliveries and pickups: routing, timing, driver coordination, tracking, and processes that affect on-time fulfillment."
+      - generic: 30.43%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Pickup location and staff
+      - paragraph: Focuses on physical pickup points and personnel, including location accessibility, staff professionalism, counter procedures, and handoff efficiency.
+      - generic: 8.7%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Support and case handling
+      - generic: 34.78%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Issue resolution workflows
+      - paragraph: Describes workflows used to resolve customer issues, such as ticketing, escalation paths, case ownership, SLAs, and outcome tracking.
+      - generic: 21.74%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Support interaction and tone
+      - paragraph: "Concerns the nature of support interactions: agent tone, responsiveness, clarity of communication, empathy, and perceived helpfulness."
+      - generic: 17.39%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Service operations and reliability
+      - generic: 26.09%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Service reliability and availability
+      - paragraph: Focuses on service reliability and availability, including uptime, outage impact, recovery processes, and measures to ensure continuous operation.
+      - generic: 26.09%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Pricing and purchase
+      - generic: 8.7%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Subscription and pricing
+      - paragraph: Discusses subscription options and pricing structure, including tiers, billing frequency, discounts, and perceived value for features.
+      - generic: 8.7%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Checkout and payment flow
+      - paragraph: "Covers the checkout and payment experience: payment methods, transaction flow, errors, receipts, and billing transparency."
+      - generic: 4.35%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: 
+      - generic: Outlier Parent Topic
+      - generic: 0%
+      - button "Rename theme":
+        - generic: 
+      - button "Delete theme":
+        - generic: 
+      - generic: Outlier
+      - paragraph: Texts that don't match any taxonomy topic
+      - generic: 0%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Gibberish
+      - paragraph: Texts identified as gibberish or non-meaningful.
+      - generic: 0%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: N/A
+      - paragraph: Empty, non-substantive, or non-applicable responses identified.
+      - generic: 0%
+      - button "Rename":
+        - generic: 
+      - button "Move":
+        - generic: 
+      - button "Delete":
+        - generic: 
+      - generic: Explore raw data
+      - button "All ":
+        - generic: All
+        - generic: 
+      - button "wm-open-in-full":
+        - generic "wm-open-in-full": 
+      - paragraph: Theme coverage
+      - 'generic "1 sub-themes: 66.67% (20 responses)"'
+      - 'generic "2 sub-themes: 23.33% (7 responses)"'
+      - 'generic "3 sub-themes: 10% (3 responses)"'
+      - generic: 1 sub-themes
+      - generic: 66.67%
+      - generic: (20/30)
+      - generic: 2 sub-themes
+      - generic: 23.33%
+      - generic: (7/30)
+      - generic: 3 sub-themes
+      - generic: 10%
+      - generic: (3/30)
+      - generic: "Filtered by: 1 sub-theme"
+      - button "Clear all sub-theme filters":
+        - generic "wm-filter-alt-off": 
+      - navigation:
+        - button "Previous page" [disabled]:
+          - generic: 
+        - button "menu-trigger":
+          - generic: 1 - 6
+          - generic "wm-arrow-drop-down": 
+        - button "Next page" [disabled]:
+          - generic: 
+      - paragraph: 6 items
+      - button "wm-sort Newest first":
+        - generic "wm-sort": 
+        - text: Newest first
+      - checkbox
+      - paragraph: The setup guide was clear. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance. I could complete the task without assistance.
+      - text: Feature discoverability and guidance
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I would like offline access during a train journey.
+      - text: Feature discoverability and guidance
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Fast service, clear instructions, and a helpful reply.
+      - text: Support interaction and tone
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Feature discoverability and guidance
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Service reliability and availability
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: Fast service, clear instructions, and a helpful reply.
+      - text: Support interaction and tone
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Feature discoverability and guidance
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Service reliability and availability
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: I could not find the export button. The help article did not explain it.
+      - text: Feature discoverability and guidance
+      - button "wm-close":
+        - generic "wm-close": 
+      - checkbox
+      - paragraph: The agent solved my problem quickly and explained each step.
+      - text: Issue resolution workflows
+      - button "wm-close":
+        - generic "wm-close": 
+      - text: Feature discoverability and guidance
+      - button "wm-close":
+        - generic "wm-close": 
+      - button "Clear selection":
+        - generic "wm-close": 
+      - generic: 1 selected
+      - button "Merge" [disabled]
+      - button "Add to theme"
+      - button "Delete"
+  - link "QuestionPro Admin":
+    - /url: https://www.questionpro.com/a/showUpgradeUser.do?payment=RecurringOrder
+  - generic: "#Business Intelligence v202"
+  - button "":
+    - generic: 

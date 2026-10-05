@@ -1,4 +1,7 @@
 'use client';
+import { TextAiOutlierResponses } from '@/components/text-ai/TextAiOutlierResponses';
+import { TextAiCensoredDashboard } from '@/components/text-ai/TextAiCensoredDashboard';
+import { CENSORED_DEMO_DASHBOARD_ID } from '@/data/text-ai-censored-subthemes';
 import type { TextAiAddedWidget } from '@/components/text-ai/TextAiDashboardCanvas';
 
 import { use, useEffect, useState } from 'react';
@@ -28,7 +31,7 @@ import {
   createTextAiComparativeChartWidget,
   type TextAiTopicSegmentWidget,
 } from '@/data/mock-text-ai-topic-segment-widget';
-import { type TextAiKpiId, type TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
+import { defaultTextAiKpiConfig, type TextAiKpiConfig, type TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
 import type { TextAiSubthemeTrendWidgetInstance } from '@/data/mock-text-ai-subtheme-trend';
 import {
   getTextAiThemePreferences,
@@ -84,7 +87,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const [addedWidgets, setAddedWidgets] = useState<TextAiAddedWidget[]>([]);
   const [addedKpiWidgets, setAddedKpiWidgets] = useState<
     TextAiKpiWidgetInstance[]
-  >([]);
+  >(() => [{ id: 'default-impact-kpi', question: initialQuestions[0].text, name: 'Impact on KPI', config: { ...defaultTextAiKpiConfig(), sourceType: dashboard?.creationPreferences?.dataSourceType.toLowerCase().includes('dataset') ? 'dataset' : 'survey' } }]);
   const [addedSubthemeTrendWidgets, setAddedSubthemeTrendWidgets] = useState<
     TextAiSubthemeTrendWidgetInstance[]
   >([]);
@@ -116,6 +119,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     emergingApprovedAtByName: {},
     emergingThemeValidityDays: 30,
     showThemesWithNoResponses: true,
+    showCensoredSubthemes: false,
   });
 
   useEffect(() => {
@@ -177,11 +181,11 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   function handleAddWidget(
     question: TextAiAnalysisQuestion,
     chartTypeId: TextAiWidgetChartTypeId,
-    kpi?: { id: TextAiKpiId; name: string }
+    kpi?: TextAiKpiConfig
   ): void {
     if (chartTypeId === 'kpi-by-theme') {
       if (!kpi) return;
-      setAddedKpiWidgets(previous => [{ id: `kpi-by-theme-${question.code}-${Date.now()}`, question: question.text, kpiId: kpi.id, name: kpi.name }, ...previous]);
+      setAddedKpiWidgets(previous => [{ id: `kpi-by-theme-${question.code}-${Date.now()}`, question: question.text, kpiId: kpi.questionId, name: 'Impact on KPI', config: kpi }, ...previous]);
       return;
     }
     const dashboardQuestion: TextAiDashboardQuestion = availableQuestions.find(entry=>entry.text===question.text) ?? {
@@ -222,6 +226,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   return (
     <div className="flex flex-col h-full min-h-0">
       <TextAiDashboardToolbar
+        focusedAnalysis={numericId === CENSORED_DEMO_DASHBOARD_ID}
         key={numericId}
         responseFilter={responseFilter}
         onResponseFilterChange={setResponseFilter}
@@ -240,7 +245,8 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         onProcessResponses={handleProcessResponses}
       />
       {collectionError&&<p role="alert">{collectionError}</p>}
-      <TextAiDashboardCanvas
+      {numericId !== CENSORED_DEMO_DASHBOARD_ID && <TextAiOutlierResponses dashboardId={numericId} questionId={selectedQuestion.id} preferences={themePreferences} />}
+      {numericId === CENSORED_DEMO_DASHBOARD_ID ? <TextAiCensoredDashboard dashboardId={numericId} preferences={themePreferences} /> : <TextAiDashboardCanvas
         dashboardId={numericId}
         dashboardFilter={responseFilter}
         selectedQuestion={selectedQuestion}
@@ -250,11 +256,11 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         addedWidgets={addedWidgets}
         addedTopicSegmentWidgets={addedTopicSegmentWidgets}
         addedKpiWidgets={addedKpiWidgets}
-        onKpiChange={(widgetId,kpiId)=>setAddedKpiWidgets(previous=>previous.map(widget=>widget.id===widgetId?{...widget,kpiId}:widget))}
+        onKpiChange={(widgetId,config)=>setAddedKpiWidgets(previous=>previous.map(widget=>widget.id===widgetId?{...widget,config,kpiId:config.questionId}:widget))}
         addedSubthemeTrendWidgets={addedSubthemeTrendWidgets}
         themePreferences={themePreferences}
         design={design}
-      />
+      />}
       <TextAiDashboardSettingsModal
         dashboard={currentDashboard}
         design={design}
@@ -265,6 +271,8 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
       <TextAiAddWidgetModal
         open={addWidgetOpen}
         onOpenChange={setAddWidgetOpen}
+        sourceType={dashboard?.creationPreferences?.dataSourceType.toLowerCase().includes('dataset') ? 'dataset' : 'survey'}
+        questions={availableQuestions.map((question, index) => ({ id: index + 1, code: `Q${index + 1}`, text: question.text, type: 'Text' as const }))}
         onAddWidget={handleAddWidget}
       />
     </div>

@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Title as DialogTitle } from '@radix-ui/react-dialog';
+import { SharedDashboardDateFilter } from '@/components/dashboards/SharedDashboardDateFilter';
+import { filterThemeResponses } from '@/data/text-ai-theme-configuration-view';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
@@ -37,10 +39,11 @@ import {
   type TagAssignments, type TagDrafts,
 } from '@/data/text-ai-tag-drafts';
 import {
-  mergeCodeFrameItems, parseCodeFrames, remapResponseTags, removeCodeFrameItems,
+  mergeCodeFrameItems, moveCodeFrameItems, parseCodeFrames, remapResponseTags, removeCodeFrameItems,
   stageCodeFrame, summarizeCodeFrameDrafts, validateCodeFrameName,
   type CodeFrames, type CodeFrameDrafts, type SubTheme, type ThemeGroup, type ThemeTone,
 } from '@/data/text-ai-code-frame-drafts';
+import { CENSORED_DEMO_DASHBOARD_ID, CENSORED_TAG_ID, CENSORED_VISIBILITY_HELP, CENSORED_CONFIGURATION_EVENT, censoredResponseReason, ensureOutlierTheme, getSharedOutlierResponses, outlierResponseKey, RESTAURANT_THEME_GROUPS, RESTAURANT_RESPONSES, isCensoredResponse, visibleCensoredResponses, addCensoredAwareTags } from '@/data/text-ai-censored-subthemes';
 import styles from './ThemeConfiguration.module.css';
 
 const WuCombobox = dynamic(
@@ -117,45 +120,12 @@ interface QuestionThemeVariant {
   subThemeFactor: number;
 }
 
-interface GranularityOption {
-  classificationCount: number;
-  description: string;
-  label: string;
-  level: GranularityLevel;
-  subThemeCounts: number[];
-}
-
 interface ResponseClassification {
   tag: string;
   tone: Exclude<ThemeTone, 'red'>;
   sentiment: TextAiAssignedSentiment;
 }
 
-const GRANULARITY_OPTIONS: GranularityOption[] = [
-  {
-    classificationCount: 40,
-    level: 'high',
-    label: 'Detailed',
-    description: 'Creates the most specific view of response themes.',
-    subThemeCounts: [12, 10, 15],
-  },
-  {
-    classificationCount: 20,
-    level: 'medium',
-    label: 'Balanced',
-    description: 'Balances useful detail with a streamlined code frame.',
-    subThemeCounts: [6, 5, 6],
-  },
-  {
-    classificationCount: 10,
-    level: 'low',
-    label: 'Compressed',
-    description: 'Creates a concise overview of the strongest response patterns.',
-    subThemeCounts: [3, 2, 2],
-  },
-];
-
-const GRANULARITY_CHANGE_LIMIT = 2;
 const RECODE_RUN_LIMIT = 2;
 const RAW_RESPONSE_PAGE_SIZE = 100;
 
@@ -450,13 +420,6 @@ const COVERAGE_CATEGORIES = [
   { label: '5 sub-themes', color: '#49a94f' },
 ];
 
-const GRANULARITY_COVERAGE_WEIGHTS: Partial<
-  Record<GranularityLevel, number[]>
-> = {
-  high: [0.04, 0.36, 0.3, 0.16, 0.09, 0.05],
-  low: [0.08, 0.72, 0.17, 0.03, 0, 0],
-};
-
 const QUESTION_VARIANTS: QuestionThemeVariant[] = [
   {
     responseCount: 1500,
@@ -571,126 +534,103 @@ function getDefaultSubThemeDescription(name: string): string {
   return `Responses that relate to ${name.toLowerCase()} within this theme.`;
 }
 
-function getCoverageCounts(
-  responseCount: number,
-  weights: number[]
-): number[] {
-  const counts = weights.map((weight) => Math.round(responseCount * weight));
-  const difference = responseCount - counts.reduce((total, count) => total + count, 0);
-  counts[counts.length - 1] += difference;
-  return counts;
-}
-
-function ThemeGroupCard({
-  group,
-  collapsed,
-  onEditSubTheme,
-  onDeleteTheme,
-  onSelectionToggle,
-  onToggle,
-  selectedKeys,
+function ThemeGroupCard({ group, collapsed, onEditSubTheme, onDeleteTheme, onDeleteSubTheme,
+  onMoveSubTheme, onRenameTheme, onSelectionToggle, onToggle, selectedKeys,
 }: {
   group: ThemeGroup;
   collapsed: boolean;
   onEditSubTheme: (subTheme: SubTheme) => void;
   onDeleteTheme: () => void;
+  onDeleteSubTheme: (subTheme: SubTheme) => void;
+  onMoveSubTheme: (subTheme: SubTheme) => void;
+  onRenameTheme: (name: string) => string | null;
   onSelectionToggle: (target: ApproveTarget) => void;
   onToggle: () => void;
   selectedKeys: ReadonlySet<string>;
 }) {
+  const [renaming, setRenaming] = useState(false);
+  const [name, setName] = useState(group.name);
+  const [renameError, setRenameError] = useState<string | null>(null);
+  function saveName() {
+    const error = onRenameTheme(name);
+    setRenameError(error);
+    if (!error) setRenaming(false);
+  }
   return (
     <section className={`${styles.themeGroup} ${styles[`themeGroup${group.tone}`]}`}>
-      <div
-        className={`${styles.themeGroupHeader} ${styles[`themeGroupHeader${group.tone}`]}`}
-      >
-        <button
-          type="button"
-          className={styles.themeGroupToggle}
-          onClick={onToggle}
-          aria-expanded={!collapsed}
-          aria-label={`${collapsed ? 'Expand' : 'Collapse'} theme ${group.name}`}
-        >
-          <span
-            className={`wm-chevron-down ${collapsed ? styles.chevronCollapsed : ''}`}
-            aria-hidden
-          />
+      <div className={`${styles.themeGroupHeader} ${styles[`themeGroupHeader${group.tone}`]}`}
+        onClick={event => {
+          if (!renaming && event.target instanceof Element && !event.target.closest('button, input')) onToggle();
+        }}>
+        <button type="button" className={styles.themeCollapseButton} onClick={onToggle}
+          aria-expanded={!collapsed} aria-label={`${collapsed ? 'Expand' : 'Collapse'} theme ${group.name}`}>
+          <span className={`wm-expand-more ${collapsed ? styles.chevronCollapsed : ''}`} aria-hidden />
+        </button>
+        {renaming ? <div className={styles.inlineThemeRename}>
+          <input aria-label="Theme name" maxLength={100} autoFocus value={name}
+            onChange={event => setName(event.target.value)} onKeyDown={event => {
+              if (event.key === 'Enter') saveName();
+              if (event.key === 'Escape') setRenaming(false);
+            }} />
+          <button type="button" aria-label="Apply theme name" onClick={saveName}><span className="wm-check" aria-hidden /></button>
+          <button type="button" aria-label="Cancel theme rename" onClick={() => setRenaming(false)}><span className="wm-close" aria-hidden /></button>
+          {renameError && <span role="alert">{renameError}</span>}
+        </div> : <button type="button" className={styles.themeGroupToggle} onClick={onToggle} aria-expanded={!collapsed}>
           <span className={styles.themeGroupLabel}>
             <span className={styles.themeGroupName}>{group.name}</span>
-            {group.pendingApproval ? (
-              <TextAiPendingApprovalBadge />
-            ) : group.emerging ? (
-              <TextAiEmergingBadge />
-            ) : null}
+            {group.pendingApproval ? <TextAiPendingApprovalBadge /> : group.emerging ? <TextAiEmergingBadge /> : null}
           </span>
-          <span className={styles.themeGroupMeta}>
-            <span className={styles.subThemeCount}>
-              {group.subThemes.length} sub-theme{group.subThemes.length === 1 ? '' : 's'}
-            </span>
-            <span className={styles.themeGroupPercentage}>{group.percentage}</span>
-          </span>
-        </button>
-        <button type="button" className={styles.deleteThemeButton} onClick={onDeleteTheme}
-          aria-label={`Delete theme ${group.name}`} title="Delete theme">
-          <span className="wm-delete" aria-hidden />
-        </button>
+        </button>}
+        <span className={styles.themeGroupPercentage}>{group.percentage}</span>
+        {!renaming && <div className={styles.themeEditActions}>
+          <button type="button" className={styles.editSubThemeButton} disabled={group.id === 'outlier'}
+            aria-label={`Rename theme ${group.name}`} title="Rename theme" onClick={() => { setName(group.name); setRenameError(null); setRenaming(true); }}>
+            <span className="wm-edit" aria-hidden />
+          </button>
+          <button type="button" disabled={group.id === 'outlier'} className={`${styles.editSubThemeButton} ${styles.deleteActionButton}`}
+            onClick={onDeleteTheme} aria-label={`Delete theme ${group.name}`} title="Delete theme">
+            <span className="wm-delete" aria-hidden />
+          </button>
+        </div>}
       </div>
-      {!collapsed && (
-        <div className={styles.subThemeGrid}>
-          {group.subThemes.map((subTheme) => {
-            const subThemeTarget: ApproveTarget = {
-              kind: 'sub-theme',
-              name: subTheme.name,
-              subThemeId: subTheme.id,
-              themeId: group.id,
-            };
-            const subThemeSelected = selectedKeys.has(
-              getApproveTargetKey(subThemeTarget)
-            );
-            return (
-              <div
-                className={`${styles.subTheme} ${
-                  subThemeSelected ? styles.subThemeSelected : ''
-                }`}
-                key={subTheme.id}
-              >
-                <button
-                  type="button"
-                  className={styles.subThemeSelectButton}
-                  aria-pressed={subThemeSelected}
-                  aria-label={`${subThemeSelected ? 'Deselect' : 'Select'} sub-theme ${subTheme.name}`}
-                  onClick={() => onSelectionToggle(subThemeTarget)}
-                >
-                  <div className={styles.subThemeMain}>
-                    <span title={subTheme.description}>{subTheme.name}</span>
-                    {subTheme.pendingApproval ? (
-                      <TextAiPendingApprovalBadge />
-                    ) : subTheme.emerging ? (
-                      <TextAiEmergingBadge />
-                    ) : null}
-                  </div>
-                  <span className={styles.subThemePercentage}>
-                    {subTheme.percentage}
-                  </span>
-                </button>
-                <div className={styles.subThemeMeta}>
-                  <button
-                    type="button"
-                    className={styles.editSubThemeButton}
-                    onClick={() => onEditSubTheme(subTheme)}
-                    aria-label={`Edit sub-theme ${subTheme.name}`}
-                    title="Edit sub-theme"
-                  >
-                    <span className="wm-edit" aria-hidden />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-          {group.subThemes.length === 0 && (
-            <p className={styles.noSubThemes}>No sub-themes remain in this theme.</p>
-          )}
-        </div>
-      )}
+      {!collapsed && <div className={styles.subThemeGrid}>
+        {group.subThemes.map(subTheme => {
+          const target: ApproveTarget = { kind: 'sub-theme', name: subTheme.name, subThemeId: subTheme.id, themeId: group.id };
+          const selected = selectedKeys.has(getApproveTargetKey(target));
+          const protectedSubTheme = group.id === 'outlier' && subTheme.id === 'censored';
+          return <div className={`${styles.subTheme} ${selected ? styles.subThemeSelected : ''}`} key={subTheme.id}
+            onClick={event => {
+              if (event.target instanceof Element && !event.target.closest('button')) onSelectionToggle(target);
+            }}>
+            <button type="button" className={styles.subThemeSelectButton} aria-pressed={selected}
+              aria-label={`${selected ? 'Deselect' : 'Select'} sub-theme ${subTheme.name}`} onClick={() => onSelectionToggle(target)}>
+              <span className={styles.subThemeContent}>
+                <span className={styles.subThemeMain}>
+                  <span>{subTheme.name}</span>
+                  {subTheme.pendingApproval ? <TextAiPendingApprovalBadge /> : subTheme.emerging ? <TextAiEmergingBadge /> : null}
+                </span>
+                {subTheme.description && <span className={styles.subThemeDescription}>{subTheme.description}</span>}
+              </span>
+              <span className={styles.subThemePercentage}>{subTheme.percentage}</span>
+            </button>
+            <div className={styles.subThemeMeta}>
+              <button type="button" className={styles.editSubThemeButton} disabled={protectedSubTheme}
+                onClick={() => onEditSubTheme(subTheme)} aria-label={`Rename sub-theme ${subTheme.name}`} title="Rename">
+                <span className="wm-edit" aria-hidden />
+              </button>
+              <button type="button" className={styles.editSubThemeButton} disabled={protectedSubTheme}
+                onClick={() => onMoveSubTheme(subTheme)} aria-label={`Move sub-theme ${subTheme.name}`} title="Move">
+                <span className="wm-drive-file-move" aria-hidden />
+              </button>
+              <button type="button" className={`${styles.editSubThemeButton} ${styles.deleteActionButton}`} disabled={protectedSubTheme}
+                onClick={() => onDeleteSubTheme(subTheme)} aria-label={`Delete sub-theme ${subTheme.name}`} title="Delete">
+                <span className="wm-delete" aria-hidden />
+              </button>
+            </div>
+          </div>;
+        })}
+        {group.subThemes.length === 0 && <p className={styles.noSubThemes}>No sub-themes remain in this theme.</p>}
+      </div>}
     </section>
   );
 }
@@ -708,27 +648,36 @@ export default function TextAiThemeConfigurationPage({
   const [selectedQuestionId, setSelectedQuestionId] = useState<string>(
     () => questions[0]?.id ?? ''
   );
+  const [censoredReviewOpen, setCensoredReviewOpen] = useState(false);
+  const [censoredSelection, setCensoredSelection] = useState<Set<number>>(new Set());
+  const [censoredSearch, setCensoredSearch] = useState('');
+  const [censoredPage, setCensoredPage] = useState(0);
+  const [responseSubthemeFilters, setResponseSubthemeFilters] = useState<Set<string>>(() => new Set());
+  const [responseTagCount, setResponseTagCount] = useState<number | 'all' | 'untagged'>('all');
+  const [newestFirst, setNewestFirst] = useState(true);
+  const [rawDataExpanded, setRawDataExpanded] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [responseDateRange, setResponseDateRange] = useState({ startDate: '', endDate: '' });
+  const [sentimentFilter, setSentimentFilter] = useState('');
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [moveTargets, setMoveTargets] = useState<ApproveTarget[]>([]);
+  const [moveModalOpen, setMoveModalOpen] = useState(false);
+  const [moveParentId, setMoveParentId] = useState('');
+  const [moveError, setMoveError] = useState('');
   const [search, setSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set());
   const [selectedCodeFrameKeys, setSelectedCodeFrameKeys] = useState<Set<string>>(
     () => new Set()
   );
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<'preferences' | 'logs'>(
-    'preferences'
-  );
   const [themePreferences, setThemePreferences] = useState<TextAiThemePreferences>({
     approvedEmergingNames: [],
     emergingApprovedAtByName: {},
     emergingThemeValidityDays: 30,
     showThemesWithNoResponses: true,
+    showCensoredSubthemes: false,
   });
-  const [granularityModalOpen, setGranularityModalOpen] = useState(false);
-  const [appliedGranularity, setAppliedGranularity] =
-    useState<GranularityLevel>('medium');
-  const [draftGranularity, setDraftGranularity] =
-    useState<GranularityLevel>('medium');
-  const [granularityChangesUsed, setGranularityChangesUsed] = useState(0);
+  const appliedGranularity: GranularityLevel = 'medium';
   const [recodeModalOpen, setRecodeModalOpen] = useState(false);
   const [recodeScope, setRecodeScope] =
     useState<RecodeScope>('new-sub-themes');
@@ -771,7 +720,8 @@ export default function TextAiThemeConfigurationPage({
   const hasTagChanges = changeCount > 0;
   const configurationStorageKey = `bi-stats-text-ai-configuration-v2:${numericDashboardId}`;
   const tagStorageKey = `bi-stats-text-ai-tags-v1:${numericDashboardId}`;
-  const tagScope = `${selectedQuestionId}:${appliedGranularity}:`;
+  const isCensoredDemo = numericDashboardId === CENSORED_DEMO_DASHBOARD_ID;
+  const tagScope = `${selectedQuestionId}:${isCensoredDemo ? 'medium' : appliedGranularity}:`;
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -848,22 +798,12 @@ export default function TextAiThemeConfigurationPage({
     questions.findIndex((question) => question.id === selectedQuestionId)
   );
   const selectedQuestion = questions[selectedQuestionIndex] ?? null;
-  const questionVariant = QUESTION_VARIANTS[selectedQuestionIndex % QUESTION_VARIANTS.length];
-  const appliedGranularityOption =
-    GRANULARITY_OPTIONS.find((option) => option.level === appliedGranularity) ??
-    GRANULARITY_OPTIONS[1];
-  const granularityChangeLimitReached =
-    granularityChangesUsed >= GRANULARITY_CHANGE_LIMIT;
-  const granularityChangesRemaining = Math.max(
-    0,
-    GRANULARITY_CHANGE_LIMIT - granularityChangesUsed
-  );
-  const granularitySelectionChanged = draftGranularity !== appliedGranularity;
+  const questionVariant = useMemo(() => isCensoredDemo ? { ...QUESTION_VARIANTS[0], responseCount: RESTAURANT_RESPONSES.length, responseTexts: RESTAURANT_RESPONSES.map(response => response.text) } : QUESTION_VARIANTS[selectedQuestionIndex % QUESTION_VARIANTS.length], [isCensoredDemo, selectedQuestionIndex]);
   const recodesRemaining = Math.max(0, RECODE_RUN_LIMIT - recodesUsed);
 
   const baseThemeGroups = useMemo(
     () =>
-      THEME_GROUPS.map((group, groupIndex) => {
+      isCensoredDemo ? RESTAURANT_THEME_GROUPS : THEME_GROUPS.map((group, groupIndex) => {
         const groupCandidate = Boolean(group.emerging);
         const groupApproved =
           !groupCandidate ||
@@ -883,7 +823,6 @@ export default function TextAiThemeConfigurationPage({
           pendingApproval: groupCandidate && !groupApproved,
           percentage: formatPercentage(questionVariant.groupPercentages[groupIndex]),
           subThemes: group.subThemes
-            .slice(0, appliedGranularityOption.subThemeCounts[groupIndex])
             .map((subTheme, subThemeIndex) => {
               const basePercentage = Number.parseFloat(subTheme.percentage);
               const indexAdjustment =
@@ -920,7 +859,7 @@ export default function TextAiThemeConfigurationPage({
         };
       }),
     [
-      appliedGranularityOption,
+      isCensoredDemo,
       questionVariant,
       selectedQuestionIndex,
       themePreferences.approvedEmergingNames,
@@ -929,26 +868,118 @@ export default function TextAiThemeConfigurationPage({
     ]
   );
 
-  const themeGroups = useMemo(() => {
-    const source = codeFrameDrafts[tagScope]?.after ?? savedCodeFrames[tagScope] ?? baseThemeGroups;
+  const unfilteredThemeGroups = useMemo(() => {
+    const savedFrame = codeFrameDrafts[tagScope]?.after ?? savedCodeFrames[tagScope];
+    const source = ensureOutlierTheme(savedFrame ?? baseThemeGroups, !savedFrame);
+    const currentAssignments = { ...savedTagAssignments, ...Object.fromEntries(Object.entries(tagDrafts).map(([key, value]) => [key, value.after])) };
+    const demoRows = isCensoredDemo ? RESTAURANT_RESPONSES.map(response => ({ ...response, subthemes: currentAssignments[(response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`)] ?? response.subthemes })) : getSharedOutlierResponses(selectedQuestionId, currentAssignments);
+    const countBase = isCensoredDemo ? demoRows.length : questionVariant.responseCount + demoRows.length;
     return source.map((group) => {
       const original = THEME_GROUPS.find((item) => item.id === group.id);
       const groupCandidate = Boolean(original?.emerging);
       const groupApproved = !groupCandidate || themePreferences.approvedEmergingNames.includes(group.name);
       return { ...group,
+        percentage: isCensoredDemo || group.id === 'outlier' ? formatPercentage(demoRows.filter(response => response.subthemes.some(tag => tag.id.startsWith(`${group.id}:`))).length / countBase * 100) : group.percentage,
         pendingApproval: groupCandidate && !groupApproved,
         emerging: groupApproved && isTextAiItemEmerging(group.name, groupCandidate, themePreferences.emergingThemeValidityDays, themePreferences.emergingApprovedAtByName[group.name]),
         subThemes: group.subThemes.map((sub) => {
           const candidate = groupCandidate || Boolean(original?.subThemes.find((item) => item.id === sub.id)?.emerging);
           const approved = !candidate || themePreferences.approvedEmergingNames.includes(sub.name);
-          return { ...sub, pendingApproval: candidate && !approved,
+          return { ...sub, percentage: isCensoredDemo || group.id === 'outlier' ? formatPercentage(demoRows.filter(response => response.subthemes.some(tag => tag.id === `${group.id}:${sub.id}`)).length / countBase * 100) : sub.percentage, pendingApproval: candidate && !approved,
             emerging: approved && isTextAiItemEmerging(sub.name, candidate, themePreferences.emergingThemeValidityDays, themePreferences.emergingApprovedAtByName[sub.name]) };
         }),
       };
     });
-  }, [baseThemeGroups, codeFrameDrafts, savedCodeFrames, tagScope, themePreferences]);
-  const codeFrameLabels = useMemo(() => new Map<string, string>(themeGroups.flatMap((group) =>
-    group.subThemes.map((sub) => [`${group.id}:${sub.id}`, sub.name] as const))), [themeGroups]);
+  }, [baseThemeGroups, codeFrameDrafts, savedCodeFrames, tagScope, themePreferences, isCensoredDemo, savedTagAssignments, tagDrafts, selectedQuestionId, questionVariant.responseCount]);
+  const codeFrameLabels = useMemo(() => new Map<string, string>(unfilteredThemeGroups.flatMap((group) =>
+    group.subThemes.map((sub) => [`${group.id}:${sub.id}`, sub.name] as const))), [unfilteredThemeGroups]);
+
+  const questionResponses = useMemo<TextAiSentimentEditableResponse[]>(
+    () => {
+      const ordinaryResponses = Array.from({ length: questionVariant.responseCount }, (_, index) => {
+        const sampleIndex = index % RAW_RESPONSES.length;
+        const response = RAW_RESPONSES[sampleIndex];
+        const responseId = index + 1;
+        const classification =
+          RESPONSE_CLASSIFICATIONS[appliedGranularity][sampleIndex];
+        const classifications = classification
+          ? [
+              classification,
+              ...(SECONDARY_RESPONSE_CLASSIFICATIONS[sampleIndex]
+                ? [SECONDARY_RESPONSE_CLASSIFICATIONS[sampleIndex]]
+                : []),
+            ]
+          : [];
+        const subthemes = classifications.map((item, subthemeIndex) => {
+          const group = THEME_GROUPS.find((group) => group.subThemes.some((subtheme) => subtheme.name === item.tag));
+          const taxonomyId = group?.subThemes.find((subtheme) => subtheme.name === item.tag)?.id;
+          return {
+            id: group && taxonomyId ? `${group.id}:${taxonomyId}` : `seed:${sampleIndex}:${subthemeIndex}`,
+            label: item.tag,
+            sentiment: item.sentiment,
+            tone: item.tone,
+          };
+        });
+        const edit =
+          responseSentimentEdits[`${selectedQuestionId}:${responseId}`];
+        const assignmentKey = `${tagScope}${responseId}`;
+        const assignedSubthemes = tagDrafts[assignmentKey]?.after ?? savedTagAssignments[assignmentKey] ?? (isCensoredDemo ? RESTAURANT_RESPONSES[index].subthemes : subthemes);
+        const editedSubthemes = assignedSubthemes.map((subtheme) => ({
+          ...subtheme,
+          label: codeFrameLabels.get(subtheme.id) ?? subtheme.label,
+          sentiment:
+            edit?.subthemeSentiments[subtheme.id] ?? subtheme.sentiment,
+        }));
+        return {
+          id: responseId,
+          text: isCensoredDemo ? RESTAURANT_RESPONSES[index].text : questionVariant.responseTexts[sampleIndex] ?? response.text,
+          responseSentimentOverride: edit?.responseSentiment ?? null,
+          responseSentiment:
+            edit?.responseSentiment ??
+            (editedSubthemes.length === 1
+              ? editedSubthemes[0].sentiment
+              : 'neutral'),
+          subthemes: editedSubthemes,
+        };
+      });
+      if (isCensoredDemo) return ordinaryResponses;
+      const assignments = { ...savedTagAssignments, ...Object.fromEntries(Object.entries(tagDrafts).map(([key, draft]) => [key, draft.after])) };
+      return [...ordinaryResponses, ...getSharedOutlierResponses(selectedQuestionId, assignments).map(response => ({ ...response,
+        subthemes: response.subthemes.map(tag => ({ ...tag, label: codeFrameLabels.get(tag.id) ?? tag.label,
+          sentiment: responseSentimentEdits[`${selectedQuestionId}:${response.id}`]?.subthemeSentiments[tag.id] ?? tag.sentiment })),
+      }))];
+    },
+    [
+      appliedGranularity,
+      questionVariant,
+      responseSentimentEdits,
+      isCensoredDemo,
+      savedTagAssignments,
+      codeFrameLabels,
+      tagDrafts,
+      tagScope,
+      selectedQuestionId,
+    ]
+  );
+
+  const searchedAnalysisResponses = useMemo(() => filterThemeResponses(questionResponses, {
+    showCensored: true, subthemeIds: new Set(), search, minimumTags: 'all', newestFirst: false,
+    sentiment: sentimentFilter, ...responseDateRange,
+  }), [questionResponses, search, sentimentFilter, responseDateRange]);
+  const themeGroups = useMemo(() => {
+    const base = searchedAnalysisResponses.length;
+    const visible = visibleCensoredResponses(searchedAnalysisResponses, themePreferences.showCensoredSubthemes);
+    return unfilteredThemeGroups.map(group => {
+      const included = group.id === 'outlier' ? searchedAnalysisResponses : visible;
+      return { ...group,
+        percentage: formatPercentage(base ? included.filter(response => response.subthemes.some(tag => tag.id.startsWith(`${group.id}:`))).length / base * 100 : 0),
+        subThemes: group.subThemes.map(sub => ({ ...sub,
+          percentage: formatPercentage(base ? (sub.id === 'censored' && group.id === 'outlier' ? searchedAnalysisResponses : visible)
+            .filter(response => response.subthemes.some(tag => tag.id === `${group.id}:${sub.id}`)).length / base * 100 : 0),
+        })).sort((a,b) => Number.parseFloat(b.percentage)-Number.parseFloat(a.percentage)),
+      };
+    }).sort((a,b) => Number.parseFloat(b.percentage)-Number.parseFloat(a.percentage));
+  }, [searchedAnalysisResponses, unfilteredThemeGroups, themePreferences.showCensoredSubthemes]);
 
   const pendingApprovalTargets = useMemo(() => {
     return themeGroups.flatMap((group): ApproveTarget[] => {
@@ -1004,8 +1035,9 @@ export default function TextAiThemeConfigurationPage({
   const selectionContainsOnlySubThemes =
     selectedCodeFrameTargets.length > 0 &&
     selectedCodeFrameTargets.every((target) => target.kind === 'sub-theme');
+  const protectedSelection = selectedCodeFrameTargets.some(target => target.themeId === 'outlier' && target.kind === 'sub-theme' && target.subThemeId === 'censored');
   const canMergeSelection =
-    selectionContainsOnlySubThemes && selectedCodeFrameTargets.length > 1;
+    !protectedSelection && selectionContainsOnlySubThemes && selectedCodeFrameTargets.length > 1;
 
   const visibleThemeGroups = useMemo(
     () =>
@@ -1013,6 +1045,7 @@ export default function TextAiThemeConfigurationPage({
         .flatMap((group) => {
           if (
             !themePreferences.showThemesWithNoResponses &&
+            group.id !== 'outlier' &&
             !group.id.startsWith('custom-') &&
             !hasResponses(group.percentage)
           ) {
@@ -1021,7 +1054,7 @@ export default function TextAiThemeConfigurationPage({
 
           const subThemes = group.subThemes.filter(
             (subTheme) =>
-              (themePreferences.showThemesWithNoResponses || subTheme.id.startsWith('custom-') ||
+              (subTheme.id === 'censored' || themePreferences.showThemesWithNoResponses || subTheme.id.startsWith('custom-') ||
                 hasResponses(subTheme.percentage))
           );
 
@@ -1033,96 +1066,22 @@ export default function TextAiThemeConfigurationPage({
     ]
   );
 
-  const coverageItems = useMemo(
-    () => {
-      const weights = GRANULARITY_COVERAGE_WEIGHTS[appliedGranularity];
-      const counts = weights
-        ? getCoverageCounts(questionVariant.responseCount, weights)
-        : questionVariant.coverageCounts;
+  const coverageItems = useMemo(() => {
+    const included = visibleCensoredResponses(searchedAnalysisResponses, themePreferences.showCensoredSubthemes);
+    return COVERAGE_CATEGORIES.map((category, index) => {
+      const count = included.filter(response => Math.min(response.subthemes.length, 5) === index).length;
+      return { ...category, count: `${count}/${included.length}`, percentage: formatPercentage(included.length ? count / included.length * 100 : 0) };
+    });
+  }, [searchedAnalysisResponses, themePreferences.showCensoredSubthemes]);
 
-      return COVERAGE_CATEGORIES.map((category, index) => {
-        const count = counts[index];
-        return {
-          ...category,
-          count: `${count}/${questionVariant.responseCount}`,
-          percentage: formatPercentage((count / questionVariant.responseCount) * 100),
-        };
-      });
-    },
-    [appliedGranularity, questionVariant]
-  );
+  const visibleResponses = useMemo(() => filterThemeResponses(questionResponses, {
+    showCensored: themePreferences.showCensoredSubthemes, subthemeIds: responseSubthemeFilters,
+    search, minimumTags: responseTagCount, newestFirst, sentiment: sentimentFilter,
+    ...responseDateRange,
+  }), [questionResponses, search, themePreferences.showCensoredSubthemes, responseSubthemeFilters, responseTagCount, newestFirst, sentimentFilter, responseDateRange]);
+  const censoredCount = questionResponses.filter(isCensoredResponse).length;
+  const maximumResponseTags = Math.max(1, ...questionResponses.map(response => response.subthemes.length));
 
-  const questionResponses = useMemo<TextAiSentimentEditableResponse[]>(
-    () =>
-      Array.from({ length: questionVariant.responseCount }, (_, index) => {
-        const sampleIndex = index % RAW_RESPONSES.length;
-        const response = RAW_RESPONSES[sampleIndex];
-        const responseId = index + 1;
-        const classification =
-          RESPONSE_CLASSIFICATIONS[appliedGranularity][sampleIndex];
-        const classifications = classification
-          ? [
-              classification,
-              ...(SECONDARY_RESPONSE_CLASSIFICATIONS[sampleIndex]
-                ? [SECONDARY_RESPONSE_CLASSIFICATIONS[sampleIndex]]
-                : []),
-            ]
-          : [];
-        const subthemes = classifications.map((item, subthemeIndex) => {
-          const group = THEME_GROUPS.find((group) => group.subThemes.some((subtheme) => subtheme.name === item.tag));
-          const taxonomyId = group?.subThemes.find((subtheme) => subtheme.name === item.tag)?.id;
-          return {
-            id: group && taxonomyId ? `${group.id}:${taxonomyId}` : `seed:${sampleIndex}:${subthemeIndex}`,
-            label: item.tag,
-            sentiment: item.sentiment,
-            tone: item.tone,
-          };
-        });
-        const edit =
-          responseSentimentEdits[`${selectedQuestionId}:${responseId}`];
-        const assignmentKey = `${tagScope}${responseId}`;
-        const assignedSubthemes = tagDrafts[assignmentKey]?.after ?? savedTagAssignments[assignmentKey] ?? subthemes;
-        const editedSubthemes = assignedSubthemes.map((subtheme) => ({
-          ...subtheme,
-          label: codeFrameLabels.get(subtheme.id) ?? subtheme.label,
-          sentiment:
-            edit?.subthemeSentiments[subtheme.id] ?? subtheme.sentiment,
-        }));
-        return {
-          id: responseId,
-          text: questionVariant.responseTexts[sampleIndex] ?? response.text,
-          responseSentimentOverride: edit?.responseSentiment ?? null,
-          responseSentiment:
-            edit?.responseSentiment ??
-            (editedSubthemes.length === 1
-              ? editedSubthemes[0].sentiment
-              : 'neutral'),
-          subthemes: editedSubthemes,
-        };
-      }),
-    [
-      appliedGranularity,
-      questionVariant,
-      responseSentimentEdits,
-      savedTagAssignments,
-      codeFrameLabels,
-      tagDrafts,
-      tagScope,
-      selectedQuestionId,
-    ]
-  );
-
-  const visibleResponses = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return questionResponses;
-    return questionResponses.filter(
-      (response) =>
-        response.text.toLowerCase().includes(query) ||
-        response.subthemes.some((subtheme) =>
-          subtheme.label.toLowerCase().includes(query)
-        )
-    );
-  }, [questionResponses, search]);
 
   const rawDataPageCount = Math.max(
     1,
@@ -1137,18 +1096,10 @@ export default function TextAiThemeConfigurationPage({
       ),
     [safeRawDataPage, visibleResponses]
   );
-  const rawDataRangeStart =
-    visibleResponses.length === 0
-      ? 0
-      : safeRawDataPage * RAW_RESPONSE_PAGE_SIZE + 1;
-  const rawDataRangeEnd = Math.min(
-    (safeRawDataPage + 1) * RAW_RESPONSE_PAGE_SIZE,
-    visibleResponses.length
-  );
   const selectedResponses = useMemo(
     () =>
-      questionResponses.filter((response) => selectedResponseIds.has(response.id)),
-    [questionResponses, selectedResponseIds]
+      visibleCensoredResponses(questionResponses, themePreferences.showCensoredSubthemes).filter((response) => selectedResponseIds.has(response.id)),
+    [questionResponses, selectedResponseIds, themePreferences.showCensoredSubthemes]
   );
   const allVisibleResponsesSelected =
     visibleResponses.length > 0 &&
@@ -1159,7 +1110,7 @@ export default function TextAiThemeConfigurationPage({
 
   function removeResponseTag(response: TextAiSentimentEditableResponse, tagId: string): void {
     if (!tagsReady) return;
-    const key = `${tagScope}${response.id}`;
+    const key = (response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`);
     setTagDrafts((current) => stageTagAssignment(current, key, response.subthemes,
       (current[key]?.after ?? response.subthemes).filter((tag) => tag.id !== tagId)));
     setTagMessage('');
@@ -1178,11 +1129,11 @@ export default function TextAiThemeConfigurationPage({
     setTagDrafts((current) => {
       let next = current;
       for (const response of questionResponses.filter((response) => taggingResponseIds.includes(response.id))) {
-        const key = `${tagScope}${response.id}`;
+        const key = (response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`);
         const existing = next[key]?.after ?? response.subthemes;
         const additions = tags.filter((tag) => !existing.some((item) => item.id === tag.id))
           .map((tag) => next[key]?.before.find((item) => item.id === tag.id) ?? tag);
-        next = stageTagAssignment(next, key, response.subthemes, [...existing, ...additions]);
+        next = stageTagAssignment(next, key, response.subthemes, addCensoredAwareTags(existing, additions, themePreferences.showCensoredSubthemes));
       }
       return next;
     });
@@ -1205,7 +1156,14 @@ export default function TextAiThemeConfigurationPage({
       setSelectedCodeFrameKeys(new Set());
       setTagConfirmation(null);
       setTagError('');
-      setTagMessage('Theme changes saved.');
+      window.dispatchEvent(new CustomEvent(CENSORED_CONFIGURATION_EVENT));
+      try {
+        appendTextAiRecodeLog({ action: 'configuration-saved', dashboardId: numericDashboardId,
+          question: selectedQuestion?.text ?? 'Selected question', title: 'Theme configuration saved',
+          details: `Saved ${changeCount} configuration change${changeCount === 1 ? '' : 's'}: ${tagSummary.added} response tags added, ${tagSummary.removed} removed, ${codeFrameSummary.changes} code frame changes.`,
+        });
+        setTagMessage('Theme changes saved.');
+      } catch { setTagMessage('Theme changes saved. Theme history could not be updated.'); }
     } catch {
       setTagConfirmation(null);
       setTagError('Changes could not be saved. Your edits are still here. Please try again.');
@@ -1245,7 +1203,7 @@ export default function TextAiThemeConfigurationPage({
       setTagDrafts((current) => {
         let next = current;
         for (const response of questionResponses) {
-          const key = `${tagScope}${response.id}`;
+          const key = (response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`);
           const existing = next[key]?.after ?? response.subthemes;
           const after = remapResponseTags(existing, removed, destination);
           if (after !== existing) next = stageTagAssignment(next, key, response.subthemes, after);
@@ -1254,6 +1212,8 @@ export default function TextAiThemeConfigurationPage({
       });
     }
     setSelectedCodeFrameKeys(new Set());
+    setResponseSubthemeFilters(new Set());
+    setRawDataPage(0);
     setTagMessage('');
     setTagError('');
     setConfigurationAction(null);
@@ -1356,14 +1316,39 @@ export default function TextAiThemeConfigurationPage({
     );
   }
 
+  function openCensoredReview(): void {
+    setCensoredReviewOpen(true); setCensoredSelection(new Set()); setCensoredSearch(''); setCensoredPage(0);
+  }
   function toggleCodeFrameSelection(target: ApproveTarget): void {
+    if (target.kind !== 'sub-theme') return;
+    if (target.themeId === 'outlier' && target.subThemeId === 'censored' && !themePreferences.showCensoredSubthemes) {
+      openCensoredReview(); return;
+    }
     const key = getApproveTargetKey(target);
-    setSelectedCodeFrameKeys((current) => {
-      const next = new Set(current);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
+    const tagId = `${target.themeId}:${target.subThemeId}`;
+    setSelectedCodeFrameKeys(current => { const next = new Set(current); if (next.has(key)) next.delete(key); else next.add(key); return next; });
+    setResponseSubthemeFilters(current => { const next = new Set(current); if (next.has(tagId)) next.delete(tagId); else next.add(tagId); return next; });
+    setSelectedResponseIds(new Set()); setRawDataPage(0);
+  }
+  function openMove(targets: ApproveTarget[]): void {
+    setMoveTargets(targets); setMoveParentId(''); setMoveError(''); setMoveModalOpen(true);
+  }
+  function applyMove(): void {
+    try {
+      const sourceIds = moveTargets.flatMap(target => target.kind === 'sub-theme' ? [`${target.themeId}:${target.subThemeId}`] : []);
+      const result = moveCodeFrameItems(themeGroups, sourceIds, moveParentId);
+      stageConfiguration(result.groups);
+      setTagDrafts(current => {
+        let next = current;
+        for (const response of questionResponses) {
+          if (!response.subthemes.some(tag => result.tagIds[tag.id])) continue;
+          const key = response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`;
+          next = stageTagAssignment(next, key, response.subthemes, response.subthemes.map(tag => ({ ...tag, id: result.tagIds[tag.id] ?? tag.id })));
+        }
+        return next;
+      });
+      setResponseSubthemeFilters(new Set()); setMoveModalOpen(false);
+    } catch (error) { setMoveError(error instanceof Error ? error.message : 'The sub-themes could not be moved.'); }
   }
 
   function approveTargets(targets: readonly ApproveTarget[]): void {
@@ -1484,123 +1469,68 @@ export default function TextAiThemeConfigurationPage({
   return (
     <PageContainer className={styles.page}>
       <div className={styles.utilityBar}>
-        <div className={styles.utilityControls}>
-          <div className={styles.configurationFilters}>
-            <div className={styles.questionFilter}>
-              <span className={styles.filterLabel}>Question</span>
-              <WuCombobox
-                data={questions}
-                accessorKey={{ value: 'id', label: 'text' }}
-                value={selectedQuestion}
-                onSelect={(option) => {
-                  if (!option || Array.isArray(option)) return;
-                  setSelectedQuestionId((option as TextAiDashboardQuestion).id);
-                  setSearch('');
-                  setSelectedCodeFrameKeys(new Set());
-                  setSelectedResponseIds(new Set());
-                  setRawDataPage(0);
-                  setSentimentUpdateMessage('');
-                  setEditSubThemeTarget(null);
-                }}
-                variant="outlined"
-                enableSearch
-                isEllipse
-                maxHeight={320}
-                noDataContent="No questions found"
-                className={styles.questionSelect}
-                aria-label="Question"
-              />
-            </div>
-          </div>
-        </div>
-        <div className={styles.utilityActions}>
-          <div className={styles.recodeAction}>
-            <Link
-              href={`/text-ai/${dashboard.id}`}
-              className={styles.dashboardLink}
-              aria-label={`Back to ${dashboard.name} dashboard`}
-            >
-              <span className="wc-report" aria-hidden />
-            </Link>
-            <button
-              type="button"
-              className={styles.recodeTrigger}
-              disabled={hasTagChanges}
-              title={hasTagChanges ? 'Save or cancel configuration changes before recoding' : undefined}
-              onClick={() => {
-                setRecodeScope('new-sub-themes');
-                setCustomRecodeSubThemeIds([]);
-                setRecodeModalOpen(true);
-              }}
-              aria-haspopup="dialog"
-            >
-              Recode
-            </button>
-          </div>
-          <button
-            type="button"
-            className={styles.granularityAction}
-            disabled={hasTagChanges}
-            title={hasTagChanges ? 'Save or cancel configuration changes before changing granularity' : undefined}
-            onClick={() => {
-              setDraftGranularity(appliedGranularity);
-              setGranularityModalOpen(true);
-            }}
-            aria-haspopup="dialog"
-          >
-            <span className="wm-tune" aria-hidden />
-            <span>Granularity</span>
-          </button>
-          <WuButton
-            type="button"
-            variant="iconOnly"
-            size="sm"
-            className={styles.settingsAction}
-            aria-label="Theme configuration settings"
-            Icon={<span className="wm-settings" aria-hidden />}
-            onClick={() => {
-              setSettingsTab('preferences');
-              setSettingsModalOpen(true);
-            }}
-          />
-        </div>
-      </div>
-
-      <div className={styles.themeVisibilityControls}>
         <label className={styles.searchBox}>
           <span className="wm-search" aria-hidden />
           <span className={styles.srOnly}>Search themes or responses</span>
-          <input
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              setRawDataPage(0);
-            }}
-            placeholder="Search themes or responses..."
-          />
+          <input value={search} onChange={event => { setSearch(event.target.value); setRawDataPage(0); }} placeholder="Search themes or responses..." />
         </label>
-        <div className={styles.themeSaveActions} aria-label="Theme configuration changes">
-          <span className={hasTagChanges ? styles.unsavedChangeCount : styles.srOnly} role="status" aria-live="polite">
-            {hasTagChanges ? `${changeCount} unsaved change${changeCount === 1 ? '' : 's'}` : tagMessage || 'No unsaved configuration changes'}
-          </span>
-          <WuButton size="sm" variant="secondary" disabled={!hasTagChanges} onClick={() => { setPendingHref(null); setTagConfirmation('discard'); }}>Cancel</WuButton>
-          <WuButton size="sm" variant="primary" disabled={!hasTagChanges} onClick={() => setTagConfirmation('save')}>Save</WuButton>
+        <div className={styles.utilityActions}>
+          <button type="button" className={styles.toolbarTextButton} aria-expanded={filtersOpen} onClick={() => setFiltersOpen(open => !open)}>
+            <span className="wm-filter-alt" aria-hidden /> Filter
+          </button>
+          <button type="button" className={styles.iconButton} aria-label="Theme history" title="Theme history" onClick={() => setHistoryOpen(true)}>
+            <span className="wm-history" aria-hidden />
+          </button>
+          <WuButton type="button" variant="iconOnly" size="sm" className={styles.settingsAction} aria-label="Theme configuration settings"
+            Icon={<span className="wm-settings" aria-hidden />} onClick={() => setSettingsModalOpen(true)} />
+          <Link href={`/text-ai/${dashboard.id}`} className={styles.dashboardLink} aria-label={`Back to ${dashboard.name} dashboard`} title="Dashboard">
+            <span className="wc-report" aria-hidden />
+          </Link>
+          <button type="button" className={styles.recodeTrigger} disabled={hasTagChanges}
+            title={hasTagChanges ? 'Save or cancel configuration changes before recoding' : undefined}
+            onClick={() => { setRecodeScope('new-sub-themes'); setCustomRecodeSubThemeIds([]); setRecodeModalOpen(true); }} aria-haspopup="dialog">Recode</button>
+          {hasTagChanges && <div className={styles.themeSaveActions} aria-label="Theme configuration changes">
+            <span className={styles.unsavedChangeCount} role="status">{changeCount} unsaved change{changeCount === 1 ? '' : 's'}</span>
+            <WuButton size="sm" variant="secondary" onClick={() => { setPendingHref(null); setTagConfirmation('discard'); }}>Cancel</WuButton>
+            <WuButton size="sm" variant="primary" onClick={() => setTagConfirmation('save')}>Save</WuButton>
+          </div>}
         </div>
       </div>
+      {!hasTagChanges && tagMessage && <p className={styles.savedMessage} role="status">{tagMessage}</p>}
+      {filtersOpen && <section className={styles.configurationFilterPanel} aria-label="Theme configuration filters">
+        <div className={styles.configurationFilters}>
+          {questions.length > 1 && <div className={styles.questionFilter}>
+            <span className={styles.filterLabel}>Question</span>
+            <WuCombobox data={questions} accessorKey={{ value: 'id', label: 'text' }} value={selectedQuestion}
+              onSelect={option => {
+                if (!option || Array.isArray(option)) return;
+                setSelectedQuestionId((option as TextAiDashboardQuestion).id); setSearch(''); setSelectedCodeFrameKeys(new Set());
+                setResponseSubthemeFilters(new Set()); setSelectedResponseIds(new Set()); setRawDataPage(0); setSentimentUpdateMessage(''); setEditSubThemeTarget(null);
+              }} variant="outlined" enableSearch isEllipse maxHeight={320} noDataContent="No questions found" className={styles.questionSelect} aria-label="Question" />
+          </div>}
+          <div className={styles.dateFilter}><span className={styles.filterLabel}>Filter by date</span>
+            <SharedDashboardDateFilter {...responseDateRange} onChange={range => { setResponseDateRange(range); setRawDataPage(0); setSelectedResponseIds(new Set()); }} />
+          </div>
+          <label className={styles.filterField}><span className={styles.filterLabel}>Sentiment</span>
+            <select value={sentimentFilter} onChange={event => { setSentimentFilter(event.target.value); setRawDataPage(0); setSelectedResponseIds(new Set()); }}>
+              <option value="">All sentiments</option>
+              {(['very-negative', 'negative', 'neutral', 'positive', 'very-positive'] as TextAiAssignedSentiment[]).map(value => <option key={value} value={value}>{getSentimentLabel(value)}</option>)}
+            </select>
+          </label>
+          <button type="button" className={styles.toolbarTextButton} onClick={() => { setResponseDateRange({startDate:'',endDate:''}); setSentimentFilter(''); setSearch(''); setResponseSubthemeFilters(new Set()); setResponseTagCount('all'); setSelectedCodeFrameKeys(new Set()); setRawDataPage(0); setSelectedResponseIds(new Set()); }}>Reset</button>
+        </div>
+      </section>}
       {tagError && <p className={styles.tagError} role="alert">{tagError}</p>}
 
-      <div className={styles.workspace}>
+      <div className={`${styles.workspace} ${rawDataExpanded ? styles.rawDataExpanded : ''}`}>
         <section className={styles.codeFramePanel} aria-label="Code frame">
           <header className={styles.codeFrameHeader}>
             <div className={styles.codeFrameTitle}>
               <strong>My code frame</strong>
               <span className={styles.headerCount}>{themeGroups.reduce((count, group) => count + group.subThemes.length, 0)}</span>
-              <span className={styles.appliedGranularity}>
-                {`${appliedGranularityOption.label} · Up to ${appliedGranularityOption.classificationCount} sub-themes`}
-              </span>
             </div>
             <div className={styles.codeFrameActions}>
-              <span className={styles.headerCount}>{questionVariant.responseCount}</span>
+              <span className={styles.headerCount}>{searchedAnalysisResponses.length}</span>
               <button type="button" disabled={!tagsReady || themeGroups.length === 0} onClick={() => openConfigurationAction('new-sub-theme')}>New sub-theme</button>
               <button type="button" disabled={!tagsReady} onClick={() => openConfigurationAction('new-theme')}>New theme</button>
             </div>
@@ -1630,6 +1560,14 @@ export default function TextAiThemeConfigurationPage({
                       getDefaultSubThemeDescription(subTheme.name)
                   );
                 }}
+                onRenameTheme={name => {
+                  const error = validateCodeFrameName(name, themeGroups.filter(item => item.id !== group.id).map(item => item.name));
+                  if (error) return error;
+                  stageConfiguration(themeGroups.map(item => item.id === group.id ? { ...item, name: name.trim() } : item));
+                  return null;
+                }}
+                onMoveSubTheme={subTheme => openMove([{ kind: 'sub-theme', themeId: group.id, subThemeId: subTheme.id, name: subTheme.name }])}
+                onDeleteSubTheme={subTheme => { setDeleteTargets([{ kind: 'sub-theme', themeId: group.id, subThemeId: subTheme.id, name: subTheme.name }]); setConfigurationAction('delete'); }}
                 onDeleteTheme={() => {
                   setDeleteTargets([{ kind: 'theme', themeId: group.id, name: group.name }]);
                   setConfigurationAction('delete');
@@ -1646,20 +1584,16 @@ export default function TextAiThemeConfigurationPage({
           <header className={styles.rawDataHeader}>
             <h1>Explore raw data</h1>
             <div className={styles.rawDataTools}>
-              <button type="button" className={styles.iconButton} aria-label="Filter responses">
-                <span className="wm-filter-list" aria-hidden />
-              </button>
               <label className={styles.coverageSelect}>
-                <span className={styles.srOnly}>Filter by theme</span>
-                <select defaultValue="">
-                  <option value="" disabled>Select...</option>
-                  <option>Customer experience</option>
-                  <option>Staff service</option>
-                  <option>Overall experience</option>
+                <span className={styles.srOnly}>Filter by number of sub-themes</span>
+                <select value={String(responseTagCount)} onChange={event => { setResponseTagCount(event.target.value === 'all' || event.target.value === 'untagged' ? event.target.value : Number(event.target.value)); setRawDataPage(0); setSelectedResponseIds(new Set()); }}>
+                  <option value="all">All</option><option value="untagged">Untagged</option>
+                  {Array.from({length:maximumResponseTags},(_,index) => <option key={index+1} value={index+1}>At least {index+1}</option>)}
                 </select>
               </label>
-              <button type="button" className={styles.iconButton} aria-label="Expand raw data">
-                <span className="wm-open-in-full" aria-hidden />
+              <button type="button" className={styles.iconButton} aria-label={rawDataExpanded ? 'Restore raw data panel' : 'Expand raw data'}
+                title={rawDataExpanded ? 'Restore raw data panel' : 'Expand raw data'} onClick={() => setRawDataExpanded(expanded => !expanded)}>
+                <span className={rawDataExpanded ? 'wm-close-fullscreen' : 'wm-open-in-full'} aria-hidden />
               </button>
             </div>
           </header>
@@ -1667,16 +1601,16 @@ export default function TextAiThemeConfigurationPage({
           <div className={styles.coverageSection}>
             <h2>Theme coverage</h2>
             <div className={styles.coverageBar} aria-label="Theme coverage distribution">
-              {coverageItems.map((item) => (
+              {coverageItems.filter(item => !item.count.startsWith('0/')).map((item) => (
                 <span
                   key={item.label}
                   style={{ backgroundColor: item.color, width: item.percentage }}
-                  title={`${item.label}: ${item.percentage}`}
+                  title={`${item.label}: ${item.percentage} (${item.count.split('/')[0]} responses)`}
                 />
               ))}
             </div>
             <div className={styles.coverageLegend}>
-              {coverageItems.map((item) => (
+              {coverageItems.filter(item => !item.count.startsWith('0/')).map((item) => (
                 <div className={styles.legendItem} key={item.label}>
                   <span className={styles.legendDot} style={{ backgroundColor: item.color }} />
                   <strong>{item.label}</strong>
@@ -1687,7 +1621,15 @@ export default function TextAiThemeConfigurationPage({
             </div>
           </div>
 
-          <div className={styles.responseSelectionToolbar}>
+          {!themePreferences.showCensoredSubthemes && censoredCount > 0 && <div className={styles.censoredNote} role="note">
+            <span>{censoredCount} censored response{censoredCount === 1 ? '' : 's'} hidden from this panel and dashboard.</span>
+            <button type="button" onClick={openCensoredReview}>Review</button>
+          </div>}
+          {responseSubthemeFilters.size > 0 && <div className={styles.responseFilterNote}>
+            <span>Filtered by: {responseSubthemeFilters.size} sub-theme{responseSubthemeFilters.size === 1 ? '' : 's'}</span>
+            <button type="button" aria-label="Clear all sub-theme filters" onClick={() => { setResponseSubthemeFilters(new Set()); setSelectedCodeFrameKeys(new Set()); setRawDataPage(0); setSelectedResponseIds(new Set()); }}><span className="wm-filter-alt-off" aria-hidden /></button>
+          </div>}
+          <div className={styles.responseSelectionToolbar} hidden={selectedResponses.length === 0}>
             <label className={styles.selectAllResponses}>
               <input
                 type="checkbox"
@@ -1729,7 +1671,7 @@ export default function TextAiThemeConfigurationPage({
                 disabled={!tagsReady || selectedResponses.length === 0}
                 onClick={() => openTagPicker(selectedResponses.map((response) => response.id))}
               >
-                Tag responses
+                <span className="wm-add" aria-hidden /> Add sub-theme
               </button>
               <button
                 type="button"
@@ -1753,11 +1695,9 @@ export default function TextAiThemeConfigurationPage({
             >
               <span className="wm-chevron-left" aria-hidden />
             </button>
-            <span>
-              {rawDataRangeStart.toLocaleString()} -{' '}
-              {rawDataRangeEnd.toLocaleString()}
-            </span>
-            <span className="wm-arrow-drop-down" aria-hidden />
+            <select className={styles.pageRangeSelect} aria-label="Response page" value={safeRawDataPage} onChange={event => setRawDataPage(Number(event.target.value))}>
+              {Array.from({length:rawDataPageCount},(_,page) => <option key={page} value={page}>{visibleResponses.length ? page * RAW_RESPONSE_PAGE_SIZE + 1 : 0} - {Math.min((page+1) * RAW_RESPONSE_PAGE_SIZE,visibleResponses.length)}</option>)}
+            </select>
             <button
               type="button"
               aria-label="Next page"
@@ -1773,11 +1713,19 @@ export default function TextAiThemeConfigurationPage({
             <span className={styles.itemCount}>
               {visibleResponses.length.toLocaleString()} items
             </span>
+            <button type="button" className={styles.sortResponsesButton} onClick={() => { setNewestFirst(current => !current); setRawDataPage(0); }}>
+              <span className="wm-sort" aria-hidden /> {newestFirst ? 'Newest first' : 'Oldest first'}
+            </button>
           </div>
 
           <div className={styles.responses}>
             {currentPageResponses.map((response) => (
-              <article className={`${styles.responseCard} ${tagDrafts[`${tagScope}${response.id}`] ? styles.responseCardPending : ''}`} key={response.id}>
+              <article className={`${styles.responseCard} ${selectedResponseIds.has(response.id) ? styles.responseCardSelected : ''} ${tagDrafts[(response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`)] ? styles.responseCardPending : ''}`} key={response.id}
+                onClick={event => {
+                  if (event.target instanceof Element && !event.target.closest('label, button')) {
+                    toggleResponseSelection(response.id, !selectedResponseIds.has(response.id));
+                  }
+                }}>
                 <label className={styles.responseText}>
                   <input
                     type="checkbox"
@@ -1820,16 +1768,11 @@ export default function TextAiThemeConfigurationPage({
                     ))}
                   </div>
                 ) : <span className={styles.untaggedLabel}>Untagged</span>}
-                <div className={styles.responseEditActions}>
-                  <button type="button" className={styles.addResponseTag} disabled={!tagsReady}
-                    onClick={() => openTagPicker([response.id])}
-                    aria-label={`Tag response ${response.id}`}>
-                    <span className="wm-add" aria-hidden /> Tag response
-                  </button>
-                  {tagDrafts[`${tagScope}${response.id}`] && (
+                {tagDrafts[(response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`)] && (
+                  <div className={styles.responseEditActions}>
                     <span className={styles.responsePendingLabel}>Unsaved changes</span>
-                  )}
-                </div>
+                  </div>
+                )}
               </article>
             ))}
             {visibleResponses.length === 0 && (
@@ -1893,6 +1836,7 @@ export default function TextAiThemeConfigurationPage({
             <div className={styles.tagChangeSummary}>
               <strong>{changeCount} configuration change{changeCount === 1 ? '' : 's'}</strong>
               {codeFrameSummary.themesAdded > 0 && <span>{codeFrameSummary.themesAdded} theme{codeFrameSummary.themesAdded === 1 ? '' : 's'} created</span>}
+              {codeFrameSummary.themesUpdated > 0 && <span>{codeFrameSummary.themesUpdated} theme{codeFrameSummary.themesUpdated === 1 ? '' : 's'} renamed</span>}
               {codeFrameSummary.themesDeleted > 0 && <span>{codeFrameSummary.themesDeleted} theme{codeFrameSummary.themesDeleted === 1 ? '' : 's'} deleted with all associated sub-themes</span>}
               {codeFrameSummary.subThemesAdded > 0 && <span>{codeFrameSummary.subThemesAdded} sub-theme{codeFrameSummary.subThemesAdded === 1 ? '' : 's'} created</span>}
               {codeFrameSummary.subThemesDeleted > 0 && <span>{codeFrameSummary.subThemesDeleted} sub-theme{codeFrameSummary.subThemesDeleted === 1 ? '' : 's'} deleted</span>}
@@ -1910,6 +1854,30 @@ export default function TextAiThemeConfigurationPage({
             {tagConfirmation === 'discard' ? 'Discard' : 'Save'}
           </WuButton>
         </WuModalFooter>
+      </WuModal>
+
+      <WuModal open={censoredReviewOpen} onOpenChange={setCensoredReviewOpen} size="lg" variant="action" aria-describedby="censored-review-description">
+        <DialogTitle className={styles.srOnly}>Review censored responses</DialogTitle>
+        <WuModalHeader>Outlier / Censored</WuModalHeader>
+        <WuModalContent>
+          <p id="censored-review-description">{themePreferences.showCensoredSubthemes ? 'These responses are currently included in the dashboard and regular response panel.' : 'These responses are hidden from the dashboard and regular response panel.'} Remove the Censored tag from responses you want to include, then Save your theme changes. Removing censorship does not assign any other sub-theme.</p>
+          <input className={styles.censoredSearch} type="search" aria-label="Search censored responses" placeholder="Search censored responses" value={censoredSearch} onChange={event => { setCensoredSearch(event.target.value); setCensoredPage(0); }} />
+          <label className={styles.selectAllResponses}><input type="checkbox" checked={questionResponses.filter(isCensoredResponse).length > 0 && questionResponses.filter(isCensoredResponse).every(response => censoredSelection.has(response.id))} onChange={event => setCensoredSelection(event.target.checked ? new Set(questionResponses.filter(isCensoredResponse).map(response => response.id)) : new Set())} /> Select all censored responses ({questionResponses.filter(isCensoredResponse).length})</label>
+          <p role="status">{censoredSelection.size} selected across all pages</p>
+          <div className={styles.censoredReviewList}>
+            {questionResponses.filter(isCensoredResponse).filter(response => response.text.toLowerCase().includes(censoredSearch.toLowerCase())).slice(censoredPage * 20, (censoredPage + 1) * 20).map(response => <article className={`${styles.responseCard} ${censoredSelection.has(response.id) ? styles.responseCardSelected : ''}`} key={response.id}>
+              <label className={styles.responseText}><input type="checkbox" aria-label={`Select censored response ${response.id}`} checked={censoredSelection.has(response.id)} onChange={event => setCensoredSelection(current => { const next = new Set(current); if (event.target.checked) next.add(response.id); else next.delete(response.id); return next; })} /><span>{response.text}</span></label>
+              <small>{censoredResponseReason(response.id)} · Censored</small>
+            </article>)}
+            {questionResponses.filter(isCensoredResponse).length === 0 && <p>No censored responses remain. Save your changes to update the dashboard.</p>}
+          </div>
+          <div className={styles.censoredReviewPaging}><button type="button" disabled={censoredPage === 0} onClick={() => setCensoredPage(page => page - 1)}>Previous</button><span>Page {censoredPage + 1}</span><button type="button" disabled={(censoredPage + 1) * 20 >= questionResponses.filter(isCensoredResponse).filter(response => response.text.toLowerCase().includes(censoredSearch.toLowerCase())).length} onClick={() => setCensoredPage(page => page + 1)}>Next</button></div>
+        </WuModalContent>
+        <WuModalFooter><WuButton variant="secondary" onClick={() => setCensoredReviewOpen(false)}>Close</WuButton><WuButton variant="primary" disabled={!tagsReady || censoredSelection.size === 0} onClick={() => {
+          setTagDrafts(current => { let next = current; for (const response of questionResponses.filter(response => censoredSelection.has(response.id) && isCensoredResponse(response))) next = stageTagAssignment(next, (response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`), response.subthemes, response.subthemes.filter(tag => tag.id !== CENSORED_TAG_ID)); return next; });
+          setCensoredSelection(new Set()); setSelectedResponseIds(new Set()); setResponseSubthemeFilters(new Set()); setSelectedCodeFrameKeys(new Set()); setRawDataPage(0);
+          setTagMessage('Censorship removal is pending. Review the responses in the regular panel and Save to update the dashboard.');
+        }}>Remove censorship ({censoredSelection.size})</WuButton></WuModalFooter>
       </WuModal>
 
       <WuModal open={taggingResponseIds.length > 0} onOpenChange={(open) => { if (!open) setTaggingResponseIds([]); }} size="md" variant="action" aria-describedby="tag-picker-description">
@@ -1971,7 +1939,8 @@ export default function TextAiThemeConfigurationPage({
           <button
             type="button"
             className={styles.selectionTextAction}
-            disabled={!selectionContainsOnlySubThemes}
+            disabled={!selectionContainsOnlySubThemes || protectedSelection}
+            onClick={() => openMove(selectedCodeFrameTargets)}
           >
             Add to theme
           </button>
@@ -1985,7 +1954,7 @@ export default function TextAiThemeConfigurationPage({
               Approve
             </button>
           ) : null}
-          <button type="button" className={styles.selectionDeleteAction} onClick={() => {
+          <button type="button" className={styles.selectionDeleteAction} disabled={protectedSelection} onClick={() => {
             setDeleteTargets(selectedCodeFrameTargets); setConfigurationAction('delete');
           }}>
             Delete
@@ -2183,124 +2152,28 @@ export default function TextAiThemeConfigurationPage({
             disabled={!draftSubThemeName.trim() || Boolean(subThemeEditError)}
             onClick={saveSubThemeEdit}
           >
-            Apply
+            Save changes
           </WuButton>
         </WuModalFooter>
       </WuModal>
 
-      <WuModal
-        open={granularityModalOpen}
-        onOpenChange={(open) => {
-          setGranularityModalOpen(open);
-          if (!open) setDraftGranularity(appliedGranularity);
-        }}
-        size="md"
-        variant="action"
-      >
-        <DialogTitle className={styles.srOnly}>Response tagging granularity</DialogTitle>
-        <WuModalHeader>Response tagging granularity</WuModalHeader>
-        <WuModalContent>
-          <div className={styles.granularityModalContent}>
-            <p className={styles.granularityIntroduction}>
-              Choose how detailed the response tagging should be.
-            </p>
-            {granularityChangeLimitReached && (
-              <p className={styles.granularityLimitMessage}>
-                Change limit reached. The current granularity can no longer be changed.
-              </p>
-            )}
-            <div
-              className={styles.granularityOptions}
-              role="radiogroup"
-              aria-label="Response tagging granularity"
-            >
-              {GRANULARITY_OPTIONS.map((option) => (
-                <label
-                  className={`${styles.granularityOption} ${
-                    draftGranularity === option.level
-                      ? styles.granularityOptionSelected
-                      : ''
-                  } ${
-                    granularityChangeLimitReached
-                      ? styles.granularityOptionDisabled
-                      : ''
-                  }`}
-                  key={option.level}
-                >
-                  <input
-                    type="radio"
-                    name="granularity"
-                    value={option.level}
-                    checked={draftGranularity === option.level}
-                    onChange={() => setDraftGranularity(option.level)}
-                    disabled={granularityChangeLimitReached}
-                  />
-                  <span className={styles.granularityOptionText}>
-                    <span className={styles.granularityOptionHeading}>
-                      <strong>{option.label}</strong>
-                    </span>
-                    <span className={styles.granularityDescription}>
-                      {option.description}
-                    </span>
-                  </span>
-                </label>
-              ))}
-            </div>
-            <strong
-              className={`${styles.granularityChangesRemaining} ${
-                granularityChangeLimitReached
-                  ? styles.granularityChangesRemainingLimit
-                  : ''
-              }`}
-              aria-live="polite"
-            >
-              Granularity changes remaining: {granularityChangesRemaining}
-            </strong>
-          </div>
-        </WuModalContent>
-        <WuModalFooter>
-          <WuButton
-            type="button"
-            variant="secondary"
-            onClick={() => setGranularityModalOpen(false)}
-          >
-            Cancel
-          </WuButton>
-          <WuButton
-            type="button"
-            disabled={
-              granularityChangeLimitReached || !granularitySelectionChanged
-            }
-            onClick={() => {
-              if (
-                granularityChangeLimitReached ||
-                draftGranularity === appliedGranularity
-              ) {
-                return;
-              }
-              setAppliedGranularity(draftGranularity);
-              const nextGranularityOption =
-                GRANULARITY_OPTIONS.find(
-                  (option) => option.level === draftGranularity
-                ) ?? GRANULARITY_OPTIONS[1];
-              appendTextAiRecodeLog({
-                action: 'granularity-changed',
-                dashboardId: numericDashboardId,
-                details: `Changed response tagging from ${appliedGranularityOption.label} (up to ${appliedGranularityOption.classificationCount} sub-themes) to ${nextGranularityOption.label} (up to ${nextGranularityOption.classificationCount} sub-themes).`,
-                question: selectedQuestion?.text ?? 'Selected question',
-                title: 'Granularity changed',
-              });
-              setGranularityChangesUsed((current) =>
-                Math.min(current + 1, GRANULARITY_CHANGE_LIMIT)
-              );
-              setGranularityModalOpen(false);
-            }}
-          >
-            Apply
-          </WuButton>
-        </WuModalFooter>
+      <WuModal open={historyOpen} onOpenChange={setHistoryOpen} size="lg" variant="action">
+        <DialogTitle className={styles.srOnly}>Theme history</DialogTitle>
+        <WuModalHeader>Theme history</WuModalHeader>
+        <WuModalContent><TextAiThemeLogs dashboardId={numericDashboardId} /></WuModalContent>
+        <WuModalFooter><WuButton onClick={() => setHistoryOpen(false)}>Close</WuButton></WuModalFooter>
       </WuModal>
-
+      <WuModal open={moveModalOpen} onOpenChange={setMoveModalOpen} size="sm" variant="action">
+        <DialogTitle className={styles.srOnly}>Move to theme</DialogTitle>
+        <WuModalHeader>Move to theme</WuModalHeader>
+        <WuModalContent><div className={styles.configurationForm}>
+          <label><span>Select theme</span><select aria-label="Move destination theme" value={moveParentId} onChange={event => { setMoveParentId(event.target.value); setMoveError(''); }}>
+            <option value="">Select...</option>{themeGroups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}
+          </select></label>
+          {moveError && <p role="alert" className={styles.tagError}>{moveError}</p>}
+        </div></WuModalContent>
+        <WuModalFooter><WuButton variant="secondary" onClick={() => setMoveModalOpen(false)}>Cancel</WuButton><WuButton disabled={!moveParentId} onClick={applyMove}>Save</WuButton></WuModalFooter>
+      </WuModal>
       <WuModal
         open={settingsModalOpen}
         onOpenChange={setSettingsModalOpen}
@@ -2314,28 +2187,16 @@ export default function TextAiThemeConfigurationPage({
         <WuModalContent className={styles.settingsModalBody}>
           <div className={styles.settingsModalContent}>
             <div className={styles.settingsTabs} role="tablist" aria-label="Settings">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={settingsTab === 'preferences'}
-                className={settingsTab === 'preferences' ? styles.activeSettingsTab : ''}
-                onClick={() => setSettingsTab('preferences')}
-              >
-                Preferences
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={settingsTab === 'logs'}
-                className={settingsTab === 'logs' ? styles.activeSettingsTab : ''}
-                onClick={() => setSettingsTab('logs')}
-              >
-                Logs
-              </button>
+              <button type="button" role="tab" aria-selected="true" className={styles.activeSettingsTab}>Preferences</button>
             </div>
-
-            {settingsTab === 'preferences' ? (
               <div className={styles.settingsPreferences}>
+                <label className={styles.settingsPreference}>
+                  <span><strong>Show censored sub-themes</strong><small>{CENSORED_VISIBILITY_HELP}</small></span>
+                  <WuToggle checked={themePreferences.showCensoredSubthemes} onChange={checked => {
+                    updateThemePreferences(current => ({ ...current, showCensoredSubthemes: checked }));
+                    setSelectedResponseIds(new Set()); setResponseSubthemeFilters(new Set()); setSelectedCodeFrameKeys(new Set()); setRawDataPage(0);
+                  }} aria-label="Show censored sub-themes" />
+                </label>
                 <label className={styles.settingsPreference}>
                   <span>
                     <strong>Show themes with no responses</strong>
@@ -2387,11 +2248,6 @@ export default function TextAiThemeConfigurationPage({
                   />
                 </div>
               </div>
-            ) : (
-              <div className={styles.settingsLogs}>
-                <TextAiThemeLogs dashboardId={numericDashboardId} />
-              </div>
-            )}
           </div>
         </WuModalContent>
         <WuModalFooter>

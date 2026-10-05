@@ -1,4 +1,5 @@
 'use client';
+import { CENSORED_VISIBILITY_HELP } from '@/data/text-ai-censored-subthemes';
 
 import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -240,6 +241,13 @@ export function TextAiDashboardSettingsModal({
               aria-labelledby="preferences-tab"
               className={`${styles.tabPanel} ${styles.preferencesPanel}`}
             >
+              <label className={styles.preferenceRow}>
+                <span><strong>Show censored sub-themes</strong><small>{CENSORED_VISIBILITY_HELP}</small></span>
+                <WuToggle checked={themePreferences.showCensoredSubthemes} onChange={checked => {
+                  const next = { ...themePreferences, showCensoredSubthemes: checked };
+                  saveTextAiThemePreferences(dashboard.id, next); setThemePreferences(next);
+                }} aria-label="Show censored sub-themes" />
+              </label>
               <label className={styles.preferenceRow}>
                 <span>
                   <strong>Show themes with no responses</strong>
