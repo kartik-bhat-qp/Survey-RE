@@ -19,7 +19,7 @@ export const MOCK_HEADER_USER: IWuAppHeaderAccount = {
   },
   settings: [
     { title: 'My Account', url: '/my-account', canDisplay: true, displayIcon: true },
-    { title: 'Organization', url: '#', canDisplay: true },
+    { title: 'Organization', url: '/organization/settings', canDisplay: true },
     { title: 'Compliance', url: '/compliance', canDisplay: true },
     { title: 'Issue Tracker', url: '/issue-tracker', canDisplay: true },
     { title: 'Migration Center', url: '/migration-center', canDisplay: true },

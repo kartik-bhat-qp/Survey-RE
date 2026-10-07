@@ -1,0 +1,109 @@
+.bar {
+  align-items: stretch;
+  background: #e7eaee;
+  display: flex;
+  flex-shrink: 0;
+  min-height: 4.35rem;
+}
+
+.tabs {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.tab,
+.tabActive {
+  align-items: center;
+  border-bottom: 3px solid transparent;
+  color: #7b8794;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 400;
+  gap: 0.2rem;
+  justify-content: center;
+  min-width: 7.75rem;
+  padding: 0.7rem 1.1rem 0.45rem;
+  text-decoration: none;
+}
+
+.tab:hover,
+.tab:focus-visible {
+  color: #1b87e6;
+  outline: none;
+}
+
+.tabActive {
+  background: #fff;
+  border-bottom-color: #1b87e6;
+  color: #3d4752;
+}
+
+.tabIcon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.promo {
+  background: #1a4f9c;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 17.5rem;
+  padding: 0.45rem 1rem 0.5rem;
+}
+
+.promoTitle,
+.promoItem {
+  align-items: center;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  font-family: 'Fira Sans', sans-serif;
+  gap: 0.35rem;
+  padding: 0.05rem 0;
+  text-align: left;
+  width: 100%;
+}
+
+.promoTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.1rem;
+}
+
+.promoItem {
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.promoTitle:hover,
+.promoTitle:focus-visible,
+.promoItem:hover,
+.promoItem:focus-visible {
+  outline: none;
+  text-decoration: underline;
+}
+
+.promoCaret {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+@media (max-width: 767px) {
+  .bar {
+    flex-direction: column;
+  }
+
+  .tabs {
+    overflow-x: auto;
+  }
+
+  .promo {
+    min-width: 0;
+  }
+}

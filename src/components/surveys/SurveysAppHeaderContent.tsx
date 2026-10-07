@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ACCOUNT_NAV_ITEMS } from '@/data/mock-compliance';
+import { accountAreaBreadcrumbLabel } from '@/data/mock-organization';
 import { MOCK_SURVEY_FOLDERS } from '@/data/mock-survey-folders';
 import { getSurveyDetail } from '@/data/mock-survey-detail';
 import { useSurveyById } from '@/hooks/useSurveyById';
@@ -22,6 +23,8 @@ const DEFAULT_ACCOUNT_FOLDER =
   MOCK_SURVEY_FOLDERS.find((folder) => folder.id === 'demo-2026') ?? MOCK_SURVEY_FOLDERS[0];
 
 function getAccountPageLabel(pathname: string): string | null {
+  const areaLabel = accountAreaBreadcrumbLabel(pathname);
+  if (areaLabel) return areaLabel;
   const match = ACCOUNT_NAV_ITEMS.find(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
   );
