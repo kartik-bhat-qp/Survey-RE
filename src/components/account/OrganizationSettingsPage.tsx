@@ -14,6 +14,7 @@ import {
   ORGANIZATION_SETTINGS_ACTIONS,
   WELCOME_EMAIL_TOOLTIP,
   companySettingsOption,
+  normalizeCompanySettings,
   type CompanySettingsDraft,
   type OrganizationSettingField,
   type OrganizationSettingsSection,
@@ -51,10 +52,11 @@ export function OrganizationSettingsPage() {
   const { showToast } = useWuShowToast();
   const [section, setSection] = useState<OrganizationSettingsSection>('settings');
   const [companySettingsOpen, setCompanySettingsOpen] = useState(false);
-  const [companySettings, setCompanySettings] = usePersistedState<CompanySettingsDraft>(
+  const [companySettingsRaw, setCompanySettings] = usePersistedState<CompanySettingsDraft>(
     'organization-company-settings',
     DEFAULT_COMPANY_SETTINGS
   );
+  const companySettings = normalizeCompanySettings(companySettingsRaw);
   const [summaryFields, setSummaryFields] = usePersistedState<OrganizationSettingField[]>(
     'organization-setting-summary',
     ORGANIZATION_SETTING_FIELDS
@@ -72,7 +74,7 @@ export function OrganizationSettingsPage() {
   );
 
   function handleSaveCompanySettings(next: CompanySettingsDraft): void {
-    setCompanySettings(next);
+    setCompanySettings(normalizeCompanySettings(next));
     setSummaryFields((current) =>
       current.map((field) => {
         if (field.id === 'company-name') return { ...field, value: next.organizationName };

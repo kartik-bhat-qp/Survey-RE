@@ -2,7 +2,6 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
-import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
   COBRANDED_LOGO_NOTE,
@@ -20,6 +19,7 @@ import {
   UPDATE_COMPANY_SETTINGS_TOOLTIP,
   WORKSPACE_URL_SUFFIX,
   companySettingsOption,
+  normalizeCompanySettings,
   type CompanySettingsDraft,
   type CompanySettingsOption,
 } from '@/data/mock-organization';
@@ -42,13 +42,13 @@ export function UpdateCompanySettingsModal({
   const { showToast } = useWuShowToast();
   const fileInputId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState(draft);
-  const [audioPrompt, setAudioPrompt] = useState<'disable' | 'allow' | null>(null);
+  const [form, setForm] = useState(() => normalizeCompanySettings(draft));
+  const [audioPrompt, setAudioPrompt] = useState<'on' | 'off' | null>(null);
   const [applyAudioToExisting, setApplyAudioToExisting] = useState(false);
   const [audioReset, setAudioReset] = useState(0);
 
   useEffect(() => {
-    if (open) setForm(draft);
+    if (open) setForm(normalizeCompanySettings(draft));
   }, [open, draft]);
 
   useEffect(() => {
@@ -83,23 +83,30 @@ export function UpdateCompanySettingsModal({
     key: (typeof COMPANY_SETTINGS_TOGGLES)[number]['key'],
     checked: boolean
   ): void {
-    if (key === 'disableAudioInput') {
+    if (key === 'audioInput') {
       setApplyAudioToExisting(false);
-      setAudioPrompt(checked ? 'disable' : 'allow');
+      setAudioPrompt(checked ? 'on' : 'off');
       setAudioReset((current) => current + 1);
       return;
     }
     patch(key, checked);
   }
 
-  function confirmAllowAudio(): void {
-    patch('disableAudioInput', false);
+  function confirmAudioChange(): void {
+    const enabling = audioPrompt === 'on';
+    patch('audioInput', enabling);
+    const base = enabling
+      ? 'Audio input is allowed on surveys created from now on'
+      : 'Audio input is disabled on surveys created from now on';
     showToast({
-      message: applyAudioToExisting
-        ? 'Audio input is allowed on surveys created from now on, including existing surveys.'
-        : 'Audio input is allowed on surveys created from now on.',
+      message: applyAudioToExisting ? `${base}, including existing surveys.` : `${base}.`,
       variant: 'success',
     });
+    setAudioPrompt(null);
+    setApplyAudioToExisting(false);
+  }
+
+  function dismissAudioPrompt(): void {
     setAudioPrompt(null);
     setApplyAudioToExisting(false);
   }
@@ -294,8 +301,8 @@ export function UpdateCompanySettingsModal({
               <span className={styles.label}>{item.label}</span>
               <WuToggle
                 key={
-                  item.key === 'disableAudioInput'
-                    ? `disable-audio-${form.disableAudioInput}-${audioReset}`
+                  item.key === 'audioInput'
+                    ? `audio-input-${form.audioInput}-${audioReset}`
                     : item.key
                 }
                 checked={form[item.key]}
@@ -406,38 +413,23 @@ export function UpdateCompanySettingsModal({
         <WuButton onClick={() => onSave(form)}>Save</WuButton>
       </WuModalFooter>
     </WuModal>
-      <ConfirmModal
-        open={audioPrompt === 'disable'}
-        onOpenChange={(next) => {
-          if (!next) setAudioPrompt(null);
-        }}
-        title="Disable Audio Input"
-        description="Disable audio input for surveys created from now on? Respondents will not be able to record audio answers."
-        confirmLabel="Disable audio input"
-        onConfirm={() => {
-          patch('disableAudioInput', true);
-          showToast({
-            message: 'Audio input is disabled for surveys created from now on.',
-            variant: 'success',
-          });
-        }}
-      />
       <WuModal
-        open={audioPrompt === 'allow'}
+        open={audioPrompt !== null}
         onOpenChange={(next) => {
-          if (!next) {
-            setAudioPrompt(null);
-            setApplyAudioToExisting(false);
-          }
+          if (!next) dismissAudioPrompt();
         }}
         variant="action"
         size="sm"
         preventClickOutside
       >
-        <WuModalHeader>Allow audio input</WuModalHeader>
+        <WuModalHeader>
+          {audioPrompt === 'on' ? 'Turn on Audio Input' : 'Turn off Audio Input'}
+        </WuModalHeader>
         <WuModalContent>
           <p className={styles.promptCopy}>
-            Turning this off will allow audio input on all surveys created from now on.
+            {audioPrompt === 'on'
+              ? 'Turning this on will allow audio input on all surveys created from now on.'
+              : 'Turning this off will disable audio input on all surveys created from now on.'}
           </p>
           <div className={styles.promptChoice}>
             <WuCheckbox
@@ -449,16 +441,12 @@ export function UpdateCompanySettingsModal({
           </div>
         </WuModalContent>
         <WuModalFooter>
-          <WuButton
-            variant="secondary"
-            onClick={() => {
-              setAudioPrompt(null);
-              setApplyAudioToExisting(false);
-            }}
-          >
+          <WuButton variant="secondary" onClick={dismissAudioPrompt}>
             Cancel
           </WuButton>
-          <WuButton onClick={confirmAllowAudio}>Allow audio input</WuButton>
+          <WuButton onClick={confirmAudioChange}>
+            {audioPrompt === 'on' ? 'Turn on' : 'Turn off'}
+          </WuButton>
         </WuModalFooter>
       </WuModal>
     </>

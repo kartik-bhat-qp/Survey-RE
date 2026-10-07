@@ -203,7 +203,7 @@ export interface CompanySettingsDraft {
   encryptMediaUrls: boolean;
   strongPassword: boolean;
   respondentAnonymity: boolean;
-  disableAudioInput: boolean;
+  audioInput: boolean;
   ageVerification: boolean;
   surveyLayout: string;
   reportSortOrder: string;
@@ -233,7 +233,7 @@ export const DEFAULT_COMPANY_SETTINGS: CompanySettingsDraft = {
   encryptMediaUrls: false,
   strongPassword: false,
   respondentAnonymity: false,
-  disableAudioInput: false,
+  audioInput: true,
   ageVerification: false,
   surveyLayout: 'focus',
   reportSortOrder: '',
@@ -271,7 +271,7 @@ export const COMPANY_SETTINGS_TOGGLES: {
   { key: 'encryptMediaUrls', label: 'Encrypt Media URLs' },
   { key: 'strongPassword', label: 'Strong Password' },
   { key: 'respondentAnonymity', label: 'Respondent anonymity assurance' },
-  { key: 'disableAudioInput', label: 'Disable Audio Input' },
+  { key: 'audioInput', label: 'Audio Input' },
   { key: 'ageVerification', label: 'Age Verification' },
 ];
 
@@ -280,4 +280,22 @@ export function companySettingsOption(
   value: string
 ): CompanySettingsOption {
   return options.find((option) => option.value === value) ?? options[0];
+}
+
+/** Migrates older persisted drafts that used `disableAudioInput`. */
+export function normalizeCompanySettings(
+  value: CompanySettingsDraft | (Partial<CompanySettingsDraft> & { disableAudioInput?: boolean })
+): CompanySettingsDraft {
+  const legacy = value as Partial<CompanySettingsDraft> & { disableAudioInput?: boolean };
+  const { disableAudioInput, ...rest } = legacy;
+  return {
+    ...DEFAULT_COMPANY_SETTINGS,
+    ...rest,
+    audioInput:
+      typeof rest.audioInput === 'boolean'
+        ? rest.audioInput
+        : typeof disableAudioInput === 'boolean'
+          ? !disableAudioInput
+          : DEFAULT_COMPANY_SETTINGS.audioInput,
+  };
 }
