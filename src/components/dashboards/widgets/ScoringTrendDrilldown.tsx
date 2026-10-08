@@ -58,10 +58,9 @@ export function ScoringTrendDrilldown({widgetId,payload,settings,context,typogra
     <WuDrilldown initial="LEVEL_1" baseTitle={{id:'LEVEL_1',title:'Scoring trend'}} variant="slideRight" mode="wait" headerClasses={styles.breadcrumbs} offsetHeight={38} items={{
       LEVEL_1:{component:nav=><div className={styles.level} data-drill-level="trend">
         <div className={styles.chart}>{payload.segmentTrendRows.some(row=>row.value!==null) ? <BiAmChart widgetId={`${widgetId}-trend`} chartType="segment-trend" data={{...payload,onTrendPointClick:category=>selectPeriod(category,nav)}} typography={typography}/> : <p className={styles.empty}>No matching results</p>}</div>
-        <p className={styles.hint}>Select a point to view its answer distribution</p>
       </div>},
       LEVEL_2:{component:nav=><div className={styles.level} data-drill-level="distribution">
-        <DetailHeading onBack={()=>nav.goBack('LEVEL_1')} backLabel="Back to scoring trend">Answer distribution</DetailHeading><p className={styles.context} title={summary}>{summary}</p>
+        <p className={styles.context} title={summary}>{summary}</p>
         {settings.movingAverage && <p className={styles.note}>Responses for the selected period; the trend point uses a moving average.</p>}
         <div className={styles.chart}><BiAmChart widgetId={`${widgetId}-distribution`} chartType="bar" typography={typography} data={{...payload,ageBarItems:distribution.map((item,index)=>({...item,color:COLORS[index]})),barDrilldown:{onSelect:category=>selectAnswer(category,nav),counts:Object.fromEntries(distribution.map(item=>[item.category,item.count]))}}}/></div>
         <p className={styles.stats}>Response count <strong>{records.length.toLocaleString()}</strong><span>Select a bar to view responses</span></p>

@@ -223,6 +223,10 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
           open
           onOpenChange={setFocusedPreviewOpen}
           designTypography={designTypography}
+          dashboardId={numericId}
+          dashboardTabId={activeWidgetTab}
+          dateSelection={effectiveDates}
+          dashboardDesign={dashboardDesign}
         />
       ) : null}
 

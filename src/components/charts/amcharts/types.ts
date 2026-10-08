@@ -55,6 +55,9 @@ export interface ResponseInfoData {
 
 export interface TimeSeriesChartOptions {
   kind: 'segment-trend' | 'scoring-trend' | 'response-timeline';
+  metric?: 'Count' | 'Percent';
+  scoring?: 'Mean' | 'Net promoter score' | 'Customer effort score' | 'Customer satisfaction score';
+  axisFontSize?: number;
   dataLabels: string; axisTitles: boolean; xTitle: string; yTitle: string;
   highlightHighest: boolean; minimum?: number; maximum?: number; tooltip: 'Default' | 'Custom' | 'None'; tooltipTitle?:boolean; tooltipCount?:boolean; tooltipPercentage?:boolean;
 }

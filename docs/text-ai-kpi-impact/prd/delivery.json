@@ -1,17 +1,17 @@
 {
-  "title": "PRD: TextAI — Impact on KPI — Review draft",
+  "title": "PRD: TextAI — Impact on KPI",
   "date": "2026-09-30",
-  "status": "Updated in place; shared-folder move remains pending",
+  "status": "Filed in TextAI Documents with verified QuestionPro Commenter access",
   "url": "https://docs.google.com/presentation/d/1F8QLc7_HfYYv_pRq5Mc9q5Suq_U9fdFUj4lZw26CreM/edit",
   "slideCount": 14,
   "template": "https://docs.google.com/presentation/d/1TdA4-yRzdqmVPT5FeOW1jRGQ5FrGV4xzpgaBtWAyHqg/edit",
   "destination": {
-    "name": "PRDs 2025 to 2026",
-    "url": "https://drive.google.com/drive/folders/1NcDurGVZrwexb_wBs9QKPWpXCahs9911",
+    "name": "TextAI → Documents",
+    "url": "https://drive.google.com/drive/folders/1PS3hVbkwWqWWkIyTmnpfaGK1K4qxfCva",
     "shared": true,
-    "moved": false
+    "moved": true
   },
-  "currentLocation": "My Drive; private to owner",
+  "currentLocation": "TextAI → Documents",
   "guidanceThread": "BI & TextAI: Update roadmap",
   "guidanceThreadId": "01a0f0de-f532-7ef0-a535-3d9f724c5b10",
   "prototype": "https://survey-re.vercel.app/",
@@ -22,7 +22,7 @@
     "Google identity verified from visible UI: prabal.gupta@questionpro.com; Chrome questionpro.com extension ab453961-a7c8-4c85-ae9d-5670c67e4a5b.",
     "No Google connector or direct API access used."
   ],
-  "pending": "Shared-folder move still requires immediate confirmation before changing inherited access. Both requested links were added to Shipyard project documents on 4 October 2026.",
+  "pending": null,
   "slideMapping": [
     {
       "role": "Cover",
@@ -108,7 +108,7 @@
       "method": "Duplicate exemplar and edit native text fields; retain layout/font hierarchy."
     }
   ],
-  "updatedAt": "2026-10-04",
+  "updatedAt": "2026-10-05",
   "latestRevision": {
     "date": "2026-10-04",
     "scope": "Complete requirements reconciliation: widget-first flow, inherited-source question table, immediate KPI setup, configurable named metric, scoring mappings/precision, shared Analytics settings, table/tooltips, default/session lifecycle and acceptance criteria.",
@@ -147,5 +147,10 @@
     "date": "2026-10-04",
     "status": "Saved in native PRD; product requirements and published walkthrough preserved. Local development and validation commentary removed.",
     "record": "/Users/prabalgupta/Documents/work/outputs/prd-wording-cleanup-2026-10-04/completion.json"
+  },
+  "filingVerification": {
+    "date": "2026-10-05",
+    "generalAccess": "QuestionPro — Commenter",
+    "record": "/Users/prabalgupta/Documents/work/outputs/q4-prd-filing-2026-10-05/completion.json"
   }
 }

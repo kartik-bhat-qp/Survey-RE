@@ -11,7 +11,11 @@ import {
   getDashboardTypographyCssVars,
   type DesignTypographyOptions,
 } from '@/components/dashboards/DashboardDesignSettingsTab';
-import { AiWidgetRenderer } from '@/components/dashboards/widgets/AiWidgetRenderer';
+import { AiWidgetRenderer, buildChartPayload } from '@/components/dashboards/widgets/AiWidgetRenderer';
+import { ReportingYearTrend } from './widgets/ReportingYearTrend';
+import { defaultTimeSeriesSettings, type TimeSeriesSettings } from '@/data/time-series';
+import type { DashboardDateSelection } from '@/data/reporting-year';
+import type { DashboardDesign } from '@/data/dashboard-design';
 import type { AmChartTypography } from '@/components/charts/amcharts/theme';
 import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
 import styles from './DashboardFocusedPreview.module.css';
@@ -33,6 +37,10 @@ interface DashboardFocusedPreviewProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   designTypography?: DesignTypographyOptions;
+  dashboardId?: number;
+  dashboardTabId?: string;
+  dateSelection?: DashboardDateSelection;
+  dashboardDesign?: DashboardDesign;
 }
 
 function shouldShowDiamond(widget: AiWidgetConfig) {
@@ -48,10 +56,22 @@ export function DashboardFocusedPreview({
   open,
   onOpenChange,
   designTypography = DEFAULT_DESIGN_TYPOGRAPHY,
+  dashboardId,
+  dashboardTabId = 'tab-1',
+  dateSelection,
+  dashboardDesign,
 }: DashboardFocusedPreviewProps) {
   const showLicenseRestrictions = useBiLicenseRestrictions();
   const [activeIndex, setActiveIndex] = useState(0);
   const activeWidget = AI_DASHBOARD_WIDGETS[activeIndex];
+  const segmentSettings = useMemo<TimeSeriesSettings | undefined>(() => {
+    if (activeWidget?.type !== 'segment-trend') return undefined;
+    const defaults = defaultTimeSeriesSettings('segment-trend', activeWidget.title);
+    try {
+      const saved = window.localStorage.getItem(`survey-re:time-series:${dashboardId}:${dashboardTabId}:${activeWidget.id}`);
+      return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+    } catch { return defaults; }
+  }, [activeWidget, dashboardId, dashboardTabId]);
 
   const typographyStyle = useMemo(
     () => getDashboardTypographyCssVars(designTypography),
@@ -121,13 +141,13 @@ export function DashboardFocusedPreview({
       className={styles.overlay}
       style={typographyStyle}
     >
-      <section className={styles.previewShell}>
+      <section className={`${styles.previewShell} ${segmentSettings ? styles.segmentPreview : ''}`}>
         <header className={styles.header}>
           <div className={styles.titleWrap}>
-            <h2 className={styles.title}>{activeWidget.title}</h2>
-            <span className={styles.counter}>
+            <h2 className={styles.title}>{segmentSettings ? segmentSettings.showName && segmentSettings.name : activeWidget.title}</h2>
+            {!segmentSettings && <span className={styles.counter}>
               {activeIndex + 1} of {AI_DASHBOARD_WIDGETS.length}
-            </span>
+            </span>}
           </div>
           <div className={styles.headerActions}>
             <span className="wm-lightbulb text-[22px] text-[#536277]" aria-hidden="true" />
@@ -147,12 +167,12 @@ export function DashboardFocusedPreview({
         </header>
 
         <div className={styles.widgetBody}>
-          <AiWidgetRenderer
+          {segmentSettings ? <ReportingYearTrend kind="segment-trend" settings={segmentSettings} dashboardDesign={dashboardDesign} selection={dateSelection} payload={buildChartPayload(activeWidget.id)} widgetId={`${activeWidget.id}-focused-preview`} typography={chartTypography}/> : <AiWidgetRenderer
             widgetId={activeWidget.id}
             chartInstanceId={`${activeWidget.id}-focused-preview`}
             type={activeWidget.type}
             typography={chartTypography}
-          />
+          />}
         </div>
       </section>
 

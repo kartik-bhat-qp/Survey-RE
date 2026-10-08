@@ -3,7 +3,8 @@
 .breadcrumbs button { cursor:pointer; }
 .level { height:100%; min-height:0; display:flex; flex-direction:column; padding-top:8px; }
 .chart { flex:1; min-height:110px; }
-.hint { flex:none; color:#777; font-size:11px; text-align:center; margin:4px 0 0; }
+.drilldown:has([data-drill-level="trend"]) .breadcrumbs { display:none; }
+.level[data-drill-level="trend"] { padding-top:0; }
 .detailHeading { font-size:13px; font-weight:500; margin:0 0 4px; outline:none; }
 .context { flex:none; font-size:11px; margin:0 0 5px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; color:#777; }
 .note { flex:none; margin:0 0 5px; font-size:11px; color:#777; }

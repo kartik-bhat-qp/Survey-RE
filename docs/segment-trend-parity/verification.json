@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-08",
+  "feature": "Segment Trend chart presentation",
+  "productionEvidenceStatus": "Saved production observations; fresh account access blocked",
+  "productionReferences": [
+    "../reporting-year/screenshots/production-segment-settings.png",
+    "../../../bi-textai-knowledge-base/checkpoints/2026-10-04-native-segment-trend-percent-reloaded.jpg",
+    "../../../bi-textai-knowledge-base/checkpoints/2026-10-04-segment-trend-settings.txt",
+    "../../../bi-textai-knowledge-base/checkpoints/2026-10-04-segment-trend-segments-reloaded.txt"
+  ],
+  "changes": [
+    "Compact production-style widget title, divider, border and rounded corners",
+    "Circular markers, bold values, darker axes and count/percentage formatting",
+    "Bottom legend with square palette markers and wrapping segment names",
+    "Distinct palette colors for additional segments and dashboard/widget palette inheritance",
+    "Functional Full screen retaining applied segment settings",
+    "Presentation mode retains applied segments, interval, metric, chart elements and palette",
+    "Create segment works on the private HTTP Tailscale origin"
+  ],
+  "validation": {
+    "typecheck": "Passed",
+    "targetedLint": "Passed",
+    "existingTimeSeriesTests": "12 passed",
+    "browser": "Verified through QuestionPro Chrome extension 8efe46aa-7d0e-4b03-a42e-629caad67975 using the private Tailscale URL",
+    "flows": ["Count/Percent", "Create a third segment", "Long segment legend", "Full screen", "Presentation retains three segments", "Widget palette selection", "Reload persistence"],
+    "restored": "Temporary third segment removed; Count, Monthly and Dashboard design restored"
+  },
+  "limitations": [
+    "Exact current production parity is not certified: automatic approval review rejected the QuestionPro sign-in redirect as a wildcard-scope OAuth flow, including after clarification of existing-session authorization",
+    "Production backend calculations, source/question rule builders and weighting remain outside this chart presentation update",
+    "The chart continues to use synthetic prototype response data"
+  ]
+}

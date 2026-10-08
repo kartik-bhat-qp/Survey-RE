@@ -1,6 +1,7 @@
 import type { DashboardActiveFilter } from './mock-dashboard-filters';
 import type { DataSlicer, SlicerField } from './mock-data-slicers';
 import { reportingBuckets, type DashboardDateSelection, type ReportingInterval } from './reporting-year';
+import { DESIGN_PALETTES } from './dashboard-design';
 
 export type TimeSeriesKind = 'segment-trend' | 'scoring-trend' | 'response-timeline';
 export interface TimeSeriesSegment { id:string; name:string; group:'All responses'|'Segment 1'|'Segment 2'; dates?:DashboardDateSelection; status?:'All responses'|'Completed'|'Partial'|'Terminated'; }
@@ -17,9 +18,10 @@ export interface TimeSeriesSettings {
   customDenominator: boolean; perSegmentDenominator:boolean; denominatorSegment?:TimeSeriesSegment; denominators:Record<string,TimeSeriesSegment>;
   segments: TimeSeriesSegment[];
   design: 'Dashboard' | 'Widget'; color: string; fontSize: number; fontFamily: string;
+  palette?: string; seriesColors?: string[];
 }
 export function defaultTimeSeriesSettings(kind: TimeSeriesKind, name: string): TimeSeriesSettings {
-  return { name, showName:true, highlighted:false, interval:kind === 'response-timeline' ? 'Daily' : 'Monthly', filter:'Dashboard', widgetDates:{startDate:'',endDate:''}, axisTitles:false,xTitle:'',yTitle:'',highlightHighest:false,dataLabels:kind === 'response-timeline' ? 'Inside Top' : kind === 'scoring-trend' ? 'None' : 'Above',customAxis:false,minimum:0,maximum:100,metric:'Count',movingAverage:false,windowSize:2,exclude:false,minimumResponses:0,precision:1,stats:false,tooltip:'Default',tooltipTitle:true,tooltipCount:true,tooltipPercentage:true,scoring:'Mean',customMean:false,scores:[1,2,3,4,5,6,7],weighting:'Dashboard',customDenominator:false,perSegmentDenominator:false,denominators:{},segments:[{id:'segment1',name:'Segment 1',group:'Segment 1'},{id:'segment2',name:'Seg 2',group:'Segment 2'}],design:'Dashboard',color:'#6575aa',fontSize:13,fontFamily:'Fira Sans' };
+  return { name, showName:true, highlighted:false, interval:kind === 'response-timeline' ? 'Daily' : 'Monthly', filter:'Dashboard', widgetDates:{startDate:'',endDate:''}, axisTitles:false,xTitle:'',yTitle:'',highlightHighest:false,dataLabels:kind === 'response-timeline' ? 'Inside Top' : kind === 'scoring-trend' ? 'None' : 'Above',customAxis:false,minimum:0,maximum:100,metric:'Count',movingAverage:false,windowSize:2,exclude:false,minimumResponses:0,precision:1,stats:kind === 'scoring-trend',tooltip:'Default',tooltipTitle:true,tooltipCount:true,tooltipPercentage:true,scoring:'Mean',customMean:false,scores:[1,2,3,4,5,6,7],weighting:'Dashboard',customDenominator:false,perSegmentDenominator:false,denominators:{},segments:[{id:'segment1',name:'Segment 1',group:'Segment 1'},{id:'segment2',name:'Seg 2',group:'Segment 2'}],design:'Dashboard',color:kind === 'scoring-trend' ? '#5b7aae' : '#6575aa',fontSize:13,fontFamily:'Fira Sans' };
 }
 export const DEFAULT_TIME_WINDOW = { startDate:'2026-01-01', endDate:'2026-12-31' };
 export function effectiveTimeWindow(dashboard: DashboardDateSelection | undefined, settings: TimeSeriesSettings): DashboardDateSelection {
@@ -35,10 +37,12 @@ export function effectiveTimeWindow(dashboard: DashboardDateSelection | undefine
 export function timeSeriesData(kind: TimeSeriesKind, settings: TimeSeriesSettings, dashboard?: DashboardDateSelection, context?: ScoringFilterContext) {
   const selection = effectiveTimeWindow(dashboard, settings);
   const buckets = reportingBuckets(selection, settings.interval);
-  const series = kind === 'segment-trend' ? settings.segments.map((s,i)=>({field:s.id,name:s.name,color:i ? '#90bef2' : settings.color})) : [{field:'value',name:kind === 'scoring-trend' ? settings.scoring : 'Responses',color:settings.color}];
+  const colors = settings.seriesColors?.length ? settings.seriesColors : DESIGN_PALETTES[settings.palette ?? 'categorical'] ?? DESIGN_PALETTES.categorical;
+  const series = kind === 'segment-trend' ? settings.segments.map((s,i)=>({field:s.id,name:s.name,color:colors[i % colors.length]})) : [{field:'value',name:kind === 'scoring-trend' ? settings.scoring : 'Responses',color:kind === 'scoring-trend' && settings.design === 'Dashboard' ? '#5b7aae' : settings.color}];
   const rows = buckets.map(bucket => {
     const total = bucket.segment1 + bucket.segment2;
-    const row: Record<string,string|number|null> & { category:string } = { category:bucket.label, coverage:`${bucket.startDate} – ${bucket.endDate}`, startDate:bucket.startDate, endDate:bucket.endDate, responses:total };
+    const periodLabel = kind === 'scoring-trend' && settings.interval === 'Monthly' ? new Intl.DateTimeFormat('en', { month:'long', year:'numeric', timeZone:'UTC' }).format(new Date(bucket.startDate)) : bucket.label;
+    const row: Record<string,string|number|null> & { category:string } = { category:bucket.label, periodLabel, coverage:`${bucket.startDate} – ${bucket.endDate}`, startDate:bucket.startDate, endDate:bucket.endDate, responses:total };
     if (kind === 'segment-trend') {
       const count = (segment:TimeSeriesSegment) => {
         const start=segment.dates?.startDate && segment.dates.startDate > bucket.startDate ? segment.dates.startDate : bucket.startDate;
@@ -68,10 +72,17 @@ export function timeSeriesData(kind: TimeSeriesKind, settings: TimeSeriesSetting
       row.responses = base;
       row.value = !base || (settings.exclude && base < settings.minimumResponses) ? null : settings.scoring === 'Mean' ? sum/base : settings.scoring === 'Net promoter score' ? 100*(positive-negative)/base : 100*positive/base;
       row.valueCount = base;
-
+      row.positiveCount = positive;
+      row.neutralCount = base-positive-negative;
+      row.negativeCount = negative;
     }
     return row;
   });
+  // Production plots empty scoring periods at zero within a non-empty result.
+  // An entirely unmatched slice and deliberately excluded periods remain absent.
+  if (kind === 'scoring-trend' && settings.scoring !== 'Mean' && rows.some(row => Number(row.responses) > 0)) {
+    rows.forEach(row => { if (row.responses === 0 && !settings.exclude) row.value = 0; });
+  }
   const smoothed = rows.map((row,i)=>{
     const result={...row};
     for(const s of series) {
@@ -81,6 +92,16 @@ export function timeSeriesData(kind: TimeSeriesKind, settings: TimeSeriesSetting
         value=values.length ? values.reduce((a,b)=>a+b,0)/values.length : null;
       }
       result[s.field]=typeof value==='number' ? Number(value.toFixed(kind==='scoring-trend' ? settings.precision : settings.metric==='Percent'||settings.movingAverage ? 1 : 0)) : value;
+    }
+    if (kind === 'scoring-trend') {
+      const metric = { Mean:'Mean', 'Net promoter score':'NPS', 'Customer effort score':'CES', 'Customer satisfaction score':'CSAT' }[settings.scoring];
+      const groupNames = settings.scoring === 'Net promoter score' ? ['Promoters','Passives','Detractors'] : ['Satisfied','Neutrals','Not satisfied'];
+      const groups = settings.scoring === 'Mean' || settings.scoring === 'Customer effort score' ? [] : ['positiveCount','neutralCount','negativeCount'].map((key,index) => {
+        const count=Number(row[key]);
+        const percentage=Number(row.responses) ? Math.round(100*count/Number(row.responses)) : 0;
+        return `${groupNames[index]}: [bold]${count} (${percentage}%)[/]`;
+      });
+      result.scoreTooltip = [String(row.periodLabel), `${metric}: [bold]${result.value ?? 0}[/]`, `Total Count: [bold]${row.responses}[/]`, ...groups].join('\n');
     }
     return result;
   });
@@ -95,7 +116,7 @@ export interface ScoringResponse {
   answer: number;
   attributes: Record<SlicerField | 'country' | 'single', string>;
 }
-export const SCORING_ANSWER_LABELS = ['1 - Sad', '2', '3', '4', '5', '6', '7 - Happy'];
+export const SCORING_ANSWER_LABELS = ['1', '2', '3', '4', '5', '6', '7'];
 
 /** Synthetic respondent fixture. Trend, distribution and detail all use these exact records. */
 export function scoringResponses(window: DashboardDateSelection, settings: TimeSeriesSettings, context?: ScoringFilterContext): ScoringResponse[] {

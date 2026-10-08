@@ -1,0 +1,28 @@
+{
+  "verifiedOn": "2026-10-08",
+  "reference": "Four production screenshots supplied directly by the user in this conversation",
+  "productionAccess": "No new production session or account writes. Visual evidence supplied by the user; scoring values remain synthetic.",
+  "changes": [
+    "Equal-width rectangular data slicer tabs directly below the widget header, blue active fill and pale inactive fill",
+    "Compact dark-blue title, rounded border, single blue scoring line and six-pixel point markers",
+    "Full month names with angled labels; CSAT/CES axes default to 0–100, NPS to -100–100, with custom range overrides retained",
+    "Blue scoring tooltip with period, score, total count and CSAT satisfaction groups from the exact filtered response records",
+    "Left-aligned response-count footer and divider, enabled by default for new scoring widgets",
+    "Zero markers for empty percentage-score periods within non-empty results; unmatched slices and exclusions stay empty",
+    "Full-screen scoring view preserves slice selection and drilldown"
+  ],
+  "limits": { "appliedSlices": 10, "createdSlices": 100, "overallCountsTowardAppliedLimit": false },
+  "validation": {
+    "typecheck": "passed",
+    "targetedLint": "passed",
+    "timeSeriesTests": { "passed": 14, "failed": 0 },
+    "browser": [
+      "Overall response total 7289; Northeast age 25–34 slice total 369",
+      "January point opens answer distribution with 36 filtered responses",
+      "First answer bar opens five exact responses, all in January and Northeast",
+      "Keyboard activation, back navigation and full-screen preserve the selected slice"
+    ]
+  },
+  "browserBinding": { "connectionId": "3", "profileName": "QuestionPro", "extensionInstanceId": "8efe46aa-7d0e-4b03-a42e-629caad67975" },
+  "preview": "http://prabals-mac-mini.tail5e17c3.ts.net:3001/dashboards/1"
+}

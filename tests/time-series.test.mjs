@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
-const source = readFileSync(new URL('../src/data/time-series.ts', import.meta.url), 'utf8').replace("'./reporting-year'", JSON.stringify(new URL('../src/data/reporting-year.ts', import.meta.url).href));
+const source = readFileSync(new URL('../src/data/time-series.ts', import.meta.url), 'utf8').replace("'./reporting-year'", JSON.stringify(new URL('../src/data/reporting-year.ts', import.meta.url).href)).replace("'./dashboard-design'", JSON.stringify(new URL('../src/data/dashboard-design.ts', import.meta.url).href));
 const { defaultTimeSeriesSettings, timeSeriesData, effectiveTimeWindow } = await import('data:text/javascript;base64,' + Buffer.from(stripTypeScriptTypes(source)).toString('base64'));
 const year={id:'fy',name:'FY',startDate:'2026-02-01',endDate:'2027-01-31'};
 const selection={...year,reportingYear:year};
@@ -145,4 +145,37 @@ test('ten applied slices are supported independently of Overall and saved inacti
   const slices=Array.from({length:100},(_,i)=>({id:i,name:`Slice ${i}`,applyToDashboard:i>=50}));
   assert.deepEqual(appliedDataSlicers(slices).map(s=>s.id),[50,51,52,53,54,55,56,57,58,59]);
   assert.equal(appliedDataSlicers(slices.map(s=>({...s,applyToDashboard:false}))).length,0);
+});
+
+test('CSAT tooltip groups reconcile with the filtered answer distribution, including moving averages',()=>{
+  const settings={...defaultTimeSeriesSettings('scoring-trend','Score'),scoring:'Customer satisfaction score',movingAverage:true,windowSize:3};
+  const window={startDate:'2026-01-01',endDate:'2026-03-31'};
+  for(const slice of [undefined,...MOCK_DATA_SLICERS]) {
+    const result=timeSeriesData('scoring-trend',settings,window,{slice});
+    result.rows.forEach(row=>{
+      const bars=scoringDistribution(scoringResponses(row,settings,{slice}));
+      assert.equal(row.positiveCount,bars.slice(5).reduce((sum,bar)=>sum+bar.count,0));
+      assert.equal(row.neutralCount,bars[4].count);
+      assert.equal(row.negativeCount,bars.slice(0,4).reduce((sum,bar)=>sum+bar.count,0));
+      assert.equal(row.positiveCount+row.neutralCount+row.negativeCount,row.responses);
+      assert.ok(row.scoreTooltip.includes(`CSAT: [bold]${row.value ?? 0}[/]`));
+      assert.ok(row.scoreTooltip.includes(`Total Count: [bold]${row.responses}[/]`));
+    });
+    assert.equal(result.rows[0].periodLabel,'January 2026');
+    assert.equal(result.rows[0].category,'Jan 2026');
+  }
+});
+
+test('empty CSAT periods plot zero without making unmatched slices or exclusions clickable',()=>{
+  const settings={...defaultTimeSeriesSettings('scoring-trend','Score'),scoring:'Customer satisfaction score',interval:'Weekly'};
+  const slice={id:101,name:'Sparse slice',criteria:{gender:'Female',region:'Northeast',age:'25–34',status:'terminated'}};
+  const result=timeSeriesData('scoring-trend',settings,undefined,{slice});
+  assert.ok(result.total>0);
+  const empty=result.rows.filter(row=>row.responses===0);
+  assert.ok(empty.length>0);
+  assert.ok(empty.every(row=>row.value===0&&row.positiveCount===0&&row.neutralCount===0&&row.negativeCount===0));
+  const excluded=timeSeriesData('scoring-trend',{...settings,exclude:true,minimumResponses:1},undefined,{slice});
+  assert.ok(excluded.rows.filter(row=>row.responses===0).every(row=>row.value===null));
+  const unmatched=timeSeriesData('scoring-trend',settings,undefined,{slice:{...slice,criteria:{region:'Missing'}}});
+  assert.ok(unmatched.rows.every(row=>row.value===null));
 });

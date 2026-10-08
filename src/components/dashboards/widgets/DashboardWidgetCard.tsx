@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, type ReactNode, type CSSProperties } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
@@ -27,7 +27,9 @@ const WuMenuItem = dynamic(
 
 interface DashboardWidgetCardProps {
   className?: string;
+  style?: CSSProperties;
   onOpenSettings?: () => void;
+  onOpenFullscreen?: () => void;
   title: string;
   /** Optional line under the title (e.g. the primary question for driver analysis). */
   subtitle?: ReactNode;
@@ -47,7 +49,9 @@ interface DashboardWidgetCardProps {
 
 export function DashboardWidgetCard({
   className,
+  style,
   onOpenSettings,
+  onOpenFullscreen,
   title,
   subtitle,
   subtitleTitle,
@@ -67,7 +71,7 @@ export function DashboardWidgetCard({
   const [filterType, setFilterType] = useState<DashboardWidgetFilterType>('Dashboard');
 
   return (
-    <article className={`${styles.card} ${shared ? styles.shared : ''} ${className ?? ''}`}>
+    <article className={`${styles.card} ${shared ? styles.shared : ''} ${className ?? ''}`} style={style}>
       <header className={`${styles.header} ${dragHandleClassName ?? ''}`.trim()}>
         <div className={styles.titleBlock}>
           <h3 className={styles.title}>{title}</h3>
@@ -119,7 +123,7 @@ export function DashboardWidgetCard({
           >
             <WuMenuItem Icon={<span className="wm-edit" aria-hidden />} onSelect={() => showToast({ message: `Edit ${title}`, variant: 'info' })}>Edit</WuMenuItem>
             <WuMenuItem Icon={<span className="wm-settings" aria-hidden />} onSelect={() => { setMenuOpen(false); if (onOpenSettings) onOpenSettings(); else setSettingsOpen(true); }}>Settings</WuMenuItem>
-            <WuMenuItem Icon={<span className="wm-open-in-full" aria-hidden />} onSelect={() => showToast({ message: `${title} opened in full screen`, variant: 'success' })}>Full screen</WuMenuItem>
+            <WuMenuItem Icon={<span className="wm-open-in-full" aria-hidden />} onSelect={() => { setMenuOpen(false); if (onOpenFullscreen) onOpenFullscreen(); else showToast({ message: `${title} opened in full screen`, variant: 'success' }); }}>Full screen</WuMenuItem>
             <WuMenuItem Icon={<span className="wm-content-copy" aria-hidden />} onSelect={() => showToast({ message: `${title} duplicated`, variant: 'success' })}>Duplicate</WuMenuItem>
             <WuMenuItem Icon={<span className="wm-info" aria-hidden />} onSelect={() => showToast({ message: `${title} widget information`, variant: 'info' })}>Info</WuMenuItem>
           </WuMenu>
