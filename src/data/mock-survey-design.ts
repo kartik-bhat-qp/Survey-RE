@@ -8,6 +8,8 @@ export interface SurveyLayoutOption {
   description: string;
   icon: string;
   sunsetting?: boolean;
+  /** Icon shown on the Leaving Soon badge. Defaults to wm-hourglass-empty. */
+  sunsetIcon?: string;
 }
 
 export interface SurveyDesignTheme {
@@ -65,6 +67,7 @@ export const SURVEY_LAYOUT_OPTIONS: SurveyLayoutOption[] = [
     label: 'Visual',
     description: 'Image-forward layout with large visuals',
     icon: 'wm-palette',
+    sunsetting: true,
   },
   {
     id: 'accessible',
@@ -77,6 +80,13 @@ export const SURVEY_LAYOUT_OPTIONS: SurveyLayoutOption[] = [
 export const SURVEY_LAYOUT_RETIRING_NOTICE = {
   title: 'Deprecating after 12/31/2026',
   body: 'This mode will not be available after 12/31/2026. Existing surveys will not be impacted with this change.',
+};
+
+export const LEAVING_SOON_NOTICE = {
+  title: 'Leaving Soon',
+  body: 'This mode will not be available after 12/31/2026. Existing surveys will not be impacted with this change.',
+  learnMoreLabel: 'Learn More',
+  learnMoreHref: 'https://www.questionpro.com/help/',
 };
 
 export const SURVEY_DOWNLOAD_RETIRING_NOTICE = {

@@ -1,0 +1,91 @@
+.badge {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #f19d00;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 22%);
+  color: #f19d00;
+  cursor: help;
+  display: inline-flex;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  gap: 0;
+  height: 1.25rem;
+  justify-content: center;
+  left: 0.375rem;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  max-width: 1.25rem;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  top: 0.375rem;
+  transition:
+    max-width 180ms ease,
+    padding 180ms ease,
+    gap 180ms ease,
+    background-color 120ms ease;
+  white-space: nowrap;
+  width: auto;
+  z-index: 1;
+}
+
+.badge:hover,
+.badge:focus-visible {
+  background: #fff8eb;
+  gap: 0.3rem;
+  max-width: 7.5rem;
+  outline: none;
+  padding: 0 0.45rem 0 0.3rem;
+}
+
+.icon {
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  line-height: 1;
+}
+
+.label {
+  flex-shrink: 0;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-width 180ms ease,
+    opacity 140ms ease;
+}
+
+.badge:hover .label,
+.badge:focus-visible .label {
+  max-width: 5.5rem;
+  opacity: 1;
+}
+
+.tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 16.5rem;
+  text-align: left;
+}
+
+.tooltipTitle {
+  font-weight: 600;
+}
+
+.tooltipBody {
+  opacity: 0.92;
+}
+
+.learnMore {
+  color: #7ec8f5;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.learnMore:hover,
+.learnMore:focus-visible {
+  color: #fff;
+  outline: none;
+}

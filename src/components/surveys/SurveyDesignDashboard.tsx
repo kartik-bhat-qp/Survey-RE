@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { IWuTabItem } from '@npm-questionpro/wick-ui-lib';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { LeavingSoonBadge } from '@/components/surveys/LeavingSoonBadge';
 import { SurveyDesignPreview, SurveyDesignPreviewToolbar } from '@/components/surveys/SurveyDesignPreview';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import {
@@ -11,7 +12,6 @@ import {
   SURVEY_DESIGN_FONT_FAMILY_OPTIONS,
   SURVEY_DESIGN_THEMES,
   SURVEY_LAYOUT_OPTIONS,
-  SURVEY_LAYOUT_RETIRING_NOTICE,
   normalizeSurveyDesignSettings,
   surveyDesignSettingsStorageKey,
   type SurveyDesignBehaviorSettings,
@@ -35,11 +35,6 @@ const WuSelect = dynamic(
 
 const WuTab = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTab })),
-  { ssr: false }
-);
-
-const WuTooltip = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
   { ssr: false }
 );
 
@@ -275,27 +270,7 @@ export function SurveyDesignDashboard({ surveyId }: SurveyDesignDashboardProps) 
                       </span>
                     ) : null}
                     {layout.sunsetting ? (
-                      <WuTooltip
-                        content={
-                          <span className={styles.sunsetTooltip}>
-                            <span className={styles.sunsetTooltipTitle}>
-                              {SURVEY_LAYOUT_RETIRING_NOTICE.title}
-                            </span>
-                            <span className={styles.sunsetTooltipBody}>
-                              {SURVEY_LAYOUT_RETIRING_NOTICE.body}
-                            </span>
-                          </span>
-                        }
-                        position="top"
-                        showArrow
-                      >
-                        <span
-                          className={styles.sunsetBadge}
-                          aria-label={SURVEY_LAYOUT_RETIRING_NOTICE.title}
-                        >
-                          <span className="wm-wb-twilight" aria-hidden />
-                        </span>
-                      </WuTooltip>
+                      <LeavingSoonBadge icon={layout.sunsetIcon} />
                     ) : null}
                     <span className={`${layout.icon} ${styles.layoutCardIcon}`} aria-hidden />
                     <span className={styles.layoutCardLabel}>{layout.label}</span>
