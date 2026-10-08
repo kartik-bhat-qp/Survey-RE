@@ -109,7 +109,7 @@ export function OrganizationSettingsPage() {
                 key={action.id}
                 size="sm"
                 variant={active ? 'primary' : 'secondary'}
-                color={active ? 'primary' : 'neutral'}
+                color={active ? 'primary' : undefined}
                 selected={active}
                 onClick={() => {
                   setSection(action.id);
