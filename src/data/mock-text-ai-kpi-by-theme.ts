@@ -1,4 +1,4 @@
-export type TextAiKpiId = 'visit-rating' | 'nps' | 'csat' | 'return-likelihood';
+export type TextAiKpiId = 'visit-rating' | 'nps' | 'csat' | 'ces' | 'return-likelihood';
 
 export type TextAiKpiKind = 'mean' | 'nps' | 'top-box';
 export type TextAiKpiSentiment = 'positive' | 'neutral' | 'negative';
@@ -98,7 +98,7 @@ export function getTextAiKpiOptions(id: TextAiKpiId): number[] {
 }
 export function defaultTextAiKpiConfig(questionId: TextAiKpiId = 'nps', metric?: TextAiKpiMetric, cesCalculation: TextAiKpiConfig['cesCalculation'] = 'average'): TextAiKpiConfig {
   const field = TEXT_AI_KPI_DEFINITIONS.find(d => d.id === questionId)!;
-  const selected = metric ?? (field.kind === 'nps' ? 'nps' : field.kind === 'top-box' ? 'csat' : 'mean');
+  const selected = metric ?? (field.id === 'ces' ? 'ces' : field.kind === 'nps' ? 'nps' : field.kind === 'top-box' ? 'csat' : 'mean');
   const values = getTextAiKpiOptions(questionId);
   return { name: selected === 'mean' ? field.label : selected.toUpperCase(), questionId, metric: selected, cesCalculation, precision: selected === 'mean' ? 2 : 1,
     sourceType: 'survey', textQuestionId: 1,
@@ -109,7 +109,7 @@ export function defaultTextAiKpiConfig(questionId: TextAiKpiId = 'nps', metric?:
 }
 export function validateTextAiKpiConfig(config: TextAiKpiConfig): string | null {
   if (!config.name.trim()) return 'Enter a KPI name.';
-  if (!config.questionId) return `Select a KPI ${config.sourceType === 'dataset' ? 'variable' : 'question'}.`;
+  if (!config.questionId) return 'Select a KPI question.';
   const numeric = config.metric === 'mean' || (config.metric === 'ces' && (config.cesCalculation ?? 'average') === 'average');
   const allowed: TextAiKpiMapping[] = config.metric === 'nps' ? ['promoter', 'passive', 'detractor', 'exclude']
     : config.metric === 'csat' ? ['satisfied', 'dissatisfied', 'exclude'] : ['easy', 'neutral', 'difficult', 'exclude'];
@@ -172,8 +172,8 @@ export const TEXT_AI_KPI_DEFINITIONS: readonly TextAiKpiDefinition[] = [
   {
     id: 'visit-rating',
     code: 'Q4',
-    label: 'Visit rating',
-    question: 'How would you rate your overall visit?',
+    label: 'Overall experience rating',
+    question: 'How would you rate your overall experience with us?',
     kind: 'mean',
     scaleMin: 1,
     scaleMax: 5,
@@ -181,7 +181,7 @@ export const TEXT_AI_KPI_DEFINITIONS: readonly TextAiKpiDefinition[] = [
   {
     id: 'nps',
     code: 'Q7',
-    label: 'Net Promoter Score',
+    label: 'NPS',
     question: 'How likely are you to recommend us to a friend or colleague?',
     kind: 'nps',
     scaleMin: 0,
@@ -190,11 +190,20 @@ export const TEXT_AI_KPI_DEFINITIONS: readonly TextAiKpiDefinition[] = [
   {
     id: 'csat',
     code: 'Q8',
-    label: 'Customer satisfaction',
-    question: 'How satisfied were you with your experience?',
+    label: 'CSAT',
+    question: 'How satisfied are you with the service you received?',
     kind: 'top-box',
     scaleMin: 1,
     scaleMax: 5,
+  },
+  {
+    id: 'ces',
+    code: 'Q10',
+    label: 'CES',
+    question: 'How easy was it to complete your order?',
+    kind: 'mean',
+    scaleMin: 1,
+    scaleMax: 7,
   },
   {
     id: 'return-likelihood',
@@ -206,6 +215,15 @@ export const TEXT_AI_KPI_DEFINITIONS: readonly TextAiKpiDefinition[] = [
     scaleMax: 5,
   },
 ] as const;
+
+/** Shared question wording for survey and dataset KPI pickers. */
+export const TEXT_AI_KPI_QUESTION_OPTIONS = [...TEXT_AI_KPI_DEFINITIONS]
+  .sort((a, b) => {
+    const priority = ['nps', 'csat', 'ces'];
+    const rank = (id: TextAiKpiId) => priority.includes(id) ? priority.indexOf(id) : priority.length;
+    return rank(a.id) - rank(b.id);
+  })
+  .map(field => ({ value: field.id, label: `${field.code} · ${field.label} — ${field.question}` }));
 
 const RATING_COUNTS = [359, 140, 206, 253, 542] as const;
 
@@ -265,6 +283,9 @@ function createAnswerSet(
   }
   if (responseIndex % 4 !== 0) {
     answers.csat = clamp(rating + (responseIndex % 9 === 0 ? -1 : 0), 1, 5);
+  }
+  if (responseIndex % 6 !== 0) {
+    answers.ces = clamp(Math.round(1 + (rating - 1) * 1.5) + (responseIndex % 7 === 0 ? -1 : 0), 1, 7);
   }
   if (responseIndex % 3 !== 0) {
     answers['return-likelihood'] = clamp(

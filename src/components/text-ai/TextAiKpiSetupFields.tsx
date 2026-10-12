@@ -2,7 +2,7 @@
 
 import { useId, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { TEXT_AI_KPI_DEFINITIONS, TEXT_AI_KPI_METRICS, defaultTextAiKpiConfig, getTextAiKpiOptions, textAiKpiFormula, validateTextAiKpiConfig, type TextAiKpiConfig, type TextAiKpiId, type TextAiKpiMapping, type TextAiKpiMetric } from '@/data/mock-text-ai-kpi-by-theme';
+import { TEXT_AI_KPI_QUESTION_OPTIONS, TEXT_AI_KPI_METRICS, defaultTextAiKpiConfig, getTextAiKpiOptions, textAiKpiFormula, validateTextAiKpiConfig, type TextAiKpiConfig, type TextAiKpiId, type TextAiKpiMapping, type TextAiKpiMetric } from '@/data/mock-text-ai-kpi-by-theme';
 import styles from './TextAiKpiSetupFields.module.css';
 
 const WuSelect = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => ({ default: m.WuSelect })), { ssr: false });
@@ -13,8 +13,8 @@ const WuInput = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => (
 
 export function TextAiKpiSetupFields({ value, onChange }: { value: TextAiKpiConfig; onChange: (value: TextAiKpiConfig) => void }) {
   const id = useId();
-  const fieldLabel = value.sourceType === 'dataset' ? 'KPI variable' : 'KPI question';
-  const options = TEXT_AI_KPI_DEFINITIONS.map(d => ({ value: d.id, label: value.sourceType === 'dataset' ? d.id.replaceAll('-', '_') : `${d.code} · ${d.question}` }));
+  const fieldLabel = 'KPI question';
+  const options = TEXT_AI_KPI_QUESTION_OPTIONS;
   const update = (patch: Partial<TextAiKpiConfig>) => onChange({ ...value, ...patch });
   function changeScoring(questionId: TextAiKpiId, metric: TextAiKpiMetric) {
     const defaults = defaultTextAiKpiConfig(questionId, metric, value.cesCalculation ?? 'average');

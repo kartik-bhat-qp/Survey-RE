@@ -22,6 +22,7 @@ interface TextAiSentimentResponsesModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   context: TextAiVerbatimModalContext | null;
+  verbatims?: readonly TextAiSentimentVerbatim[];
 }
 
 function SubtopicTag({
@@ -32,13 +33,14 @@ function SubtopicTag({
   tone: TextAiVerbatimSubtopicTone;
 }) {
   const isPositive = tone === 'positive';
+  const isNegative = tone === 'negative';
   return (
     <span
       className={`${styles.subtopicPill} ${
-        isPositive ? styles.subtopicPositive : styles.subtopicNeutral
+        isPositive ? styles.subtopicPositive : isNegative ? styles.subtopicNegative : styles.subtopicNeutral
       }`}
     >
-      <span className={isPositive ? 'wm-sentiment-satisfied' : 'wm-sentiment-neutral'} aria-hidden />
+      <span className={isPositive ? 'wm-sentiment-satisfied' : isNegative ? 'wm-sentiment-dissatisfied' : 'wm-sentiment-neutral'} aria-hidden />
       {label}
     </span>
   );
@@ -68,15 +70,17 @@ export function TextAiSentimentResponsesModal({
   open,
   onOpenChange,
   context,
+  verbatims,
 }: TextAiSentimentResponsesModalProps) {
   const wick = useWickUILib();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
 
   const allVerbatims = useMemo(() => {
+    if (verbatims) return verbatims;
     if (!context) return [];
     return getSentimentVerbatimsForCell(context);
-  }, [context]);
+  }, [context, verbatims]);
 
   const filteredVerbatims = useMemo(() => {
     const term = search.trim().toLowerCase();

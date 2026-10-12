@@ -2,7 +2,7 @@
 
 import { useId } from "react";
 import dynamic from "next/dynamic";
-import { TEXT_AI_KPI_DEFINITIONS, type TextAiKpiId } from "@/data/mock-text-ai-kpi-by-theme";
+import { TEXT_AI_KPI_DEFINITIONS, TEXT_AI_KPI_QUESTION_OPTIONS, type TextAiKpiId } from "@/data/mock-text-ai-kpi-by-theme";
 import styles from "./TextAiConfiguredWidget.module.css";
 
 const WuSelect = dynamic(() => import("@npm-questionpro/wick-ui-lib").then(m => ({ default: m.WuSelect })), { ssr: false });
@@ -14,7 +14,7 @@ export function TextAiKpiQuestionField({ value, onChange, showDetails = true }: 
   showDetails?: boolean;
 }) {
   const id = useId();
-  const options = TEXT_AI_KPI_DEFINITIONS.map(d => ({ value: d.id, label: `${d.code} · ${d.label}` }));
+  const options = TEXT_AI_KPI_QUESTION_OPTIONS;
   const definition = TEXT_AI_KPI_DEFINITIONS.find(d => d.id === value);
   return <>
     <div className={styles.field}>
@@ -28,7 +28,7 @@ export function TextAiKpiQuestionField({ value, onChange, showDetails = true }: 
         }} />
     </div>
     {showDetails && definition && <p className={styles.note}><strong>{definition.question}</strong><br />
-      {definition.kind === "nps" ? "NPS = % promoters (9–10) − % detractors (0–6)." : definition.kind === "top-box" ? "CSAT = % of valid answers scoring 4 or 5 out of 5." : "Mean rating = average of valid answers on the 1–5 scale."}
+      {definition.kind === "nps" ? "NPS = % promoters (9–10) − % detractors (0–6)." : definition.kind === "top-box" ? "CSAT = % of valid answers scoring 4 or 5 out of 5." : `Mean ${definition.id === "ces" ? "effort score" : "rating"} = average of valid answers on the ${definition.scaleMin}–${definition.scaleMax} scale.`}
     </p>}
     {showDetails && <p className={styles.note}>Match text and KPI answers by response ID in the same survey or dataset. Only responses with analyzed text and a valid selected KPI answer are included.</p>}
   </>;

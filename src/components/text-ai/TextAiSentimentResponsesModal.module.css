@@ -146,6 +146,12 @@
   color: #b26a00;
 }
 
+.subtopicNegative {
+  background: #fcebed;
+  border: 1px solid #f3c6cc;
+  color: #c7434e;
+}
+
 .subtopicPill :global([class*='wm-']) {
   font-size: 14px;
 }

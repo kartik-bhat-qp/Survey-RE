@@ -9,7 +9,7 @@ export type TextAiSentimentLabel =
   | 'Negative'
   | 'Very Negative';
 
-export type TextAiVerbatimSubtopicTone = 'positive' | 'neutral';
+export type TextAiVerbatimSubtopicTone = 'positive' | 'neutral' | 'negative';
 
 export interface TextAiSentimentVerbatim {
   id: string;

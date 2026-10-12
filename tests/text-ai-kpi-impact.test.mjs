@@ -79,7 +79,7 @@ test('dashboard filters recompute both groups and count only matching source res
 });
 
 test('the prototype fixture reconciles impact with prevalence and group difference', () => {
-  for (const kpi of ['nps', 'csat', 'visit-rating', 'return-likelihood']) {
+  for (const kpi of ['nps', 'csat', 'ces', 'visit-rating', 'return-likelihood']) {
     const result = getTextAiKpiAnalysis(kpi);
     for (const row of result.rows.flatMap(row => [row, ...row.subthemes])) {
       assert.equal(row.responseCount + row.comparisonCount, result.pairedResponseCount);
@@ -198,4 +198,21 @@ test('CES average and net-easy calculations have explicit, distinct results and 
   assert.equal(result.rows[0].score, -100);
   near(result.rows[0].impact, -200 / 3);
   assert.equal(formatTextAiKpiScore(result.definition, 0), '0.0');
+});
+
+test('the CES question has a populated seven-point base and supports all effort calculations', () => {
+  const average = defaultTextAiKpiConfig('ces');
+  assert.equal(average.metric, 'ces');
+  assert.equal(average.name, 'CES');
+  assert.deepEqual(Object.values(average.mappings), [1, 2, 3, 4, 5, 6, 7]);
+  for (const sourceType of ['survey', 'dataset']) {
+    for (const calculation of ['average', 'percent-easy', 'net-easy']) {
+      const config = { ...defaultTextAiKpiConfig('ces', 'ces', calculation), sourceType };
+      const result = getTextAiKpiAnalysis('ces', {}, config);
+      assert.ok(result.pairedResponseCount > 0);
+      assert.ok(Number.isFinite(result.overallScore));
+      assert.ok(result.rows.some(row => row.responses.length > 0));
+      assert.equal(validateTextAiKpiConfig(config), null);
+    }
+  }
 });

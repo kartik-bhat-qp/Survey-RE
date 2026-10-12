@@ -18,12 +18,12 @@
 .expandButton { flex: 0 0 24px; width: 24px; height: 28px; border: 0; border-radius: 3px; background: transparent; color: #657181; cursor: pointer; }
 .expandButton:hover { background: #eaf0f7; }
 .themeLink { border: 0; background: none; color: #3e4e62; font: inherit; line-height: 18px; padding: 0; text-align: left; cursor: pointer; }
-.themeLink:hover, .countLink:hover { color: #1768a9; text-decoration: underline; }
+.themeLink:hover { color: #1768a9; text-decoration: underline; }
 .childRow { background: #f8fafc; }
 .childRow .themeCell { padding-left: 28px; font-weight: 400; }
 .indent { flex: 0 0 16px; }
-.impactButton { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; padding: 2px 0; background: transparent; cursor: pointer; color: inherit; font: inherit; }
-.impactButton strong { flex: 0 0 54px; text-align: right; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.impactValue { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; padding: 2px 0; background: transparent; color: inherit; font: inherit; }
+.impactValue strong { flex: 0 0 54px; text-align: right; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .barTrack { flex: 1; position: relative; height: 26px; background: linear-gradient(to right, #fbf1f1 0 50%, #eff7f4 50% 100%); }
 .zeroLine { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: #9aa6b5; }
 .impactBar { position: absolute; top: 7px; height: 12px; border-radius: 2px; }
@@ -33,231 +33,16 @@
 .netPositive { color: #167451; }
 .scoreCell, .countCell { text-align: right; font-variant-numeric: tabular-nums; }
 .table thead .scoreHeading, .table thead .countHeading, .table thead .shareHeading { text-align: right; }
-.countLink { color: #1768a9; padding: 3px 0; background: none; border: 0; font: inherit; cursor: pointer; }
 .lowSample { display: block; color: #896211; font-size: 10px; white-space: nowrap; }
 .unavailable { color: #687486; font-size: 11px; text-align: left; }
 .card button:focus-visible, .card select:focus-visible { outline: 2px solid #1b87e6; outline-offset: 3px; }
 .emptyState { padding: 25px !important; text-align: center; color: #687486; }
-.calculation { padding: 12px; margin-bottom: 12px; background: #f0f5fa; border-radius: 4px; color: #3e4e62; font-size: 12px; line-height: 18px; }
-.calculation p { margin: 5px 0; }
-.modal {
-  max-height: min(90vh, 46rem);
-  max-width: min(58rem, calc(100vw - 2rem)) !important;
-  width: 100% !important;
-}
-
-.modalTitle {
-  color: #1b3380;
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.modalContent {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.modalContext {
-  background: #f8fafc;
-  border: 1px solid #e5e7eb;
-  border-radius: 5px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  margin-bottom: 12px;
-}
-
-.modalContext > div {
-  display: flex;
-  flex-direction: column;
-  padding: 10px 12px;
-}
-
-.modalContext > div + div {
-  border-left: 1px solid #e5e7eb;
-}
-
-.modalContext strong {
-  color: #344054;
-  font-size: 13px;
-}
-
-.modalParentTheme {
-  color: #87929f;
-  font-size: 11px;
-  line-height: 14px;
-  margin-top: 2px;
-}
-
-.modalQuestion {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 5px;
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 12px;
-  padding: 9px 12px;
-}
-
-.modalQuestion strong {
-  color: #344054;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 19px;
-}
-
-.modalEyebrow {
-  color: #85909c;
-  font-size: 10px;
-  text-transform: uppercase;
-}
-
-.searchWrap {
-  align-items: center;
-  border-bottom: 1px solid #b9c4d0;
-  display: flex;
-  gap: 7px;
-  margin-bottom: 8px;
-  padding: 4px 2px;
-}
-
-.searchWrap input {
-  border: 0;
-  color: #344054;
-  flex: 1;
-  font-family: inherit;
-  font-size: 13px;
-  outline: 0;
-  padding: 5px 0;
-}
-
-.searchWrap > span:last-child {
-  color: #77818d;
-  font-size: 11px;
-}
-
-.responseList {
-  max-height: min(62vh, 34rem);
-  overflow-y: auto;
-}
-
-.responseItem {
-  border-bottom: 1px solid #edf0f3;
-  padding: 12px 2px;
-}
-
-.responseItemHeader {
-  align-items: center;
-  color: #7d8793;
-  display: flex;
-  font-size: 11px;
-  gap: 8px;
-}
-
-.responseDetails {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.85fr);
-  margin-top: 8px;
-}
-
-.openEndedResponse {
-  padding: 8px 10px 8px 0;
-}
-
-.openEndedResponse p,
-.responseKpiPanel p {
-  color: #3f4b5a;
-  font-size: 13px;
-  line-height: 19px;
-  margin: 3px 0 0;
-}
-
-.responseKpiPanel {
-  background: #f8fafc;
-  border: 1px solid #e5e7eb;
-  border-radius: 5px;
-  display: grid;
-  gap: 9px;
-  padding: 9px 11px;
-}
-
-.responseKpiPanel > div {
-  display: flex;
-  flex-direction: column;
-}
-
-.responseKpiPanel strong {
-  color: #344054;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 18px;
-}
-
-.responseFieldLabel {
-  color: #89939f;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  line-height: 14px;
-  text-transform: uppercase;
-}
-
-.kpiAnswer {
-  color: #1b3380 !important;
-  font-size: 14px !important;
-}
-
-.sentimentPill {
-  border-radius: 999px;
-  font-size: 10px;
-  line-height: 17px;
-  padding: 0 7px;
-}
-
-.sentimentPillpositive {
-  background: #e8f6ee;
-  color: #238653;
-}
-
-.sentimentPillneutral {
-  background: #fff5d9;
-  color: #9b6d00;
-}
-
-.sentimentPillnegative {
-  background: #fcebed;
-  color: #c7434e;
-}
-
-.emptyState {
-  color: #7b8491;
-  font-size: 12px;
-  padding: 20px 0;
-  text-align: center;
-}
-
-
-@media (max-width: 700px) { .responseDetails { grid-template-columns: 1fr; } .modalContext { grid-template-columns: 1fr; } .modalContext > div + div { border-left: 0; border-top: 1px solid #e5e7eb; } }
-
 .headerActions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-.actionButton { border: 1px solid #aebdcd; border-radius: 4px; background: #fff; color: #24629a; padding: 6px 12px; min-height: 32px; font: inherit; font-size: 12px; cursor: pointer; }
-.actionButton:hover { background: #f0f5fa; }
-.actionButton:disabled { opacity: .5; cursor: default; }
 .sortButton { display: inline-flex; align-items: center; gap: 7px; color: inherit; font: inherit; text-align: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
 .table .overallRow th, .table .overallRow td { background: #f0f4f8; color: #34445a; font-weight: 600; }
-.overallButton { border: 0; background: none; color: inherit; font: inherit; padding: 0 0 0 30px; cursor: pointer; }
+.overallLabel { padding-left: 30px; }
 .overallRow th { text-align: left; }
 .baselineCell { text-align: right; color: #768395; }
-.settingsForm { display: flex; flex-direction: column; gap: 16px; color: #465263; font-size: 13px; line-height: 20px; }
-.settingsForm p { margin: 0; }
-.settingsForm label { display: flex; flex-direction: column; gap: 6px; font-weight: 500; }
-.settingsForm select { border: 1px solid #b8c3cf; border-radius: 4px; background: white; color: #344054; font: inherit; padding: 8px 10px; width: 100%; }
-.prototypeNote { background: #f5f7fa; padding: 10px; font-size: 12px; color: #657181; }
-.modalActions { display: flex; justify-content: flex-end; gap: 10px; }
-.primaryButton { background: #267bd4; border-color: #267bd4; color: white; }
-.primaryButton:hover { background: #206ab8; }
 @media (max-width: 640px) { .cardHeader { gap: 8px; padding: 12px; flex-wrap: wrap; } .headerActions { gap: 8px; } }
 
 /* WuTable uses 20px glyphs with a 28px line box; inheriting the 16px
