@@ -41,7 +41,7 @@ const MOCK_PENDING_RESPONSES = MOCK_TEXT_AI_FILTER_RESPONSES.slice(0, TEXT_AI_PE
   .map((response) => ({ ...response, id: `pending-${response.id}` }));
 
 interface TextAiDashboardToolbarProps {
-  focusedAnalysis?: boolean;
+  showCensoredSubthemes?: boolean;
   responseFilter?:TextAiResponseFilter;
   onResponseFilterChange?:(filter:TextAiResponseFilter)=>void;
   name: string;
@@ -59,7 +59,7 @@ interface TextAiDashboardToolbarProps {
 
 export function TextAiDashboardToolbar({
   name,
-  focusedAnalysis = false,
+  showCensoredSubthemes = false,
   responseFilter=EMPTY_TEXT_AI_FILTER, onResponseFilterChange,
   onNameChange,
   onAddWidget,
@@ -180,7 +180,7 @@ export function TextAiDashboardToolbar({
           </div>
 
           <div className={styles.actions}>
-            {!focusedAnalysis && <><WuButton
+            <WuButton
               variant="iconOnly"
               size="sm"
               aria-label="Filter dashboard"
@@ -208,7 +208,6 @@ export function TextAiDashboardToolbar({
               onClick={() => showToast({ message: 'Share dashboard', variant: 'success' })}
               Icon={<span className="wm-share" />}
             />
-            </>}
             <WuMenu
               open={settingsMenuOpen}
               onOpenChange={setSettingsMenuOpen}
@@ -249,18 +248,18 @@ export function TextAiDashboardToolbar({
                 Theme configuration
               </WuMenuItem>
             </WuMenu>
-            {!focusedAnalysis && <WuButton
+            <WuButton
               className={styles.addWidgetBtn}
               onClick={onAddWidget}
               Icon={<span className="wm-add-2" />}
             >
               Add widget
-            </WuButton>}
+            </WuButton>
           </div>
         </div>
 
         {responseFilterOpen&&<section className={styles.responseFilterPanel} aria-label="Dashboard response filters"><h3>Response filters</h3><TextAiResponseFilterFields value={responseFilter} onChange={value=>onResponseFilterChange?.(value)}/><button type="button" onClick={()=>onResponseFilterChange?.({...EMPTY_TEXT_AI_FILTER})}>Reset filters</button></section>}
-        {!focusedAnalysis && <div className={styles.filterRow}>
+        <div className={styles.filterRow}>
           <div className={styles.filters}>
             <div className={styles.inlineFilter}>
               <span className={styles.filterLabel}>Themes</span>
@@ -281,9 +280,9 @@ export function TextAiDashboardToolbar({
             <div className={styles.inlineFilter}>
               <span className={styles.filterLabel}>Sub-themes</span>
               <WuSelect<TextAiFilterSelectOption>
-                data={TEXT_AI_SUBTHEME_FILTER_OPTIONS}
+                data={showCensoredSubthemes ? [...TEXT_AI_SUBTHEME_FILTER_OPTIONS, { value: 'outlier:censored', label: 'Censored' }] : TEXT_AI_SUBTHEME_FILTER_OPTIONS}
                 accessorKey={{ value: 'value', label: 'label' }}
-                value={subtheme}
+                value={!showCensoredSubthemes && subtheme?.value === 'outlier:censored' ? null : subtheme}
                 placeholder="Select sub-themes"
                 onSelect={(option) => {
                   if (!isFilterOption(option)) return;
@@ -318,7 +317,7 @@ export function TextAiDashboardToolbar({
                 Process now
               </WuButton>
             </div>
-        </div>}
+        </div>
       </header>
 
       <WuModal

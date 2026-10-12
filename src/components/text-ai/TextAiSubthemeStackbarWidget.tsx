@@ -10,6 +10,7 @@ import {
   TEXT_AI_SUBTHEME_STACKBAR_ROWS,
   type TextAiSentimentBucket,
   type TextAiSentimentDistribution,
+  type TextAiThemeSentimentRow,
 } from '@/data/mock-text-ai-subtheme-stackbar';
 import { isTextAiItemEmerging } from '@/data/text-ai-emerging-status';
 import {
@@ -37,6 +38,7 @@ interface TextAiSubthemeStackbarWidgetProps extends TextAiWidgetSettingsProps {
   question: string;
   onDelete?: () => void;
   themePreferences: TextAiThemePreferences;
+  rows?: TextAiThemeSentimentRow[];
 }
 
 function SentimentStackbar({
@@ -114,6 +116,7 @@ export function TextAiSubthemeStackbarWidget({
   question,
   onDelete,
   themePreferences, settings, onOpenSettings, preview,
+  rows = TEXT_AI_SUBTHEME_STACKBAR_ROWS,
 }: TextAiSubthemeStackbarWidgetProps) {
   const s=settings??defaultTextAiWidgetSettings('subtheme-stacked-bar',question);
   const widgetId = useId();
@@ -127,10 +130,12 @@ export function TextAiSubthemeStackbarWidget({
   >(() => new Set(SENTIMENT_BUCKETS.map((bucket) => bucket.key)));
   useEffect(()=>{
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setExpandedThemeIds(new Set(s.expanded?TEXT_AI_SUBTHEME_STACKBAR_ROWS.map(row=>row.id):[]));
+    setExpandedThemeIds(new Set(s.expanded?rows.map(row=>row.id):[]));
+    // Only reset expansion when the preference changes, retaining user choices on data updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[s.expanded]);
   const visibleThemes = useMemo(() => {
-    const filtered = TEXT_AI_SUBTHEME_STACKBAR_ROWS.flatMap((theme) => {
+    const filtered = rows.flatMap((theme) => {
       const themeCandidate = Boolean(theme.emerging);
       const themeApproved =
         !themeCandidate ||
@@ -178,7 +183,7 @@ export function TextAiSubthemeStackbarWidget({
 
     const parents=filtered.filter(row=>!s.parentIds.length||s.parentIds.includes(row.id)).map(row=>({...row,subthemes:row.subthemes.filter(child=>!s.subthemeIds.length||s.subthemeIds.includes(child.id)).slice(0,s.childLimit||undefined)}));
     return settings?selectTextAiItems(parents,s,row=>row.label,row=>Object.values(row.sentiment).reduce((a,b)=>a+b,0)):limitTextAiWidgetItems(parents,topN);
-  }, [themePreferences, topN, settings, s]);
+  }, [rows, themePreferences, topN, settings, s]);
 
   function toggleTheme(themeId: string): void {
     setExpandedThemeIds((current) => {

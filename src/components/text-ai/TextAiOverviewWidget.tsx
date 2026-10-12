@@ -5,6 +5,7 @@ import { TextAiWidgetMenu } from "./TextAiWidgetMenu";
 import {
   TEXT_AI_SUBTHEME_STACKBAR_ROWS,
   type TextAiSentimentBucket,
+  type TextAiThemeSentimentRow,
 } from "@/data/mock-text-ai-subtheme-stackbar";
 import type { TextAiThemePreferences } from "@/data/text-ai-theme-preferences";
 import {
@@ -42,19 +43,22 @@ export function TextAiOverviewWidget({
   settings,
   onOpenSettings,
   preview,
+  rows: chartRows = TEXT_AI_SUBTHEME_STACKBAR_ROWS,
 }: TextAiWidgetSettingsProps & {
   kind: TextAiOverviewKind;
   question: string;
   onDelete: () => void;
   themePreferences: TextAiThemePreferences;
+  rows?: TextAiThemeSentimentRow[];
 }) {
   const clipId = useId();
   const s = settings ?? defaultTextAiWidgetSettings(kind, question);
   const [hidden, setHidden] = useState<string[]>([]);
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
-  const sourceRows = TEXT_AI_SUBTHEME_STACKBAR_ROWS.map((row, index) => ({
+  const sourceRows = chartRows.map((row, index) => ({
     ...row,
-    mentions: 420 - index * 48,
+    mentions: row.mentions ?? 420 - index * 48,
+    sentimentBase: row.mentions ?? 100,
     colorIndex: index,
   })).filter(
     (row) =>
@@ -67,13 +71,13 @@ export function TextAiOverviewWidget({
     (row) => row.label,
     (row) => row.mentions,
   );
+  const base = sourceRows.reduce((sum, row) => sum + row.sentimentBase, 0);
   const values = BUCKETS.map((bucket) =>
-    sourceRows.length
-      ? sourceRows.reduce((sum, row) => sum + row.sentiment[bucket.key], 0) /
-        sourceRows.length
+    base
+      ? sourceRows.reduce((sum, row) => sum + row.sentiment[bucket.key] * row.sentimentBase, 0) /
+        base
       : 0,
   );
-  const base = sourceRows.length * 100;
   const toggle = (key: string) =>
     setHidden((current) =>
       current.includes(key)
@@ -95,7 +99,7 @@ export function TextAiOverviewWidget({
       )
       .map((row) => ({
         ...row,
-        mentions: Math.round(parent.mentions / parent.subthemes.length),
+        mentions: row.mentions ?? Math.round(parent.mentions / parent.subthemes.length),
         colorIndex: parent.colorIndex,
         parentId: parent.id,
       })),
@@ -188,7 +192,7 @@ export function TextAiOverviewWidget({
             </svg>
             {s.showBase && (
               <p className={styles.base}>
-                Synthetic sentiment assignments: {base} · equal weight per theme
+                Sentiment assignments: {base}
               </p>
             )}
           </>

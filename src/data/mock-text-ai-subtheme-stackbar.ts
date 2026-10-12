@@ -9,6 +9,7 @@ export type TextAiSentimentBucket =
 export type TextAiSentimentDistribution = Record<TextAiSentimentBucket, number>;
 
 export interface TextAiSubthemeSentimentRow {
+  mentions?: number;
   emerging?: boolean;
   id: string;
   label: string;

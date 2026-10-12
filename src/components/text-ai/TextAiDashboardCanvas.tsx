@@ -42,7 +42,7 @@ import { defaultTextAiKpiConfig, type TextAiKpiConfig, type TextAiKpiWidgetInsta
 import type { TextAiSubthemeTrendWidgetInstance } from '@/data/mock-text-ai-subtheme-trend';
 import { DEFAULT_DASHBOARD_DESIGN, getDashboardDesignColorVars, type DashboardDesign } from '@/data/dashboard-design';
 import { getTextAiTypographyCssVars } from '@/components/text-ai/text-ai-typography';
-import { CENSORED_CONFIGURATION_EVENT, getSharedOutlierResponses, visibleCensoredResponses } from '@/data/text-ai-censored-subthemes';
+import { CENSORED_CONFIGURATION_EVENT, CENSORED_DEMO_DASHBOARD_ID, getDashboardExampleResponses, getOutlierDashboardRows } from '@/data/text-ai-censored-subthemes';
 import { parseTagAssignments, type TagAssignments } from '@/data/text-ai-tag-drafts';
 import styles from './TextAiDashboardCanvas.module.css';
 
@@ -382,6 +382,12 @@ export function TextAiDashboardCanvas({
       themePreferences.emergingApprovedAtByName[name]
     );
   const questionFactor = getQuestionFactor(questionIndex);
+  const outlierData = getOutlierDashboardRows(
+    outlierLoadError ? [] : getDashboardExampleResponses(dashboardId, selectedQuestion.id, outlierAssignments),
+    themePreferences.showCensoredSubthemes,
+    themePreferences.showThemesWithNoResponses,
+  );
+  const stackRows = [...TEXT_AI_SUBTHEME_STACKBAR_ROWS, ...outlierData.sentimentRows];
   const summaryWidgets = adaptSummaryWidgets(
     getTextAiSummaryWidgets(dashboardId),
     selectedQuestion,
@@ -392,21 +398,16 @@ export function TextAiDashboardCanvas({
     getTextAiTopicSegmentWidgets(dashboardId),
     selectedQuestion,
     questionFactor
-  );
-  const outlierRows = outlierLoadError ? [] : visibleCensoredResponses(getSharedOutlierResponses(selectedQuestion.id, outlierAssignments), themePreferences.showCensoredSubthemes).map(response => ({
-    id: response.id, value: response.text, topic: response.subthemes.some(tag => tag.id.startsWith('outlier:')) ? 'Outlier Parent Topic' : response.subthemes.length ? 'Manually coded' : 'Untagged',
-    subtopic: response.subthemes.map(tag => tag.label).join(', ') || 'Untagged', subtopicTone: 'neutral' as const,
-    insight: '', tags: response.subthemes.map(tag => tag.label), collectedOn: '2026-10-05',
-  }));
+  ).map(widget => ({ ...widget, rows: [...widget.rows, ...outlierData.comparisonRows] }));
   const analysisWidgets = adaptAnalysisWidgets(
     getTextAiDashboardWidgets(dashboardId),
     selectedQuestion,
     questionIndex
-  ).map(widget => ({ ...widget, rows: [...widget.rows, ...outlierRows] }));
+  ).map(widget => ({ ...widget, rows: dashboardId === CENSORED_DEMO_DASHBOARD_ID ? outlierData.analysisRows : [...widget.rows, ...outlierData.analysisRows] }));
   const visibleAddedTopicSegmentWidgets = addedTopicSegmentWidgets.map((widget) => ({
     ...widget,
     rows: filterTopicRowsForDashboard(
-      widget.rows,
+      [...widget.rows, ...(widget.question === selectedQuestion.text ? outlierData.comparisonRows : [])],
       isApproved,
       isEmerging
     ),
@@ -437,13 +438,13 @@ export function TextAiDashboardCanvas({
     const question = widget.question;
     if (widget.chartType === 'text-viewer') return { id: widget.id, kind: 'analysis', content: <TextAiAnalysisWidgetCard widget={{ ...analysisWidgets[0], id: widget.id, question }} onDelete={onDelete} /> };
     if (widget.chartType === 'text-summary') return { id: widget.id, kind: 'summary', content: <TextAiSummaryWidgetCard widget={{ ...summaryWidgets[0], id: widget.id, question }} onDelete={onDelete} /> };
-    if (widget.chartType === 'subtheme-stacked-bar') return { id: widget.id, kind: 'subtheme-stackbar', content: <TextAiSubthemeStackbarWidget question={question} themePreferences={themePreferences} onDelete={onDelete} /> };
+    if (widget.chartType === 'subtheme-stacked-bar') return { id: widget.id, kind: 'subtheme-stackbar', content: <TextAiSubthemeStackbarWidget question={question} themePreferences={themePreferences} rows={stackRows} onDelete={onDelete} /> };
     if (widget.chartType === 'subtheme-comparative-chart') {
       const base = visibleTopicSegmentWidgets[0];
       const rows = base.rows.flatMap(parent => (parent.subtopics ?? []).map(row => ({ ...row, parentTopic: parent.topic, subtopics: undefined })));
       return { id: widget.id, kind: 'subtheme-comparative', content: <TextAiTopicSegmentWidgetCard widget={{ ...base, id: widget.id, question, rows, visibleSegmentKeys: ['overall'] }} onDelete={onDelete} /> };
     }
-    return { id: widget.id, kind: 'overview', content: <TextAiOverviewWidget kind={widget.chartType as TextAiOverviewKind} question={question} themePreferences={themePreferences} onDelete={onDelete} /> };
+    return { id: widget.id, kind: 'overview', content: <TextAiOverviewWidget kind={widget.chartType as TextAiOverviewKind} question={question} themePreferences={themePreferences} rows={stackRows} onDelete={onDelete} /> };
   }
   const defaultExtraWidgets: TextAiAddedWidget[] = ['gauge', 'theme-stacked-bar', 'bubble-chart', 'trend-line', 'subtheme-comparative-chart'].map(chartType => ({ id: `default-${chartType}`, chartType: chartType as TextAiWidgetChartTypeId, question: selectedQuestion.text }));
 
@@ -521,6 +522,7 @@ export function TextAiDashboardCanvas({
           question={selectedQuestion.text}
           onDelete={() => removeWidget('subtheme-stackbar')}
           themePreferences={themePreferences}
+          rows={stackRows}
         />
       ),
     },
@@ -560,11 +562,11 @@ export function TextAiDashboardCanvas({
     const kind:TextAiSettingsKind=entry.kind==='overview'?element.props.kind! : entry.kind==='analysis'?'text-viewer':entry.kind==='summary'?'text-summary':entry.kind==='subtheme-stackbar'?'subtheme-stacked-bar':entry.kind==='subtheme-comparative'?'subtheme-comparative-chart':'comparative-chart';
     const title=element.props.question??element.props.widget?.question??selectedQuestion.text;
     const rows=element.props.widget?.rows??[];
-    const stackRows=TEXT_AI_SUBTHEME_STACKBAR_ROWS.filter(row=>isApproved(row.label,Boolean(row.emerging)));
-    const items=kind.includes('comparative')?rows.map(row=>({id:row.id,label:row.topic})):stackRows.map(row=>({id:row.id,label:row.label}));
-    const subthemes=stackRows.flatMap(parent=>parent.subthemes.filter(row=>isApproved(row.label,Boolean(parent.emerging||row.emerging))).map(row=>({id:row.id,label:`${parent.label} / ${row.label}`,parentId:parent.id})));
+    const approvedStackRows=stackRows.filter(row=>isApproved(row.label,Boolean(row.emerging)));
+    const items=kind.includes('comparative')?rows.map(row=>({id:row.id,label:row.topic})):approvedStackRows.map(row=>({id:row.id,label:row.label}));
+    const subthemes=approvedStackRows.flatMap(parent=>parent.subthemes.filter(row=>isApproved(row.label,Boolean(parent.emerging||row.emerging))).map(row=>({id:row.id,label:`${parent.label} / ${row.label}`,parentId:parent.id})));
     const identity=addedWidgets.some(w=>w.id===entry.id)||visibleAddedTopicSegmentWidgets.some(w=>`topic-segment-${w.id}`===entry.id)?entry.id:`${entry.id}:${selectedQuestion.id}`;
-    return {...entry,content:<TextAiConfiguredWidget key={identity} dashboardId={dashboardId} widgetId={identity} kind={kind} title={title} design={design} dashboardFilter={dashboardFilter} items={items} parents={stackRows.map(row=>({id:row.id,label:row.label}))} subthemes={subthemes} sections={[...new Set(element.props.widget?.summaryTypes?.flatMap(v=>v.sections.map(section=>section.heading))??[])]}>{element}</TextAiConfiguredWidget>};
+    return {...entry,content:<TextAiConfiguredWidget key={identity} dashboardId={dashboardId} widgetId={identity} kind={kind} title={title} design={design} dashboardFilter={dashboardFilter} items={items} parents={approvedStackRows.map(row=>({id:row.id,label:row.label}))} subthemes={subthemes} sections={[...new Set(element.props.widget?.summaryTypes?.flatMap(v=>v.sections.map(section=>section.heading))??[])]}>{element}</TextAiConfiguredWidget>};
   }
   const canvasWidgets = allCanvasWidgets.map(configureWidget).filter(
     (widget) => !removedWidgetIds.has(widget.id)

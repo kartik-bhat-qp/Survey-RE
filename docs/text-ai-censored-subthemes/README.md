@@ -1,5 +1,15 @@
 # Censored sub-themes — prototype review checkpoint
 
+## Dashboard alignment correction — 12 October 2026
+
+The original implementation introduced a dedicated dashboard component for dashboard 23, **McDonald's feedback — Censored sub-themes**, suppressed normal toolbar actions and filters there, and inserted a separate Outlier responses section on other dashboards. The owner requested removal of this dashboard-specific UI.
+
+All TextAI dashboard detail routes now use the same toolbar and `TextAiDashboardCanvas` default widget collection, including Add widget, regular filters, layout, design and widget controls. The dedicated censorship dashboard, metrics, banners, response table and separate Outlier section were removed. Censorship review remains in Theme Configuration, with the shared visibility preference available through both existing settings routes.
+
+Saved example assignments are adapted into existing comparison, sentiment/stacked-bar, bubble and text-viewer widget data. Censored is an ordinary Neutral Outlier child when included; toggling visibility does not add or replace widgets. Hidden-mode adapters omit the entire response and Censored option even when empty themes are shown. Dashboard 23 retains its restaurant response examples and saved release assignments. Existing aggregate widget fixtures remain illustrative, rather than a new end-to-end source-data calculation or production release claim.
+
+Verification: all 64 TextAI tests, TypeScript, targeted ESLint and the complete production build pass. Added regression coverage checks hidden/shown chart adapters, Neutral Censored assignments, saved restaurant releases and mixed-tag suppression. Visual verification is pending: only the Personal Chrome extension was available, and one permitted opening of the existing QuestionPro profile did not restore its extension. No alternate browser/profile was used. Earlier dashboard-specific descriptions below are historical and superseded by this correction.
+
 5 October 2026. Prototype only; this is an engineering checkpoint, not a PRD or a production release claim.
 
 ## Requirements document and Shipyard

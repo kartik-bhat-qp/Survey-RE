@@ -1,7 +1,4 @@
 'use client';
-import { TextAiOutlierResponses } from '@/components/text-ai/TextAiOutlierResponses';
-import { TextAiCensoredDashboard } from '@/components/text-ai/TextAiCensoredDashboard';
-import { CENSORED_DEMO_DASHBOARD_ID } from '@/data/text-ai-censored-subthemes';
 import type { TextAiAddedWidget } from '@/components/text-ai/TextAiDashboardCanvas';
 
 import { use, useEffect, useState } from 'react';
@@ -226,7 +223,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   return (
     <div className="flex flex-col h-full min-h-0">
       <TextAiDashboardToolbar
-        focusedAnalysis={numericId === CENSORED_DEMO_DASHBOARD_ID}
+        showCensoredSubthemes={themePreferences.showCensoredSubthemes}
         key={numericId}
         responseFilter={responseFilter}
         onResponseFilterChange={setResponseFilter}
@@ -245,8 +242,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         onProcessResponses={handleProcessResponses}
       />
       {collectionError&&<p role="alert">{collectionError}</p>}
-      {numericId !== CENSORED_DEMO_DASHBOARD_ID && <TextAiOutlierResponses dashboardId={numericId} questionId={selectedQuestion.id} preferences={themePreferences} />}
-      {numericId === CENSORED_DEMO_DASHBOARD_ID ? <TextAiCensoredDashboard dashboardId={numericId} preferences={themePreferences} /> : <TextAiDashboardCanvas
+      <TextAiDashboardCanvas
         dashboardId={numericId}
         dashboardFilter={responseFilter}
         selectedQuestion={selectedQuestion}
@@ -260,7 +256,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         addedSubthemeTrendWidgets={addedSubthemeTrendWidgets}
         themePreferences={themePreferences}
         design={design}
-      />}
+      />
       <TextAiDashboardSettingsModal
         dashboard={currentDashboard}
         design={design}

@@ -1,6 +1,9 @@
 import type { TextAiSentimentSubtheme, TextAiSentimentEditableResponse } from '../components/text-ai/TextAiUpdateSentimentModal';
 import type { ThemeGroup } from './text-ai-code-frame-drafts';
 import type { TagAssignments } from './text-ai-tag-drafts';
+import type { TextAiThemeSentimentRow, TextAiSentimentDistribution } from './mock-text-ai-subtheme-stackbar';
+import type { TextAiTopicSegmentRow } from './mock-text-ai-topic-segment-widget';
+import type { TextAiAnalysisRow } from './mock-text-ai-widget-data';
 
 export const CENSORED_DEMO_DASHBOARD_ID = 23;
 export const CENSORED_DEMO_QUESTION_ID = 'restaurant-feedback-q1';
@@ -103,4 +106,55 @@ export function getSharedOutlierResponses(questionId: string, assignments: TagAs
 }
 export function censoredResponseReason(responseId: number): string {
   return sharedOutlierExamples[responseId - 100001]?.reason ?? CENSORED_REASONS[responseId] ?? 'Censored content';
+}
+
+/** The demo changes response data, never the dashboard's widget collection. */
+export function getDashboardExampleResponses(dashboardId: number, questionId: string, assignments: TagAssignments): TextAiSentimentEditableResponse[] {
+  return dashboardId === CENSORED_DEMO_DASHBOARD_ID
+    ? restaurantResponses(assignments, `${questionId}:medium:`)
+    : getSharedOutlierResponses(questionId, assignments);
+}
+
+/** Adapt included Outlier responses to the same chart rows used by ordinary themes. */
+export function getOutlierDashboardRows(responses: TextAiSentimentEditableResponse[], showCensored: boolean, showEmpty = false): {
+  sentimentRows: (TextAiThemeSentimentRow & { mentions: number })[];
+  comparisonRows: TextAiTopicSegmentRow[];
+  analysisRows: TextAiAnalysisRow[];
+} {
+  const visible = visibleCensoredResponses(responses, showCensored);
+  const groups = [...RESTAURANT_THEME_GROUPS.filter(group => group.id !== 'outlier'), OUTLIER_THEME_GROUP];
+  const parentName = (id: string) => groups.find(group => group.id === id)?.name ?? 'Manually coded';
+  const analysisRows: TextAiAnalysisRow[] = visible.map(response => ({
+    id: response.id, value: response.text,
+    topic: [...new Set(response.subthemes.map(tag => parentName(tag.id.split(':')[0])))].join(', ') || 'Untagged',
+    subtopic: response.subthemes.map(tag => tag.label).join(', ') || 'Untagged',
+    subtopicTone: response.subthemes.some(tag => tag.sentiment === 'positive' || tag.sentiment === 'very-positive') ? 'positive' : 'neutral',
+    insight: '', tags: response.subthemes.map(tag => tag.label), collectedOn: '2026-10-05',
+  }));
+  const included = visible.filter(response => response.subthemes.some(tag => tag.id.startsWith('outlier:')));
+  if (!included.length && !showEmpty) return { sentimentRows: [], comparisonRows: [], analysisRows };
+  const distribution = (rows: TextAiSentimentEditableResponse[], subthemeId?: string): TextAiSentimentDistribution => {
+    const counts: TextAiSentimentDistribution = { veryNegative: 0, negative: 0, mixed: 0, neutral: 0, positive: 0, veryPositive: 0 };
+    const keys = { 'very-negative': 'veryNegative', negative: 'negative', mixed: 'mixed', neutral: 'neutral', positive: 'positive', 'very-positive': 'veryPositive' } as const;
+    const tags = rows.flatMap(response => response.subthemes.filter(tag => subthemeId ? tag.id === subthemeId : tag.id.startsWith('outlier:')));
+    for (const tag of tags) counts[keys[tag.sentiment]]++;
+    for (const key of Object.keys(counts) as (keyof TextAiSentimentDistribution)[]) counts[key] = tags.length ? counts[key] / tags.length * 100 : 0;
+    return counts;
+  };
+  const children = OUTLIER_THEME_GROUP.subThemes.flatMap(sub => {
+    if (sub.id === 'censored' && !showCensored) return [];
+    const id = `outlier:${sub.id}`;
+    const rows = included.filter(response => response.subthemes.some(tag => tag.id === id));
+    return rows.length || showEmpty ? [{ id, label: sub.name, mentions: rows.length, sentiment: distribution(rows, id) }] : [];
+  });
+  const comparisonRow = (id: string, topic: string, count: number): TextAiTopicSegmentRow => ({
+    id, topic, overall: { count, percentage: visible.length ? count / visible.length * 100 : 0 },
+    male: { count: 0, percentage: 0 }, female: { count: 0, percentage: 0 }, otherGender: { count: 0, percentage: 0 },
+    genderChiSquare: { chiSquare: 0, pValue: 1, df: 2, pairwiseComparisons: [] },
+  });
+  return {
+    sentimentRows: [{ id: 'outlier', label: OUTLIER_THEME_GROUP.name, mentions: included.length, sentiment: distribution(included), subthemes: children }],
+    comparisonRows: [{ ...comparisonRow('outlier', OUTLIER_THEME_GROUP.name, included.length), subtopics: children.map(sub => comparisonRow(sub.id, sub.label, sub.mentions)) }],
+    analysisRows,
+  };
 }
