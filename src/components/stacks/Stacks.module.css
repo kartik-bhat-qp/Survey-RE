@@ -158,3 +158,73 @@ tr:hover .listActions,tr:focus-within .listActions { opacity:1; }
 .header .actions .button { min-width:104px; }
 
 .questionChoice,.fieldTable .surveyHeading { max-width:270px; }
+
+/* Question Stack flow from the Figma creation and management screens. */
+.stackListToolbar { display:flex; align-items:center; justify-content:space-between; gap:24px; margin-bottom:20px; }
+.stackListToolbar .inlineName { justify-content:flex-start; }
+.stackListToolbar .nameInput { width:260px; max-width:300px; }
+.choices .choice { flex-direction:row; align-items:center; gap:20px; padding:28px 24px; }
+.choiceIcon { display:flex; align-items:center; justify-content:center; background:#eef2f7; color:#545e6b; width:72px; height:72px; flex-shrink:0; font-size:44px; }
+.choices .choice p { margin-top:6px; max-width:270px; }
+.questionStack .header { gap:12px; }
+.questionStack .header h1 { font-size:24px; }
+.questionStack .addQuestions { width:94px!important; height:70px; min-width:0; font-size:28px; color:#8d98a6; border-color:#e4e7ec; margin-top:18px; }
+.questionStack .mappingViewport { padding:64px 24px 24px; }
+.metricGroupTable { width:100%; min-width:820px; }
+.metricGroupTable>tbody>tr>td { vertical-align:top; padding-block:20px; }
+.metricTypeCell { display:flex; position:relative; align-items:center; justify-content:center; min-height:28px; }
+.metricEdit { position:absolute; left:0; opacity:0; }
+.metricGroupTable tr:hover .metricEdit,.metricGroupTable tr:focus-within .metricEdit { opacity:1; }
+.metricGroupName { display:block; padding-top:3px; color:#545e6b; font-size:13px; overflow-wrap:anywhere; }
+.questionStack .groupQuestions { color:#545e6b; font-size:13px; line-height:1.6; }
+.questionStack .groupQuestions p { margin-bottom:22px; }
+.questionStack .groupQuestions p:last-child { margin-bottom:0; }
+.questionStack .rowActions { align-items:flex-start; }
+.questionStackSource { flex-shrink:0; padding:12px 60px; font-size:16px; line-height:1.5; color:#788494; overflow-wrap:anywhere; }
+.questionStackSource strong { color:#545e6b; font-weight:500; }
+.questionsWithActions { display:flex; align-items:flex-start; gap:16px; width:fit-content; max-width:100%; }
+.questionsWithActions .groupQuestions { min-width:0; max-width:600px; }
+.questionsWithActions .rowActions { flex-shrink:0; margin-top:-4px; }
+.questionAnswerMapping { padding:12px 24px 24px 155px; }
+.questionAnswerMapping .table { max-width:none; }
+.questionAnswerMapping .table th { vertical-align:top; line-height:1.5; }
+.questionAnswerMapping .table th>span { display:block; }
+.questionAnswerMapping .table th>small { display:block; color:#788494; font-weight:400; margin-top:6px; }
+.questionStack .addFieldBar { border-bottom:0; }
+.mappingIssue { font-size:12px; color:#a32b24; margin:12px 0 0; }
+.questionPicker { display:flex; flex-direction:column; min-height:480px; padding:12px 20px 0; }
+.questionPicker>div:first-child { flex:1; min-height:0; }
+.questionPicker table { font-size:13px; }
+.questionPicker table td { padding-block:14px; }
+.questionPicker table button:not([role=checkbox]) { color:#545e6b; font-weight:400!important; }
+.metricName { display:flex; align-items:center; gap:8px; font-size:13px; color:#545e6b; }
+.metricName>span { color:#b9362b; margin-left:-6px; }
+.metricName input { width:240px; max-width:100%; }
+.questionSelectionSummary { padding:12px 16px 16px; font-size:13px; }
+.questionSelectionSummary p { margin:0 0 12px; }
+.questionSelectionSummary .chip { border-radius:0; background:#eee; color:#545e6b; max-width:210px; padding:8px 12px; }
+.minimumHint { margin-right:auto; color:#697688; font-size:12px; }
+@media(max-width:850px){
+  .stackListToolbar { flex-wrap:wrap; }
+  .questionStack .mappingViewport { padding:32px 16px 24px; }
+  .questionStackSource { padding:12px 16px; }
+  .questionAnswerMapping { padding-left:16px; }
+  .questionPicker { min-height:330px; padding:8px; }
+}
+@media(max-width:600px){
+  .choices .choice { padding:20px; }
+  .choiceIcon { width:52px; height:52px; font-size:32px; }
+  .metricName { flex-wrap:wrap; }
+  .metricName input { width:100%; }
+  .questionStack .header h1 { font-size:20px; }
+  .stackListToolbar .nameInput { width:auto; }
+  .minimumHint { flex-basis:100%; }
+}
+@media(hover:none){ .metricEdit,.listActions { opacity:1; } }
+.questionPicker { height:min(640px,calc(70dvh - 24px)); min-height:0; }
+.questionPicker>div:first-child { overflow:hidden; }
+.questionSelectionSummary { flex-shrink:0; }
+.metricName { white-space:nowrap; }
+.metricName>[data-slot='wu-input-group'] { width:260px; flex:0 1 260px; }
+.metricName input { width:100%; }
+@media(max-width:600px){ .metricName { white-space:normal; } }

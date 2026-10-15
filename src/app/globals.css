@@ -3,6 +3,11 @@
 @import '@npm-questionpro/wick-ui-lib/dist/style.css';
 @import '../styles/wick-ui-editor.css';
 
+/* These heatmap menus render in a portal outside the component's CSS scope. */
+[role="listbox"][id="advanced-heatmap-filter-type"] [data-disabled] { cursor: not-allowed !important; pointer-events: auto !important; }
+[role="listbox"][id="advanced-heatmap-question-picker"] { display: flex; flex-direction: column; max-height: min(360px, var(--radix-popper-available-height, 360px)); }
+[role="listbox"][id="advanced-heatmap-question-picker"] .wu-select-list { flex: 1 1 auto; min-height: 0; max-height: 300px !important; overscroll-behavior: contain; }
+
 @theme {
   --font-sans: 'Fira Sans', ui-sans-serif, system-ui, sans-serif;
 }

@@ -6,10 +6,10 @@ import {MOCK_SURVEYS,type SurveyListItem} from '@/data/mock-survey-folders';
 import {StackButton,StackDialog} from './StackControls';
 import styles from './Stacks.module.css';
 
-export function StackSurveyPicker({single=false,min=1,excluded=[],initialSelected=[],onClose,onSave,replace=false}:{single?:boolean;min?:number;excluded?:number[];initialSelected?:number[];onClose:()=>void;onSave:(surveys:SurveyListItem[])=>void;replace?:boolean}){
+export function StackSurveyPicker({single=false,min=1,excluded=[],initialSelected=[],onClose,onSave,replace=false,advanceOnSelect=false}:{single?:boolean;min?:number;excluded?:number[];initialSelected?:number[];onClose:()=>void;onSave:(surveys:SurveyListItem[])=>void;replace?:boolean;advanceOnSelect?:boolean}){
  const [selected,setSelected]=useState<number[]>(initialSelected);
  function toggle(id:number){setSelected(current=>single?[id]:current.includes(id)?current.filter(value=>value!==id):[...current,id]);}
- return <StackDialog wide flush title="Add survey" onClose={onClose} footer={<>
+ return <StackDialog wide flush title={advanceOnSelect?'Select survey':'Add survey'} onClose={onClose} footer={advanceOnSelect?undefined:<>
    <div className={styles.pickerSelection}>
      {!single&&selected.length<min&&<span className={styles.hint} role="status">Select at least {min} surveys</span>}
      <div className={styles.pickerChips}>{selected.map(id=>{
@@ -19,6 +19,6 @@ export function StackSurveyPicker({single=false,min=1,excluded=[],initialSelecte
    </div>
    <div className={styles.actions}><StackButton disabled={selected.length<min} onClick={()=>onSave(selected.map(id=>MOCK_SURVEYS.find(survey=>survey.id===id)!))}>{replace?'Update':'Add survey'}</StackButton></div>
  </>}>
-   <AiDataSourceSelection initialFolderId="my-surveys" selectedSurveyId={selected[0]??null} selectedSurveyIds={selected} selectionMode={single?'single':'multiple'} excludedSurveyIds={excluded} onSelectSurvey={survey=>toggle(survey.id)}/>
+   <AiDataSourceSelection initialFolderId="my-surveys" selectedSurveyId={selected[0]??null} selectedSurveyIds={selected} selectionMode={single?'single':'multiple'} excludedSurveyIds={excluded} onSelectSurvey={survey=>advanceOnSelect?onSave([survey]):toggle(survey.id)}/>
  </StackDialog>;
 }

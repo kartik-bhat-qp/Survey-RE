@@ -259,3 +259,17 @@ test('segment ranges, reversal, overall mean, thresholds and custom groups',asyn
  assert.equal(groups.at(-1).responses.length,2);
  assert.equal(segmentScoreCell(fixture,r,matrix,{...c,customMetric:true,weights:Object.fromEntries(matrix.options.map((o,i)=>[o.id,i===3?100:0]))}).value,200/3);
 });
+
+
+test('General Custom Metric filter type controls row filtering without changing respondent bases', () => {
+ const c = {...config, customMetric: true, filterType: 'Custom Metric', metricFilter: {...EMPTY_METRIC_FILTER, enabled: true, value: 80}};
+ assert.equal(matchesMetricFilter(79.99, c), true);
+ assert.equal(matchesMetricFilter(80, c), false);
+ for (const filterType of ['Dashboard', 'Widget', 'Combined', 'None']) {
+  assert.equal(matchesMetricFilter(90, {...c, filterType}), true, filterType);
+ }
+ assert.equal(matchesMetricFilter(90, {...c, mode: 'segments'}), true);
+ assert.equal(matchesMetricFilter(90, {...c, customMetric: false}), true);
+ const data = createHeatmapResponses(questions);
+ assert.deepEqual(filterHeatmapResponses(data, questions, c).responses, data);
+});

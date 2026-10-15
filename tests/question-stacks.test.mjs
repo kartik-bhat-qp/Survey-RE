@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {autoMapAnswers,compatibleStackQuestions,demoQuestionStack,isStackEligible,poolMetricGroup,setAnswerMapping,STACK_DEMO_QUESTIONS,validateMetricGroup} from '../src/data/question-stacks.ts';
+import {alignMetricGroupBaseline,autoMapAnswers,compatibleStackQuestions,demoQuestionStack,isStackEligible,poolMetricGroup,setAnswerMapping,STACK_DEMO_QUESTIONS,validateMetricGroup} from '../src/data/question-stacks.ts';
 const stack=demoQuestionStack();const group=stack.groups[0];const qs=STACK_DEMO_QUESTIONS;
 test('single-select eligibility rejects text, multi-select, missing options and collapsed NPS buckets',()=>{
  for(const type of ['Text','Multiple Select','Rank order','Matrix Uni choice'])assert.equal(isStackEligible({...qs[0],type}),false);
@@ -35,4 +35,26 @@ test('empty and single-answer bases preserve undefined statistics',()=>{
  const g={...group,questionIds:[1],mappings:{1:[0,1,2,3,4]}};
  assert.equal(poolMetricGroup(g,[]).mean,null);assert.equal(poolMetricGroup(g,[]).ci,null);
  const p=poolMetricGroup(g,[{id:'a',answers:{1:0}}]);assert.equal(p.mean,1);assert.equal(p.variance,null);assert.equal(p.se,null);
+});
+
+test('changing the baseline to a retained reversed question preserves mapped results and scores',()=>{
+ const before={...group,questionIds:[qs[1].id,qs[3].id],mappings:{[qs[1].id]:[4,3,2,1,0],[qs[3].id]:[0,1,2,3,4]}};
+ const after=alignMetricGroupBaseline(before,qs);
+ assert.deepEqual(after.labels,qs[1].options);
+ assert.deepEqual(after.mappings[qs[1].id],[0,1,2,3,4]);
+ assert.deepEqual(after.mappings[qs[3].id],[4,3,2,1,0]);
+ assert.deepEqual(after.scores,[5,4,3,2,1]);
+ const rows=[{id:'a',answers:{[qs[1].id]:0,[qs[3].id]:1}},{id:'b',answers:{[qs[1].id]:3,[qs[3].id]:4}}];
+ assert.equal(poolMetricGroup(after,rows).mean,poolMetricGroup(before,rows).mean);
+ assert.equal(validateMetricGroup(after,qs,stack.surveyId),null);
+ assert.deepEqual(before.mappings[qs[1].id],[4,3,2,1,0]);
+});
+
+test('baseline alignment retains unmapped answers and leaves unmatched wording for explicit mapping',()=>{
+ const before={...group,questionIds:[qs[0].id,qs[2].id],mappings:{[qs[0].id]:[0,1,2,3,4],[qs[2].id]:[-1,-1,-1,-1,-1]}};
+ const after=alignMetricGroupBaseline(before,qs);
+ assert.deepEqual(after.mappings[qs[2].id],[-1,-1,-1,-1,-1]);
+ assert.ok(validateMetricGroup(after,qs,stack.surveyId));
+ const edited={...group,mappings:{...group.mappings,[qs[1].id]:[4,3,2,1,-1]}};
+ assert.equal(alignMetricGroupBaseline(edited,qs).mappings[qs[1].id][4],-1);
 });

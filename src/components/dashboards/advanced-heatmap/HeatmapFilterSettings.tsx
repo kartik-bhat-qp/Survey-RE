@@ -2,10 +2,9 @@
 
 import { useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
-import { heatmapRespondentFilterError, type AdvancedHeatmapConfig, type HeatmapQuestion, type HeatmapRespondentFilter } from '@/data/advanced-heatmap';
+import { EMPTY_METRIC_FILTER, METRIC_FILTER_OPERATORS, metricFilterError, type MetricFilter, heatmapRespondentFilterError, type AdvancedHeatmapConfig, type HeatmapQuestion, type HeatmapRespondentFilter } from '@/data/advanced-heatmap';
 import { HeatMapSelect } from '../heat-map/HeatMapSelect';
 import { supportsAdvancedHeatmap } from './HeatmapSetup';
-import { Select } from '../heat-map/HeatMapSettingsControls';
 import regularStyles from '../heat-map/HeatMapBaseline.module.css';
 import styles from './AdvancedHeatmap.module.css';
 
@@ -21,15 +20,27 @@ const FilterModal = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m 
 })), { ssr: false });
 const blankCondition = (): HeatmapRespondentFilter['criteria'][number] => ({ rowId: '', operator: 'Is', optionIds: [] });
 
-export function HeatmapFilterSettings({ config, questions, update, segment = false, regular = false, renderActions }: { config: AdvancedHeatmapConfig; questions: HeatmapQuestion[]; update: (patch: Partial<AdvancedHeatmapConfig>) => void; segment?: boolean; regular?: boolean; renderActions?: (open:()=>void)=>ReactNode }) {
+export function HeatmapFilterSettings({ config, questions, update, segment = false, regular = false, metricApplied = false, renderActions }: { config: AdvancedHeatmapConfig; questions: HeatmapQuestion[]; update: (patch: Partial<AdvancedHeatmapConfig>) => void; segment?: boolean; regular?: boolean; metricApplied?: boolean; renderActions?: (open:()=>void)=>ReactNode }) {
   const [filter, setFilter] = useState<HeatmapRespondentFilter | null>(null);
   const type = config.filterType ?? 'Dashboard';
+  const metricAvailable = metricApplied && config.customMetric && config.mode === 'distribution';
+  const metricFilter = config.metricFilter ?? EMPTY_METRIC_FILTER;
+  const updateMetricFilter = (patch: Partial<MetricFilter>) => update({ metricFilter: { ...metricFilter, ...patch } });
+  const metricError = type === 'Custom Metric' ? metricFilterError(metricFilter) : null;
   const error = filter ? heatmapRespondentFilterError(filter, questions) : null;
   const available = questions.filter(supportsAdvancedHeatmap);
   const patchCondition = (index: number, patch: Partial<HeatmapRespondentFilter['criteria'][number]>) => setFilter(current => current && ({ ...current, criteria: current.criteria.map((c, i) => i === index ? { ...c, ...patch } : c) }));
   return <>
     {!segment && (regular ? <h3>Filter options</h3> : <h4 className={styles.sectionTitle}>Filter options</h4>)}
-    {!segment && (regular ? <Select label="Filter type" value={type} options={['Dashboard','Widget','Combined','None']} onChange={filterType=>update({filterType:filterType as AdvancedHeatmapConfig['filterType']})}/> : <label className={styles.field}>Filter type<HeatMapSelect label="Filter type" value={type} options={['Dashboard','Widget','Combined','None']} onChange={filterType => update({ filterType: filterType as AdvancedHeatmapConfig['filterType'] })} /></label>)}
+    {!segment && <label className={regular ? regularStyles.field : styles.field}><span>Filter type</span><HeatMapSelect id="advanced-heatmap-filter-type" label="Filter type" value={type} options={['Dashboard','Widget','Combined','None','Custom Metric']} disabledOptions={metricAvailable ? [] : ['Custom Metric']} onChange={filterType => update({ filterType: filterType as AdvancedHeatmapConfig['filterType'], metricFilter: { ...metricFilter, enabled: filterType === 'Custom Metric' } })} /></label>}
+    {!segment && type === 'Custom Metric' && <>
+      <div className={styles.metricFilterRow}>
+        <label className={styles.field}>Condition<HeatMapSelect label="Custom metric condition" value={metricFilter.operator} options={METRIC_FILTER_OPERATORS.map(o=>o.id)} formatOption={value=>METRIC_FILTER_OPERATORS.find(o=>o.id===value)?.label ?? String(value)} onChange={operator=>updateMetricFilter({operator:operator as MetricFilter['operator']})} /></label>
+        <label className={styles.field}>{metricFilter.operator === 'between' ? 'Lower value' : 'Threshold'}<input type="number" step="any" value={metricFilter.value ?? ''} onChange={e => updateMetricFilter({ value: e.target.value === '' ? null : Number(e.target.value) })} /></label>
+        {metricFilter.operator === 'between' && <label className={styles.field}>Upper value<input type="number" step="any" value={metricFilter.upper ?? ''} onChange={e => updateMetricFilter({ upper: e.target.value === '' ? null : Number(e.target.value) })} /></label>}
+      </div>
+      {metricError && <p className={styles.error} role="alert">{metricError}</p>}
+    </>}
     {(segment || type === 'Widget' || type === 'Combined') && (renderActions ? renderActions(()=>setFilter(config.widgetFilter ? structuredClone(config.widgetFilter) : { name: '', match: 'all', criteria: [blankCondition()] })) : <div className={regular ? regularStyles.searchRow : styles.filterActions}>
       <button type="button" className={styles.secondary} onClick={() => setFilter(config.widgetFilter ? structuredClone(config.widgetFilter) : { name: '', match: 'all', criteria: [blankCondition()] })}>{config.widgetFilter?.name || (segment ? 'Create segment' : 'Create filter')}</button>
       {config.widgetFilter && <button type="button" className={styles.secondary} onClick={() => update({ widgetFilter: undefined })}>{segment ? 'Remove segment' : 'Remove filter'}</button>}

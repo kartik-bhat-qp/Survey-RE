@@ -26,3 +26,13 @@ The custom stack survey picker has been replaced by the dashboard's actual `AiDa
 ## Current production alignment — 1 October 2026
 
 The [fresh audit](production-parity.md) supersedes the previous layout screenshots. Add survey now manages the complete selected source set, single selection uses native links, and both editors preserve drafts with a Cancel confirmation. Add metric group creates an inline row before question selection. Both use compact production-style columns and fixed bottom actions, with Save returning to the list and Update remaining in the editor. See the latest browser verification in [ui-qa.md](ui-qa.md).
+
+## Figma creation and management alignment — 14 October 2026
+
+The current Question Stack flow supersedes the earlier inline-group-row implementation: enter the stack name before type choice; Add your questions opens single-survey selection and then the shared question picker; name the metric group in that dialog and save it; manage groups in the Data type / Metric group / Questions table with full question text and a hover/focus edit pencil. Answer mappings remain expandable. Survey Stack keeps its existing editor and selection behavior.
+
+See [review and validation](figma-alignment-2026-10-14/REVIEW.md), [question picker](figma-alignment-2026-10-14/question-picker.jpg), and [editor](figma-alignment-2026-10-14/editor.jpg). The existing Tailscale preview runs at `http://prabals-mac-mini.tail5e17c3.ts.net:3001/survey-stacks` while its local server is running. Eleven targeted tests, feature lint and TypeScript pass; the full build currently encounters an unrelated Advanced Heatmap CSS error.
+
+Follow-up on 14 October: source details now appear beneath the header without source-change buttons. Expanded mappings show only selected-question columns, with the first fixed as the baseline and remaining columns editable. Group mapping/delete actions sit beside question text. Thirteen targeted tests, feature lint and TypeScript pass.
+
+Publication validation on 15 October: the heatmap portal CSS build issue is resolved. All 196 repository tests, targeted lint and the complete production build with TypeScript pass. Data-source typography remains 16px; the rejected spacing experiment remains rolled back.

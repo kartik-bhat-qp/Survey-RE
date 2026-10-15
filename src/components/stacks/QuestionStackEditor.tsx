@@ -1,36 +1,152 @@
 'use client';
+import {createPrototypeId} from '@/lib/prototype-id.mjs';
+
 import {Fragment,Suspense,useState} from 'react';
 import {useRouter,useSearchParams} from 'next/navigation';
 import {useWuShowToast} from '@npm-questionpro/wick-ui-lib';
 import {getQuestionsBySurvey} from '@/data/mock-survey-questions';
-import {setAnswerMapping,validateMetricGroup,type MetricGroup,type QuestionStack} from '@/data/question-stacks';
+import {alignMetricGroupBaseline,setAnswerMapping,validateMetricGroup,type MetricGroup,type QuestionStack,type StackQuestion} from '@/data/question-stacks';
 import {useQuestionStacks} from '@/hooks/useQuestionStacks';
 import {useBiProductBasePath,withBiProductBasePath} from '@/hooks/useBiProductBasePath';
 import {MetricGroupEditor} from './MetricGroupEditor';
 import {StackSurveyPicker} from './StackSurveyPicker';
-import {StackButton,StackDialog,StackInput,StackSelect,StackTypeIcon} from './StackControls';
+import {StackButton,StackDialog,StackSelect,StackTypeIcon} from './StackControls';
 import styles from './Stacks.module.css';
-export function QuestionStackEditor({id}:{id:string}){return <Suspense fallback={<p>Loading…</p>}><LoadedEditor id={id}/></Suspense>;}
-function LoadedEditor({id}:{id:string}){
- const {stacks,ready,error,saveStack}=useQuestionStacks();const params=useSearchParams();const stack=stacks.find(s=>s.id===id);
- if(!ready)return <p className={styles.main}>Loading Question Stack…</p>;if(error)return <p role="alert" className={styles.error}>{error}</p>;if(id!=='new'&&!stack)return <p>This Question Stack is unavailable.</p>;
- return <Editor key={id} initial={stack} name={params.get('name')??'Untitled Question Stack'} saveStack={saveStack}/>;
+
+export function QuestionStackEditor({id}:{id:string}) {
+  return <Suspense fallback={<p>Loading…</p>}><LoadedEditor id={id}/></Suspense>;
 }
-function Editor({initial,name,saveStack}:{initial?:QuestionStack;name:string;saveStack:(stack:QuestionStack)=>void}){
- const router=useRouter(),base=useBiProductBasePath(),{showToast}=useWuShowToast();const path=withBiProductBasePath(base,'/survey-stacks');
- const [draft,setDraft]=useState<QuestionStack>(()=>initial?structuredClone(initial):{id:`question-${crypto.randomUUID()}`,name,surveyId:0,surveyName:'',createdOn:new Date().toISOString().slice(0,10),groups:[]});
- const [picker,setPicker]=useState(false),[menu,setMenu]=useState(false);const [editing,setEditing]=useState<MetricGroup|undefined>();const [expanded,setExpanded]=useState<string[]>([]);const [remove,setRemove]=useState<string|null>(null);const [replaceConfirm,setReplaceConfirm]=useState(false);const [removeSurvey,setRemoveSurvey]=useState(false);const [error,setError]=useState('');const [discard,setDiscard]=useState(false);const [savedSnapshot,setSavedSnapshot]=useState(()=>JSON.stringify(draft));
- const gridWidth=Math.max(836,Math.min(1270,310+Math.max(0,...draft.groups.map(group=>group.questionIds.length))*240));
- const questions=getQuestionsBySurvey(draft.surveyId);const duplicateNames=new Set(draft.groups.map(g=>g.name.trim().toLowerCase())).size!==draft.groups.length;const invalid=duplicateNames||draft.groups.some(g=>validateMetricGroup(g,questions,draft.surveyId));
- function update(group:MetricGroup){setDraft({...draft,groups:draft.groups.map(g=>g.id===group.id?group:g)});}
- function save(){try{saveStack(draft);showToast({message:`Question Stack '${draft.name}' saved`,variant:'success'});if(initial)setSavedSnapshot(JSON.stringify(draft));else router.push(path);}catch{setError('Could not save changes. Your draft is still available.');}}
- return <div className={styles.page}><header className={styles.header}><h1>{draft.name}</h1><div className={styles.actions}><StackButton variant="outline" onClick={()=>JSON.stringify(draft)!==savedSnapshot?setDiscard(true):router.push(path)}>Cancel</StackButton>{draft.surveyId!==0&&<StackButton disabled={!draft.groups.length||invalid} onClick={save}>{initial?'Update':'Save'}</StackButton>}</div></header>{error&&<p role="alert" className={styles.error}>{error}</p>}{duplicateNames&&<p role="alert" className={styles.error}>Use unique metric group names within this stack.</p>}
- {!draft.surveyId?<div className={styles.productionEmpty}><h2>Add your survey</h2><p>Click on plus button to create question stack</p><StackButton variant="link" onClick={()=>setPicker(true)}>＋ Add survey</StackButton></div>:<><div className={styles.mappingViewport} role="region" aria-label="Metric groups" tabIndex={0}><table className={styles.fieldTable} style={{width:gridWidth}}><colgroup><col style={{width:190}}/><col style={{width:250}}/><col style={{width:gridWidth-536}}/><col style={{width:96}}/></colgroup><thead><tr><th>Data type</th><th>Metric group</th><th><div className={styles.surveyHeading}><span title={draft.surveyName}>{draft.surveyName}</span><button aria-label="Survey options" onClick={()=>setMenu(!menu)}>⋮</button>{menu&&<div className={styles.columnMenu}><button onClick={()=>{setMenu(false);if(draft.groups.length)setReplaceConfirm(true);else setPicker(true);}}>Replace</button><button onClick={()=>{setMenu(false);setRemoveSurvey(true);}}>Delete</button></div>}</div></th><th/></tr></thead><tbody>{draft.groups.map(group=>{const open=expanded.includes(group.id),issue=validateMetricGroup(group,questions,draft.surveyId);return <Fragment key={group.id}><tr className={open?styles.expandedRow:''}><td><span className={styles.dataType}><StackTypeIcon type={group.questionIds.length?questions.find(q=>q.id===group.questionIds[0])?.type:undefined}/></span></td><td><StackInput autoFocus={!group.questionIds.length} aria-label={`Metric group ${group.name}`} value={group.name} variant="flat" title={group.name} onChange={e=>update({...group,name:e.target.value})}/><small>{group.questionIds.length} questions</small></td><td><button className={styles.questionChoice} aria-label={`Select questions for ${group.name}`} title={group.questionIds.map(id=>questions.find(q=>q.id===id)?.text).join('\n')} onClick={()=>setEditing(group)}><span>{group.questionIds.length?`${questions.find(q=>q.id===group.questionIds[0])?.text??'Unavailable question'}${group.questionIds.length>1?` (+${group.questionIds.length-1})`:''}`:'---Select questions---'}</span><span className="wm-arrow-drop-down" aria-hidden="true"/></button>{!group.questionIds.length&&<small>Select 2–20 compatible questions</small>}{issue&&group.questionIds.length>0&&<p role="alert" className={styles.error}>{issue}</p>}</td><td><div className={styles.rowActions}><button className={styles.iconButton} disabled={!group.questionIds.length} aria-label={`${open?'Collapse':'Expand'} ${group.name}`} onClick={()=>setExpanded(open?expanded.filter(id=>id!==group.id):[...expanded,group.id])}><span className={open?'wm-expand-less':'wm-expand-more'} aria-hidden="true"/></button><button className={styles.iconButton} aria-label={`Delete ${group.name}`} onClick={()=>setRemove(group.id)}><span className="wm-delete" aria-hidden="true"/></button></div></td></tr>{open&&<tr><td colSpan={4} className={styles.mappingCell}><div className={styles.groupMapping} role="region" aria-label={`${group.name} answer mappings`} tabIndex={0}><table className={styles.table} style={{width:310+group.questionIds.length*240,minWidth:'100%'}}><colgroup><col style={{width:220}}/><col style={{width:90}}/>{group.questionIds.map(id=><col key={id} style={{width:240}}/>)}</colgroup><thead><tr><th>Common answer</th><th>Score</th>{group.questionIds.map(id=><th key={id} title={questions.find(q=>q.id===id)?.text}>{questions.find(q=>q.id===id)?.code}</th>)}</tr></thead><tbody>{group.labels.map((label,i)=><tr key={i}><td><input aria-label={`${group.name}: common answer ${i+1}`} value={label} onChange={e=>update({...group,labels:group.labels.map((v,j)=>i===j?e.target.value:v)})}/></td><td><input type="number" step="any" aria-label={`${group.name}: score ${i+1}`} value={Number.isNaN(group.scores[i])?'':group.scores[i]} onChange={e=>update({...group,scores:group.scores.map((v,j)=>i===j?e.target.value===''?NaN:Number(e.target.value):v)})}/></td>{group.questionIds.map(id=>{const q=questions.find(q=>q.id===id)!;const mapping=group.mappings[id]??[];const sourceIndex=mapping.indexOf(i);return <td key={id}><StackSelect label={`${group.name}: ${q.code}: ${label}`} value={String(sourceIndex)} options={(q.options??[]).map((text,index)=>({value:String(index),label:text}))} placeholder="Select matching answer" onChange={value=>{const next=[...mapping];if(sourceIndex>=0)next[sourceIndex]=-1;update({...group,mappings:{...group.mappings,[id]:setAnswerMapping(next,Number(value),i)}});}}/></td>;})}</tr>)}</tbody></table></div></td></tr>}</Fragment>;})}</tbody></table>{!draft.groups.length&&<div className={styles.groupEmpty}><p>Add related questions as a metric group</p></div>}</div><div className={styles.addFieldBar}><StackButton onClick={()=>setDraft({...draft,groups:[...draft.groups,{id:crypto.randomUUID(),name:'untitled',questionIds:[],labels:[],scores:[],mappings:{}}]})}>＋ Add metric group</StackButton></div></>}
- {picker&&<StackSurveyPicker single replace={!!draft.surveyId} initialSelected={draft.surveyId?[draft.surveyId]:[]} onClose={()=>setPicker(false)} onSave={surveys=>{if(surveys[0].id!==draft.surveyId)setDraft({...draft,surveyId:surveys[0].id,surveyName:surveys[0].name,groups:[]});setPicker(false);}}/>}
- {editing&&<MetricGroupEditor group={editing} questions={questions} surveyId={draft.surveyId} onClose={()=>setEditing(undefined)} onSave={group=>{setDraft({...draft,groups:draft.groups.some(g=>g.id===group.id)?draft.groups.map(g=>g.id===group.id?group:g):[...draft.groups,group]});setExpanded([...expanded.filter(id=>id!==group.id),group.id]);setEditing(undefined);}}/>}
- {discard&&<StackDialog title="Question stack" onClose={()=>setDiscard(false)} footer={<StackButton onClick={()=>router.push(path)}>Yes</StackButton>}><p>You have some unsaved changes. Are you sure you want to go back?</p></StackDialog>}
- {remove&&<StackDialog title="Delete metric group" onClose={()=>setRemove(null)} footer={<StackButton onClick={()=>{setDraft({...draft,groups:draft.groups.filter(g=>g.id!==remove)});setRemove(null);}}>Yes</StackButton>}><p>Delete this metric group and its answer mappings? The change is applied when you save the stack.</p></StackDialog>}
- {removeSurvey&&<StackDialog title="Delete survey" onClose={()=>setRemoveSurvey(false)} footer={<StackButton onClick={()=>{setDraft({...draft,surveyId:0,surveyName:'',groups:[]});setExpanded([]);setRemoveSurvey(false);}}>Yes</StackButton>}><p>Are you sure you want to delete this survey? Its metric groups and answer mappings will be removed from this stack.</p></StackDialog>}
- {replaceConfirm&&<StackDialog title="Replace survey" onClose={()=>setReplaceConfirm(false)} footer={<StackButton onClick={()=>{setReplaceConfirm(false);setPicker(true);}}>Continue</StackButton>}><p>Choosing a different survey clears this stack’s metric groups and mappings when you save. Cancel the survey picker to keep the existing groups.</p></StackDialog>}
- </div>;
+
+function LoadedEditor({id}:{id:string}) {
+  const {stacks,ready,error,saveStack}=useQuestionStacks();
+  const params=useSearchParams();
+  const stack=stacks.find(s=>s.id===id);
+  if(!ready)return <p className={styles.main}>Loading Question Stack…</p>;
+  if(error)return <p role="alert" className={styles.error}>{error}</p>;
+  if(id!=='new'&&!stack)return <p>This Question Stack is unavailable.</p>;
+  return <Editor key={id} initial={stack} name={params.get('name')??'Untitled Question Stack'} saveStack={saveStack}/>;
+}
+
+function emptyGroup():MetricGroup {
+  return {id:createPrototypeId(),name:'',questionIds:[],labels:[],scores:[],mappings:{}};
+}
+
+function Editor({initial,name,saveStack}:{initial?:QuestionStack;name:string;saveStack:(stack:QuestionStack)=>void}) {
+  const router=useRouter(),base=useBiProductBasePath(),{showToast}=useWuShowToast();
+  const path=withBiProductBasePath(base,'/survey-stacks');
+  const [draft,setDraft]=useState<QuestionStack>(()=>initial?{...structuredClone(initial),groups:initial.groups.map(group=>alignMetricGroupBaseline(group,getQuestionsBySurvey(initial.surveyId)))}:{id:`question-${createPrototypeId()}`,name,surveyId:0,surveyName:'',createdOn:new Date().toISOString().slice(0,10),groups:[]});
+  const [picker,setPicker]=useState(false);
+  const [editing,setEditing]=useState<MetricGroup>();
+  const [pendingGroup,setPendingGroup]=useState<MetricGroup>();
+  const [expanded,setExpanded]=useState<string[]>([]);
+  const [remove,setRemove]=useState<string|null>(null);
+  const [error,setError]=useState('');
+  const [discard,setDiscard]=useState(false);
+  const [savedSnapshot,setSavedSnapshot]=useState(()=>JSON.stringify(draft));
+  const questions=getQuestionsBySurvey(draft.surveyId);
+  const duplicateNames=new Set(draft.groups.map(g=>g.name.trim().toLowerCase())).size!==draft.groups.length;
+  const invalid=duplicateNames||draft.groups.some(g=>validateMetricGroup(g,questions,draft.surveyId));
+
+  function update(group:MetricGroup) {
+    setDraft(current=>({...current,groups:current.groups.map(g=>g.id===group.id?group:g)}));
+  }
+  function cancel() {
+    if(JSON.stringify(draft)!==savedSnapshot)setDiscard(true);else router.push(path);
+  }
+  function addGroup() {
+    if(!draft.surveyId)setPicker(true);else setEditing(emptyGroup());
+  }
+  function save() {
+    if(!draft.name.trim()||!draft.surveyId||!draft.groups.length||invalid)return;
+    try {
+      saveStack(draft);
+      showToast({message:`Question Stack '${draft.name}' saved`,variant:'success'});
+      if(initial)setSavedSnapshot(JSON.stringify(draft));else router.push(path);
+    }catch{setError('Could not save changes. Your draft is still available.');}
+  }
+
+  return <div className={`${styles.page} ${styles.questionStack}`}>
+    <header className={styles.header}>
+      <button className={styles.iconButton} aria-label="Back to stacks" onClick={cancel}><span className="wm-arrow-back" aria-hidden="true"/></button>
+      <h1>{draft.name}</h1>
+      <div className={styles.actions}>
+        <StackButton variant="outline" onClick={cancel}>Cancel</StackButton>
+        {!!draft.groups.length&&<StackButton disabled={!!invalid} onClick={save}>{initial?'Update':'Save'}</StackButton>}
+      </div>
+    </header>
+    {!!draft.surveyId&&<div className={styles.questionStackSource}><span>Data source: <strong>{draft.surveyName}</strong></span></div>}
+    {error&&<p role="alert" className={styles.error}>{error}</p>}
+    {duplicateNames&&<p role="alert" className={styles.error}>Use unique metric group names within this stack.</p>}
+    {!draft.groups.length?<div className={styles.productionEmpty}>
+      <h2>Add your questions</h2>
+      <p>Click on plus button to create a question stack</p>
+      <StackButton variant="outline" className={styles.addQuestions} aria-label="Add your questions" onClick={addGroup}><span className="wm-add" aria-hidden="true"/></StackButton>
+    </div>:<>
+      <div className={styles.mappingViewport} role="region" aria-label="Metric groups" tabIndex={0}>
+        <table className={`${styles.fieldTable} ${styles.metricGroupTable}`}>
+          <colgroup><col style={{width:140}}/><col style={{width:260}}/><col/></colgroup>
+          <thead><tr><th>Data type</th><th>Metric group</th><th>Questions</th></tr></thead>
+          <tbody>{draft.groups.map(group=>{
+            const open=expanded.includes(group.id),issue=validateMetricGroup(group,questions,draft.surveyId);
+            return <Fragment key={group.id}>
+              <tr className={open?styles.expandedRow:''}>
+                <td><div className={styles.metricTypeCell}>
+                  <button className={`${styles.iconButton} ${styles.metricEdit}`} aria-label={`Edit ${group.name}`} onClick={()=>setEditing(group)}><span className="wm-edit" aria-hidden="true"/></button>
+                  <StackTypeIcon type={questions.find(q=>q.id===group.questionIds[0])?.type}/>
+                </div></td>
+                <td><span className={styles.metricGroupName}>{group.name}</span></td>
+                <td><div className={styles.questionsWithActions}><div className={styles.groupQuestions}>{group.questionIds.map(id=><p key={id}>{questions.find(q=>q.id===id)?.text??'Unavailable question'}</p>)}</div>
+                <div className={styles.rowActions}>
+                  <button className={styles.iconButton} aria-expanded={open} aria-label={`${open?'Hide':'Review'} answer mappings for ${group.name}`} title="Answer mappings" onClick={()=>setExpanded(open?expanded.filter(id=>id!==group.id):[...expanded,group.id])}><span className={open?'wm-expand-less':'wm-expand-more'} aria-hidden="true"/></button>
+                  <button className={styles.iconButton} aria-label={`Delete ${group.name}`} onClick={()=>setRemove(group.id)}><span className="wm-delete" aria-hidden="true"/></button>
+                </div></div>{issue&&<p role="alert" className={styles.mappingIssue}>{issue}</p>}</td>
+              </tr>
+              {open&&<tr><td colSpan={3} className={styles.mappingCell}><AnswerMappings group={group} questions={questions} onChange={update}/></td></tr>}
+            </Fragment>;
+          })}</tbody>
+        </table>
+      </div>
+      <div className={styles.addFieldBar}><StackButton onClick={addGroup}>＋ Add metric group</StackButton></div>
+    </>}
+    {picker&&<StackSurveyPicker single advanceOnSelect initialSelected={draft.surveyId?[draft.surveyId]:[]} onClose={()=>{setPicker(false);setPendingGroup(undefined);}} onSave={surveys=>{
+      const survey=surveys[0];
+      const changed=survey.id!==draft.surveyId;
+      if(changed){setDraft({...draft,surveyId:survey.id,surveyName:survey.name,groups:[]});setExpanded([]);}
+      setPicker(false);
+      if(!draft.groups.length||changed)setEditing(!changed&&pendingGroup?pendingGroup:emptyGroup());
+      setPendingGroup(undefined);
+    }}/>}
+    {editing&&<MetricGroupEditor group={editing} questions={questions} surveyId={draft.surveyId} existingNames={draft.groups.filter(g=>g.id!==editing.id).map(g=>g.name)} onClose={()=>setEditing(undefined)} onBack={group=>{
+      setEditing(undefined);
+      if(!draft.groups.length){setPendingGroup(group);setPicker(true);}
+    }} onSave={group=>{
+      setDraft({...draft,groups:draft.groups.some(g=>g.id===group.id)?draft.groups.map(g=>g.id===group.id?group:g):[...draft.groups,group]});
+      if(validateMetricGroup(group,questions,draft.surveyId))setExpanded([...expanded.filter(id=>id!==group.id),group.id]);
+      setEditing(undefined);
+    }}/>}
+    {discard&&<StackDialog title="Question stack" onClose={()=>setDiscard(false)} footer={<><StackButton variant="secondary" onClick={()=>setDiscard(false)}>Keep editing</StackButton><StackButton onClick={()=>router.push(path)}>Yes</StackButton></>}><p>You have some unsaved changes. Are you sure you want to go back?</p></StackDialog>}
+    {remove&&<StackDialog title="Delete metric group" onClose={()=>setRemove(null)} footer={<><StackButton variant="secondary" onClick={()=>setRemove(null)}>Cancel</StackButton><StackButton onClick={()=>{setDraft({...draft,groups:draft.groups.filter(g=>g.id!==remove)});setExpanded(expanded.filter(id=>id!==remove));setRemove(null);}}>Yes</StackButton></>}><p>Delete this metric group and its answer mappings? The change is applied when you save the stack.</p></StackDialog>}
+  </div>;
+}
+
+function AnswerMappings({group,questions,onChange}:{group:MetricGroup;questions:StackQuestion[];onChange:(group:MetricGroup)=>void}) {
+  return <div className={`${styles.groupMapping} ${styles.questionAnswerMapping}`} role="region" aria-label={`${group.name} answer mappings`} tabIndex={0}>
+    <table className={styles.table} style={{width:group.questionIds.length*280}}>
+      <colgroup>{group.questionIds.map(id=><col key={id} style={{width:280}}/>)}</colgroup>
+      <thead><tr>{group.questionIds.map((id,index)=>{const q=questions.find(q=>q.id===id);return <th key={id}><span>{q?`${q.code} · ${q.text}`:'Unavailable question'}</span>{index===0&&<small>Baseline</small>}</th>;})}</tr></thead>
+      <tbody>{group.labels.map((label,i)=><tr key={i}>
+        {group.questionIds.map((id,index)=>{
+          const q=questions.find(q=>q.id===id);
+          if(!q)return <td key={id}>Unavailable question</td>;
+          const mapping=group.mappings[id]??[],sourceIndex=mapping.indexOf(i);
+          return <td key={id}><StackSelect disabled={index===0} label={`${group.name}: ${q.code}: ${label}`} value={String(sourceIndex)} options={(q.options??[]).map((text,index)=>({value:String(index),label:text}))} placeholder="Select matching answer" onChange={value=>{
+            if(index===0)return;
+            const next=[...mapping];
+            if(sourceIndex>=0)next[sourceIndex]=-1;
+            onChange({...group,mappings:{...group.mappings,[id]:setAnswerMapping(next,Number(value),i)}});
+          }}/></td>;
+        })}
+      </tr>)}</tbody>
+    </table>
+  </div>;
 }

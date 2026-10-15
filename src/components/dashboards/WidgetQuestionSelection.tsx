@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { StandardLoader } from '@/components/ui/StandardLoader';
@@ -34,6 +34,9 @@ interface WidgetQuestionSelectionProps {
   wholeQuestionsOnly?: boolean;
   unavailableQuestionIds?: number[];
   showSelectionCount?: boolean;
+  showSelectAll?: boolean;
+  hideSearch?: boolean;
+  toolbarContent?: ReactNode;
   onSelectionChange?: (ids: number[]) => void;
   onSelectQuestion?: (question: SurveyQuestion) => void;
   onToggleQuestion?: (question: SurveyQuestion, selected: boolean) => void;
@@ -49,12 +52,16 @@ export function WidgetQuestionSelection({
   wholeQuestionsOnly = false,
   unavailableQuestionIds = [],
   showSelectionCount = false,
+  showSelectAll = true,
+  hideSearch = false,
+  toolbarContent,
   onSelectionChange,
   onSelectQuestion,
   onToggleQuestion,
   excludeQuestionIds = [],
 }: WidgetQuestionSelectionProps) {
   const [search, setSearch] = useState('');
+  const filterText = hideSearch ? '' : search;
   const [expandedParentIds, setExpandedParentIds] = useState<Set<number>>(() => new Set());
 
   const excludedIds = useMemo(() => new Set(excludeQuestionIds), [excludeQuestionIds]);
@@ -83,7 +90,7 @@ export function WidgetQuestionSelection({
     });
   }, []);
 
-  const selectableVisible = useMemo(() => displayQuestions.filter(q => !unavailableIds.has(q.id) && q.text.toLowerCase().includes(search.toLowerCase())), [displayQuestions, unavailableIds, search]);
+  const selectableVisible = useMemo(() => displayQuestions.filter(q => !unavailableIds.has(q.id) && `${q.code} ${q.text}`.toLowerCase().includes(filterText.toLowerCase())), [displayQuestions, unavailableIds, filterText]);
   const allVisibleSelected = multiSelect && selectableVisible.length > 0 && selectableVisible.every(q => selectedIds.has(q.id));
   const toggleQuestion = useCallback((question: SurveyQuestion, checked: boolean) => {
     const key = question.id;
@@ -112,6 +119,7 @@ export function WidgetQuestionSelection({
       {
         accessorKey: 'code',
         header: 'Code',
+        filterable: true,
         enableSorting: true,
         size: 80,
       },
@@ -191,11 +199,11 @@ export function WidgetQuestionSelection({
         accessorKey: 'id',
         header: () => (
           <div className={styles.checkboxHeader}>
-            <WuCheckbox
+            {showSelectAll && <WuCheckbox
               checked={allVisibleSelected}
               onChange={toggleAllVisible}
               aria-label="Select all questions"
-            />
+            />}
           </div>
         ),
         cell: ({ row }) => {
@@ -219,6 +227,7 @@ export function WidgetQuestionSelection({
     ];
   }, [
     allVisibleSelected,
+    showSelectAll,
     expandedParentIds,
     multiSelect,
     onSelectQuestion,
@@ -234,15 +243,17 @@ export function WidgetQuestionSelection({
   return (
     <div className={styles.root}>
       <div className={styles.searchRow}>
-        <WuInput
+        {toolbarContent}
+        {!hideSearch && <WuInput
           variant="outlined"
           placeholder="Search by question name"
+          aria-label="Search questions"
           Icon={<span className="wm-search" />}
           iconPosition="left"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className={styles.searchInput}
-        />
+        />}
         {showSelectionCount && <span className={styles.selectionCount} aria-live="polite">{questions.filter(q => !unavailableIds.has(q.id) && selectedIds.has(q.id)).length} out of {questions.filter(q => !unavailableIds.has(q.id)).length}</span>}
       </div>
       <div className={styles.tableArea}>
@@ -251,7 +262,7 @@ export function WidgetQuestionSelection({
           columns={columns as unknown as IWuTableColumnDef<unknown>[]}
           variant="unstyled"
           sort={{ enabled: true }}
-          filterText={search}
+          filterText={filterText}
         />
       </div>
     </div>

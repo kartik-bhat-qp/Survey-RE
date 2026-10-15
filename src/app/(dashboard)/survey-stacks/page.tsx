@@ -20,10 +20,6 @@ type SurveyStack = {
   completedResponses: number;
 };
 
-const WuButton = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
-  { ssr: false }
-);
 const WuInput = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuInput })),
   { ssr: false }
@@ -83,7 +79,6 @@ export default function SurveyStacksPage() {
   const surveyStacksPath = withBiProductBasePath(basePath, '/survey-stacks');
   const [searchTerm, setSearchTerm] = useState('');
   const [chooseType,setChooseType] = useState(false);
-  const [newType,setNewType]=useState<'Question Stack'|'Survey Stack'|null>(null);
   const [newName,setNewName]=useState('');
   const router = useRouter();
   const {stacks:questionStacks,error,saveStack,removeStack} = useQuestionStacks();
@@ -117,7 +112,7 @@ export default function SurveyStacksPage() {
   const columns: IWuTableColumnDef<SurveyStack>[] = [
     {
       accessorKey: 'name',
-      header: 'Name',
+      header: 'Stack name',
       filterable: true,
       cell: ({ row }) => (
         <Link
@@ -129,7 +124,7 @@ export default function SurveyStacksPage() {
       ),
     },
     {
-      accessorKey: 'kind', header: 'Type', cell: ({row}) => row.original.kind ?? 'Survey Stack',
+      accessorKey: 'kind', header: 'Stack type', cell: ({row}) => row.original.kind ?? 'Survey Stack',
     },
     {
       accessorKey: 'createdOn',
@@ -138,7 +133,7 @@ export default function SurveyStacksPage() {
     },
     {
       accessorKey: 'completedResponses',
-      header: 'Completed responses',
+      header: 'Responses',
       headerAlign: 'left',
       cellAlign: 'left',
       cell: ({ row }) => row.original.completedResponses,
@@ -164,30 +159,23 @@ export default function SurveyStacksPage() {
         <h1 className="text-[18px] font-semibold leading-none text-[#515b6b]">
           Stacks
         </h1>
-        {newType?<form className={stackStyles.inlineName} onSubmit={e=>{e.preventDefault();if(newName.trim())router.push(withBiProductBasePath(basePath,`${newType==='Question Stack'?'/question-stacks':'/survey-stacks'}/new?name=${encodeURIComponent(newName.trim())}`));}}><div className={stackStyles.nameInput}><WuInput autoFocus aria-label="Stack name" placeholder="Stack name" value={newName} onChange={e=>setNewName(e.target.value)}/></div><StackButton type="submit" disabled={!newName.trim()}>Create {newType}</StackButton><StackButton variant="link" aria-label="Cancel new stack" onClick={()=>{setNewType(null);setNewName('');}}>×</StackButton></form>:<WuButton
-          onClick={()=>setChooseType(true)}
-          className="inline-flex h-8 items-center gap-2 rounded-[4px] bg-[#1e88e5] px-3 text-[13px] font-medium text-white shadow-sm transition hover:bg-[#1976d2]"
-          Icon={<span className="wm-add text-[16px]" aria-hidden="true" />}
-        >
-          New stack
-        </WuButton>}
+
       </div>
 
       {action&&<StackDialog title={action.kind==='rename'?'Rename stack':'Delete stack'} onClose={()=>setAction(null)} footer={<><StackButton variant="secondary" onClick={()=>setAction(null)}>Cancel</StackButton><StackButton disabled={action.kind==='rename'&&!actionName.trim()} onClick={applyAction}>{action.kind==='rename'?'Update':'Yes'}</StackButton></>}>{action.kind==='rename'?<StackInput aria-label="Stack name" value={actionName} onChange={e=>setActionName(e.target.value)}/>:<p>Delete “{action.stack.name}”? Widgets using this stack will need a new source.</p>}{actionError&&<p role="alert">{actionError}</p>}</StackDialog>}
       {error && <p role="alert" className={stackStyles.error}>{error}</p>}
-      {chooseType && <StackDialog title="Create new stack" onClose={()=>setChooseType(false)}><div className={stackStyles.choices}><button className={stackStyles.choice} onClick={()=>{setChooseType(false);setNewType('Question Stack');}}><span className={stackStyles.choiceTitle}><span className="wm-layers" aria-hidden="true"/><strong>Question Stack</strong></span><p>Group related questions from one survey into reusable metrics.</p></button><button className={stackStyles.choice} onClick={()=>{setChooseType(false);setNewType('Survey Stack');}}><span className={stackStyles.choiceTitle}><span className="wm-layers" aria-hidden="true"/><strong>Survey Stack</strong></span><p>Combine fields and answers across multiple surveys.</p></button></div></StackDialog>}
+      {chooseType && <StackDialog wide title="Select stack type" onClose={()=>setChooseType(false)}><div className={stackStyles.choices}>
+        <button className={stackStyles.choice} onClick={()=>router.push(withBiProductBasePath(basePath,`/survey-stacks/new?name=${encodeURIComponent(newName.trim())}`))}><span className={stackStyles.choiceIcon}><span className="wm-bar-chart" aria-hidden="true"/></span><div><strong>Survey Stack</strong><p>Create unified analysis using questions from multiple surveys</p></div></button>
+        <button className={stackStyles.choice} onClick={()=>router.push(withBiProductBasePath(basePath,`/question-stacks/new?name=${encodeURIComponent(newName.trim())}`))}><span className={stackStyles.choiceIcon}><span className="wm-layers" aria-hidden="true"/></span><div><strong>Question Stack</strong><p>Create unified analysis using questions from a single survey</p></div></button>
+      </div></StackDialog>}
       <section className="px-[31px] pt-[33px]">
-        <WuInput
-          type="search"
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Search"
-          aria-label="Search stacks"
-          variant="flat"
-          Icon={<span className="wm-search text-[13px]" aria-hidden="true" />}
-          iconPosition="left"
-          className="h-8 w-[165px] rounded-[4px] border-0 border-b border-[#d7dbe2] bg-[#f3f3f4] text-[12px] text-[#253449]"
-        />
+        <div className={stackStyles.stackListToolbar}>
+          <form className={stackStyles.inlineName} onSubmit={e=>{e.preventDefault();if(newName.trim())setChooseType(true);}}>
+            <div className={stackStyles.nameInput}><WuInput aria-label="Stack name" placeholder="Enter stack name" variant="flat" value={newName} onChange={e=>setNewName(e.target.value)}/></div>
+            <StackButton type="submit" disabled={!newName.trim()} Icon={<span className="wm-add" aria-hidden="true"/>}>New stack</StackButton>
+          </form>
+          <WuInput type="search" value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} placeholder="Search" aria-label="Search stacks" variant="flat" Icon={<span className="wm-search" aria-hidden="true"/>} iconPosition="left" className="h-8 w-[220px] rounded-[4px] border-0 border-b border-[#d7dbe2] bg-[#f3f3f4] text-[12px] text-[#253449]"/>
+        </div>
 
         <div className="mt-4 overflow-x-auto">
           <WuTable

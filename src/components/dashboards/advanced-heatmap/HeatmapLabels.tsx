@@ -56,7 +56,7 @@ export function HeatmapLabels({ questions, draft, update }: Props) {
   }
   return <>
     <div className={draft.mode === 'segments' ? regular.field : styles.field}><span>{draft.mode === 'segments' ? 'Manage rows (questions)' : 'Questions'}</span>
-      <WuSelect aria-label="Select questions" multiple variant="outlined" className={styles.questionSelect} maxHeight={300} maxContentWidth="410px"
+      <WuSelect id="advanced-heatmap-question-picker" aria-label="Select questions" multiple variant="outlined" className={styles.questionSelect} maxHeight={300} maxContentWidth="410px"
         accessorKey={{ value: 'value', label: 'label' }}
         data={questionOptions.filter(q => q.label.toLowerCase().includes(questionSearch.toLowerCase()))}
         value={questionOptions.filter(q => selected.some(s => s.id === q.value))}

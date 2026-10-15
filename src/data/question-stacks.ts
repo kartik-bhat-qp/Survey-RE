@@ -43,6 +43,32 @@ export function autoMapAnswers(source: string[], labels: string[]): number[] {
 export function setAnswerMapping(values: number[], sourceIndex: number, targetIndex: number): number[] {
   return values.map((value, index) => index === sourceIndex ? targetIndex : targetIndex >= 0 && value === targetIndex ? -1 : value);
 }
+/** Keep the first selected question fixed and rebase retained mappings if it changes. */
+export function alignMetricGroupBaseline(group: MetricGroup, questions: StackQuestion[]): MetricGroup {
+  const baseline = questions.find(q => q.id === group.questionIds[0]);
+  if (!baseline?.options) return group;
+  const previous = group.mappings[baseline.id] ?? autoMapAnswers(baseline.options, group.labels);
+  const oldToBaseline = new Map<number, number>();
+  previous.forEach((target, index) => {
+    if (target >= 0 && previous.filter(value => value === target).length === 1) oldToBaseline.set(target, index);
+  });
+  return {
+    ...group,
+    labels: [...baseline.options],
+    scores: baseline.options.map((_, index) => previous[index] >= 0 && previous[index] < group.scores.length ? group.scores[previous[index]] : index + 1),
+    mappings: Object.fromEntries(group.questionIds.map(id => {
+      if (id === baseline.id) return [id, baseline.options!.map((_, index) => index)];
+      const q = questions.find(question => question.id === id);
+      const old = group.mappings[id];
+      const exact = autoMapAnswers(q?.options ?? [], baseline.options!);
+      return [id, (q?.options ?? []).map((_, index) => {
+        const target = old?.[index];
+        if (target !== undefined && target < 0) return -1;
+        return (target === undefined ? undefined : oldToBaseline.get(target)) ?? exact[index] ?? -1;
+      })];
+    })),
+  };
+}
 export function validateMetricGroup(group: MetricGroup, questions: StackQuestion[], surveyId: number): string | null {
   if (!group.name.trim()) return 'Enter a metric group name.';
   if (group.questionIds.length < 2) return 'Please select at least 2 questions.';

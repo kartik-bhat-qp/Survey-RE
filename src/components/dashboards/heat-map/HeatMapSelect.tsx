@@ -7,8 +7,10 @@ const WuSelect = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then(module => ({ default: module.WuSelect })),
   { ssr: false }
 );
-interface Option { value: string; label: string }
+interface Option { value: string; label: string; disabled?: boolean }
 interface HeatMapSelectProps {
+  id?: string;
+  disabledOptions?: string[];
   label: string;
   value: string | number;
   options: (string | number)[];
@@ -17,9 +19,10 @@ interface HeatMapSelectProps {
 }
 
 /** Shared production-style select, with controlled values and WickUI keyboard handling. */
-export function HeatMapSelect({ label, value, options, onChange, formatOption = String }: HeatMapSelectProps) {
-  const data: Option[] = options.map(option => ({ value: String(option), label: formatOption(option) }));
+export function HeatMapSelect({ label, value, options, onChange, formatOption = String, disabledOptions = [], id }: HeatMapSelectProps) {
+  const data: Option[] = options.map(option => ({ value: String(option), label: formatOption(option), disabled: disabledOptions.includes(String(option)) }));
   return <WuSelect
+    id={id}
     aria-label={label}
     data={data}
     accessorKey={{ value: 'value', label: 'label' }}
@@ -28,7 +31,7 @@ export function HeatMapSelect({ label, value, options, onChange, formatOption = 
     className={styles.selectTrigger}
     onSelect={selected => {
       const option = selected as Option | Option[];
-      if (!Array.isArray(option)) onChange(option.value);
+      if (!Array.isArray(option) && !option.disabled) onChange(option.value);
     }}
   />;
 }

@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import dynamic from 'next/dynamic';
 import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
-import { filterHeatmapResponses, ANALYSIS_MODES, isHeatmapOptionExcluded, EMPTY_METRIC_FILTER, METRIC_FILTER_OPERATORS, heatmapRowGroups, isMetricFilterActive, metricFilterError, adaptHeatmapQuestions, createHeatmapResponses, distributionCell, distributionColumns, poolDistributionCells, segmentScoreCell, segmentOverallAverage, segmentBandIndex, advancedHeatmapSegments, summaryCell, type AdvancedHeatmapConfig, type HeatmapCell, type HeatmapQuestion, type MetricFilter } from '@/data/advanced-heatmap';
+import { filterHeatmapResponses, ANALYSIS_MODES, isHeatmapOptionExcluded, EMPTY_METRIC_FILTER, METRIC_FILTER_OPERATORS, heatmapRowGroups, isMetricFilterActive, metricFilterError, adaptHeatmapQuestions, createHeatmapResponses, distributionCell, distributionColumns, poolDistributionCells, segmentScoreCell, segmentOverallAverage, segmentBandIndex, advancedHeatmapSegments, summaryCell, type AdvancedHeatmapConfig, type HeatmapCell, type HeatmapQuestion } from '@/data/advanced-heatmap';
 import type { DashboardActiveFilter } from '@/data/mock-dashboard-filters';
 import { getReadableDesignColor, getDashboardDesignColors, type DashboardDesign } from '@/data/dashboard-design';
 import { HeatmapFilterSettings } from './HeatmapFilterSettings';
@@ -29,7 +29,6 @@ export function AdvancedHeatmapWidget({ config, onChange, dashboardFilter, dashb
   const [tab, setTab] = useState<SettingsTab>('General');
   const update = (patch: Partial<AdvancedHeatmapConfig>) => setDraft(current => ({ ...current, ...patch }));
   const draftMetricFilter = draft.metricFilter ?? EMPTY_METRIC_FILTER;
-  const updateMetricFilter = (patch: Partial<MetricFilter>) => update({ metricFilter: { ...draftMetricFilter, ...patch } });
   const filterError = isMetricFilterActive(draft) ? metricFilterError(draftMetricFilter) : null;
   const missingWeights = draft.customMetric && questions.some(q => q.rows.some(r => draft.selected.includes(r.id) && !draft.excluded.includes(r.id)) && q.options.some(o => !isHeatmapOptionExcluded(o.id, draft) && !Number.isFinite(draft.weights[o.id])));
   const invalid = Boolean(filterError) || missingWeights || !draft.name.trim() || draft.selected.length === 0 || !questions.some(q => q.rows.some(r => draft.selected.includes(r.id) && !draft.excluded.includes(r.id))) || Object.values(draft.weights).some(v => !Number.isFinite(v));
@@ -38,7 +37,7 @@ export function AdvancedHeatmapWidget({ config, onChange, dashboardFilter, dashb
       const computed = getComputedStyle(widgetRef.current);
       setPreviewStyle(Object.fromEntries(['font-family','font-style','font-weight','title-size','body-size'].map(key => [`--dashboard-widget-${key}`, computed.getPropertyValue(`--dashboard-widget-${key}`)])) as CSSProperties);
     }
-    setDraft({ ...structuredClone(config), labelGroups: [], base: 'respondents' }); setEditing(true); };
+    setDraft({ ...structuredClone(config), labelGroups: [], base: 'respondents', ...(isMetricFilterActive(config) ? { filterType: 'Custom Metric' as const } : {}) }); setEditing(true); };
   const widgetStyle = config.mode === 'segments' ? segmentWidgetStyle(config,dashboardDesign) : config.designType === 'Widget' ? {'--advanced-title-color':config.themeColor??'#3f559a', '--dashboard-widget-font-family': config.fontFamily ?? 'Fira Sans', '--dashboard-widget-body-size': `${config.fontSize ?? 14}px`} as CSSProperties : {};
   return <div ref={widgetRef} data-analysis={config.mode} style={widgetStyle} className={styles.widgetFrame} data-show-name={config.showName !== false} data-testid="advanced-heatmap-widget">
     <DashboardWidgetCard title={config.name === 'Advanced Heatmap Widget' ? 'Advanced Heatmap' : config.name} onOpenSettings={openSettings}>
@@ -52,26 +51,14 @@ export function AdvancedHeatmapWidget({ config, onChange, dashboardFilter, dashb
       <header className={styles.header}><h3 id={`settings-${config.id}`}>Settings</h3><button type="button" aria-label="Close settings" onClick={() => setEditing(false)}>×</button></header>
       <nav className={styles.tabs} role="tablist">{(['General','Analytics','Labels','Design'] as SettingsTab[]).map(item => <button type="button" role="tab" aria-selected={tab === item} key={item} onClick={() => setTab(item)}>{item}</button>)}</nav>
       <div className={draft.mode === 'segments' ? `${regular.page} ${regular.settingsBody} ${styles.segmentSettings}` : styles.settings} role="tabpanel">
-        {tab === 'General' && draft.mode === 'segments' && <><Toggle label="Name" checked={draft.showName!==false} onChange={showName=>update({showName})}/><input aria-label="Widget name" value={draft.name} onChange={e=>update({name:e.target.value})}/><HeatmapFilterSettings regular config={draft} questions={questions} update={update}/></>}
-        {tab === 'General' && draft.mode !== 'segments' && <><label className={styles.check}><input type="checkbox" checked={draft.showName!==false} onChange={e=>update({showName:e.target.checked})}/>Name</label><label className={styles.field}>Widget name<input value={draft.name} onChange={e => update({ name: e.target.value })} /></label><HeatmapFilterSettings config={draft} questions={questions} update={update} /></>}
+        {tab === 'General' && draft.mode === 'segments' && <><Toggle label="Name" checked={draft.showName!==false} onChange={showName=>update({showName})}/><input aria-label="Widget name" value={draft.name} onChange={e=>update({name:e.target.value})}/><HeatmapFilterSettings regular config={draft} metricApplied={config.customMetric && !missingWeights} questions={questions} update={update}/></>}
+        {tab === 'General' && draft.mode !== 'segments' && <><label className={styles.check}><input type="checkbox" checked={draft.showName!==false} onChange={e=>update({showName:e.target.checked})}/>Name</label><label className={styles.field}>Widget name<input value={draft.name} onChange={e => update({ name: e.target.value })} /></label><HeatmapFilterSettings config={draft} metricApplied={config.customMetric && !missingWeights} questions={questions} update={update} /></>}
         {tab === 'Analytics' && <>
-          <Field label="Analysis type"><HeatMapSelect label="Analysis type" value={draft.mode} options={ANALYSIS_MODES.map(m=>m.id)} formatOption={value => ANALYSIS_MODES.find(m=>m.id===value)?.title ?? String(value)} onChange={mode=>update({mode:mode as AdvancedHeatmapConfig['mode']})} /></Field>
+          <Field label="Analysis type"><HeatMapSelect label="Analysis type" value={draft.mode} options={ANALYSIS_MODES.map(m=>m.id)} formatOption={value => ANALYSIS_MODES.find(m=>m.id===value)?.title ?? String(value)} onChange={mode=>update({mode:mode as AdvancedHeatmapConfig['mode'], ...(mode === 'segments' && draft.filterType === 'Custom Metric' ? { filterType: 'None', metricFilter: { ...draftMetricFilter, enabled: false } } : {})})} /></Field>
           {draft.mode === 'segments' ? <HeatmapSegmentAnalytics draft={draft} questions={questions} update={update} colors={segmentColors(draft,dashboardDesign)}/> : <label className={styles.field}>Cell values<HeatMapSelect label="Cell values" value={draft.display} options={['percent','count']} formatOption={v=>v==='percent'?'Percentages':'Counts'} onChange={display=>update({display:display as 'percent'|'count'})} /></label>}
 
-          {draft.mode === 'segments' ? <h3>Custom metrics</h3> : <h4 className={styles.sectionTitle}>Custom metrics</h4>}<button type="button" className={styles.secondary} onClick={() => update({ customMetric: !draft.customMetric })}>{draft.customMetric ? 'Remove custom metric' : 'Add custom metric'}</button>
+          {draft.mode === 'segments' ? <h3>Custom metrics</h3> : <h4 className={styles.sectionTitle}>Custom metrics</h4>}<button type="button" className={styles.secondary} onClick={() => update({ customMetric: !draft.customMetric, ...(draft.customMetric && draft.filterType === 'Custom Metric' ? { filterType: 'None', metricFilter: { ...draftMetricFilter, enabled: false } } : {}) })}>{draft.customMetric ? 'Remove custom metric' : 'Add custom metric'}</button>
           {draft.customMetric && <><label className={styles.field}>Name<input value={draft.metricLabel} onChange={e => update({ metricLabel: e.target.value })} /></label><p className={styles.muted}>Set a weight for each included answer option.</p>{questions.filter(q => q.rows.some(r => draft.selected.includes(r.id))).map(q => <div className={styles.group} key={q.id}><strong>{q.code}. {q.label}</strong>{q.options.map(o => <label className={styles.labelRow} key={o.id}><span /><span>{draft.aliases[o.id] || o.label}</span><input type="number" step="any" aria-label={`Weight for ${q.code} ${o.label}`} placeholder="Required" value={draft.weights[o.id] ?? ''} disabled={isHeatmapOptionExcluded(o.id, draft)} onChange={e => { const weights = { ...draft.weights }; if (e.target.value === '') delete weights[o.id]; else weights[o.id] = Number(e.target.value); update({ weights }); }} /></label>)}<label className={styles.check}><input type="checkbox" checked={draft.reverse.includes(q.id)} onChange={e => update({ reverse: e.target.checked ? [...draft.reverse, q.id] : draft.reverse.filter(id => id !== q.id) })} />Reverse weights for all statements in this question</label></div>)}</>}
-          {draft.mode === 'distribution' && draft.customMetric && <div className={styles.metricFilterSettings}>
-            <label className={styles.check}><input type="checkbox" checked={draftMetricFilter.enabled} onChange={e => updateMetricFilter({ enabled: e.target.checked })} />Filter rows by {draft.metricLabel || 'custom metric'}</label>
-            {draftMetricFilter.enabled && <>
-              <label className={styles.field}>Show rows with<HeatMapSelect label="Show rows with" value={draftMetricFilter.operator} options={METRIC_FILTER_OPERATORS.map(o=>o.id)} formatOption={value=>METRIC_FILTER_OPERATORS.find(o=>o.id===value)?.label ?? String(value)} onChange={operator=>updateMetricFilter({operator:operator as MetricFilter['operator']})} /></label>
-              <div className={styles.thresholds}>
-                <label className={styles.field}>{draftMetricFilter.operator === 'between' ? 'Lower value' : 'Threshold'}<input type="number" step="any" value={draftMetricFilter.value ?? ''} onChange={e => updateMetricFilter({ value: e.target.value === '' ? null : Number(e.target.value) })} /></label>
-                {draftMetricFilter.operator === 'between' && <label className={styles.field}>Upper value<input type="number" step="any" value={draftMetricFilter.upper ?? ''} onChange={e => updateMetricFilter({ upper: e.target.value === '' ? null : Number(e.target.value) })} /></label>}
-              </div>
-              <p className={styles.muted}>Uses unrounded metric scores. Filters rows and matrix totals independently; response bases stay unchanged.</p>
-              {filterError && <p className={styles.error} role="alert">{filterError}</p>}
-            </>}
-          </div>}
           {draft.mode === 'distribution' && <label className={styles.field}>Decimal places<HeatMapSelect label="Decimal places" value={draft.precision} options={[0,1,2,3,4]} onChange={precision=>update({precision:Number(precision)})} /></label>}
         </>}
         {tab === 'Labels' && <><HeatmapLabels questions={questions} draft={draft} update={update} />{draft.mode === 'segments' && <HeatmapSegmentLabels questions={questions} draft={draft} update={update}/>}</>}
@@ -99,7 +86,7 @@ function HeatmapTable({ config, onChange, dashboardFilter, dashboardDesign }: { 
     ...(expanded.includes(group.entry.id) ? group.children.map(entry => ({ ...entry, expandable: false, child: true, contextOnly: false })) : []),
   ]);
   const metricFilterActive = isMetricFilterActive(config);
-  const clearMetricFilter = () => onChange({ ...config, metricFilter: { ...config.metricFilter!, enabled: false } });
+  const clearMetricFilter = () => onChange({ ...config, filterType: 'None', metricFilter: { ...config.metricFilter!, enabled: false } });
   const filterDescription = config.metricFilter?.operator === 'between'
     ? `${config.metricLabel || 'Custom metric'}: ${config.metricFilter.value}–${config.metricFilter.upper}`
     : `${config.metricLabel || 'Custom metric'} ${METRIC_FILTER_OPERATORS.find(o => o.id === config.metricFilter?.operator)?.symbol ?? ''} ${config.metricFilter?.value}`;

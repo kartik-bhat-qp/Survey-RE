@@ -25,7 +25,7 @@ export function metricFilterError(filter: MetricFilter): string | null {
   return null;
 }
 export function isMetricFilterActive(config: AdvancedHeatmapConfig): boolean {
-  return config.mode === 'distribution' && config.customMetric && Boolean(config.metricFilter?.enabled);
+  return config.mode === 'distribution' && config.customMetric && Boolean(config.metricFilter?.enabled) && (config.filterType === undefined || config.filterType === 'Custom Metric');
 }
 /** Filter calculated rows, not their source respondents. Never compare rounded display values. */
 export function matchesMetricFilter(value: number | null, config: AdvancedHeatmapConfig): boolean {
@@ -61,7 +61,7 @@ export interface AdvancedHeatmapConfig {
   hiddenSegments?: string[]; segmentAliases?: Record<string,string>;
   customSegments?: (HeatmapRespondentFilter & {id:string})[];
   showName?: boolean;
-  filterType?: 'Dashboard' | 'Widget' | 'Combined' | 'None';
+  filterType?: 'Dashboard' | 'Widget' | 'Combined' | 'None' | 'Custom Metric';
   widgetFilter?: HeatmapRespondentFilter;
   id: string; name: string; surveyId: number; selected: string[]; mode: AnalysisMode;
   segmentRow: string; showOverall: boolean; precision: number; display: 'percent' | 'count';
