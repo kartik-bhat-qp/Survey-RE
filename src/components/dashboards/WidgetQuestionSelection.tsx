@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import type { IWuTableColumnDef } from '@npm-questionpro/wick-ui-lib';
 import { StandardLoader } from '@/components/ui/StandardLoader';
+import { QuestionAvailabilityHint } from './QuestionAvailabilityHint';
 import {
   flattenQuestionsForPicker,
   getQuestionsBySurvey,
@@ -33,7 +34,9 @@ interface WidgetQuestionSelectionProps {
   multiSelect?: boolean;
   wholeQuestionsOnly?: boolean;
   unavailableQuestionIds?: number[];
+  unavailableQuestionReasons?: Record<number, string>;
   showSelectionCount?: boolean;
+  selectionLimit?: number;
   showSelectAll?: boolean;
   hideSearch?: boolean;
   toolbarContent?: ReactNode;
@@ -51,7 +54,9 @@ export function WidgetQuestionSelection({
   multiSelect = false,
   wholeQuestionsOnly = false,
   unavailableQuestionIds = [],
+  unavailableQuestionReasons,
   showSelectionCount = false,
+  selectionLimit,
   showSelectAll = true,
   hideSearch = false,
   toolbarContent,
@@ -161,7 +166,7 @@ export function WidgetQuestionSelection({
               ) : isSubRow ? (
                 <span className={styles.subRowSpacer} aria-hidden />
               ) : null}
-              <button
+              <QuestionAvailabilityHint reason={unavailableQuestionReasons?.[selectionKey]}><button
                 type="button"
                 className={styles.questionLink}
                 disabled={unavailableIds.has(selectionKey)}
@@ -175,7 +180,7 @@ export function WidgetQuestionSelection({
                 }}
               >
                 {question.text}
-              </button>
+              </button></QuestionAvailabilityHint>
             </span>
           );
         },
@@ -183,7 +188,7 @@ export function WidgetQuestionSelection({
       {
         accessorKey: 'type',
         header: 'Type',
-        cell: ({ row }) => <span>{row.original.type}{unavailableIds.has(row.original.id) && <small className={styles.unavailable}>Unavailable</small>}</span>,
+        cell: ({ row }) => <span>{row.original.type}</span>,
         enableSorting: true,
         size: 140,
       },
@@ -212,12 +217,12 @@ export function WidgetQuestionSelection({
           const checked = selectedIds.has(selectionKey);
           return (
             <div className={styles.checkboxCell}>
-              <WuCheckbox
+              <QuestionAvailabilityHint reason={unavailableQuestionReasons?.[selectionKey]}><WuCheckbox
                 disabled={unavailableIds.has(selectionKey)}
                 checked={checked}
                 onChange={(nextChecked) => toggleQuestion(question, nextChecked)}
                 aria-label={`Select ${question.code}`}
-              />
+              /></QuestionAvailabilityHint>
             </div>
           );
         },
@@ -233,6 +238,7 @@ export function WidgetQuestionSelection({
     onSelectQuestion,
     toggleQuestion,
     unavailableIds,
+    unavailableQuestionReasons,
     wholeQuestionsOnly,
     selectedIds,
     selectedQuestionId,
@@ -254,7 +260,7 @@ export function WidgetQuestionSelection({
           onChange={(e) => setSearch(e.target.value)}
           className={styles.searchInput}
         />}
-        {showSelectionCount && <span className={styles.selectionCount} aria-live="polite">{questions.filter(q => !unavailableIds.has(q.id) && selectedIds.has(q.id)).length} out of {questions.filter(q => !unavailableIds.has(q.id)).length}</span>}
+        {showSelectionCount && <span className={styles.selectionCount} aria-live="polite">{questions.filter(q => selectedIds.has(q.id)).length} out of {selectionLimit ?? questions.filter(q => !unavailableIds.has(q.id)).length}</span>}
       </div>
       <div className={styles.tableArea}>
         <WuTable

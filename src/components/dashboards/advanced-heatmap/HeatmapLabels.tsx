@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { heatmapAnswerSlots, type AdvancedHeatmapConfig, type HeatmapQuestion } from '@/data/advanced-heatmap';
+import { constrainHeatmapSelection, heatmapQuestionUnavailableReason, heatmapAnswerSlots, type AdvancedHeatmapConfig, type HeatmapQuestion } from '@/data/advanced-heatmap';
+import { QuestionAvailabilityHint } from '../QuestionAvailabilityHint';
 import { supportsAdvancedHeatmap } from './HeatmapSetup';
 import styles from './AdvancedHeatmap.module.css';
 import regular from '../heat-map/HeatMapBaseline.module.css';
@@ -17,7 +18,10 @@ interface Props { questions: HeatmapQuestion[]; draft: AdvancedHeatmapConfig; up
 export function HeatmapLabels({ questions, draft, update }: Props) {
   const [questionSearch, setQuestionSearch] = useState('');
   const selected = questions.filter(q => q.rows.some(r => draft.selected.includes(r.id)));
-  const questionOptions = questions.map(q => ({ value: q.id, label: `${q.code}. ${q.label}${supportsAdvancedHeatmap(q) ? '' : ' — Unavailable'}`, disabled: !supportsAdvancedHeatmap(q) }));
+  const questionOptions = questions.map(q => {
+    const reason = heatmapQuestionUnavailableReason(q, questions, draft.selected);
+    return { value: q.id, label: `${q.code}. ${q.label}`, disabled: Boolean(reason), icon: reason ? <QuestionAvailabilityHint reason={reason} /> : undefined };
+  });
   const slots = heatmapAnswerSlots(selected, draft);
   const answerItems = slots.map(s => ({ id: s.key, label: s.label }));
   const groups: {id:string; label:string; kind:Kind; members:string[]}[] = [];
@@ -67,7 +71,7 @@ export function HeatmapLabels({ questions, draft, update }: Props) {
           const selected = questions.filter(q => supportsAdvancedHeatmap(q) && chosen.some(option => option.value === q.id)).flatMap(q => q.rows.map(row => row.id));
           // WickUI invokes multi-select callbacks inside its state updater.
           // Defer the parent update until that render has finished.
-          queueMicrotask(() => update({ selected }));
+          queueMicrotask(() => update({ selected: constrainHeatmapSelection(questions, draft.selected, selected) }));
         }} />
     </div>
     {draft.mode === 'distribution' && <div className={styles.labelsHeading}><span>Answer labels</span></div>}

@@ -273,3 +273,43 @@ test('General Custom Metric filter type controls row filtering without changing 
  const data = createHeatmapResponses(questions);
  assert.deepEqual(filterHeatmapResponses(data, questions, c).responses, data);
 });
+
+test('selection caps whole questions at 25, not matrix statements', async () => {
+ const {heatmapSelectionError, heatmapQuestionUnavailable, constrainHeatmapSelection} = await import('../src/data/advanced-heatmap.ts');
+ const qs=Array.from({length:26},(_,i)=>({...matrix,id:`q${i}`,rows:Array.from({length:5},(_,j)=>({id:`q${i}r${j}`,label:`Row ${j}`}))}));
+ const rows=qs.slice(0,25).flatMap(q=>q.rows.map(r=>r.id));
+ assert.equal(heatmapSelectionError(qs,rows),null);
+ assert.equal(heatmapQuestionUnavailable(qs[25],qs,rows),true);
+ assert.equal(heatmapQuestionUnavailable(qs[0],qs,rows),false);
+ assert.match(heatmapSelectionError(qs,qs.flatMap(q=>q.rows.map(r=>r.id))),/25/);
+ assert.equal(constrainHeatmapSelection(qs,[],qs.flatMap(q=>q.rows.map(r=>r.id))).length,125);
+ assert.equal(heatmapQuestionUnavailable(qs[25],qs,rows.slice(5)),false);
+});
+test('selection rejects unequal original option counts and resets compatibility when cleared', async () => {
+ const {heatmapSelectionError, heatmapQuestionUnavailable, constrainHeatmapSelection, createDefaultAdvancedHeatmap} = await import('../src/data/advanced-heatmap.ts');
+ const six={...matrix,id:'six',rows:[{id:'six-row',label:'Six'}],options:Array.from({length:6},(_,i)=>({id:`six-${i}`,label:`Option ${i}`}))};
+ const qs=[matrix,six];
+ assert.match(heatmapSelectionError(qs,[r,'six-row']),/same number/);
+ assert.equal(heatmapQuestionUnavailable(six,qs,[r]),true);
+ assert.equal(heatmapQuestionUnavailable(six,qs,[]),false);
+ assert.equal(heatmapQuestionUnavailable(six,qs,[r,'six-row']),false);
+ assert.deepEqual(constrainHeatmapSelection(qs,[r],[r,'six-row']),matrix.rows.map(r=>r.id));
+ assert.deepEqual(constrainHeatmapSelection(qs,[r],['six-row']),['six-row']);
+ assert.match(heatmapSelectionError(qs,[]),/at least one/);
+ assert.equal(heatmapSelectionError(questions,createDefaultAdvancedHeatmap(questions).selected),null);
+});
+
+test('question availability explains unsupported types, exact option counts and the cap', async () => {
+ const {heatmapQuestionUnavailableReason: reason} = await import('../src/data/advanced-heatmap.ts');
+ const text={...matrix,id:'text',type:'Text',rows:[{id:'text-row',label:'Comment'}]};
+ assert.match(reason(text,[text],[]),/Text questions are not supported/);
+ const six={...matrix,id:'six',rows:[{id:'six-row',label:'Six'}],options:Array.from({length:6},(_,i)=>({id:`o${i}`,label:`Option ${i}`}))};
+ assert.match(reason(six,[matrix,six],[r]),/6 answer options; selected questions require 4/);
+ assert.equal(reason(six,[matrix,six],[]),null);
+ const qs=Array.from({length:25},(_,i)=>({...matrix,id:`q${i}`,rows:[{id:`q${i}-row`,label:'Row'}]}));
+ const rows=qs.flatMap(q=>q.rows.map(r=>r.id));
+ const both=reason(six,[...qs,six],rows);
+ assert.match(both,/6 answer options/); assert.match(both,/selected 25 questions/);
+ assert.equal(reason(qs[0],qs,rows),null);
+ assert.equal(reason(text,[text],['text-row']),null);
+});

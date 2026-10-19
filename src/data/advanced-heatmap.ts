@@ -1,6 +1,46 @@
 import type { DashboardActiveFilter } from './mock-dashboard-filters';
 import type { SurveyQuestion } from './mock-survey-questions';
 
+export const MAX_ADVANCED_HEATMAP_QUESTIONS = 25;
+export function supportsAdvancedHeatmap(question: HeatmapQuestion): boolean {
+  return ['Single Select', 'Multiple Select', 'Matrix Uni choice', 'Flex Matrix', 'NPS'].includes(question.type);
+}
+/** Explain the same eligibility rules in creation and settings. Selected items remain removable. */
+export function heatmapQuestionUnavailableReason(question: HeatmapQuestion, questions: HeatmapQuestion[], rowIds: string[]): string | null {
+  const selected = selectedHeatmapQuestions(questions, rowIds);
+  if (selected.some(q => q.id === question.id)) return null;
+  if (!supportsAdvancedHeatmap(question)) return `${question.type} questions are not supported in Advanced Heatmap. Choose a choice or supported matrix question.`;
+  const reasons: string[] = [];
+  const different = selected.find(q => q.options.length !== question.options.length);
+  if (different) reasons.push(`This question has ${question.options.length} answer options; selected questions require ${different.options.length}. All selected questions must have the same number of answer options.`);
+  if (selected.length >= MAX_ADVANCED_HEATMAP_QUESTIONS) reasons.push('You have selected 25 questions, the maximum allowed. Remove a question before adding another.');
+  return reasons.length ? reasons.join(' ') : null;
+}
+export function selectedHeatmapQuestions(questions: HeatmapQuestion[], rowIds: string[]) {
+  return questions.filter(q => q.rows.some(row => rowIds.includes(row.id)));
+}
+export function heatmapSelectionError(questions: HeatmapQuestion[], rowIds: string[]): string | null {
+  const selected = selectedHeatmapQuestions(questions, rowIds);
+  if (!selected.length) return 'Select at least one question.';
+  if (selected.length > MAX_ADVANCED_HEATMAP_QUESTIONS) return 'Select no more than 25 questions. Each matrix counts as one question.';
+  if (new Set(selected.map(q => q.options.length)).size > 1) return 'All selected questions must have the same number of answer options.';
+  return null;
+}
+/** Already-selected questions stay removable, including invalid saved selections. */
+export function heatmapQuestionUnavailable(question: HeatmapQuestion, questions: HeatmapQuestion[], rowIds: string[]): boolean {
+  return heatmapQuestionUnavailableReason(question, questions, rowIds) !== null;
+}
+/** Bulk selection keeps existing choices and admits only compatible questions up to the cap. */
+export function constrainHeatmapSelection(questions: HeatmapQuestion[], previous: string[], requested: string[]): string[] {
+  const wanted = selectedHeatmapQuestions(questions, requested);
+  const kept = wanted.filter(q => q.rows.some(row => previous.includes(row.id)));
+  for (const question of wanted) {
+    if (kept.some(q => q.id === question.id)) continue;
+    if (kept.length < MAX_ADVANCED_HEATMAP_QUESTIONS && kept.every(q => q.options.length === question.options.length)) kept.push(question);
+  }
+  return kept.flatMap(q => q.rows.map(row => row.id));
+}
+
 export type AnalysisMode = 'segments' | 'distribution';
 export const METRIC_FILTER_OPERATORS = [
   { id: 'lt', label: 'Below', symbol: '<' },
@@ -232,7 +272,8 @@ export function heatmapResultRows(questions: HeatmapQuestion[], responses: Heatm
 }
 
 export function createDefaultAdvancedHeatmap(questions: HeatmapQuestion[], surveyId = 1): AdvancedHeatmapConfig {
-  const selected = questions.filter(q => ['Q6','Q11','Q13'].includes(q.code)).flatMap(q => q.rows.map(r => r.id));
+  const matrix = questions.find(q => q.code === 'Q11') ?? questions[0];
+  const selected = questions.filter(q => q.options.length === matrix?.options.length && ['Single Select', 'Multiple Select', 'Matrix Uni choice', 'Flex Matrix', 'NPS'].includes(q.type)).slice(0, 3).flatMap(q => q.rows.map(r => r.id));
   return createAdvancedHeatmapConfig(surveyId, 'Advanced Heatmap', selected, 'distribution', questions, 'advanced-heatmap-default');
 }
 

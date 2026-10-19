@@ -8,6 +8,12 @@ Merge labels and the Percentage / count base selector are removed. Distribution 
 
 Segment Comparison now includes Overall, response counts, overall average, 0–4 decimals, mean scaling, independent reversal, threshold bands, statistics and custom segment management. See [regular Heat Map comparison and remaining limitations](SEGMENT-PARITY.md). Do not infer full production parity from the presence of controls.
 
+## Question selection constraints
+
+Creation and Labels allow 1–25 whole questions with the same original answer-option count. A matrix counts once, regardless of statement count. Incompatible questions and additions at 25 are disabled; selected questions remain removable. Next, Create widget and Apply reject invalid selections. Answer exclusions do not alter eligibility. The default widget uses compatible four-option questions. These rules supersede the older unequal-option-count examples below.
+
+Creation uses a fixed “X out of 25” counter. Neither creation nor Labels shows a selection instruction banner. Question types remain visible; disabled questions explain unsupported types, option-count mismatches or the selection limit through tooltips.
+
 ## Try it
 
 On a regular BI or BI Lite dashboard, choose **Add widget → Advanced widgets → Advanced Heatmap → Next**. Select a survey using the standard data-source picker, select questions (one checkbox selects every matrix statement), then choose **Next**, choose an analysis type, then **Create widget**. The new card appears in the two-column dashboard layout. Open Settings from the standard three-dot widget menu; tabs are **General, Analytics, Labels, Design**.

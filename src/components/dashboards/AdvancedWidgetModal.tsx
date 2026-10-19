@@ -25,7 +25,7 @@ import { DEFAULT_DASHBOARD_SURVEY, type SurveyListItem } from '@/data/mock-surve
 import type { AiWidgetConfig } from '@/data/mock-ai-widgets';
 import { driverAnalysisWidgetTitle } from '@/data/mock-driver-analysis';
 import { useWickUILib } from '@/components/ui/useWickUILib';
-import { adaptHeatmapQuestions, createAdvancedHeatmapConfig, type AdvancedHeatmapConfig, type AnalysisMode } from '@/data/advanced-heatmap';
+import { heatmapSelectionError, adaptHeatmapQuestions, createAdvancedHeatmapConfig, type AdvancedHeatmapConfig, type AnalysisMode } from '@/data/advanced-heatmap';
 import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
 import { AddWidgetStepBreadcrumb } from './AddWidgetStepBreadcrumb';
 import { HeatmapQuestionPicker, HeatmapAnalysisPicker } from './advanced-heatmap/HeatmapSetup';
@@ -226,9 +226,10 @@ export function AdvancedWidgetModal({
 
   function handleNext(): void {
     const selectedType = ADVANCED_WIDGET_TYPES.find((t) => t.id === selectedTypeId);
+    if ((step === 'heatmap-questions' || step === 'heatmap-analysis') && heatmapSelectionError(heatmapQuestions, heatmapRows)) return;
     if (step === 'heatmap-questions') { setStep('heatmap-analysis'); return; }
     if (step === 'heatmap-analysis') {
-      onAdvancedHeatmapCreated?.(createAdvancedHeatmapConfig(heatmapSurvey!.id, widgetName, heatmapRows, heatmapMode, heatmapQuestions, `advanced-heatmap-${crypto.randomUUID()}`));
+      onAdvancedHeatmapCreated?.(createAdvancedHeatmapConfig(heatmapSurvey!.id, widgetName, heatmapRows, heatmapMode, heatmapQuestions, `advanced-heatmap-${(crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`)}`));
       showToast({ message: 'Advanced Heatmap created for this session', variant: 'success' });
       handleClose(); return;
     }
@@ -304,7 +305,7 @@ export function AdvancedWidgetModal({
     step === 'heatmap-analysis' ? 'Create widget' : step === 'details' || step === 'driver-question' ? 'Finish' : 'Next';
   const showNext =
     step !== 'heatmap-survey' && (!isDriverQuestionFlow || step === 'driver-question');
-  const nextDisabled = (step === 'driver-question' && driverQuestions.length === 0) || (step === 'heatmap-questions' && heatmapRows.length === 0);
+  const nextDisabled = (step === 'driver-question' && driverQuestions.length === 0) || ((step === 'heatmap-questions' || step === 'heatmap-analysis') && Boolean(heatmapSelectionError(heatmapQuestions, heatmapRows)));
   const modalTitle =
     step === 'primary-question'
       ? 'Select primary question'
