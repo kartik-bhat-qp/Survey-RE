@@ -26,7 +26,7 @@ import type { AiWidgetConfig } from '@/data/mock-ai-widgets';
 import { driverAnalysisWidgetTitle } from '@/data/mock-driver-analysis';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import { heatmapSelectionError, adaptHeatmapQuestions, createAdvancedHeatmapConfig, type AdvancedHeatmapConfig, type AnalysisMode } from '@/data/advanced-heatmap';
-import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
+import { getAdvancedHeatmapQuestions } from '@/data/mock-survey-questions';
 import { AddWidgetStepBreadcrumb } from './AddWidgetStepBreadcrumb';
 import { HeatmapQuestionPicker, HeatmapAnalysisPicker } from './advanced-heatmap/HeatmapSetup';
 import type { BuiltWidget } from '@/data/ai-widget-builder';
@@ -122,7 +122,7 @@ export function AdvancedWidgetModal({
   const [heatmapSurvey, setHeatmapSurvey] = useState<SurveyListItem | null>(null);
   const [heatmapRows, setHeatmapRows] = useState<string[]>([]);
   const [heatmapMode, setHeatmapMode] = useState<AnalysisMode>('distribution');
-  const heatmapQuestions = useMemo(() => adaptHeatmapQuestions(getQuestionsBySurvey(heatmapSurvey?.id ?? surveyId)), [heatmapSurvey?.id, surveyId]);
+  const heatmapQuestions = useMemo(() => adaptHeatmapQuestions(getAdvancedHeatmapQuestions(heatmapSurvey?.id ?? surveyId)), [heatmapSurvey?.id, surveyId]);
 
   const resetState = useCallback(() => {
     setStep('widget');

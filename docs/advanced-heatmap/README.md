@@ -10,7 +10,9 @@ Segment Comparison now includes Overall, response counts, overall average, 0–4
 
 ## Question selection constraints
 
-Creation and Labels allow 1–25 whole questions with the same original answer-option count. A matrix counts once, regardless of statement count. Incompatible questions and additions at 25 are disabled; selected questions remain removable. Next, Create widget and Apply reject invalid selections. Answer exclusions do not alter eligibility. The default widget uses compatible four-option questions. These rules supersede the older unequal-option-count examples below.
+Creation and Labels allow 1–25 whole questions with the same original answer-option count. A matrix counts once, regardless of statement count. Incompatible questions and additions at 25 are disabled; selected questions remain removable. Next, Create widget and Apply reject invalid selections. Answer exclusions do not alter eligibility. These rules supersede the older unequal-option-count examples below.
+
+The default widget compares six customer satisfaction rating questions: overall service, booking, delivery, customer support, shipment stages and digital services. Three matrices have different statement counts and all six use the same five-point satisfaction scale. Creation and Labels offer 30 additional satisfaction questions (CS1–CS30), so the demo can also exercise the 25-question limit. These examples are scoped to Advanced Heatmap. Custom metrics remain optional and weights are configured by the user.
 
 Creation uses a fixed “X out of 25” counter. Neither creation nor Labels shows a selection instruction banner. Question types remain visible; disabled questions explain unsupported types, option-count mismatches or the selection limit through tooltips.
 

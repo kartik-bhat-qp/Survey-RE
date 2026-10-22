@@ -149,6 +149,38 @@ export function getQuestionsBySurvey(surveyId: number): SurveyQuestion[] {
   return questionsBySurvey.get(surveyId) ?? [];
 }
 
+const SATISFACTION_OPTIONS = ['Very dissatisfied', 'Dissatisfied', 'Neutral', 'Satisfied', 'Very satisfied'];
+const HEATMAP_SATISFACTION_QUESTIONS: Omit<SurveyQuestion, 'id' | 'surveyId'>[] = [
+  { code: 'CS1', text: 'How satisfied were you with your overall service experience?', type: 'Single Select' },
+  { code: 'CS2', text: 'How satisfied were you with the booking process?', type: 'Single Select' },
+  { code: 'CS3', text: 'How satisfied were you with the delivery experience?', type: 'Single Select' },
+  { code: 'CS4', text: 'How satisfied were you with each aspect of customer support?', type: 'Matrix Uni choice', matrixRows: ['Speed of response', 'Helpfulness of the support team', 'Resolution of your issue'] },
+  { code: 'CS5', text: 'How satisfied were you with each stage of your shipment?', type: 'Matrix Uni choice', matrixRows: ['Booking confirmation', 'Collection of your shipment', 'Tracking updates', 'Final delivery'] },
+  { code: 'CS6', text: 'How satisfied were you with each digital service?', type: 'Flex Matrix', matrixRows: ['Online booking portal', 'Shipment tracking portal'] },
+  ...[
+    'the clarity of pricing', 'the accuracy of your invoice', 'the available payment options',
+    'the ease of requesting a quote', 'the speed of quote delivery', 'the clarity of service information',
+    'the ease of changing a booking', 'the pickup scheduling process', 'the punctuality of collection',
+    'the care taken with your shipment', 'the accuracy of tracking information', 'the frequency of shipment updates',
+    'the delivery time', 'the condition of your goods on arrival', 'the delivery handover process',
+    'the customs documentation process', 'the handling of delivery exceptions', 'the claims process',
+    'the ease of contacting your account manager', 'the communication from your account manager',
+    'the speed of resolving billing questions', 'the follow-up after your service request',
+    'the value provided by the service', 'the consistency of service across locations',
+  ].map((aspect, index) => ({ code: `CS${index + 7}`, text: `How satisfied were you with ${aspect}?`, type: 'Single Select' as const })),
+];
+
+/** Additional rating examples are scoped to Advanced Heatmap; other widget catalogues stay intact. */
+export function getAdvancedHeatmapQuestions(surveyId: number): SurveyQuestion[] {
+  return [
+    ...HEATMAP_SATISFACTION_QUESTIONS.map(question => ({
+      ...question, surveyId, id: stableNumericId(`advanced-heatmap:${surveyId}:${question.code}`, 90000),
+      options: [...SATISFACTION_OPTIONS], blockTitle: 'Customer satisfaction',
+    })),
+    ...getQuestionsBySurvey(surveyId),
+  ];
+}
+
 function subRowId(parentId: number, rowIndex: number): number {
   return parentId * 1000 + rowIndex + 1;
 }

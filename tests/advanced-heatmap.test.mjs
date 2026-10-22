@@ -5,7 +5,7 @@ import { stripTypeScriptTypes } from 'node:module';
 import { filterHeatmapResponses, heatmapRespondentFilterError, EMPTY_METRIC_FILTER, metricFilterError, matchesMetricFilter, heatmapRowGroups, heatmapResultRows, adaptHeatmapQuestions, createAdvancedHeatmapConfig, createHeatmapResponses, scoreCell, distributionCell, segmentResponses, summaryCell, distributionColumns, toggleQuestionRows } from '../src/data/advanced-heatmap.ts';
 const questionSource = readFileSync(new URL('../src/data/mock-survey-questions.ts', import.meta.url), 'utf8')
   .replace("'./question-stacks'", JSON.stringify(new URL('../src/data/question-stacks.ts', import.meta.url).href));
-const { getQuestionsBySurvey } = await import(`data:text/javascript,${encodeURIComponent(stripTypeScriptTypes(questionSource))}`);
+const { getQuestionsBySurvey, getAdvancedHeatmapQuestions } = await import(`data:text/javascript,${encodeURIComponent(stripTypeScriptTypes(questionSource))}`);
 const questions = adaptHeatmapQuestions(getQuestionsBySurvey(1));
 const matrix = questions.find(q => q.code === 'Q11');
 const nominal = questions.find(q => q.code === 'Q1');
@@ -14,6 +14,32 @@ const config = createAdvancedHeatmapConfig(1,'Test',matrix.rows.map(r=>r.id),'di
 const r = matrix.rows[0].id;
 const answer = (id, answers) => ({ id, answers });
 const fixture = [answer('1',{[r]:[matrix.options[0].id]}),answer('2',{[r]:[matrix.options[3].id]}),answer('3',{[r]:[matrix.options[3].id]}),answer('4',{})];
+test('satisfaction demo shares compatible questions across creation, settings and default results', async () => {
+ const {createDefaultAdvancedHeatmap, selectedHeatmapQuestions, heatmapSelectionError, constrainHeatmapSelection, heatmapQuestionUnavailableReason} = await import('../src/data/advanced-heatmap.ts');
+ const catalog=adaptHeatmapQuestions(getAdvancedHeatmapQuestions(1));
+ const satisfaction=catalog.filter(q=>/^CS\d+$/.test(q.code));
+ assert.equal(satisfaction.length,30);
+ assert.equal(new Set(catalog.map(q=>q.id)).size,catalog.length);
+ assert.equal(getQuestionsBySurvey(1).some(q=>/^CS\d+$/.test(q.code)),false);
+ assert.deepEqual(getAdvancedHeatmapQuestions(2).filter(q=>/^CS\d+$/.test(q.code)).map(q=>q.text),satisfaction.map(q=>q.label));
+ const demo=createDefaultAdvancedHeatmap(catalog);
+ const selected=selectedHeatmapQuestions(catalog,demo.selected);
+ assert.equal(selected.length,6); assert.equal(heatmapSelectionError(catalog,demo.selected),null);
+ assert.deepEqual(selected.filter(q=>q.rows.length>1).map(q=>q.rows.length),[3,4,2]);
+ assert.equal(demo.customMetric,false);
+ assert.deepEqual(distributionColumns(selected,demo).map(c=>c.label),['Very dissatisfied','Dissatisfied','Neutral','Satisfied','Very satisfied']);
+ const capped=constrainHeatmapSelection(catalog,[],satisfaction.flatMap(q=>q.rows.map(r=>r.id)));
+ assert.equal(selectedHeatmapQuestions(catalog,capped).length,25);
+ assert.match(heatmapQuestionUnavailableReason(satisfaction[29],catalog,capped),/selected 25 questions/);
+ const data=createHeatmapResponses(catalog);
+ const weights=Object.fromEntries(selected.flatMap(q=>q.options.map((o,i)=>[o.id,i>=3?100:0])));
+ for(const q of selected) for(const row of q.rows){
+   const cell=scoreCell(data,row.id,q,{...demo,customMetric:true,weights},true);
+   const valid=data.filter(r=>r.answers[row.id]?.length);
+   const satisfied=valid.filter(r=>r.answers[row.id].some(id=>q.options.slice(3).some(o=>o.id===id)));
+   assert.ok(valid.length>0);assert.equal(cell.value,100*satisfied.length/valid.length);
+ }
+});
 test('whole matrix selection is atomic and de-duplicated; other rows survive deselection',()=>{
  let selected=toggleQuestionRows([nominal.rows[0].id,matrix.rows[0].id],matrix,true);
  assert.equal(selected.length,4); selected=toggleQuestionRows(selected,matrix,false); assert.deepEqual(selected,[nominal.rows[0].id]);

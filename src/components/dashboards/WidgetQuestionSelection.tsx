@@ -28,6 +28,7 @@ const WuTable = dynamic(
 
 interface WidgetQuestionSelectionProps {
   surveyId: number;
+  questionCatalog?: SurveyQuestion[];
   selectedQuestionId?: number | null;
   /** When set with multiSelect, rows can be toggled independently. */
   selectedQuestionIds?: number[];
@@ -49,6 +50,7 @@ interface WidgetQuestionSelectionProps {
 
 export function WidgetQuestionSelection({
   surveyId,
+  questionCatalog,
   selectedQuestionId = null,
   selectedQuestionIds = [],
   multiSelect = false,
@@ -74,13 +76,17 @@ export function WidgetQuestionSelection({
   const selectedIds = useMemo(() => new Set(selectedQuestionIds), [selectedQuestionIds]);
 
   const questions = useMemo(
-    () => getQuestionsBySurvey(surveyId).filter((q) => !excludedIds.has(q.id)),
-    [surveyId, excludedIds]
+    () => (questionCatalog ?? getQuestionsBySurvey(surveyId)).filter((q) => !excludedIds.has(q.id)),
+    [surveyId, questionCatalog, excludedIds]
   );
 
   const displayQuestions = useMemo(
     () => wholeQuestionsOnly ? questions : flattenQuestionsForPicker(questions, expandedParentIds),
     [questions, expandedParentIds, wholeQuestionsOnly]
+  );
+  const visibleQuestions = useMemo(
+    () => displayQuestions.filter(q => `${q.code} ${q.text}`.toLowerCase().includes(filterText.toLowerCase())),
+    [displayQuestions, filterText]
   );
 
   const toggleExpand = useCallback((parentId: number) => {
@@ -95,7 +101,7 @@ export function WidgetQuestionSelection({
     });
   }, []);
 
-  const selectableVisible = useMemo(() => displayQuestions.filter(q => !unavailableIds.has(q.id) && `${q.code} ${q.text}`.toLowerCase().includes(filterText.toLowerCase())), [displayQuestions, unavailableIds, filterText]);
+  const selectableVisible = useMemo(() => visibleQuestions.filter(q => !unavailableIds.has(q.id)), [visibleQuestions, unavailableIds]);
   const allVisibleSelected = multiSelect && selectableVisible.length > 0 && selectableVisible.every(q => selectedIds.has(q.id));
   const toggleQuestion = useCallback((question: SurveyQuestion, checked: boolean) => {
     const key = question.id;
@@ -264,11 +270,10 @@ export function WidgetQuestionSelection({
       </div>
       <div className={styles.tableArea}>
         <WuTable
-          data={displayQuestions as unknown[]}
+          data={visibleQuestions as unknown[]}
           columns={columns as unknown as IWuTableColumnDef<unknown>[]}
           variant="unstyled"
           sort={{ enabled: true }}
-          filterText={filterText}
         />
       </div>
     </div>

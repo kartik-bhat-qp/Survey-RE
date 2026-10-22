@@ -136,6 +136,8 @@ export function adaptHeatmapQuestions(questions: SurveyQuestion[]): HeatmapQuest
 export function createHeatmapResponses(questions: HeatmapQuestion[], count = 120): HeatmapResponse[] {
   let seed = 41027;
   const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+  // Different satisfaction patterns make strengths and improvement areas visible in the demo.
+  const satisfactionProfiles = [[3,5,10,42,40], [8,12,20,35,25], [18,22,25,20,15], [5,8,17,40,30], [10,15,20,30,25], [2,3,8,37,50]];
   return Array.from({ length: count }, (_, n) => {
     const answers: Record<string, string[]> = {};
     for (const q of questions) {
@@ -143,7 +145,15 @@ export function createHeatmapResponses(questions: HeatmapQuestion[], count = 120
       for (let i = ranking.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [ranking[i], ranking[j]] = [ranking[j], ranking[i]]; }
       q.rows.forEach((row, index) => {
         if (!q.options.length || random() < 0.06) return;
-        const pick = q.options[Math.floor(random() * q.options.length)].id;
+        const draw = random();
+        const satisfactionNumber = q.code.match(/^CS(\d+)$/)?.[1];
+        const profile = satisfactionNumber && q.options.length === 5 ? satisfactionProfiles[(Number(satisfactionNumber) + index - 1) % satisfactionProfiles.length] : null;
+        let optionIndex = Math.floor(draw * q.options.length);
+        if (profile) {
+          let cumulative = 0;
+          optionIndex = profile.findIndex(weight => { cumulative += weight; return draw * 100 < cumulative; });
+        }
+        const pick = q.options[optionIndex].id;
         answers[row.id] = q.type === 'Rank order' ? [ranking[index]] : q.multiple ? [...new Set([pick, q.options[Math.floor(random() * q.options.length)].id])] : [pick];
       });
     }
@@ -272,8 +282,9 @@ export function heatmapResultRows(questions: HeatmapQuestion[], responses: Heatm
 }
 
 export function createDefaultAdvancedHeatmap(questions: HeatmapQuestion[], surveyId = 1): AdvancedHeatmapConfig {
-  const matrix = questions.find(q => q.code === 'Q11') ?? questions[0];
-  const selected = questions.filter(q => q.options.length === matrix?.options.length && ['Single Select', 'Multiple Select', 'Matrix Uni choice', 'Flex Matrix', 'NPS'].includes(q.type)).slice(0, 3).flatMap(q => q.rows.map(r => r.id));
+  const demo = questions.filter(q => ['CS1', 'CS2', 'CS3', 'CS4', 'CS5', 'CS6'].includes(q.code));
+  const anchor = demo[0] ?? questions.find(q => q.code === 'Q6') ?? questions[0];
+  const selected = (demo.length ? demo : questions.filter(q => q.options.length === anchor?.options.length && supportsAdvancedHeatmap(q)).slice(0, 3)).flatMap(q => q.rows.map(r => r.id));
   return createAdvancedHeatmapConfig(surveyId, 'Advanced Heatmap', selected, 'distribution', questions, 'advanced-heatmap-default');
 }
 

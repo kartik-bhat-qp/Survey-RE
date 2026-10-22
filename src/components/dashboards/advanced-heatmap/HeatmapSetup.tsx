@@ -1,6 +1,7 @@
 'use client';
 
 import { WidgetQuestionSelection } from '../WidgetQuestionSelection';
+import { getAdvancedHeatmapQuestions } from '@/data/mock-survey-questions';
 import { constrainHeatmapSelection, heatmapQuestionUnavailableReason, heatmapSelectionError, MAX_ADVANCED_HEATMAP_QUESTIONS, ANALYSIS_MODES, type AnalysisMode, type HeatmapQuestion } from '@/data/advanced-heatmap';
 import styles from './AdvancedHeatmap.module.css';
 
@@ -10,7 +11,7 @@ export function HeatmapQuestionPicker({ surveyId, questions, selected, onChange 
     const reason = heatmapQuestionUnavailableReason(q, questions, selected);
     return reason ? [[Number(q.id), reason]] : [];
   }));
-  return <><WidgetQuestionSelection surveyId={surveyId} multiSelect wholeQuestionsOnly showSelectionCount selectionLimit={MAX_ADVANCED_HEATMAP_QUESTIONS}
+  return <><WidgetQuestionSelection surveyId={surveyId} questionCatalog={getAdvancedHeatmapQuestions(surveyId)} multiSelect wholeQuestionsOnly showSelectionCount selectionLimit={MAX_ADVANCED_HEATMAP_QUESTIONS}
     unavailableQuestionIds={Object.keys(unavailableReasons).map(Number)} unavailableQuestionReasons={unavailableReasons}
     selectedQuestionIds={questions.filter(q => q.rows.some(r => selected.includes(r.id))).map(q => Number(q.id))}
     onSelectionChange={ids => onChange(constrainHeatmapSelection(questions, selected, questions.filter(q => ids.includes(Number(q.id))).flatMap(q => q.rows.map(r => r.id))))} />{selected.length > 0 && heatmapSelectionError(questions, selected) && <p role="alert" className={styles.error}>{heatmapSelectionError(questions, selected)}</p>}</>;

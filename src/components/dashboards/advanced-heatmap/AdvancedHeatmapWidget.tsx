@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState, type CSSProperties } from 'react';
 import dynamic from 'next/dynamic';
-import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
+import { getAdvancedHeatmapQuestions } from '@/data/mock-survey-questions';
 import { heatmapSelectionError, filterHeatmapResponses, ANALYSIS_MODES, isHeatmapOptionExcluded, EMPTY_METRIC_FILTER, METRIC_FILTER_OPERATORS, heatmapRowGroups, isMetricFilterActive, metricFilterError, adaptHeatmapQuestions, createHeatmapResponses, distributionCell, distributionColumns, poolDistributionCells, segmentScoreCell, segmentOverallAverage, segmentBandIndex, advancedHeatmapSegments, summaryCell, type AdvancedHeatmapConfig, type HeatmapCell, type HeatmapQuestion } from '@/data/advanced-heatmap';
 import type { DashboardActiveFilter } from '@/data/mock-dashboard-filters';
 import { getReadableDesignColor, getDashboardDesignColors, type DashboardDesign } from '@/data/dashboard-design';
@@ -21,7 +21,7 @@ const WuDrawer = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => 
 
 type SettingsTab = 'General' | 'Analytics' | 'Labels' | 'Design';
 export function AdvancedHeatmapWidget({ config, onChange, dashboardFilter, dashboardDesign }: { dashboardDesign?: DashboardDesign; config: AdvancedHeatmapConfig; onChange: (config: AdvancedHeatmapConfig) => void; dashboardFilter?: DashboardActiveFilter }) {
-  const questions = useMemo(() => adaptHeatmapQuestions(getQuestionsBySurvey(config.surveyId)), [config.surveyId]);
+  const questions = useMemo(() => adaptHeatmapQuestions(getAdvancedHeatmapQuestions(config.surveyId)), [config.surveyId]);
   const widgetRef = useRef<HTMLDivElement>(null);
   const [previewStyle, setPreviewStyle] = useState<CSSProperties>({});
   const [draft, setDraft] = useState(config);
@@ -75,7 +75,7 @@ export function AdvancedHeatmapWidget({ config, onChange, dashboardFilter, dashb
 }
 
 function HeatmapTable({ config, onChange, dashboardFilter, dashboardDesign }: { dashboardDesign?: DashboardDesign; config: AdvancedHeatmapConfig; onChange: (config: AdvancedHeatmapConfig) => void; dashboardFilter?: DashboardActiveFilter }) {
-  const questions = useMemo(() => adaptHeatmapQuestions(getQuestionsBySurvey(config.surveyId)), [config.surveyId]);
+  const questions = useMemo(() => adaptHeatmapQuestions(getAdvancedHeatmapQuestions(config.surveyId)), [config.surveyId]);
   const sourceResponses = useMemo(() => createHeatmapResponses(questions), [questions]);
   const filtered = filterHeatmapResponses(sourceResponses, questions, config, dashboardFilter);
   const responses = filtered.responses;

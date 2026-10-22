@@ -38,7 +38,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
 import { stackLayoutSingleColumn } from '@/lib/ai-dashboard-layout';
 import { adaptHeatmapQuestions, createDefaultAdvancedHeatmap, type AdvancedHeatmapConfig } from '@/data/advanced-heatmap';
-import { getQuestionsBySurvey } from '@/data/mock-survey-questions';
+import { getAdvancedHeatmapQuestions } from '@/data/mock-survey-questions';
 import { BuiltWidgetCard } from './ai-builder/BuiltWidgetCard';
 import { AdvancedHeatmapWidget } from './advanced-heatmap/AdvancedHeatmapWidget';
 import { HeatMapBaseline } from '@/components/dashboards/heat-map/HeatMapBaseline';
@@ -139,7 +139,7 @@ export function AiDashboardCanvas({
   footer,
 }: AiDashboardCanvasProps) {
   const { showToast } = useWuShowToast();
-  const [defaultAdvancedHeatmap, setDefaultAdvancedHeatmap] = useState(() => createDefaultAdvancedHeatmap(adaptHeatmapQuestions(getQuestionsBySurvey(1))));
+  const [defaultAdvancedHeatmap, setDefaultAdvancedHeatmap] = useState(() => createDefaultAdvancedHeatmap(adaptHeatmapQuestions(getAdvancedHeatmapQuestions(1))));
   const advancedHeatmaps = useMemo(() => [defaultAdvancedHeatmap, ...addedAdvancedHeatmaps.filter(w => w.id !== defaultAdvancedHeatmap.id)], [defaultAdvancedHeatmap, addedAdvancedHeatmaps]);
   const isMobile = useIsMobile();
   const showLicenseRestrictions = useBiLicenseRestrictions();
