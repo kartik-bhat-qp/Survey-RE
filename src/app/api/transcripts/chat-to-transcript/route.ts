@@ -6,7 +6,8 @@ import { TranscriptConvertError } from '@/lib/transcripts/to-excel';
 import { TranslationUnavailableError } from '@/lib/transcripts/translate-to-english';
 
 export const runtime = 'nodejs';
-export const maxDuration = 800;
+// Hobby plans reject anything above 60s while the deployment is uploading.
+export const maxDuration = 60;
 
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
