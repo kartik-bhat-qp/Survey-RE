@@ -3,7 +3,14 @@
 import { useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import type { IWuTabItem } from '@npm-questionpro/wick-ui-lib';
+import { ChatTranscriptConverter } from '@/components/transcripts/ChatTranscriptConverter';
+import { downloadBase64Excel, formatBytes } from '@/components/transcripts/transcript-file-utils';
 
+const WuTab = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTab })),
+  { ssr: false }
+);
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false }
@@ -64,32 +71,45 @@ function isCsvFile(file: File): boolean {
   return file.name.toLowerCase().endsWith('.csv');
 }
 
-function formatBytes(size: number): string {
-  if (size < 1024) return `${size} B`;
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function downloadBase64Excel(fileName: string, excelBase64: string): void {
-  const binary = atob(excelBase64);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-  const blob = new Blob([bytes], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
-
 export function TranscriptsConverter() {
+  const tabs: IWuTabItem[] = [
+    {
+      value: 'csv',
+      Trigger: 'CSV transcripts',
+      Content: (
+        <div className="pt-4">
+          <p className="mb-4 text-sm text-gray-500">
+            Upload one or more CSV transcripts. The converter groups answers under each common
+            question and returns an Excel workbook.
+          </p>
+          <CsvTranscriptConverter />
+        </div>
+      ),
+    },
+    {
+      value: 'chat-log',
+      Trigger: 'Chat log Excel',
+      Content: (
+        <div className="pt-4">
+          <p className="mb-4 text-sm text-gray-500">
+            Upload an Excel file where each row holds a chat conversation as JSON. The converter
+            returns a simple transcript workbook you can import into other systems.
+          </p>
+          <ChatTranscriptConverter />
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <WuCard rounded className="mb-8 p-5 sm:p-6">
+      <h2 className="mb-2 text-base font-semibold text-gray-900">Convert transcripts to Excel</h2>
+      <WuTab items={tabs} defaultValue="csv" />
+    </WuCard>
+  );
+}
+
+function CsvTranscriptConverter() {
   const { showToast } = useWuShowToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -161,15 +181,7 @@ export function TranscriptsConverter() {
   }
 
   return (
-    <WuCard rounded className="mb-8 p-5 sm:p-6">
-      <div className="mb-4">
-        <h2 className="text-base font-semibold text-gray-900">Convert transcripts to Excel</h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Upload one or more CSV transcripts. The converter groups answers under each common
-          question and returns an Excel workbook.
-        </p>
-      </div>
-
+    <div>
       <input
         ref={inputRef}
         type="file"
@@ -282,6 +294,6 @@ export function TranscriptsConverter() {
           ) : null}
         </div>
       ) : null}
-    </WuCard>
+    </div>
   );
 }

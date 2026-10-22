@@ -169,7 +169,7 @@ function normalizeHeader(value: string | undefined | null): string {
   return slug.replace(WHITESPACE_RE, '_').replace(/^_+|_+$/g, '');
 }
 
-function extractQuestion(text: string): string {
+export function extractQuestion(text: string): string {
   let cleaned = cleanText(text);
   const sentences = cleaned.split(SENTENCE_SPLIT_RE).filter((part) => part.trim());
   const asking = sentences.filter((part) => part.includes('?'));
@@ -181,7 +181,7 @@ function extractQuestion(text: string): string {
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
-function questionKey(label: string): string {
+export function questionKey(label: string): string {
   let text = cleanText(label).toLowerCase().replace(QUESTION_PREFIX_RE, '');
   text = text.replace(LEAD_IN_RE, '');
   text = text.replace(NON_WORD_RE, ' ');

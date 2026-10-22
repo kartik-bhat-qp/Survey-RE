@@ -198,7 +198,7 @@ export default function TranscriptsPage() {
     <PageContainer>
       <PageHeader
         title="Transcripts"
-        description="Upload transcript CSVs and download an Excel workbook grouped by common questions"
+        description="Upload transcript CSVs or chat log Excel files and download a ready-to-use Excel workbook"
         action={
           <WuButton onClick={() => setIsCreateOpen(true)}>
             <span className="wm-add" /> New transcript
