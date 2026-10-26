@@ -26,6 +26,19 @@ export interface SurveyFinishOptions {
   rewardQualifyingCriteria: string;
   rewardId: string;
   rewardPublicContactEmail: string;
+  couponCompanyName: string;
+  couponHeadline: string;
+  couponDetails: string;
+  couponList: string;
+  rewardPageHeadline: string;
+  rewardPageMessage: string;
+  giftCardValue: string;
+  giftCardCount: string;
+  starbucksGiftCardValue: string;
+  prepaidVisaGiftCardValue: string;
+  emailRewardsToRespondent: boolean;
+  displayRewardOnThankYouPage: boolean;
+  emailAdminOnEachReward: boolean;
 }
 
 export const FINISH_OPTIONS_HELP =
@@ -98,26 +111,74 @@ export const REWARD_PUBLIC_CONTACT_TOOLTIP =
 
 export const DEFAULT_REWARD_PUBLIC_CONTACT_EMAIL = 'kartik.khat@questionpro.com';
 
+export const DEFAULT_COUPON_COMPANY_NAME = "Bob's Ski Haus";
+
+export const DEFAULT_COUPON_HEADLINE = '50% off all skis!';
+
+export const DEFAULT_COUPON_DETAILS =
+  'Thank you for participating in our market research! Bring this into our store to redeem!\n\nCoupon code: ${couponCode}';
+
+export const COUPON_LIST_HINT = 'One per Line';
+
+export const REWARD_PAGE_PREVIEW_HINT = 'Preview shows the last saved reward page.';
+
+export const GIFT_CARD_VALUE_HINT = '$1 to $1000 (USD)';
+
+export const GIFT_CARD_FULFILLMENT_NOTE =
+  'Gift cards are added within 24 hours. They will not show up in your inventory right away.';
+
+export const TANGO_GIFT_CARD_VALUE_HINT = '$1 to $2000 (USD)';
+
+export const AMAZON_GIFT_CARD_DISCLAIMER =
+  'Amazon.com is not a sponsor of this promotion. Amazon.com Gift Cards may be used only for purchases of eligible goods at Amazon.com or certain of its affiliated websites. For complete terms and conditions, see www.amazon.com/gc-legal. Gift cards are issued by ACI Gift Cards, Inc., a Washington corporation.';
+
+export const AMAZON_REWARD_TEST_MODE_MESSAGE =
+  'The order total and payment details could not be loaded, so this reward cannot be taken out of test mode right now. Try again shortly.';
+
+export const STARBUCKS_GIFT_CARD_DISCLAIMER =
+  'The Starbucks word mark and logo are trademarks of Starbucks Corporation. Starbucks is not a participating partner or sponsor in this offer.';
+
+export const STARBUCKS_GIFT_CARD_VALUE_OPTIONS: RewardSelectOption[] = [
+  { value: '5', label: '$5' },
+  { value: '25', label: '$25' },
+  { value: '50', label: '$50' },
+  { value: '100', label: '$100' },
+  { value: '250', label: '$250' },
+  { value: '500', label: '$500' },
+];
+
+export const PREPAID_VISA_DISCLAIMER =
+  'Prepaid Visa cards are issued pursuant to a license from Visa. The merchants represented are not sponsors of the rewards or otherwise affiliated with this promotion.';
+
+export const PREPAID_VISA_GIFT_CARD_VALUE_OPTIONS: RewardSelectOption[] = [
+  { value: '5', label: '$5' },
+  { value: '10', label: '$10' },
+  { value: '25', label: '$25' },
+  { value: '50', label: '$50' },
+  { value: '100', label: '$100' },
+  { value: '250', label: '$250' },
+  { value: '500', label: '$500' },
+];
+
 export interface RewardSelectOption {
   value: string;
   label: string;
 }
 
-export const REWARD_QUALIFYING_CRITERIA_OPTIONS: RewardSelectOption[] = MOCK_EXISTING_CRITERIA.map(
-  (template) => ({ value: template.id, label: template.name })
-);
+export const REWARD_QUALIFYING_CRITERIA_OPTIONS: RewardSelectOption[] = [
+  { value: 'all-complete-respondents', label: 'All Complete Respondents' },
+  { value: 'survey-quiz-score', label: 'Based on Survey Quiz Score' },
+  { value: 'first-n-completes', label: 'First N Number of Completes' },
+  { value: 'drawing-random-winners', label: 'Drawing - Random Winner(s)' },
+];
 
 export const REWARD_CATALOG: RewardSelectOption[] = [
-  { value: 'amazon-10', label: 'Amazon.com Gift Card — $10' },
-  { value: 'amazon-25', label: 'Amazon.com Gift Card — $25' },
-  { value: 'starbucks-5', label: 'Starbucks eGift — $5' },
-  { value: 'visa-15', label: 'Visa Virtual Reward — $15' },
-  { value: 'charity-10', label: 'Charity donation — $10' },
-  {
-    value: 'long-name-experience',
-    label:
-      'Premium multi-brand experience voucher for respondents who complete the full research study',
-  },
+  { value: 'coupon', label: 'Coupon' },
+  { value: 'user-defined', label: 'User Defined and Fulfilled' },
+  { value: 'amazon', label: 'Amazon.com Gift Card' },
+  { value: 'starbucks', label: 'Starbucks Gift Card' },
+  { value: 'tango', label: 'Tango Gift Card' },
+  { value: 'prepaid-visa', label: 'Prepaid Visa Reward' },
 ];
 
 export const SPOTLIGHT_OVERALL_RESULTS_VALUE = 'overall-results';
@@ -161,6 +222,19 @@ export const DEFAULT_SURVEY_FINISH_OPTIONS: SurveyFinishOptions = {
   rewardQualifyingCriteria: '',
   rewardId: '',
   rewardPublicContactEmail: DEFAULT_REWARD_PUBLIC_CONTACT_EMAIL,
+  couponCompanyName: DEFAULT_COUPON_COMPANY_NAME,
+  couponHeadline: DEFAULT_COUPON_HEADLINE,
+  couponDetails: DEFAULT_COUPON_DETAILS,
+  couponList: '',
+  rewardPageHeadline: '',
+  rewardPageMessage: '',
+  giftCardValue: '',
+  giftCardCount: '',
+  starbucksGiftCardValue: '',
+  prepaidVisaGiftCardValue: '',
+  emailRewardsToRespondent: false,
+  displayRewardOnThankYouPage: true,
+  emailAdminOnEachReward: false,
 };
 
 export function surveyFinishOptionsStorageKey(surveyId: number): string {
@@ -215,5 +289,48 @@ export function normalizeSurveyFinishOptions(
       typeof parsed.rewardPublicContactEmail === 'string'
         ? parsed.rewardPublicContactEmail
         : fallback.rewardPublicContactEmail,
+    couponCompanyName:
+      typeof parsed.couponCompanyName === 'string'
+        ? parsed.couponCompanyName
+        : fallback.couponCompanyName,
+    couponHeadline:
+      typeof parsed.couponHeadline === 'string' ? parsed.couponHeadline : fallback.couponHeadline,
+    couponDetails:
+      typeof parsed.couponDetails === 'string' ? parsed.couponDetails : fallback.couponDetails,
+    couponList: typeof parsed.couponList === 'string' ? parsed.couponList : fallback.couponList,
+    rewardPageHeadline:
+      typeof parsed.rewardPageHeadline === 'string'
+        ? parsed.rewardPageHeadline
+        : fallback.rewardPageHeadline,
+    rewardPageMessage:
+      typeof parsed.rewardPageMessage === 'string'
+        ? parsed.rewardPageMessage
+        : fallback.rewardPageMessage,
+    giftCardValue:
+      typeof parsed.giftCardValue === 'string' ? parsed.giftCardValue : fallback.giftCardValue,
+    giftCardCount:
+      typeof parsed.giftCardCount === 'string' ? parsed.giftCardCount : fallback.giftCardCount,
+    starbucksGiftCardValue: STARBUCKS_GIFT_CARD_VALUE_OPTIONS.some(
+      (option) => option.value === parsed.starbucksGiftCardValue
+    )
+      ? (parsed.starbucksGiftCardValue as string)
+      : fallback.starbucksGiftCardValue,
+    prepaidVisaGiftCardValue: PREPAID_VISA_GIFT_CARD_VALUE_OPTIONS.some(
+      (option) => option.value === parsed.prepaidVisaGiftCardValue
+    )
+      ? (parsed.prepaidVisaGiftCardValue as string)
+      : fallback.prepaidVisaGiftCardValue,
+    emailRewardsToRespondent:
+      typeof parsed.emailRewardsToRespondent === 'boolean'
+        ? parsed.emailRewardsToRespondent
+        : fallback.emailRewardsToRespondent,
+    displayRewardOnThankYouPage:
+      typeof parsed.displayRewardOnThankYouPage === 'boolean'
+        ? parsed.displayRewardOnThankYouPage
+        : fallback.displayRewardOnThankYouPage,
+    emailAdminOnEachReward:
+      typeof parsed.emailAdminOnEachReward === 'boolean'
+        ? parsed.emailAdminOnEachReward
+        : fallback.emailAdminOnEachReward,
   };
 }
