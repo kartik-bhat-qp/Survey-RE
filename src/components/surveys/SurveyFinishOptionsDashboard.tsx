@@ -529,6 +529,11 @@ export function SurveyFinishOptionsDashboard({
     [inventoryRaw]
   );
   const balances = useMemo(() => rewardInventoryBalances(inventory), [inventory]);
+  const approvals = useMemo(
+    () => inventory.filter((entry) => entry.event !== 'refunded'),
+    [inventory]
+  );
+  const [approvalsOpen, setApprovalsOpen] = useState(false);
   const [refundKey, setRefundKey] = useState<string | null>(null);
   const [refundCount, setRefundCount] = useState('1');
   const refundRow =
@@ -1416,6 +1421,58 @@ export function SurveyFinishOptionsDashboard({
                 </tr>
               </tbody>
             </table>
+            <div className={styles.employeeApproval}>
+              <p className={styles.orderCopy}>
+                See every gift card approval and the comment left with it.
+              </p>
+              <WuButton type="button" variant="secondary" onClick={() => setApprovalsOpen(true)}>
+                View approvals
+              </WuButton>
+            </div>
+            {approvalsOpen && wick ? (
+              <wick.WuModal
+                open
+                size="lg"
+                onOpenChange={(open: boolean) => {
+                  if (!open) setApprovalsOpen(false);
+                }}
+              >
+                <wick.WuModalHeader>Approvals</wick.WuModalHeader>
+                <wick.WuModalContent>
+                  {approvals.length === 0 ? (
+                    <p className={styles.refundDialogCopy}>No approvals yet.</p>
+                  ) : (
+                    <table className={`${styles.inventoryTable} ${styles.approvalTable}`}>
+                      <thead>
+                        <tr>
+                          <th scope="col">When</th>
+                          <th scope="col">Ticket</th>
+                          <th scope="col">Reward</th>
+                          <th scope="col">Cards</th>
+                          <th scope="col">Comment</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {approvals.map((entry) => (
+                          <tr key={entry.ticketId}>
+                            <td>{formatRewardOrderWhen(entry.addedAt)}</td>
+                            <td>{entry.ticketId}</td>
+                            <td>
+                              {entry.rewardLabel} · {formatUsd(entry.unitValue)}
+                            </td>
+                            <td>{entry.cardCount}</td>
+                            <td>{entry.approvalComment}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </wick.WuModalContent>
+                <wick.WuModalFooter>
+                  <wick.WuModalClose variant="secondary">Close</wick.WuModalClose>
+                </wick.WuModalFooter>
+              </wick.WuModal>
+            ) : null}
         </section>
       </div>
 

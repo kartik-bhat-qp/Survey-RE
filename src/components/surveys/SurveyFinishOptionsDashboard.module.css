@@ -253,6 +253,16 @@
   max-width: 28rem;
 }
 
+.approvalTable th:nth-child(4),
+.approvalTable td:nth-child(4) {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.approvalTable td:last-child {
+  white-space: normal;
+}
+
 .saveActions {
   margin-top: 1.25rem;
   padding-top: 0.5rem;
