@@ -119,6 +119,140 @@
   min-width: 18rem;
 }
 
+.inventory {
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+}
+
+.inventoryTable {
+  border-collapse: collapse;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  width: 100%;
+}
+
+.inventoryTable th,
+.inventoryTable td {
+  border-bottom: 1px solid #e5e7eb;
+  color: #1f2937;
+  padding: 0.55rem 0.65rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.inventoryTable th {
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.balanceTable {
+  table-layout: fixed;
+}
+
+.rewardCol {
+  width: 34.8%;
+}
+
+.valueCol {
+  width: 20.4%;
+}
+
+.cardsCol {
+  width: 13.4%;
+}
+
+.balanceTable th:nth-child(n + 2),
+.balanceTable td:nth-child(n + 2) {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.balanceHead,
+.balanceCell {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.balanceAmount,
+.refundSizer {
+  font-variant-numeric: tabular-nums;
+}
+
+.refundSizer {
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  visibility: hidden;
+}
+
+.refundSlot {
+  display: grid;
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.refundSlot > .refundSizer,
+.refundSlot > button {
+  grid-area: 1 / 1;
+}
+
+.refundDialog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.refundDialogCopy {
+  color: #4b5563;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.refundBlocked {
+  cursor: not-allowed;
+  display: inline-flex;
+}
+
+.refundBlocked button {
+  pointer-events: none;
+}
+
+.refundDialogField {
+  color: #1f2937;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  gap: 0.35rem;
+}
+
+.refundCount {
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  color: #1f2937;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  height: 2rem;
+  padding: 0 0.35rem;
+  width: 3.25rem;
+}
+
+.logTable td:last-child {
+  max-width: 28rem;
+}
+
 .saveActions {
   margin-top: 1.25rem;
   padding-top: 0.5rem;
@@ -365,7 +499,7 @@
 
 .employeeApproval {
   background: #f8fafc;
-  border: 1px dashed #94a3b8;
+  border: 1px dashed #dc2626;
   border-radius: 6px;
   display: flex;
   flex-direction: column;

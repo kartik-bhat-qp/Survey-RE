@@ -1,8 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { useWickUILib } from '@/components/ui/useWickUILib';
 import { WarningNotice } from '@/components/ui/WarningNotice';
 import { SpotlightCriteriaModal } from '@/components/surveys/SpotlightCriteriaModal';
 import { SurveySettingsRichText } from '@/components/surveys/SurveySettingsRichText';
@@ -10,12 +12,20 @@ import { usePersistedState } from '@/hooks/usePersistedState';
 import {
   buildRewardCharge,
   createRewardTicketId,
+  formatRewardOrderWhen,
   formatUsd,
+  inventoryEntryFromOrder,
   isRewardCardOrder,
+  isRewardInventoryEntry,
   parseGiftCardAmount,
   parseGiftCardCount,
+  rewardInventoryBalances,
+  rewardInventoryStorageKey,
+  SAMPLE_REDEEMED_GIFT_CARD_LOG,
   rewardOrderStorageKey,
   type RewardCardOrder,
+  type RewardInventoryBalance,
+  type RewardInventoryEntry,
 } from '@/data/mock-reward-orders';
 import {
   buildSpotlightCompareOptions,
@@ -91,18 +101,31 @@ interface SurveyFinishOptionsDashboardProps {
 
 const DEFAULT_URL_SCHEME = 'https://';
 
+function refundBlockedReason(
+  cardCount: number,
+  count: number | null,
+  ready: boolean
+): string | null {
+  if (ready) return null;
+  if (count === null) return 'Enter how many unused cards to refund.';
+  const onHand = cardCount === 1 ? '1 balance card' : `${cardCount} balance cards`;
+  return `You only have ${onHand} on hand.`;
+}
+
 function GiftCardOrderPanel({
   surveyId,
   rewardId,
   rewardLabel,
   unitValueRaw,
   countRaw,
+  onApproved,
 }: {
   surveyId: number;
   rewardId: string;
   rewardLabel: string;
   unitValueRaw: string;
   countRaw: string;
+  onApproved: (order: RewardCardOrder) => void;
 }) {
   const { showToast } = useWuShowToast();
   const [orderRaw, setOrder] = usePersistedState<RewardCardOrder | null>(
@@ -115,6 +138,11 @@ function GiftCardOrderPanel({
   const charge =
     unitValue !== null && cardCount !== null ? buildRewardCharge(unitValue, cardCount) : null;
   const [approvalComment, setApprovalComment] = useState('');
+  const [cancelOpen, setCancelOpen] = useState(false);
+
+  useEffect(() => {
+    if (order?.status === 'added') onApproved(order);
+  }, [onApproved, order]);
 
   function placeOrder(): void {
     if (!charge || unitValue === null || cardCount === null) return;
@@ -159,13 +187,43 @@ function GiftCardOrderPanel({
     });
   }
 
+  function cancelOrder(): void {
+    if (!order || order.status !== 'processing') return;
+    const ticketId = order.ticketId;
+    setOrder(null);
+    setApprovalComment('');
+    showToast({ message: `Ticket ${ticketId} cancelled.`, variant: 'success' });
+  }
+
   if (order?.status === 'processing' && order.rewardId !== rewardId) {
     return (
-      <p className={styles.fulfillmentNote} role="status">
-        <span className={`wm-schedule ${styles.fulfillmentNoteIcon}`} aria-hidden />
-        Ticket {order.ticketId} for {order.rewardLabel} is still in process. Place another order
-        after those cards are added.
-      </p>
+      <>
+        <div className={styles.fulfillmentNote} role="status">
+          <span className={`wm-schedule ${styles.fulfillmentNoteIcon}`} aria-hidden />
+          <span>
+            Ticket {order.ticketId} for {order.rewardLabel} is still in process. Place another
+            order after those cards are added.
+          </span>
+          <button
+            type="button"
+            className={styles.placeAnother}
+            onClick={() => setCancelOpen(true)}
+          >
+            Cancel order
+          </button>
+        </div>
+        <ConfirmModal
+          open={cancelOpen}
+          onOpenChange={setCancelOpen}
+          title="Cancel order?"
+          description={
+            `Ticket ${order.ticketId} will be cancelled. You can place a new order after that.`
+          }
+          confirmLabel="Cancel order"
+          variant="critical"
+          onConfirm={cancelOrder}
+        />
+      </>
     );
   }
 
@@ -177,7 +235,10 @@ function GiftCardOrderPanel({
     const processingCopy =
       `Your ${order.rewardLabel} order is in process. ` +
       'Gift cards are added when an employee approves the order.';
+    const cancelDescription =
+      `Ticket ${order.ticketId} will be cancelled. You can place a new order after that.`;
     return (
+      <>
       <section className={styles.orderCard} aria-live="polite" aria-label="Reward order status">
         <div className={styles.orderStatusHead}>
           <div>
@@ -225,10 +286,24 @@ function GiftCardOrderPanel({
           </p>
         ) : null}
         {added ? (
-          <button type="button" className={styles.placeAnother} onClick={() => setOrder(null)}>
+          <button
+            type="button"
+            className={styles.placeAnother}
+            onClick={() => {
+              setOrder(null);
+              document.getElementById('reward-setup')?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+              });
+            }}
+          >
             Place another order
           </button>
         ) : (
+          <>
+          <WuButton type="button" variant="secondary" onClick={() => setCancelOpen(true)}>
+            Cancel order
+          </WuButton>
           <div className={styles.employeeApproval}>
             <p className={styles.employeeLabel}>Employee only</p>
             <p className={styles.orderCopy}>
@@ -250,8 +325,21 @@ function GiftCardOrderPanel({
               Approve
             </WuButton>
           </div>
+          </>
         )}
       </section>
+      {!added ? (
+        <ConfirmModal
+          open={cancelOpen}
+          onOpenChange={setCancelOpen}
+          title="Cancel order?"
+          description={cancelDescription}
+          confirmLabel="Cancel order"
+          variant="critical"
+          onConfirm={cancelOrder}
+        />
+      ) : null}
+      </>
     );
   }
 
@@ -425,12 +513,72 @@ export function SurveyFinishOptionsDashboard({
   embedded = false,
 }: SurveyFinishOptionsDashboardProps) {
   const { showToast } = useWuShowToast();
+  const wick = useWickUILib();
   const [createCriteriaOpen, setCreateCriteriaOpen] = useState(false);
   const [optionsRaw, setOptions] = usePersistedState<SurveyFinishOptions>(
     surveyFinishOptionsStorageKey(surveyId),
     normalizeSurveyFinishOptions({})
   );
   const options = useMemo(() => normalizeSurveyFinishOptions(optionsRaw), [optionsRaw]);
+  const [inventoryRaw, setInventory] = usePersistedState<RewardInventoryEntry[]>(
+    rewardInventoryStorageKey(surveyId),
+    []
+  );
+  const inventory = useMemo(
+    () => (Array.isArray(inventoryRaw) ? inventoryRaw.filter(isRewardInventoryEntry) : []),
+    [inventoryRaw]
+  );
+  const balances = useMemo(() => rewardInventoryBalances(inventory), [inventory]);
+  const [refundKey, setRefundKey] = useState<string | null>(null);
+  const [refundCount, setRefundCount] = useState('1');
+  const refundRow =
+    balances.find((row) => `${row.rewardId}-${row.unitValue}` === refundKey) ?? null;
+  const refundParsed = parseGiftCardCount(refundCount);
+  const refundReady =
+    refundRow !== null && refundParsed !== null && refundParsed <= refundRow.cardCount;
+
+  function closeRefund(): void {
+    setRefundKey(null);
+    setRefundCount('1');
+  }
+  const recordApprovedOrder = useCallback(
+    (order: RewardCardOrder) => {
+      if (order.status !== 'added' || !order.addedAt) return;
+      setInventory((current) => {
+        const list = (Array.isArray(current) ? current : []).filter(isRewardInventoryEntry);
+        if (list.some((entry) => entry.ticketId === order.ticketId)) {
+          return Array.isArray(current) ? current : list;
+        }
+        return [inventoryEntryFromOrder(order), ...list];
+      });
+    },
+    [setInventory]
+  );
+
+  function refundUnusedCards(row: RewardInventoryBalance): void {
+    const count = parseGiftCardCount(refundCount);
+    if (count === null || count > row.cardCount) return;
+    const now = new Date().toISOString();
+    const entry: RewardInventoryEntry = {
+      ticketId: `RFD-${Date.now()}`,
+      rewardId: row.rewardId,
+      rewardLabel: row.rewardLabel,
+      unitValue: row.unitValue,
+      cardCount: count,
+      total: Math.round(row.unitValue * count * 100) / 100,
+      orderedAt: now,
+      addedAt: now,
+      approvalComment: '',
+      event: 'refunded',
+    };
+    setInventory((current) => {
+      const list = (Array.isArray(current) ? current : []).filter(isRewardInventoryEntry);
+      return [entry, ...list];
+    });
+    closeRefund();
+    const unused = count === 1 ? '1 unused card' : `${count} unused cards`;
+    showToast({ message: `${unused} refunded.`, variant: 'success' });
+  }
 
   const selectedFinishType =
     FINISH_OPTION_TYPE_OPTIONS.find((option) => option.value === options.finishType) ??
@@ -564,7 +712,7 @@ export function SurveyFinishOptionsDashboard({
             </p>
           </section>
         ) : options.finishType === 'rewards' ? (
-          <section className={styles.rewardsCard} aria-label="Reward setup">
+          <section id="reward-setup" className={styles.rewardsCard} aria-label="Reward setup">
             <div>
               <h2 className={styles.rewardsTitle}>Reward setup</h2>
               <p className={styles.rewardsHint}>
@@ -745,6 +893,7 @@ export function SurveyFinishOptionsDashboard({
                   rewardLabel="Amazon.com Gift Card"
                   unitValueRaw={options.giftCardValue}
                   countRaw={options.giftCardCount}
+                  onApproved={recordApprovedOrder}
                 />
               </div>
             ) : options.rewardId === 'tango' ? (
@@ -794,6 +943,7 @@ export function SurveyFinishOptionsDashboard({
                   rewardLabel="Tango Gift Card"
                   unitValueRaw={options.giftCardValue}
                   countRaw={options.giftCardCount}
+                  onApproved={recordApprovedOrder}
                 />
               </div>
             ) : options.rewardId === 'starbucks' ? (
@@ -875,6 +1025,7 @@ export function SurveyFinishOptionsDashboard({
                   rewardLabel="Starbucks Gift Card"
                   unitValueRaw={options.starbucksGiftCardValue}
                   countRaw={options.giftCardCount}
+                  onApproved={recordApprovedOrder}
                 />
               </div>
             ) : options.rewardId === 'prepaid-visa' ? (
@@ -934,6 +1085,7 @@ export function SurveyFinishOptionsDashboard({
                   rewardLabel="Prepaid Visa Reward"
                   unitValueRaw={options.prepaidVisaGiftCardValue}
                   countRaw={options.giftCardCount}
+                  onApproved={recordApprovedOrder}
                 />
               </div>
             ) : (
@@ -1115,6 +1267,156 @@ export function SurveyFinishOptionsDashboard({
             Save Changes
           </WuButton>
         </div>
+        <section className={styles.inventory} aria-label="Reward inventory">
+            {balances.length > 0 ? (
+              <>
+            <h2 className={styles.orderTitle}>Reward inventory balance</h2>
+            <table className={`${styles.inventoryTable} ${styles.balanceTable}`}>
+              <colgroup>
+                <col className={styles.rewardCol} />
+                <col className={styles.valueCol} />
+                <col className={styles.cardsCol} />
+                <col />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th scope="col">Reward</th>
+                  <th scope="col">Card value</th>
+                  <th scope="col">Balance cards</th>
+                  <th scope="col">
+                    <span className={styles.balanceHead}>
+                      <span>Balance</span>
+                      <span className={styles.refundSizer} aria-hidden="true">
+                        Refund
+                      </span>
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {balances.map((row) => {
+                  const key = `${row.rewardId}-${row.unitValue}`;
+                  return (
+                    <tr key={key}>
+                      <td>{row.rewardLabel}</td>
+                      <td>{formatUsd(row.unitValue)}</td>
+                      <td>{row.cardCount}</td>
+                      <td>
+                        <div className={styles.balanceCell}>
+                          <span className={styles.balanceAmount}>{formatUsd(row.amount)}</span>
+                          <div className={styles.refundSlot}>
+                            <span className={styles.refundSizer} aria-hidden="true">
+                              Refund
+                            </span>
+                            <button
+                              type="button"
+                              className={styles.placeAnother}
+                              onClick={() => {
+                                setRefundKey(key);
+                                setRefundCount('1');
+                              }}
+                            >
+                              Refund
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {refundRow && wick ? (
+              <wick.WuModal
+                open
+                size="sm"
+                onOpenChange={(open: boolean) => {
+                  if (!open) closeRefund();
+                }}
+              >
+                <wick.WuModalHeader>Refund unused cards</wick.WuModalHeader>
+                <wick.WuModalContent>
+                  <div className={styles.refundDialog}>
+                    <p className={styles.refundDialogCopy}>
+                      {refundRow.rewardLabel}, {formatUsd(refundRow.unitValue)}.
+                      {' '}
+                      {refundRow.cardCount} balance cards on hand.
+                    </p>
+                    <label className={styles.refundDialogField} htmlFor="refund-unused-cards">
+                      Unused cards
+                      <input
+                        id="refund-unused-cards"
+                        className={styles.refundCount}
+                        type="number"
+                        min={1}
+                        max={refundRow.cardCount}
+                        value={refundCount}
+                        onChange={(event) => setRefundCount(event.target.value)}
+                      />
+                    </label>
+                  </div>
+                </wick.WuModalContent>
+                <wick.WuModalFooter>
+                  <wick.WuModalClose variant="secondary">Cancel</wick.WuModalClose>
+                  {refundReady ? (
+                    <wick.WuButton onClick={() => refundUnusedCards(refundRow)}>
+                      Refund
+                    </wick.WuButton>
+                  ) : (
+                    <WuTooltip
+                      content={refundBlockedReason(
+                        refundRow.cardCount,
+                        refundParsed,
+                        refundReady
+                      )}
+                      position="top"
+                    >
+                      <span className={styles.refundBlocked}>
+                        <wick.WuButton disabled>Refund</wick.WuButton>
+                      </span>
+                    </WuTooltip>
+                  )}
+                </wick.WuModalFooter>
+              </wick.WuModal>
+            ) : null}
+              </>
+            ) : null}
+            <h2 className={styles.orderTitle}>Logs</h2>
+            <table className={`${styles.inventoryTable} ${styles.logTable}`}>
+              <thead>
+                <tr>
+                  <th scope="col">When</th>
+                  <th scope="col">Event</th>
+                  <th scope="col">Detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inventory.map((entry) => {
+                  const refunded = entry.event === 'refunded';
+                  const unused =
+                    entry.cardCount === 1 ? '1 unused card' : `${entry.cardCount} unused cards`;
+                  const value = formatUsd(entry.unitValue);
+                  const detail = refunded
+                    ? `${unused} of ${value} for ${entry.rewardLabel} refunded.`
+                    : `${entry.cardCount} cards of ${value} for ${entry.rewardLabel}. ${
+                        entry.approvalComment
+                      }`;
+                  return (
+                  <tr key={entry.ticketId}>
+                    <td>{formatRewardOrderWhen(entry.addedAt)}</td>
+                    <td>{refunded ? 'Gift card refunded' : 'Cards added'}</td>
+                    <td>{detail}</td>
+                  </tr>
+                  );
+                })}
+                <tr key={`sample-${SAMPLE_REDEEMED_GIFT_CARD_LOG.ticketId}`}>
+                  <td>{formatRewardOrderWhen(SAMPLE_REDEEMED_GIFT_CARD_LOG.when)}</td>
+                  <td>{SAMPLE_REDEEMED_GIFT_CARD_LOG.event}</td>
+                  <td>{SAMPLE_REDEEMED_GIFT_CARD_LOG.detail}</td>
+                </tr>
+              </tbody>
+            </table>
+        </section>
       </div>
 
       {createCriteriaOpen ? (
