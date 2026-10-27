@@ -1,5 +1,11 @@
 # Censored sub-themes — prototype review checkpoint
 
+## Live audit and completed PRD rules — 27 October 2026
+
+The live feature remains available in TextAI. The audit found that the later confirmation and persistent manual-release requirements reached the PRD but not the prototype. See [the RCA](RCA-2026-10-27.md) for history, reproduction, repair and verification. Earlier statements below allowing Censored to coexist with newly added ordinary tags, or leaving recoding persistence unresolved, are historical and superseded.
+
+Adding another sub-theme now requires confirmation and removes Censored on Proceed; Cancel changes no tags. Save records a durable manual-release marker, including migration for older releases. Full/custom Censored recoding respects those markers. Hidden review, bulk removal, both settings routes, Save/Discard and normal dashboard widgets remain. All 70 TextAI tests, TypeScript, targeted ESLint, the build and the documented preview browser flows pass.
+
 ## Dashboard alignment correction — 12 October 2026
 
 The original implementation introduced a dedicated dashboard component for dashboard 23, **McDonald's feedback — Censored sub-themes**, suppressed normal toolbar actions and filters there, and inserted a separate Outlier responses section on other dashboards. The owner requested removal of this dashboard-specific UI.

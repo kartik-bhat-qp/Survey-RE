@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CENSORED_TAG, CENSORED_TAG_ID, RESTAURANT_RESPONSES, restaurantResponses, isCensoredResponse, visibleCensoredResponses, addCensoredAwareTags, getDashboardExampleResponses, getOutlierDashboardRows } from '../src/data/text-ai-censored-subthemes.ts';
+import { CENSORED_TAG, CENSORED_TAG_ID, RESTAURANT_RESPONSES, restaurantResponses, isCensoredResponse, visibleCensoredResponses, addCensoredAwareTags, getDashboardExampleResponses, getOutlierDashboardRows, requiresCensoredRelease, parseCensoredReleases, rememberCensoredReleases, recodeCensoredAssignments, automaticCensoredAssignments } from '../src/data/text-ai-censored-subthemes.ts';
 import { stageTagAssignment, commitTagDrafts } from '../src/data/text-ai-tag-drafts.ts';
 
 test('automatic censorship is exclusive and does not censor actionable negative feedback', () => {
@@ -13,11 +13,69 @@ test('automatic censorship is exclusive and does not censor actionable negative 
 });
 test('hidden mode excludes entire responses even when they carry additional tags', () => {
   const other = RESTAURANT_RESPONSES[0].subthemes[0];
-  const tagged = { ...RESTAURANT_RESPONSES[8], subthemes: addCensoredAwareTags([CENSORED_TAG], [other], true) };
+  const tagged = { ...RESTAURANT_RESPONSES[8], subthemes: [CENSORED_TAG, other] };
   assert.equal(tagged.subthemes.length, 2);
   assert.equal(visibleCensoredResponses([tagged], false).length, 0);
   assert.equal(visibleCensoredResponses([tagged], true).length, 1);
   assert.deepEqual(addCensoredAwareTags([other], [CENSORED_TAG], false), [CENSORED_TAG]);
+});
+
+test('adding a regular tag to Censored requires confirmation and replaces Censored atomically', () => {
+  const ordinary = RESTAURANT_RESPONSES[0].subthemes[0];
+  const before = [CENSORED_TAG];
+  assert.equal(requiresCensoredRelease(before, [ordinary]), true);
+  assert.throws(() => addCensoredAwareTags(before, [ordinary], true), /Confirm/);
+  assert.deepEqual(before, [CENSORED_TAG]);
+  assert.deepEqual(addCensoredAwareTags(before, [ordinary], true, true), [ordinary]);
+  assert.deepEqual(addCensoredAwareTags([ordinary], [ordinary], true), [ordinary]);
+  assert.equal(requiresCensoredRelease([CENSORED_TAG, ordinary], [ordinary]), false);
+});
+
+test('saved individual and bulk releases survive automatic recoding and serialization', () => {
+  const automatic = automaticCensoredAssignments('restaurant-feedback-q1', true);
+  const keys = Object.keys(automatic);
+  const ordinary = RESTAURANT_RESPONSES[0].subthemes[0];
+  let drafts = {};
+  drafts = stageTagAssignment(drafts, keys[0], automatic[keys[0]], [ordinary]);
+  drafts = stageTagAssignment(drafts, keys[1], automatic[keys[1]], []);
+  const assignments = commitTagDrafts(automatic, drafts);
+  const releases = rememberCensoredReleases({}, assignments, drafts);
+  const persisted = JSON.parse(JSON.stringify({ assignments, releases }));
+  const recoded = recodeCensoredAssignments(persisted.assignments, automatic, parseCensoredReleases(persisted.releases));
+  assert.deepEqual(recoded[keys[0]], [ordinary]);
+  assert.deepEqual(recoded[keys[1]], []);
+  assert.deepEqual(recoded[keys[2]], [CENSORED_TAG]);
+  assert.equal(visibleCensoredResponses(restaurantResponses(recoded), false).length, 10);
+  assert.deepEqual(recodeCensoredAssignments(recoded, automatic, releases), recoded);
+});
+
+test('legacy restaurant and shared Outlier releases migrate without releasing untouched responses', () => {
+  const restaurantKey = 'restaurant-feedback-q1:medium:9';
+  const sharedKey = 'q1:outlier:100004';
+  const otherQuestion = 'q2:outlier:100004';
+  const releases = rememberCensoredReleases({}, { [restaurantKey]: [], [sharedKey]: [], [otherQuestion]: [CENSORED_TAG], 'q1:medium:9': [] });
+  assert.deepEqual(releases, { [restaurantKey]: true, [sharedKey]: true });
+  const automatic = { ...automaticCensoredAssignments('q1', false), ...automaticCensoredAssignments('q2', false) };
+  const recoded = recodeCensoredAssignments({ [sharedKey]: [] }, automatic, releases);
+  assert.deepEqual(recoded[sharedKey], []);
+  assert.deepEqual(recoded[otherQuestion], [CENSORED_TAG]);
+});
+
+test('discarded releases do not create a durable marker and saved markers cannot be lost by later saves', () => {
+  const key = 'restaurant-feedback-q1:medium:9';
+  const saved = { [key]: [CENSORED_TAG] };
+  const drafts = stageTagAssignment({}, key, saved[key], []);
+  assert.deepEqual(rememberCensoredReleases({}, saved), {});
+  const releases = rememberCensoredReleases({}, commitTagDrafts(saved, drafts), drafts);
+  assert.deepEqual(rememberCensoredReleases(releases, {}, {}), { [key]: true });
+  assert.deepEqual(recodeCensoredAssignments(saved, saved, {}), saved);
+});
+
+test('release metadata rejects corrupt values and safely handles older snapshots', () => {
+  assert.deepEqual(parseCensoredReleases(undefined), {});
+  assert.throws(() => parseCensoredReleases({ key: false }), /Invalid/);
+  assert.throws(() => parseCensoredReleases([]), /Invalid/);
+  assert.throws(() => parseCensoredReleases(null), /Invalid/);
 });
 test('bulk release retains text, preserves other tags and becomes visible only in committed dashboard state', () => {
   let drafts = {};

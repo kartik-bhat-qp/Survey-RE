@@ -43,7 +43,7 @@ import {
   stageCodeFrame, summarizeCodeFrameDrafts, validateCodeFrameName,
   type CodeFrames, type CodeFrameDrafts, type SubTheme, type ThemeGroup, type ThemeTone,
 } from '@/data/text-ai-code-frame-drafts';
-import { CENSORED_DEMO_DASHBOARD_ID, CENSORED_TAG_ID, CENSORED_VISIBILITY_HELP, CENSORED_CONFIGURATION_EVENT, censoredResponseReason, ensureOutlierTheme, getSharedOutlierResponses, outlierResponseKey, RESTAURANT_THEME_GROUPS, RESTAURANT_RESPONSES, isCensoredResponse, visibleCensoredResponses, addCensoredAwareTags } from '@/data/text-ai-censored-subthemes';
+import { CENSORED_DEMO_DASHBOARD_ID, CENSORED_TAG_ID, CENSORED_VISIBILITY_HELP, CENSORED_CONFIGURATION_EVENT, censoredResponseReason, ensureOutlierTheme, getSharedOutlierResponses, outlierResponseKey, RESTAURANT_THEME_GROUPS, RESTAURANT_RESPONSES, isCensoredResponse, visibleCensoredResponses, addCensoredAwareTags, requiresCensoredRelease, parseCensoredReleases, rememberCensoredReleases, recodeCensoredAssignments, automaticCensoredAssignments, type CensoredReleases } from '@/data/text-ai-censored-subthemes';
 import styles from './ThemeConfiguration.module.css';
 
 const WuCombobox = dynamic(
@@ -494,14 +494,19 @@ const FALLBACK_QUESTIONS: TextAiDashboardQuestion[] = MOCK_TEXT_AI_ANALYSIS_QUES
   })
 );
 
-function readSavedConfiguration(storageKey: string, legacyKey: string): { assignments: TagAssignments; codeFrames: CodeFrames } {
+function readSavedConfiguration(storageKey: string, legacyKey: string): { assignments: TagAssignments; codeFrames: CodeFrames; censoredReleases: CensoredReleases } {
   const raw = window.localStorage.getItem(storageKey);
-  if (!raw) return { assignments: parseTagAssignments(window.localStorage.getItem(legacyKey)), codeFrames: {} };
+  if (!raw) {
+    const assignments = parseTagAssignments(window.localStorage.getItem(legacyKey));
+    return { assignments, codeFrames: {}, censoredReleases: rememberCensoredReleases({}, assignments) };
+  }
   const value: unknown = JSON.parse(raw);
   if (!value || typeof value !== 'object' || !('assignments' in value) || !('codeFrames' in value)) {
     throw new Error('Invalid saved configuration');
   }
-  return { assignments: parseTagAssignments(JSON.stringify(value.assignments)), codeFrames: parseCodeFrames(value.codeFrames) };
+  const assignments = parseTagAssignments(JSON.stringify(value.assignments));
+  const releases = parseCensoredReleases('censoredReleases' in value ? value.censoredReleases : undefined);
+  return { assignments, codeFrames: parseCodeFrames(value.codeFrames), censoredReleases: rememberCensoredReleases(releases, assignments) };
 }
 
 function formatPercentage(value: number): string {
@@ -707,6 +712,7 @@ export default function TextAiThemeConfigurationPage({
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [taggingResponseIds, setTaggingResponseIds] = useState<number[]>([]);
   const [tagPickerIds, setTagPickerIds] = useState<string[]>([]);
+  const [confirmCensoredAddition, setConfirmCensoredAddition] = useState(false);
   const tagSummary = useMemo(() => summarizeTagDrafts(tagDrafts), [tagDrafts]);
   const [savedCodeFrames, setSavedCodeFrames] = useState<CodeFrames>({});
   const [codeFrameDrafts, setCodeFrameDrafts] = useState<CodeFrameDrafts>({});
@@ -1120,25 +1126,34 @@ export default function TextAiThemeConfigurationPage({
   function openTagPicker(responseIds: number[]): void {
     setTaggingResponseIds(responseIds);
     setTagPickerIds([]);
+    setConfirmCensoredAddition(false);
   }
 
-  function addResponseTags(): void {
-    const tags: TextAiSentimentSubtheme[] = themeGroups.flatMap((group) => group.subThemes
+  const tagPickerTags: TextAiSentimentSubtheme[] = themeGroups.flatMap((group) => group.subThemes
       .filter((subtheme) => tagPickerIds.includes(`${group.id}:${subtheme.id}`))
       .map((subtheme) => ({ id: `${group.id}:${subtheme.id}`, label: subtheme.name, sentiment: 'neutral' as const })));
+  const censoredAdditionCount = questionResponses.filter(response => taggingResponseIds.includes(response.id) && requiresCensoredRelease(response.subthemes, tagPickerTags)).length;
+
+  function addResponseTags(confirmed = false): void {
+    if (!tagsReady || tagPickerTags.length === 0) return;
+    if (censoredAdditionCount > 0 && !confirmed) {
+      setConfirmCensoredAddition(true);
+      return;
+    }
     setTagDrafts((current) => {
       let next = current;
       for (const response of questionResponses.filter((response) => taggingResponseIds.includes(response.id))) {
         const key = (response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`);
         const existing = next[key]?.after ?? response.subthemes;
-        const additions = tags.filter((tag) => !existing.some((item) => item.id === tag.id))
+        const additions = tagPickerTags.filter((tag) => !existing.some((item) => item.id === tag.id))
           .map((tag) => next[key]?.before.find((item) => item.id === tag.id) ?? tag);
-        next = stageTagAssignment(next, key, response.subthemes, addCensoredAwareTags(existing, additions, themePreferences.showCensoredSubthemes));
+        next = stageTagAssignment(next, key, response.subthemes, addCensoredAwareTags(existing, additions, themePreferences.showCensoredSubthemes, confirmed));
       }
       return next;
     });
     setTaggingResponseIds([]);
-    setTagMessage('');
+    setConfirmCensoredAddition(false);
+    setTagMessage(censoredAdditionCount ? 'Censored was removed and the selected sub-themes were added. Save to keep the release through future recoding.' : '');
     setTagError('');
   }
 
@@ -1147,8 +1162,9 @@ export default function TextAiThemeConfigurationPage({
       // Merge into the latest saved snapshot so unrelated saved responses remain intact.
       const latest = readSavedConfiguration(configurationStorageKey, tagStorageKey);
       const assignments = commitTagDrafts(latest.assignments, tagDrafts);
+      const censoredReleases = rememberCensoredReleases(latest.censoredReleases, assignments, tagDrafts);
       const codeFrames = { ...latest.codeFrames, ...Object.fromEntries(Object.entries(codeFrameDrafts).map(([scope, draft]) => [scope, draft.after])) };
-      window.localStorage.setItem(configurationStorageKey, JSON.stringify({ assignments, codeFrames }));
+      window.localStorage.setItem(configurationStorageKey, JSON.stringify({ assignments, codeFrames, censoredReleases }));
       setSavedTagAssignments(assignments);
       setSavedCodeFrames(codeFrames);
       setTagDrafts({});
@@ -1443,14 +1459,28 @@ export default function TextAiThemeConfigurationPage({
   }
 
   function handleRecode(): void {
+    if (!tagsReady || hasTagChanges) return;
     if (recodesRemaining === 0) return;
     if (recodeScope === 'custom' && customRecodeSubThemeIds.length === 0) return;
 
+    try {
+      const latest = readSavedConfiguration(configurationStorageKey, tagStorageKey);
+      const automatic = recodeScope === 'all-sub-themes' || (recodeScope === 'custom' && customRecodeSubThemeIds.includes(CENSORED_TAG_ID))
+        ? automaticCensoredAssignments(selectedQuestionId, isCensoredDemo) : {};
+      const assignments = recodeCensoredAssignments(latest.assignments, automatic, latest.censoredReleases);
+      window.localStorage.setItem(configurationStorageKey, JSON.stringify({ ...latest, assignments }));
+      setSavedTagAssignments(assignments);
+      window.dispatchEvent(new CustomEvent(CENSORED_CONFIGURATION_EVENT));
+      setTagError('');
+    } catch {
+      setTagError('Recoding could not be saved. Saved manual Censored releases were not changed. Please try again.');
+      return;
+    }
     const details =
       recodeScope === 'new-sub-themes'
         ? 'Reprocessed responses to discover and tag new sub-themes while preserving existing manual tags.'
         : recodeScope === 'all-sub-themes'
-          ? 'Reprocessed all responses across every sub-theme. Existing manual response tags may have been overwritten.'
+          ? 'Reprocessed all responses across every sub-theme. Saved manual Censored releases were preserved.'
           : `Reprocessed responses for ${customRecodeSubThemeIds.length} selected sub-theme${
               customRecodeSubThemeIds.length === 1 ? '' : 's'
             }.`;
@@ -1458,12 +1488,13 @@ export default function TextAiThemeConfigurationPage({
     appendTextAiRecodeLog({
       action: 'recode-run',
       dashboardId: numericDashboardId,
-      details,
+      details: `${details} Censored is never reapplied to a saved manual release.`,
       question: selectedQuestion?.text ?? 'Selected question',
       title: 'Responses recoded',
     });
     setRecodesUsed((current) => Math.min(current + 1, RECODE_RUN_LIMIT));
     setRecodeModalOpen(false);
+    setTagMessage('Responses recoded. Saved manual Censored releases were preserved.');
   }
 
   return (
@@ -1880,16 +1911,22 @@ export default function TextAiThemeConfigurationPage({
         }}>Remove censorship ({censoredSelection.size})</WuButton></WuModalFooter>
       </WuModal>
 
-      <WuModal open={taggingResponseIds.length > 0} onOpenChange={(open) => { if (!open) setTaggingResponseIds([]); }} size="md" variant="action" aria-describedby="tag-picker-description">
-        <DialogTitle className={styles.srOnly}>Tag responses</DialogTitle>
-        <WuModalHeader>Tag responses</WuModalHeader>
+      <WuModal open={taggingResponseIds.length > 0} onOpenChange={(open) => { if (!open) { setTaggingResponseIds([]); setConfirmCensoredAddition(false); } }} size="md" variant="action" aria-describedby="tag-picker-description">
+        <DialogTitle className={styles.srOnly}>{confirmCensoredAddition ? 'Remove Censored tag?' : 'Tag responses'}</DialogTitle>
+        <WuModalHeader>{confirmCensoredAddition ? 'Remove Censored tag?' : 'Tag responses'}</WuModalHeader>
         <WuModalContent>
+          {confirmCensoredAddition ? <div className={styles.tagConfirmationContent}>
+            <p id="tag-picker-description">Adding the selected sub-themes will remove the Censored tag from {censoredAdditionCount} response{censoredAdditionCount === 1 ? '' : 's'}. Do you want to proceed?</p>
+            <p>Proceed removes Censored and adds the selected sub-themes together. Save commits the release and keeps Censored from returning during recoding.</p>
+            <p>Cancel leaves all response tags unchanged.</p>
+          </div> : <>
           <p id="tag-picker-description" className={styles.tagPickerDescription}>Choose sub-themes for {taggingResponseIds.length} response{taggingResponseIds.length === 1 ? '' : 's'}. Changes stay unsaved until you select Save.</p>
           <div className={styles.tagPickerGroups}>
             {themeGroups.map((group) => <fieldset key={group.id}>
               <legend>{group.name}</legend>
               {group.subThemes.map((subtheme) => {
                 const tagId = `${group.id}:${subtheme.id}`;
+                if (tagId === CENSORED_TAG_ID && !themePreferences.showCensoredSubthemes) return null;
                 const alreadyAssigned = questionResponses.filter((response) => taggingResponseIds.includes(response.id))
                   .every((response) => response.subthemes.some((tag) => tag.id === tagId));
                 return <label key={tagId}>
@@ -1900,10 +1937,11 @@ export default function TextAiThemeConfigurationPage({
               })}
             </fieldset>)}
           </div>
+          </>}
         </WuModalContent>
         <WuModalFooter>
-          <WuButton variant="secondary" onClick={() => setTaggingResponseIds([])}>Cancel</WuButton>
-          <WuButton variant="primary" disabled={tagPickerIds.length === 0} onClick={addResponseTags}>Add tags</WuButton>
+          <WuButton variant="secondary" onClick={() => { setTaggingResponseIds([]); setConfirmCensoredAddition(false); }}>Cancel</WuButton>
+          <WuButton variant="primary" disabled={!tagsReady || tagPickerIds.length === 0} onClick={() => addResponseTags(confirmCensoredAddition)}>{confirmCensoredAddition ? 'Proceed' : 'Add tags'}</WuButton>
         </WuModalFooter>
       </WuModal>
 
@@ -2011,7 +2049,8 @@ export default function TextAiThemeConfigurationPage({
                   />
                   <span>
                     <strong>All sub-themes:</strong> recode the entire data,
-                    overwriting any manual retags you have done.
+                    which may overwrite manual retags. Saved manual removals of
+                    Censored are always preserved.
                   </span>
                 </label>
                 <label>
@@ -2064,7 +2103,8 @@ export default function TextAiThemeConfigurationPage({
               QuestionPro always reprocesses all responses to ensure accuracy, but
               only revises tagging based on your selection above. Note that if you
               recode &quot;All Sub-themes&quot;, any manual changes you have made to
-              tagging may be overwritten and lost.
+              tagging may be overwritten and lost. Saved manual removals of
+              Censored are an exception: that tag will not be reapplied.
             </p>
             <strong className={styles.recodesRemaining}>
               Recodes remaining: {recodesRemaining}

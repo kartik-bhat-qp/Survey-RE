@@ -1,6 +1,6 @@
 import type { TextAiSentimentSubtheme, TextAiSentimentEditableResponse } from '../components/text-ai/TextAiUpdateSentimentModal';
 import type { ThemeGroup } from './text-ai-code-frame-drafts';
-import type { TagAssignments } from './text-ai-tag-drafts';
+import type { TagAssignments, TagDrafts } from './text-ai-tag-drafts';
 import type { TextAiThemeSentimentRow, TextAiSentimentDistribution } from './mock-text-ai-subtheme-stackbar';
 import type { TextAiTopicSegmentRow } from './mock-text-ai-topic-segment-widget';
 import type { TextAiAnalysisRow } from './mock-text-ai-widget-data';
@@ -9,7 +9,7 @@ export const CENSORED_DEMO_DASHBOARD_ID = 23;
 export const CENSORED_DEMO_QUESTION_ID = 'restaurant-feedback-q1';
 export const CENSORED_TAG_ID = 'outlier:censored';
 export const CENSORED_TAG: TextAiSentimentSubtheme = { id: CENSORED_TAG_ID, label: 'Censored', sentiment: 'neutral' };
-export const CENSORED_VISIBILITY_HELP = 'When off, censored responses and all their tags are hidden from dashboard charts, counts and responses, and the Theme Configuration response panel. Review them under Outlier → Censored to remove censorship.';
+export const CENSORED_VISIBILITY_HELP = 'Show censored responses and their tags in dashboard charts, counts and response panels. When off, review and release them under Outlier → Censored.';
 export const CENSORED_CONFIGURATION_EVENT = 'text-ai-censored-configuration-changed';
 
 export const RESTAURANT_THEME_GROUPS: ThemeGroup[] = [
@@ -57,9 +57,52 @@ export const isCensoredResponse = (response: Pick<TextAiSentimentEditableRespons
 export function visibleCensoredResponses<T extends Pick<TextAiSentimentEditableResponse, 'subthemes'>>(responses: T[], show: boolean): T[] {
   return show ? responses : responses.filter(response => !isCensoredResponse(response));
 }
-export function addCensoredAwareTags(existing: TextAiSentimentSubtheme[], additions: TextAiSentimentSubtheme[], show: boolean): TextAiSentimentSubtheme[] {
+export function requiresCensoredRelease(existing: TextAiSentimentSubtheme[], additions: TextAiSentimentSubtheme[]): boolean {
+  return existing.some(tag => tag.id === CENSORED_TAG_ID) && additions.some(tag => tag.id !== CENSORED_TAG_ID && !existing.some(current => current.id === tag.id));
+}
+export function addCensoredAwareTags(existing: TextAiSentimentSubtheme[], additions: TextAiSentimentSubtheme[], show: boolean, confirmed = false): TextAiSentimentSubtheme[] {
   const combined = Array.from(new Map([...existing, ...additions].map(tag => [tag.id, tag])).values());
+  if (show && requiresCensoredRelease(existing, additions)) {
+    if (!confirmed) throw new Error('Confirm removal of the Censored tag before adding other sub-themes.');
+    return combined.filter(tag => tag.id !== CENSORED_TAG_ID);
+  }
   return !show && combined.some(tag => tag.id === CENSORED_TAG_ID) ? [CENSORED_TAG] : combined;
+}
+
+export type CensoredReleases = Record<string, true>;
+
+export function parseCensoredReleases(value: unknown): CensoredReleases {
+  if (value === undefined) return {};
+  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.values(value).some(released => released !== true)) throw new Error('Invalid saved Censored releases');
+  return value as CensoredReleases;
+}
+
+/** Also migrate manual releases saved before a separate release marker existed. */
+export function rememberCensoredReleases(releases: CensoredReleases, assignments: TagAssignments, drafts: TagDrafts = {}): CensoredReleases {
+  const next = { ...releases };
+  for (const [key, tags] of Object.entries(assignments)) {
+    const original = RESTAURANT_RESPONSES.find(response => `${CENSORED_DEMO_QUESTION_ID}:medium:${response.id}` === key)
+      ?? SHARED_OUTLIER_RESPONSES.find(response => key.endsWith(`:outlier:${response.id}`));
+    if (original && isCensoredResponse(original) && !tags.some(tag => tag.id === CENSORED_TAG_ID)) next[key] = true;
+  }
+  for (const [key, draft] of Object.entries(drafts)) {
+    if (draft.before.some(tag => tag.id === CENSORED_TAG_ID) && !draft.after.some(tag => tag.id === CENSORED_TAG_ID)) next[key] = true;
+  }
+  return next;
+}
+
+/** Automatic recoding may replace tags, but cannot override a saved manual release. */
+export function recodeCensoredAssignments(saved: TagAssignments, automatic: TagAssignments, releases: CensoredReleases): TagAssignments {
+  return Object.fromEntries(Object.entries({ ...saved, ...automatic }).map(([key, tags]) => [key,
+    releases[key] ? Array.from(new Map([...(saved[key] ?? []), ...tags].filter(tag => tag.id !== CENSORED_TAG_ID).map(tag => [tag.id, tag])).values()) : tags,
+  ]));
+}
+
+export function automaticCensoredAssignments(questionId: string, restaurant: boolean): TagAssignments {
+  const responses = restaurant ? RESTAURANT_RESPONSES : SHARED_OUTLIER_RESPONSES;
+  return Object.fromEntries(responses.filter(isCensoredResponse).map(response => [
+    restaurant ? `${questionId}:medium:${response.id}` : outlierResponseKey(questionId, response.id), response.subthemes,
+  ]));
 }
 export function restaurantResponses(assignments: TagAssignments, scope = `${CENSORED_DEMO_QUESTION_ID}:medium:`): TextAiSentimentEditableResponse[] {
   return RESTAURANT_RESPONSES.map(response => ({ ...response, subthemes: assignments[`${scope}${response.id}`] ?? response.subthemes }));
