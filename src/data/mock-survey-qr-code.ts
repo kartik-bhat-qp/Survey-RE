@@ -108,6 +108,31 @@ export function buildSurveyUrlWithCid(baseUrl: string, cid: string): string {
   return `${baseUrl}${separator}${QR_CONTACT_ID_PARAM}=${cid}`;
 }
 
+function stableCid(seed: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  let cid = '';
+  for (let index = 0; index < CID_LENGTH; index += 1) {
+    hash = Math.imul(hash ^ (hash >>> 13), 16777619);
+    cid += CID_CHARS[(hash >>> 0) % CID_CHARS.length];
+  }
+  return cid;
+}
+
+/** Same URL on the server and the first client render. New drafts still get a random cid. */
+export function previewManualQrUrl(
+  baseSurveyUrl: string
+): Pick<ManualQrEntry, 'cid' | 'surveyUrl'> {
+  const cid = stableCid(baseSurveyUrl);
+  return {
+    cid,
+    surveyUrl: buildSurveyUrlWithCid(baseSurveyUrl, cid),
+  };
+}
+
 export function allocateManualQrUrl(
   baseSurveyUrl: string
 ): Pick<ManualQrEntry, 'cid' | 'surveyUrl'> {

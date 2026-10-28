@@ -4,7 +4,11 @@ import {
   questionKey,
   TranscriptConvertError,
 } from '@/lib/transcripts/to-excel';
-import { embedTexts, translateTextsToEnglish } from '@/lib/transcripts/translate-to-english';
+import {
+  embedTexts,
+  looksEnglish,
+  translateTextsToEnglish,
+} from '@/lib/transcripts/translate-to-english';
 
 // Excel stores at most 32,767 characters per cell.
 const MAX_CELL_CHARS = 32_000;
@@ -358,6 +362,37 @@ function questionLabelOf(message: Message): string | null {
   if (!isInterviewer(message.role) || !message.text.includes('?')) return null;
   const label = extractQuestion(message.text);
   return questionKey(label) || questionTokens(label).size > 0 ? label : null;
+}
+
+function replaceQuestionLabel(text: string, label: string, english: string): string {
+  const exact = text.indexOf(label);
+  if (exact >= 0) return `${text.slice(0, exact)}${english}${text.slice(exact + label.length)}`;
+  const at = text.toLowerCase().indexOf(label.toLowerCase());
+  if (at < 0) return text;
+  return `${text.slice(0, at)}${english}${text.slice(at + label.length)}`;
+}
+
+/** Question titles are translated on their own when the message translation left them as-is. */
+async function translateRemainingQuestionLabels(
+  conversations: Conversation[],
+  onProgress?: ChatTranscriptProgress
+): Promise<void> {
+  const labels = [...new Set(questionLabels(conversations))].filter(
+    (label) => !looksEnglish(label)
+  );
+  if (labels.length === 0) return;
+  const translations = await translateTextsToEnglish(labels, (done, total) =>
+    onProgress?.('translating', done, total)
+  );
+  for (const conversation of conversations) {
+    for (const message of conversation.messages) {
+      const label = questionLabelOf(message);
+      if (!label) continue;
+      const english = translations.get(label);
+      if (!english || english === label || /】|【|assistant to=/.test(english)) continue;
+      message.text = replaceQuestionLabel(message.text, label, english);
+    }
+  }
 }
 
 function questionLabels(conversations: Conversation[]): string[] {
@@ -717,6 +752,7 @@ export async function convertChatLogToTranscript(
         message.text = english;
       }
     }
+    await translateRemainingQuestionLabels(conversations, onProgress);
     if (options.layout === 'questions') {
       onProgress?.('grouping', 0, 1);
       embeddings = await embedTexts(questionLabels(conversations));

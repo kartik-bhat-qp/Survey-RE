@@ -11,13 +11,20 @@ const MAX_RETRIES = 4;
 const EN_WORDS = new Set(
   'the and you your to of is it that this for with my we are what would have be in was they not but i me our do'.split(' ')
 );
-const DE_WORDS = new Set(
-  'und der die das ist nicht ich sie es mit ein eine zu auf für wir sehr auch dass wenn oder aber man wäre würde haben sind mir'.split(' ')
+const FOREIGN_WORDS = new Set(
+  [
+    'und der die das ist nicht ich sie es mit ein eine zu auf für',
+    'wir sehr auch dass wenn oder aber man wäre würde haben sind mir',
+    'og det er ikke jeg at en til på med som de vi har meget så hvad',
+    'hvis kan være var mig der du også hva hvordan',
+    'što sto kako kada koji koja koje nije sam ste smo vas vam',
+    'vaš ovo taj ali ili jer ako samo zaista netko nešto biti ovdje tamo',
+  ]
+    .join(' ')
+    .split(' ')
 );
-const DA_WORDS = new Set(
-  'og det er ikke jeg at en til på med som de vi har meget så hvad hvis kan være var mig der du'.split(' ')
-);
-const NON_ENGLISH_LETTERS = /[æøåäöüß]/i;
+const NON_ENGLISH_LETTERS =
+  /[æøåäöüßàáâãèéêëìíîïòóôõùúûüýÿčćđšžłńř]/i;
 
 export type TranslationProgress = (done: number, total: number) => void;
 
@@ -44,13 +51,23 @@ function getClient(): OpenAI {
 export function looksEnglish(text: string): boolean {
   if (!/\p{L}/u.test(text)) return true;
   if (NON_ENGLISH_LETTERS.test(text)) return false;
+  const words = text.toLowerCase().split(/[^\p{L}]+/u).filter(Boolean);
+  if (words.length === 0) return true;
   let en = 0;
   let foreign = 0;
-  for (const word of text.toLowerCase().split(/[^\p{L}]+/u)) {
+  for (const word of words) {
     if (EN_WORDS.has(word)) en += 1;
-    if (DE_WORDS.has(word) || DA_WORDS.has(word)) foreign += 1;
+    if (FOREIGN_WORDS.has(word)) foreign += 1;
   }
-  return en > 0 && en >= foreign * 2;
+  if (foreign > en) return false;
+  // One shared word like "to" or "a" is not enough to skip a whole question.
+  if (words.length >= 4 && en < 2) return false;
+  if (words.length >= 8 && en / words.length < 0.15) return false;
+  return en > 0;
+}
+
+function translationLooksBroken(value: string): boolean {
+  return /】|【|assistant to=/.test(value);
 }
 
 async function withRetry<T>(run: () => Promise<T>): Promise<T> {
@@ -71,18 +88,28 @@ async function withRetry<T>(run: () => Promise<T>): Promise<T> {
   }
 }
 
-async function translateBatch(client: OpenAI, model: string, items: string[]): Promise<string[]> {
+async function translateBatch(
+  client: OpenAI,
+  model: string,
+  items: string[],
+  force = false
+): Promise<string[]> {
+  const shared =
+    'Do not summarise, answer, or add commentary. Keep names, numbers and formatting. ' +
+    'Reply with JSON {"t": [...]} containing exactly one string per input item, ' +
+    'in the same order.';
+  const instructions = force
+    ? `Every item is not English. Translate each one into natural English. ${shared}`
+    : 'You translate interview transcript snippets into natural English. ' +
+      'Translate every item faithfully. ' +
+      `${shared} If an item is already English, return it unchanged.`;
   const completion = await withRetry(() =>
     client.chat.completions.create({
       model,
       temperature: 0,
       response_format: { type: 'json_object' },
       messages: [
-        {
-          role: 'system',
-          content:
-            'You translate interview transcript snippets into natural English. Translate every item faithfully; do not summarise, answer, or add commentary. Keep names, numbers and formatting. If an item is already English, return it unchanged. Reply with JSON {"t": [...]} containing exactly one string per input item, in the same order.',
-        },
+        { role: 'system', content: instructions },
         { role: 'user', content: JSON.stringify({ items }) },
       ],
     })
@@ -96,13 +123,33 @@ async function translateBatch(client: OpenAI, model: string, items: string[]): P
   }
   const translations = (parsed as { t?: unknown } | null)?.t;
   if (Array.isArray(translations) && translations.length === items.length) {
-    return translations.map((value, index) => (typeof value === 'string' ? value : items[index]));
+    const mapped = translations.map((value, index) =>
+      typeof value === 'string' && !translationLooksBroken(value) ? value : items[index]
+    );
+    if (!force) {
+      const stuck = mapped
+        .map((value, index) => (value === items[index] && !looksEnglish(items[index]) ? index : -1))
+        .filter((index) => index >= 0);
+      if (stuck.length > 0) {
+        const retried = await translateBatch(
+          client,
+          model,
+          stuck.map((index) => items[index]),
+          true
+        );
+        stuck.forEach((index, retryIndex) => {
+          const next = retried[retryIndex];
+          if (next && next !== items[index] && !translationLooksBroken(next)) mapped[index] = next;
+        });
+      }
+    }
+    return mapped;
   }
   if (items.length === 1) return items;
   const middle = Math.ceil(items.length / 2);
   return [
-    ...(await translateBatch(client, model, items.slice(0, middle))),
-    ...(await translateBatch(client, model, items.slice(middle))),
+    ...(await translateBatch(client, model, items.slice(0, middle), force)),
+    ...(await translateBatch(client, model, items.slice(middle), force)),
   ];
 }
 
@@ -155,8 +202,9 @@ export async function translateTextsToEnglish(
     batches.map((items) => async () => {
       const translated = await translateBatch(client, model, items);
       items.forEach((text, index) => {
-        translationCache.set(text, translated[index]);
-        result.set(text, translated[index]);
+        const english = translated[index];
+        if (english !== text || looksEnglish(text)) translationCache.set(text, english);
+        result.set(text, english);
       });
       done += items.length;
       onProgress?.(done, pending.length);

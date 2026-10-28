@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import {
   allocateManualQrUrl,
+  previewManualQrUrl,
   copyBrandedQrCodeToClipboard,
   createBulkQrHistoryEntry,
   createManualQrEntry,
@@ -71,7 +72,7 @@ export function SurveyQrCodePanel({ baseSurveyUrl }: SurveyQrCodePanelProps) {
   const [draftName, setDraftName] = useState(() => getDefaultDraftName(0));
   const [draftVariables, setDraftVariables] = useState<QrUrlVariable[]>(createInitialVariables);
   const [draftLockedUrl, setDraftLockedUrl] = useState(() =>
-    allocateManualQrUrl(baseSurveyUrl)
+    previewManualQrUrl(baseSurveyUrl)
   );
   const [bulkSummary, setBulkSummary] = useState<BulkQrImportSummary | null>(null);
   const [bulkHistory, setBulkHistory] = useState<BulkQrGenerationHistoryEntry[]>(() =>
