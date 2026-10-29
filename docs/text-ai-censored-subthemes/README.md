@@ -1,5 +1,11 @@
 # Censored sub-themes — prototype review checkpoint
 
+## Creation and configuration visibility — 29 October 2026
+
+Model setup now enables Censored classification by default, with an information tooltip explaining review and re-categorization and a visible warning that disabling it prevents enabling it later for that dashboard. Dashboards created without Censored omit its category and visibility preference through both settings routes. See [the creation checkpoint](model-setup-2026-10-29.md).
+
+For dashboards with Censored classification, the category and its responses remain available in Theme configuration regardless of **Show censored sub-themes**. This switch controls dashboard charts, counts and response widgets only. The configuration panel always includes these responses in its response list, counts, selection and tagging; it no longer displays a hidden-response note. Selecting Censored opens its bulk review dialog in either visibility state. Confirmed re-categorization removes Censored, and saved manual releases remain protected during recoding. This supersedes earlier descriptions below that hide responses from the configuration panel.
+
 ## Live audit and completed PRD rules — 27 October 2026
 
 The live feature remains available in TextAI. The audit found that the later confirmation and persistent manual-release requirements reached the PRD but not the prototype. See [the RCA](RCA-2026-10-27.md) for history, reproduction, repair and verification. Earlier statements below allowing Censored to coexist with newly added ordinary tags, or leaving recoding persistence unresolved, are historical and superseded.

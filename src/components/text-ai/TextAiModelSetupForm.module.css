@@ -148,6 +148,13 @@
 }
 .expertReviewLabel > :first-child { margin-top: 4px; flex-shrink: 0; }
 
+.censoredOption { display: flex; flex-direction: column; gap: 4px; }
+.censoredHeading { display: flex; align-items: center; gap: 8px; }
+.censoredOption .irreversibleWarning { margin-left: 26px; margin-top: 0; }
+.infoButton { display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent; color: #909090; cursor: help; width: 24px; height: 24px; padding: 0; }
+.infoButton:hover { color: #1b87e6; }
+.infoButton:focus-visible { outline: 2px solid #1b87e6; outline-offset: 2px; border-radius: 4px; }
+
 .expertReviewText {
   display: flex;
   flex-direction: column;

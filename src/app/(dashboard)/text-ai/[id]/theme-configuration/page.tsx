@@ -43,7 +43,7 @@ import {
   stageCodeFrame, summarizeCodeFrameDrafts, validateCodeFrameName,
   type CodeFrames, type CodeFrameDrafts, type SubTheme, type ThemeGroup, type ThemeTone,
 } from '@/data/text-ai-code-frame-drafts';
-import { CENSORED_DEMO_DASHBOARD_ID, CENSORED_TAG_ID, CENSORED_VISIBILITY_HELP, CENSORED_CONFIGURATION_EVENT, censoredResponseReason, ensureOutlierTheme, getSharedOutlierResponses, outlierResponseKey, RESTAURANT_THEME_GROUPS, RESTAURANT_RESPONSES, isCensoredResponse, visibleCensoredResponses, addCensoredAwareTags, requiresCensoredRelease, parseCensoredReleases, rememberCensoredReleases, recodeCensoredAssignments, automaticCensoredAssignments, type CensoredReleases } from '@/data/text-ai-censored-subthemes';
+import { CENSORED_DEMO_DASHBOARD_ID, CENSORED_TAG_ID, CENSORED_VISIBILITY_HELP, CENSORED_CONFIGURATION_EVENT, censoredResponseReason, ensureOutlierTheme, getSharedOutlierResponses, outlierResponseKey, RESTAURANT_THEME_GROUPS, RESTAURANT_RESPONSES, isCensoredResponse, addCensoredAwareTags, requiresCensoredRelease, parseCensoredReleases, rememberCensoredReleases, recodeCensoredAssignments, automaticCensoredAssignments, type CensoredReleases } from '@/data/text-ai-censored-subthemes';
 import { isCensoredSubthemesEnabled, applyCensoredClassificationPreference } from '@/data/text-ai-censored-subthemes';
 import styles from './ThemeConfiguration.module.css';
 
@@ -977,18 +977,17 @@ export default function TextAiThemeConfigurationPage({
   }), [questionResponses, search, sentimentFilter, responseDateRange]);
   const themeGroups = useMemo(() => {
     const base = searchedAnalysisResponses.length;
-    const visible = visibleCensoredResponses(searchedAnalysisResponses, themePreferences.showCensoredSubthemes);
     return unfilteredThemeGroups.map(group => {
-      const included = group.id === 'outlier' ? searchedAnalysisResponses : visible;
+      const included = searchedAnalysisResponses;
       return { ...group,
         percentage: formatPercentage(base ? included.filter(response => response.subthemes.some(tag => tag.id.startsWith(`${group.id}:`))).length / base * 100 : 0),
         subThemes: group.subThemes.map(sub => ({ ...sub,
-          percentage: formatPercentage(base ? (sub.id === 'censored' && group.id === 'outlier' ? searchedAnalysisResponses : visible)
+          percentage: formatPercentage(base ? included
             .filter(response => response.subthemes.some(tag => tag.id === `${group.id}:${sub.id}`)).length / base * 100 : 0),
         })).sort((a,b) => Number.parseFloat(b.percentage)-Number.parseFloat(a.percentage)),
       };
     }).sort((a,b) => Number.parseFloat(b.percentage)-Number.parseFloat(a.percentage));
-  }, [searchedAnalysisResponses, unfilteredThemeGroups, themePreferences.showCensoredSubthemes]);
+  }, [searchedAnalysisResponses, unfilteredThemeGroups]);
 
   const pendingApprovalTargets = useMemo(() => {
     return themeGroups.flatMap((group): ApproveTarget[] => {
@@ -1076,19 +1075,18 @@ export default function TextAiThemeConfigurationPage({
   );
 
   const coverageItems = useMemo(() => {
-    const included = visibleCensoredResponses(searchedAnalysisResponses, themePreferences.showCensoredSubthemes);
+    const included = searchedAnalysisResponses;
     return COVERAGE_CATEGORIES.map((category, index) => {
       const count = included.filter(response => Math.min(response.subthemes.length, 5) === index).length;
       return { ...category, count: `${count}/${included.length}`, percentage: formatPercentage(included.length ? count / included.length * 100 : 0) };
     });
-  }, [searchedAnalysisResponses, themePreferences.showCensoredSubthemes]);
+  }, [searchedAnalysisResponses]);
 
   const visibleResponses = useMemo(() => filterThemeResponses(questionResponses, {
-    showCensored: themePreferences.showCensoredSubthemes, subthemeIds: responseSubthemeFilters,
+    showCensored: true, subthemeIds: responseSubthemeFilters,
     search, minimumTags: responseTagCount, newestFirst, sentiment: sentimentFilter,
     ...responseDateRange,
-  }), [questionResponses, search, themePreferences.showCensoredSubthemes, responseSubthemeFilters, responseTagCount, newestFirst, sentimentFilter, responseDateRange]);
-  const censoredCount = questionResponses.filter(isCensoredResponse).length;
+  }), [questionResponses, search, responseSubthemeFilters, responseTagCount, newestFirst, sentimentFilter, responseDateRange]);
   const maximumResponseTags = Math.max(1, ...questionResponses.map(response => response.subthemes.length));
 
 
@@ -1107,8 +1105,8 @@ export default function TextAiThemeConfigurationPage({
   );
   const selectedResponses = useMemo(
     () =>
-      visibleCensoredResponses(questionResponses, themePreferences.showCensoredSubthemes).filter((response) => selectedResponseIds.has(response.id)),
-    [questionResponses, selectedResponseIds, themePreferences.showCensoredSubthemes]
+      questionResponses.filter((response) => selectedResponseIds.has(response.id)),
+    [questionResponses, selectedResponseIds]
   );
   const allVisibleResponsesSelected =
     visibleResponses.length > 0 &&
@@ -1150,7 +1148,7 @@ export default function TextAiThemeConfigurationPage({
         const existing = next[key]?.after ?? response.subthemes;
         const additions = tagPickerTags.filter((tag) => !existing.some((item) => item.id === tag.id))
           .map((tag) => next[key]?.before.find((item) => item.id === tag.id) ?? tag);
-        next = stageTagAssignment(next, key, response.subthemes, addCensoredAwareTags(existing, additions, themePreferences.showCensoredSubthemes, confirmed));
+        next = stageTagAssignment(next, key, response.subthemes, addCensoredAwareTags(existing, additions, true, confirmed));
       }
       return next;
     });
@@ -1340,7 +1338,7 @@ export default function TextAiThemeConfigurationPage({
   }
   function toggleCodeFrameSelection(target: ApproveTarget): void {
     if (target.kind !== 'sub-theme') return;
-    if (target.themeId === 'outlier' && target.subThemeId === 'censored' && !themePreferences.showCensoredSubthemes) {
+    if (target.themeId === 'outlier' && target.subThemeId === 'censored') {
       openCensoredReview(); return;
     }
     const key = getApproveTargetKey(target);
@@ -1655,10 +1653,6 @@ export default function TextAiThemeConfigurationPage({
             </div>
           </div>
 
-          {!themePreferences.showCensoredSubthemes && censoredCount > 0 && <div className={styles.censoredNote} role="note">
-            <span>{censoredCount} censored response{censoredCount === 1 ? '' : 's'} hidden from this panel and dashboard.</span>
-            <button type="button" onClick={openCensoredReview}>Review</button>
-          </div>}
           {responseSubthemeFilters.size > 0 && <div className={styles.responseFilterNote}>
             <span>Filtered by: {responseSubthemeFilters.size} sub-theme{responseSubthemeFilters.size === 1 ? '' : 's'}</span>
             <button type="button" aria-label="Clear all sub-theme filters" onClick={() => { setResponseSubthemeFilters(new Set()); setSelectedCodeFrameKeys(new Set()); setRawDataPage(0); setSelectedResponseIds(new Set()); }}><span className="wm-filter-alt-off" aria-hidden /></button>
@@ -1894,7 +1888,7 @@ export default function TextAiThemeConfigurationPage({
         <DialogTitle className={styles.srOnly}>Review censored responses</DialogTitle>
         <WuModalHeader>Outlier / Censored</WuModalHeader>
         <WuModalContent>
-          <p id="censored-review-description">{themePreferences.showCensoredSubthemes ? 'These responses are currently included in the dashboard and regular response panel.' : 'These responses are hidden from the dashboard and regular response panel.'} Remove the Censored tag from responses you want to include, then Save your theme changes. Removing censorship does not assign any other sub-theme.</p>
+          <p id="censored-review-description">Censored responses always appear in Theme configuration. {themePreferences.showCensoredSubthemes ? 'They are also included in the dashboard.' : 'They are hidden from the dashboard.'} Remove the Censored tag to re-categorize responses, then Save your theme changes. Removing censorship does not assign any other sub-theme.</p>
           <input className={styles.censoredSearch} type="search" aria-label="Search censored responses" placeholder="Search censored responses" value={censoredSearch} onChange={event => { setCensoredSearch(event.target.value); setCensoredPage(0); }} />
           <label className={styles.selectAllResponses}><input type="checkbox" checked={questionResponses.filter(isCensoredResponse).length > 0 && questionResponses.filter(isCensoredResponse).every(response => censoredSelection.has(response.id))} onChange={event => setCensoredSelection(event.target.checked ? new Set(questionResponses.filter(isCensoredResponse).map(response => response.id)) : new Set())} /> Select all censored responses ({questionResponses.filter(isCensoredResponse).length})</label>
           <p role="status">{censoredSelection.size} selected across all pages</p>
@@ -1929,7 +1923,6 @@ export default function TextAiThemeConfigurationPage({
               <legend>{group.name}</legend>
               {group.subThemes.map((subtheme) => {
                 const tagId = `${group.id}:${subtheme.id}`;
-                if (tagId === CENSORED_TAG_ID && !themePreferences.showCensoredSubthemes) return null;
                 const alreadyAssigned = questionResponses.filter((response) => taggingResponseIds.includes(response.id))
                   .every((response) => response.subthemes.some((tag) => tag.id === tagId));
                 return <label key={tagId}>

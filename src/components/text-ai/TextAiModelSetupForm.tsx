@@ -56,6 +56,10 @@ const WuToggle = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
   { ssr: false }
 );
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false }
+);
 
 export interface TextAiModelSetupValues {
   name: string;
@@ -280,14 +284,20 @@ export function TextAiModelSetupForm({
       </fieldset>
 
       <section className={styles.card}>
-        <label className={styles.expertReviewLabel}>
-          <WuCheckbox checked={values.censoredSubthemesEnabled} onChange={checked => patch({ censoredSubthemesEnabled: checked })} aria-label="Enable censored sub-themes" aria-describedby="censored-creation-description censored-creation-warning" />
-          <span className={styles.expertReviewText}>
-            <span className={styles.expertReviewTitle}>Enable censored sub-themes</span>
-            <span id="censored-creation-description" className={styles.expertReviewDescription}>Group off-topic, abusive, malicious or spam text under Outlier → Censored. These responses are excluded from other themes and hidden from dashboards by default.</span>
-            <strong id="censored-creation-warning" className={styles.irreversibleWarning}>Once enabled for this dashboard, this choice cannot be reversed.</strong>
-          </span>
-        </label>
+        <div className={styles.censoredOption}>
+          <div className={styles.censoredHeading}>
+            <label className={styles.expertReviewLabel}>
+              <WuCheckbox checked={values.censoredSubthemesEnabled} onChange={checked => patch({ censoredSubthemesEnabled: checked })} aria-label="Enable censored sub-themes" aria-describedby="censored-creation-warning" />
+              <span className={styles.expertReviewTitle}>Enable censored sub-themes</span>
+            </label>
+            <WuTooltip position="top" content="Group off-topic, abusive, malicious or spam text under Outlier → Censored, separate from other themes and hidden from dashboards by default. You can review these responses, remove the Censored tag and re-categorize them under other sub-themes.">
+              <button type="button" className={styles.infoButton} aria-label="About censored sub-themes">
+                <span className="wm-info" aria-hidden />
+              </button>
+            </WuTooltip>
+          </div>
+          <strong id="censored-creation-warning" className={styles.irreversibleWarning}>If disabled, you cannot enable censored sub-themes for this dashboard later.</strong>
+        </div>
       </section>
 
       <div className={`${styles.card} ${styles.expertReviewOption}`}>
@@ -321,6 +331,6 @@ export function createDefaultModelSetupValues(defaultName: string): TextAiModelS
     reportCodebook: null,
     expertReviewRequested: false,
     alsoTranslateVerbatim: true,
-    censoredSubthemesEnabled: false,
+    censoredSubthemesEnabled: true,
   };
 }

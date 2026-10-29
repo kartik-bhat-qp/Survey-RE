@@ -21,7 +21,7 @@ export const CENSORED_DEMO_DASHBOARD_ID = 23;
 export const CENSORED_DEMO_QUESTION_ID = 'restaurant-feedback-q1';
 export const CENSORED_TAG_ID = 'outlier:censored';
 export const CENSORED_TAG: TextAiSentimentSubtheme = { id: CENSORED_TAG_ID, label: 'Censored', sentiment: 'neutral' };
-export const CENSORED_VISIBILITY_HELP = 'Show censored responses and their tags in dashboard charts, counts and response panels. When off, review and release them under Outlier → Censored.';
+export const CENSORED_VISIBILITY_HELP = 'Include censored sub-themes and responses in the dashboard. They always remain available in Theme configuration for review and re-categorization.';
 export const CENSORED_CONFIGURATION_EVENT = 'text-ai-censored-configuration-changed';
 
 export const RESTAURANT_THEME_GROUPS: ThemeGroup[] = [
