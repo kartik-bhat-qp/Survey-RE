@@ -13,17 +13,17 @@ export interface TextAiReportCodebookOption {
 export type TextAiCodebookSource = 'none' | 'template' | 'report';
 
 export const TEXT_AI_OUTPUT_LANGUAGES: TextAiLanguageOption[] = [
-  { value: 'en', label: 'English' },
-  { value: 'es', label: 'Spanish' },
-  { value: 'fr', label: 'French' },
-  { value: 'de', label: 'German' },
-  { value: 'pt', label: 'Portuguese' },
+  { value: 'en', label: 'English (en)' },
+  { value: 'es', label: 'Spanish (es)' },
+  { value: 'fr', label: 'French (fr)' },
+  { value: 'de', label: 'German (de)' },
+  { value: 'pt', label: 'Portuguese (pt)' },
 ];
 
 export const DEFAULT_TEXT_AI_OUTPUT_LANGUAGE = TEXT_AI_OUTPUT_LANGUAGES[0];
 
 export const TEXT_AI_MODELING_GOAL_PLACEHOLDER =
-  'Ex. I want to track my restaurant customers\u2019 emotions to identify where I can improve my service.';
+  'Ex. I want to understand the main topics and sentiments in these text responses.';
 
 export const TEXT_AI_CODEBOOK_OPTIONS: { value: TextAiCodebookSource; label: string }[] = [
   { value: 'none', label: 'Generate with QuestionPro AI' },
@@ -58,10 +58,10 @@ export const TEXT_AI_REPORT_CODEBOOKS: TextAiReportCodebookOption[] = [
   },
 ];
 
-export const TEXT_AI_EXPERT_REVIEW_TITLE = 'QuestionPro Expert Review';
+export const TEXT_AI_EXPERT_REVIEW_TITLE = 'QuestionPro expert review';
 
 export const TEXT_AI_EXPERT_REVIEW_DESCRIPTION =
-  'Have a QuestionPro research expert review your codeframe';
+  'A notification is sent for this report to be manually reviewed after creation.';
 
 export const TEXT_AI_CODEBOOK_TEMPLATE_DOWNLOAD_LABEL = 'Download template file';
 

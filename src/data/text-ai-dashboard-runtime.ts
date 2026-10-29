@@ -14,6 +14,12 @@ export function getRuntimeTextAiDashboards(): TextAiDashboard[] {
 
 export function saveRuntimeTextAiDashboard(dashboard: TextAiDashboard): void {
   if (typeof window === 'undefined') return;
-  const existing = getRuntimeTextAiDashboards().filter((d) => d.id !== dashboard.id);
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify([dashboard, ...existing]));
+  const all = getRuntimeTextAiDashboards();
+  const previous = all.find(d => d.id === dashboard.id);
+  const existing = all.filter(d => d.id !== dashboard.id);
+  const next = previous ? { ...dashboard, creationPreferences: dashboard.creationPreferences ? {
+    ...dashboard.creationPreferences,
+    censoredSubthemesEnabled: previous.creationPreferences?.censoredSubthemesEnabled ?? true,
+  } : previous.creationPreferences } : dashboard;
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify([next, ...existing]));
 }

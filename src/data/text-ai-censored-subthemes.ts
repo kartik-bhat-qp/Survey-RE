@@ -4,6 +4,18 @@ import type { TagAssignments, TagDrafts } from './text-ai-tag-drafts';
 import type { TextAiThemeSentimentRow, TextAiSentimentDistribution } from './mock-text-ai-subtheme-stackbar';
 import type { TextAiTopicSegmentRow } from './mock-text-ai-topic-segment-widget';
 import type { TextAiAnalysisRow } from './mock-text-ai-widget-data';
+import type { TextAiDashboard } from './mock-text-ai-dashboards';
+
+/** Existing examples retain their feature; newly created dashboards store an explicit choice. */
+export function isCensoredSubthemesEnabled(dashboard: TextAiDashboard | undefined): boolean {
+  return dashboard?.creationPreferences?.censoredSubthemesEnabled !== false;
+}
+
+export function applyCensoredClassificationPreference<T extends { subthemes: TextAiSentimentSubtheme[] }>(responses: T[], enabled: boolean): T[] {
+  if (enabled) return responses;
+  return responses.map(response => ({ ...response, subthemes: Array.from(new Map(response.subthemes.map(tag => tag.id === CENSORED_TAG_ID
+    ? { id: 'outlier:unmatched', label: 'Outlier', sentiment: 'neutral' as const } : tag).map(tag => [tag.id, tag])).values()) }));
+}
 
 export const CENSORED_DEMO_DASHBOARD_ID = 23;
 export const CENSORED_DEMO_QUESTION_ID = 'restaurant-feedback-q1';
@@ -119,13 +131,13 @@ export const OUTLIER_THEME_GROUP: ThemeGroup = {
   ],
 };
 
-export function ensureOutlierTheme(groups: ThemeGroup[], fillDefaults = true): ThemeGroup[] {
+export function ensureOutlierTheme(groups: ThemeGroup[], fillDefaults = true, censoredEnabled = true): ThemeGroup[] {
   const existing = groups.find(group => group.id === 'outlier');
   const outlier = existing ? { ...existing, subThemes: [
     ...existing.subThemes,
     ...OUTLIER_THEME_GROUP.subThemes.filter(sub => (fillDefaults || sub.id === 'censored') && !existing.subThemes.some(current => current.id === sub.id)),
   ] } : OUTLIER_THEME_GROUP;
-  return [...groups.filter(group => group.id !== 'outlier'), outlier];
+  return [...groups.filter(group => group.id !== 'outlier'), { ...outlier, subThemes: outlier.subThemes.filter(sub => censoredEnabled || sub.id !== 'censored') }];
 }
 
 const sharedOutlierExamples: { text: string; subtheme: string; reason?: string }[] = [
@@ -144,18 +156,18 @@ export const SHARED_OUTLIER_RESPONSES: TextAiSentimentEditableResponse[] = share
 export function outlierResponseKey(questionId: string, responseId: number): string {
   return `${questionId}:outlier:${responseId}`;
 }
-export function getSharedOutlierResponses(questionId: string, assignments: TagAssignments): TextAiSentimentEditableResponse[] {
-  return SHARED_OUTLIER_RESPONSES.map(response => ({ ...response, subthemes: assignments[outlierResponseKey(questionId, response.id)] ?? response.subthemes }));
+export function getSharedOutlierResponses(questionId: string, assignments: TagAssignments, censoredEnabled = true): TextAiSentimentEditableResponse[] {
+  return applyCensoredClassificationPreference(SHARED_OUTLIER_RESPONSES.map(response => ({ ...response, subthemes: assignments[outlierResponseKey(questionId, response.id)] ?? response.subthemes })), censoredEnabled);
 }
 export function censoredResponseReason(responseId: number): string {
   return sharedOutlierExamples[responseId - 100001]?.reason ?? CENSORED_REASONS[responseId] ?? 'Censored content';
 }
 
 /** The demo changes response data, never the dashboard's widget collection. */
-export function getDashboardExampleResponses(dashboardId: number, questionId: string, assignments: TagAssignments): TextAiSentimentEditableResponse[] {
-  return dashboardId === CENSORED_DEMO_DASHBOARD_ID
+export function getDashboardExampleResponses(dashboardId: number, questionId: string, assignments: TagAssignments, censoredEnabled = true): TextAiSentimentEditableResponse[] {
+  return applyCensoredClassificationPreference(dashboardId === CENSORED_DEMO_DASHBOARD_ID
     ? restaurantResponses(assignments, `${questionId}:medium:`)
-    : getSharedOutlierResponses(questionId, assignments);
+    : getSharedOutlierResponses(questionId, assignments), censoredEnabled);
 }
 
 /** Adapt included Outlier responses to the same chart rows used by ordinary themes. */

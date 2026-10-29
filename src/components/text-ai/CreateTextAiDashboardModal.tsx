@@ -102,6 +102,7 @@ export function CreateTextAiDashboardModal({
       showToast({ message: 'Dashboard name is required', variant: 'error' });
       return;
     }
+    if (!modelSetup.modelingGoal.trim()) return;
     setNameError(false);
     setStep('segment');
   }
@@ -132,6 +133,8 @@ export function CreateTextAiDashboardModal({
       separateDashboardPerQuestion:
         separateDashboardPerQuestion && selectedQuestionIds.length > 1,
       expertReviewRequested: modelSetup.expertReviewRequested,
+      alsoTranslateVerbatim: modelSetup.alsoTranslateVerbatim,
+      censoredSubthemesEnabled: modelSetup.censoredSubthemesEnabled,
       segmentFilters: normalizeTextAiSegmentFilters(segmentFilters),
     });
     handleOpenChange(false);
@@ -194,10 +197,10 @@ export function CreateTextAiDashboardModal({
     <WuModal
       open
       onOpenChange={handleOpenChange}
-      className={modalStyles.modalWide}
+      className={step === 'model-setup' ? styles.modelSetupModal : modalStyles.modalWide}
       variant="action"
     >
-      <WuModalHeader className={modalStyles.modalTitle}>{modalTitle}</WuModalHeader>
+      <WuModalHeader className={step === 'model-setup' ? styles.modelSetupHeader : modalStyles.modalTitle}>{modalTitle}</WuModalHeader>
 
       {step === 'survey' && (
         <WuModalContent className={modalStyles.surveyContent}>
@@ -263,7 +266,7 @@ export function CreateTextAiDashboardModal({
                   Back
                 </WuButton>
                 {step === 'model-setup' && (
-                  <WuButton onClick={handleModelSetupNext}>Next</WuButton>
+                  <WuButton onClick={handleModelSetupNext} disabled={!getTrimmedName() || !modelSetup.modelingGoal.trim()}>Next</WuButton>
                 )}
                 {step === 'segment' && (
                   <WuButton onClick={handleSegmentNext} disabled={!!filterError || eligibleResponseCount === 0}>Next</WuButton>

@@ -52,6 +52,10 @@ const WuCombobox = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCombobox })),
   { ssr: false }
 );
+const WuToggle = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
+  { ssr: false }
+);
 
 export interface TextAiModelSetupValues {
   name: string;
@@ -62,6 +66,8 @@ export interface TextAiModelSetupValues {
   codebookFileName: string;
   reportCodebook: TextAiReportCodebookOption | null;
   expertReviewRequested: boolean;
+  alsoTranslateVerbatim: boolean;
+  censoredSubthemesEnabled: boolean;
 }
 
 interface TextAiModelSetupFormProps {
@@ -106,12 +112,17 @@ export function TextAiModelSetupForm({
 
   return (
     <div className={styles.form}>
+      <div className={styles.column}>
+      <section className={styles.card} aria-labelledby="text-ai-dashboard-details">
+      <h3 id="text-ai-dashboard-details" className={styles.cardHeading}>Dashboard details</h3>
       <WuFormGroup
-        Label={<WuLabel>Name</WuLabel>}
+        Label={<WuLabel className={styles.fieldLabel}>Dashboard name<span className={styles.required}>*</span></WuLabel>}
         Error={nameError ? 'Dashboard name is required' : undefined}
         Input={
           <WuInput
-            variant="outlined"
+            variant="flat"
+            aria-label="Dashboard name"
+            required
             placeholder={namePlaceholder}
             value={values.name}
             maxLength={100}
@@ -122,7 +133,7 @@ export function TextAiModelSetupForm({
       />
 
       <div className={styles.fieldBlock}>
-        <WuLabel className={styles.fieldLabel}>Output language</WuLabel>
+        <WuLabel className={styles.fieldLabel}>Themes and sub-themes</WuLabel>
         <div className={styles.languageSelect}>
           <WuSelect
             data={TEXT_AI_OUTPUT_LANGUAGES}
@@ -133,25 +144,41 @@ export function TextAiModelSetupForm({
               patch({ outputLanguage: option as TextAiLanguageOption });
             }}
             variant="outlined"
+            aria-label="Themes and sub-themes language"
           />
         </div>
+        <label className={styles.translateOption}>
+          <WuToggle checked={values.alsoTranslateVerbatim} onChange={checked => patch({ alsoTranslateVerbatim: checked })} aria-label="Also translate verbatim" />
+          <span>Also translate verbatim</span>
+        </label>
       </div>
+      </section>
 
+      <section className={styles.card} aria-labelledby="text-ai-modeling">
+      <h3 id="text-ai-modeling" className={styles.cardHeading}>Modeling</h3>
       <div className={styles.fieldBlock}>
         <WuLabel className={styles.fieldLabel}>
-          What is the goal of this topic modeling?
+          What is the goal of this topic modeling?<span className={styles.required}>*</span>
         </WuLabel>
         <WuTextarea
-          variant="outlined"
+          variant="flat"
+          aria-label="What is the goal of this topic modeling?"
+          maxLength={200}
+          required
           placeholder={TEXT_AI_MODELING_GOAL_PLACEHOLDER}
           value={values.modelingGoal}
           onChange={(e) => patch({ modelingGoal: e.target.value })}
           className={styles.goalTextarea}
         />
+        <span className={styles.characterCount}>{values.modelingGoal.length} / 200</span>
+      </div>
+      </section>
       </div>
 
-      <fieldset className={styles.codebookFieldset}>
-        <legend className={styles.fieldLabel}>Codebook</legend>
+      <div className={styles.column}>
+      <fieldset className={`${styles.card} ${styles.codebookFieldset}`}>
+        <legend className={styles.srOnly}>Codebook</legend>
+        <h3 className={styles.cardHeading} aria-hidden="true">Codebook</h3>
         <div className={styles.codebookOptions}>
           {TEXT_AI_CODEBOOK_OPTIONS.map((option) => {
             const checked = values.codebookSource === option.value;
@@ -252,7 +279,18 @@ export function TextAiModelSetupForm({
         ) : null}
       </fieldset>
 
-      <div className={styles.expertReviewOption}>
+      <section className={styles.card}>
+        <label className={styles.expertReviewLabel}>
+          <WuCheckbox checked={values.censoredSubthemesEnabled} onChange={checked => patch({ censoredSubthemesEnabled: checked })} aria-label="Enable censored sub-themes" aria-describedby="censored-creation-description censored-creation-warning" />
+          <span className={styles.expertReviewText}>
+            <span className={styles.expertReviewTitle}>Enable censored sub-themes</span>
+            <span id="censored-creation-description" className={styles.expertReviewDescription}>Group off-topic, abusive, malicious or spam text under Outlier → Censored. These responses are excluded from other themes and hidden from dashboards by default.</span>
+            <strong id="censored-creation-warning" className={styles.irreversibleWarning}>Once enabled for this dashboard, this choice cannot be reversed.</strong>
+          </span>
+        </label>
+      </section>
+
+      <div className={`${styles.card} ${styles.expertReviewOption}`}>
         <label className={styles.expertReviewLabel}>
           <WuCheckbox
             checked={values.expertReviewRequested}
@@ -266,6 +304,7 @@ export function TextAiModelSetupForm({
             </span>
           </span>
         </label>
+      </div>
       </div>
     </div>
   );
@@ -281,5 +320,7 @@ export function createDefaultModelSetupValues(defaultName: string): TextAiModelS
     codebookFileName: '',
     reportCodebook: null,
     expertReviewRequested: false,
+    alsoTranslateVerbatim: true,
+    censoredSubthemesEnabled: false,
   };
 }

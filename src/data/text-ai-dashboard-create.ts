@@ -19,5 +19,7 @@ export interface TextAiDashboardCreatePayload {
   reportCodebook: TextAiReportCodebookOption | null;
   separateDashboardPerQuestion: boolean;
   expertReviewRequested: boolean;
+  alsoTranslateVerbatim: boolean;
+  censoredSubthemesEnabled: boolean;
   segmentFilters: TextAiSegmentFilterState;
 }

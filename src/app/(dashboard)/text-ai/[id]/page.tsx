@@ -1,5 +1,6 @@
 'use client';
 import type { TextAiAddedWidget } from '@/components/text-ai/TextAiDashboardCanvas';
+import { isCensoredSubthemesEnabled } from '@/data/text-ai-censored-subthemes';
 
 import { use, useEffect, useState } from 'react';
 import { EMPTY_TEXT_AI_FILTER, type TextAiResponseFilter } from '@/data/text-ai-widget-settings';
@@ -223,7 +224,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   return (
     <div className="flex flex-col h-full min-h-0">
       <TextAiDashboardToolbar
-        showCensoredSubthemes={themePreferences.showCensoredSubthemes}
+        showCensoredSubthemes={isCensoredSubthemesEnabled(dashboard) && themePreferences.showCensoredSubthemes}
         key={numericId}
         responseFilter={responseFilter}
         onResponseFilterChange={setResponseFilter}
@@ -243,6 +244,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
       />
       {collectionError&&<p role="alert">{collectionError}</p>}
       <TextAiDashboardCanvas
+        censoredSubthemesEnabled={isCensoredSubthemesEnabled(dashboard)}
         dashboardId={numericId}
         dashboardFilter={responseFilter}
         selectedQuestion={selectedQuestion}

@@ -16,6 +16,8 @@ export interface TextAiDashboardCreationQuestion {
 }
 
 export interface TextAiDashboardCreationPreferences {
+  censoredSubthemesEnabled?: boolean;
+  alsoTranslateVerbatim?: boolean;
   codebookPreference: string;
   codebookFileDataUrl?: string;
   codebookFileName?: string;

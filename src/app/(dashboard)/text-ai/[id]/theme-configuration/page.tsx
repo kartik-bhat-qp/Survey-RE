@@ -44,6 +44,7 @@ import {
   type CodeFrames, type CodeFrameDrafts, type SubTheme, type ThemeGroup, type ThemeTone,
 } from '@/data/text-ai-code-frame-drafts';
 import { CENSORED_DEMO_DASHBOARD_ID, CENSORED_TAG_ID, CENSORED_VISIBILITY_HELP, CENSORED_CONFIGURATION_EVENT, censoredResponseReason, ensureOutlierTheme, getSharedOutlierResponses, outlierResponseKey, RESTAURANT_THEME_GROUPS, RESTAURANT_RESPONSES, isCensoredResponse, visibleCensoredResponses, addCensoredAwareTags, requiresCensoredRelease, parseCensoredReleases, rememberCensoredReleases, recodeCensoredAssignments, automaticCensoredAssignments, type CensoredReleases } from '@/data/text-ai-censored-subthemes';
+import { isCensoredSubthemesEnabled, applyCensoredClassificationPreference } from '@/data/text-ai-censored-subthemes';
 import styles from './ThemeConfiguration.module.css';
 
 const WuCombobox = dynamic(
@@ -727,6 +728,7 @@ export default function TextAiThemeConfigurationPage({
   const configurationStorageKey = `bi-stats-text-ai-configuration-v2:${numericDashboardId}`;
   const tagStorageKey = `bi-stats-text-ai-tags-v1:${numericDashboardId}`;
   const isCensoredDemo = numericDashboardId === CENSORED_DEMO_DASHBOARD_ID;
+  const censoredEnabled = isCensoredSubthemesEnabled(dashboard);
   const tagScope = `${selectedQuestionId}:${isCensoredDemo ? 'medium' : appliedGranularity}:`;
 
   useEffect(() => {
@@ -876,9 +878,9 @@ export default function TextAiThemeConfigurationPage({
 
   const unfilteredThemeGroups = useMemo(() => {
     const savedFrame = codeFrameDrafts[tagScope]?.after ?? savedCodeFrames[tagScope];
-    const source = ensureOutlierTheme(savedFrame ?? baseThemeGroups, !savedFrame);
+    const source = ensureOutlierTheme(savedFrame ?? baseThemeGroups, !savedFrame, censoredEnabled);
     const currentAssignments = { ...savedTagAssignments, ...Object.fromEntries(Object.entries(tagDrafts).map(([key, value]) => [key, value.after])) };
-    const demoRows = isCensoredDemo ? RESTAURANT_RESPONSES.map(response => ({ ...response, subthemes: currentAssignments[(response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`)] ?? response.subthemes })) : getSharedOutlierResponses(selectedQuestionId, currentAssignments);
+    const demoRows = isCensoredDemo ? applyCensoredClassificationPreference(RESTAURANT_RESPONSES.map(response => ({ ...response, subthemes: currentAssignments[(response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`)] ?? response.subthemes })), censoredEnabled) : getSharedOutlierResponses(selectedQuestionId, currentAssignments, censoredEnabled);
     const countBase = isCensoredDemo ? demoRows.length : questionVariant.responseCount + demoRows.length;
     return source.map((group) => {
       const original = THEME_GROUPS.find((item) => item.id === group.id);
@@ -896,7 +898,7 @@ export default function TextAiThemeConfigurationPage({
         }),
       };
     });
-  }, [baseThemeGroups, codeFrameDrafts, savedCodeFrames, tagScope, themePreferences, isCensoredDemo, savedTagAssignments, tagDrafts, selectedQuestionId, questionVariant.responseCount]);
+  }, [baseThemeGroups, codeFrameDrafts, savedCodeFrames, tagScope, themePreferences, isCensoredDemo, censoredEnabled, savedTagAssignments, tagDrafts, selectedQuestionId, questionVariant.responseCount]);
   const codeFrameLabels = useMemo(() => new Map<string, string>(unfilteredThemeGroups.flatMap((group) =>
     group.subThemes.map((sub) => [`${group.id}:${sub.id}`, sub.name] as const))), [unfilteredThemeGroups]);
 
@@ -948,15 +950,16 @@ export default function TextAiThemeConfigurationPage({
           subthemes: editedSubthemes,
         };
       });
-      if (isCensoredDemo) return ordinaryResponses;
+      if (isCensoredDemo) return applyCensoredClassificationPreference(ordinaryResponses, censoredEnabled);
       const assignments = { ...savedTagAssignments, ...Object.fromEntries(Object.entries(tagDrafts).map(([key, draft]) => [key, draft.after])) };
-      return [...ordinaryResponses, ...getSharedOutlierResponses(selectedQuestionId, assignments).map(response => ({ ...response,
+      return [...ordinaryResponses, ...getSharedOutlierResponses(selectedQuestionId, assignments, censoredEnabled).map(response => ({ ...response,
         subthemes: response.subthemes.map(tag => ({ ...tag, label: codeFrameLabels.get(tag.id) ?? tag.label,
           sentiment: responseSentimentEdits[`${selectedQuestionId}:${response.id}`]?.subthemeSentiments[tag.id] ?? tag.sentiment })),
       }))];
     },
     [
       appliedGranularity,
+      censoredEnabled,
       questionVariant,
       responseSentimentEdits,
       isCensoredDemo,
@@ -1465,7 +1468,7 @@ export default function TextAiThemeConfigurationPage({
 
     try {
       const latest = readSavedConfiguration(configurationStorageKey, tagStorageKey);
-      const automatic = recodeScope === 'all-sub-themes' || (recodeScope === 'custom' && customRecodeSubThemeIds.includes(CENSORED_TAG_ID))
+      const automatic = censoredEnabled && (recodeScope === 'all-sub-themes' || (recodeScope === 'custom' && customRecodeSubThemeIds.includes(CENSORED_TAG_ID)))
         ? automaticCensoredAssignments(selectedQuestionId, isCensoredDemo) : {};
       const assignments = recodeCensoredAssignments(latest.assignments, automatic, latest.censoredReleases);
       window.localStorage.setItem(configurationStorageKey, JSON.stringify({ ...latest, assignments }));
@@ -2230,13 +2233,13 @@ export default function TextAiThemeConfigurationPage({
               <button type="button" role="tab" aria-selected="true" className={styles.activeSettingsTab}>Preferences</button>
             </div>
               <div className={styles.settingsPreferences}>
-                <label className={styles.settingsPreference}>
+                {censoredEnabled && <label className={styles.settingsPreference}>
                   <span><strong>Show censored sub-themes</strong><small>{CENSORED_VISIBILITY_HELP}</small></span>
                   <WuToggle checked={themePreferences.showCensoredSubthemes} onChange={checked => {
                     updateThemePreferences(current => ({ ...current, showCensoredSubthemes: checked }));
                     setSelectedResponseIds(new Set()); setResponseSubthemeFilters(new Set()); setSelectedCodeFrameKeys(new Set()); setRawDataPage(0);
                   }} aria-label="Show censored sub-themes" />
-                </label>
+                </label>}
                 <label className={styles.settingsPreference}>
                   <span>
                     <strong>Show themes with no responses</strong>
