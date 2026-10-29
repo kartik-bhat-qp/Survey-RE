@@ -2,7 +2,7 @@
 
 ## Direct editing, deletion and sync lifecycle
 
-The latest [lifecycle checkpoint](lifecycle-2026-10-29.md) supersedes earlier confirmation and review-pop-up rules. Censored filters the regular response panel. Any selection containing Censored disables Add sub-theme with explanatory tooltip help; users remove its tags directly, individually or in bulk, before coding. Censored itself can be deleted and saved. It returns only when newly synced responses qualify, while saved releases remain protected during recoding. The native PRD includes these rules and intentionally omits sentiment editing requirements.
+The latest [lifecycle checkpoint](lifecycle-2026-10-29.md) supersedes earlier confirmation and review-pop-up rules. Censored filters the regular response panel. Any selection containing Censored disables Add sub-theme with explanatory tooltip help; users remove its tags through the same per-response controls as other sub-themes, before coding. No separate Censored-removal button appears. Censored itself can be deleted and saved. It returns only when newly synced responses qualify, while saved releases remain protected during recoding. The native PRD includes these rules and intentionally omits sentiment editing requirements. The configuration corpus includes three extra examples per existing sub-theme.
 
 ## Creation and configuration visibility — 29 October 2026
 

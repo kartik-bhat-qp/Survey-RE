@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import { Title as DialogTitle } from '@radix-ui/react-dialog';
 import { SharedDashboardDateFilter } from '@/components/dashboards/SharedDashboardDateFilter';
 import { filterThemeResponses } from '@/data/text-ai-theme-configuration-view';
+import { createConfigurationResponseExamples } from '@/data/mock-text-ai-configuration-responses';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { TextAiEmergingBadge } from '@/components/text-ai/TextAiEmergingBadge';
@@ -43,7 +44,7 @@ import {
   stageCodeFrame, summarizeCodeFrameDrafts, validateCodeFrameName,
   type CodeFrames, type CodeFrameDrafts, type SubTheme, type ThemeGroup, type ThemeTone,
 } from '@/data/text-ai-code-frame-drafts';
-import { CENSORED_DEMO_DASHBOARD_ID, CENSORED_TAG_ID, CENSORED_VISIBILITY_HELP, CENSORED_CONFIGURATION_EVENT, ensureOutlierTheme, getSharedOutlierResponses, outlierResponseKey, RESTAURANT_THEME_GROUPS, RESTAURANT_RESPONSES, isCensoredResponse, containsCensoredResponse, addCensoredAwareTags, getSyncedCensoredResponses, parseCensoredReleases, rememberCensoredReleases, recodeCensoredAssignments, automaticCensoredAssignments, type CensoredReleases } from '@/data/text-ai-censored-subthemes';
+import { CENSORED_DEMO_DASHBOARD_ID, CENSORED_TAG_ID, CENSORED_VISIBILITY_HELP, CENSORED_CONFIGURATION_EVENT, ensureOutlierTheme, getSharedOutlierResponses, outlierResponseKey, RESTAURANT_THEME_GROUPS, RESTAURANT_RESPONSES, containsCensoredResponse, addCensoredAwareTags, getSyncedCensoredResponses, parseCensoredReleases, rememberCensoredReleases, recodeCensoredAssignments, automaticCensoredAssignments, type CensoredReleases } from '@/data/text-ai-censored-subthemes';
 import { isCensoredSubthemesEnabled, applyCensoredClassificationPreference } from '@/data/text-ai-censored-subthemes';
 import styles from './ThemeConfiguration.module.css';
 
@@ -951,13 +952,17 @@ export default function TextAiThemeConfigurationPage({
       });
       const assignments = { ...savedTagAssignments, ...Object.fromEntries(Object.entries(tagDrafts).map(([key, draft]) => [key, draft.after])) };
       const extra = isCensoredDemo ? getSyncedCensoredResponses(selectedQuestionId, assignments, dashboard?.syncedCensoredResponses) : getSharedOutlierResponses(selectedQuestionId, assignments, censoredEnabled, dashboard?.syncedCensoredResponses);
-      return applyCensoredClassificationPreference([...ordinaryResponses, ...extra.map(response => ({ ...response,
+      const examples = createConfigurationResponseExamples(ensureOutlierTheme(baseThemeGroups, true, censoredEnabled)).map(response => ({ ...response,
+        subthemes: assignments[outlierResponseKey(selectedQuestionId, response.id)] ?? response.subthemes.filter(tag => codeFrameLabels.has(tag.id)),
+      }));
+      return applyCensoredClassificationPreference([...ordinaryResponses, ...[...extra, ...examples].map(response => ({ ...response,
         subthemes: response.subthemes.map(tag => ({ ...tag, label: codeFrameLabels.get(tag.id) ?? tag.label,
           sentiment: responseSentimentEdits[`${selectedQuestionId}:${response.id}`]?.subthemeSentiments[tag.id] ?? tag.sentiment })),
       }))], censoredEnabled);
     },
     [
       dashboard?.syncedCensoredResponses,
+      baseThemeGroups,
       appliedGranularity,
       censoredEnabled,
       questionVariant,
@@ -1682,9 +1687,6 @@ export default function TextAiThemeConfigurationPage({
                   Clear
                 </button>
               ) : null}
-              {selectionHasCensored && <button type="button" className={styles.updateSentimentButton} disabled={!tagsReady} onClick={() => {
-                selectedResponses.filter(isCensoredResponse).forEach(response => removeResponseTag(response, CENSORED_TAG_ID));
-              }}>Remove Censored tag</button>}
               <WuTooltip content={selectionHasCensored ? 'Remove the Censored sub-theme from all selected responses before adding another sub-theme.' : undefined} position="top">
               <span className={styles.disabledAction} tabIndex={selectionHasCensored ? 0 : undefined} aria-label={selectionHasCensored ? 'Why Add sub-theme is disabled' : undefined}>
               <button
