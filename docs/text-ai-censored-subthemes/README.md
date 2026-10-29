@@ -1,5 +1,9 @@
 # Censored sub-themes — prototype review checkpoint
 
+## Dashboard visibility and classification sentiment
+
+Dashboard visibility now defaults on. New dashboards and older preference records with no explicit visibility value include Censored responses by default; an explicitly saved visibility choice remains respected. Censored responses and their Censored assignments always use Neutral sentiment, including when older saved overrides differ. The creation tooltip explains both defaults. The native PRD is now 12 slides: the former Visibility rules slide was removed and remaining requirements and acceptance criteria use the on-by-default rule. Sentiment editing remains outside the PRD.
+
 ## Direct editing, deletion and sync lifecycle
 
 The latest [lifecycle checkpoint](lifecycle-2026-10-29.md) supersedes earlier confirmation and review-pop-up rules. Censored filters the regular response panel. Any selection containing Censored disables Add sub-theme with explanatory tooltip help; users remove its tags through the same per-response controls as other sub-themes, before coding. No separate Censored-removal button appears. Censored itself can be deleted and saved. It returns only when newly synced responses qualify, while saved releases remain protected during recoding. The native PRD includes these rules and intentionally omits sentiment editing requirements. The configuration corpus includes three extra examples per existing sub-theme.

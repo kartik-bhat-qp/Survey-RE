@@ -1,0 +1,8 @@
+# Dashboard default and Neutral classification checkpoint
+
+- Show censored sub-themes defaults on for a new dashboard and for older preference records without an explicit value. Preserve explicitly saved on/off choices. Creation opt-out still hides this visibility control and prevents classification.
+- Censored response sentiment and its Censored assignment are normalized to Neutral, including older saved response or tag sentiment overrides. Ordinary responses retain their coding. Dashboard sentiment adapters also normalize their inputs.
+- The creation tooltip explains that Censored responses receive Neutral sentiment and appear in dashboards by default, while retaining review, untagging and re-categorization guidance.
+- The existing native PRD now has 12 slides. Removed the Visibility rules slide. Updated overview, classification, settings, creation guidance, counts, acceptance criteria and walkthrough. The automatic Neutral rule is included; sentiment editing requirements remain excluded. No sharing or folder changes were made.
+
+Validation: all 78 TextAI tests, TypeScript, targeted ESLint and the production build pass. New tests cover fresh/legacy defaults, explicit off preservation, Neutral normalization, older sentiment overrides and dashboard output. Browser verification created a fresh opted-in dashboard and confirmed the visibility switch starts on, both settings routes agree, Censored response badges are Neutral, and the creation tooltip contains the new wording. Read back all 12 PRD slides, inspected every rendered slide and empty speaker note, and confirmed TextAI → Documents with QuestionPro Commenter access. Evidence is retained under the Work task's `outputs/textai-model-setup-2026-10-29/defaults-on` folder.

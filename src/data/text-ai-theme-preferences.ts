@@ -27,7 +27,7 @@ const DEFAULT_PREFERENCES: TextAiThemePreferences = {
   emergingApprovedAtByName: {},
   emergingThemeValidityDays: 30,
   showThemesWithNoResponses: true,
-  showCensoredSubthemes: false,
+  showCensoredSubthemes: true,
 };
 
 function getStorageKey(dashboardId: number): string {
@@ -78,7 +78,8 @@ export function getTextAiThemePreferences(
       approvedEmergingNames,
       emergingApprovedAtByName,
       emergingThemeValidityDays,
-      showCensoredSubthemes: parsed.showCensoredSubthemes === true,
+      showCensoredSubthemes: typeof parsed.showCensoredSubthemes === 'boolean'
+        ? parsed.showCensoredSubthemes : DEFAULT_PREFERENCES.showCensoredSubthemes,
       showThemesWithNoResponses:
         typeof parsed.showThemesWithNoResponses === 'boolean'
           ? parsed.showThemesWithNoResponses

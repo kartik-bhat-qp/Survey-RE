@@ -44,7 +44,7 @@ import {
   stageCodeFrame, summarizeCodeFrameDrafts, validateCodeFrameName,
   type CodeFrames, type CodeFrameDrafts, type SubTheme, type ThemeGroup, type ThemeTone,
 } from '@/data/text-ai-code-frame-drafts';
-import { CENSORED_DEMO_DASHBOARD_ID, CENSORED_TAG_ID, CENSORED_VISIBILITY_HELP, CENSORED_CONFIGURATION_EVENT, ensureOutlierTheme, getSharedOutlierResponses, outlierResponseKey, RESTAURANT_THEME_GROUPS, RESTAURANT_RESPONSES, containsCensoredResponse, addCensoredAwareTags, getSyncedCensoredResponses, parseCensoredReleases, rememberCensoredReleases, recodeCensoredAssignments, automaticCensoredAssignments, type CensoredReleases } from '@/data/text-ai-censored-subthemes';
+import { CENSORED_DEMO_DASHBOARD_ID, CENSORED_TAG_ID, CENSORED_VISIBILITY_HELP, CENSORED_CONFIGURATION_EVENT, ensureOutlierTheme, getSharedOutlierResponses, outlierResponseKey, RESTAURANT_THEME_GROUPS, RESTAURANT_RESPONSES, containsCensoredResponse, normalizeCensoredSentiments, addCensoredAwareTags, getSyncedCensoredResponses, parseCensoredReleases, rememberCensoredReleases, recodeCensoredAssignments, automaticCensoredAssignments, type CensoredReleases } from '@/data/text-ai-censored-subthemes';
 import { isCensoredSubthemesEnabled, applyCensoredClassificationPreference } from '@/data/text-ai-censored-subthemes';
 import styles from './ThemeConfiguration.module.css';
 
@@ -682,7 +682,7 @@ export default function TextAiThemeConfigurationPage({
     emergingApprovedAtByName: {},
     emergingThemeValidityDays: 30,
     showThemesWithNoResponses: true,
-    showCensoredSubthemes: false,
+    showCensoredSubthemes: true,
   });
   const appliedGranularity: GranularityLevel = 'medium';
   const [recodeModalOpen, setRecodeModalOpen] = useState(false);
@@ -955,10 +955,10 @@ export default function TextAiThemeConfigurationPage({
       const examples = createConfigurationResponseExamples(ensureOutlierTheme(baseThemeGroups, true, censoredEnabled)).map(response => ({ ...response,
         subthemes: assignments[outlierResponseKey(selectedQuestionId, response.id)] ?? response.subthemes.filter(tag => codeFrameLabels.has(tag.id)),
       }));
-      return applyCensoredClassificationPreference([...ordinaryResponses, ...[...extra, ...examples].map(response => ({ ...response,
+      return normalizeCensoredSentiments(applyCensoredClassificationPreference([...ordinaryResponses, ...[...extra, ...examples].map(response => ({ ...response,
         subthemes: response.subthemes.map(tag => ({ ...tag, label: codeFrameLabels.get(tag.id) ?? tag.label,
           sentiment: responseSentimentEdits[`${selectedQuestionId}:${response.id}`]?.subthemeSentiments[tag.id] ?? tag.sentiment })),
-      }))], censoredEnabled);
+      }))], censoredEnabled));
     },
     [
       dashboard?.syncedCensoredResponses,

@@ -119,7 +119,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     emergingApprovedAtByName: {},
     emergingThemeValidityDays: 30,
     showThemesWithNoResponses: true,
-    showCensoredSubthemes: false,
+    showCensoredSubthemes: true,
   });
 
   useEffect(() => {

@@ -67,6 +67,13 @@ export const RESTAURANT_RESPONSES: TextAiSentimentEditableResponse[] = examples.
 export const CENSORED_REASONS = Object.fromEntries(examples.map((example, index) => [index + 1, example.reason]));
 export const isCensoredResponse = (response: Pick<TextAiSentimentEditableResponse, 'subthemes'>) => response.subthemes.some(tag => tag.id === CENSORED_TAG_ID);
 export const containsCensoredResponse = (responses: Pick<TextAiSentimentEditableResponse, 'subthemes'>[]) => responses.some(isCensoredResponse);
+export function normalizeCensoredSentiments<T extends TextAiSentimentEditableResponse>(responses: T[]): T[] {
+  return responses.map(response => isCensoredResponse(response) ? { ...response,
+    responseSentiment: 'neutral' as const,
+    responseSentimentOverride: null,
+    subthemes: response.subthemes.map(tag => tag.id === CENSORED_TAG_ID ? { ...tag, sentiment: 'neutral' as const } : tag),
+  } : response);
+}
 export function visibleCensoredResponses<T extends Pick<TextAiSentimentEditableResponse, 'subthemes'>>(responses: T[], show: boolean): T[] {
   return show ? responses : responses.filter(response => !isCensoredResponse(response));
 }
@@ -165,9 +172,9 @@ export function censoredResponseReason(responseId: number): string {
 
 /** The demo changes response data, never the dashboard's widget collection. */
 export function getDashboardExampleResponses(dashboardId: number, questionId: string, assignments: TagAssignments, censoredEnabled = true, synced: TextAiSyncedCensoredResponse[] = []): TextAiSentimentEditableResponse[] {
-  return applyCensoredClassificationPreference(dashboardId === CENSORED_DEMO_DASHBOARD_ID
+  return normalizeCensoredSentiments(applyCensoredClassificationPreference(dashboardId === CENSORED_DEMO_DASHBOARD_ID
     ? [...restaurantResponses(assignments, `${questionId}:medium:`), ...getSyncedCensoredResponses(questionId, assignments, synced)]
-    : getSharedOutlierResponses(questionId, assignments, true, synced), censoredEnabled);
+    : getSharedOutlierResponses(questionId, assignments, true, synced), censoredEnabled));
 }
 
 /** Prototype sync consumes explicit synthetic classification results, never reclassifies released records. */
@@ -197,14 +204,14 @@ export function getOutlierDashboardRows(responses: TextAiSentimentEditableRespon
   comparisonRows: TextAiTopicSegmentRow[];
   analysisRows: TextAiAnalysisRow[];
 } {
-  const visible = visibleCensoredResponses(responses, showCensored);
+  const visible = visibleCensoredResponses(normalizeCensoredSentiments(responses), showCensored);
   const groups = [...RESTAURANT_THEME_GROUPS.filter(group => group.id !== 'outlier'), OUTLIER_THEME_GROUP];
   const parentName = (id: string) => groups.find(group => group.id === id)?.name ?? 'Manually coded';
   const analysisRows: TextAiAnalysisRow[] = visible.map(response => ({
     id: response.id, value: response.text,
     topic: [...new Set(response.subthemes.map(tag => parentName(tag.id.split(':')[0])))].join(', ') || 'Untagged',
     subtopic: response.subthemes.map(tag => tag.label).join(', ') || 'Untagged',
-    subtopicTone: response.subthemes.some(tag => tag.sentiment === 'positive' || tag.sentiment === 'very-positive') ? 'positive' : 'neutral',
+    subtopicTone: !isCensoredResponse(response) && response.subthemes.some(tag => tag.sentiment === 'positive' || tag.sentiment === 'very-positive') ? 'positive' : 'neutral',
     insight: '', tags: response.subthemes.map(tag => tag.label), collectedOn: '2026-10-05',
   }));
   const included = visible.filter(response => response.subthemes.some(tag => tag.id.startsWith('outlier:')));

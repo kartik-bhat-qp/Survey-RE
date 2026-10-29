@@ -290,7 +290,7 @@ export function TextAiModelSetupForm({
               <WuCheckbox checked={values.censoredSubthemesEnabled} onChange={checked => patch({ censoredSubthemesEnabled: checked })} aria-label="Enable censored sub-themes" aria-describedby="censored-creation-warning" />
               <span className={styles.expertReviewTitle}>Enable censored sub-themes</span>
             </label>
-            <WuTooltip position="top" content="Group off-topic, abusive, malicious or spam text under Outlier → Censored, separate from other themes and hidden from dashboards by default. You can review these responses, remove the Censored tag and re-categorize them under other sub-themes.">
+            <WuTooltip position="top" content="Group off-topic, abusive, malicious or spam text under Outlier → Censored, separate from other themes. These responses receive Neutral sentiment and appear in dashboards by default. You can review them, remove the Censored tag and re-categorize them under other sub-themes.">
               <button type="button" className={styles.infoButton} aria-label="About censored sub-themes">
                 <span className="wm-info" aria-hidden />
               </button>
