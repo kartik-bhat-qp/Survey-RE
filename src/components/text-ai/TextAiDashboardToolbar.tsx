@@ -12,12 +12,10 @@ import {
   createDefaultSegmentFilterState,
   getTextAiExclusionValidationError,
   getTextAiSegmentResponseSummary,
-  MOCK_TEXT_AI_FILTER_RESPONSES,
   normalizeTextAiSegmentFilters,
   type TextAiSegmentFilterState,
 } from '@/data/mock-text-ai-segment-filters';
 import {
-  TEXT_AI_PENDING_NEW_COMMENTS,
   TEXT_AI_SUBTHEME_FILTER_OPTIONS,
   TEXT_AI_THEME_FILTER_OPTIONS,
   type TextAiFilterOption,
@@ -37,8 +35,7 @@ const WuMenuItem = dynamic(
   { ssr: false }
 );
 
-const MOCK_PENDING_RESPONSES = MOCK_TEXT_AI_FILTER_RESPONSES.slice(0, TEXT_AI_PENDING_NEW_COMMENTS)
-  .map((response) => ({ ...response, id: `pending-${response.id}` }));
+import { MOCK_TEXT_AI_PENDING_RESPONSES as MOCK_PENDING_RESPONSES } from '@/data/mock-text-ai-pending-responses';
 
 interface TextAiDashboardToolbarProps {
   showCensoredSubthemes?: boolean;

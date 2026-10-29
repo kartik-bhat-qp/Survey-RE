@@ -76,6 +76,7 @@ interface TextAiCanvasWidget {
 export interface TextAiAddedWidget { id: string; chartType: TextAiWidgetChartTypeId; question: string; }
 
 interface TextAiDashboardCanvasProps {
+  syncedCensoredResponses?: import('@/data/mock-text-ai-dashboards').TextAiSyncedCensoredResponse[];
   censoredSubthemesEnabled?: boolean;
   dashboardFilter?: TextAiResponseFilter;
   addedWidgets?: TextAiAddedWidget[];
@@ -335,6 +336,7 @@ function filterAnalysisWidgetsForDashboard(
 }
 
 export function TextAiDashboardCanvas({
+  syncedCensoredResponses,
   censoredSubthemesEnabled = true,
   dashboardId,
   dashboardFilter = EMPTY_TEXT_AI_FILTER,
@@ -385,7 +387,7 @@ export function TextAiDashboardCanvas({
     );
   const questionFactor = getQuestionFactor(questionIndex);
   const outlierData = getOutlierDashboardRows(
-    outlierLoadError ? [] : getDashboardExampleResponses(dashboardId, selectedQuestion.id, outlierAssignments, censoredSubthemesEnabled),
+    outlierLoadError ? [] : getDashboardExampleResponses(dashboardId, selectedQuestion.id, outlierAssignments, censoredSubthemesEnabled, syncedCensoredResponses),
     censoredSubthemesEnabled && themePreferences.showCensoredSubthemes,
     themePreferences.showThemesWithNoResponses,
   );

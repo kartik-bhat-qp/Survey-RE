@@ -42,11 +42,13 @@ test('moving sub-themes preserves descriptions and memberships with colliding ch
   assert.equal(summarizeCodeFrameDrafts(drafts).changes, 1);
   assert.deepEqual(stageCodeFrame(drafts, 'q1:medium:', rename, groups), {});
 });
-test('saved code frames gain missing Outlier while deliberate edits to its ordinary children persist', () => {
+test('saved code frames retain deliberate Outlier child deletions', () => {
   const seeded = ensureOutlierTheme([]);
   const edited = [{ ...seeded[0], subThemes: seeded[0].subThemes.filter(sub => sub.id !== 'unmatched') }];
   assert.equal(ensureOutlierTheme(edited, false)[0].subThemes.some(sub => sub.id === 'unmatched'), false);
   assert.equal(ensureOutlierTheme(edited, false)[0].subThemes.some(sub => sub.id === 'censored'), true);
+  const deleted = [{ ...seeded[0], subThemes: seeded[0].subThemes.filter(sub => sub.id !== 'censored') }];
+  assert.equal(ensureOutlierTheme(deleted, false)[0].subThemes.some(sub => sub.id === 'censored'), false);
   assert.equal(ensureOutlierTheme([], false)[0].subThemes.length, 4);
   assert.throws(() => moveCodeFrameItems(seeded, ['outlier:censored'], 'missing'), /destination/);
 });

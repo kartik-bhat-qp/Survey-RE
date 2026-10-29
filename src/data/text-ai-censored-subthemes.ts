@@ -1,10 +1,10 @@
 import type { TextAiSentimentSubtheme, TextAiSentimentEditableResponse } from '../components/text-ai/TextAiUpdateSentimentModal';
-import type { ThemeGroup } from './text-ai-code-frame-drafts';
+import type { CodeFrames, ThemeGroup } from './text-ai-code-frame-drafts';
 import type { TagAssignments, TagDrafts } from './text-ai-tag-drafts';
 import type { TextAiThemeSentimentRow, TextAiSentimentDistribution } from './mock-text-ai-subtheme-stackbar';
 import type { TextAiTopicSegmentRow } from './mock-text-ai-topic-segment-widget';
 import type { TextAiAnalysisRow } from './mock-text-ai-widget-data';
-import type { TextAiDashboard } from './mock-text-ai-dashboards';
+import type { TextAiDashboard, TextAiSyncedCensoredResponse } from './mock-text-ai-dashboards';
 
 /** Existing examples retain their feature; newly created dashboards store an explicit choice. */
 export function isCensoredSubthemesEnabled(dashboard: TextAiDashboard | undefined): boolean {
@@ -66,19 +66,16 @@ export const RESTAURANT_RESPONSES: TextAiSentimentEditableResponse[] = examples.
 }));
 export const CENSORED_REASONS = Object.fromEntries(examples.map((example, index) => [index + 1, example.reason]));
 export const isCensoredResponse = (response: Pick<TextAiSentimentEditableResponse, 'subthemes'>) => response.subthemes.some(tag => tag.id === CENSORED_TAG_ID);
+export const containsCensoredResponse = (responses: Pick<TextAiSentimentEditableResponse, 'subthemes'>[]) => responses.some(isCensoredResponse);
 export function visibleCensoredResponses<T extends Pick<TextAiSentimentEditableResponse, 'subthemes'>>(responses: T[], show: boolean): T[] {
   return show ? responses : responses.filter(response => !isCensoredResponse(response));
 }
-export function requiresCensoredRelease(existing: TextAiSentimentSubtheme[], additions: TextAiSentimentSubtheme[]): boolean {
-  return existing.some(tag => tag.id === CENSORED_TAG_ID) && additions.some(tag => tag.id !== CENSORED_TAG_ID && !existing.some(current => current.id === tag.id));
-}
-export function addCensoredAwareTags(existing: TextAiSentimentSubtheme[], additions: TextAiSentimentSubtheme[], show: boolean, confirmed = false): TextAiSentimentSubtheme[] {
-  const combined = Array.from(new Map([...existing, ...additions].map(tag => [tag.id, tag])).values());
-  if (show && requiresCensoredRelease(existing, additions)) {
-    if (!confirmed) throw new Error('Confirm removal of the Censored tag before adding other sub-themes.');
-    return combined.filter(tag => tag.id !== CENSORED_TAG_ID);
+export function addCensoredAwareTags(existing: TextAiSentimentSubtheme[], additions: TextAiSentimentSubtheme[]): TextAiSentimentSubtheme[] {
+  if (existing.some(tag => tag.id === CENSORED_TAG_ID) && additions.length) {
+    throw new Error('Remove Censored before adding other sub-themes.');
   }
-  return !show && combined.some(tag => tag.id === CENSORED_TAG_ID) ? [CENSORED_TAG] : combined;
+  const combined = Array.from(new Map([...existing, ...additions].map(tag => [tag.id, tag])).values());
+  return combined.some(tag => tag.id === CENSORED_TAG_ID) ? [CENSORED_TAG] : combined;
 }
 
 export type CensoredReleases = Record<string, true>;
@@ -110,11 +107,11 @@ export function recodeCensoredAssignments(saved: TagAssignments, automatic: TagA
   ]));
 }
 
-export function automaticCensoredAssignments(questionId: string, restaurant: boolean): TagAssignments {
+export function automaticCensoredAssignments(questionId: string, restaurant: boolean, synced: TextAiSyncedCensoredResponse[] = []): TagAssignments {
   const responses = restaurant ? RESTAURANT_RESPONSES : SHARED_OUTLIER_RESPONSES;
-  return Object.fromEntries(responses.filter(isCensoredResponse).map(response => [
+  return Object.fromEntries([...responses.filter(isCensoredResponse).map(response => [
     restaurant ? `${questionId}:medium:${response.id}` : outlierResponseKey(questionId, response.id), response.subthemes,
-  ]));
+  ]), ...synced.filter(response => response.questionId === questionId).map(response => [outlierResponseKey(questionId, response.id), [CENSORED_TAG]])]);
 }
 export function restaurantResponses(assignments: TagAssignments, scope = `${CENSORED_DEMO_QUESTION_ID}:medium:`): TextAiSentimentEditableResponse[] {
   return RESTAURANT_RESPONSES.map(response => ({ ...response, subthemes: assignments[`${scope}${response.id}`] ?? response.subthemes }));
@@ -135,7 +132,7 @@ export function ensureOutlierTheme(groups: ThemeGroup[], fillDefaults = true, ce
   const existing = groups.find(group => group.id === 'outlier');
   const outlier = existing ? { ...existing, subThemes: [
     ...existing.subThemes,
-    ...OUTLIER_THEME_GROUP.subThemes.filter(sub => (fillDefaults || sub.id === 'censored') && !existing.subThemes.some(current => current.id === sub.id)),
+    ...OUTLIER_THEME_GROUP.subThemes.filter(sub => fillDefaults && !existing.subThemes.some(current => current.id === sub.id)),
   ] } : OUTLIER_THEME_GROUP;
   return [...groups.filter(group => group.id !== 'outlier'), { ...outlier, subThemes: outlier.subThemes.filter(sub => censoredEnabled || sub.id !== 'censored') }];
 }
@@ -156,18 +153,42 @@ export const SHARED_OUTLIER_RESPONSES: TextAiSentimentEditableResponse[] = share
 export function outlierResponseKey(questionId: string, responseId: number): string {
   return `${questionId}:outlier:${responseId}`;
 }
-export function getSharedOutlierResponses(questionId: string, assignments: TagAssignments, censoredEnabled = true): TextAiSentimentEditableResponse[] {
-  return applyCensoredClassificationPreference(SHARED_OUTLIER_RESPONSES.map(response => ({ ...response, subthemes: assignments[outlierResponseKey(questionId, response.id)] ?? response.subthemes })), censoredEnabled);
+export function getSyncedCensoredResponses(questionId: string, assignments: TagAssignments, synced: TextAiSyncedCensoredResponse[] = []): TextAiSentimentEditableResponse[] {
+  return synced.filter(response => response.questionId === questionId).map(response => ({ id: response.id, text: response.text, responseSentiment: 'neutral', responseSentimentOverride: null, subthemes: assignments[outlierResponseKey(questionId, response.id)] ?? [CENSORED_TAG] }));
+}
+export function getSharedOutlierResponses(questionId: string, assignments: TagAssignments, censoredEnabled = true, synced: TextAiSyncedCensoredResponse[] = []): TextAiSentimentEditableResponse[] {
+  return applyCensoredClassificationPreference([...SHARED_OUTLIER_RESPONSES.map(response => ({ ...response, subthemes: assignments[outlierResponseKey(questionId, response.id)] ?? response.subthemes })), ...getSyncedCensoredResponses(questionId, assignments, synced)], censoredEnabled);
 }
 export function censoredResponseReason(responseId: number): string {
   return sharedOutlierExamples[responseId - 100001]?.reason ?? CENSORED_REASONS[responseId] ?? 'Censored content';
 }
 
 /** The demo changes response data, never the dashboard's widget collection. */
-export function getDashboardExampleResponses(dashboardId: number, questionId: string, assignments: TagAssignments, censoredEnabled = true): TextAiSentimentEditableResponse[] {
+export function getDashboardExampleResponses(dashboardId: number, questionId: string, assignments: TagAssignments, censoredEnabled = true, synced: TextAiSyncedCensoredResponse[] = []): TextAiSentimentEditableResponse[] {
   return applyCensoredClassificationPreference(dashboardId === CENSORED_DEMO_DASHBOARD_ID
-    ? restaurantResponses(assignments, `${questionId}:medium:`)
-    : getSharedOutlierResponses(questionId, assignments), censoredEnabled);
+    ? [...restaurantResponses(assignments, `${questionId}:medium:`), ...getSyncedCensoredResponses(questionId, assignments, synced)]
+    : getSharedOutlierResponses(questionId, assignments, true, synced), censoredEnabled);
+}
+
+/** Prototype sync consumes explicit synthetic classification results, never reclassifies released records. */
+export function syncCensoredResponses(dashboard: TextAiDashboard, questionIds: string[], incoming: { id: string; text: string; censored: boolean }[], frames: CodeFrames): { dashboard: TextAiDashboard; codeFrames: CodeFrames } {
+  if (!isCensoredSubthemesEnabled(dashboard)) return { dashboard, codeFrames: frames };
+  const alreadyProcessed = new Set(dashboard.processedResponseIds ?? []);
+  const qualifying = incoming.filter(response => response.censored && !alreadyProcessed.has(response.id));
+  const synced = [...(dashboard.syncedCensoredResponses ?? [])];
+  const codeFrames = { ...frames };
+  for (const questionId of questionIds) {
+    const fresh = qualifying.filter(response => !synced.some(row => row.questionId === questionId && row.sourceId === response.id));
+    if (!fresh.length) continue;
+    for (const response of fresh) synced.push({ id: 200001 + Number(response.id.replace(/\D/g, '')), sourceId: response.id, questionId, text: response.text });
+    for (const scope of Object.keys(codeFrames).filter(key => key.startsWith(`${questionId}:`))) {
+      const groups = codeFrames[scope];
+      const outlier = groups.find(group => group.id === 'outlier');
+      const censored = OUTLIER_THEME_GROUP.subThemes.find(sub => sub.id === 'censored')!;
+      codeFrames[scope] = outlier ? groups.map(group => group.id !== 'outlier' || group.subThemes.some(sub => sub.id === 'censored') ? group : { ...group, subThemes: [...group.subThemes, censored] }) : [...groups, { ...OUTLIER_THEME_GROUP, subThemes: [censored] }];
+    }
+  }
+  return { dashboard: { ...dashboard, syncedCensoredResponses: synced }, codeFrames };
 }
 
 /** Adapt included Outlier responses to the same chart rows used by ordinary themes. */

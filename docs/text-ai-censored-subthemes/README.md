@@ -1,5 +1,9 @@
 # Censored sub-themes — prototype review checkpoint
 
+## Direct editing, deletion and sync lifecycle
+
+The latest [lifecycle checkpoint](lifecycle-2026-10-29.md) supersedes earlier confirmation and review-pop-up rules. Censored filters the regular response panel. Any selection containing Censored disables Add sub-theme with explanatory tooltip help; users remove its tags directly, individually or in bulk, before coding. Censored itself can be deleted and saved. It returns only when newly synced responses qualify, while saved releases remain protected during recoding. The native PRD includes these rules and intentionally omits sentiment editing requirements.
+
 ## Creation and configuration visibility — 29 October 2026
 
 Model setup now enables Censored classification by default, with an information tooltip explaining review and re-categorization and a visible warning that disabling it prevents enabling it later for that dashboard. Dashboards created without Censored omit its category and visibility preference through both settings routes. See [the creation checkpoint](model-setup-2026-10-29.md).

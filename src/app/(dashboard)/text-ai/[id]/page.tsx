@@ -1,6 +1,8 @@
 'use client';
 import type { TextAiAddedWidget } from '@/components/text-ai/TextAiDashboardCanvas';
-import { isCensoredSubthemesEnabled } from '@/data/text-ai-censored-subthemes';
+import { CENSORED_CONFIGURATION_EVENT, isCensoredSubthemesEnabled, syncCensoredResponses } from '@/data/text-ai-censored-subthemes';
+import { parseCodeFrames } from '@/data/text-ai-code-frame-drafts';
+import { MOCK_TEXT_AI_PENDING_RESPONSES } from '@/data/mock-text-ai-pending-responses';
 
 import { use, useEffect, useState } from 'react';
 import { EMPTY_TEXT_AI_FILTER, type TextAiResponseFilter } from '@/data/text-ai-widget-settings';
@@ -165,15 +167,21 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const currentDashboard = dashboard;
 
   function handleProcessResponses(nextFilters: TextAiSegmentFilterState, responseIds: string[]): void {
+    const key = `bi-stats-text-ai-configuration-v2:${numericId}`;
+    const raw = localStorage.getItem(key);
+    const configuration = raw ? JSON.parse(raw) : { assignments: {}, codeFrames: {}, censoredReleases: {} };
+    const synced = syncCensoredResponses(currentDashboard, availableQuestions.map(question => question.id), MOCK_TEXT_AI_PENDING_RESPONSES.filter(response => responseIds.includes(response.id)), parseCodeFrames(configuration.codeFrames));
+    localStorage.setItem(key, JSON.stringify({ ...configuration, codeFrames: synced.codeFrames }));
     const nextProcessedIds = [...new Set([...processedResponseIds, ...responseIds])];
     setSegmentFilters(nextFilters);
     setProcessedResponseIds(nextProcessedIds);
     saveRuntimeTextAiDashboard({
-      ...currentDashboard,
+      ...synced.dashboard,
       name,
       segmentFilters: nextFilters,
       processedResponseIds: nextProcessedIds,
     });
+    window.dispatchEvent(new CustomEvent(CENSORED_CONFIGURATION_EVENT));
   }
 
   function handleAddWidget(
@@ -244,6 +252,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
       />
       {collectionError&&<p role="alert">{collectionError}</p>}
       <TextAiDashboardCanvas
+        syncedCensoredResponses={dashboard.syncedCensoredResponses}
         censoredSubthemesEnabled={isCensoredSubthemesEnabled(dashboard)}
         dashboardId={numericId}
         dashboardFilter={responseFilter}

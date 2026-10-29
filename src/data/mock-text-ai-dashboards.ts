@@ -29,6 +29,8 @@ export interface TextAiDashboardCreationPreferences {
   themeModelingPrompt: string;
 }
 
+export interface TextAiSyncedCensoredResponse { id: number; sourceId: string; questionId: string; text: string; }
+
 export interface TextAiDashboard {
   id: number;
   name: string;
@@ -41,6 +43,7 @@ export interface TextAiDashboard {
   segmentFilters?: TextAiSegmentFilterState;
   /** Records already handled by the local Process Now simulation. */
   processedResponseIds?: string[];
+  syncedCensoredResponses?: TextAiSyncedCensoredResponse[];
   /** Preferences captured when the dashboard was created. */
   creationPreferences?: TextAiDashboardCreationPreferences;
 }

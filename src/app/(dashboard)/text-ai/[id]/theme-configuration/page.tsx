@@ -43,7 +43,7 @@ import {
   stageCodeFrame, summarizeCodeFrameDrafts, validateCodeFrameName,
   type CodeFrames, type CodeFrameDrafts, type SubTheme, type ThemeGroup, type ThemeTone,
 } from '@/data/text-ai-code-frame-drafts';
-import { CENSORED_DEMO_DASHBOARD_ID, CENSORED_TAG_ID, CENSORED_VISIBILITY_HELP, CENSORED_CONFIGURATION_EVENT, censoredResponseReason, ensureOutlierTheme, getSharedOutlierResponses, outlierResponseKey, RESTAURANT_THEME_GROUPS, RESTAURANT_RESPONSES, isCensoredResponse, addCensoredAwareTags, requiresCensoredRelease, parseCensoredReleases, rememberCensoredReleases, recodeCensoredAssignments, automaticCensoredAssignments, type CensoredReleases } from '@/data/text-ai-censored-subthemes';
+import { CENSORED_DEMO_DASHBOARD_ID, CENSORED_TAG_ID, CENSORED_VISIBILITY_HELP, CENSORED_CONFIGURATION_EVENT, ensureOutlierTheme, getSharedOutlierResponses, outlierResponseKey, RESTAURANT_THEME_GROUPS, RESTAURANT_RESPONSES, isCensoredResponse, containsCensoredResponse, addCensoredAwareTags, getSyncedCensoredResponses, parseCensoredReleases, rememberCensoredReleases, recodeCensoredAssignments, automaticCensoredAssignments, type CensoredReleases } from '@/data/text-ai-censored-subthemes';
 import { isCensoredSubthemesEnabled, applyCensoredClassificationPreference } from '@/data/text-ai-censored-subthemes';
 import styles from './ThemeConfiguration.module.css';
 
@@ -73,6 +73,10 @@ const WuModalHeader = dynamic(
 );
 const WuToggle = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
+  { ssr: false }
+);
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then(m => ({ default: m.WuTooltip })),
   { ssr: false }
 );
 const WuSelect = dynamic(
@@ -628,7 +632,7 @@ function ThemeGroupCard({ group, collapsed, onEditSubTheme, onDeleteTheme, onDel
                 onClick={() => onMoveSubTheme(subTheme)} aria-label={`Move sub-theme ${subTheme.name}`} title="Move">
                 <span className="wm-drive-file-move" aria-hidden />
               </button>
-              <button type="button" className={`${styles.editSubThemeButton} ${styles.deleteActionButton}`} disabled={protectedSubTheme}
+              <button type="button" className={`${styles.editSubThemeButton} ${styles.deleteActionButton}`}
                 onClick={() => onDeleteSubTheme(subTheme)} aria-label={`Delete sub-theme ${subTheme.name}`} title="Delete">
                 <span className="wm-delete" aria-hidden />
               </button>
@@ -654,10 +658,6 @@ export default function TextAiThemeConfigurationPage({
   const [selectedQuestionId, setSelectedQuestionId] = useState<string>(
     () => questions[0]?.id ?? ''
   );
-  const [censoredReviewOpen, setCensoredReviewOpen] = useState(false);
-  const [censoredSelection, setCensoredSelection] = useState<Set<number>>(new Set());
-  const [censoredSearch, setCensoredSearch] = useState('');
-  const [censoredPage, setCensoredPage] = useState(0);
   const [responseSubthemeFilters, setResponseSubthemeFilters] = useState<Set<string>>(() => new Set());
   const [responseTagCount, setResponseTagCount] = useState<number | 'all' | 'untagged'>('all');
   const [newestFirst, setNewestFirst] = useState(true);
@@ -713,7 +713,6 @@ export default function TextAiThemeConfigurationPage({
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [taggingResponseIds, setTaggingResponseIds] = useState<number[]>([]);
   const [tagPickerIds, setTagPickerIds] = useState<string[]>([]);
-  const [confirmCensoredAddition, setConfirmCensoredAddition] = useState(false);
   const tagSummary = useMemo(() => summarizeTagDrafts(tagDrafts), [tagDrafts]);
   const [savedCodeFrames, setSavedCodeFrames] = useState<CodeFrames>({});
   const [codeFrameDrafts, setCodeFrameDrafts] = useState<CodeFrameDrafts>({});
@@ -880,7 +879,7 @@ export default function TextAiThemeConfigurationPage({
     const savedFrame = codeFrameDrafts[tagScope]?.after ?? savedCodeFrames[tagScope];
     const source = ensureOutlierTheme(savedFrame ?? baseThemeGroups, !savedFrame, censoredEnabled);
     const currentAssignments = { ...savedTagAssignments, ...Object.fromEntries(Object.entries(tagDrafts).map(([key, value]) => [key, value.after])) };
-    const demoRows = isCensoredDemo ? applyCensoredClassificationPreference(RESTAURANT_RESPONSES.map(response => ({ ...response, subthemes: currentAssignments[(response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`)] ?? response.subthemes })), censoredEnabled) : getSharedOutlierResponses(selectedQuestionId, currentAssignments, censoredEnabled);
+    const demoRows = isCensoredDemo ? applyCensoredClassificationPreference(RESTAURANT_RESPONSES.map(response => ({ ...response, subthemes: currentAssignments[(response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`)] ?? response.subthemes })), censoredEnabled) : getSharedOutlierResponses(selectedQuestionId, currentAssignments, censoredEnabled, dashboard?.syncedCensoredResponses);
     const countBase = isCensoredDemo ? demoRows.length : questionVariant.responseCount + demoRows.length;
     return source.map((group) => {
       const original = THEME_GROUPS.find((item) => item.id === group.id);
@@ -898,7 +897,7 @@ export default function TextAiThemeConfigurationPage({
         }),
       };
     });
-  }, [baseThemeGroups, codeFrameDrafts, savedCodeFrames, tagScope, themePreferences, isCensoredDemo, censoredEnabled, savedTagAssignments, tagDrafts, selectedQuestionId, questionVariant.responseCount]);
+  }, [baseThemeGroups, codeFrameDrafts, savedCodeFrames, tagScope, themePreferences, isCensoredDemo, censoredEnabled, savedTagAssignments, tagDrafts, selectedQuestionId, questionVariant.responseCount, dashboard?.syncedCensoredResponses]);
   const codeFrameLabels = useMemo(() => new Map<string, string>(unfilteredThemeGroups.flatMap((group) =>
     group.subThemes.map((sub) => [`${group.id}:${sub.id}`, sub.name] as const))), [unfilteredThemeGroups]);
 
@@ -950,14 +949,15 @@ export default function TextAiThemeConfigurationPage({
           subthemes: editedSubthemes,
         };
       });
-      if (isCensoredDemo) return applyCensoredClassificationPreference(ordinaryResponses, censoredEnabled);
       const assignments = { ...savedTagAssignments, ...Object.fromEntries(Object.entries(tagDrafts).map(([key, draft]) => [key, draft.after])) };
-      return [...ordinaryResponses, ...getSharedOutlierResponses(selectedQuestionId, assignments, censoredEnabled).map(response => ({ ...response,
+      const extra = isCensoredDemo ? getSyncedCensoredResponses(selectedQuestionId, assignments, dashboard?.syncedCensoredResponses) : getSharedOutlierResponses(selectedQuestionId, assignments, censoredEnabled, dashboard?.syncedCensoredResponses);
+      return applyCensoredClassificationPreference([...ordinaryResponses, ...extra.map(response => ({ ...response,
         subthemes: response.subthemes.map(tag => ({ ...tag, label: codeFrameLabels.get(tag.id) ?? tag.label,
           sentiment: responseSentimentEdits[`${selectedQuestionId}:${response.id}`]?.subthemeSentiments[tag.id] ?? tag.sentiment })),
-      }))];
+      }))], censoredEnabled);
     },
     [
+      dashboard?.syncedCensoredResponses,
       appliedGranularity,
       censoredEnabled,
       questionVariant,
@@ -1108,6 +1108,7 @@ export default function TextAiThemeConfigurationPage({
       questionResponses.filter((response) => selectedResponseIds.has(response.id)),
     [questionResponses, selectedResponseIds]
   );
+  const selectionHasCensored = containsCensoredResponse(selectedResponses);
   const allVisibleResponsesSelected =
     visibleResponses.length > 0 &&
     visibleResponses.every((response) => selectedResponseIds.has(response.id));
@@ -1125,22 +1126,17 @@ export default function TextAiThemeConfigurationPage({
   }
 
   function openTagPicker(responseIds: number[]): void {
+    if (containsCensoredResponse(questionResponses.filter(response => responseIds.includes(response.id)))) return;
     setTaggingResponseIds(responseIds);
     setTagPickerIds([]);
-    setConfirmCensoredAddition(false);
   }
 
   const tagPickerTags: TextAiSentimentSubtheme[] = themeGroups.flatMap((group) => group.subThemes
       .filter((subtheme) => tagPickerIds.includes(`${group.id}:${subtheme.id}`))
       .map((subtheme) => ({ id: `${group.id}:${subtheme.id}`, label: subtheme.name, sentiment: 'neutral' as const })));
-  const censoredAdditionCount = questionResponses.filter(response => taggingResponseIds.includes(response.id) && requiresCensoredRelease(response.subthemes, tagPickerTags)).length;
 
-  function addResponseTags(confirmed = false): void {
-    if (!tagsReady || tagPickerTags.length === 0) return;
-    if (censoredAdditionCount > 0 && !confirmed) {
-      setConfirmCensoredAddition(true);
-      return;
-    }
+  function addResponseTags(): void {
+    if (!tagsReady || tagPickerTags.length === 0 || containsCensoredResponse(questionResponses.filter(response => taggingResponseIds.includes(response.id)))) return;
     setTagDrafts((current) => {
       let next = current;
       for (const response of questionResponses.filter((response) => taggingResponseIds.includes(response.id))) {
@@ -1148,13 +1144,12 @@ export default function TextAiThemeConfigurationPage({
         const existing = next[key]?.after ?? response.subthemes;
         const additions = tagPickerTags.filter((tag) => !existing.some((item) => item.id === tag.id))
           .map((tag) => next[key]?.before.find((item) => item.id === tag.id) ?? tag);
-        next = stageTagAssignment(next, key, response.subthemes, addCensoredAwareTags(existing, additions, true, confirmed));
+        next = stageTagAssignment(next, key, response.subthemes, addCensoredAwareTags(existing, additions));
       }
       return next;
     });
     setTaggingResponseIds([]);
-    setConfirmCensoredAddition(false);
-    setTagMessage(censoredAdditionCount ? 'Censored was removed and the selected sub-themes were added. Save to keep the release through future recoding.' : '');
+    setTagMessage('');
     setTagError('');
   }
 
@@ -1333,14 +1328,8 @@ export default function TextAiThemeConfigurationPage({
     );
   }
 
-  function openCensoredReview(): void {
-    setCensoredReviewOpen(true); setCensoredSelection(new Set()); setCensoredSearch(''); setCensoredPage(0);
-  }
   function toggleCodeFrameSelection(target: ApproveTarget): void {
     if (target.kind !== 'sub-theme') return;
-    if (target.themeId === 'outlier' && target.subThemeId === 'censored') {
-      openCensoredReview(); return;
-    }
     const key = getApproveTargetKey(target);
     const tagId = `${target.themeId}:${target.subThemeId}`;
     setSelectedCodeFrameKeys(current => { const next = new Set(current); if (next.has(key)) next.delete(key); else next.add(key); return next; });
@@ -1466,8 +1455,8 @@ export default function TextAiThemeConfigurationPage({
 
     try {
       const latest = readSavedConfiguration(configurationStorageKey, tagStorageKey);
-      const automatic = censoredEnabled && (recodeScope === 'all-sub-themes' || (recodeScope === 'custom' && customRecodeSubThemeIds.includes(CENSORED_TAG_ID)))
-        ? automaticCensoredAssignments(selectedQuestionId, isCensoredDemo) : {};
+      const automatic = censoredEnabled && themeGroups.some(group => group.id === 'outlier' && group.subThemes.some(sub => sub.id === 'censored')) && (recodeScope === 'all-sub-themes' || (recodeScope === 'custom' && customRecodeSubThemeIds.includes(CENSORED_TAG_ID)))
+        ? automaticCensoredAssignments(selectedQuestionId, isCensoredDemo, dashboard?.syncedCensoredResponses) : {};
       const assignments = recodeCensoredAssignments(latest.assignments, automatic, latest.censoredReleases);
       window.localStorage.setItem(configurationStorageKey, JSON.stringify({ ...latest, assignments }));
       setSavedTagAssignments(assignments);
@@ -1693,22 +1682,33 @@ export default function TextAiThemeConfigurationPage({
                   Clear
                 </button>
               ) : null}
+              {selectionHasCensored && <button type="button" className={styles.updateSentimentButton} disabled={!tagsReady} onClick={() => {
+                selectedResponses.filter(isCensoredResponse).forEach(response => removeResponseTag(response, CENSORED_TAG_ID));
+              }}>Remove Censored tag</button>}
+              <WuTooltip content={selectionHasCensored ? 'Remove the Censored sub-theme from all selected responses before adding another sub-theme.' : undefined} position="top">
+              <span className={styles.disabledAction} tabIndex={selectionHasCensored ? 0 : undefined} aria-label={selectionHasCensored ? 'Why Add sub-theme is disabled' : undefined}>
               <button
                 type="button"
                 className={styles.updateSentimentButton}
-                disabled={!tagsReady || selectedResponses.length === 0}
+                disabled={!tagsReady || selectedResponses.length === 0 || selectionHasCensored}
                 onClick={() => openTagPicker(selectedResponses.map((response) => response.id))}
               >
                 <span className="wm-add" aria-hidden /> Add sub-theme
               </button>
+              </span>
+              </WuTooltip>
+              <WuTooltip content={selectionHasCensored ? 'Remove the Censored sub-theme from all selected responses before updating sentiment.' : undefined} position="top">
+              <span className={styles.disabledAction} tabIndex={selectionHasCensored ? 0 : undefined} aria-label={selectionHasCensored ? 'Why Update sentiment is disabled' : undefined}>
               <button
                 type="button"
                 className={styles.updateSentimentButton}
-                disabled={selectedResponses.length === 0}
+                disabled={selectedResponses.length === 0 || selectionHasCensored}
                 onClick={() => setSentimentEditorOpen(true)}
               >
                 Update sentiment
               </button>
+              </span>
+              </WuTooltip>
             </div>
           </div>
 
@@ -1819,6 +1819,7 @@ export default function TextAiThemeConfigurationPage({
             <p id="code-frame-action-description">Remove the selected items from your code frame? Deleting a theme also removes its sub-themes. Associated response tags will be removed; the original response text will remain.</p>
             <ul className={styles.configurationItemList}>{deleteTargets.map((target) => <li key={getApproveTargetKey(target)}>{target.name}</li>)}</ul>
             <p>{deletionAffectedCount} response{deletionAffectedCount === 1 ? '' : 's'} affected.</p>
+            {deletedSubThemeIds.includes(CENSORED_TAG_ID) && <p>Censored can return when newly synced responses qualify. Responses whose Censored tags were removed will remain released.</p>}
             <p className={styles.tagConfirmationHint}>This deletion stays unsaved until you select Save. Use Cancel to restore your last saved configuration.</p>
           </div> : <div className={styles.configurationForm}>
             <p id="code-frame-action-description">{configurationAction === 'merge'
@@ -1884,39 +1885,10 @@ export default function TextAiThemeConfigurationPage({
         </WuModalFooter>
       </WuModal>
 
-      <WuModal open={censoredReviewOpen} onOpenChange={setCensoredReviewOpen} size="lg" variant="action" aria-describedby="censored-review-description">
-        <DialogTitle className={styles.srOnly}>Review censored responses</DialogTitle>
-        <WuModalHeader>Outlier / Censored</WuModalHeader>
+      <WuModal open={taggingResponseIds.length > 0} onOpenChange={(open) => { if (!open) { setTaggingResponseIds([]); } }} size="md" variant="action" aria-describedby="tag-picker-description">
+        <DialogTitle className={styles.srOnly}>Tag responses</DialogTitle>
+        <WuModalHeader>Tag responses</WuModalHeader>
         <WuModalContent>
-          <p id="censored-review-description">Censored responses always appear in Theme configuration. {themePreferences.showCensoredSubthemes ? 'They are also included in the dashboard.' : 'They are hidden from the dashboard.'} Remove the Censored tag to re-categorize responses, then Save your theme changes. Removing censorship does not assign any other sub-theme.</p>
-          <input className={styles.censoredSearch} type="search" aria-label="Search censored responses" placeholder="Search censored responses" value={censoredSearch} onChange={event => { setCensoredSearch(event.target.value); setCensoredPage(0); }} />
-          <label className={styles.selectAllResponses}><input type="checkbox" checked={questionResponses.filter(isCensoredResponse).length > 0 && questionResponses.filter(isCensoredResponse).every(response => censoredSelection.has(response.id))} onChange={event => setCensoredSelection(event.target.checked ? new Set(questionResponses.filter(isCensoredResponse).map(response => response.id)) : new Set())} /> Select all censored responses ({questionResponses.filter(isCensoredResponse).length})</label>
-          <p role="status">{censoredSelection.size} selected across all pages</p>
-          <div className={styles.censoredReviewList}>
-            {questionResponses.filter(isCensoredResponse).filter(response => response.text.toLowerCase().includes(censoredSearch.toLowerCase())).slice(censoredPage * 20, (censoredPage + 1) * 20).map(response => <article className={`${styles.responseCard} ${censoredSelection.has(response.id) ? styles.responseCardSelected : ''}`} key={response.id}>
-              <label className={styles.responseText}><input type="checkbox" aria-label={`Select censored response ${response.id}`} checked={censoredSelection.has(response.id)} onChange={event => setCensoredSelection(current => { const next = new Set(current); if (event.target.checked) next.add(response.id); else next.delete(response.id); return next; })} /><span>{response.text}</span></label>
-              <small>{censoredResponseReason(response.id)} · Censored</small>
-            </article>)}
-            {questionResponses.filter(isCensoredResponse).length === 0 && <p>No censored responses remain. Save your changes to update the dashboard.</p>}
-          </div>
-          <div className={styles.censoredReviewPaging}><button type="button" disabled={censoredPage === 0} onClick={() => setCensoredPage(page => page - 1)}>Previous</button><span>Page {censoredPage + 1}</span><button type="button" disabled={(censoredPage + 1) * 20 >= questionResponses.filter(isCensoredResponse).filter(response => response.text.toLowerCase().includes(censoredSearch.toLowerCase())).length} onClick={() => setCensoredPage(page => page + 1)}>Next</button></div>
-        </WuModalContent>
-        <WuModalFooter><WuButton variant="secondary" onClick={() => setCensoredReviewOpen(false)}>Close</WuButton><WuButton variant="primary" disabled={!tagsReady || censoredSelection.size === 0} onClick={() => {
-          setTagDrafts(current => { let next = current; for (const response of questionResponses.filter(response => censoredSelection.has(response.id) && isCensoredResponse(response))) next = stageTagAssignment(next, (response.id >= 100001 ? outlierResponseKey(selectedQuestionId, response.id) : `${tagScope}${response.id}`), response.subthemes, response.subthemes.filter(tag => tag.id !== CENSORED_TAG_ID)); return next; });
-          setCensoredSelection(new Set()); setSelectedResponseIds(new Set()); setResponseSubthemeFilters(new Set()); setSelectedCodeFrameKeys(new Set()); setRawDataPage(0);
-          setTagMessage('Censorship removal is pending. Review the responses in the regular panel and Save to update the dashboard.');
-        }}>Remove censorship ({censoredSelection.size})</WuButton></WuModalFooter>
-      </WuModal>
-
-      <WuModal open={taggingResponseIds.length > 0} onOpenChange={(open) => { if (!open) { setTaggingResponseIds([]); setConfirmCensoredAddition(false); } }} size="md" variant="action" aria-describedby="tag-picker-description">
-        <DialogTitle className={styles.srOnly}>{confirmCensoredAddition ? 'Remove Censored tag?' : 'Tag responses'}</DialogTitle>
-        <WuModalHeader>{confirmCensoredAddition ? 'Remove Censored tag?' : 'Tag responses'}</WuModalHeader>
-        <WuModalContent>
-          {confirmCensoredAddition ? <div className={styles.tagConfirmationContent}>
-            <p id="tag-picker-description">Adding the selected sub-themes will remove the Censored tag from {censoredAdditionCount} response{censoredAdditionCount === 1 ? '' : 's'}. Do you want to proceed?</p>
-            <p>Proceed removes Censored and adds the selected sub-themes together. Save commits the release and keeps Censored from returning during recoding.</p>
-            <p>Cancel leaves all response tags unchanged.</p>
-          </div> : <>
           <p id="tag-picker-description" className={styles.tagPickerDescription}>Choose sub-themes for {taggingResponseIds.length} response{taggingResponseIds.length === 1 ? '' : 's'}. Changes stay unsaved until you select Save.</p>
           <div className={styles.tagPickerGroups}>
             {themeGroups.map((group) => <fieldset key={group.id}>
@@ -1933,11 +1905,10 @@ export default function TextAiThemeConfigurationPage({
               })}
             </fieldset>)}
           </div>
-          </>}
         </WuModalContent>
         <WuModalFooter>
-          <WuButton variant="secondary" onClick={() => { setTaggingResponseIds([]); setConfirmCensoredAddition(false); }}>Cancel</WuButton>
-          <WuButton variant="primary" disabled={!tagsReady || tagPickerIds.length === 0} onClick={() => addResponseTags(confirmCensoredAddition)}>{confirmCensoredAddition ? 'Proceed' : 'Add tags'}</WuButton>
+          <WuButton variant="secondary" onClick={() => { setTaggingResponseIds([]); }}>Cancel</WuButton>
+          <WuButton variant="primary" disabled={!tagsReady || tagPickerIds.length === 0} onClick={addResponseTags}>Add tags</WuButton>
         </WuModalFooter>
       </WuModal>
 
@@ -1988,7 +1959,7 @@ export default function TextAiThemeConfigurationPage({
               Approve
             </button>
           ) : null}
-          <button type="button" className={styles.selectionDeleteAction} disabled={protectedSelection} onClick={() => {
+          <button type="button" className={styles.selectionDeleteAction} onClick={() => {
             setDeleteTargets(selectedCodeFrameTargets); setConfigurationAction('delete');
           }}>
             Delete

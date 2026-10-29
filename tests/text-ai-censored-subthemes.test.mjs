@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CENSORED_TAG, CENSORED_TAG_ID, RESTAURANT_RESPONSES, restaurantResponses, isCensoredResponse, visibleCensoredResponses, addCensoredAwareTags, getDashboardExampleResponses, getOutlierDashboardRows, requiresCensoredRelease, parseCensoredReleases, rememberCensoredReleases, recodeCensoredAssignments, automaticCensoredAssignments } from '../src/data/text-ai-censored-subthemes.ts';
+import { CENSORED_TAG, CENSORED_TAG_ID, RESTAURANT_RESPONSES, restaurantResponses, isCensoredResponse, visibleCensoredResponses, addCensoredAwareTags, getDashboardExampleResponses, getOutlierDashboardRows, parseCensoredReleases, rememberCensoredReleases, recodeCensoredAssignments, automaticCensoredAssignments } from '../src/data/text-ai-censored-subthemes.ts';
 import { stageTagAssignment, commitTagDrafts } from '../src/data/text-ai-tag-drafts.ts';
 
 test('automatic censorship is exclusive and does not censor actionable negative feedback', () => {
@@ -17,18 +17,17 @@ test('hidden mode excludes entire responses even when they carry additional tags
   assert.equal(tagged.subthemes.length, 2);
   assert.equal(visibleCensoredResponses([tagged], false).length, 0);
   assert.equal(visibleCensoredResponses([tagged], true).length, 1);
-  assert.deepEqual(addCensoredAwareTags([other], [CENSORED_TAG], false), [CENSORED_TAG]);
+  assert.deepEqual(addCensoredAwareTags([other], [CENSORED_TAG]), [CENSORED_TAG]);
 });
 
-test('adding a regular tag to Censored requires confirmation and replaces Censored atomically', () => {
+test('adding another tag requires explicit prior removal of Censored', () => {
   const ordinary = RESTAURANT_RESPONSES[0].subthemes[0];
   const before = [CENSORED_TAG];
-  assert.equal(requiresCensoredRelease(before, [ordinary]), true);
-  assert.throws(() => addCensoredAwareTags(before, [ordinary], true), /Confirm/);
+  assert.throws(() => addCensoredAwareTags(before, [ordinary]), /Remove Censored/);
   assert.deepEqual(before, [CENSORED_TAG]);
-  assert.deepEqual(addCensoredAwareTags(before, [ordinary], true, true), [ordinary]);
-  assert.deepEqual(addCensoredAwareTags([ordinary], [ordinary], true), [ordinary]);
-  assert.equal(requiresCensoredRelease([CENSORED_TAG, ordinary], [ordinary]), false);
+  assert.deepEqual(addCensoredAwareTags(before.filter(tag => tag.id !== CENSORED_TAG_ID), [ordinary]), [ordinary]);
+  assert.deepEqual(addCensoredAwareTags([ordinary], [ordinary]), [ordinary]);
+  assert.throws(() => addCensoredAwareTags([CENSORED_TAG, ordinary], [ordinary]), /Remove Censored/);
 });
 
 test('saved individual and bulk releases survive automatic recoding and serialization', () => {
