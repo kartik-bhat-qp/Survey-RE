@@ -12,6 +12,9 @@ export function getSurveyEditorPhaseFromPathname(
   if (pathname === `${base}/distribute` || pathname.startsWith(`${base}/distribute/`)) {
     return 'distribute';
   }
+  if (pathname === `${base}/collectors` || pathname.startsWith(`${base}/collectors/`)) {
+    return 'collectors';
+  }
   if (pathname === `${base}/analytics` || pathname.startsWith(`${base}/analytics/`)) {
     return 'analytics';
   }
@@ -28,6 +31,9 @@ export function getSurveyEditorPhasePath(
   const base = `/surveys/${surveyId}`;
   if (phase === 'distribute') {
     return getCanonicalDistributePath(surveyId, getDefaultDistributeRouteState());
+  }
+  if (phase === 'collectors') {
+    return `${base}/collectors`;
   }
   if (phase === 'analytics') {
     return `${base}/analytics`;

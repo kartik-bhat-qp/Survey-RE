@@ -1,0 +1,629 @@
+<!doctype html>
+<meta charset="utf-8"><style data-dc-design-system-vars>@layer{:root{--wu-color-gray-lead:#545e6b;--wu-color-gray-subtle:#9b9b9b;--wu-color-gray-switcher:#404040;--wu-color-gray-notification:#555555;--wu-color-gray-footer:#a3a3a3;--wu-color-gray-40:#d8d8d8;--wu-color-gray-25:#e8e8e8;--wu-color-gray-20:#0000000f;--wu-color-gray-10:#f5f5f5;--wu-color-blue-p:#1b87e6;--wu-color-blue-p-hover:#54a5ec;--wu-color-blue-p-hover-deep:#035ebf;--wu-color-blue-q:#1b3380;--wu-color-blue-deep:#215694;--wu-color-blue-soft:#ccf0ff;--wu-color-blue-focus:#8dc3f2;--wu-color-blue-sidebar:#eef3fb;--wu-color-blue-sidebar-hover:#dde4f1;--wu-color-blue-switcher:#001840;--wu-color-orange-deep:#f58300;--wu-color-orange-soft:#f5a300;--wu-color-yellow-deep:#9f6000;--wu-color-yellow-soft:#feefb3;--wu-color-red-deep:#cc0000;--wu-color-red-soft:#ffbaba;--wu-color-maroon:#a50000;--wu-color-maroon-hover:#fecaca;--wu-color-green-deep:#227700;--wu-color-green-soft:#dff2bf;--wu-bg:#ffffff;--wu-fg:#545e6b;--wu-muted:#eeeeee;--wu-muted-fg:#9b9b9b;--wu-primary:#1b87e6;--wu-primary-fg:#ffffff;--wu-secondary:#1b3380;--wu-secondary-fg:#ffffff;--wu-accent:#f5a300;--wu-accent-fg:#ffffff;--wu-error:#cc0000;--wu-error-fg:#ffffff;--wu-border:#d8d8d8;--wu-chart-qualitative-1:#4c5b94;--wu-chart-qualitative-2:#5b7aae;--wu-chart-qualitative-3:#409eb5;--wu-chart-qualitative-4:#40b59e;--wu-chart-qualitative-5:#60c790;--wu-chart-qualitative-6:#9ad69a;--wu-chart-qualitative-7:#b3bd56;--wu-chart-qualitative-8:#dd8f40;--wu-chart-qualitative-9:#ce6550;--wu-chart-qualitative-10:#ae4c3d;--wu-chart-qualitative-11:#8f3328;--wu-chart-qualitative-12:#985d75;--wu-chart-qualitative-13:#b181a8;--wu-chart-qualitative-14:#c5a0c2;--wu-chart-qualitative-15:#dac2e0;--wu-chart-qualitative-16:#e3d9e8;--wu-chart-blue-sequential-1:#ebf8ff;--wu-chart-blue-sequential-2:#d7efff;--wu-chart-blue-sequential-3:#c2deff;--wu-chart-blue-sequential-4:#aad0ff;--wu-chart-blue-sequential-5:#94c1f3;--wu-chart-blue-sequential-6:#7db2e7;--wu-chart-blue-sequential-7:#67a3db;--wu-chart-blue-sequential-8:#5194cf;--wu-chart-blue-sequential-9:#3b85c3;--wu-chart-blue-sequential-10:#2576b7;--wu-chart-blue-sequential-11:#256cac;--wu-chart-blue-sequential-12:#1a60a6;--wu-chart-blue-sequential-13:#184994;--wu-chart-blue-sequential-14:#1c337f;--wu-chart-blue-sequential-15:#0d2163;--wu-chart-blue-sequential-16:#00083d;--wu-chart-green-sequential-1:#e0f9ed;--wu-chart-green-sequential-2:#c4f3dc;--wu-chart-green-sequential-3:#a8eccc;--wu-chart-green-sequential-4:#8de5bd;--wu-chart-green-sequential-5:#78ddb1;--wu-chart-green-sequential-6:#62d3a3;--wu-chart-green-sequential-7:#4cc996;--wu-chart-green-sequential-8:#3abf8a;--wu-chart-green-sequential-9:#35af7f;--wu-chart-green-sequential-10:#329d75;--wu-chart-green-sequential-11:#308a6a;--wu-chart-green-sequential-12:#2d7a60;--wu-chart-green-sequential-13:#286a55;--wu-chart-green-sequential-14:#255c4b;--wu-chart-green-sequential-15:#1f4b3e;--wu-chart-green-sequential-16:#1b3d34;--wu-chart-red-sequential-1:#fee9ec;--wu-chart-red-sequential-2:#ffd2d8;--wu-chart-red-sequential-3:#ffbbc4;--wu-chart-red-sequential-4:#ffa6b3;--wu-chart-red-sequential-5:#fb97a5;--wu-chart-red-sequential-6:#f78998;--wu-chart-red-sequential-7:#f37c8c;--wu-chart-red-sequential-8:#ee6f80;--wu-chart-red-sequential-9:#e76172;--wu-chart-red-sequential-10:#e15466;--wu-chart-red-sequential-11:#da465b;--wu-chart-red-sequential-12:#d33b50;--wu-chart-red-sequential-13:#bc3548;--wu-chart-red-sequential-14:#a73343;--wu-chart-red-sequential-15:#91313e;--wu-chart-red-sequential-16:#7d2d38;--wu-chart-orange-sequential-1:#fdede5;--wu-chart-orange-sequential-2:#fcdfcf;--wu-chart-orange-sequential-3:#fbcfba;--wu-chart-orange-sequential-4:#fac5ab;--wu-chart-orange-sequential-5:#f7b694;--wu-chart-orange-sequential-6:#f6ab85;--wu-chart-orange-sequential-7:#f79d70;--wu-chart-orange-sequential-8:#f6915f;--wu-chart-orange-sequential-9:#ef8450;--wu-chart-orange-sequential-10:#e37944;--wu-chart-orange-sequential-11:#db713c;--wu-chart-orange-sequential-12:#d06530;--wu-chart-orange-sequential-13:#c95e29;--wu-chart-orange-sequential-14:#bd521c;--wu-chart-orange-sequential-15:#b24610;--wu-chart-orange-sequential-16:#aa3f08;--wu-chart-red-divergent-1:#661200;--wu-chart-red-divergent-2:#a11c00;--wu-chart-red-divergent-3:#d2300f;--wu-chart-red-divergent-4:#df4828;--wu-chart-red-divergent-5:#eb6a4a;--wu-chart-red-divergent-6:#f4896c;--wu-chart-red-divergent-7:#ffc4b3;--wu-chart-red-divergent-8:#ffe2d9;--wu-chart-divergent-neutral:#f5f5f5;--wu-chart-blue-divergent-1:#dbd9e9;--wu-chart-blue-divergent-2:#b7b5d4;--wu-chart-blue-divergent-3:#9392bf;--wu-chart-blue-divergent-4:#7070aa;--wu-chart-blue-divergent-5:#4a5195;--wu-chart-blue-divergent-6:#1b3380;--wu-chart-blue-divergent-7:#182d72;--wu-chart-blue-divergent-8:#122254;--wu-color-nps-detractor:#f85271;--wu-color-nps-passive:#f1da7e;--wu-color-nps-promoter:#42bd84;--wu-color-sentiment-negative:#f85271;--wu-color-sentiment-slightly-negative:#f69a79;--wu-color-sentiment-neutral:#f1da7e;--wu-color-sentiment-slightly-positive:#94d08b;--wu-color-sentiment-positive:#42bd84;--wu-color-sentiment-no-sentiment:#e0e0e0;--wu-shadow:0 10px 15px -3px #0000001a, 0 4px 6px -4px #0000001a;--space-0\.5:0.125rem;--space-1:0.25rem;--space-1\.5:0.375rem;--space-2:0.5rem;--space-2\.5:0.625rem;--space-3:0.75rem;--space-4:1rem;--space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-12:3rem;--space-16:4rem;--wu-radius:0.25rem;--radius-sm:0.125rem;--radius-md:0.375rem;--radius-lg:0.5rem;--radius-xl:0.75rem;--radius-full:9999px;--wu-z-base:0;--wu-z-sticky:10;--wu-z-overlay:20;--wu-z-modal:50;--wu-z-dropdown:50;--wu-z-toast:50;--wu-z-tooltip:50;--font-sans:"Fira Sans", ui-sans-serif, system-ui, sans-serif;--font-icon:"wu-icon";--text-display-1:300 48px/56px var(--font-sans);--text-display-2:400 40px/48px var(--font-sans);--text-heading-1:400 32px/40px var(--font-sans);--text-heading-2:400 24px/32px var(--font-sans);--text-heading-3:500 18px/32px var(--font-sans);--text-heading-4:500 16px/24px var(--font-sans);--text-body-1:400 16px/24px var(--font-sans);--text-body-2:400 14px/16px var(--font-sans);--text-body-3:400 12px/16px var(--font-sans);--text-sub-1:400 16px/24px var(--font-sans);--text-sub-2:400 14px/16px var(--font-sans);--text-sub-3:400 12px/16px var(--font-sans);}}</style>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Collectors prototype</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/wickui/components/bundle.css">
+<script src="ds/wickui/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600&amp;display=swap">
+<style>
+@font-face{font-family:'wu-icon';src:url("ds/wickui/fonts/wu-icon.woff2") format("woff2");font-display:block}
+:root{--wu-color-gray-lead:#545e6b;--wu-color-gray-subtle:#9b9b9b;--wu-color-gray-switcher:#404040;--wu-color-gray-notification:#555555;--wu-color-gray-40:#d8d8d8;--wu-color-gray-25:#e8e8e8;--wu-color-gray-20:#eeeeee;--wu-color-gray-10:#f5f5f5;--wu-color-blue-p:#1b87e6;--wu-color-blue-p-hover:#54a5ec;--wu-color-blue-p-hover-deep:#045ebf;--wu-color-blue-q:#1b3380;--wu-color-blue-deep:#215694;--wu-color-blue-soft:#ccf0ff;--wu-color-blue-focus:#8dc3f2;--wu-color-blue-sidebar:#eef3fb;--wu-color-blue-sidebar-hover:#dde4f1;--wu-color-blue-switcher:#001840;--wu-color-orange-deep:#f58300;--wu-color-orange-soft:#f5a300;--wu-color-yellow-deep:#9f6000;--wu-color-yellow-soft:#feefb3;--wu-color-red-deep:#cc0000;--wu-color-red-soft:#ffbaba;--wu-color-green-deep:#227700;--wu-color-green-soft:#dff2bf;--wu-radius:4px;--wu-shadow:0 2px 8px rgba(0,0,0,.12)}
+body{margin:0;background:#f5f5f5;font-family:'Fira Sans',sans-serif;font-weight:300;color:#545e6b}
+a{color:#045ebf}a:hover{color:#1b3380}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #f5f5f5; font-family: 'Fira Sans', sans-serif; color: #545e6b; font-size: 14px; position: relative">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; min-height: 48px; background: #001840; color: #ffffff">
+  <div style="display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; width: 220px; box-sizing: border-box; background: #1b87e6; font-weight: 500; font-size: 16px"><span class="wp-surveys" aria-hidden="true"></span>Surveys<span class="wm-arrow-drop-down" aria-hidden="true" style="margin-left: auto"></span></div>
+  <nav aria-label="Breadcrumb" style="display: flex; align-items: center; gap: 8px; padding: 0 20px; flex: 1 1 360px; min-width: 0; font-weight: 400"><span>My Surveys</span><span class="wm-chevron-right" aria-hidden="true"></span><span style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Texas SNAP Food Restriction Waiver – Recipient Survey 2026</span></nav>
+  <div style="display: flex; align-items: center; gap: 12px; padding: 0 16px">
+    <x-import component-from-global-scope="WickUI.WuButton" color="upgrade" size="sm" shape="rounded">Upgrade now</x-import>
+    <span class="wm-help" aria-hidden="true" style="font-size: 22px"></span>
+    <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: #ffffff; color: #1b3380; font-weight: 500; font-size: 12px">KB</span>
+  </div>
+</header>
+
+<nav aria-label="Survey sections" style="display: flex; gap: 28px; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #d8d8d8; font-weight: 400">
+  <span style="padding: 12px 0">Edit</span>
+  <button type="button" onClick="{{goList}}" aria-current="page" style="padding: 12px 0; color: #1b87e6; background: transparent; border: none; border-bottom: 2px solid #1b87e6; font-size: 14px; font-weight: 500; cursor: pointer">Distribute</button>
+  <span style="padding: 12px 0">Analytics</span>
+  <span style="padding: 12px 0">Integration</span>
+</nav>
+
+<!-- ============ LIST ============ -->
+<sc-if value="{{isList}}" hint-placeholder-val="{{true}}">
+<main style="max-width: 1280px; margin: 0 auto; padding: 28px 24px 64px; display: flex; flex-direction: column; gap: 20px">
+
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 500; color: #1b3380">Collectors</h1>
+      <p style="margin: 0; color: #555555; max-width: 640px">Each collector is one way of sending this survey, with its own link, settings and response tracking.</p>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap">
+      <x-import component-from-global-scope="WickUI.WuButton" variant="outlined" color="neutral" on-click="{{compare}}">Compare in Analytics</x-import>
+      <x-import component-from-global-scope="WickUI.WuButton" on-click="{{goAdd}}">Add collector</x-import>
+    </div>
+  </div>
+
+  <section aria-label="Response summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px">
+    <div style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; padding: 16px; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 12px; color: #555555">Total responses</span>
+      <span style="font-size: 28px; font-weight: 500; color: #1b3380">{{totalResponses}}</span>
+      <span style="font-size: 12px; color: #555555">Across {{counts.all}} collectors</span>
+    </div>
+    <div style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; padding: 16px; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 12px; color: #555555">Open collectors</span>
+      <span style="font-size: 28px; font-weight: 500; color: #1b3380">{{counts.open}}</span>
+      <span style="font-size: 12px; color: #555555">{{counts.scheduled}} scheduled · {{counts.closed}} closed</span>
+    </div>
+    <div style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; padding: 16px; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 12px; color: #555555">Completion rate</span>
+      <span style="font-size: 28px; font-weight: 500; color: #1b3380">71%</span>
+      <span style="font-size: 12px; color: #555555">Started vs. completed</span>
+    </div>
+    <div style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; padding: 16px; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 12px; color: #555555">Next scheduled send</span>
+      <span style="font-size: 28px; font-weight: 500; color: #1b3380">Nov 4</span>
+      <span style="font-size: 12px; color: #555555">Email · 9:00 AM CT</span>
+    </div>
+  </section>
+
+  <section aria-label="Collectors" style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; display: flex; flex-direction: column">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #d8d8d8">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <sc-for list="{{filters}}" as="f" hint-placeholder-count="4">
+          <x-import component-from-global-scope="WickUI.WuChip" selected="{{f.selected}}" variant="{{f.variant}}" shape="rounded" on-click="{{f.pick}}">{{f.label}}</x-import>
+        </sc-for>
+      </div>
+      <label style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid #d8d8d8; border-radius: 4px; min-width: 240px; color: #555555"><span class="wm-search" aria-hidden="true" style="font-size: 18px"></span><input type="search" placeholder="Search collectors" aria-label="Search collectors" value="{{query}}" onChange="{{onQuery}}" style="border: none; outline: none; font: inherit; color: #545e6b; flex: 1; min-width: 0; background: transparent"></label>
+    </div>
+
+    <div style="overflow-x: auto">
+      <table style="width: 100%; min-width: 900px; border-collapse: collapse">
+        <thead>
+          <tr style="background: #f5f5f5; text-align: left; font-size: 12px; color: #404040">
+            <th scope="col" style="padding: 10px 16px; font-weight: 500">Collector</th>
+            <th scope="col" style="padding: 10px 16px; font-weight: 500">Status</th>
+            <th scope="col" style="padding: 10px 16px; font-weight: 500; text-align: right">Responses</th>
+            <th scope="col" style="padding: 10px 16px; font-weight: 500">Created</th>
+            <th scope="col" style="padding: 10px 16px; font-weight: 500">Closes</th>
+            <th scope="col" style="padding: 10px 16px; font-weight: 500; text-align: right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+          <tr style="border-top: 1px solid #eeeeee">
+            <td style="padding: 12px 16px">
+              <div style="display: flex; gap: 12px; align-items: center">
+                <span style="{{r.iconStyle}}"><span class="{{r.typeIcon}}" aria-hidden="true"></span></span>
+                <div style="display: flex; flex-direction: column; gap: 2px; align-items: flex-start">
+                  <button type="button" onClick="{{r.open}}" style="padding: 0; border: none; background: transparent; color: #045ebf; font-size: 14px; font-weight: 500; cursor: pointer; text-align: left">{{r.name}}</button>
+                  <span style="font-size: 12px; color: #555555">{{r.typeLabel}} · {{r.sub}}</span>
+                </div>
+              </div>
+            </td>
+            <td style="padding: 12px 16px"><span style="{{r.statusStyle}}"><span class="{{r.statusIcon}}" aria-hidden="true"></span>{{r.statusLabel}}</span></td>
+            <td style="padding: 12px 16px; text-align: right; font-weight: 500; color: #404040">{{r.responsesText}}</td>
+            <td style="padding: 12px 16px">{{r.created}}</td>
+            <td style="padding: 12px 16px">{{r.closes}}</td>
+            <td style="padding: 12px 16px; text-align: right; white-space: nowrap">
+              <button type="button" onClick="{{r.open}}" style="border: none; background: transparent; color: #045ebf; font-size: 14px; cursor: pointer; padding: 4px 8px">Manage</button>
+              <button type="button" onClick="{{r.toggle}}" style="border: none; background: transparent; color: #045ebf; font-size: 14px; cursor: pointer; padding: 4px 8px">{{r.toggleLabel}}</button>
+            </td>
+          </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      <sc-if value="{{noRows}}" hint-placeholder-val="{{false}}">
+        <div style="padding: 40px 16px; text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center">
+          <span style="font-weight: 500; color: #404040">No collectors found</span>
+          <span style="color: #555555">Try another filter or search term.</span>
+        </div>
+      </sc-if>
+    </div>
+  </section>
+
+  <x-import component-from-global-scope="WickUI.WuAlert" variant="info">All collectors feed one dataset. Filter Analytics by collector to compare channels.</x-import>
+</main>
+</sc-if>
+
+<!-- ============ ADD ============ -->
+<sc-if value="{{isAdd}}" hint-placeholder-val="{{false}}">
+<main style="max-width: 1120px; margin: 0 auto; padding: 24px 24px 64px; display: flex; flex-direction: column; gap: 20px">
+  <button type="button" onClick="{{goList}}" style="display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; border: none; background: transparent; color: #045ebf; font-size: 14px; cursor: pointer; padding: 0"><span class="wm-arrow-back" aria-hidden="true"></span>Back to collectors</button>
+  <div style="display: flex; flex-direction: column; gap: 6px">
+    <h1 style="margin: 0; font-size: 24px; font-weight: 500; color: #1b3380">How do you want to collect responses?</h1>
+    <p style="margin: 0; color: #555555">Pick a collector type. Add as many as you need; each one is tracked separately.</p>
+  </div>
+  <div role="radiogroup" aria-label="Collector type" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px">
+    <sc-for list="{{typeCards}}" as="t" hint-placeholder-count="8">
+      <button type="button" role="radio" aria-checked="{{t.checked}}" onClick="{{t.pick}}" style="{{t.cardStyle}}">
+        <span style="{{t.iconWrapStyle}}"><span class="{{t.icon}}" aria-hidden="true"></span></span>
+        <span style="font-size: 16px; font-weight: 500; color: #404040">{{t.label}}</span>
+        <span style="color: #555555">{{t.desc}}</span>
+        <span style="font-size: 12px; color: #555555">{{t.note}}</span>
+      </button>
+    </sc-for>
+  </div>
+  <section aria-label="Name this collector" style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; padding: 20px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px">
+    <div style="display: flex; flex-direction: column; gap: 4px; flex: 1 1 320px">
+      <label for="collector-name" style="font-size: 12px; font-weight: 400; color: #404040">Collector name</label>
+      <input id="collector-name" type="text" value="{{newName}}" placeholder="{{namePlaceholder}}" onChange="{{onNewName}}" style="height: 32px; box-sizing: border-box; padding: 0 10px; border: 1px solid #d8d8d8; border-radius: 4px; font: inherit; color: #545e6b">
+      <span style="font-size: 12px; color: #555555">Only your team sees this name. It labels the collector in Analytics filters and exports.</span>
+    </div>
+    <div style="display: flex; gap: 8px">
+      <x-import component-from-global-scope="WickUI.WuButton" variant="secondary" on-click="{{goList}}">Cancel</x-import>
+      <x-import component-from-global-scope="WickUI.WuButton" on-click="{{create}}">Create collector</x-import>
+    </div>
+  </section>
+</main>
+</sc-if>
+
+<!-- ============ DETAIL ============ -->
+<sc-if value="{{isDetail}}" hint-placeholder-val="{{false}}">
+<main style="max-width: 1180px; margin: 0 auto; padding: 24px 24px 64px; display: flex; flex-direction: column; gap: 16px">
+  <button type="button" onClick="{{goList}}" style="display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; border: none; background: transparent; color: #045ebf; font-size: 14px; cursor: pointer; padding: 0"><span class="wm-arrow-back" aria-hidden="true"></span>All collectors</button>
+
+  <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+    <div style="display: flex; align-items: center; gap: 12px; flex: 1 1 420px; min-width: 0">
+      <span style="{{cur.iconStyle}}"><span class="{{cur.typeIcon}}" aria-hidden="true"></span></span>
+      <div style="display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0">
+        <input aria-label="Collector name" value="{{cur.name}}" onChange="{{onRename}}" style="font: inherit; font-size: 22px; font-weight: 500; color: #1b3380; border: 1px solid transparent; border-radius: 4px; padding: 2px 6px; margin-left: -6px; background: transparent; min-width: 0">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #555555"><span>{{cur.typeLabel}}</span><span style="{{cur.statusStyle}}"><span class="{{cur.statusIcon}}" aria-hidden="true"></span>{{cur.statusLabel}}</span><span>Created {{cur.created}}</span></div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap">
+      <x-import component-from-global-scope="WickUI.WuButton" variant="outlined" color="neutral" on-click="{{cur.analyze}}">Analyze responses</x-import>
+      <x-import component-from-global-scope="WickUI.WuButton" variant="outlined" color="{{cur.toggleColor}}" on-click="{{cur.toggle}}">{{cur.toggleLong}}</x-import>
+    </div>
+  </div>
+
+  <div role="tablist" aria-label="Collector sections" style="display: flex; gap: 24px; border-bottom: 1px solid #d8d8d8">
+    <sc-for list="{{tabs}}" as="tb" hint-placeholder-count="3">
+      <button type="button" role="tab" aria-selected="{{tb.ariaSel}}" onClick="{{tb.pick}}" style="{{tb.style}}">{{tb.label}}</button>
+    </sc-for>
+  </div>
+
+  <!-- Overview -->
+  <sc-if value="{{tabOverview}}" hint-placeholder-val="{{true}}">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px">
+      <sc-for list="{{funnel}}" as="m" hint-placeholder-count="4">
+        <div style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 12px; color: #555555">{{m.label}}</span>
+          <span style="font-size: 24px; font-weight: 500; color: #1b3380">{{m.value}}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{showLink}}" hint-placeholder-val="{{true}}">
+      <section style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 500; color: #404040">Survey link for this collector</h2>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <input readonly="readonly" aria-label="Collector link" value="{{curUrl}}" style="flex: 1 1 360px; height: 32px; box-sizing: border-box; padding: 0 10px; border: 1px solid #d8d8d8; border-radius: 4px; font: inherit; color: #545e6b; background: #f5f5f5">
+          <x-import component-from-global-scope="WickUI.WuButton" on-click="{{copyLink}}">Copy link</x-import>
+          <x-import component-from-global-scope="WickUI.WuButton" variant="outlined" on-click="{{customize}}">Customize URL</x-import>
+        </div>
+        <span style="font-size: 12px; color: #555555">Responses through this link are tagged with this collector, so you can filter them in Analytics.</span>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{showQr}}" hint-placeholder-val="{{false}}">
+      <section style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; padding: 20px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center">
+        <div aria-label="QR code preview" role="img" style="width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; border: 1px solid #d8d8d8; border-radius: 4px; font-size: 140px; color: #001840"><span class="wm-qr-code-2" aria-hidden="true"></span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 500; color: #404040">QR code</h2>
+          <span style="color: #555555">Print it on posters and flyers. Scans count toward this collector.</span>
+          <div style="display: flex; gap: 8px"><x-import component-from-global-scope="WickUI.WuButton" variant="outlined" on-click="{{download}}">Download PNG</x-import><x-import component-from-global-scope="WickUI.WuButton" variant="outlined" on-click="{{download}}">Download SVG</x-import></div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{showEmbed}}" hint-placeholder-val="{{false}}">
+      <section style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 500; color: #404040">Embed code</h2>
+        <pre style="margin: 0; padding: 12px; background: #f5f5f5; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-break: break-all; color: #404040">{{embedCode}}</pre>
+        <div><x-import component-from-global-scope="WickUI.WuButton" on-click="{{copyLink}}">Copy code</x-import></div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{showMessagingHint}}" hint-placeholder-val="{{false}}">
+      <section style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; padding: 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 500; color: #404040">Invitations and reminders</h2>
+          <span style="color: #555555">{{msgCount}} messages in this collector. Reminders only go to people who haven't finished.</span>
+        </div>
+        <x-import component-from-global-scope="WickUI.WuButton" on-click="{{goMessagesCompose}}">Compose message</x-import>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{showOffline}}" hint-placeholder-val="{{false}}">
+      <section style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; padding: 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 500; color: #404040">Devices</h2>
+          <span style="color: #555555">12 devices assigned · responses sync when a device is back online.</span>
+        </div>
+        <div style="display: flex; gap: 8px"><x-import component-from-global-scope="WickUI.WuButton" variant="outlined" on-click="{{download}}">Manual sync</x-import><x-import component-from-global-scope="WickUI.WuButton" on-click="{{download}}">Add device</x-import></div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{showAudience}}" hint-placeholder-val="{{false}}">
+      <x-import component-from-global-scope="WickUI.WuAlert" variant="info">Audience panel collectors are set up with the QuestionPro Audience team, so collector options aren't available here.</x-import>
+    </sc-if>
+  </sc-if>
+
+  <!-- Messages -->
+  <sc-if value="{{tabMessages}}" hint-placeholder-val="{{false}}">
+    <section style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; display: flex; flex-direction: column">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #d8d8d8">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 500; color: #404040">Messages</h2>
+        <sc-if value="{{notComposing}}" hint-placeholder-val="{{true}}">
+          <x-import component-from-global-scope="WickUI.WuButton" on-click="{{startCompose}}">Compose message</x-import>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{composing}}" hint-placeholder-val="{{false}}">
+        <div style="padding: 16px; background: #eef3fb; border-bottom: 1px solid #d8d8d8; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px">
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <label for="msg-to" style="font-size: 12px; font-weight: 400; color: #404040">Send to</label>
+              <select id="msg-to" value="{{compose.to}}" onChange="{{onTo}}" style="height: 32px; padding: 0 8px; border: 1px solid #d8d8d8; border-radius: 4px; font: inherit; color: #545e6b; background: #ffffff">
+                <option value="all">Everyone on the list (18,500)</option>
+                <option value="notresp">Not responded (14,398)</option>
+                <option value="partial">Started but not finished (690)</option>
+              </select>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <label for="msg-from" style="font-size: 12px; font-weight: 400; color: #404040">From</label>
+              <input id="msg-from" readonly="readonly" value="Kartik Bhat (kartik.bhat@questionpro.com)" style="height: 32px; box-sizing: border-box; padding: 0 10px; border: 1px solid #d8d8d8; border-radius: 4px; font: inherit; color: #545e6b; background: #ffffff">
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <label for="msg-subject" style="font-size: 12px; font-weight: 400; color: #404040">Subject</label>
+            <input id="msg-subject" value="{{compose.subject}}" onChange="{{onSubject}}" style="height: 32px; box-sizing: border-box; padding: 0 10px; border: 1px solid #d8d8d8; border-radius: 4px; font: inherit; color: #545e6b; background: #ffffff">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <label for="msg-body" style="font-size: 12px; font-weight: 400; color: #404040">Message</label>
+            <textarea id="msg-body" rows="6" value="{{compose.body}}" onChange="{{onBody}}" style="padding: 8px 10px; border: 1px solid #d8d8d8; border-radius: 4px; font: inherit; color: #545e6b; resize: vertical; background: #ffffff"></textarea>
+            <span style="font-size: 12px; color: #555555">&lt;SURVEY_LINK&gt; is replaced with each recipient's personal link for this collector.</span>
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap">
+            <x-import component-from-global-scope="WickUI.WuButton" variant="secondary" on-click="{{cancelCompose}}">Cancel</x-import>
+            <x-import component-from-global-scope="WickUI.WuButton" variant="outlined" on-click="{{scheduleMsg}}">Schedule for Nov 4</x-import>
+            <x-import component-from-global-scope="WickUI.WuButton" on-click="{{sendMsg}}">Send now</x-import>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="overflow-x: auto">
+        <table style="width: 100%; min-width: 760px; border-collapse: collapse">
+          <thead>
+            <tr style="background: #f5f5f5; text-align: left; font-size: 12px; color: #404040">
+              <th scope="col" style="padding: 10px 16px; font-weight: 500">Message</th>
+              <th scope="col" style="padding: 10px 16px; font-weight: 500">Sent to</th>
+              <th scope="col" style="padding: 10px 16px; font-weight: 500">When</th>
+              <th scope="col" style="padding: 10px 16px; font-weight: 500; text-align: right">Recipients</th>
+              <th scope="col" style="padding: 10px 16px; font-weight: 500; text-align: right">Completed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{messages}}" as="msg" hint-placeholder-count="2">
+            <tr style="border-top: 1px solid #eeeeee">
+              <td style="padding: 12px 16px"><div style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500; color: #404040">{{msg.kind}}</span><span style="font-size: 12px; color: #555555">{{msg.subject}}</span></div></td>
+              <td style="padding: 12px 16px">{{msg.to}}</td>
+              <td style="padding: 12px 16px">{{msg.when}}</td>
+              <td style="padding: 12px 16px; text-align: right">{{msg.sent}}</td>
+              <td style="padding: 12px 16px; text-align: right">{{msg.completed}}</td>
+            </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <sc-if value="{{noMessages}}" hint-placeholder-val="{{false}}">
+          <div style="padding: 32px 16px; text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center">
+            <span style="font-weight: 500; color: #404040">No messages yet</span>
+            <span style="color: #555555">Compose an invitation to start collecting responses.</span>
+          </div>
+        </sc-if>
+      </div>
+    </section>
+  </sc-if>
+
+  <!-- Options -->
+  <sc-if value="{{tabOptions}}" hint-placeholder-val="{{false}}">
+    <sc-for list="{{optGroups}}" as="g" hint-placeholder-count="3">
+      <section style="background: #ffffff; border: 1px solid #d8d8d8; border-radius: 4px; display: flex; flex-direction: column">
+        <h2 style="margin: 0; padding: 14px 16px; font-size: 16px; font-weight: 500; color: #404040; border-bottom: 1px solid #d8d8d8">{{g.title}}</h2>
+        <sc-for list="{{g.rows}}" as="o" hint-placeholder-count="3">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 14px 16px; border-top: 1px solid #eeeeee">
+            <div style="display: flex; flex-direction: column; gap: 2px; flex: 1 1 320px">
+              <span style="font-weight: 500; color: #404040">{{o.label}}</span>
+              <span style="font-size: 12px; color: #555555">{{o.desc}}</span>
+            </div>
+            <sc-if value="{{o.showInput}}" hint-placeholder-val="{{false}}">
+              <input type="{{o.inputType}}" aria-label="{{o.label}}" value="{{o.inputVal}}" onChange="{{o.onInput}}" style="height: 32px; box-sizing: border-box; padding: 0 10px; border: 1px solid #d8d8d8; border-radius: 4px; font: inherit; color: #545e6b; width: 240px">
+            </sc-if>
+            <sc-if value="{{o.isToggle}}" hint-placeholder-val="{{true}}">
+              <x-import component-from-global-scope="WickUI.WuToggle" checked="{{o.on}}" on-change="{{o.toggle}}" aria-label="{{o.label}}"></x-import>
+            </sc-if>
+            <sc-if value="{{o.isUpgrade}}" hint-placeholder-val="{{false}}">
+              <x-import component-from-global-scope="WickUI.WuButton" color="upgrade" size="sm" on-click="{{upgrade}}">Upgrade to unlock</x-import>
+            </sc-if>
+          </div>
+        </sc-for>
+      </section>
+    </sc-for>
+  </sc-if>
+
+</main>
+</sc-if>
+
+<sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+  <div role="status" style="position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #404040; color: #ffffff; padding: 10px 16px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.12); display: flex; align-items: center; gap: 8px; z-index: 50"><span class="wm-check-circle" aria-hidden="true"></span>{{toast}}</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+var TYPES = {
+  link: { label: 'Web link', icon: 'wm-link', desc: 'A shareable URL for websites, chat or social posts.', note: 'Cutoff, response limit, password, custom URL' },
+  email: { label: 'Email invitation', icon: 'wm-mail', desc: 'Send to an email list and track opens, starts and completes.', note: 'Reminders, scheduling, per-recipient tracking' },
+  sms: { label: 'SMS', icon: 'wm-sms', desc: 'Text the survey link to a contact list. Uses SMS credits.', note: 'Available credits: $50.38' },
+  qr: { label: 'QR code', icon: 'wm-qr-code-2', desc: 'Print on posters, receipts or flyers for in-person feedback.', note: 'Download as PNG or SVG' },
+  embed: { label: 'Website embed', icon: 'wm-code', desc: 'Show the survey inline, as a popup or as a feedback tab.', note: 'Trigger by page, time on page or exit intent' },
+  offline: { label: 'Offline app', icon: 'wm-tablet-mac', desc: 'Collect on tablets without a connection, then sync.', note: 'Assign devices, manual or FTP sync' },
+  community: { label: 'Community', icon: 'wm-groups', desc: 'Invite members of your QuestionPro Community.', note: 'Target by member profile fields' },
+  audience: { label: 'Audience panel', icon: 'wm-person-search', desc: 'Buy responses from a targeted QuestionPro Audience sample.', note: 'Set up with the Audience team' }
+};
+var ORDER = ['link', 'email', 'sms', 'qr', 'embed', 'offline', 'community', 'audience'];
+var PILL = 'display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:500;';
+var STATUS = {
+  open: { label: 'Open', icon: 'wm-play-circle', style: PILL + 'background:#dff2bf;color:#227700' },
+  scheduled: { label: 'Scheduled', icon: 'wm-schedule', style: PILL + 'background:#ccf0ff;color:#215694' },
+  closed: { label: 'Closed', icon: 'wm-stop-circle', style: PILL + 'background:#eeeeee;color:#404040' }
+};
+var ICON_ON = 'display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;flex-shrink:0;border-radius:4px;background:#eef3fb;color:#1b87e6;font-size:20px';
+var ICON_OFF = 'display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;flex-shrink:0;border-radius:4px;background:#f5f5f5;color:#555555;font-size:20px';
+var TO_LABEL = { all: 'Everyone on the list', notresp: 'Not responded', partial: 'Started but not finished' };
+var TO_COUNT = { all: '18,500', notresp: '14,398', partial: '690' };
+var DEFAULT_BODY = 'Hello,\n\nWe would appreciate your feedback in our online survey. All responses will remain confidential and secure.\n\nPlease click this link to complete the survey:\n<SURVEY_LINK>\n\nPlease contact kartik.bhat@questionpro.com with any questions.\n\nThank you';
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      screen: 'list', filter: 'all', query: '', curId: null, tab: 'overview',
+      newType: 'email', newName: '', composing: false,
+      compose: { to: 'notresp', subject: 'Reminder: share your SNAP experience', body: DEFAULT_BODY },
+      toast: '', nextId: 8,
+      collectors: [
+        { id: 'c1', name: 'Public web link — HHSC site', type: 'link', status: 'open', responses: 1248, created: 'Oct 2, 2026', closes: 'No cutoff', sub: 'productteam26.questionpro.com/t/AB3xKZq', slug: 'AB3xKZq' },
+        { id: 'c2', name: 'Recipient email — wave 1', type: 'email', status: 'open', responses: 3412, created: 'Oct 6, 2026', closes: 'Nov 30, 2026', sub: '18,500 recipients', slug: 'EM1wv' },
+        { id: 'c3', name: 'Recipient email — wave 2', type: 'email', status: 'scheduled', responses: 0, created: 'Oct 20, 2026', closes: 'Nov 30, 2026', sub: 'sends Nov 4, 9:00 AM CT', slug: 'EM2wv' },
+        { id: 'c4', name: 'SMS — Lone Star Card holders', type: 'sms', status: 'open', responses: 862, created: 'Oct 9, 2026', closes: 'Nov 30, 2026', sub: '4,200 recipients', slug: 'SMSlsc' },
+        { id: 'c5', name: 'Benefit office QR posters', type: 'qr', status: 'open', responses: 391, created: 'Oct 12, 2026', closes: 'Dec 15, 2026', sub: '46 offices', slug: 'QRbo46' },
+        { id: 'c6', name: 'Field office tablets', type: 'offline', status: 'closed', responses: 214, created: 'Sep 28, 2026', closes: 'Closed Oct 25', sub: '12 devices', slug: 'OFFtab' },
+        { id: 'c7', name: 'Pilot test link (internal)', type: 'link', status: 'closed', responses: 24, created: 'Sep 20, 2026', closes: 'Closed Sep 27', sub: 'excluded from reports', slug: 'PILOT1' }
+      ],
+      messages: {
+        c2: [
+          { kind: 'Invitation', subject: 'Your feedback on SNAP food restrictions', to: 'Everyone on the list', when: 'Oct 6, 2026 · 9:00 AM', sent: '18,500', completed: '2,640' },
+          { kind: 'Reminder', subject: 'Reminder: 5 minutes to share your experience', to: 'Not responded', when: 'Oct 13, 2026 · 9:00 AM', sent: '15,860', completed: '772' }
+        ],
+        c3: [
+          { kind: 'Invitation', subject: 'Your feedback on SNAP food restrictions', to: 'Everyone on the list', when: 'Scheduled · Nov 4, 9:00 AM CT', sent: '9,000', completed: '—' }
+        ],
+        c4: [
+          { kind: 'Invitation', subject: 'TX HHSC: 5-min survey on SNAP changes', to: 'Everyone on the list', when: 'Oct 9, 2026 · 11:00 AM', sent: '4,200', completed: '862' }
+        ]
+      },
+      opts: {}
+    };
+  }
+
+  flash(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: '' }), 2400);
+  }
+
+  updateCollector(id, patch) {
+    this.setState({ collectors: this.state.collectors.map((c) => (c.id === id ? Object.assign({}, c, patch) : c)) });
+  }
+
+  toggleStatus(id) {
+    var c = this.state.collectors.find((x) => x.id === id);
+    var next = c.status === 'closed' ? 'open' : 'closed';
+    this.updateCollector(id, { status: next, closes: next === 'closed' ? 'Closed Oct 28' : 'No cutoff' });
+    this.flash(next === 'closed' ? 'Collector closed' : 'Collector reopened');
+  }
+
+  getOpts(id) {
+    return Object.assign({ multiple: false, editing: true, anonymous: false, cutoff: true, cutoffVal: '2026-11-30T23:59', limit: false, limitVal: '5000', password: false, passwordVal: '', thanks: false, thanksVal: 'Thank you for helping improve SNAP in Texas.', ip: false }, this.state.opts[id] || {});
+  }
+
+  setOpt(id, patch) {
+    var o = Object.assign({}, this.state.opts);
+    o[id] = Object.assign(this.getOpts(id), patch);
+    this.setState({ opts: o });
+  }
+
+  decorate(c) {
+    var t = TYPES[c.type], st = STATUS[c.status];
+    return Object.assign({}, c, {
+      typeLabel: t.label, typeIcon: t.icon,
+      statusLabel: st.label, statusIcon: st.icon, statusStyle: st.style,
+      iconStyle: c.status === 'closed' ? ICON_OFF : ICON_ON,
+      responsesText: c.responses.toLocaleString('en-US'),
+      toggleLabel: c.status === 'closed' ? 'Reopen' : 'Close',
+      toggleLong: c.status === 'closed' ? 'Reopen collector' : 'Close collector',
+      toggleColor: c.status === 'closed' ? 'primary' : 'error',
+      open: () => this.setState({ screen: 'detail', curId: c.id, tab: 'overview', composing: false }),
+      toggle: () => this.toggleStatus(c.id),
+      analyze: () => this.flash('Opening Analytics filtered to "' + c.name + '"')
+    });
+  }
+
+  renderVals() {
+    var s = this.state;
+    var all = s.collectors;
+    var counts = { all: all.length, open: 0, scheduled: 0, closed: 0 };
+    var total = 0;
+    all.forEach((c) => { counts[c.status]++; total += c.responses; });
+
+    var filters = ['all', 'open', 'scheduled', 'closed'].map((k) => ({
+      label: (k === 'all' ? 'All' : STATUS[k].label) + ' ' + counts[k],
+      selected: s.filter === k,
+      variant: s.filter === k ? 'primary' : 'secondary',
+      pick: () => this.setState({ filter: k })
+    }));
+    var q = s.query.trim().toLowerCase();
+    var rows = all.filter((c) => (s.filter === 'all' || c.status === s.filter) && (!q || c.name.toLowerCase().indexOf(q) >= 0)).map((c) => this.decorate(c));
+
+    var typeCards = ORDER.map((k) => {
+      var t = TYPES[k], sel = s.newType === k;
+      return {
+        label: t.label, icon: t.icon, desc: t.desc, note: t.note, checked: sel ? 'true' : 'false',
+        cardStyle: 'text-align:left;font:inherit;color:inherit;cursor:pointer;border-radius:4px;display:flex;flex-direction:column;gap:8px;' + (sel ? 'background:#eef3fb;border:2px solid #1b87e6;padding:15px' : 'background:#ffffff;border:1px solid #d8d8d8;padding:16px'),
+        iconWrapStyle: 'display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:4px;font-size:22px;color:#1b87e6;background:' + (sel ? '#ffffff' : '#eef3fb'),
+        pick: () => this.setState({ newType: k })
+      };
+    });
+
+    var cur = null, tabs = [], funnel = [], messages = [], optGroups = [], curUrl = '';
+    var raw = all.find((c) => c.id === s.curId);
+    if (raw) {
+      cur = this.decorate(raw);
+      var messaging = raw.type === 'email' || raw.type === 'sms';
+      var tabKeys = messaging ? ['overview', 'messages', 'options'] : (raw.type === 'audience' ? ['overview'] : ['overview', 'options']);
+      var labels = { overview: 'Overview', messages: 'Messages', options: 'Options' };
+      tabs = tabKeys.map((k) => ({
+        label: labels[k], ariaSel: s.tab === k ? 'true' : 'false',
+        style: 'padding:10px 0;margin-bottom:-1px;background:transparent;border:none;font-size:14px;cursor:pointer;' + (s.tab === k ? 'color:#1b87e6;font-weight:500;border-bottom:2px solid #1b87e6' : 'color:#545e6b;font-weight:400;border-bottom:2px solid transparent'),
+        pick: () => this.setState({ tab: k, composing: false })
+      }));
+      var r = raw.responses;
+      if (messaging) {
+        var base = raw.id === 'c2' ? [18500, 18214, 9840, 4102] : raw.id === 'c4' ? [4200, 4161, null, 1190] : raw.id === 'c3' ? [0, 0, 0, 0] : [0, 0, 0, 0];
+        funnel = [
+          { label: 'Sent', value: base[0].toLocaleString('en-US') },
+          { label: 'Delivered', value: base[1].toLocaleString('en-US') }
+        ];
+        if (raw.type === 'email') funnel.push({ label: 'Opened', value: (base[2] || 0).toLocaleString('en-US') });
+        funnel.push({ label: 'Started', value: base[3].toLocaleString('en-US') });
+        funnel.push({ label: 'Completed', value: r.toLocaleString('en-US') });
+      } else {
+        funnel = [
+          { label: 'Responses', value: r.toLocaleString('en-US') },
+          { label: 'Completion rate', value: r ? '74%' : '—' },
+          { label: 'Median time', value: r ? '6m 12s' : '—' },
+          { label: 'Last response', value: raw.status === 'open' && r ? '12 min ago' : '—' }
+        ];
+      }
+      messages = s.messages[raw.id] || [];
+      curUrl = 'https://productteam26.questionpro.com/t/' + raw.slug;
+
+      var o = this.getOpts(raw.id), id = raw.id;
+      var tog = (key, label, desc, extra) => Object.assign({
+        label: label, desc: desc, on: o[key], isToggle: true, isUpgrade: false, showInput: false,
+        toggle: (v) => { this.setOpt(id, { [key]: typeof v === 'boolean' ? v : !o[key] }); }
+      }, extra || {});
+      var withInput = (key, valKey, type) => ({
+        showInput: !!o[key], inputType: type, inputVal: o[valKey],
+        onInput: (e) => this.setOpt(id, { [valKey]: e.target.value })
+      });
+      optGroups = [
+        { title: 'Responses', rows: [
+          tog('multiple', 'Allow multiple responses', 'Let people take the survey more than once from the same device.'),
+          tog('editing', 'Allow response editing', 'Respondents can change answers until they submit.'),
+          tog('anonymous', 'Anonymous responses', "Don't record IP address, location or contact details.")
+        ] },
+        { title: 'Access and limits', rows: [
+          tog('cutoff', 'Cutoff date and time', 'Close this collector automatically at a set time (CT).', withInput('cutoff', 'cutoffVal', 'datetime-local')),
+          tog('limit', 'Response limit', 'Close this collector after a number of completed responses.', withInput('limit', 'limitVal', 'number')),
+          tog('password', 'Password protection', 'Respondents enter a password before starting.', withInput('password', 'passwordVal', 'text')),
+          tog('ip', 'IP restrictions', 'Allow or block responses from specific IP ranges.'),
+          { label: 'Respondent authentication (SSO)', desc: 'Require sign-in through your identity provider.', isToggle: false, isUpgrade: true, showInput: false }
+        ] },
+        { title: 'After the survey', rows: [
+          tog('thanks', 'Custom thank-you message', 'Replace the default end page for people who come through this collector.', withInput('thanks', 'thanksVal', 'text'))
+        ] }
+      ];
+    }
+
+    return {
+      yes: true,
+      isList: s.screen === 'list', isAdd: s.screen === 'add', isDetail: s.screen === 'detail' && !!cur,
+      counts: counts, totalResponses: total.toLocaleString('en-US'),
+      filters: filters, rows: rows, noRows: rows.length === 0, query: s.query,
+      onQuery: (e) => this.setState({ query: e.target.value }),
+      goList: () => this.setState({ screen: 'list', composing: false }),
+      goAdd: () => this.setState({ screen: 'add', newName: '' }),
+      compare: () => this.flash('Opening Analytics with a collector comparison'),
+      typeCards: typeCards, newName: s.newName,
+      namePlaceholder: TYPES[s.newType].label + ' — ' + 'new collector',
+      onNewName: (e) => this.setState({ newName: e.target.value }),
+      create: () => {
+        var id = 'c' + s.nextId, t = TYPES[s.newType];
+        var name = s.newName.trim() || (t.label + ' ' + s.nextId);
+        var slug = Math.random().toString(36).slice(2, 9);
+        var c = { id: id, name: name, type: s.newType, status: 'open', responses: 0, created: 'Oct 28, 2026', closes: 'No cutoff', sub: 'just created', slug: slug };
+        this.setState({ collectors: [c].concat(s.collectors), nextId: s.nextId + 1, screen: 'detail', curId: id, tab: 'overview', filter: 'all' });
+        this.flash('Collector created');
+      },
+      cur: cur, tabs: tabs, funnel: funnel, curUrl: curUrl,
+      tabOverview: s.tab === 'overview', tabMessages: s.tab === 'messages', tabOptions: s.tab === 'options',
+      showLink: !!raw && (raw.type === 'link' || raw.type === 'community'),
+      showQr: !!raw && raw.type === 'qr',
+      showEmbed: !!raw && raw.type === 'embed',
+      showMessagingHint: !!raw && (raw.type === 'email' || raw.type === 'sms'),
+      showOffline: !!raw && raw.type === 'offline',
+      showAudience: !!raw && raw.type === 'audience',
+      embedCode: raw ? '<script src="https://productteam26.questionpro.com/embed.js" data-survey="13854836" data-collector="' + raw.slug + '" data-mode="popup"><\/script>' : '',
+      msgCount: messages.length,
+      copyLink: () => this.flash('Copied to clipboard'),
+      customize: () => this.flash('Custom URLs: productteam26.questionpro.com/t/your-name'),
+      download: () => this.flash('Download started'),
+      upgrade: () => this.flash('Respondent authentication is on the Enterprise plan'),
+      onRename: (e) => raw && this.updateCollector(raw.id, { name: e.target.value }),
+      messages: messages, noMessages: messages.length === 0,
+      composing: s.composing, notComposing: !s.composing, compose: s.compose,
+      goMessagesCompose: () => this.setState({ tab: 'messages', composing: true }),
+      startCompose: () => this.setState({ composing: true }),
+      cancelCompose: () => this.setState({ composing: false }),
+      onTo: (e) => this.setState({ compose: Object.assign({}, s.compose, { to: e.target.value }) }),
+      onSubject: (e) => this.setState({ compose: Object.assign({}, s.compose, { subject: e.target.value }) }),
+      onBody: (e) => this.setState({ compose: Object.assign({}, s.compose, { body: e.target.value }) }),
+      sendMsg: () => {
+        if (!raw) return;
+        var list = (s.messages[raw.id] || []).slice();
+        list.push({ kind: list.length ? 'Reminder' : 'Invitation', subject: s.compose.subject, to: TO_LABEL[s.compose.to], when: 'Oct 28, 2026 · just now', sent: TO_COUNT[s.compose.to], completed: '0' });
+        var m = Object.assign({}, s.messages); m[raw.id] = list;
+        this.setState({ messages: m, composing: false });
+        this.flash('Message sent to ' + TO_COUNT[s.compose.to] + ' recipients');
+      },
+      scheduleMsg: () => {
+        if (!raw) return;
+        var list = (s.messages[raw.id] || []).slice();
+        list.push({ kind: list.length ? 'Reminder' : 'Invitation', subject: s.compose.subject, to: TO_LABEL[s.compose.to], when: 'Scheduled · Nov 4, 9:00 AM CT', sent: TO_COUNT[s.compose.to], completed: '—' });
+        var m = Object.assign({}, s.messages); m[raw.id] = list;
+        this.setState({ messages: m, composing: false });
+        this.flash('Message scheduled for Nov 4, 9:00 AM CT');
+      },
+      optGroups: optGroups,
+      hasToast: !!s.toast, toast: s.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

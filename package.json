@@ -13,6 +13,7 @@
     "test:text-ai": "node --test tests/text-ai-segment-filters.test.mjs",
     "test:text-ai-kpi": "node --test tests/text-ai-kpi-impact.test.mjs",
     "test:ai-dashboard-references": "node --test tests/ai-dashboard-references.test.mjs",
+    "test:integrity": "node --test tests/integrity-policy.test.mjs",
     "postinstall": "node scripts/patch-wick-ui-editor.cjs && node scripts/patch-wick-ui-lib-css.cjs"
   },
   "dependencies": {

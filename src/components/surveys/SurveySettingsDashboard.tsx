@@ -17,6 +17,7 @@ import { SurveySettingsRichText } from '@/components/surveys/SurveySettingsRichT
 import { SurveyLanguagesDashboard } from '@/components/surveys/SurveyLanguagesDashboard';
 import { SurveyFinishOptionsDashboard } from '@/components/surveys/SurveyFinishOptionsDashboard';
 import { SurveyVariablesDashboard } from '@/components/surveys/SurveyVariablesDashboard';
+import { SurveyIntegrityCard } from '@/components/integrity/SurveyIntegrityCard';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { useSurveyById } from '@/hooks/useSurveyById';
@@ -957,6 +958,7 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
           </div>
         ) : activeTab === 'security' ? (
           <div className={`${styles.panel} ${styles.authPanel}`}>
+            <SurveyIntegrityCard surveyId={surveyId} surveyName={survey?.name ?? 'This survey'} />
             <div className={styles.authHeader}>
               <h2 className={styles.authTitle}>Survey Authentication</h2>
               <WuTooltip content={SURVEY_AUTHENTICATION_HELP} position="top">

@@ -1,0 +1,90 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+}
+
+.card h2 {
+  color: #404040;
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.hint {
+  color: #545e6b;
+  margin: 0;
+}
+
+.choiceRow,
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.choice,
+.choiceOn {
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 999px;
+  color: #545e6b;
+  cursor: pointer;
+  font: inherit;
+  padding: 6px 14px;
+}
+
+.choiceOn {
+  background: #eef3fb;
+  border-color: #1b87e6;
+  color: #1b3380;
+}
+
+.fields label {
+  color: #404040;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 4px;
+}
+
+.number {
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  color: #545e6b;
+  font: inherit;
+  font-weight: 400;
+  height: 32px;
+  padding: 0 10px;
+  width: 120px;
+}
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.table th,
+.table td {
+  border-top: 1px solid #eee;
+  padding: 8px 4px;
+  text-align: left;
+}
+
+.table th {
+  color: #404040;
+  font-size: 12px;
+  font-weight: 500;
+}
