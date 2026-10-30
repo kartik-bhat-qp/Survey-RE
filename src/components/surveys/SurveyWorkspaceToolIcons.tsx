@@ -11,8 +11,10 @@ import { PreDefinedLogicCriteriaModal } from '@/components/surveys/PreDefinedLog
 import { RemoveAllLogicModal } from '@/components/surveys/RemoveAllLogicModal';
 import { SearchReplaceModal } from '@/components/surveys/SearchReplaceModal';
 import { SurveyApprovalsModal } from '@/components/surveys/SurveyApprovalsModal';
+import { SurveyIntegrityModal } from '@/components/integrity/SurveyIntegrityModal';
 import { UpdateQuestionCodesModal } from '@/components/surveys/UpdateQuestionCodesModal';
 import { useSurveyEditorBulkEdit } from '@/components/surveys/SurveyEditorBulkEditContext';
+import { getSurveyById } from '@/data/get-survey-by-id';
 import { DEFAULT_SURVEY_CUSTOM_JS } from '@/data/mock-survey-custom-js';
 import { surveyHasApprovalTab } from '@/data/mock-survey-approval';
 import styles from './SurveyWorkspaceToolIcons.module.css';
@@ -52,6 +54,8 @@ export function SurveyWorkspaceToolIcons() {
   const [logicCriteriaOpen, setLogicCriteriaOpen] = useState(false);
   const [blockFlowOpen, setBlockFlowOpen] = useState(false);
   const [customJsOpen, setCustomJsOpen] = useState(false);
+  const [integrityOpen, setIntegrityOpen] = useState(false);
+  const surveyName = getSurveyById(surveyId)?.name ?? 'This survey';
   const [removeAllLogicOpen, setRemoveAllLogicOpen] = useState(false);
   const [approvalsModalOpen, setApprovalsModalOpen] = useState(false);
   const [customJs, setCustomJs] = useState(DEFAULT_SURVEY_CUSTOM_JS);
@@ -87,6 +91,12 @@ export function SurveyWorkspaceToolIcons() {
   ];
 
   const menuTools: ToolIconItem[] = [
+    {
+      id: 'respondent-integrity',
+      label: 'Respondent integrity',
+      icon: <span className={`wm-verified-user ${styles.menuItemIcon}`} aria-hidden />,
+      onClick: () => setIntegrityOpen(true),
+    },
     {
       id: 'search-replace',
       label: 'Search & Replace',
@@ -188,6 +198,14 @@ export function SurveyWorkspaceToolIcons() {
         <PreDefinedLogicCriteriaModal open onOpenChange={setLogicCriteriaOpen} />
       ) : null}
       {blockFlowOpen ? <BlockFlowModal open onOpenChange={setBlockFlowOpen} /> : null}
+      {integrityOpen ? (
+        <SurveyIntegrityModal
+          open
+          surveyId={surveyId}
+          surveyName={surveyName}
+          onOpenChange={setIntegrityOpen}
+        />
+      ) : null}
       {customJsOpen ? (
         <CustomJsModal
           open

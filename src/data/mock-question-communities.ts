@@ -1,4 +1,14 @@
-export type CommunityId = 'my-community' | 'customer-advisory-panel' | 'beta-testers';
+export type CommunityId =
+  | 'my-community'
+  | 'customer-advisory-panel'
+  | 'beta-testers'
+  | 'product-research-panel'
+  | 'employee-voice'
+  | 'healthcare-professionals-emea'
+  | 'nps-advocates'
+  | 'retail-shopper-community'
+  | 'campus-ambassadors'
+  | 'legacy-member-panel';
 
 export type CommunityIdSelection = CommunityId | '';
 

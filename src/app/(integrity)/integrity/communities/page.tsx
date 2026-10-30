@@ -1,7 +1,5 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { CommunityProtectionDashboard } from '@/components/integrity/CommunityProtectionDashboard';
-
-export default function IntegrityCommunitiesPage() {
-  return <CommunityProtectionDashboard />;
+export default function IntegrityCommunitiesRedirect() {
+  redirect('/communities');
 }

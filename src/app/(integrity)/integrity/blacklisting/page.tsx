@@ -1,7 +1,5 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { IntegrityBlacklist } from '@/components/integrity/IntegrityBlacklist';
-
-export default function IntegrityBlacklistingPage() {
-  return <IntegrityBlacklist />;
+export default function IntegrityBlacklistRedirect() {
+  redirect('/organization/blocklist');
 }

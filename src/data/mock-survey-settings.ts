@@ -13,6 +13,7 @@ export {
 export type SurveySettingsTab =
   | 'settings'
   | 'security'
+  | 'respondent-integrity'
   | 'privacy'
   | 'notifications'
   | 'languages'
@@ -175,6 +176,7 @@ export const SURVEY_STATUS_OPTIONS: { value: SurveySettingsStatus; label: string
 export const SURVEY_SETTINGS_TABS: SurveySettingsNavItem[] = [
   { id: 'settings', label: 'General' },
   { id: 'security', label: 'Security' },
+  { id: 'respondent-integrity', label: 'Respondent integrity' },
   { id: 'privacy', label: 'Privacy and compliance' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'languages', label: 'Languages' },

@@ -5,11 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { PageContainer } from '@/components/ui/PageContainer';
-import { PageHeader } from '@/components/ui/PageHeader';
-import {
-  COMMUNITY_SETTINGS_OPTIONS,
-  type CommunityId,
-} from '@/data/mock-question-communities';
+import { type CommunityId } from '@/data/mock-question-communities';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import {
   COMMUNITY_CHECKS,
@@ -40,10 +36,6 @@ const WuToggle = dynamic(
   { ssr: false },
 );
 
-const COMMUNITIES = COMMUNITY_SETTINGS_OPTIONS.filter(
-  (option): option is { value: CommunityId; label: string } => option.value !== '',
-);
-
 const LOGIN_CHOICES: { id: LoginCheck; label: string }[] = [
   { id: 'off', label: 'Off' },
   { id: 'sporadic', label: 'Sporadically' },
@@ -62,7 +54,13 @@ function blankRecord(communityId: CommunityId): CommunityProtectionRecord {
   };
 }
 
-export function CommunityProtectionDashboard() {
+export function CommunityProtectionDashboard({
+  communityId,
+  communityName,
+}: {
+  communityId: CommunityId;
+  communityName: string;
+}) {
   const { showToast } = useWuShowToast();
   const [coverage, setCoverage] = usePersistedState(
     INTEGRITY_COVERAGE_KEY,
@@ -150,28 +148,22 @@ export function CommunityProtectionDashboard() {
     }));
   }
 
+  const record = recordFor(communityId);
+  const saved = findCommunityProtection(coverage, communityId);
+
   return (
     <PageContainer>
-      <PageHeader
-        title="Communities"
-        description={
-          'Protect the communities you already run. Signups can be checked every time. ' +
-          'Logins can stay open, be checked every time, or be sampled.'
-        }
-      />
       <div className={styles.stack}>
-        {COMMUNITIES.map((community) => {
-          const record = recordFor(community.value);
-          const saved = findCommunityProtection(coverage, community.value);
-          return (
-            <section key={community.value} className={styles.card} aria-label={community.label}>
+            <section className={styles.card} aria-label={`Integrity for ${communityName}`}>
               <div className={styles.row}>
                 <div className={styles.copy}>
-                  <h2>{community.label}</h2>
-                  <p className={styles.hint}>{communityProtectionSummary(saved)}</p>
+                  <h2>Integrity</h2>
+                  <p className={styles.hint}>
+                    {communityProtectionSummary(saved)}. These checks apply only to this community.
+                  </p>
                 </div>
               </div>
-              <section className={styles.checks} aria-label={`Checks for ${community.label}`}>
+              <section className={styles.checks} aria-label={`Checks for ${communityName}`}>
                 <h3>When to check</h3>
               <div className={styles.row}>
                 <div className={styles.copy}>
@@ -179,7 +171,7 @@ export function CommunityProtectionDashboard() {
                     <button
                       type="button"
                       className={styles.textButton}
-                      onClick={() => patch(community.value, { signups: !record.signups })}
+                      onClick={() => patch(communityId, { signups: !record.signups })}
                     >
                       <strong>Protect signups</strong>
                     </button>
@@ -191,7 +183,7 @@ export function CommunityProtectionDashboard() {
                   <button
                     type="button"
                     className={styles.textButton}
-                    onClick={() => patch(community.value, { signups: !record.signups })}
+                    onClick={() => patch(communityId, { signups: !record.signups })}
                   >
                     <span className={styles.hint}>
                       Check new accounts before they join this community.
@@ -200,8 +192,8 @@ export function CommunityProtectionDashboard() {
                 </div>
                 <WuToggle
                   checked={record.signups}
-                  aria-label={`Protect signups for ${community.label}`}
-                  onChange={(checked) => patch(community.value, { signups: checked })}
+                  aria-label={`Protect signups for ${communityName}`}
+                  onChange={(checked) => patch(communityId, { signups: checked })}
                 />
               </div>
               <div className={styles.copy}>
@@ -216,14 +208,14 @@ export function CommunityProtectionDashboard() {
               <div
                 className={styles.choiceRow}
                 role="group"
-                aria-label={`Logins for ${community.label}`}
+                aria-label={`Logins for ${communityName}`}
               >
                 {LOGIN_CHOICES.map((choice) => (
                   <span key={choice.id} className={styles.choiceItem}>
                     <button
                       type="button"
                       className={record.loginCheck === choice.id ? styles.choiceOn : styles.choice}
-                      onClick={() => patch(community.value, { loginCheck: choice.id })}
+                      onClick={() => patch(communityId, { loginCheck: choice.id })}
                     >
                       {choice.label}
                     </button>
@@ -248,10 +240,10 @@ export function CommunityProtectionDashboard() {
                   <input
                     className={styles.number}
                     inputMode="numeric"
-                    aria-label={`Sample rate for ${community.label}`}
+                    aria-label={`Sample rate for ${communityName}`}
                     value={String(record.loginEvery)}
                     onChange={(event) =>
-                      patch(community.value, { loginEvery: Number(event.target.value) || 0 })
+                      patch(communityId, { loginEvery: Number(event.target.value) || 0 })
                     }
                   />
                   logins
@@ -263,7 +255,7 @@ export function CommunityProtectionDashboard() {
                     <button
                       type="button"
                       className={styles.textButton}
-                      onClick={() => patch(community.value, { recovery: !record.recovery })}
+                      onClick={() => patch(communityId, { recovery: !record.recovery })}
                     >
                       <strong>Account recovery</strong>
                     </button>
@@ -275,7 +267,7 @@ export function CommunityProtectionDashboard() {
                   <button
                     type="button"
                     className={styles.textButton}
-                    onClick={() => patch(community.value, { recovery: !record.recovery })}
+                    onClick={() => patch(communityId, { recovery: !record.recovery })}
                   >
                     <span className={styles.hint}>
                       Limit repeated recovery requests without saying whether the email has an
@@ -285,8 +277,8 @@ export function CommunityProtectionDashboard() {
                 </div>
                 <WuToggle
                   checked={record.recovery}
-                  aria-label={`Account recovery for ${community.label}`}
-                  onChange={(checked) => patch(community.value, { recovery: checked })}
+                  aria-label={`Account recovery for ${communityName}`}
+                  onChange={(checked) => patch(communityId, { recovery: checked })}
                 />
               </div>
               <div className={styles.row}>
@@ -295,7 +287,7 @@ export function CommunityProtectionDashboard() {
                     <button
                       type="button"
                       className={styles.textButton}
-                      onClick={() => patch(community.value, { invitations: !record.invitations })}
+                      onClick={() => patch(communityId, { invitations: !record.invitations })}
                     >
                       <strong>Invitations</strong>
                     </button>
@@ -307,7 +299,7 @@ export function CommunityProtectionDashboard() {
                   <button
                     type="button"
                     className={styles.textButton}
-                    onClick={() => patch(community.value, { invitations: !record.invitations })}
+                    onClick={() => patch(communityId, { invitations: !record.invitations })}
                   >
                     <span className={styles.hint}>
                       Check invitation links before they are accepted.
@@ -316,51 +308,49 @@ export function CommunityProtectionDashboard() {
                 </div>
                 <WuToggle
                   checked={record.invitations}
-                  aria-label={`Invitations for ${community.label}`}
-                  onChange={(checked) => patch(community.value, { invitations: checked })}
+                  aria-label={`Invitations for ${communityName}`}
+                  onChange={(checked) => patch(communityId, { invitations: checked })}
                 />
               </div>
               </section>
-              <section className={styles.checks} aria-label={`Signals for ${community.label}`}>
+              <section className={styles.checks} aria-label={`Signals for ${communityName}`}>
                 <h3>What will be checked</h3>
                 <IntegrityCheckToggles
                   items={COMMUNITY_CHECKS}
                   selected={normalizeCommunityChecks(record.checks ?? [])}
                   tolerances={record.tolerance}
-                  onToggle={(id, checked) => toggleCheck(community.value, id, checked)}
+                  onToggle={(id, checked) => toggleCheck(communityId, id, checked)}
                   onTolerance={(id, value) =>
-                    patch(community.value, {
+                    patch(communityId, {
                       tolerance: { ...(record.tolerance ?? {}), [id]: value },
                     })
                   }
                 />
               </section>
               <div className={styles.actions}>
-                <WuButton type="button" onClick={() => save(community.value, community.label)}>
+                <WuButton type="button" onClick={() => save(communityId, communityName)}>
                   Save protection
                 </WuButton>
                 <WuButton
                   type="button"
                   variant="secondary"
-                  onClick={() => runLogin(community.value, community.label)}
+                  onClick={() => runLogin(communityId, communityName)}
                 >
                   Try a login
                 </WuButton>
                 {saved?.signups ? (
                   <Link
                     className={styles.link}
-                    href={`/integrity/check?entry=registration&community=${community.value}`}
+                    href={`/integrity/check?entry=registration&community=${communityId}`}
                   >
                     Try a signup
                   </Link>
                 ) : null}
               </div>
-              {sampleNote[community.value] ? (
-                <p className={styles.result}>{sampleNote[community.value]}</p>
+              {sampleNote[communityId] ? (
+                <p className={styles.result}>{sampleNote[communityId]}</p>
               ) : null}
             </section>
-          );
-        })}
       </div>
     </PageContainer>
   );

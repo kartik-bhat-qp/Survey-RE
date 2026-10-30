@@ -12,6 +12,7 @@ import { AudioInputButton } from '@/components/ui/AudioInputButton';
 import { useEssentialsAccountActionsLocked } from '@/hooks/useEssentialsAccountUnderReview';
 import { ESSENTIALS_ACCOUNT_LOCKED_TOAST } from '@/data/mock-essentials-phishing-review';
 import { NEW_AI_SURVEY_ID } from '@/data/ai-survey-draft';
+import { applyOrganizationIntegrityToNewSurvey } from '@/lib/integrity/apply-new-survey';
 import { runAiSurveyCreationFlow } from '@/lib/request-ai-survey-generation';
 import {
   createSurveyBriefFile,
@@ -101,6 +102,7 @@ export default function NewSurveyCreationFlowPage() {
       }
 
       succeeded = true;
+      applyOrganizationIntegrityToNewSurvey(NEW_AI_SURVEY_ID);
       showToast({ message: 'Your survey is ready to edit', variant: 'success' });
       router.push(`/surveys/${NEW_AI_SURVEY_ID}`);
     } finally {
@@ -140,6 +142,7 @@ export default function NewSurveyCreationFlowPage() {
       }
 
       succeeded = true;
+      applyOrganizationIntegrityToNewSurvey(NEW_AI_SURVEY_ID);
       showToast({ message: 'Your survey is ready to edit', variant: 'success' });
       router.push(`/surveys/${NEW_AI_SURVEY_ID}`);
     } finally {
@@ -201,6 +204,7 @@ export default function NewSurveyCreationFlowPage() {
       return;
     }
     saveBlankSurveyDraft(name);
+    applyOrganizationIntegrityToNewSurvey(NEW_BLANK_SURVEY_ID);
     showToast({ message: 'Blank survey created', variant: 'success' });
     router.push(`/surveys/${NEW_BLANK_SURVEY_ID}`);
   }

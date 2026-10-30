@@ -21,7 +21,7 @@ export const MOCK_HEADER_CATEGORIES: IWuAppHeaderMenuItem[] = [
       {
         name: 'Communities',
         icon: 'e314',
-        link: 'https://www.questionpro.com/a/showPanelManagement.do',
+        link: '/communities',
         active: true,
         logo: `${APP_NAV}/communities-product.png`,
         order: 2,
@@ -137,14 +137,6 @@ export const MOCK_HEADER_CATEGORIES: IWuAppHeaderMenuItem[] = [
         active: true,
         logo: `${APP_NAV}/live-polls-product.png`,
         order: 1,
-      },
-      {
-        name: 'Integrity',
-        icon: 'e308',
-        link: '/integrity',
-        active: true,
-        logo: `${APP_NAV}/integrity-product.svg`,
-        order: 2,
       },
     ],
   },

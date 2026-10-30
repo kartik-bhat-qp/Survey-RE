@@ -4,6 +4,8 @@ export type OrganizationNavId =
   | 'teams'
   | 'libraries'
   | 'settings'
+  | 'integrity'
+  | 'blocklist'
   | 'wiki';
 
 export interface OrganizationNavItem {
@@ -18,6 +20,8 @@ export const ORGANIZATION_NAV_ITEMS: OrganizationNavItem[] = [
   { id: 'teams', label: 'Teams', href: '/organization/teams' },
   { id: 'libraries', label: 'Libraries', href: '/organization/libraries' },
   { id: 'settings', label: 'Settings', href: '/organization/settings' },
+  { id: 'integrity', label: 'Respondent integrity', href: '/organization/integrity' },
+  { id: 'blocklist', label: 'Blocklist', href: '/organization/blocklist' },
   { id: 'wiki', label: 'Wiki', href: '/organization/wiki' },
 ];
 

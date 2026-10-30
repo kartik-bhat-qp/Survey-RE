@@ -15,6 +15,12 @@
   padding: 20px;
 }
 
+.embedded {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .card h2,
 .editor h2,
 .checks h3,

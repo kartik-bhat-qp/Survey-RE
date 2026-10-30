@@ -27,8 +27,8 @@ const WuSidebarItem = dynamic(
 );
 
 const NAV = [
-  { href: '/integrity', label: 'Surveys', icon: 'wm-assignment' },
-  { href: '/integrity/communities', label: 'Communities', icon: 'wm-groups' },
+  { href: '/surveys/integrity', label: 'Surveys', icon: 'wm-assignment' },
+  { href: '/communities', label: 'Communities', icon: 'wm-groups' },
 ];
 
 const COMING_SOON = [
@@ -53,9 +53,7 @@ export function IntegritySideNav() {
         <WuSidebarGroup label="Sources">
           {NAV.map((item) => {
             const active =
-              item.href === '/integrity'
-                ? pathname === '/integrity'
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <WuSidebarItem
                 key={item.href}
@@ -86,11 +84,11 @@ export function IntegritySideNav() {
           <WuSidebarItem
             Icon={<span className="wm-block" />}
             isActive={
-              pathname === '/integrity/blacklisting' ||
-              pathname.startsWith('/integrity/blacklisting/')
+              pathname === '/organization/blocklist' ||
+              pathname.startsWith('/organization/blocklist/')
             }
           >
-            <Link href="/integrity/blacklisting">Blocklist</Link>
+            <Link href="/organization/blocklist">Blocklist</Link>
           </WuSidebarItem>
         </WuSidebarGroup>
       </WuSidebarContent>

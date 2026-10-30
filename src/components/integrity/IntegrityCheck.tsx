@@ -6,10 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import { IntegrityEntry } from '@/components/integrity/IntegrityEntry';
 import { PageContainer } from '@/components/ui/PageContainer';
 import { MOCK_SURVEYS } from '@/data/mock-surveys';
-import {
-  COMMUNITY_SETTINGS_OPTIONS,
-  type CommunityId,
-} from '@/data/mock-question-communities';
+import { getCommunityById } from '@/data/mock-communities';
+import { type CommunityId } from '@/data/mock-question-communities';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import {
   EMPTY_INTEGRITY_COVERAGE,
@@ -34,7 +32,8 @@ export function IntegrityCheck() {
   const [ready, setReady] = useState(false);
   const survey = MOCK_SURVEYS.find((item) => String(item.id) === searchParams.get('survey'));
   const communityId = searchParams.get('community') as CommunityId | null;
-  const community = COMMUNITY_SETTINGS_OPTIONS.find((option) => option.value === communityId);
+  const listed = communityId ? getCommunityById(communityId) : undefined;
+  const community = listed ? { label: listed.name } : undefined;
   const surveyRecord = survey ? findSurveyProtection(coverage, survey.id) : null;
   const communityRecord = communityId ? findCommunityProtection(coverage, communityId) : null;
 
@@ -53,7 +52,13 @@ export function IntegrityCheck() {
           <p className={styles.hint}>{blocked}</p>
           <Link
             className={styles.link}
-            href={entry === 'survey' ? '/integrity' : '/integrity/communities'}
+            href={
+              entry === 'survey'
+                ? '/surveys/integrity'
+                : communityId
+                  ? `/communities/${communityId}`
+                  : '/communities'
+            }
           >
             Back to protection
           </Link>

@@ -1,12 +1,14 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { Suspense } from 'react';
-import { SurveyProtectionDashboard } from '@/components/integrity/SurveyProtectionDashboard';
-
-export default function IntegritySurveyPage() {
-  return (
-    <Suspense>
-      <SurveyProtectionDashboard />
-    </Suspense>
+export default async function IntegritySurveyRedirect({
+  searchParams,
+}: {
+  searchParams: Promise<{ survey?: string }>;
+}) {
+  const { survey } = await searchParams;
+  redirect(
+    survey
+      ? `/surveys/integrity?survey=${encodeURIComponent(survey)}`
+      : '/surveys/integrity'
   );
 }

@@ -1,0 +1,15 @@
+.toolbar {
+  margin-bottom: 1rem;
+  max-width: 22rem;
+}
+
+.name {
+  color: #045ebf;
+  display: inline-block;
+  font-weight: 500;
+  max-width: 28rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}

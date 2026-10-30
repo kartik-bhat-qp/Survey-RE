@@ -278,6 +278,7 @@ function isSurveySettingsTab(value: string | null): value is SurveySettingsTab {
   return (
     value === 'settings' ||
     value === 'security' ||
+    value === 'respondent-integrity' ||
     value === 'privacy' ||
     value === 'notifications' ||
     value === 'languages' ||
@@ -958,7 +959,6 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
           </div>
         ) : activeTab === 'security' ? (
           <div className={`${styles.panel} ${styles.authPanel}`}>
-            <SurveyIntegrityCard surveyId={surveyId} surveyName={survey?.name ?? 'This survey'} />
             <div className={styles.authHeader}>
               <h2 className={styles.authTitle}>Survey Authentication</h2>
               <WuTooltip content={SURVEY_AUTHENTICATION_HELP} position="top">
@@ -1270,6 +1270,10 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
             <div className={styles.actions}>
               <WuButton onClick={handleSave}>Save Changes</WuButton>
             </div>
+          </div>
+        ) : activeTab === 'respondent-integrity' ? (
+          <div className={styles.panel}>
+            <SurveyIntegrityCard surveyId={surveyId} surveyName={survey?.name ?? 'This survey'} />
           </div>
         ) : activeTab === 'privacy' ? (
           <div className={styles.panel}>

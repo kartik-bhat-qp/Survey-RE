@@ -51,29 +51,10 @@ export const SURVEY_CHECKS = [
     label: 'Same person',
     group: 'Same person',
     detail:
-      'How many devices and IP addresses one person may use, even when the IP address changes. ' +
+      'Recognize the same person across devices and IP addresses, even when the IP address changes. ' +
       'Checked once, when the survey opens.',
     moment: 'open',
     whenLabel: 'Checked once, when the survey opens.',
-    allowances: [
-      {
-        id: 'fingerprint',
-        label: 'Devices per person',
-        singular: 'device per person',
-        plural: 'devices per person',
-        min: 1,
-        defaultValue: 1,
-      },
-      {
-        id: 'ip',
-        legacyId: 'ip-duplicates',
-        label: 'IPs per person',
-        singular: 'IP per person',
-        plural: 'IPs per person',
-        min: 1,
-        defaultValue: 1,
-      },
-    ],
   },
   {
     id: 'connection',
@@ -123,24 +104,14 @@ export const COMMUNITY_CHECKS = [
     label: 'Same person',
     group: 'Same person',
     detail:
-      'How many devices and IP addresses one person may use across signups and sign-ins. ' +
-      'Checked on signup or sign-in.',
-    whenLabel: 'Checked once, on the first signup or sign-in from that device.',
+      'How many devices one person may use to sign up. The device includes its IP address. Checked when the account is created.',
+    whenLabel: 'Checked once, on signup.',
     allowances: [
       {
         id: 'fingerprint',
         label: 'Devices per person',
         singular: 'device per person',
         plural: 'devices per person',
-        min: 1,
-        defaultValue: 1,
-      },
-      {
-        id: 'ip',
-        legacyId: 'ip-duplicates',
-        label: 'IPs per person',
-        singular: 'IP per person',
-        plural: 'IPs per person',
         min: 1,
         defaultValue: 1,
       },
@@ -234,9 +205,17 @@ export interface CommunityProtectionRecord {
   tolerance?: CheckTolerance<CommunityCheckId>;
 }
 
+export interface NewSurveyIntegrityDefault {
+  enabled: boolean;
+  checks: SurveyCheckId[];
+  tolerance?: CheckTolerance<SurveyCheckId>;
+}
+
 export interface IntegrityCoverage {
   surveys: SurveyProtectionRecord[];
   communities: CommunityProtectionRecord[];
+  /** Applied only when a survey is created after this is turned on. */
+  newSurveys?: NewSurveyIntegrityDefault;
 }
 
 export const EMPTY_INTEGRITY_COVERAGE: IntegrityCoverage = {
@@ -376,6 +355,42 @@ export function communityCheckSummary(ids: readonly string[] | undefined): strin
   const checks = enabledCommunityChecks(ids);
   if (checks.length === 0) return '';
   return checks.map((item) => item.label).join(', ');
+}
+
+export function surveyRecordFromChecks(
+  surveyId: number,
+  checks: readonly string[],
+  tolerance?: Partial<Record<string, number>>,
+): SurveyProtectionRecord {
+  const normalized = normalizeSurveyChecks(checks);
+  return {
+    surveyId,
+    checks: normalized,
+    protections: protectionsForSurveyChecks(normalized),
+    tolerance: normalizeTolerance(normalized, tolerance, SURVEY_CHECKS),
+  };
+}
+
+/**
+ * Sets protection on a survey that was just created.
+ * Other surveys in the list are left as they are.
+ * When the organization default is off, the new survey starts unprotected.
+ */
+export function coverageWithNewSurvey(
+  coverage: IntegrityCoverage,
+  surveyId: number,
+): IntegrityCoverage {
+  const others = coverage.surveys.filter((item) => item.surveyId !== surveyId);
+  const defaults = coverage.newSurveys;
+  const checks = defaults?.enabled ? normalizeSurveyChecks(defaults.checks) : [];
+  if (checks.length === 0) {
+    if (others.length === coverage.surveys.length) return coverage;
+    return { ...coverage, surveys: others };
+  }
+  return {
+    ...coverage,
+    surveys: [...others, surveyRecordFromChecks(surveyId, checks, defaults?.tolerance)],
+  };
 }
 
 export function findSurveyProtection(

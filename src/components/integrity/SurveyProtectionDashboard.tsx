@@ -180,10 +180,10 @@ export function SurveyProtectionDashboard() {
   return (
     <PageContainer>
       <PageHeader
-        title="Surveys"
+        title="Respondent integrity"
         description={
-          'Turn on Respondent Integrity for a survey you already have in Surveys. ' +
-          'Choose what Integrity looks for. Each check runs on its own schedule.'
+          'Turn on checks for a survey you already have. ' +
+          'Each check runs on its own schedule.'
         }
         action={
           <WuButton type="button" onClick={openNew}>
