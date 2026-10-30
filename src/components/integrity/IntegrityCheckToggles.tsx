@@ -9,6 +9,16 @@ const WuToggle = dynamic(
   { ssr: false },
 );
 
+type Allowance = {
+  id: string;
+  label: string;
+  singular: string;
+  plural: string;
+  min: number;
+  defaultValue: number;
+  legacyId?: string;
+};
+
 type CheckItem<T extends string> = {
   id: T;
   label: string;
@@ -16,14 +26,24 @@ type CheckItem<T extends string> = {
   whenLabel?: string;
   group?: string;
   groupNote?: string;
-  tolerance?: {
-    label: string;
-    singular: string;
-    plural: string;
-    min: number;
-    defaultValue: number;
-  };
+  tolerance?: Omit<Allowance, 'id'>;
+  allowances?: readonly Allowance[];
 };
+
+function allowancesFor<T extends string>(item: CheckItem<T>): Allowance[] {
+  if (item.allowances?.length) return [...item.allowances];
+  if (!item.tolerance) return [];
+  return [{ ...item.tolerance, id: item.id }];
+}
+
+function allowanceCount(
+  spec: Allowance,
+  tolerances: Partial<Record<string, number>> | undefined,
+): number {
+  const raw = tolerances?.[spec.id] ?? (spec.legacyId ? tolerances?.[spec.legacyId] : undefined);
+  const value = typeof raw === 'number' && Number.isFinite(raw) ? raw : spec.defaultValue;
+  return Math.max(spec.min, value);
+}
 
 function grouped<T extends string>(items: readonly CheckItem<T>[]) {
   const groups: { key: string; note: string; items: CheckItem<T>[] }[] = [];
@@ -36,28 +56,30 @@ function grouped<T extends string>(items: readonly CheckItem<T>[]) {
   return groups;
 }
 
+function isSingleToggle<T extends string>(items: readonly CheckItem<T>[]): boolean {
+  return items.length === 1;
+}
+
 function groupStatus<T extends string>(
   items: readonly CheckItem<T>[],
   selected: readonly T[],
-  tolerances: Partial<Record<T, number>> | undefined,
+  tolerances: Partial<Record<string, number>> | undefined,
 ): string {
   const counts: string[] = [];
   const names: string[] = [];
   for (const item of items) {
     if (!selected.includes(item.id)) continue;
-    if (!item.tolerance) {
+    const allowances = allowancesFor(item);
+    if (allowances.length === 0) {
       names.push(item.label);
       continue;
     }
-    const value = Math.max(
-      item.tolerance.min,
-      tolerances?.[item.id] ?? item.tolerance.defaultValue,
-    );
-    const unit = value === 1 ? item.tolerance.singular : item.tolerance.plural;
-    counts.push(`${value} ${unit}`);
+    for (const spec of allowances) {
+      const value = allowanceCount(spec, tolerances);
+      counts.push(`${value} ${value === 1 ? spec.singular : spec.plural}`);
+    }
   }
-  const plain =
-    names.length > 2 ? `${names.length} on` : names.join(', ');
+  const plain = names.length > 2 ? `${names.length} on` : names.join(', ');
   const summary = [counts.join(', '), plain].filter(Boolean).join(', ');
   return summary || 'Off';
 }
@@ -71,14 +93,30 @@ export function IntegrityCheckToggles<T extends string>({
 }: {
   items: readonly CheckItem<T>[];
   selected: readonly T[];
-  tolerances?: Partial<Record<T, number>>;
+  tolerances?: Partial<Record<string, number>>;
   onToggle: (id: T, checked: boolean) => void;
-  onTolerance?: (id: T, value: number) => void;
+  onTolerance?: (id: string, value: number) => void;
 }) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   return (
     <div className={styles.groupList}>
       {grouped(items).map((group) => {
+        if (isSingleToggle(group.items)) {
+          const item = group.items[0];
+          return (
+            <section key={group.key} className={styles.checkCard}>
+              <div className={styles.plainHeader}>
+                <CheckRow
+                  item={item}
+                  checked={selected.includes(item.id)}
+                  tolerances={tolerances}
+                  onToggle={onToggle}
+                  onTolerance={onTolerance}
+                />
+              </div>
+            </section>
+          );
+        }
         const expanded = open[group.key] ?? false;
         const status = groupStatus(group.items, selected, tolerances);
         return (
@@ -112,14 +150,7 @@ export function IntegrityCheckToggles<T extends string>({
                     key={item.id}
                     item={item}
                     checked={selected.includes(item.id)}
-                    allowance={
-                      item.tolerance
-                        ? Math.max(
-                            item.tolerance.min,
-                            tolerances?.[item.id] ?? item.tolerance.defaultValue,
-                          )
-                        : 0
-                    }
+                    tolerances={tolerances}
                     onToggle={onToggle}
                     onTolerance={onTolerance}
                   />
@@ -136,17 +167,17 @@ export function IntegrityCheckToggles<T extends string>({
 function CheckRow<T extends string>({
   item,
   checked,
-  allowance,
+  tolerances,
   onToggle,
   onTolerance,
 }: {
   item: CheckItem<T>;
   checked: boolean;
-  allowance: number;
+  tolerances?: Partial<Record<string, number>>;
   onToggle: (id: T, checked: boolean) => void;
-  onTolerance?: (id: T, value: number) => void;
+  onTolerance?: (id: string, value: number) => void;
 }) {
-  const tolerance = item.tolerance;
+  const allowances = allowancesFor(item);
   return (
     <div className={styles.row}>
       <div className={styles.copy}>
@@ -164,44 +195,49 @@ function CheckRow<T extends string>({
         >
           <span className={styles.hint}>{item.detail}</span>
         </button>
-        {checked && tolerance ? (
-          <div className={styles.tolerance}>
-            <span>Allow</span>
-            <div className={styles.stepper}>
-              <button
-                type="button"
-                className={styles.step}
-                aria-label={`Decrease ${tolerance.label}`}
-                disabled={allowance <= tolerance.min}
-                onClick={() =>
-                  onTolerance?.(item.id, Math.max(tolerance.min, allowance - 1))
-                }
-              >
-                −
-              </button>
-              <input
-                className={styles.stepValue}
-                inputMode="numeric"
-                aria-label={`${tolerance.label} for ${item.label}`}
-                value={String(allowance)}
-                onChange={(event) => {
-                  const next = Number(event.target.value);
-                  if (!Number.isFinite(next)) return;
-                  onTolerance?.(item.id, Math.max(tolerance.min, Math.floor(next)));
-                }}
-              />
-              <button
-                type="button"
-                className={styles.step}
-                aria-label={`Increase ${tolerance.label}`}
-                onClick={() => onTolerance?.(item.id, allowance + 1)}
-              >
-                +
-              </button>
-            </div>
-            <span>{allowance === 1 ? tolerance.singular : tolerance.plural}</span>
-          </div>
-        ) : null}
+        {checked
+          ? allowances.map((allowance) => {
+              const count = allowanceCount(allowance, tolerances);
+              return (
+                <div key={allowance.id} className={styles.tolerance}>
+                  <span>Allow</span>
+                  <div className={styles.stepper}>
+                    <button
+                      type="button"
+                      className={styles.step}
+                      aria-label={`Decrease ${allowance.label}`}
+                      disabled={count <= allowance.min}
+                      onClick={() =>
+                        onTolerance?.(allowance.id, Math.max(allowance.min, count - 1))
+                      }
+                    >
+                      −
+                    </button>
+                    <input
+                      className={styles.stepValue}
+                      inputMode="numeric"
+                      aria-label={`${allowance.label} for ${item.label}`}
+                      value={String(count)}
+                      onChange={(event) => {
+                        const next = Number(event.target.value);
+                        if (!Number.isFinite(next)) return;
+                        onTolerance?.(allowance.id, Math.max(allowance.min, Math.floor(next)));
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className={styles.step}
+                      aria-label={`Increase ${allowance.label}`}
+                      onClick={() => onTolerance?.(allowance.id, count + 1)}
+                    >
+                      +
+                    </button>
+                  </div>
+                  <span>{count === 1 ? allowance.singular : allowance.plural}</span>
+                </div>
+              );
+            })
+          : null}
       </div>
       <WuToggle
         checked={checked}

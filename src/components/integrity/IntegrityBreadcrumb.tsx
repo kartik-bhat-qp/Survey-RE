@@ -13,6 +13,9 @@ const WuTruncatedLabel = dynamic(
 const PAGE_LABEL: Record<string, string> = {
   '/integrity': 'Surveys',
   '/integrity/communities': 'Communities',
+  '/integrity/blacklisting': 'Blocklist',
+  '/integrity/customer-experience': 'Customer Experience',
+  '/integrity/employee-experience': 'Employee Experience',
   '/integrity/check': 'Respondent check',
   '/integrity/settings': 'Protection settings',
 };

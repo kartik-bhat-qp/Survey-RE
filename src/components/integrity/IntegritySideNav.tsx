@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import styles from './IntegritySideNav.module.css';
 
 const WuSidebarContent = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSidebarContent })),
@@ -30,13 +31,26 @@ const NAV = [
   { href: '/integrity/communities', label: 'Communities', icon: 'wm-groups' },
 ];
 
+const COMING_SOON = [
+  {
+    href: '/integrity/customer-experience',
+    label: 'Customer Experience',
+    icon: 'wm-sentiment-satisfied',
+  },
+  {
+    href: '/integrity/employee-experience',
+    label: 'Employee Experience',
+    icon: 'wm-badge',
+  },
+];
+
 export function IntegritySideNav() {
   const pathname = usePathname() ?? '';
 
   return (
     <>
       <WuSidebarContent>
-        <WuSidebarGroup label="Products">
+        <WuSidebarGroup label="Sources">
           {NAV.map((item) => {
             const active =
               item.href === '/integrity'
@@ -52,6 +66,32 @@ export function IntegritySideNav() {
               </WuSidebarItem>
             );
           })}
+          {COMING_SOON.map((item) => {
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
+              <WuSidebarItem
+                key={item.href}
+                Icon={<span className={item.icon} />}
+                isActive={active}
+              >
+                <Link href={item.href} className={styles.soonLink}>
+                  <span>{item.label}</span>
+                  <span className={styles.note}>Coming soon</span>
+                </Link>
+              </WuSidebarItem>
+            );
+          })}
+        </WuSidebarGroup>
+        <WuSidebarGroup label="All sources">
+          <WuSidebarItem
+            Icon={<span className="wm-block" />}
+            isActive={
+              pathname === '/integrity/blacklisting' ||
+              pathname.startsWith('/integrity/blacklisting/')
+            }
+          >
+            <Link href="/integrity/blacklisting">Blocklist</Link>
+          </WuSidebarItem>
         </WuSidebarGroup>
       </WuSidebarContent>
       <WuSidebarFooter>

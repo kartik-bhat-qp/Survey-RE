@@ -31,6 +31,10 @@ const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false },
 );
+const WuTooltip = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuTooltip })),
+  { ssr: false },
+);
 const WuCombobox = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuCombobox })),
   { ssr: false },
@@ -55,7 +59,7 @@ export function SurveyProtectionDashboard() {
   const [scrollTick, setScrollTick] = useState(0);
   const [surveyId, setSurveyId] = useState('');
   const [checks, setChecks] = useState<SurveyCheckId[]>([]);
-  const [tolerance, setTolerance] = useState<Partial<Record<SurveyCheckId, number>>>({});
+  const [tolerance, setTolerance] = useState<Partial<Record<string, number>>>({});
   const [removeId, setRemoveId] = useState<number | null>(null);
   const [ready, setReady] = useState(false);
   const appliedQuery = useRef(false);
@@ -286,20 +290,26 @@ export function SurveyProtectionDashboard() {
                     {((row.record.checks?.length ?? 0) > 0
                       ? protectionsForSurveyChecks(row.record.checks).includes('start')
                       : row.record.protections?.includes('start')) ? (
-                      <Link
-                        className={styles.link}
-                        href={`/integrity/check?entry=survey&survey=${row.survey.id}`}
-                      >
-                        Try survey start
-                      </Link>
+                      <WuTooltip content="Try survey start" position="top">
+                        <Link
+                          className={`${styles.link} ${styles.action}`}
+                          href={`/integrity/check?entry=survey&survey=${row.survey.id}`}
+                          aria-label="Try survey start"
+                        >
+                          <span className={`wm-play-arrow ${styles.actionIcon}`} aria-hidden />
+                        </Link>
+                      </WuTooltip>
                     ) : null}
-                    <button
-                      type="button"
-                      className={styles.link}
-                      onClick={() => setRemoveId(row.survey.id)}
-                    >
-                      Turn off
-                    </button>
+                    <WuTooltip content="Turn off" position="top">
+                      <button
+                        type="button"
+                        className={`${styles.link} ${styles.action}`}
+                        aria-label="Turn off"
+                        onClick={() => setRemoveId(row.survey.id)}
+                      >
+                        <span className={`wm-toggle-off ${styles.actionIcon}`} aria-hidden />
+                      </button>
+                    </WuTooltip>
                   </div>
                 </td>
               </tr>

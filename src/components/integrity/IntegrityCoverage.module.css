@@ -42,6 +42,10 @@
   border-radius: 4px;
 }
 
+.plainHeader {
+  padding: 10px 12px;
+}
+
 .groupHeader {
   align-items: flex-start;
   background: transparent;
@@ -186,6 +190,17 @@
   font: inherit;
   padding: 0;
   text-align: left;
+}
+
+.action {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.actionIcon {
+  font-size: 16px;
+  line-height: 1;
 }
 
 .table {

@@ -48,74 +48,43 @@ export type SurveyProtectionId = (typeof SURVEY_PROTECTIONS)[number]['id'];
 export const SURVEY_CHECKS = [
   {
     id: 'fingerprint',
-    label: 'Device fingerprinting',
+    label: 'Same person',
     group: 'Same person',
-    groupNote: 'Device and IP. Checked once, when the survey opens.',
     detail:
-      'Recognize the same browser or device across visits, even when the IP address changes.',
+      'How many devices and IP addresses one person may use, even when the IP address changes. ' +
+      'Checked once, when the survey opens.',
     moment: 'open',
     whenLabel: 'Checked once, when the survey opens.',
-    tolerance: {
-      label: 'Devices allowed',
-      singular: 'device',
-      plural: 'devices',
-      min: 1,
-      defaultValue: 1,
-    },
+    allowances: [
+      {
+        id: 'fingerprint',
+        label: 'Devices per person',
+        singular: 'device per person',
+        plural: 'devices per person',
+        min: 1,
+        defaultValue: 1,
+      },
+      {
+        id: 'ip',
+        legacyId: 'ip-duplicates',
+        label: 'IPs per person',
+        singular: 'IP per person',
+        plural: 'IPs per person',
+        min: 1,
+        defaultValue: 1,
+      },
+    ],
   },
   {
-    id: 'ip-duplicates',
-    label: 'IP duplicates',
-    group: 'Same person',
-    groupNote: 'Device and IP. Checked once, when the survey opens.',
-    detail: 'Flag more than one response from the same IP address.',
-    moment: 'open',
-    whenLabel: 'Checked once, when the survey opens.',
-    tolerance: {
-      label: 'IPs allowed',
-      singular: 'IP',
-      plural: 'IPs',
-      min: 1,
-      defaultValue: 1,
-    },
-  },
-  {
-    id: 'vpn',
-    label: 'VPN',
+    id: 'connection',
+    label: 'Connection',
     group: 'Connection',
-    groupNote: 'VPN, proxy, location, and bots. Checked when the survey opens.',
-    detail: 'Flag a response that reaches the survey through a VPN.',
-    moment: 'open',
-    whenLabel: 'Checked once, when the survey opens.',
-  },
-  {
-    id: 'proxy',
-    label: 'Proxy',
-    group: 'Connection',
-    groupNote: 'VPN, proxy, location, and bots. Checked when the survey opens.',
-    detail: 'Flag a response that reaches the survey through a proxy.',
-    moment: 'open',
-    whenLabel: 'Checked once, when the survey opens.',
-  },
-  {
-    id: 'location',
-    label: 'Location',
-    group: 'Connection',
-    groupNote: 'VPN, proxy, location, and bots. Checked when the survey opens.',
     detail:
-      'Flag a response whose location does not match its IP address, or moves faster than a ' +
-      'person could travel.',
-    moment: 'open',
-    whenLabel: 'Checked once, when the survey opens.',
-  },
-  {
-    id: 'bot',
-    label: 'Bot and automation detection',
-    group: 'Connection',
-    groupNote: 'VPN, proxy, location, and bots. Checked when the survey opens.',
-    detail: 'Flag a visit that looks like a script, a headless browser, or another automated tool.',
+      'VPN, proxy, location, and bots. Checked when the survey opens, and again while answers ' +
+      'are being entered.',
     moment: 'session',
-    whenLabel: 'Checked when the survey opens, and again while answers are being entered.',
+    whenLabel:
+      'Checked when the survey opens, and again while answers are being entered.',
   },
   {
     id: 'ai-detection',
@@ -125,13 +94,6 @@ export const SURVEY_CHECKS = [
     detail: 'Flag open-ended answers that read like they were written by an AI tool.',
     moment: 'throughout',
     whenLabel: 'Checked throughout the survey, whenever an answer is written.',
-    tolerance: {
-      label: 'AI-like answers allowed',
-      singular: 'AI-like answer',
-      plural: 'AI-like answers',
-      min: 0,
-      defaultValue: 0,
-    },
   },
   {
     id: 'copy-paste',
@@ -141,29 +103,13 @@ export const SURVEY_CHECKS = [
     detail: 'Flag answers that were pasted in instead of typed.',
     moment: 'throughout',
     whenLabel: 'Checked throughout the survey, whenever an answer is entered.',
-    tolerance: {
-      label: 'Pasted answers allowed',
-      singular: 'pasted answer',
-      plural: 'pasted answers',
-      min: 0,
-      defaultValue: 0,
-    },
-  },
-  {
-    id: 'campaign',
-    label: 'Campaign-level anomalies',
-    group: 'Across responses',
-    groupNote: 'Campaign and cohort. Checked as responses come in.',
-    detail: 'Flag a campaign when its responses do not look like the rest of that campaign.',
-    moment: 'aggregate',
-    whenLabel: 'Checked across the campaign, as responses come in.',
   },
   {
     id: 'cohort',
     label: 'Cohort-level anomalies',
-    group: 'Across responses',
-    groupNote: 'Campaign and cohort. Checked as responses come in.',
-    detail: 'Flag a cohort when its responses do not look like the other cohorts in this survey.',
+    detail:
+      'Flag a cohort when its responses do not look like the other cohorts in this survey. ' +
+      'Checked as responses come in.',
     moment: 'aggregate',
     whenLabel: 'Checked across each cohort, as responses come in.',
   },
@@ -174,64 +120,39 @@ export type SurveyCheckId = (typeof SURVEY_CHECKS)[number]['id'];
 export const COMMUNITY_CHECKS = [
   {
     id: 'fingerprint',
-    label: 'Device fingerprinting',
+    label: 'Same person',
     group: 'Same person',
-    groupNote: 'Device and IP. Checked on signup or sign-in.',
-    detail: 'Recognize the same browser or device across signups and sign-ins.',
+    detail:
+      'How many devices and IP addresses one person may use across signups and sign-ins. ' +
+      'Checked on signup or sign-in.',
     whenLabel: 'Checked once, on the first signup or sign-in from that device.',
-    tolerance: {
-      label: 'Devices allowed',
-      singular: 'device',
-      plural: 'devices',
-      min: 1,
-      defaultValue: 1,
-    },
+    allowances: [
+      {
+        id: 'fingerprint',
+        label: 'Devices per person',
+        singular: 'device per person',
+        plural: 'devices per person',
+        min: 1,
+        defaultValue: 1,
+      },
+      {
+        id: 'ip',
+        legacyId: 'ip-duplicates',
+        label: 'IPs per person',
+        singular: 'IP per person',
+        plural: 'IPs per person',
+        min: 1,
+        defaultValue: 1,
+      },
+    ],
   },
   {
-    id: 'ip-duplicates',
-    label: 'IP duplicates',
-    group: 'Same person',
-    groupNote: 'Device and IP. Checked on signup or sign-in.',
-    detail: 'Flag more than one account from the same IP address.',
-    whenLabel: 'Checked once, when the account is created.',
-    tolerance: {
-      label: 'IPs allowed',
-      singular: 'IP',
-      plural: 'IPs',
-      min: 1,
-      defaultValue: 1,
-    },
-  },
-  {
-    id: 'vpn',
-    label: 'VPN',
+    id: 'connection',
+    label: 'Connection',
     group: 'Connection',
-    groupNote: 'VPN, proxy, location, and bots. Checked on signup or sign-in.',
-    detail: 'Flag a signup or sign-in that comes through a VPN.',
-    whenLabel: 'Checked once, on signup or sign-in.',
-  },
-  {
-    id: 'proxy',
-    label: 'Proxy',
-    group: 'Connection',
-    groupNote: 'VPN, proxy, location, and bots. Checked on signup or sign-in.',
-    detail: 'Flag a signup or sign-in that comes through a proxy.',
-    whenLabel: 'Checked once, on signup or sign-in.',
-  },
-  {
-    id: 'location',
-    label: 'Location',
-    group: 'Connection',
-    groupNote: 'VPN, proxy, location, and bots. Checked on signup or sign-in.',
-    detail: 'Flag a signup or sign-in whose location does not match its IP address.',
-    whenLabel: 'Checked once, on signup or sign-in.',
-  },
-  {
-    id: 'bot',
-    label: 'Bot and automation detection',
-    group: 'Connection',
-    groupNote: 'VPN, proxy, location, and bots. Checked on signup or sign-in.',
-    detail: 'Flag a signup or sign-in that looks like a script or another automated tool.',
+    detail:
+      'VPN, proxy, location, and bots. Checked on signup or sign-in, and again if the session ' +
+      'looks scripted.',
     whenLabel: 'Checked on signup or sign-in, and again if the session looks scripted.',
   },
   {
@@ -241,13 +162,6 @@ export const COMMUNITY_CHECKS = [
     groupNote: 'AI-written text, pasting, and disposable email.',
     detail: 'Flag signup or profile text that reads like it was written by an AI tool.',
     whenLabel: 'Checked throughout, whenever signup or profile text is written.',
-    tolerance: {
-      label: 'AI-like entries allowed',
-      singular: 'AI-like entry',
-      plural: 'AI-like entries',
-      min: 0,
-      defaultValue: 0,
-    },
   },
   {
     id: 'copy-paste',
@@ -256,13 +170,6 @@ export const COMMUNITY_CHECKS = [
     groupNote: 'AI-written text, pasting, and disposable email.',
     detail: 'Flag text pasted into a signup or profile instead of typed.',
     whenLabel: 'Checked throughout, whenever text is entered.',
-    tolerance: {
-      label: 'Pasted entries allowed',
-      singular: 'pasted entry',
-      plural: 'pasted entries',
-      min: 0,
-      defaultValue: 0,
-    },
   },
   {
     id: 'disposable-email',
@@ -307,7 +214,7 @@ export const LOGIN_CHECK_HELP: Record<LoginCheck, string> = {
     'sign-in that looks automated, can be asked to wait or confirm.',
 };
 
-export type CheckTolerance<T extends string> = Partial<Record<T, number>>;
+export type CheckTolerance<T extends string = string> = Partial<Record<T | string, number>>;
 
 export interface SurveyProtectionRecord {
   surveyId: number;
@@ -340,6 +247,11 @@ export const EMPTY_INTEGRITY_COVERAGE: IntegrityCoverage = {
 export const INTEGRITY_COVERAGE_KEY = 'integrity-coverage';
 
 const PROTECTION_IDS = new Set<string>(SURVEY_PROTECTIONS.map((item) => item.id));
+const CONNECTION_LEGACY = new Set(['connection', 'vpn', 'proxy', 'location', 'bot']);
+
+function withConnection(ids: readonly string[]): string[] {
+  return ids.some((id) => CONNECTION_LEGACY.has(id)) ? [...ids, 'connection'] : [...ids];
+}
 
 export function surveyProtectionLabel(id: SurveyProtectionId): string {
   return SURVEY_PROTECTIONS.find((item) => item.id === id)?.label ?? id;
@@ -357,11 +269,13 @@ export function normalizeProtections(ids: SurveyProtectionId[]): SurveyProtectio
 }
 
 export function normalizeSurveyChecks(ids: readonly string[]): SurveyCheckId[] {
-  return SURVEY_CHECKS.map((item) => item.id).filter((id) => ids.includes(id));
+  const expanded = withConnection(ids);
+  return SURVEY_CHECKS.map((item) => item.id).filter((id) => expanded.includes(id));
 }
 
 export function normalizeCommunityChecks(ids: readonly string[]): CommunityCheckId[] {
-  return COMMUNITY_CHECKS.map((item) => item.id).filter((id) => ids.includes(id));
+  const expanded = withConnection(ids);
+  return COMMUNITY_CHECKS.map((item) => item.id).filter((id) => expanded.includes(id));
 }
 
 export function enabledSurveyChecks(ids: readonly string[] | undefined) {
@@ -380,24 +294,47 @@ export function protectionsForSurveyChecks(ids: readonly string[]): SurveyProtec
   return protections;
 }
 
+type AllowanceSpec = {
+  id: string;
+  min: number;
+  defaultValue: number;
+  singular: string;
+  plural: string;
+  legacyId?: string;
+};
+
 type ToleranceSpec = {
   id: string;
-  tolerance?: { min: number; defaultValue: number; singular: string; plural: string };
+  tolerance?: Omit<AllowanceSpec, 'id'>;
+  allowances?: readonly AllowanceSpec[];
 };
+
+function allowanceSpecs(item: ToleranceSpec): AllowanceSpec[] {
+  if (item.allowances?.length) return [...item.allowances];
+  if (!item.tolerance) return [];
+  return [{ ...item.tolerance, id: item.id }];
+}
+
+function allowanceValue(
+  spec: AllowanceSpec,
+  stored: Partial<Record<string, number>> | undefined,
+): number {
+  const raw = stored?.[spec.id] ?? (spec.legacyId ? stored?.[spec.legacyId] : undefined);
+  const value =
+    typeof raw === 'number' && Number.isFinite(raw) ? Math.floor(raw) : spec.defaultValue;
+  return Math.max(spec.min, value);
+}
 
 export function normalizeTolerance<T extends string>(
   checks: readonly T[],
   stored: Partial<Record<string, number>> | undefined,
   catalog: readonly ToleranceSpec[],
-): Partial<Record<T, number>> {
-  const next: Partial<Record<T, number>> = {};
+): Partial<Record<string, number>> {
+  const next: Partial<Record<string, number>> = {};
   for (const id of checks) {
-    const spec = catalog.find((item) => item.id === id)?.tolerance;
-    if (!spec) continue;
-    const raw = stored?.[id];
-    const value =
-      typeof raw === 'number' && Number.isFinite(raw) ? Math.floor(raw) : spec.defaultValue;
-    next[id] = Math.max(spec.min, value);
+    const item = catalog.find((entry) => entry.id === id);
+    if (!item) continue;
+    for (const spec of allowanceSpecs(item)) next[spec.id] = allowanceValue(spec, stored);
   }
   return next;
 }
@@ -409,17 +346,13 @@ export function toleranceSummary(
 ): string {
   const enabled = new Set(checks ?? []);
   return catalog
-    .filter((item) => item.tolerance && enabled.has(item.id))
-    .map((item) => {
-      const spec = item.tolerance;
-      if (!spec) return '';
-      const raw = stored?.[item.id];
-      const value =
-        typeof raw === 'number' && Number.isFinite(raw) ? Math.floor(raw) : spec.defaultValue;
-      const count = Math.max(spec.min, value);
-      return `${count} ${count === 1 ? spec.singular : spec.plural}`;
-    })
-    .filter(Boolean)
+    .filter((item) => enabled.has(item.id))
+    .flatMap((item) =>
+      allowanceSpecs(item).map((spec) => {
+        const count = allowanceValue(spec, stored);
+        return `${count} ${count === 1 ? spec.singular : spec.plural}`;
+      }),
+    )
     .join(', ');
 }
 

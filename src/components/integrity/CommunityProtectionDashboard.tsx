@@ -325,7 +325,7 @@ export function CommunityProtectionDashboard() {
                 <h3>What will be checked</h3>
                 <IntegrityCheckToggles
                   items={COMMUNITY_CHECKS}
-                  selected={record.checks ?? []}
+                  selected={normalizeCommunityChecks(record.checks ?? [])}
                   tolerances={record.tolerance}
                   onToggle={(id, checked) => toggleCheck(community.value, id, checked)}
                   onTolerance={(id, value) =>
