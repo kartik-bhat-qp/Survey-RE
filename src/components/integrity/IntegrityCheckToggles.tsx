@@ -146,6 +146,7 @@ function CheckRow<T extends string>({
   onToggle: (id: T, checked: boolean) => void;
   onTolerance?: (id: T, value: number) => void;
 }) {
+  const tolerance = item.tolerance;
   return (
     <div className={styles.row}>
       <div className={styles.copy}>
@@ -163,17 +164,17 @@ function CheckRow<T extends string>({
         >
           <span className={styles.hint}>{item.detail}</span>
         </button>
-        {checked && item.tolerance ? (
+        {checked && tolerance ? (
           <div className={styles.tolerance}>
             <span>Allow</span>
             <div className={styles.stepper}>
               <button
                 type="button"
                 className={styles.step}
-                aria-label={`Decrease ${item.tolerance.label}`}
-                disabled={allowance <= item.tolerance.min}
+                aria-label={`Decrease ${tolerance.label}`}
+                disabled={allowance <= tolerance.min}
                 onClick={() =>
-                  onTolerance?.(item.id, Math.max(item.tolerance.min, allowance - 1))
+                  onTolerance?.(item.id, Math.max(tolerance.min, allowance - 1))
                 }
               >
                 −
@@ -181,24 +182,24 @@ function CheckRow<T extends string>({
               <input
                 className={styles.stepValue}
                 inputMode="numeric"
-                aria-label={`${item.tolerance.label} for ${item.label}`}
+                aria-label={`${tolerance.label} for ${item.label}`}
                 value={String(allowance)}
                 onChange={(event) => {
                   const next = Number(event.target.value);
                   if (!Number.isFinite(next)) return;
-                  onTolerance?.(item.id, Math.max(item.tolerance!.min, Math.floor(next)));
+                  onTolerance?.(item.id, Math.max(tolerance.min, Math.floor(next)));
                 }}
               />
               <button
                 type="button"
                 className={styles.step}
-                aria-label={`Increase ${item.tolerance.label}`}
+                aria-label={`Increase ${tolerance.label}`}
                 onClick={() => onTolerance?.(item.id, allowance + 1)}
               >
                 +
               </button>
             </div>
-            <span>{allowance === 1 ? item.tolerance.singular : item.tolerance.plural}</span>
+            <span>{allowance === 1 ? tolerance.singular : tolerance.plural}</span>
           </div>
         ) : null}
       </div>

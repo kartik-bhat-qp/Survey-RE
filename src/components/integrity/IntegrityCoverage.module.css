@@ -220,34 +220,6 @@
   max-width: 420px;
 }
 
-/* The survey menu portals to the page and nests two overflow areas. Keep the list scroll only. */
-:global(.wu-z-50:has(.wu-combobox-search)) {
-  display: flex !important;
-  flex-direction: column;
-  overflow: hidden !important;
-}
-
-:global(.wu-z-50:has(.wu-combobox-search) > .wu-flex) {
-  flex: 1 1 auto;
-  height: 100% !important;
-  max-height: 100%;
-  min-height: 0;
-  overflow: hidden !important;
-}
-
-:global(.wu-z-50:has(.wu-combobox-search) > .wu-flex > div:last-child) {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-}
-
-:global(.wu-z-50:has(.wu-combobox-search) .wu-combobox-list) {
-  height: auto !important;
-  max-height: none !important;
-  overflow: visible !important;
-}
-
 .tolerance {
   align-items: center;
   background: #f4f7fb;
