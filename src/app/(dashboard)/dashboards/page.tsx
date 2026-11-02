@@ -304,6 +304,7 @@ export default function DashboardsPage() {
           />
           {filteredDashboards.length > DASHBOARDS_PER_PAGE && (
             <WuPagination
+              className={styles.pagination}
               key={`${currentPage}-${filteredDashboards.length}`}
               totalRows={filteredDashboards.length}
               initialPage={currentPage - 1}

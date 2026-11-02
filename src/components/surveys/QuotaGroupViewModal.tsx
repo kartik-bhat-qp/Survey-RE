@@ -11,6 +11,7 @@ import {
   applyQuotaGroupCheckOverrides,
   getQuotaGroupCheckPoints,
   mergeQuotaGroups,
+  resolveQuotaGroupMeta,
   type QuotaGroup,
   type QuotaGroupCheckOverrides,
 } from '@/data/mock-quota-groups';
@@ -120,7 +121,7 @@ export function QuotaGroupViewModal({
     return (
       groups.find(
         (group) => group.name.toLowerCase() === groupName.toLowerCase()
-      ) ?? null
+      ) ?? resolveQuotaGroupMeta(groupName, customGroups)
     );
   }, [customGroups, groupCheckOverrides, groupName]);
 

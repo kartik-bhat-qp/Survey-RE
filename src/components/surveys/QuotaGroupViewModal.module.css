@@ -316,14 +316,20 @@
   line-height: 1;
   opacity: 0;
   padding: 0.125rem;
-  pointer-events: none;
+  pointer-events: auto;
+  position: relative;
   transition: opacity 0.15s ease, background 0.15s ease;
+  z-index: 1;
 }
 
+:global(tr:hover) .viewBtn,
+:global(tr:focus-within) .viewBtn,
 .cell:hover .viewBtn,
 .cell:focus-within .viewBtn {
   opacity: 1;
   pointer-events: auto;
+  position: relative;
+  z-index: 1;
 }
 
 .viewBtn:hover {

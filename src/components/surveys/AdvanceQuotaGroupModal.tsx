@@ -1,12 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import {
-  advanceQuotaCustomGroupsKey,
-  advanceQuotaGroupCheckOverridesKey,
   applyQuotaGroupCheckOverrides,
   DEFAULT_QUOTA_GROUP_HANDLING_TYPE,
   formatQuotaGroupCheckLabel,
@@ -224,6 +229,10 @@ interface AdvanceQuotaGroupModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   surveyId: number;
+  customGroups: QuotaGroup[];
+  setCustomGroups: Dispatch<SetStateAction<QuotaGroup[]>>;
+  groupCheckOverrides: QuotaGroupCheckOverrides;
+  setGroupCheckOverrides: Dispatch<SetStateAction<QuotaGroupCheckOverrides>>;
   onBack?: () => void;
   onConfirm: (selection: QuotaGroupSelection) => void;
 }
@@ -232,20 +241,15 @@ export function AdvanceQuotaGroupModal({
   open,
   onOpenChange,
   surveyId,
+  customGroups,
+  setCustomGroups,
+  groupCheckOverrides,
+  setGroupCheckOverrides,
   onBack,
   onConfirm,
 }: AdvanceQuotaGroupModalProps) {
   const wick = useWickUILib();
   const { showToast } = useWuShowToast();
-  const [customGroups, setCustomGroups] = usePersistedState<QuotaGroup[]>(
-    advanceQuotaCustomGroupsKey(surveyId),
-    []
-  );
-  const [groupCheckOverrides, setGroupCheckOverrides] =
-    usePersistedState<QuotaGroupCheckOverrides>(
-      advanceQuotaGroupCheckOverridesKey(surveyId),
-      {}
-    );
   const [mode, setMode] = useState<GroupMode>('existing');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [newGroupName, setNewGroupName] = useState('');

@@ -102,12 +102,7 @@ export function SurveyEditorPhaseTabs() {
           active={activePhase === tab.id}
           onClick={(event) => {
             event.preventDefault();
-            if (
-              tab.id === 'edit' ||
-              tab.id === 'analytics' ||
-              tab.id === 'analytics-2' ||
-              tab.id === 'distribute'
-            ) {
+            if (tab.id !== 'integration') {
               setActivePhase(tab.id);
               return;
             }

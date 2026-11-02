@@ -61,6 +61,7 @@ import {
   getQuotaGroupCheckPoints,
   mergeQuotaGroups,
   type QuotaGroup,
+  type QuotaGroupCheckOverrides,
   type QuotaGroupSelection,
 } from '@/data/mock-quota-groups';
 import type { CriteriaQuotaFlow } from '@/components/surveys/CriteriaBasedQuotaModal';
@@ -858,14 +859,15 @@ export function SurveyAdvanceQuotasDashboard({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [viewQuotaGroupName, setViewQuotaGroupName] = useState<string | null>(null);
   const [viewCriteriaQuotaId, setViewCriteriaQuotaId] = useState<string | null>(null);
-  const [customGroups] = usePersistedState<QuotaGroup[]>(
+  const [customGroups, setCustomGroups] = usePersistedState<QuotaGroup[]>(
     advanceQuotaCustomGroupsKey(surveyId),
     []
   );
-  const [groupCheckOverrides] = usePersistedState(
-    advanceQuotaGroupCheckOverridesKey(surveyId),
-    {}
-  );
+  const [groupCheckOverrides, setGroupCheckOverrides] =
+    usePersistedState<QuotaGroupCheckOverrides>(
+      advanceQuotaGroupCheckOverridesKey(surveyId),
+      {}
+    );
   const [deletedMockQuotaIds, setDeletedMockQuotaIds] = usePersistedStringSet(
     `advance-quotas:${surveyId}:deleted-mock`
   );
@@ -1704,6 +1706,10 @@ export function SurveyAdvanceQuotasDashboard({
         open={quotaGroupModalOpen}
         onOpenChange={setQuotaGroupModalOpen}
         surveyId={surveyId}
+        customGroups={customGroups}
+        setCustomGroups={setCustomGroups}
+        groupCheckOverrides={groupCheckOverrides}
+        setGroupCheckOverrides={setGroupCheckOverrides}
         onBack={() => {
           setQuotaGroupModalOpen(false);
           setAddQuotaOpen(true);
