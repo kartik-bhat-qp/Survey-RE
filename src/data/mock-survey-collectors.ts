@@ -35,19 +35,55 @@ export interface CollectorMessage {
   completed: string;
 }
 
+export type RecurrenceMode = 'off' | 'schedule';
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly';
+export type ThankYouMode = 'default' | 'custom';
+export type EndpageMode = 'thank-you' | 'redirect' | 'custom';
+export type ResponseCopyMode = 'none' | 'email-request';
+export type MultipleResponsesMode = 'allow' | 'once' | 'custom-variable';
+export type ResponseEditingMode = 'until-complete' | 'after-complete' | 'no-page-back';
+export type AnonymousMode = 'anonymous' | 'include-ip';
+export type InstantResultsMode = 'show' | 'hide';
+export type CutoffMode = 'manual' | 'datetime' | 'per-response';
+export type ResponseLimitMode = 'manual' | 'max';
+export type IpRestrictionMode = 'block' | 'allow' | 'none';
+export type PasswordMode = 'required' | 'none';
+export type DisqualifyMode = 'default' | 'custom';
+
+export interface CollectorLandingPage {
+  imageUrl: string;
+  title: string;
+  description: string;
+}
+
 export interface CollectorOptions {
-  multiple: boolean;
-  editing: boolean;
-  anonymous: boolean;
-  cutoff: boolean;
+  landing: CollectorLandingPage;
+  recurrence: RecurrenceMode;
+  recurrenceFrequency: RecurrenceFrequency;
+  recurrenceNextAt: string;
+  recurrenceEndAt: string;
+  thankYou: ThankYouMode;
+  thankYouMessage: string;
+  endpage: EndpageMode;
+  endpageRedirect: string;
+  endpageCustom: string;
+  responseCopy: ResponseCopyMode;
+  multiple: MultipleResponsesMode;
+  customVariable: string;
+  editing: ResponseEditingMode;
+  anonymous: AnonymousMode;
+  instantResults: InstantResultsMode;
+  cutoff: CutoffMode;
   cutoffVal: string;
-  limit: boolean;
+  closedMessage: string;
+  limit: ResponseLimitMode;
   limitVal: string;
-  password: boolean;
+  ip: IpRestrictionMode;
+  ipList: string;
+  password: PasswordMode;
   passwordVal: string;
-  thanks: boolean;
-  thanksVal: string;
-  ip: boolean;
+  disqualify: DisqualifyMode;
+  disqualifyMessage: string;
 }
 
 export interface CollectorTypeInfo {
@@ -246,20 +282,63 @@ export const INITIAL_COLLECTOR_MESSAGES: Record<string, CollectorMessage[]> = {
   ],
 };
 
-export const DEFAULT_COLLECTOR_OPTIONS: CollectorOptions = {
-  multiple: false,
-  editing: true,
-  anonymous: false,
-  cutoff: true,
-  cutoffVal: '2026-11-30T23:59',
-  limit: false,
-  limitVal: '5000',
-  password: false,
-  passwordVal: '',
-  thanks: false,
-  thanksVal: 'Thank you for helping improve SNAP in Texas.',
-  ip: false,
+export const DEFAULT_COLLECTOR_LANDING: CollectorLandingPage = {
+  imageUrl: '/images/questionpro-logo.png',
+  title: 'We would like your feedback',
+  description:
+    'Take this survey powered by QuestionPro. Create your own surveys for free.',
 };
+
+export const DEFAULT_CLOSED_MESSAGE =
+  'This collector is no longer accepting responses.';
+
+export const DEFAULT_COLLECTOR_OPTIONS: CollectorOptions = {
+  landing: DEFAULT_COLLECTOR_LANDING,
+  recurrence: 'off',
+  recurrenceFrequency: 'weekly',
+  recurrenceNextAt: '2026-11-09T09:00',
+  recurrenceEndAt: '2026-12-31',
+  thankYou: 'default',
+  thankYouMessage: 'Thank you for helping improve SNAP in Texas.',
+  endpage: 'thank-you',
+  endpageRedirect: 'https://www.questionpro.com',
+  endpageCustom: 'Thanks for taking the time to share your feedback.',
+  responseCopy: 'none',
+  multiple: 'once',
+  customVariable: 'respondent_id',
+  editing: 'until-complete',
+  anonymous: 'include-ip',
+  instantResults: 'hide',
+  cutoff: 'manual',
+  cutoffVal: '2026-11-30T23:59',
+  closedMessage: DEFAULT_CLOSED_MESSAGE,
+  limit: 'manual',
+  limitVal: '5000',
+  ip: 'none',
+  ipList: '',
+  password: 'none',
+  passwordVal: '',
+  disqualify: 'default',
+  disqualifyMessage:
+    "We're sorry, you do not qualify for this survey. Thank you for your time.",
+};
+
+export function collectorOptionsStorageKey(surveyId: number): string {
+  return `collectors:${surveyId}:options`;
+}
+
+export function mergeCollectorOptions(
+  stored?: Partial<CollectorOptions> | null
+): CollectorOptions {
+  return {
+    ...DEFAULT_COLLECTOR_OPTIONS,
+    ...stored,
+    landing: {
+      ...DEFAULT_COLLECTOR_LANDING,
+      ...stored?.landing,
+    },
+  };
+}
 
 export const MESSAGE_AUDIENCES = [
   {

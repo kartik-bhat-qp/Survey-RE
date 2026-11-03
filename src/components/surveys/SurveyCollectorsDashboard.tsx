@@ -1,19 +1,23 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useParams } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { CollectorOptionsPanel } from '@/components/surveys/CollectorOptionsPanel';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import {
   COLLECTOR_STATUS_LABEL,
   COLLECTOR_TYPE_ORDER,
   COLLECTOR_TYPES,
-  DEFAULT_COLLECTOR_OPTIONS,
   DEFAULT_MESSAGE_BODY,
   INITIAL_COLLECTOR_MESSAGES,
   INITIAL_COLLECTORS,
   MESSAGE_AUDIENCES,
   collectorEmbedCode,
+  collectorOptionsStorageKey,
   collectorUrl,
+  mergeCollectorOptions,
   type Collector,
   type CollectorFilter,
   type CollectorMessage,
@@ -26,10 +30,6 @@ import styles from './SurveyCollectorsDashboard.module.css';
 
 const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
-  { ssr: false }
-);
-const WuToggle = dynamic(
-  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuToggle })),
   { ssr: false }
 );
 
@@ -87,10 +87,15 @@ function responseFunnel(collector: Collector): { label: string; value: string }[
 }
 
 export function SurveyCollectorsDashboard() {
+  const params = useParams();
+  const surveyId = Number(params.id);
   const { showToast } = useWuShowToast();
   const [collectors, setCollectors] = useState<Collector[]>(INITIAL_COLLECTORS);
   const [messages, setMessages] = useState(INITIAL_COLLECTOR_MESSAGES);
-  const [options, setOptions] = useState<Record<string, CollectorOptions>>({});
+  const [options, setOptions] = usePersistedState<Record<string, CollectorOptions>>(
+    collectorOptionsStorageKey(surveyId),
+    {}
+  );
   const [screen, setScreen] = useState<Screen>('list');
   const [filter, setFilter] = useState<CollectorFilter>('all');
   const [query, setQuery] = useState('');
@@ -106,8 +111,8 @@ export function SurveyCollectorsDashboard() {
 
   const current = collectors.find((collector) => collector.id === currentId) ?? null;
   const currentOptions = current
-    ? { ...DEFAULT_COLLECTOR_OPTIONS, ...options[current.id] }
-    : DEFAULT_COLLECTOR_OPTIONS;
+    ? mergeCollectorOptions(options[current.id])
+    : mergeCollectorOptions();
   const currentMessages = current ? messages[current.id] ?? [] : [];
 
   const counts = useMemo(() => {
@@ -156,7 +161,7 @@ export function SurveyCollectorsDashboard() {
   function setOption(id: string, patch: Partial<CollectorOptions>): void {
     setOptions((currentOptionsMap) => ({
       ...currentOptionsMap,
-      [id]: { ...DEFAULT_COLLECTOR_OPTIONS, ...currentOptionsMap[id], ...patch },
+      [id]: mergeCollectorOptions({ ...currentOptionsMap[id], ...patch }),
     }));
   }
 
@@ -651,7 +656,12 @@ export function SurveyCollectorsDashboard() {
             <CollectorOptionsPanel
               options={currentOptions}
               onChange={(patch) => setOption(current.id, patch)}
-              onUpgrade={() => flash('Respondent authentication is on the Enterprise plan')}
+              surveyId={surveyId}
+              onGetResponses={() => {
+                setNewType('audience');
+                setNewName('');
+                setScreen('add');
+              }}
             />
           ) : null}
         </div>
@@ -826,158 +836,3 @@ export function SurveyCollectorsDashboard() {
   );
 }
 
-function CollectorOptionsPanel({
-  options,
-  onChange,
-  onUpgrade,
-}: {
-  options: CollectorOptions;
-  onChange: (patch: Partial<CollectorOptions>) => void;
-  onUpgrade: () => void;
-}) {
-  return (
-    <>
-      <OptionGroup title="Responses">
-        <ToggleRow
-          label="Allow multiple responses"
-          description="Let people take the survey more than once from the same device."
-          checked={options.multiple}
-          onChange={(checked) => onChange({ multiple: checked })}
-        />
-        <ToggleRow
-          label="Allow response editing"
-          description="Respondents can change answers until they submit."
-          checked={options.editing}
-          onChange={(checked) => onChange({ editing: checked })}
-        />
-        <ToggleRow
-          label="Anonymous responses"
-          description="Don't record IP address, location or contact details."
-          checked={options.anonymous}
-          onChange={(checked) => onChange({ anonymous: checked })}
-        />
-      </OptionGroup>
-      <OptionGroup title="Access and limits">
-        <ToggleRow
-          label="Cutoff date and time"
-          description="Close this collector automatically at a set time (CT)."
-          checked={options.cutoff}
-          onChange={(checked) => onChange({ cutoff: checked })}
-          input={
-            options.cutoff
-              ? {
-                  type: 'datetime-local',
-                  value: options.cutoffVal,
-                  onChange: (value) => onChange({ cutoffVal: value }),
-                }
-              : undefined
-          }
-        />
-        <ToggleRow
-          label="Response limit"
-          description="Close this collector after a number of completed responses."
-          checked={options.limit}
-          onChange={(checked) => onChange({ limit: checked })}
-          input={
-            options.limit
-              ? {
-                  type: 'number',
-                  value: options.limitVal,
-                  onChange: (value) => onChange({ limitVal: value }),
-                }
-              : undefined
-          }
-        />
-        <ToggleRow
-          label="Password protection"
-          description="Respondents enter a password before starting."
-          checked={options.password}
-          onChange={(checked) => onChange({ password: checked })}
-          input={
-            options.password
-              ? {
-                  type: 'text',
-                  value: options.passwordVal,
-                  onChange: (value) => onChange({ passwordVal: value }),
-                }
-              : undefined
-          }
-        />
-        <ToggleRow
-          label="IP restrictions"
-          description="Allow or block responses from specific IP ranges."
-          checked={options.ip}
-          onChange={(checked) => onChange({ ip: checked })}
-        />
-        <div className={styles.optionRow}>
-          <div className={styles.optionCopy}>
-            <strong>Respondent authentication (SSO)</strong>
-            <span className={styles.hint}>Require sign-in through your identity provider.</span>
-          </div>
-          <WuButton type="button" onClick={onUpgrade}>
-            Upgrade to unlock
-          </WuButton>
-        </div>
-      </OptionGroup>
-      <OptionGroup title="After the survey">
-        <ToggleRow
-          label="Custom thank-you message"
-          description="Replace the default end page for people who come through this collector."
-          checked={options.thanks}
-          onChange={(checked) => onChange({ thanks: checked })}
-          input={
-            options.thanks
-              ? {
-                  type: 'text',
-                  value: options.thanksVal,
-                  onChange: (value) => onChange({ thanksVal: value }),
-                }
-              : undefined
-          }
-        />
-      </OptionGroup>
-    </>
-  );
-}
-
-function OptionGroup({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className={styles.panel}>
-      <h2 className={styles.sectionTitle}>{title}</h2>
-      {children}
-    </section>
-  );
-}
-
-function ToggleRow({
-  label,
-  description,
-  checked,
-  onChange,
-  input,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  input?: { type: string; value: string; onChange: (value: string) => void };
-}) {
-  return (
-    <div className={styles.optionRow}>
-      <div className={styles.optionCopy}>
-        <strong>{label}</strong>
-        <span className={styles.hint}>{description}</span>
-      </div>
-      {input ? (
-        <input
-          className={styles.optionInput}
-          type={input.type}
-          aria-label={label}
-          value={input.value}
-          onChange={(event) => input.onChange(event.target.value)}
-        />
-      ) : null}
-      <WuToggle checked={checked} onChange={onChange} aria-label={label} />
-    </div>
-  );
-}

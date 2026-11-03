@@ -1,0 +1,256 @@
+.layout {
+  align-items: flex-start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.aside {
+  position: sticky;
+  top: 12px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+}
+
+.cardHeader {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #404040;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  justify-content: space-between;
+  padding: 14px 16px;
+  text-align: left;
+  width: 100%;
+}
+
+.chevron {
+  color: #8a94a0;
+  flex-shrink: 0;
+  font-size: 20px;
+  line-height: 1;
+  width: 20px;
+}
+
+.cardBody {
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.lede {
+  color: #545e6b;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.radios {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.radio {
+  align-items: flex-start;
+  color: #404040;
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.radio input {
+  accent-color: #00a65a;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.fields {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field > span {
+  color: #404040;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.control,
+.textarea {
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #545e6b;
+  font: inherit;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.control {
+  height: 32px;
+}
+
+.textarea {
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.textLink,
+.inlineLink,
+.reset,
+.advancedToggle {
+  background: none;
+  border: none;
+  color: #045ebf;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+  width: fit-content;
+}
+
+.inlineLink {
+  display: inline;
+  font-size: inherit;
+}
+
+.advancedToggle {
+  align-self: flex-start;
+  font-size: 13px;
+  margin: 4px 0 8px;
+  text-decoration: underline;
+}
+
+.landing {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.imageBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.imageLabel {
+  color: #404040;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.imageHint {
+  color: #8a94a0;
+  font-size: 12px;
+}
+
+.preview {
+  align-items: flex-end;
+  background: linear-gradient(135deg, #0b7a4b 0%, #1b3380 100%);
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  display: flex;
+  justify-content: flex-end;
+  min-height: 148px;
+  overflow: hidden;
+  padding: 12px;
+  position: relative;
+}
+
+.preview img {
+  height: 72%;
+  inset: 12px auto auto 16px;
+  object-fit: contain;
+  object-position: left center;
+  position: absolute;
+  width: auto;
+}
+
+.preview :global(button) {
+  position: relative;
+  z-index: 1;
+}
+
+.fileInput {
+  display: none;
+}
+
+.landingActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.reset {
+  margin-left: auto;
+}
+
+.audienceCard {
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+}
+
+.audienceKicker {
+  color: #00a65a;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.audienceCard h3 {
+  color: #1b3380;
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.audienceCard p {
+  color: #545e6b;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .aside {
+    position: static;
+  }
+}
