@@ -56,32 +56,29 @@ function grouped<T extends string>(items: readonly CheckItem<T>[]) {
   return groups;
 }
 
-function isSingleToggle<T extends string>(items: readonly CheckItem<T>[]): boolean {
-  return items.length === 1;
-}
-
 function groupStatus<T extends string>(
   items: readonly CheckItem<T>[],
   selected: readonly T[],
   tolerances: Partial<Record<string, number>> | undefined,
 ): string {
+  const selectedItems = items.filter((item) => selected.includes(item.id));
+  if (selectedItems.length === 0) return 'Off';
   const counts: string[] = [];
-  const names: string[] = [];
-  for (const item of items) {
-    if (!selected.includes(item.id)) continue;
-    const allowances = allowancesFor(item);
-    if (allowances.length === 0) {
-      names.push(item.label);
-      continue;
-    }
-    for (const spec of allowances) {
+  for (const item of selectedItems) {
+    for (const spec of allowancesFor(item)) {
       const value = allowanceCount(spec, tolerances);
       counts.push(`${value} ${value === 1 ? spec.singular : spec.plural}`);
     }
   }
-  const plain = names.length > 2 ? `${names.length} on` : names.join(', ');
-  const summary = [counts.join(', '), plain].filter(Boolean).join(', ');
-  return summary || 'Off';
+  if (counts.length > 0) {
+    return selectedItems.length === items.length
+      ? counts.join(', ')
+      : `${counts.join(', ')}, ${selectedItems.length} on`;
+  }
+  if (selectedItems.length === items.length) {
+    return selectedItems.length === 1 ? 'On' : `${selectedItems.length} on`;
+  }
+  return `${selectedItems.length} on`;
 }
 
 export function IntegrityCheckToggles<T extends string>({
@@ -101,22 +98,6 @@ export function IntegrityCheckToggles<T extends string>({
   return (
     <div className={styles.groupList}>
       {grouped(items).map((group) => {
-        if (isSingleToggle(group.items)) {
-          const item = group.items[0];
-          return (
-            <section key={group.key} className={styles.checkCard}>
-              <div className={styles.plainHeader}>
-                <CheckRow
-                  item={item}
-                  checked={selected.includes(item.id)}
-                  tolerances={tolerances}
-                  onToggle={onToggle}
-                  onTolerance={onTolerance}
-                />
-              </div>
-            </section>
-          );
-        }
         const expanded = open[group.key] ?? false;
         const status = groupStatus(group.items, selected, tolerances);
         return (

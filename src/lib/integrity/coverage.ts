@@ -45,14 +45,18 @@ export const SURVEY_PROTECTIONS = [
 
 export type SurveyProtectionId = (typeof SURVEY_PROTECTIONS)[number]['id'];
 
+const DATA_QUALITY_NOTE =
+  'Gibberish, duplicate text, one-word answers, straight-line patterns, and speeding.';
+
 export const SURVEY_CHECKS = [
   {
     id: 'fingerprint',
     label: 'Same person',
     group: 'Same person',
+    groupNote: 'Device fingerprint across devices and IP addresses.',
     detail:
-      'Recognize the same person across devices and IP addresses, even when the IP address changes. ' +
-      'Checked once, when the survey opens.',
+      'Recognize the same person by device fingerprint across devices and IP addresses, even when ' +
+      'the IP address changes. Checked once, when the survey opens.',
     moment: 'open',
     whenLabel: 'Checked once, when the survey opens.',
   },
@@ -60,6 +64,7 @@ export const SURVEY_CHECKS = [
     id: 'connection',
     label: 'Connection',
     group: 'Connection',
+    groupNote: 'VPN, proxy, location, and bots.',
     detail:
       'VPN, proxy, location, and bots. Checked when the survey opens, and again while answers ' +
       'are being entered.',
@@ -86,8 +91,69 @@ export const SURVEY_CHECKS = [
     whenLabel: 'Checked throughout the survey, whenever an answer is entered.',
   },
   {
+    id: 'gibberish',
+    label: 'Gibberish Words',
+    group: 'Data quality',
+    groupNote: DATA_QUALITY_NOTE,
+    detail:
+      'Flag open-ended answers made of nonsense or random characters. Checked as the response comes in.',
+    moment: 'aggregate',
+    whenLabel: 'Checked as the response comes in.',
+  },
+  {
+    id: 'duplicate-text',
+    label: 'Duplicate Text Responses',
+    group: 'Data quality',
+    groupNote: DATA_QUALITY_NOTE,
+    detail:
+      'Flag the same written answer showing up across responses. Checked as responses come in.',
+    moment: 'aggregate',
+    whenLabel: 'Checked as responses come in.',
+  },
+  {
+    id: 'one-word',
+    label: 'One Word Answers',
+    group: 'Data quality',
+    groupNote: DATA_QUALITY_NOTE,
+    detail: 'Flag open-ended answers that are only a single word. Checked as the response comes in.',
+    moment: 'aggregate',
+    whenLabel: 'Checked as the response comes in.',
+  },
+  {
+    id: 'all-checkboxes',
+    label: 'All Checkboxes Selected',
+    group: 'Data quality',
+    groupNote: DATA_QUALITY_NOTE,
+    detail:
+      'Flag a response that selects every checkbox in a question. Checked as the response comes in.',
+    moment: 'aggregate',
+    whenLabel: 'Checked as the response comes in.',
+  },
+  {
+    id: 'patterned',
+    label: 'Patterned Response',
+    group: 'Data quality',
+    groupNote: DATA_QUALITY_NOTE,
+    detail:
+      'Flag answers that follow a straight pattern, such as the same choice or a straight line down the scale. Checked as the response comes in.',
+    moment: 'aggregate',
+    whenLabel: 'Checked as the response comes in.',
+  },
+  {
+    id: 'speed-traps',
+    label: 'Speed Traps',
+    group: 'Data quality',
+    groupNote: DATA_QUALITY_NOTE,
+    detail:
+      'Flag a response that finishes far faster than the questions allow. Checked when the response is submitted.',
+    moment: 'aggregate',
+    whenLabel: 'Checked when the response is submitted.',
+  },
+  {
     id: 'cohort',
     label: 'Cohort-level anomalies',
+    group: 'Cohorts',
+    groupNote: 'When a cohort’s responses do not look like the other cohorts in this survey.',
     detail:
       'Flag a cohort when its responses do not look like the other cohorts in this survey. ' +
       'Checked as responses come in.',
@@ -103,6 +169,7 @@ export const COMMUNITY_CHECKS = [
     id: 'fingerprint',
     label: 'Same person',
     group: 'Same person',
+    groupNote: 'How many devices one person may use to sign up. The device includes its IP address.',
     detail:
       'How many devices one person may use to sign up. The device includes its IP address. Checked when the account is created.',
     whenLabel: 'Checked once, on signup.',
@@ -121,6 +188,7 @@ export const COMMUNITY_CHECKS = [
     id: 'connection',
     label: 'Connection',
     group: 'Connection',
+    groupNote: 'VPN, proxy, location, and bots.',
     detail:
       'VPN, proxy, location, and bots. Checked on signup or sign-in, and again if the session ' +
       'looks scripted.',
