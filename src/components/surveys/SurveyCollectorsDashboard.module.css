@@ -82,9 +82,90 @@
 }
 
 .actions {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 16px;
+}
+
+.analyzeLink {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  gap: 6px;
+  padding: 0;
+  text-decoration: none;
+}
+
+.analyzeLinkLabel {
+  border-bottom: 1px solid transparent;
+  line-height: 1.2;
+}
+
+.analyzeLink:hover .analyzeLinkLabel {
+  border-bottom-color: currentColor;
+}
+
+.analyzeLink :global([class^='wm-']) {
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.scheduleHint {
+  color: #545e6b;
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 0 0 14px;
+}
+
+.scheduleFields {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.scheduleField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.scheduleField span {
+  color: #404040;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.scheduleControl {
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #545e6b;
+  font: inherit;
+  height: 36px;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.scheduleTimezone {
+  color: #9099a5;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.scheduleMeta {
+  color: #215694;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .stats {
@@ -278,6 +359,67 @@
   font-weight: 500;
   gap: 4px;
   padding: 2px 10px;
+}
+
+.statusTrigger {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.statusTrigger:hover {
+  filter: brightness(0.97);
+}
+
+.statusChevron {
+  font-size: 16px;
+  line-height: 1;
+  margin-left: 0;
+}
+
+.statusMenu {
+  min-width: 240px;
+}
+
+.statusMenuItem {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.statusMenuItemSelected {
+  background: #f3f6fb;
+}
+
+.statusMenuCopy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.statusMenuTitle {
+  align-items: center;
+  color: #404040;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 6px;
+}
+
+.statusMenuCheck {
+  color: #1b87e6;
+  font-size: 16px;
+}
+
+.statusMenuHint {
+  color: #545e6b;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .pillOpen {

@@ -18,7 +18,6 @@ const WuButton = dynamic(
 
 const BASIC_SECTIONS = [
   'landing',
-  'recurrence',
   'thank-you',
   'endpages',
   'copy',
@@ -46,14 +45,12 @@ interface CollectorOptionsPanelProps {
   options: CollectorOptions;
   onChange: (patch: Partial<CollectorOptions>) => void;
   surveyId: number;
-  onGetResponses: () => void;
 }
 
 export function CollectorOptionsPanel({
   options,
   onChange,
   surveyId,
-  onGetResponses,
 }: CollectorOptionsPanelProps) {
   const router = useRouter();
   const { showToast } = useWuShowToast();
@@ -94,64 +91,6 @@ export function CollectorOptionsPanel({
             onChange={(landing) => onChange({ landing })}
             onSaved={() => flash('Landing page saved')}
           />
-        </AccordionCard>
-
-        <AccordionCard
-          title="Recurrence"
-          open={open.has('recurrence')}
-          onToggle={() => toggle('recurrence')}
-        >
-          <p className={styles.lede}>
-            Email a repeating task list so this collector goes out on a schedule.
-          </p>
-          <RadioGroup
-            name="recurrence"
-            value={options.recurrence}
-            onChange={(recurrence) => onChange({ recurrence })}
-            options={[
-              { value: 'off', label: 'Do not send this collector on a repeating schedule' },
-              { value: 'schedule', label: 'Repeat this collector on a schedule' },
-            ]}
-          />
-          {options.recurrence === 'schedule' ? (
-            <div className={styles.fields}>
-              <label className={styles.field}>
-                <span>Frequency</span>
-                <select
-                  className={styles.control}
-                  value={options.recurrenceFrequency}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    onChange({
-                      recurrenceFrequency: value as CollectorOptions['recurrenceFrequency'],
-                    });
-                  }}
-                >
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-              </label>
-              <label className={styles.field}>
-                <span>Next send</span>
-                <input
-                  className={styles.control}
-                  type="datetime-local"
-                  value={options.recurrenceNextAt}
-                  onChange={(event) => onChange({ recurrenceNextAt: event.target.value })}
-                />
-              </label>
-              <label className={styles.field}>
-                <span>End on</span>
-                <input
-                  className={styles.control}
-                  type="date"
-                  value={options.recurrenceEndAt}
-                  onChange={(event) => onChange({ recurrenceEndAt: event.target.value })}
-                />
-              </label>
-            </div>
-          ) : null}
         </AccordionCard>
 
         <AccordionCard
@@ -604,20 +543,6 @@ export function CollectorOptionsPanel({
           {showAdvanced ? 'Hide advanced options' : 'Show advanced options'}
         </button>
       </div>
-
-      <aside className={styles.aside}>
-        <div className={styles.audienceCard}>
-          <p className={styles.audienceKicker}>QuestionPro Audience</p>
-          <h3>Need more responses?</h3>
-          <p>
-            Get fast, high-quality feedback from our panel of global respondents. You
-            reach an estimate.
-          </p>
-          <WuButton type="button" onClick={onGetResponses}>
-            Get started
-          </WuButton>
-        </div>
-      </aside>
     </div>
   );
 }

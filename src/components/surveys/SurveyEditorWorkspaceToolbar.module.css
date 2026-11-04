@@ -29,19 +29,6 @@
   text-transform: uppercase;
 }
 
-.legacyBadge {
-  background: #fff2e6;
-  border: 1px solid #ffd5ad;
-  border-radius: 999px;
-  color: #c05621;
-  font-family: 'Fira Sans', sans-serif;
-  font-size: 0.5625rem;
-  font-weight: 600;
-  line-height: 1;
-  padding: 0.1rem 0.3rem;
-  text-transform: uppercase;
-}
-
 .publishArea {
   align-items: center;
   display: flex;

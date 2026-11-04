@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { CollectorOptionsPanel } from '@/components/surveys/CollectorOptionsPanel';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { useWickUILib } from '@/components/ui/useWickUILib';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import {
   COLLECTOR_STATUS_LABEL,
@@ -32,6 +34,14 @@ const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false }
 );
+const WuMenu = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenu })),
+  { ssr: false }
+);
+const WuMenuItem = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuMenuItem })),
+  { ssr: false }
+);
 
 type Screen = 'list' | 'add' | 'detail';
 type MessageAudience = (typeof MESSAGE_AUDIENCES)[number]['value'];
@@ -50,8 +60,132 @@ const STATUS_ICON: Record<CollectorStatus, string> = {
   closed: 'wm-stop-circle',
 };
 
+type StatusMenuOption = {
+  value: CollectorStatus;
+  label: string;
+  description: string;
+};
+
+function statusMenuOptions(current: CollectorStatus): StatusMenuOption[] {
+  if (current === 'open') {
+    return [
+      {
+        value: 'scheduled',
+        label: 'Scheduled close',
+        description: 'Close later on a date and time you choose.',
+      },
+      {
+        value: 'closed',
+        label: 'Closed',
+        description: 'Stop accepting new responses now.',
+      },
+    ];
+  }
+  if (current === 'scheduled') {
+    return [
+      {
+        value: 'open',
+        label: 'Open now',
+        description: 'Keep accepting responses and clear the schedule.',
+      },
+      {
+        value: 'closed',
+        label: 'Closed',
+        description: 'Stop accepting new responses now.',
+      },
+    ];
+  }
+  return [
+    {
+      value: 'scheduled',
+      label: 'Scheduled open',
+      description: 'Open later on a date and time you choose.',
+    },
+    {
+      value: 'open',
+      label: 'Open now',
+      description: 'Start accepting new responses again.',
+    },
+  ];
+}
+
+function defaultScheduleParts(): { date: string; time: string } {
+  const next = new Date();
+  next.setDate(next.getDate() + 1);
+  next.setHours(9, 0, 0, 0);
+  const date = next.toISOString().slice(0, 10);
+  return { date, time: '09:00' };
+}
+
+function formatScheduleLabel(date: string, time: string): string {
+  const parsed = new Date(`${date}T${time}`);
+  if (Number.isNaN(parsed.getTime())) return `${date} ${time}`;
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(parsed);
+}
+
+function getScheduleTimezoneLabel(): string {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const offset =
+    new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      timeZoneName: 'shortOffset',
+    })
+      .formatToParts(new Date())
+      .find((part) => part.type === 'timeZoneName')?.value ?? 'GMT';
+  const city = timeZone.split('/').pop()?.replace(/_/g, ' ') ?? timeZone;
+  return `${offset} · ${city}`;
+}
+
 function countLabel(value: number): string {
   return value.toLocaleString('en-US');
+}
+
+function statusConfirmCopy(
+  current: CollectorStatus,
+  next: CollectorStatus
+): {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  variant: 'action' | 'critical';
+} {
+  if (next === 'closed') {
+    return {
+      title: 'Close collector?',
+      description:
+        'This collector will stop accepting new responses. Existing responses stay in Analytics.',
+      confirmLabel: 'Close collector',
+      variant: 'critical',
+    };
+  }
+  if (next === 'open') {
+    return {
+      title: 'Open collector?',
+      description: 'This collector will start accepting new responses again.',
+      confirmLabel: 'Open now',
+      variant: 'action',
+    };
+  }
+  if (current === 'open') {
+    return {
+      title: 'Schedule close?',
+      description: 'This collector will stay open, then close on the date and time you set.',
+      confirmLabel: 'Schedule close',
+      variant: 'action',
+    };
+  }
+  return {
+    title: 'Schedule open?',
+    description: 'This collector will open on the date and time you set.',
+    confirmLabel: 'Schedule open',
+    variant: 'action',
+  };
 }
 
 function messagingFunnel(collector: Collector): { label: string; value: string }[] {
@@ -78,7 +212,7 @@ function responseFunnel(collector: Collector): { label: string; value: string }[
   return [
     { label: 'Responses', value: countLabel(collector.responses) },
     { label: 'Completion rate', value: hasResponses ? '74%' : '—' },
-    { label: 'Median time', value: hasResponses ? '6m 12s' : '—' },
+    { label: 'Average time', value: hasResponses ? '6m 12s' : '—' },
     {
       label: 'Last response',
       value: collector.status === 'open' && hasResponses ? '12 min ago' : '—',
@@ -90,6 +224,7 @@ export function SurveyCollectorsDashboard() {
   const params = useParams();
   const surveyId = Number(params.id);
   const { showToast } = useWuShowToast();
+  const wick = useWickUILib();
   const [collectors, setCollectors] = useState<Collector[]>(INITIAL_COLLECTORS);
   const [messages, setMessages] = useState(INITIAL_COLLECTOR_MESSAGES);
   const [options, setOptions] = usePersistedState<Record<string, CollectorOptions>>(
@@ -108,6 +243,12 @@ export function SurveyCollectorsDashboard() {
   const [composeSubject, setComposeSubject] = useState('Reminder: share your SNAP experience');
   const [composeBody, setComposeBody] = useState(DEFAULT_MESSAGE_BODY);
   const [nextId, setNextId] = useState(8);
+  const [pendingStatus, setPendingStatus] = useState<{
+    id: string;
+    next: CollectorStatus;
+  } | null>(null);
+  const [scheduleDate, setScheduleDate] = useState(() => defaultScheduleParts().date);
+  const [scheduleTime, setScheduleTime] = useState(() => defaultScheduleParts().time);
 
   const current = collectors.find((collector) => collector.id === currentId) ?? null;
   const currentOptions = current
@@ -147,15 +288,55 @@ export function SurveyCollectorsDashboard() {
     );
   }
 
-  function toggleStatus(id: string): void {
+  function requestStatusChange(id: string, next: CollectorStatus): void {
     const collector = collectors.find((item) => item.id === id);
-    if (!collector) return;
-    const next = collector.status === 'closed' ? 'open' : 'closed';
+    if (!collector || collector.status === next) return;
+    if (next === 'scheduled') {
+      const defaults = defaultScheduleParts();
+      setScheduleDate(defaults.date);
+      setScheduleTime(defaults.time);
+    }
+    setPendingStatus({ id, next });
+  }
+
+  function clearPendingStatus(): void {
+    setPendingStatus(null);
+  }
+
+  function applyPendingStatus(): void {
+    if (!pendingStatus) return;
+    const { id, next } = pendingStatus;
+    const collector = collectors.find((item) => item.id === id);
+    const fromOpen = collector?.status === 'open';
+    if (next === 'scheduled' && (!scheduleDate.trim() || !scheduleTime.trim())) {
+      showToast({ message: 'Choose a date and time.', variant: 'error' });
+      return;
+    }
+    const when =
+      next === 'scheduled' ? formatScheduleLabel(scheduleDate, scheduleTime) : '';
+    const zone = next === 'scheduled' ? getScheduleTimezoneLabel() : '';
+    const scheduleSummary = when ? `${when} (${zone})` : '';
     patchCollector(id, {
       status: next,
-      closes: next === 'closed' ? 'Closed Oct 28' : 'No cutoff',
+      closes:
+        next === 'closed'
+          ? 'Closed Oct 28'
+          : next === 'scheduled'
+            ? fromOpen
+              ? `Closes ${scheduleSummary}`
+              : `Opens ${scheduleSummary}`
+            : 'No cutoff',
     });
-    flash(next === 'closed' ? 'Collector closed' : 'Collector reopened');
+    flash(
+      next === 'closed'
+        ? 'Collector closed'
+        : next === 'scheduled'
+          ? fromOpen
+            ? `Scheduled to close ${scheduleSummary}`
+            : `Scheduled to open ${scheduleSummary}`
+          : 'Collector opened'
+    );
+    setPendingStatus(null);
   }
 
   function setOption(id: string, patch: Partial<CollectorOptions>): void {
@@ -303,6 +484,14 @@ export function SurveyCollectorsDashboard() {
     };
     const funnel = messaging ? messagingFunnel(current) : responseFunnel(current);
     const closed = current.status === 'closed';
+    const menuOptions = statusMenuOptions(current.status);
+    const pendingCollector = pendingStatus
+      ? collectors.find((item) => item.id === pendingStatus.id)
+      : null;
+    const pendingConfirm =
+      pendingStatus && pendingCollector
+        ? statusConfirmCopy(pendingCollector.status, pendingStatus.next)
+        : null;
 
     return (
       <div className={styles.root}>
@@ -332,30 +521,53 @@ export function SurveyCollectorsDashboard() {
                 />
                 <div className={styles.meta}>
                   <span>{type.label}</span>
-                  <span className={STATUS_CLASS[current.status]}>
-                    <span className={STATUS_ICON[current.status]} aria-hidden />
-                    {COLLECTOR_STATUS_LABEL[current.status]}
-                  </span>
                   <span>Created {current.created}</span>
+                  <WuMenu
+                    align="start"
+                    side="bottom"
+                    sideOffset={6}
+                    className={styles.statusMenu}
+                    Trigger={
+                      <button
+                        type="button"
+                        className={`${styles.statusTrigger} ${STATUS_CLASS[current.status]}`}
+                        aria-label="Collector status"
+                      >
+                        <span className={STATUS_ICON[current.status]} aria-hidden />
+                        {COLLECTOR_STATUS_LABEL[current.status]}
+                        <span className={`wm-arrow-drop-down ${styles.statusChevron}`} aria-hidden />
+                      </button>
+                    }
+                  >
+                    {menuOptions.map((option) => (
+                      <WuMenuItem
+                        key={option.value}
+                        className={styles.statusMenuItem}
+                        onSelect={() => requestStatusChange(current.id, option.value)}
+                      >
+                        <span className={STATUS_ICON[option.value]} aria-hidden />
+                        <span className={styles.statusMenuCopy}>
+                          <span className={styles.statusMenuTitle}>{option.label}</span>
+                          <span className={styles.statusMenuHint}>{option.description}</span>
+                        </span>
+                      </WuMenuItem>
+                    ))}
+                  </WuMenu>
+                  {current.status === 'scheduled' ? (
+                    <span className={styles.scheduleMeta}>{current.closes}</span>
+                  ) : null}
                 </div>
               </div>
             </div>
             <div className={styles.actions}>
-              <WuButton
-                variant="secondary"
+              <button
                 type="button"
+                className={styles.analyzeLink}
                 onClick={() => flash(`Opening Analytics filtered to "${current.name}"`)}
               >
-                Analyze responses
-              </WuButton>
-              <WuButton
-                type="button"
-                color={closed ? 'primary' : 'error'}
-                variant={closed ? undefined : 'secondary'}
-                onClick={() => toggleStatus(current.id)}
-              >
-                {closed ? 'Reopen collector' : 'Close collector'}
-              </WuButton>
+                <span className="wm-bar-chart" aria-hidden />
+                <span className={styles.analyzeLinkLabel}>Analyze responses</span>
+              </button>
             </div>
           </div>
           <div className={styles.tabs} role="tablist" aria-label="Collector sections">
@@ -657,14 +869,66 @@ export function SurveyCollectorsDashboard() {
               options={currentOptions}
               onChange={(patch) => setOption(current.id, patch)}
               surveyId={surveyId}
-              onGetResponses={() => {
-                setNewType('audience');
-                setNewName('');
-                setScreen('add');
-              }}
             />
           ) : null}
         </div>
+        {pendingConfirm && pendingStatus?.next === 'scheduled' && wick ? (
+          <wick.WuModal
+            open
+            onOpenChange={(open) => {
+              if (!open) clearPendingStatus();
+            }}
+            variant="action"
+            size="sm"
+          >
+            <wick.WuModalHeader>{pendingConfirm.title}</wick.WuModalHeader>
+            <wick.WuModalContent>
+              <p className={styles.scheduleHint}>{pendingConfirm.description}</p>
+              <div className={styles.scheduleFields}>
+                <label className={styles.scheduleField}>
+                  <span>
+                    {pendingCollector?.status === 'open' ? 'Close on' : 'Open on'}
+                  </span>
+                  <input
+                    className={styles.scheduleControl}
+                    type="date"
+                    value={scheduleDate}
+                    onChange={(event) => setScheduleDate(event.target.value)}
+                  />
+                </label>
+                <label className={styles.scheduleField}>
+                  <span>Time</span>
+                  <input
+                    className={styles.scheduleControl}
+                    type="time"
+                    value={scheduleTime}
+                    onChange={(event) => setScheduleTime(event.target.value)}
+                  />
+                  <span className={styles.scheduleTimezone}>{getScheduleTimezoneLabel()}</span>
+                </label>
+              </div>
+            </wick.WuModalContent>
+            <wick.WuModalFooter>
+              <wick.WuModalClose variant="secondary">Cancel</wick.WuModalClose>
+              <wick.WuButton type="button" onClick={applyPendingStatus}>
+                {pendingConfirm.confirmLabel}
+              </wick.WuButton>
+            </wick.WuModalFooter>
+          </wick.WuModal>
+        ) : null}
+        {pendingConfirm && pendingStatus?.next !== 'scheduled' ? (
+          <ConfirmModal
+            open
+            onOpenChange={(open) => {
+              if (!open) clearPendingStatus();
+            }}
+            title={pendingConfirm.title}
+            description={pendingConfirm.description}
+            confirmLabel={pendingConfirm.confirmLabel}
+            variant={pendingConfirm.variant}
+            onConfirm={applyPendingStatus}
+          />
+        ) : null}
       </div>
     );
   }
@@ -811,13 +1075,6 @@ export function SurveyCollectorsDashboard() {
                             onClick={() => openCollector(collector.id)}
                           >
                             Manage
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.linkBtn}
-                            onClick={() => toggleStatus(collector.id)}
-                          >
-                            {closed ? 'Reopen' : 'Close'}
                           </button>
                         </td>
                       </tr>

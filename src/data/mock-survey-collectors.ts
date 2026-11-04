@@ -191,7 +191,7 @@ export const INITIAL_COLLECTORS: Collector[] = [
     status: 'scheduled',
     responses: 0,
     created: 'Oct 20, 2026',
-    closes: 'Nov 30, 2026',
+    closes: 'Opens Nov 4, 2026, 9:00 AM (CST · Chicago)',
     sub: 'sends Nov 4, 9:00 AM CT',
     slug: 'EM2wv',
   },

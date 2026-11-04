@@ -411,14 +411,10 @@ export function SurveyEditorWorkspaceToolbar({
             </NavLink>
           ),
           imgOrIcon:
-            tool.id === 'advance-quotas' || tool.id === 'advanced-quota' ? (
+            tool.id === 'advance-quotas' ? (
               <span className={styles.iconWithBadge}>
                 <span className={tool.icon} aria-hidden />
-                {tool.id === 'advance-quotas' ? (
-                  <span className={styles.newBadge}>New</span>
-                ) : (
-                  <span className={styles.legacyBadge}>Legacy</span>
-                )}
+                <span className={styles.newBadge}>New</span>
               </span>
             ) : (
               <span className={tool.icon} aria-hidden />

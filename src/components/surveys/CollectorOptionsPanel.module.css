@@ -1,8 +1,7 @@
 .layout {
-  align-items: flex-start;
-  display: grid;
-  gap: 20px;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .main {
@@ -10,11 +9,6 @@
   flex-direction: column;
   gap: 10px;
   min-width: 0;
-}
-
-.aside {
-  position: sticky;
-  top: 12px;
 }
 
 .card {
@@ -214,43 +208,3 @@
   margin-left: auto;
 }
 
-.audienceCard {
-  background: #fff;
-  border: 1px solid #d8d8d8;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-}
-
-.audienceKicker {
-  color: #00a65a;
-  font-size: 12px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.audienceCard h3 {
-  color: #1b3380;
-  font-size: 16px;
-  font-weight: 500;
-  margin: 0;
-}
-
-.audienceCard p {
-  color: #545e6b;
-  font-size: 13px;
-  line-height: 1.45;
-  margin: 0;
-}
-
-@media (max-width: 960px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-
-  .aside {
-    position: static;
-  }
-}

@@ -342,7 +342,10 @@ export function SurveySettingsDashboard({ surveyId }: SurveySettingsDashboardPro
   const transitioningToConfirmRef = useRef(false);
 
   const displayId = useMemo(() => getSurveyDisplayId(surveyId), [surveyId]);
-  const timezoneLabel = useMemo(() => getTimezoneLabel(), []);
+  const [timezoneLabel, setTimezoneLabel] = useState('');
+  useEffect(() => {
+    setTimezoneLabel(getTimezoneLabel());
+  }, []);
   const settings = useMemo(() => normalizeSurveySettings(settingsRaw), [settingsRaw]);
   const security = settings.security;
   const notifications = settings.notifications;
