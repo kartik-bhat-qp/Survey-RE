@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { SurveyDistributeDashboard } from '@/components/surveys/SurveyDistributeDashboard';
+import { getSurveyEditorPhasePath } from '@/components/surveys/survey-editor-navigation';
 import {
   getCanonicalDistributePath,
   getDefaultDistributeRouteState,
@@ -20,6 +21,11 @@ export function SurveyDistributeRoutePage() {
 
   useEffect(() => {
     if (!ready || !survey) return;
+
+    if (/\/distribute\/(?:email\/)?lists\/?$/.test(pathname)) {
+      router.replace(getSurveyEditorPhasePath(survey.id, 'lists'));
+      return;
+    }
 
     const parsed = parseDistributeRouteFromPathname(pathname, survey.id);
     if (!parsed) {

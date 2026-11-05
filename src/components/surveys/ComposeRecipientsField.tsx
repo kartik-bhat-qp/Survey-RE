@@ -3,10 +3,13 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { usePersistedState } from '@/hooks/usePersistedState';
 import {
-  MOCK_EMAIL_LISTS,
+  CONTACT_LISTS_STORAGE_KEY,
+  INITIAL_CONTACT_LISTS,
   isValidEmailAddress,
   normalizeEmailAddress,
+  type ContactList,
   type EmailListOption,
 } from '@/data/mock-survey-distribute';
 import styles from './ComposeRecipientsField.module.css';
@@ -31,6 +34,10 @@ export function ComposeRecipientsField({
 }: ComposeRecipientsFieldProps) {
   const { showToast } = useWuShowToast();
   const [emailDraft, setEmailDraft] = useState('');
+  const [lists] = usePersistedState<ContactList[]>(
+    CONTACT_LISTS_STORAGE_KEY,
+    INITIAL_CONTACT_LISTS
+  );
 
   function addEmailFromDraft(): void {
     const normalized = normalizeEmailAddress(emailDraft);
@@ -126,7 +133,7 @@ export function ComposeRecipientsField({
 
       <div className={styles.recipientsListPicker}>
         <WuSelect
-          data={MOCK_EMAIL_LISTS}
+          data={lists}
           accessorKey={{ value: 'value', label: 'label' }}
           value={selectedList}
           onSelect={handleListSelect}

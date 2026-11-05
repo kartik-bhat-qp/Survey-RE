@@ -14,6 +14,7 @@ import { ComposeRecipientsField } from '@/components/surveys/ComposeRecipientsFi
 import { NavLink } from '@/components/surveys/NavLink';
 import { SurveyAgentSidebar } from '@/components/surveys/SurveyAgentSidebar';
 import { SurveyDistributeTemplates } from '@/components/surveys/SurveyDistributeTemplates';
+import { getSurveyEditorPhasePath } from '@/components/surveys/survey-editor-navigation';
 import { getDistributeChannelPath } from '@/components/surveys/survey-distribute-navigation';
 import {
   COMPOSE_BLOB_UNSUPPORTED_MESSAGE,
@@ -271,6 +272,12 @@ export function SurveyEmailComposePanel({
                       recipientEmails={recipientEmails}
                       onRecipientEmailsChange={setRecipientEmails}
                     />
+                    <NavLink
+                      href={getSurveyEditorPhasePath(resolvedSurveyId, 'lists')}
+                      className={styles.manageListsLink}
+                    >
+                      Manage lists
+                    </NavLink>
                   </div>
                 </div>
 

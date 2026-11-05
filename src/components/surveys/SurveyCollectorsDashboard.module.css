@@ -486,6 +486,29 @@
   padding: 15px;
 }
 
+.typeCardSoon {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.typeLabelRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.comingSoonBadge {
+  background: #e8f4fd;
+  border-radius: 999px;
+  color: #1b87e6;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
 .typeGlyph,
 .typeGlyphSelected {
   align-items: center;
@@ -684,10 +707,113 @@
   padding: 16px;
 }
 
+.reminderBanner {
+  color: #404040;
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.reminderRow td {
+  background: #f7f9fb;
+}
+
+.reminderMessage {
+  border-left: 2px solid #d8d8d8;
+  margin-left: 8px;
+  padding-left: 12px;
+}
+
 .composeGrid {
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.channelSection {
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.channelHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+
+.channelHeaderLeft {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.channelBody {
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+}
+
+.channelBody .field {
+  flex: 0 0 auto;
+}
+
+.fromRow {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+}
+
+.fromLabel {
+  color: #64748b;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.creditLine {
+  color: #555;
+  font-size: 12px;
+  margin: 0;
+}
+
+.creditLink {
+  background: none;
+  border: none;
+  color: #045ebf;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.smsMeta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+}
+
+.smsCounter,
+.smsCounterAlert {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.smsCounter {
+  color: #555;
+}
+
+.smsCounterAlert {
+  color: #dc2626;
 }
 
 .select {

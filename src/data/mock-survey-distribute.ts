@@ -5,7 +5,7 @@ export type DistributeChannelId =
   | 'audience'
   | 'qr-codes';
 
-export type EmailSidebarId = 'compose' | 'sent' | 'scheduled' | 'lists' | 'templates';
+export type EmailSidebarId = 'compose' | 'sent' | 'scheduled' | 'templates';
 
 export interface DistributeChannel {
   id: DistributeChannelId;
@@ -22,6 +22,15 @@ export interface EmailListOption {
   value: string;
   label: string;
 }
+
+export interface ContactList {
+  value: string;
+  label: string;
+  contacts: number;
+  updated: string;
+}
+
+export const CONTACT_LISTS_STORAGE_KEY = 'distribute:contact-lists';
 
 export interface EmailSenderOption {
   value: string;
@@ -66,22 +75,25 @@ export const EMAIL_SIDEBAR_ITEMS: EmailSidebarItem[] = [
   { id: 'compose', label: 'Compose' },
   { id: 'sent', label: 'Sent' },
   { id: 'scheduled', label: 'Scheduled' },
-  { id: 'lists', label: 'Lists' },
   { id: 'templates', label: 'Templates' },
 ];
 
-export const MOCK_EMAIL_LISTS: EmailListOption[] = [
-  { value: 'list-panel', label: 'Customer Experience Panel' },
-  { value: 'list-newsletter', label: 'Monthly Newsletter Subscribers' },
-  { value: 'list-beta', label: 'Product Beta Testers — West Region' },
-  { value: 'list-nps', label: 'NPS Follow-up Cohort' },
-  { value: 'list-alumni', label: 'Alumni Research Panel' },
-  { value: 'list-enterprise', label: 'Enterprise Account Contacts' },
-  { value: 'list-healthcare', label: 'Healthcare Decision Makers' },
-  { value: 'list-students', label: 'Campus Student Ambassadors' },
-  { value: 'list-vip', label: 'VIP Loyalty Members' },
-  { value: 'list-churn', label: 'Churn Risk Outreach List' },
+export const INITIAL_CONTACT_LISTS: ContactList[] = [
+  { value: 'list-panel', label: 'Customer Experience Panel', contacts: 2410, updated: 'Oct 28, 2026' },
+  { value: 'list-newsletter', label: 'Monthly Newsletter Subscribers', contacts: 8640, updated: 'Oct 21, 2026' },
+  { value: 'list-beta', label: 'Product Beta Testers — West Region', contacts: 186, updated: 'Oct 12, 2026' },
+  { value: 'list-nps', label: 'NPS Follow-up Cohort', contacts: 940, updated: 'Sep 30, 2026' },
+  { value: 'list-alumni', label: 'Alumni Research Panel', contacts: 1522, updated: 'Sep 18, 2026' },
+  { value: 'list-enterprise', label: 'Enterprise Account Contacts', contacts: 318, updated: 'Sep 4, 2026' },
+  { value: 'list-healthcare', label: 'Healthcare Decision Makers', contacts: 705, updated: 'Aug 22, 2026' },
+  { value: 'list-students', label: 'Campus Student Ambassadors', contacts: 126, updated: 'Aug 9, 2026' },
+  { value: 'list-vip', label: 'VIP Loyalty Members', contacts: 84, updated: 'Jul 30, 2026' },
+  { value: 'list-churn', label: 'Churn Risk Outreach List', contacts: 412, updated: 'Jul 14, 2026' },
 ];
+
+export const MOCK_EMAIL_LISTS: EmailListOption[] = INITIAL_CONTACT_LISTS.map(
+  ({ value, label }) => ({ value, label })
+);
 
 export function isValidEmailAddress(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());

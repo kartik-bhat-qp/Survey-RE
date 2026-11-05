@@ -19,6 +19,7 @@ export type SurveyEditorPhase =
   | 'edit'
   | 'distribute'
   | 'collectors'
+  | 'lists'
   | 'analytics'
   | 'analytics-2'
   | 'integration';

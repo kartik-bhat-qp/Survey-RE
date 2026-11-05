@@ -71,6 +71,9 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
       if (activePhase === 'collectors') {
         router.replace(getSurveyEditorPhasePath(survey.id, 'collectors'));
       }
+      if (activePhase === 'lists') {
+        router.replace(getSurveyEditorPhasePath(survey.id, 'lists'));
+      }
     }
   }, [activePhase, pathname, ready, router, survey]);
 
@@ -106,13 +109,14 @@ function SurveyEditorLayoutBody({ children }: { children: React.ReactNode }) {
   const showAnalytics2 = activePhase === 'analytics-2';
   const showDistribute = activePhase === 'distribute';
   const showCollectors = activePhase === 'collectors';
+  const showLists = activePhase === 'lists';
 
   return (
     <div className={styles.page}>
       <SurveyEditorPhaseTabsSlot />
       {showAnalytics ? (
         <SurveyAnalyticsSubNav />
-      ) : showAnalytics2 || showCollectors ? null : showDistribute ? (
+      ) : showAnalytics2 || showCollectors || showLists ? null : showDistribute ? (
         <SurveyDistributeSubNav surveyId={survey.id} />
       ) : (
         <>

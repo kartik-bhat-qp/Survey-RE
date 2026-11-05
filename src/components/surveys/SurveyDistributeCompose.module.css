@@ -260,6 +260,18 @@
   min-width: 0;
 }
 
+.manageListsLink {
+  color: #1b87e6;
+  display: inline-block;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  text-decoration: none;
+}
+
+.manageListsLink:hover {
+  text-decoration: underline;
+}
+
 .selectWrap {
   min-width: 0;
   width: 100%;

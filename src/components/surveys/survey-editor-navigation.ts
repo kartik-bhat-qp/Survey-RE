@@ -9,6 +9,9 @@ export function getSurveyEditorPhaseFromPathname(
   surveyId: number
 ): SurveyEditorPhase {
   const base = `/surveys/${surveyId}`;
+  if (pathname === `${base}/lists` || pathname.startsWith(`${base}/lists/`)) {
+    return 'lists';
+  }
   if (pathname === `${base}/distribute` || pathname.startsWith(`${base}/distribute/`)) {
     return 'distribute';
   }
@@ -34,6 +37,9 @@ export function getSurveyEditorPhasePath(
   }
   if (phase === 'collectors') {
     return `${base}/collectors`;
+  }
+  if (phase === 'lists') {
+    return `${base}/lists`;
   }
   if (phase === 'analytics') {
     return `${base}/analytics`;

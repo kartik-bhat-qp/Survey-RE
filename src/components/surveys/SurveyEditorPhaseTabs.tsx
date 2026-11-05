@@ -30,7 +30,7 @@ const PHASE_TABS: { id: SurveyEditorPhase; label: string }[] = [
   { id: 'edit', label: 'Edit' },
   { id: 'distribute', label: 'Distribute' },
   { id: 'collectors', label: 'Collectors' },
-  { id: 'analytics', label: 'Analytics' },
+  { id: 'lists', label: 'Lists' },
   { id: 'analytics-2', label: 'Analytics 2.0' },
   { id: 'integration', label: 'Integration' },
 ];

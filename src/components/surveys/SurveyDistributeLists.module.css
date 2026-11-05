@@ -1,0 +1,70 @@
+.panel {
+  background: #fff;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  padding: 1.25rem 1.5rem 2rem;
+}
+
+.intro {
+  margin-bottom: 1rem;
+}
+
+.title {
+  color: #1b3380;
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin: 0 0 0.25rem;
+}
+
+.lede {
+  color: #555;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.searchWrap {
+  min-width: 12rem;
+  width: 16rem;
+}
+
+.createRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  max-width: 36rem;
+}
+
+.createRow > :first-child {
+  flex: 1 1 16rem;
+}
+
+.tableWrap {
+  min-height: 12rem;
+}
+
+.deleteBtn {
+  background: none;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.deleteBtn:hover {
+  text-decoration: underline;
+}

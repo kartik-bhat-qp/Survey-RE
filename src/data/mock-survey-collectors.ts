@@ -27,12 +27,16 @@ export interface Collector {
 }
 
 export interface CollectorMessage {
-  kind: string;
+  id: string;
+  kind: 'Invitation' | 'Reminder';
+  /** Set on reminders. They belong to one primary invitation. */
+  parentId?: string;
   subject: string;
   to: string;
   when: string;
   sent: string;
   completed: string;
+  channels?: string;
 }
 
 export type RecurrenceMode = 'off' | 'schedule';
@@ -91,6 +95,7 @@ export interface CollectorTypeInfo {
   icon: string;
   desc: string;
   note: string;
+  comingSoon?: boolean;
 }
 
 export const COLLECTOR_TYPE_ORDER: CollectorType[] = [
@@ -112,10 +117,10 @@ export const COLLECTOR_TYPES: Record<CollectorType, CollectorTypeInfo> = {
     note: 'Cutoff, response limit, password, custom URL',
   },
   email: {
-    label: 'Email invitation',
+    label: 'Email, SMS or WhatsApp',
     icon: 'wm-mail',
-    desc: 'Send to an email list and track opens, starts and completes.',
-    note: 'Reminders, scheduling, per-recipient tracking',
+    desc: 'Invite by email, text, or WhatsApp and track opens, starts and completes.',
+    note: 'Reminders, scheduling, SMS credits, per-recipient tracking',
   },
   sms: {
     label: 'SMS',
@@ -128,12 +133,14 @@ export const COLLECTOR_TYPES: Record<CollectorType, CollectorTypeInfo> = {
     icon: 'wm-qr-code-2',
     desc: 'Print on posters, receipts or flyers for in-person feedback.',
     note: 'Download as PNG or SVG',
+    comingSoon: true,
   },
   embed: {
     label: 'Website embed',
     icon: 'wm-code',
     desc: 'Show the survey inline, as a popup or as a feedback tab.',
     note: 'Trigger by page, time on page or exit intent',
+    comingSoon: true,
   },
   offline: {
     label: 'Offline app',
@@ -154,6 +161,82 @@ export const COLLECTOR_TYPES: Record<CollectorType, CollectorTypeInfo> = {
     note: 'Set up with the Audience team',
   },
 };
+
+/** Cards shown on the create-collector picker (messaging channels share one card). */
+export type CollectorCreateOptionId =
+  | 'link'
+  | 'messaging'
+  | 'qr'
+  | 'embed'
+  | 'offline'
+  | 'community'
+  | 'audience';
+
+export interface CollectorCreateOption extends CollectorTypeInfo {
+  id: CollectorCreateOptionId;
+  createAs: CollectorType;
+}
+
+export const COLLECTOR_CREATE_OPTIONS: CollectorCreateOption[] = [
+  {
+    id: 'link',
+    createAs: 'link',
+    label: 'Web link',
+    icon: 'wm-link',
+    desc: 'A shareable URL for websites, chat or social posts.',
+    note: 'Cutoff, response limit, password, custom URL',
+  },
+  {
+    id: 'messaging',
+    createAs: 'email',
+    label: 'Email, SMS or WhatsApp',
+    icon: 'wm-mail',
+    desc: 'Invite by email, text, or WhatsApp and track opens, starts and completes.',
+    note: 'Reminders, scheduling, SMS credits, per-recipient tracking',
+  },
+  {
+    id: 'qr',
+    createAs: 'qr',
+    label: 'QR code',
+    icon: 'wm-qr-code-2',
+    desc: 'Print on posters, receipts or flyers for in-person feedback.',
+    note: 'Download as PNG or SVG',
+    comingSoon: true,
+  },
+  {
+    id: 'embed',
+    createAs: 'embed',
+    label: 'Website embed',
+    icon: 'wm-code',
+    desc: 'Show the survey inline, as a popup or as a feedback tab.',
+    note: 'Trigger by page, time on page or exit intent',
+    comingSoon: true,
+  },
+  {
+    id: 'offline',
+    createAs: 'offline',
+    label: 'Offline app',
+    icon: 'wm-tablet-mac',
+    desc: 'Collect on tablets without a connection, then sync.',
+    note: 'Assign devices, manual or FTP sync',
+  },
+  {
+    id: 'community',
+    createAs: 'community',
+    label: 'Community',
+    icon: 'wm-groups',
+    desc: 'Invite members of your QuestionPro Community.',
+    note: 'Target by member profile fields',
+  },
+  {
+    id: 'audience',
+    createAs: 'audience',
+    label: 'Audience panel',
+    icon: 'wm-person-search',
+    desc: 'Buy responses from a targeted QuestionPro Audience sample.',
+    note: 'Set up with the Audience team',
+  },
+];
 
 export const COLLECTOR_STATUS_LABEL: Record<CollectorStatus, string> = {
   open: 'Open',
@@ -244,40 +327,49 @@ export const INITIAL_COLLECTORS: Collector[] = [
 export const INITIAL_COLLECTOR_MESSAGES: Record<string, CollectorMessage[]> = {
   c2: [
     {
+      id: 'c2-invite',
       kind: 'Invitation',
       subject: 'Your feedback on SNAP food restrictions',
       to: 'Everyone on the list',
       when: 'Oct 6, 2026 · 9:00 AM',
       sent: '18,500',
       completed: '2,640',
+      channels: 'Email',
     },
     {
+      id: 'c2-reminder-1',
       kind: 'Reminder',
+      parentId: 'c2-invite',
       subject: 'Reminder: 5 minutes to share your experience',
       to: 'Not responded',
       when: 'Oct 13, 2026 · 9:00 AM',
       sent: '15,860',
       completed: '772',
+      channels: 'Email',
     },
   ],
   c3: [
     {
+      id: 'c3-invite',
       kind: 'Invitation',
       subject: 'Your feedback on SNAP food restrictions',
       to: 'Everyone on the list',
       when: 'Scheduled · Nov 4, 9:00 AM CT',
       sent: '9,000',
       completed: '—',
+      channels: 'Email',
     },
   ],
   c4: [
     {
+      id: 'c4-invite',
       kind: 'Invitation',
       subject: 'TX HHSC: 5-min survey on SNAP changes',
       to: 'Everyone on the list',
       when: 'Oct 9, 2026 · 11:00 AM',
       sent: '4,200',
       completed: '862',
+      channels: 'SMS',
     },
   ],
 };
