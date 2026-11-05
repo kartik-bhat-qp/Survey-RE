@@ -255,11 +255,41 @@ export const LOGIN_CHECK_HELP: Record<LoginCheck, string> = {
 
 export type CheckTolerance<T extends string = string> = Partial<Record<T | string, number>>;
 
+/** What happens when integrity checks are hit. */
+export type IntegrityFlagAction = 'flag' | 'terminate';
+
+export const INTEGRITY_FLAG_ACTIONS: {
+  id: IntegrityFlagAction;
+  label: string;
+  detail: string;
+}[] = [
+  {
+    id: 'flag',
+    label: 'Only flag',
+    detail: 'Mark the response and let the respondent keep going.',
+  },
+  {
+    id: 'terminate',
+    label: 'Terminate',
+    detail: 'End the survey for that respondent when enough flags are hit.',
+  },
+];
+
+export type CheckFlagActions<T extends string = string> = Partial<
+  Record<T | string, IntegrityFlagAction>
+>;
+
 export interface SurveyProtectionRecord {
   surveyId: number;
   protections: SurveyProtectionId[];
   checks: SurveyCheckId[];
   tolerance?: CheckTolerance<SurveyCheckId>;
+  /** Per-check action when that check is hit. */
+  checkActions?: CheckFlagActions<SurveyCheckId>;
+  /** When on, end the survey after enough terminate flags. */
+  flagAction?: IntegrityFlagAction;
+  /** Used when flagAction is terminate. Defaults to 1. */
+  terminateAfterFlags?: number;
 }
 
 export interface CommunityProtectionRecord {
@@ -277,6 +307,9 @@ export interface NewSurveyIntegrityDefault {
   enabled: boolean;
   checks: SurveyCheckId[];
   tolerance?: CheckTolerance<SurveyCheckId>;
+  checkActions?: CheckFlagActions<SurveyCheckId>;
+  flagAction?: IntegrityFlagAction;
+  terminateAfterFlags?: number;
 }
 
 export interface IntegrityCoverage {
@@ -425,17 +458,118 @@ export function communityCheckSummary(ids: readonly string[] | undefined): strin
   return checks.map((item) => item.label).join(', ');
 }
 
+export function normalizeFlagAction(
+  value: IntegrityFlagAction | undefined,
+): IntegrityFlagAction {
+  return value === 'terminate' ? 'terminate' : 'flag';
+}
+
+/** Caps terminate-after at the number of possible terminate flags. */
+export function normalizeTerminateAfterFlags(
+  value: number | undefined,
+  maxFlags?: number,
+): number {
+  const max =
+    typeof maxFlags === 'number' && Number.isFinite(maxFlags)
+      ? Math.max(1, Math.floor(maxFlags))
+      : undefined;
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 1;
+  const next = Math.max(1, Math.floor(value));
+  return max !== undefined ? Math.min(next, max) : next;
+}
+
+export function normalizeCheckActions(
+  checks: readonly string[],
+  stored: CheckFlagActions | undefined,
+  fallback?: IntegrityFlagAction,
+): CheckFlagActions<SurveyCheckId> {
+  const defaultAction = normalizeFlagAction(fallback);
+  const next: CheckFlagActions<SurveyCheckId> = {};
+  for (const id of normalizeSurveyChecks(checks)) {
+    next[id] = normalizeFlagAction(stored?.[id] ?? defaultAction);
+  }
+  return next;
+}
+
+export function checkActionFor(
+  checkId: string,
+  stored: CheckFlagActions | undefined,
+  fallback?: IntegrityFlagAction,
+): IntegrityFlagAction {
+  return normalizeFlagAction(stored?.[checkId] ?? fallback);
+}
+
+/** How many enabled checks are set to Terminate (total possible terminate flags). */
+export function terminateFlagCapacity(
+  checks: readonly string[] | undefined,
+  checkActions?: CheckFlagActions,
+  fallback?: IntegrityFlagAction,
+): number {
+  const enabled = normalizeSurveyChecks(checks ?? []);
+  if (enabled.length === 0) return 1;
+  const terminateCount = enabled.filter(
+    (id) => checkActionFor(id, checkActions, fallback) === 'terminate',
+  ).length;
+  return Math.max(1, terminateCount > 0 ? terminateCount : enabled.length);
+}
+
+export function flagActionSummary(
+  checks: readonly string[] | undefined,
+  checkActions?: CheckFlagActions,
+  flagAction?: IntegrityFlagAction,
+  terminateAfterFlags?: number,
+): string {
+  const enabled = normalizeSurveyChecks(checks ?? []);
+  if (enabled.length === 0) return '';
+  let flagCount = 0;
+  let terminateCount = 0;
+  for (const id of enabled) {
+    if (checkActionFor(id, checkActions, flagAction) === 'terminate') terminateCount += 1;
+    else flagCount += 1;
+  }
+  const parts: string[] = [];
+  if (terminateCount > 0 && flagCount > 0) {
+    parts.push(`${terminateCount} terminate · ${flagCount} flag`);
+  } else if (terminateCount > 0) {
+    parts.push('Terminate');
+  } else {
+    parts.push('Only flag');
+  }
+  if (normalizeFlagAction(flagAction) === 'terminate' && terminateCount > 0) {
+    const count = normalizeTerminateAfterFlags(
+      terminateAfterFlags,
+      terminateFlagCapacity(enabled, checkActions, flagAction),
+    );
+    parts.push(
+      count === 1 ? 'after first flag' : `after ${count} flags`,
+    );
+  }
+  return parts.join(' · ');
+}
+
 export function surveyRecordFromChecks(
   surveyId: number,
   checks: readonly string[],
   tolerance?: Partial<Record<string, number>>,
+  checkActions?: CheckFlagActions,
+  flagAction?: IntegrityFlagAction,
+  terminateAfterFlags?: number,
 ): SurveyProtectionRecord {
   const normalized = normalizeSurveyChecks(checks);
+  const actions = normalizeCheckActions(normalized, checkActions, flagAction);
+  const action = normalizeFlagAction(flagAction);
+  const maxFlags = terminateFlagCapacity(normalized, actions);
   return {
     surveyId,
     checks: normalized,
     protections: protectionsForSurveyChecks(normalized),
     tolerance: normalizeTolerance(normalized, tolerance, SURVEY_CHECKS),
+    checkActions: actions,
+    flagAction: action,
+    terminateAfterFlags:
+      action === 'terminate'
+        ? normalizeTerminateAfterFlags(terminateAfterFlags, maxFlags)
+        : undefined,
   };
 }
 
@@ -457,7 +591,17 @@ export function coverageWithNewSurvey(
   }
   return {
     ...coverage,
-    surveys: [...others, surveyRecordFromChecks(surveyId, checks, defaults?.tolerance)],
+    surveys: [
+      ...others,
+      surveyRecordFromChecks(
+        surveyId,
+        checks,
+        defaults?.tolerance,
+        defaults?.checkActions,
+        defaults?.flagAction,
+        defaults?.terminateAfterFlags,
+      ),
+    ],
   };
 }
 

@@ -2,6 +2,12 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import {
+  INTEGRITY_FLAG_ACTIONS,
+  checkActionFor,
+  type CheckFlagActions,
+  type IntegrityFlagAction,
+} from '@/lib/integrity/coverage';
 import styles from './IntegrityCoverage.module.css';
 
 const WuToggle = dynamic(
@@ -60,6 +66,8 @@ function groupStatus<T extends string>(
   items: readonly CheckItem<T>[],
   selected: readonly T[],
   tolerances: Partial<Record<string, number>> | undefined,
+  checkActions: CheckFlagActions | undefined,
+  showFlagActions: boolean,
 ): string {
   const selectedItems = items.filter((item) => selected.includes(item.id));
   if (selectedItems.length === 0) return 'Off';
@@ -68,6 +76,21 @@ function groupStatus<T extends string>(
     for (const spec of allowancesFor(item)) {
       const value = allowanceCount(spec, tolerances);
       counts.push(`${value} ${value === 1 ? spec.singular : spec.plural}`);
+    }
+  }
+  if (showFlagActions) {
+    let flagCount = 0;
+    let terminateCount = 0;
+    for (const item of selectedItems) {
+      if (checkActionFor(item.id, checkActions) === 'terminate') terminateCount += 1;
+      else flagCount += 1;
+    }
+    if (terminateCount > 0 && flagCount > 0) {
+      counts.push(`${terminateCount} terminate`, `${flagCount} flag`);
+    } else if (terminateCount > 0) {
+      counts.push(terminateCount === selectedItems.length ? 'Terminate' : `${terminateCount} terminate`);
+    } else if (flagCount > 0 && selectedItems.length > 0) {
+      counts.push('Only flag');
     }
   }
   if (counts.length > 0) {
@@ -85,21 +108,32 @@ export function IntegrityCheckToggles<T extends string>({
   items,
   selected,
   tolerances,
+  checkActions,
   onToggle,
   onTolerance,
+  onCheckAction,
 }: {
   items: readonly CheckItem<T>[];
   selected: readonly T[];
   tolerances?: Partial<Record<string, number>>;
+  checkActions?: CheckFlagActions;
   onToggle: (id: T, checked: boolean) => void;
   onTolerance?: (id: string, value: number) => void;
+  onCheckAction?: (id: T, action: IntegrityFlagAction) => void;
 }) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const showFlagActions = Boolean(onCheckAction);
   return (
     <div className={styles.groupList}>
       {grouped(items).map((group) => {
         const expanded = open[group.key] ?? false;
-        const status = groupStatus(group.items, selected, tolerances);
+        const status = groupStatus(
+          group.items,
+          selected,
+          tolerances,
+          checkActions,
+          showFlagActions,
+        );
         return (
           <section key={group.key} className={styles.checkCard}>
             <button
@@ -132,8 +166,11 @@ export function IntegrityCheckToggles<T extends string>({
                     item={item}
                     checked={selected.includes(item.id)}
                     tolerances={tolerances}
+                    checkAction={checkActionFor(item.id, checkActions)}
+                    showFlagActions={showFlagActions}
                     onToggle={onToggle}
                     onTolerance={onTolerance}
+                    onCheckAction={onCheckAction}
                   />
                 ))}
               </div>
@@ -149,14 +186,20 @@ function CheckRow<T extends string>({
   item,
   checked,
   tolerances,
+  checkAction,
+  showFlagActions,
   onToggle,
   onTolerance,
+  onCheckAction,
 }: {
   item: CheckItem<T>;
   checked: boolean;
   tolerances?: Partial<Record<string, number>>;
+  checkAction: IntegrityFlagAction;
+  showFlagActions: boolean;
   onToggle: (id: T, checked: boolean) => void;
   onTolerance?: (id: string, value: number) => void;
+  onCheckAction?: (id: T, action: IntegrityFlagAction) => void;
 }) {
   const allowances = allowancesFor(item);
   return (
@@ -219,6 +262,26 @@ function CheckRow<T extends string>({
               );
             })
           : null}
+        {checked && showFlagActions ? (
+          <div
+            className={styles.checkActionRow}
+            role="radiogroup"
+            aria-label={`Action for ${item.label}`}
+          >
+            {INTEGRITY_FLAG_ACTIONS.map((choice) => (
+              <button
+                key={choice.id}
+                type="button"
+                role="radio"
+                aria-checked={checkAction === choice.id}
+                className={checkAction === choice.id ? styles.choiceOn : styles.choice}
+                onClick={() => onCheckAction?.(item.id, choice.id)}
+              >
+                {choice.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
       <WuToggle
         checked={checked}

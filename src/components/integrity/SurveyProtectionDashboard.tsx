@@ -16,15 +16,23 @@ import {
   INTEGRITY_COVERAGE_KEY,
   SURVEY_CHECKS,
   findSurveyProtection,
+  flagActionSummary,
+  normalizeCheckActions,
+  normalizeFlagAction,
   normalizeSurveyChecks,
-  normalizeTolerance,
+  normalizeTerminateAfterFlags,
   protectionsForSurveyChecks,
   surveyCheckSummary,
   surveyProtectionSummary,
+  surveyRecordFromChecks,
+  terminateFlagCapacity,
   toleranceSummary,
+  type CheckFlagActions,
+  type IntegrityFlagAction,
   type SurveyCheckId,
 } from '@/lib/integrity/coverage';
 import { IntegrityCheckToggles } from './IntegrityCheckToggles';
+import { IntegrityFlagActionControls } from './IntegrityFlagActionControls';
 import styles from './IntegrityCoverage.module.css';
 
 const WuButton = dynamic(
@@ -60,6 +68,9 @@ export function SurveyProtectionDashboard() {
   const [surveyId, setSurveyId] = useState('');
   const [checks, setChecks] = useState<SurveyCheckId[]>([]);
   const [tolerance, setTolerance] = useState<Partial<Record<string, number>>>({});
+  const [checkActions, setCheckActions] = useState<CheckFlagActions<SurveyCheckId>>({});
+  const [flagAction, setFlagAction] = useState<IntegrityFlagAction>('flag');
+  const [terminateAfterFlags, setTerminateAfterFlags] = useState(1);
   const [removeId, setRemoveId] = useState<number | null>(null);
   const [ready, setReady] = useState(false);
   const appliedQuery = useRef(false);
@@ -97,9 +108,23 @@ export function SurveyProtectionDashboard() {
     const survey = MOCK_SURVEYS.find((item) => String(item.id) === requested);
     if (!survey) return;
     const existing = findSurveyProtection(coverage, survey.id);
+    const nextChecks = normalizeSurveyChecks(existing?.checks ?? []);
+    const nextActions = normalizeCheckActions(
+      nextChecks,
+      existing?.checkActions,
+      existing?.flagAction,
+    );
     setSurveyId(String(survey.id));
-    setChecks(normalizeSurveyChecks(existing?.checks ?? []));
+    setChecks(nextChecks);
     setTolerance(existing?.tolerance ?? {});
+    setCheckActions(nextActions);
+    setFlagAction(normalizeFlagAction(existing?.flagAction));
+    setTerminateAfterFlags(
+      normalizeTerminateAfterFlags(
+        existing?.terminateAfterFlags,
+        terminateFlagCapacity(nextChecks, nextActions),
+      ),
+    );
     setEditorOpen(true);
     setScrollTick((tick) => tick + 1);
   }, [coverage, ready, searchParams]);
@@ -113,23 +138,60 @@ export function SurveyProtectionDashboard() {
     setSurveyId('');
     setChecks([]);
     setTolerance({});
+    setCheckActions({});
+    setFlagAction('flag');
+    setTerminateAfterFlags(1);
     setEditorOpen(true);
     setScrollTick((tick) => tick + 1);
   }
 
   function openExisting(id: number): void {
     const existing = findSurveyProtection(coverage, id);
+    const nextChecks = normalizeSurveyChecks(existing?.checks ?? []);
+    const nextActions = normalizeCheckActions(
+      nextChecks,
+      existing?.checkActions,
+      existing?.flagAction,
+    );
     setSurveyId(String(id));
-    setChecks(normalizeSurveyChecks(existing?.checks ?? []));
+    setChecks(nextChecks);
     setTolerance(existing?.tolerance ?? {});
+    setCheckActions(nextActions);
+    setFlagAction(normalizeFlagAction(existing?.flagAction));
+    setTerminateAfterFlags(
+      normalizeTerminateAfterFlags(
+        existing?.terminateAfterFlags,
+        terminateFlagCapacity(nextChecks, nextActions),
+      ),
+    );
     setEditorOpen(true);
     setScrollTick((tick) => tick + 1);
   }
 
   function toggleCheck(id: SurveyCheckId, checked: boolean): void {
-    setChecks((current) =>
-      normalizeSurveyChecks(checked ? [...current, id] : current.filter((item) => item !== id)),
-    );
+    setChecks((current) => {
+      const next = normalizeSurveyChecks(
+        checked ? [...current, id] : current.filter((item) => item !== id),
+      );
+      const nextActions = checked
+        ? normalizeCheckActions(next, { ...checkActions, [id]: 'flag' })
+        : normalizeCheckActions(next, checkActions);
+      setCheckActions(nextActions);
+      setTerminateAfterFlags((value) =>
+        normalizeTerminateAfterFlags(value, terminateFlagCapacity(next, nextActions)),
+      );
+      return next;
+    });
+  }
+
+  function setAction(id: SurveyCheckId, action: IntegrityFlagAction): void {
+    setCheckActions((current) => {
+      const next = { ...current, [id]: action };
+      setTerminateAfterFlags((value) =>
+        normalizeTerminateAfterFlags(value, terminateFlagCapacity(checks, next)),
+      );
+      return next;
+    });
   }
 
   function save(): void {
@@ -148,17 +210,22 @@ export function SurveyProtectionDashboard() {
       ...current,
       surveys: [
         ...current.surveys.filter((item) => item.surveyId !== id),
-        {
-          surveyId: id,
-          protections: protectionsForSurveyChecks(savedChecks),
-          checks: savedChecks,
-          tolerance: normalizeTolerance(savedChecks, tolerance, SURVEY_CHECKS),
-        },
+        surveyRecordFromChecks(
+          id,
+          savedChecks,
+          tolerance,
+          checkActions,
+          flagAction,
+          terminateAfterFlags,
+        ),
       ],
     }));
     setSurveyId('');
     setChecks([]);
     setTolerance({});
+    setCheckActions({});
+    setFlagAction('flag');
+    setTerminateAfterFlags(1);
     setEditorOpen(false);
     showToast({ message: `Protection saved for ${survey.name}.`, variant: 'success' });
   }
@@ -215,8 +282,22 @@ export function SurveyProtectionDashboard() {
                 const id = next?.value ?? '';
                 setSurveyId(id);
                 const existing = findSurveyProtection(coverage, Number(id));
-                setChecks(normalizeSurveyChecks(existing?.checks ?? []));
+                const nextChecks = normalizeSurveyChecks(existing?.checks ?? []);
+                const nextActions = normalizeCheckActions(
+                  nextChecks,
+                  existing?.checkActions,
+                  existing?.flagAction,
+                );
+                setChecks(nextChecks);
                 setTolerance(existing?.tolerance ?? {});
+                setCheckActions(nextActions);
+                setFlagAction(normalizeFlagAction(existing?.flagAction));
+                setTerminateAfterFlags(
+                  normalizeTerminateAfterFlags(
+                    existing?.terminateAfterFlags,
+                    terminateFlagCapacity(nextChecks, nextActions),
+                  ),
+                );
               }}
             />
           </div>
@@ -225,9 +306,25 @@ export function SurveyProtectionDashboard() {
             items={SURVEY_CHECKS}
             selected={checks}
             tolerances={tolerance}
+            checkActions={checkActions}
             onToggle={toggleCheck}
             onTolerance={(id, value) =>
               setTolerance((current) => ({ ...current, [id]: value }))
+            }
+            onCheckAction={setAction}
+          />
+          <IntegrityFlagActionControls
+            flagAction={flagAction}
+            terminateAfterFlags={terminateAfterFlags}
+            maxFlags={terminateFlagCapacity(checks, checkActions)}
+            onFlagActionChange={setFlagAction}
+            onTerminateAfterChange={(count) =>
+              setTerminateAfterFlags(
+                normalizeTerminateAfterFlags(
+                  count,
+                  terminateFlagCapacity(checks, checkActions),
+                ),
+              )
             }
           />
         <div className={styles.actions}>
@@ -281,7 +378,21 @@ export function SurveyProtectionDashboard() {
                   </div>
                   <p className={styles.meta}>
                     {(row.record.checks?.length ?? 0) > 0
-                      ? toleranceSummary(row.record.checks, row.record.tolerance, SURVEY_CHECKS)
+                      ? [
+                          toleranceSummary(
+                            row.record.checks,
+                            row.record.tolerance,
+                            SURVEY_CHECKS,
+                          ),
+                          flagActionSummary(
+                            row.record.checks,
+                            row.record.checkActions,
+                            row.record.flagAction,
+                            row.record.terminateAfterFlags,
+                          ),
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')
                       : ''}
                   </p>
                 </td>

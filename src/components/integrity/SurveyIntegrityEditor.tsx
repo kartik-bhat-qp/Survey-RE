@@ -9,13 +9,20 @@ import {
   INTEGRITY_COVERAGE_KEY,
   SURVEY_CHECKS,
   findSurveyProtection,
+  normalizeCheckActions,
+  normalizeFlagAction,
   normalizeSurveyChecks,
+  normalizeTerminateAfterFlags,
   normalizeTolerance,
   surveyCheckSummary,
   surveyRecordFromChecks,
+  terminateFlagCapacity,
+  type CheckFlagActions,
+  type IntegrityFlagAction,
   type SurveyCheckId,
 } from '@/lib/integrity/coverage';
 import { IntegrityCheckToggles } from './IntegrityCheckToggles';
+import { IntegrityFlagActionControls } from './IntegrityFlagActionControls';
 import styles from './IntegrityCoverage.module.css';
 
 const WuButton = dynamic(
@@ -45,6 +52,9 @@ export function SurveyIntegrityEditor({
   const [enabled, setEnabled] = useState(false);
   const [checks, setChecks] = useState<SurveyCheckId[]>([]);
   const [tolerance, setTolerance] = useState<Partial<Record<string, number>>>({});
+  const [checkActions, setCheckActions] = useState<CheckFlagActions<SurveyCheckId>>({});
+  const [flagAction, setFlagAction] = useState<IntegrityFlagAction>('flag');
+  const [terminateAfterFlags, setTerminateAfterFlags] = useState(1);
   const [synced, setSynced] = useState(false);
   const dirtyRef = useRef(false);
 
@@ -52,11 +62,30 @@ export function SurveyIntegrityEditor({
     if (dirtyRef.current) return;
     const record = findSurveyProtection(coverage, surveyId);
     const nextChecks = normalizeSurveyChecks(record?.checks ?? []);
+    const nextActions = normalizeCheckActions(
+      nextChecks,
+      record?.checkActions,
+      record?.flagAction,
+    );
     setEnabled(nextChecks.length > 0);
     setChecks(nextChecks);
     setTolerance(record?.tolerance ?? {});
+    setCheckActions(nextActions);
+    setFlagAction(normalizeFlagAction(record?.flagAction));
+    setTerminateAfterFlags(
+      normalizeTerminateAfterFlags(
+        record?.terminateAfterFlags,
+        terminateFlagCapacity(nextChecks, nextActions),
+      ),
+    );
     setSynced(true);
   }, [coverage, surveyId]);
+
+  function clampTerminate(nextChecks: SurveyCheckId[], nextActions: CheckFlagActions) {
+    setTerminateAfterFlags((value) =>
+      normalizeTerminateAfterFlags(value, terminateFlagCapacity(nextChecks, nextActions)),
+    );
+  }
 
   function toggleCheck(id: SurveyCheckId, checked: boolean) {
     dirtyRef.current = true;
@@ -65,9 +94,23 @@ export function SurveyIntegrityEditor({
         ? normalizeSurveyChecks([...current, id])
         : current.filter((item) => item !== id);
       setEnabled(next.length > 0);
+      const nextActions = checked
+        ? normalizeCheckActions(next, { ...checkActions, [id]: 'flag' })
+        : normalizeCheckActions(next, checkActions);
+      setCheckActions(nextActions);
       if (checked) {
         setTolerance((stored) => normalizeTolerance(next, stored, SURVEY_CHECKS));
       }
+      clampTerminate(next, nextActions);
+      return next;
+    });
+  }
+
+  function setAction(id: SurveyCheckId, action: IntegrityFlagAction) {
+    dirtyRef.current = true;
+    setCheckActions((current) => {
+      const next = { ...current, [id]: action };
+      clampTerminate(checks, next);
       return next;
     });
   }
@@ -77,13 +120,29 @@ export function SurveyIntegrityEditor({
     if (!checked) {
       setEnabled(false);
       setChecks([]);
+      setCheckActions({});
+      setFlagAction('flag');
+      setTerminateAfterFlags(1);
       return;
     }
     const fromOrg = normalizeSurveyChecks(coverage.newSurveys?.checks ?? []);
     const next = fromOrg.length > 0 ? fromOrg : (['fingerprint'] as SurveyCheckId[]);
+    const nextActions = normalizeCheckActions(
+      next,
+      coverage.newSurveys?.checkActions,
+      coverage.newSurveys?.flagAction,
+    );
     setEnabled(true);
     setChecks(next);
     setTolerance(normalizeTolerance(next, coverage.newSurveys?.tolerance, SURVEY_CHECKS));
+    setCheckActions(nextActions);
+    setFlagAction(normalizeFlagAction(coverage.newSurveys?.flagAction));
+    setTerminateAfterFlags(
+      normalizeTerminateAfterFlags(
+        coverage.newSurveys?.terminateAfterFlags,
+        terminateFlagCapacity(next, nextActions),
+      ),
+    );
   }
 
   function save() {
@@ -94,7 +153,17 @@ export function SurveyIntegrityEditor({
       if (nextChecks.length === 0) return { ...current, surveys: others };
       return {
         ...current,
-        surveys: [...others, surveyRecordFromChecks(surveyId, nextChecks, tolerance)],
+        surveys: [
+          ...others,
+          surveyRecordFromChecks(
+            surveyId,
+            nextChecks,
+            tolerance,
+            checkActions,
+            flagAction,
+            terminateAfterFlags,
+          ),
+        ],
       };
     });
     showToast({
@@ -105,6 +174,8 @@ export function SurveyIntegrityEditor({
       variant: 'success',
     });
   }
+
+  const maxFlags = terminateFlagCapacity(checks, checkActions);
 
   return (
     <div className={embedded ? styles.embedded : styles.editor}>
@@ -128,16 +199,33 @@ export function SurveyIntegrityEditor({
         />
       </div>
       {enabled ? (
-        <IntegrityCheckToggles
-          items={SURVEY_CHECKS}
-          selected={checks}
-          tolerances={tolerance}
-          onToggle={toggleCheck}
-          onTolerance={(id, value) => {
-            dirtyRef.current = true;
-            setTolerance((current) => ({ ...current, [id]: value }));
-          }}
-        />
+        <>
+          <IntegrityCheckToggles
+            items={SURVEY_CHECKS}
+            selected={checks}
+            tolerances={tolerance}
+            checkActions={checkActions}
+            onToggle={toggleCheck}
+            onTolerance={(id, value) => {
+              dirtyRef.current = true;
+              setTolerance((current) => ({ ...current, [id]: value }));
+            }}
+            onCheckAction={setAction}
+          />
+          <IntegrityFlagActionControls
+            flagAction={flagAction}
+            terminateAfterFlags={terminateAfterFlags}
+            maxFlags={maxFlags}
+            onFlagActionChange={(action) => {
+              dirtyRef.current = true;
+              setFlagAction(action);
+            }}
+            onTerminateAfterChange={(count) => {
+              dirtyRef.current = true;
+              setTerminateAfterFlags(normalizeTerminateAfterFlags(count, maxFlags));
+            }}
+          />
+        </>
       ) : null}
       <div className={styles.actions}>
         <WuButton type="button" onClick={save}>

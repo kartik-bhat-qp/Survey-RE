@@ -313,6 +313,21 @@
   width: 72px;
 }
 
+.flagAction {
+  border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+}
+
+.checkActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
 .choice,
 .choiceOn {
   background: #fff;
