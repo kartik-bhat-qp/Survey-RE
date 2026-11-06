@@ -31,6 +31,8 @@ const PHASE_TABS: { id: SurveyEditorPhase; label: string }[] = [
   { id: 'distribute', label: 'Distribute' },
   { id: 'collectors', label: 'Collectors' },
   { id: 'lists', label: 'Lists' },
+  // Contacts hub kept at /surveys/[id]/contacts — re-add tab when needed:
+  // { id: 'contacts', label: 'Contacts' },
   { id: 'analytics-2', label: 'Analytics 2.0' },
   { id: 'integration', label: 'Integration' },
 ];

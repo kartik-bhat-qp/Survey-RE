@@ -752,15 +752,15 @@ function FilterableColumnHeader({
         open={open}
         onOpenChange={handleOpenChange}
         Trigger={
-          <span
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
             className={styles.filterBtn}
             data-active={isActive ? 'true' : undefined}
             aria-label={`Filter ${label}`}
+            onClick={(event) => event.stopPropagation()}
           >
             <span className="wm-filter-list" aria-hidden />
-          </span>
+          </button>
         }
         align="start"
       >
@@ -1433,11 +1433,12 @@ export function SurveyAdvanceQuotasDashboard({
             options={quotaGroupOptions}
             onChange={setQuotaGroupFilter}
             leadingIcon="wm-group"
-            showSort
           />
         ),
         filterable: true,
-        enableSorting: true,
+        // WuTable wraps sortable headers in a <button>; keep this false so the
+        // WuMenu filter trigger can be a native <button> without nesting.
+        enableSorting: false,
         size: 200,
         cell: ({ row }) => {
           if (row.original.isOption) {

@@ -1,9 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { usePersistedState } from '@/hooks/usePersistedState';
+import {
+  CONTACT_HUB_STORAGE_KEY,
+  EMPTY_CONTACT_HUB,
+  estimateRecipients,
+} from '@/data/mock-contact-hub';
 import {
   CONTACT_LISTS_STORAGE_KEY,
   INITIAL_CONTACT_LISTS,
@@ -16,7 +21,7 @@ import styles from './ComposeRecipientsField.module.css';
 
 const WuSelect = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
-  { ssr: false }
+  { ssr: false },
 );
 
 interface ComposeRecipientsFieldProps {
@@ -26,6 +31,12 @@ interface ComposeRecipientsFieldProps {
   onRecipientEmailsChange: (emails: string[]) => void;
 }
 
+type RecipientSourceOption = EmailListOption & {
+  kind: 'all' | 'static' | 'dynamic' | 'list' | 'file';
+  sendable?: number;
+  suppressed?: number;
+};
+
 export function ComposeRecipientsField({
   selectedList,
   onSelectedListChange,
@@ -34,10 +45,54 @@ export function ComposeRecipientsField({
 }: ComposeRecipientsFieldProps) {
   const { showToast } = useWuShowToast();
   const [emailDraft, setEmailDraft] = useState('');
+  const [hub] = usePersistedState(CONTACT_HUB_STORAGE_KEY, EMPTY_CONTACT_HUB);
   const [lists] = usePersistedState<ContactList[]>(
     CONTACT_LISTS_STORAGE_KEY,
-    INITIAL_CONTACT_LISTS
+    INITIAL_CONTACT_LISTS,
   );
+
+  const sourceOptions = useMemo<RecipientSourceOption[]>(() => {
+    const allEstimate = estimateRecipients(hub.contacts, { type: 'all' });
+    const groupOptions = hub.groups.map((group) => {
+      const estimate = estimateRecipients(hub.contacts, {
+        type: 'group',
+        groupId: group.id,
+      });
+      return {
+        value: group.id,
+        label: `${group.name} · ${group.type === 'dynamic' ? 'Dynamic' : 'Static'} · ${estimate.sendable.toLocaleString('en-US')} sendable`,
+        kind: group.type,
+        sendable: estimate.sendable,
+        suppressed: estimate.suppressed,
+      };
+    });
+    const legacyLists = lists.map((list) => ({
+      value: list.value,
+      label: `${list.label} · Legacy list · ${list.contacts.toLocaleString('en-US')}`,
+      kind: 'list' as const,
+      sendable: list.contacts,
+      suppressed: 0,
+    }));
+    return [
+      {
+        value: 'all-contacts',
+        label: `All Contacts · ${allEstimate.sendable.toLocaleString('en-US')} sendable`,
+        kind: 'all',
+        sendable: allEstimate.sendable,
+        suppressed: allEstimate.suppressed,
+      },
+      ...groupOptions,
+      ...legacyLists,
+      {
+        value: 'upload-file',
+        label: 'Upload recipient file',
+        kind: 'file',
+      },
+    ];
+  }, [hub.contacts, hub.groups, lists]);
+
+  const selectedSource =
+    sourceOptions.find((option) => option.value === selectedList?.value) ?? null;
 
   function addEmailFromDraft(): void {
     const normalized = normalizeEmailAddress(emailDraft);
@@ -45,6 +100,20 @@ export function ComposeRecipientsField({
 
     if (!isValidEmailAddress(normalized)) {
       showToast({ message: 'Enter a valid email address', variant: 'error' });
+      return;
+    }
+
+    const blocked = hub.contacts.find(
+      (contact) =>
+        contact.email?.toLowerCase() === normalized &&
+        (contact.suppression || !contact.consent.emailSubscribed),
+    );
+    if (blocked) {
+      showToast({
+        message: 'That contact is suppressed and cannot be added to this distribution.',
+        variant: 'error',
+      });
+      setEmailDraft('');
       return;
     }
 
@@ -78,8 +147,19 @@ export function ComposeRecipientsField({
       onSelectedListChange(null);
       return;
     }
-
-    onSelectedListChange(item as EmailListOption);
+    const option = item as RecipientSourceOption;
+    if (option.kind === 'file') {
+      showToast({
+        message: 'Recipient file selected. Estimated recipients will appear after mapping.',
+        variant: 'info',
+      });
+    } else if (typeof option.sendable === 'number') {
+      showToast({
+        message: `${option.sendable.toLocaleString('en-US')} sendable recipients. ${option.suppressed?.toLocaleString('en-US') ?? 0} suppressed contacts are excluded.`,
+        variant: 'info',
+      });
+    }
+    onSelectedListChange({ value: option.value, label: option.label });
   }
 
   const hasRecipients = Boolean(selectedList) || recipientEmails.length > 0;
@@ -125,7 +205,9 @@ export function ComposeRecipientsField({
           onKeyDown={handleEmailDraftKeyDown}
           onBlur={addEmailFromDraft}
           placeholder={
-            hasRecipients ? 'Add another email' : 'Enter email addresses or select a list'
+            hasRecipients
+              ? 'Add another email'
+              : 'Enter email addresses or select contacts / groups'
           }
           aria-label="Add recipient email address"
         />
@@ -133,11 +215,11 @@ export function ComposeRecipientsField({
 
       <div className={styles.recipientsListPicker}>
         <WuSelect
-          data={lists}
+          data={sourceOptions}
           accessorKey={{ value: 'value', label: 'label' }}
-          value={selectedList}
+          value={selectedSource}
           onSelect={handleListSelect}
-          placeholder="Select List"
+          placeholder="Select recipients"
           variant="outlined"
         />
       </div>
