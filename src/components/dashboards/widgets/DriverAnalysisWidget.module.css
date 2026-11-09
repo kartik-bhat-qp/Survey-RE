@@ -29,7 +29,7 @@
   color: #545e6b;
   cursor: pointer;
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   height: 24px;
   padding: 0 9px;
 }
@@ -63,7 +63,7 @@
 
 .insightText {
   color: #3d4a5c;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   line-height: 1.45;
   margin: 0;
   text-wrap: pretty;
@@ -80,7 +80,7 @@
 
 .quadrantPane {
   display: flex;
-  flex: 1 1 70%;
+  flex: 1 1 65%;
   flex-direction: column;
   min-width: 0;
 }
@@ -97,7 +97,7 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   justify-content: space-between;
   padding: 2px 4px 16px 0;
   width: 30px;
@@ -134,7 +134,7 @@
 
 .quadrantLabel {
   color: #8c9bb0;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.3px;
   position: absolute;
@@ -177,21 +177,21 @@
 
 .dotLabel {
   color: #6b7684;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   white-space: nowrap;
 }
 
 .xAxis {
   color: #909090;
   display: flex;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   justify-content: space-between;
   padding: 4px 2px 0;
 }
 
 .axisTitle {
   color: #909090;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   padding-top: 2px;
   text-align: center;
 }
@@ -200,7 +200,7 @@
   align-items: center;
   color: #7f8a99;
   display: flex;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   gap: 12px;
   flex-wrap: wrap;
   padding-top: 6px;
@@ -227,9 +227,9 @@
 .tablePane {
   border-left: 1px solid #f0f0f0;
   display: flex;
-  flex: 0 1 30%;
+  flex: 0 1 35%;
   flex-direction: column;
-  max-width: 240px;
+  max-width: 340px;
   min-width: 0;
   padding-left: 12px;
 }
@@ -245,14 +245,14 @@
   border-bottom: 1px solid #f6f6f6;
   display: grid;
   gap: 6px;
-  grid-template-columns: 1fr 44px 34px 16px;
+  grid-template-columns: minmax(0, 1fr) 52px 40px 18px;
   padding: 5px 0;
 }
 
 .driverHead {
   border-bottom: 1px solid #eee;
   color: #909090;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   font-weight: 500;
   letter-spacing: 0.3px;
   padding: 0 0 5px;
@@ -271,7 +271,7 @@
   align-items: center;
   color: #3d4a5c;
   display: flex;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   gap: 6px;
   min-width: 0;
 }
@@ -291,20 +291,20 @@
 
 .driverMetric {
   color: #1b3380;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   font-weight: 500;
   text-align: right;
 }
 
 .driverCorr {
   color: #6b7684;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   text-align: right;
 }
 
 .sigYes,
 .sigNo {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   text-align: center;
 }
@@ -319,7 +319,7 @@
 
 .note {
   color: #909090;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   line-height: 1.4;
   padding-top: 6px;
 }
@@ -347,7 +347,7 @@
 
 .predictLabel {
   color: #909090;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   font-weight: 500;
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -373,7 +373,7 @@
 
 .predictMeta {
   color: #6b7684;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
 }
 
 .liftUp {
@@ -397,7 +397,7 @@
 .npsTicks {
   color: #909090;
   display: flex;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   justify-content: space-between;
 }
 
@@ -443,7 +443,7 @@
 .npsLegend {
   color: #7f8a99;
   display: flex;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   gap: 12px;
 }
 
@@ -467,7 +467,7 @@
 
 .recommendationText {
   color: #3d4a5c;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   line-height: 1.45;
   margin: 0;
   text-wrap: pretty;
@@ -483,7 +483,7 @@
   cursor: pointer;
   display: inline-flex;
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   gap: 5px;
   height: 26px;
   margin-top: auto;
@@ -509,14 +509,14 @@
   border-bottom: 1px solid #f6f6f6;
   display: grid;
   gap: 8px;
-  grid-template-columns: 1fr 100px 44px;
+  grid-template-columns: minmax(0, 1fr) 110px 48px;
   padding: 4px 0;
 }
 
 .simHead {
   border-bottom: 1px solid #eee;
   color: #909090;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   font-weight: 500;
   letter-spacing: 0.3px;
   padding: 0 0 5px;
@@ -537,12 +537,12 @@
 
 .simDelta {
   color: #6b7684;
-  font-size: 10px;
+  font-size: 12px;
   width: 28px;
 }
 
 .simContrib {
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   font-weight: 500;
   text-align: right;
 }

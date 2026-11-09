@@ -262,7 +262,7 @@ export function DriverAnalysisWidget({
                       className={styles.driverDot}
                       style={{ background: driverColor(driver) }}
                     />
-                    <span className={styles.driverNameText}>{driver.name}</span>
+                    <span className={styles.driverNameText} title={driver.name}>{driver.name}</span>
                   </span>
                   <span className={styles.driverMetric}>
                     {metric === 'correlation'
@@ -367,7 +367,7 @@ export function DriverAnalysisWidget({
                         className={styles.driverDot}
                         style={{ background: driverColor(driver) }}
                       />
-                      <span className={styles.driverNameText}>{driver.name}</span>
+                      <span className={styles.driverNameText} title={driver.name}>{driver.name}</span>
                     </span>
                     <span className={styles.simSlider}>
                       <input

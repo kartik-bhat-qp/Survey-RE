@@ -110,7 +110,7 @@ function createHorizontalBarChart(
         centerY: am5.p50,
         centerX: am5.p100,
         dx: 6,
-        fontSize: 11,
+        fontSize: 14,
       }),
     })
   );
@@ -252,7 +252,7 @@ function createPercentChart(
       categoryField: 'category',
     })
   );
-  series.labels.template.setAll({ fontSize: 11 });
+  series.labels.template.setAll({ fontSize: 14 });
   series.data.setAll(data);
 
   if (options.centerLabel) {
@@ -830,7 +830,7 @@ function createMatrixStackBarChart(
   yRenderer.grid.template.set('visible', false);
   yRenderer.labels.template.setAll({
     fill: am5.color(0x545e6b),
-    fontSize: 11,
+    fontSize: 14,
   });
 
   const yAxis = chart.yAxes.push(
@@ -848,7 +848,7 @@ function createMatrixStackBarChart(
   });
   xRenderer.labels.template.setAll({
     fill: am5.color(0x9b9b9b),
-    fontSize: 10,
+    fontSize: 14,
   });
 
   const xAxis = chart.xAxes.push(
@@ -893,7 +893,7 @@ function createMatrixStackBarChart(
     })
   );
   legend.labels.template.setAll({
-    fontSize: 10,
+    fontSize: 14,
     fill: am5.color(0x545e6b),
     maxWidth: 120,
     oversizedBehavior: 'truncate',
@@ -933,7 +933,7 @@ function createMatrixBarChart(
   yRenderer.grid.template.set('visible', false);
   yRenderer.labels.template.setAll({
     fill: am5.color(0x545e6b),
-    fontSize: 11,
+    fontSize: 14,
   });
 
   const yAxis = chart.yAxes.push(
@@ -951,7 +951,7 @@ function createMatrixBarChart(
   });
   xRenderer.labels.template.setAll({
     fill: am5.color(0x9b9b9b),
-    fontSize: 10,
+    fontSize: 14,
   });
 
   const xAxis = chart.xAxes.push(
@@ -996,7 +996,7 @@ function createMatrixBarChart(
     })
   );
   legend.labels.template.setAll({
-    fontSize: 10,
+    fontSize: 14,
     fill: am5.color(0x545e6b),
     maxWidth: 120,
     oversizedBehavior: 'truncate',
@@ -1083,7 +1083,7 @@ function createPictorialChart(root: am5.Root, data: ChartDataPoint[]): void {
         'M 12 2 C 15.3 2 18 4.7 18 8 C 18 11.3 15.3 14 12 14 C 8.7 14 6 11.3 6 8 C 6 4.7 8.7 2 12 2 Z M 4 20 L 20 20 L 20 18 C 20 15 16 13 12 13 C 8 13 4 15 4 18 Z',
     })
   );
-  series.labels.template.setAll({ fontSize: 11 });
+  series.labels.template.setAll({ fontSize: 14 });
   series.data.setAll(data);
   chart.appear(400, 50);
 }
@@ -1119,7 +1119,7 @@ function createMapChart(
   bubbleSeries.bullets.push(() =>
     am5.Bullet.new(root, {
       sprite: am5.Circle.new(root, {
-        radius: 10,
+        radius: 14,
         fill: am5.color(0xe53935),
         fillOpacity: 0.9,
         stroke: am5.color(0xffffff),
@@ -1134,7 +1134,7 @@ function createMapChart(
         populateText: true,
         centerX: am5.p50,
         centerY: am5.p50,
-        fontSize: 9,
+        fontSize: 12,
         fill: am5.color(0xffffff),
       }),
     })

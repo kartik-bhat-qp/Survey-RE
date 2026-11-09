@@ -220,7 +220,7 @@
 .mapLegend {
   bottom: 4px;
   color: #545e6b;
-  font-size: 11px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   left: 4px;
   position: absolute;
 }
@@ -233,7 +233,7 @@
 
 .mapPinLabel {
   fill: #fff;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
   text-anchor: middle;
 }
@@ -263,7 +263,7 @@
   align-items: center;
   color: #545e6b;
   display: flex;
-  font-size: 11px;
+  font-size: var(--dashboard-widget-body-size, 14px);
   gap: 4px;
 }
 

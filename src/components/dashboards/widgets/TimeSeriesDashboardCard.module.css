@@ -1,6 +1,6 @@
 .visual { display:flex; flex-direction:column; flex:1; height:100%; min-height:160px; background:white; }
 .visual > div { flex:1; min-height:0; }
-.stats { font-size:12px; text-align:center; color:#555; padding:6px; }
+.stats { font-size:14px; text-align:center; color:#555; padding:6px; }
 .empty { margin:auto; color:#777; }
 .overlay { position:fixed; inset:0; background:#0005; z-index:110; }
 .dialog { position:fixed; inset:0; z-index:111; pointer-events:none; outline:none; font-family:inherit; color:#555; font-size:12px; }
@@ -51,11 +51,11 @@
 .tooltipChecks label { display:flex; gap:8px; align-items:center; }
 
 .visual > .sliceTabs { flex:none; height:34px; display:flex; overflow-x:auto; gap:2px; }
-.sliceTabs button { flex:1 0 0; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; text-align:left; background:#f1f1f1; border:0; border-radius:0; padding:8px; color:#56616d; font:inherit; font-size:11px; font-weight:500; cursor:pointer; }
+.sliceTabs button { flex:1 0 0; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; text-align:left; background:#f1f1f1; border:0; border-radius:0; padding:8px; color:#56616d; font:inherit; font-size:14px; font-weight:500; cursor:pointer; }
 .sliceTabs button[aria-selected=true] { color:white; background:#5b7aae; }
 .sliceTabs button:focus-visible { outline:2px solid #1b3380; outline-offset:-2px; }
 .manySlices button { min-width:120px; }
-.scoringVisual > .stats { flex:none; font-size:11px; text-align:left; color:#56616d; border-top:1px solid #e5e5e5; padding:8px 0 0; margin:16px 0 0; line-height:16px; }
+.scoringVisual > .stats { flex:none; font-size:14px; text-align:left; color:#56616d; border-top:1px solid #e5e5e5; padding:8px 0 0; margin:16px 0 0; line-height:16px; }
 
 .visual:has([data-drill-level="distribution"]) > .sliceTabs, .visual:has([data-drill-level="responses"]) > .sliceTabs { display:none; }
 
