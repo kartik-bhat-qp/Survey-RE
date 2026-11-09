@@ -534,7 +534,7 @@ export function resolveHeatMapDesign(settings: HeatMapSettings, dashboard?: Dash
   return {
     bodySize, titleSize: ({ 'Extra small': 14, Small: 16, Medium: 18, Large: 20, 'Extra large': 22 } as Record<string, number>)[size] ?? 18,
     fontFamily: inherited ? dashboard?.typography.fontFamily.value ?? '"Fira Sans", Arial, sans-serif' : settings.fontFamily,
-    themeColor: inherited ? dashboard?.themeColor ?? '#0d2163' : settings.themeColor,
+    themeColor: inherited ? (!dashboard?.themeColor || dashboard.themeColor === '#1b3380' ? '#0d2163' : dashboard.themeColor) : (settings.themeColor === '#1b3380' ? '#0d2163' : settings.themeColor),
     // Preserve the measured legacy default palette quirk. Custom dashboard colors
     // explicitly replace that palette rather than leaking the widget's old colors.
     colorSettings: customInherited ? { ...settings, designType: 'Widget' as const, sentiment: 'Custom' as const, colors: dashboard.customSentiment } : inherited || settings.sentiment === 'Default' ? { ...settings, colors: SENTIMENT_COLORS } : settings,

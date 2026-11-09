@@ -31,9 +31,11 @@
 }
 
 .title {
-  color: #3f559a;
-  font-size: var(--dashboard-widget-title-size, 14px);
-  font-weight: var(--dashboard-widget-font-weight, 600);
+  color: #0d2163;
+  font-size: calc(var(--dashboard-widget-title-size, 24px) * .75);
+  font-weight: var(--dashboard-widget-title-weight, 500);
+  line-height: 32px;
+  overflow-wrap: anywhere;
   margin: 0;
 }
 
@@ -53,6 +55,7 @@
   color: #9b9b9b;
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .actionBtn {
@@ -135,5 +138,4 @@
 
 .shared { border-color: #ccc; border-radius: 8px; }
 .shared .header { border-color: #ddd; margin: 0 8px; padding: 10px 8px; min-height: 44px; }
-.shared .title { color: #1b3380; font-size: 18px; font-weight: 500; }
 .shared .subtitle { color: #5b6b80; font-size: 12px; }

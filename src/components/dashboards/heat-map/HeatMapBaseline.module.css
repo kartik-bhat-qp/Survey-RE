@@ -15,7 +15,7 @@
 .canvasWithSettings { padding-right:465px; }
 .widget { background:#fff; border:1px solid #d9d9d9; border-radius:7px; padding:10px; width:100%; height:480px; min-height:380px; display:flex; flex-direction:column; }
 .widgetHeader { display:flex; align-items:center; justify-content:space-between; position:relative; border-bottom:1px solid #ddd; padding:0 6px 10px; gap:12px; min-height:35px; }
-.widgetHeader h2 { font-size:18px; font-weight:500; margin:0; }
+.widgetHeader h2 { font-size:18px; font-weight:500; line-height:32px; margin:0; min-width:0; overflow-wrap:anywhere; }
 .widgetHeader>div { display:flex; }
 .widgetHeader button { border:0; color:#667685; font-size:22px; padding:0 7px; }
 .widgetHeader .menu { position:absolute; top:35px; right:0; z-index:6; background:#fff; border:1px solid #ddd; box-shadow:0 4px 12px #0002; width:155px; display:flex; flex-direction:column; }

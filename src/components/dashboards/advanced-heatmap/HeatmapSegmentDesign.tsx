@@ -18,7 +18,7 @@ const fontSizes = [11,12,14,16,18];
 const fontLabels = ['Extra small','Small','Medium','Large','Extra large'];
 export function segmentWidgetStyle(config: AdvancedHeatmapConfig, dashboard?: DashboardDesign): CSSProperties {
   const design = resolveHeatMapDesign({...defaultHeatMapSettings(), designType:config.designType??'Dashboard', fontFamily:config.fontFamily??'Fira Sans', fontSize:fontLabels[fontSizes.indexOf(config.fontSize??14)]??'Medium', themeColor:config.themeColor??'#3f559a'},dashboard);
-  return {'--advanced-title-color':design.themeColor,'--dashboard-widget-font-family':design.fontFamily,'--dashboard-widget-body-size':`${design.bodySize}px`,'--dashboard-widget-title-size':`${design.titleSize}px`} as CSSProperties;
+  return {'--advanced-title-color':design.themeColor === '#1b3380' ? '#0d2163' : design.themeColor,'--dashboard-widget-font-family':design.fontFamily,'--dashboard-widget-body-size':`${design.bodySize}px`,'--dashboard-widget-title-size':`${design.titleSize / .75}px`} as CSSProperties;
 }
 
 export function HeatmapSegmentDesign({draft,update}:{draft:AdvancedHeatmapConfig;update:(patch:Partial<AdvancedHeatmapConfig>)=>void}) {

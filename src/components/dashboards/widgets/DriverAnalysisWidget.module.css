@@ -1,9 +1,11 @@
 .widget {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
-  font-size: 12px;
+  font-size: var(--dashboard-widget-body-size, 12px);
   height: 100%;
   min-height: 0;
+  overflow: auto;
 }
 
 .modeRow {
@@ -27,7 +29,7 @@
   color: #545e6b;
   cursor: pointer;
   font-family: inherit;
-  font-size: 11px;
+  font-size: 12px;
   height: 24px;
   padding: 0 9px;
 }
@@ -95,7 +97,7 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  font-size: 9.5px;
+  font-size: 12px;
   justify-content: space-between;
   padding: 2px 4px 16px 0;
   width: 30px;
@@ -132,7 +134,7 @@
 
 .quadrantLabel {
   color: #8c9bb0;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.3px;
   position: absolute;
@@ -175,21 +177,21 @@
 
 .dotLabel {
   color: #6b7684;
-  font-size: 9.5px;
+  font-size: 12px;
   white-space: nowrap;
 }
 
 .xAxis {
   color: #909090;
   display: flex;
-  font-size: 9.5px;
+  font-size: 12px;
   justify-content: space-between;
   padding: 4px 2px 0;
 }
 
 .axisTitle {
   color: #909090;
-  font-size: 9.5px;
+  font-size: 12px;
   padding-top: 2px;
   text-align: center;
 }
@@ -198,8 +200,9 @@
   align-items: center;
   color: #7f8a99;
   display: flex;
-  font-size: 9.5px;
+  font-size: 12px;
   gap: 12px;
+  flex-wrap: wrap;
   padding-top: 6px;
 }
 
@@ -249,7 +252,7 @@
 .driverHead {
   border-bottom: 1px solid #eee;
   color: #909090;
-  font-size: 9.5px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.3px;
   padding: 0 0 5px;
@@ -268,7 +271,7 @@
   align-items: center;
   color: #3d4a5c;
   display: flex;
-  font-size: 11px;
+  font-size: 12px;
   gap: 6px;
   min-width: 0;
 }
@@ -288,14 +291,14 @@
 
 .driverMetric {
   color: #1b3380;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   text-align: right;
 }
 
 .driverCorr {
   color: #6b7684;
-  font-size: 11px;
+  font-size: 12px;
   text-align: right;
 }
 
@@ -316,7 +319,7 @@
 
 .note {
   color: #909090;
-  font-size: 9.5px;
+  font-size: 12px;
   line-height: 1.4;
   padding-top: 6px;
 }
@@ -329,6 +332,7 @@
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+  overflow-y: auto;
 }
 
 .predictCard {
@@ -343,7 +347,7 @@
 
 .predictLabel {
   color: #909090;
-  font-size: 9.5px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -369,7 +373,7 @@
 
 .predictMeta {
   color: #6b7684;
-  font-size: 10.5px;
+  font-size: 12px;
 }
 
 .liftUp {
@@ -393,7 +397,7 @@
 .npsTicks {
   color: #909090;
   display: flex;
-  font-size: 9.5px;
+  font-size: 12px;
   justify-content: space-between;
 }
 
@@ -439,7 +443,7 @@
 .npsLegend {
   color: #7f8a99;
   display: flex;
-  font-size: 9.5px;
+  font-size: 12px;
   gap: 12px;
 }
 
@@ -463,7 +467,7 @@
 
 .recommendationText {
   color: #3d4a5c;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
   margin: 0;
   text-wrap: pretty;
@@ -479,7 +483,7 @@
   cursor: pointer;
   display: inline-flex;
   font-family: inherit;
-  font-size: 11px;
+  font-size: 12px;
   gap: 5px;
   height: 26px;
   margin-top: auto;
@@ -512,7 +516,7 @@
 .simHead {
   border-bottom: 1px solid #eee;
   color: #909090;
-  font-size: 9.5px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.3px;
   padding: 0 0 5px;
@@ -538,7 +542,15 @@
 }
 
 .simContrib {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   text-align: right;
+}
+
+@container (max-width: 520px) {
+  .panels { flex-direction: column; overflow: auto; }
+  .quadrantPane { flex: none; min-height: 250px; }
+  .tablePane, .simPane { flex: none; max-width: none; border-left: 0; border-top: 1px solid #f0f0f0; padding: 12px 0 0; }
+  .predictPane { flex: none; }
+  .tableScroll { overflow: visible; }
 }

@@ -86,8 +86,7 @@ export function DashboardWidgetCard({
           onMouseDown={(event) => event.stopPropagation()}
           onPointerDown={(event) => event.stopPropagation()}
           onTouchStart={(event) => event.stopPropagation()}
-        >{actions !== undefined ? actions : <>
-          {headerExtra}
+        >{headerExtra}{actions !== undefined ? actions : <>
           {showInsights && <button
             type="button"
             className={`${styles.actionBtn} ${styles.insightButton}`}

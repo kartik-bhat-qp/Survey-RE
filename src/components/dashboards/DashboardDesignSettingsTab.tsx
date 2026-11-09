@@ -102,6 +102,7 @@ export function getDashboardTypographyCssVars(
     '--dashboard-widget-font-family': metrics.fontFamily,
     '--dashboard-widget-font-style': metrics.fontStyle,
     '--dashboard-widget-font-weight': String(metrics.fontWeight),
+    '--dashboard-widget-title-weight': typography.fontStyle.value === 'bold' ? '600' : '500',
     fontFamily: metrics.fontFamily,
     fontStyle: metrics.fontStyle,
     fontWeight: metrics.fontWeight,
