@@ -10,7 +10,6 @@ import { useWickUILib } from '@/components/ui/useWickUILib';
 import { TextAiSegmentFilterForm } from '@/components/text-ai/TextAiSegmentFilterForm';
 import {
   createDefaultSegmentFilterState,
-  getTextAiExclusionValidationError,
   getTextAiSegmentResponseSummary,
   normalizeTextAiSegmentFilters,
   type TextAiSegmentFilterState,
@@ -78,14 +77,13 @@ export function TextAiDashboardToolbar({
   const [processModalOpen, setProcessModalOpen] = useState(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
   const [draftSegmentFilters, setDraftSegmentFilters] = useState<TextAiSegmentFilterState>(
-    () => segmentFilters ?? createDefaultSegmentFilterState()
+    () => ({ ...(segmentFilters ?? createDefaultSegmentFilterState()), responseExclusions: undefined })
   );
   const pendingResponses = useMemo(() => {
     const processed = new Set(processedResponseIds ?? []);
     return MOCK_PENDING_RESPONSES.filter((response) => !processed.has(response.id));
   }, [processedResponseIds]);
   const processingSummary = useMemo(() => getTextAiSegmentResponseSummary(draftSegmentFilters, pendingResponses), [draftSegmentFilters, pendingResponses]);
-  const filterError = getTextAiExclusionValidationError(draftSegmentFilters);
   function handleNameBlur(): void {
     const trimmed = nameState.trim();
     if (!trimmed) {
@@ -103,12 +101,12 @@ export function TextAiDashboardToolbar({
 
   function handleSync(): void {
     if (!pendingResponses.length) return;
-    setDraftSegmentFilters(segmentFilters ?? createDefaultSegmentFilterState());
+    setDraftSegmentFilters({ ...(segmentFilters ?? createDefaultSegmentFilterState()), responseExclusions: undefined });
     setProcessModalOpen(true);
   }
 
   function handleProcessConfirm(): void {
-    if (filterError || !processingSummary.includedResponses.length) return;
+    if (!processingSummary.includedResponses.length) return;
     onProcessResponses?.(normalizeTextAiSegmentFilters(draftSegmentFilters), processingSummary.includedResponses.map((response) => response.id));
     setProcessModalOpen(false);
     showToast({ message: `Prototype processing complete: ${processingSummary.includedResponses.length.toLocaleString()} responses included.`, variant: 'success' });
@@ -324,7 +322,7 @@ export function TextAiDashboardToolbar({
         variant="action"
       >
         <WuModalHeader className={modalStyles.modalTitle}>
-          Filter and Exclude Responses
+          Filter Responses
         </WuModalHeader>
         <WuModalContent className={createModalStyles.segmentFilterContent}>
           <TextAiSegmentFilterForm
@@ -344,7 +342,7 @@ export function TextAiDashboardToolbar({
             </WuButton>
             <WuButton
               onClick={handleProcessConfirm}
-              disabled={!!filterError || !processingSummary.includedResponses.length}
+              disabled={!processingSummary.includedResponses.length}
               Icon={<span className="wm-sync" aria-hidden />}
             >
               Process responses

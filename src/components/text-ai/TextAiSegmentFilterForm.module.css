@@ -393,45 +393,6 @@
   outline-offset: 2px;
 }
 
-.exclusions {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 2px 0 18px;
-}
-
-.exclusionsHeader {
-  align-items: center;
-  display: flex;
-  gap: 16px;
-  justify-content: space-between;
-}
-
-.exclusions h3 {
-  color: #253449;
-  font-size: 14px;
-  font-weight: 500;
-  margin: 0;
-}
-
-.exclusionsCount {
-  color: #6b7280;
-  font-size: 12px;
-}
-
-.exclusionsCount strong { color: #253449; font-size: 13px; font-weight: 600; }
-.exclusionOption { margin-top: 12px; }
-.minimumLengthRow, .exclusionCheckbox { align-items: center; display: flex; gap: 8px; }
-.minimumLengthRow { flex-wrap: wrap; color: #4b5563; font-size: 13px; }
-.exclusionCheckbox { color: #4b5563; cursor: pointer; font-size: 13px; gap: 9px; }
-.exclusionCheckbox input { accent-color: #1b87e6; flex-shrink: 0; height: 16px; margin: 0; width: 16px; }
-.minimumLengthInput { border: 1px solid #b7c0cd; border-radius: 3px; color: #253449; font-size: 13px; height: 32px; padding: 5px 8px; width: 76px; }
-.minimumLengthInput:disabled { background: #f3f4f6; border-color: #e5e7eb; color: #8d98aa; cursor: not-allowed; }
-.exactResponsesField { margin: 9px 0 0 25px; }
-.exactResponsesInput { background: #fff; border: 1px solid #b7c0cd; border-radius: 3px; color: #253449; display: block; font: inherit; font-size: 13px; height: 74px; line-height: 1.45; padding: 8px 10px; resize: none; width: 100%; }
-.exactResponsesInput::placeholder { color: #9aa2ae; }
-.exactResponsesInput:disabled { background: #f3f4f6; border-color: #e5e7eb; color: #8d98aa; cursor: not-allowed; }
-.exactResponsesInput:disabled::placeholder { color: #9aa2ae; opacity: 1; }
-.invalidInput, .invalidInput:focus, .invalidInput:focus-visible { border-color: #d92d20; box-shadow: 0 0 0 1px #d92d20; }
-.minimumLengthInput:focus-visible, .exactResponsesInput:focus-visible, .exclusionCheckbox input:focus-visible { outline: 2px solid #1b87e6; outline-offset: 2px; }
 .emptyResults { color: #6b7280; font-size: 12px; margin: 0; text-align: right; }
 
 @media (max-width: 960px) {

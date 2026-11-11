@@ -20,7 +20,6 @@ import { getDefaultSelectedTextAiQuestionIds } from '@/data/mock-text-ai-questio
 import {
   createDefaultSegmentFilterState,
   calculateTextAiSegmentResponseCount,
-  getTextAiExclusionValidationError,
   normalizeTextAiSegmentFilters,
   type TextAiSegmentFilterState,
 } from '@/data/mock-text-ai-segment-filters';
@@ -70,7 +69,6 @@ export function CreateTextAiDashboardModal({
   const [segmentFilters, setSegmentFilters] = useState<TextAiSegmentFilterState>(() =>
     createDefaultSegmentFilterState()
   );
-  const filterError = getTextAiExclusionValidationError(segmentFilters);
   const eligibleResponseCount = calculateTextAiSegmentResponseCount(segmentFilters);
 
   const resetWizard = useCallback(() => {
@@ -108,13 +106,13 @@ export function CreateTextAiDashboardModal({
   }
 
   function handleSegmentNext(): void {
-    if (filterError || eligibleResponseCount === 0) return;
+    if (eligibleResponseCount === 0) return;
     setSegmentFilters(normalizeTextAiSegmentFilters(segmentFilters));
     setStep('select-questions');
   }
 
   function handleFinish(): void {
-    if (!selectedSurvey || !getTrimmedName() || filterError || eligibleResponseCount === 0) return;
+    if (!selectedSurvey || !getTrimmedName() || eligibleResponseCount === 0) return;
     if (selectedQuestionIds.length === 0) {
       showToast({ message: 'Select at least one question', variant: 'error' });
       return;
@@ -188,7 +186,7 @@ export function CreateTextAiDashboardModal({
   const { WuModal, WuModalHeader, WuModalContent, WuModalFooter } = wick;
   const modalTitle =
     step === 'segment'
-      ? 'Filter and Exclude Responses'
+      ? 'Filter Responses'
       : step === 'model-setup' || step === 'select-questions'
         ? 'Create TextAI dashboard'
         : 'Create dashboard';
@@ -269,7 +267,7 @@ export function CreateTextAiDashboardModal({
                   <WuButton onClick={handleModelSetupNext} disabled={!getTrimmedName() || !modelSetup.modelingGoal.trim()}>Next</WuButton>
                 )}
                 {step === 'segment' && (
-                  <WuButton onClick={handleSegmentNext} disabled={!!filterError || eligibleResponseCount === 0}>Next</WuButton>
+                  <WuButton onClick={handleSegmentNext} disabled={eligibleResponseCount === 0}>Next</WuButton>
                 )}
                 {step === 'select-questions' && (
                   <WuButton onClick={handleFinish}>{createButtonLabel}</WuButton>

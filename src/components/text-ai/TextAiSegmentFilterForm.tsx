@@ -13,15 +13,10 @@ import {
   TEXT_AI_RESPONSE_STATUS_OPTIONS,
   TEXT_AI_SEGMENT_FILTER_QUESTIONS,
   TEXT_AI_SYSTEM_VARIABLE_OPTIONS,
-  formatExcludedResponsesInput,
-  getTextAiExclusionValidationError,
-  getTextAiResponseExclusions,
   getTextAiSegmentResponseSummary,
   getResponseStatusLabel,
   getSegmentConditionValues,
   getTextAiSegmentDateRange,
-  normalizeExcludedResponses,
-  parseExcludedResponsesInput,
   newSegmentCondition,
   newSegmentCriteriaGroup,
   toggleTextAiResponseStatus,
@@ -30,7 +25,6 @@ import {
   type TextAiSegmentCriteriaGroup,
   type TextAiSegmentFilterState,
   type TextAiFilterResponse,
-  type TextAiResponseExclusions,
 } from '@/data/mock-text-ai-segment-filters';
 import styles from './TextAiSegmentFilterForm.module.css';
 
@@ -127,17 +121,9 @@ export function TextAiSegmentFilterForm({ values, onChange, responses }: TextAiS
   const modeId = useId();
   const [mode, setMode] = useState<'extended' | 'compact'>('extended');
   const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
-  const exclusions = getTextAiResponseExclusions(values);
-  const [exactResponsesInput, setExactResponsesInput] = useState(() =>
-    formatExcludedResponsesInput(exclusions.exactResponses)
-  );
-  const summary = useMemo(() => getTextAiSegmentResponseSummary(values, responses), [values, responses]);
-  const responseCount = summary.includedResponses.length;
-  const validationError = getTextAiExclusionValidationError(values);
-  const minimumLengthInvalid = exclusions.minimumCharactersEnabled &&
-    (exclusions.minimumCharacters === null || !Number.isSafeInteger(exclusions.minimumCharacters) || exclusions.minimumCharacters < 1);
-  const exactResponsesInvalid = exclusions.exactResponsesEnabled &&
-    normalizeExcludedResponses(exclusions.exactResponses).length === 0;
+  const responseCount = useMemo(() => getTextAiSegmentResponseSummary(
+    { ...values, responseExclusions: undefined }, responses
+  ).includedResponses.length, [values, responses]);
   const dateRange = getTextAiSegmentDateRange(values);
 
   function patch(partial: Partial<TextAiSegmentFilterState>): void {
@@ -146,10 +132,6 @@ export function TextAiSegmentFilterForm({ values, onChange, responses }: TextAiS
 
   function updateGroups(criteriaGroups: TextAiSegmentCriteriaGroup[]): void {
     patch({ criteriaGroups });
-  }
-
-  function updateExclusions(partial: Partial<TextAiResponseExclusions>): void {
-    patch({ responseExclusions: { ...exclusions, ...partial } });
   }
 
   function updateCondition(groupId: string, conditionId: string, partial: Partial<TextAiSegmentCondition>): void {
@@ -197,51 +179,6 @@ export function TextAiSegmentFilterForm({ values, onChange, responses }: TextAiS
 
   return (
     <div className={styles.form}>
-      <section className={styles.exclusions} aria-labelledby={`${modeId}-exclusions-title`}>
-        <div className={styles.exclusionsHeader}>
-          <h3 id={`${modeId}-exclusions-title`}>Exclude responses</h3>
-          <span className={styles.exclusionsCount} aria-live="polite" aria-atomic="true">
-            Responses excluded: <strong>{summary.excludedCount.toLocaleString()}</strong>
-          </span>
-        </div>
-        <div className={styles.exclusionOption}>
-          <div className={styles.minimumLengthRow}>
-            <label className={styles.exclusionCheckbox}>
-              <input type="checkbox" checked={exclusions.minimumCharactersEnabled}
-                onChange={(event) => updateExclusions({ minimumCharactersEnabled: event.target.checked })} />
-              Exclude responses shorter than
-            </label>
-            <input type="number"
-              className={`${styles.minimumLengthInput} ${minimumLengthInvalid ? styles.invalidInput : ''}`}
-              min={1} step={1} aria-label="Minimum character count"
-              aria-invalid={minimumLengthInvalid || undefined}
-              disabled={!exclusions.minimumCharactersEnabled}
-              value={exclusions.minimumCharacters ?? ''}
-              onChange={(event) => updateExclusions({ minimumCharacters: Number.isNaN(event.currentTarget.valueAsNumber) ? null : event.currentTarget.valueAsNumber })} />
-            <span>characters</span>
-          </div>
-        </div>
-        <div className={styles.exclusionOption}>
-          <label className={styles.exclusionCheckbox}>
-            <input type="checkbox" checked={exclusions.exactResponsesEnabled}
-              onChange={(event) => updateExclusions({ exactResponsesEnabled: event.target.checked })} />
-            Exclude specific responses
-          </label>
-          <div className={styles.exactResponsesField}>
-            <textarea aria-label="Responses to exclude" rows={3}
-              className={`${styles.exactResponsesInput} ${exactResponsesInvalid ? styles.invalidInput : ''}`}
-              aria-invalid={exactResponsesInvalid || undefined}
-              disabled={!exclusions.exactResponsesEnabled}
-              value={exactResponsesInput}
-              placeholder={'Enter responses separated by commas or one per line. Use \\ to escape a comma. Example: NA, null, Not sure\\, maybe'}
-              onChange={(event) => {
-                const input = event.target.value;
-                setExactResponsesInput(input);
-                updateExclusions({ exactResponses: parseExcludedResponsesInput(input) });
-              }} />
-          </div>
-        </div>
-      </section>
       <section className={styles.topArea} aria-labelledby={`${modeId}-filters-title`}>
         <h3 id={`${modeId}-filters-title`}>Filter Responses</h3>
         <div className={styles.filterControlsRow}>
@@ -353,9 +290,9 @@ export function TextAiSegmentFilterForm({ values, onChange, responses }: TextAiS
       </div>
       <div className={styles.responseCountFooter} aria-live="polite" aria-atomic="true">
         <span className={styles.responseCountLabel}>Responses:</span>
-        <span className={styles.responseCountValue}>{validationError ? '—' : responseCount.toLocaleString()}</span>
+        <span className={styles.responseCountValue}>{responseCount.toLocaleString()}</span>
       </div>
-      {!validationError && responseCount === 0 && <p role="status" className={styles.emptyResults}>No responses match. Adjust the filters or exclusions to continue.</p>}
+      {responseCount === 0 && <p role="status" className={styles.emptyResults}>No responses match. Adjust the filters to continue.</p>}
     </div>
   );
 }
