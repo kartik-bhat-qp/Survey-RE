@@ -12,7 +12,9 @@ import {
 import {
   CONTACT_LISTS_STORAGE_KEY,
   INITIAL_CONTACT_LISTS,
+  isContactListAvailableForSurvey,
   isValidEmailAddress,
+  normalizeContactList,
   normalizeEmailAddress,
   type ContactList,
   type EmailListOption,
@@ -25,6 +27,7 @@ const WuSelect = dynamic(
 );
 
 interface ComposeRecipientsFieldProps {
+  surveyId: number;
   selectedList: EmailListOption | null;
   onSelectedListChange: (list: EmailListOption | null) => void;
   recipientEmails: string[];
@@ -38,6 +41,7 @@ type RecipientSourceOption = EmailListOption & {
 };
 
 export function ComposeRecipientsField({
+  surveyId,
   selectedList,
   onSelectedListChange,
   recipientEmails,
@@ -66,9 +70,12 @@ export function ComposeRecipientsField({
         suppressed: estimate.suppressed,
       };
     });
-    const legacyLists = lists.map((list) => ({
+    const availableLists = lists
+      .map(normalizeContactList)
+      .filter((list) => isContactListAvailableForSurvey(list, surveyId));
+    const legacyLists = availableLists.map((list) => ({
       value: list.value,
-      label: `${list.label} · Legacy list · ${list.contacts.toLocaleString('en-US')}`,
+      label: `${list.label} · ${list.scope === 'survey-specific' ? 'Survey specific' : 'Global'} · ${list.contacts.toLocaleString('en-US')}`,
       kind: 'list' as const,
       sendable: list.contacts,
       suppressed: 0,
@@ -89,7 +96,7 @@ export function ComposeRecipientsField({
         kind: 'file',
       },
     ];
-  }, [hub.contacts, hub.groups, lists]);
+  }, [hub.contacts, hub.groups, lists, surveyId]);
 
   const selectedSource =
     sourceOptions.find((option) => option.value === selectedList?.value) ?? null;

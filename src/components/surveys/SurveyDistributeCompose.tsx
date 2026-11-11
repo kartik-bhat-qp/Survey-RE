@@ -267,6 +267,7 @@ export function SurveyEmailComposePanel({
                   <span className={styles.fieldLabel}>To:</span>
                   <div className={styles.fieldControl}>
                     <ComposeRecipientsField
+                      surveyId={resolvedSurveyId}
                       selectedList={selectedList}
                       onSelectedListChange={setSelectedList}
                       recipientEmails={recipientEmails}
