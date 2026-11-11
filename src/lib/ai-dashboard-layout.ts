@@ -12,7 +12,9 @@ export function stackLayoutSingleColumn(layout: Layout): Layout {
       x: 0,
       y: index,
       w: 1,
+      h: 1,
       minW: 1,
       maxW: 1,
+      minH: 1,
     }));
 }

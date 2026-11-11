@@ -47,8 +47,8 @@ export interface AiWidgetConfig {
   questionStack?: QuestionStackWidgetConfig;
 }
 
-const DEFAULT_W = 1;
-const DEFAULT_H = 1;
+export const DASHBOARD_DEFAULT_WIDGET_W = 6;
+export const DASHBOARD_DEFAULT_WIDGET_H = 8;
 
 export const AI_DASHBOARD_WIDGETS: AiWidgetConfig[] = [
   { id: 'w-map', type: 'map', title: 'Map' },
@@ -66,13 +66,13 @@ export const AI_DASHBOARD_WIDGETS: AiWidgetConfig[] = [
 ];
 
 /** Desktop column count — mobile uses a single column via AiDashboardCanvas. */
-export const AI_DASHBOARD_GRID_COLS = 2;
+export const AI_DASHBOARD_GRID_COLS = 12;
 
 /** Two equal-width desktop columns. Every widget occupies exactly one column. */
 export function createDashboardLayout(widgets: readonly AiWidgetConfig[]): Layout {
   return widgets.map((widget, index) => ({
-    i: widget.id, x: index % AI_DASHBOARD_GRID_COLS, y: Math.floor(index / AI_DASHBOARD_GRID_COLS),
-    w: DEFAULT_W, h: DEFAULT_H, minW: 1, maxW: 1, minH: 1,
+    i: widget.id, x: (index % 2) * DASHBOARD_DEFAULT_WIDGET_W, y: Math.floor(index / 2) * DASHBOARD_DEFAULT_WIDGET_H,
+    w: DASHBOARD_DEFAULT_WIDGET_W, h: DASHBOARD_DEFAULT_WIDGET_H, minW: 2, minH: 4,
   }));
 }
 export const AI_DASHBOARD_LAYOUT: Layout = createDashboardLayout(AI_DASHBOARD_WIDGETS);

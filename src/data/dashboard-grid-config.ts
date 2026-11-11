@@ -7,7 +7,8 @@ export const WIDGET_COMPARATIVE_BAR_WIDTH_PX = 700;
 export const COMPARATIVE_BAR_LAYOUT_W =
   WIDGET_COMPARATIVE_BAR_WIDTH_PX / WIDGET_DEFAULT_WIDTH_PX;
 
-export const GRID_ROW_HEIGHT = WIDGET_DEFAULT_HEIGHT_PX;
+/** Fine-grained rows allow resizing without changing the initial 500px height. */
+export const GRID_ROW_HEIGHT = 45;
 export const GRID_MARGIN: [number, number] = [20, 20];
 
 /** Shorter rows on mobile — one widget per line without oversized tiles. */

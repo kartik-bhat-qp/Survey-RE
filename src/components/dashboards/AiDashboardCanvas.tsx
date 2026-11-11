@@ -20,6 +20,8 @@ import {
   AI_DASHBOARD_GRID_COLS,
   AI_DASHBOARD_LAYOUT,
   AI_DASHBOARD_WIDGETS,
+  DASHBOARD_DEFAULT_WIDGET_W,
+  DASHBOARD_DEFAULT_WIDGET_H,
   type AiWidgetConfig,
 } from '@/data/mock-ai-widgets';
 import {
@@ -157,6 +159,7 @@ export function AiDashboardCanvas({
   );
   const previousGlobalRefreshVersion = useRef(globalInsightRefreshVersion);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const resizingLayout = useRef<Layout | null>(null);
   const previousAdvancedCount = useRef(advancedHeatmaps.length);
   useEffect(() => {
     if (advancedHeatmaps.length > previousAdvancedCount.current) {
@@ -173,8 +176,8 @@ export function AiDashboardCanvas({
     const layout = [...desktopLayout];
     for (const widget of [...advancedHeatmaps, ...builtWidgets]) {
       if (!layout.some(item => item.i === widget.id)) {
-        const index = layout.length;
-        layout.push({ i: widget.id, x: index % 2, y: Math.floor(index / 2), w: 1, h: 1, minW: 1, maxW: 1, minH: 1 });
+        const bottom = layout.reduce((lowest, item) => Math.max(lowest, item.y + item.h), 0);
+        layout.push({ i: widget.id, x: 0, y: bottom, w: DASHBOARD_DEFAULT_WIDGET_W, h: DASHBOARD_DEFAULT_WIDGET_H, minW: 2, minH: 4 });
       }
     }
     return isMobile ? stackLayoutSingleColumn(layout) : layout;
@@ -204,13 +207,12 @@ export function AiDashboardCanvas({
             i: widget.id,
             x: 0,
             y: nextY,
-            w: widget.type === 'driver-analysis' ? 1 : AI_DASHBOARD_GRID_COLS,
-            h: 1,
-            minW: 1,
-            ...(widget.type === 'driver-analysis' ? { maxW: 1 } : {}),
-            minH: 1,
+            w: DASHBOARD_DEFAULT_WIDGET_W,
+            h: DASHBOARD_DEFAULT_WIDGET_H,
+            minW: 2,
+            minH: 4,
           };
-          nextY += 1;
+          nextY += DASHBOARD_DEFAULT_WIDGET_H;
           return item;
         }),
       ];
@@ -242,6 +244,33 @@ export function AiDashboardCanvas({
   const notifyChartsResize = useCallback(() => {
     window.dispatchEvent(new Event('resize'));
   }, []);
+
+  const layoutStorageKey = `survey-re:dashboard-layout:v2:${dashboardId}:${dashboardTabId}`;
+  useEffect(() => {
+    if (readOnly) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (!active) return;
+      try {
+        const saved: unknown = JSON.parse(localStorage.getItem(layoutStorageKey) ?? 'null');
+        if (!Array.isArray(saved)) return;
+        const available = new Set([...AI_DASHBOARD_WIDGETS, ...addedWidgets, ...advancedHeatmaps, ...builtWidgets].map(widget => widget.id));
+        const restored = saved.filter((item): item is { i: string; x: number; y: number; w: number; h: number } =>
+          item && typeof item.i === 'string' && available.has(item.i) && [item.x, item.y, item.w, item.h].every(Number.isInteger) && item.x >= 0 && item.y >= 0 && item.w >= 2 && item.w <= AI_DASHBOARD_GRID_COLS && item.x + item.w <= AI_DASHBOARD_GRID_COLS && item.h >= 4
+        ).map(item => ({ ...item, minW: 2, minH: 4 }));
+        setDesktopLayout(current => [...restored, ...current.filter(item => !restored.some(savedItem => savedItem.i === item.i))]);
+      } catch { /* Invalid saved layouts fall back to the defaults. */ }
+    });
+    return () => { active = false; };
+    // Hydrate once per dashboard tab; later widget additions keep their current layout.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutStorageKey, readOnly]);
+
+  const saveLayout = useCallback((layout: Layout) => {
+    if (isMobile || readOnly) return;
+    setDesktopLayout(layout);
+    try { localStorage.setItem(layoutStorageKey, JSON.stringify(layout.map(({ i, x, y, w, h }) => ({ i, x, y, w, h })))); } catch { /* Layout remains available for this session. */ }
+  }, [isMobile, readOnly, layoutStorageKey]);
 
   useEffect(() => {
     const element = canvasRef.current;
@@ -419,26 +448,28 @@ export function AiDashboardCanvas({
         containerPadding={[0, 0]}
         compactType="vertical"
         onLayoutChange={readOnly ? undefined : handleLayoutChange}
-        onResize={notifyChartsResize}
-        onResizeStop={notifyChartsResize}
+        onResizeStart={() => { resizingLayout.current = null; }}
+        onResize={layout => { resizingLayout.current = layout; notifyChartsResize(); }}
+        onResizeStop={layout => { saveLayout(resizingLayout.current ?? layout); resizingLayout.current = null; notifyChartsResize(); }}
+        onDragStop={saveLayout}
         isDraggable={!isMobile && !readOnly}
         isResizable={!isMobile && !readOnly}
         resizeHandles={isMobile || readOnly ? [] : ['se']}
         resizeHandle={isMobile || readOnly ? undefined : renderResizeHandle}
         draggableHandle={isMobile || readOnly ? undefined : `.${styles.dragHandle}`}
-        draggableCancel={`.${styles.resizeHandle}, .dashboard-widget-actions`}
+        draggableCancel={`.${styles.resizeHandle}, .dashboard-widget-actions, button, input, select, textarea, a, [role="slider"]`}
       >
         {displayLayout.map((item) => {
           const built = builtWidgets.find(widget => widget.id === item.i);
           if (built) return <div key={built.id} className={styles.gridItem} data-widget-id={built.id}><BuiltWidgetCard widget={built} onChange={readOnly ? undefined : onBuiltWidgetChange} dashboardFilter={dashboardFilter} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /></div>;
           const advanced = advancedHeatmaps.find(widget => widget.id === item.i);
-          if (advanced) return <div key={advanced.id} className={styles.gridItem} data-widget-id={advanced.id}><AdvancedHeatmapWidget config={advanced} onChange={next => { if (next.id === defaultAdvancedHeatmap.id) setDefaultAdvancedHeatmap(next); else onAdvancedHeatmapChange?.(next); }} dashboardFilter={dashboardFilter} dashboardDesign={dashboardDesign} /></div>;
+          if (advanced) return <div key={advanced.id} className={styles.gridItem} data-widget-id={advanced.id}><AdvancedHeatmapWidget config={advanced} onChange={next => { if (next.id === defaultAdvancedHeatmap.id) setDefaultAdvancedHeatmap(next); else onAdvancedHeatmapChange?.(next); }} dashboardFilter={dashboardFilter} dashboardDesign={dashboardDesign} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /></div>;
           const widget = widgetById.get(item.i);
           if (!widget) return null;
 
           return (
             <div key={widget.id} className={styles.gridItem} data-widget-id={widget.id}>
-              {widget.questionStack ? <DashboardWidgetCard title={widget.title} showInsights={false} shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle}><QuestionStackWidget config={widget.questionStack} dashboardFilter={dashboardFilter}/></DashboardWidgetCard> : !renderWidget && (widget.type === 'segment-trend' || widget.type === 'scoring-trend' || widget.type === 'response-timeline') ? <TimeSeriesDashboardCard key={`${dashboardId}:${dashboardTabId}:${widget.id}`} kind={widget.type} title={widget.title} widgetId={widget.id} dashboardDesign={dashboardDesign} selection={dashboardFilter?.dateSelection} dashboardFilter={dashboardFilter} dataSlicers={dataSlicers} typography={chartTypography} storageKey={`survey-re:time-series:${dashboardId}:${dashboardTabId}:${widget.id}`} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} readOnly={readOnly} onOpenInsights={readOnly ? undefined : () => setActiveInsightWidgetId(widget.id)} insightCount={insightThreads[widget.id]?.items.length ?? 0} /> : widget.type === 'heat-map' && !renderWidget ? <HeatMapBaseline dashboardDesign={dashboardDesign} dashboardFilter={dashboardFilter} key={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} embedded readOnly={readOnly} initialName={widget.title} storageKey={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} /> : widget.type === 'wordcloud' ? <WordCloudDashboardCard shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /> : widget.type === 'driver-analysis' ? (
+              {widget.questionStack ? <DashboardWidgetCard title={widget.title} showInsights={false} shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle}><QuestionStackWidget config={widget.questionStack} dashboardFilter={dashboardFilter}/></DashboardWidgetCard> : !renderWidget && (widget.type === 'segment-trend' || widget.type === 'scoring-trend' || widget.type === 'response-timeline') ? <TimeSeriesDashboardCard key={`${dashboardId}:${dashboardTabId}:${widget.id}`} kind={widget.type} title={widget.title} widgetId={widget.id} dashboardDesign={dashboardDesign} selection={dashboardFilter?.dateSelection} dashboardFilter={dashboardFilter} dataSlicers={dataSlicers} typography={chartTypography} storageKey={`survey-re:time-series:${dashboardId}:${dashboardTabId}:${widget.id}`} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} readOnly={readOnly} onOpenInsights={readOnly ? undefined : () => setActiveInsightWidgetId(widget.id)} insightCount={insightThreads[widget.id]?.items.length ?? 0} /> : widget.type === 'heat-map' && !renderWidget ? <HeatMapBaseline dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} dashboardDesign={dashboardDesign} dashboardFilter={dashboardFilter} key={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} embedded readOnly={readOnly} initialName={widget.title} storageKey={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} /> : widget.type === 'wordcloud' ? <WordCloudDashboardCard shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /> : widget.type === 'driver-analysis' ? (
                 <DriverAnalysisDashboardCard
                   title={widget.title}
                   dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle}

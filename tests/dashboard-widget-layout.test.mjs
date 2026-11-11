@@ -11,11 +11,12 @@ test('every default widget has one equal-width column and desktop rows are paire
   for (let index = 0; index < AI_DASHBOARD_LAYOUT.length; index++) {
     const item = AI_DASHBOARD_LAYOUT[index];
     assert.equal(item.i, AI_DASHBOARD_WIDGETS[index].id);
-    assert.equal(item.w, 1);
-    assert.equal(item.maxW, 1);
-    assert.equal(item.x, index % 2);
-    assert.equal(item.y, Math.floor(index / 2));
-    assert.equal(item.h, 1);
+    assert.equal(item.w, 6);
+    assert.equal(item.minW, 2);
+    assert.equal(item.x, (index % 2) * 6);
+    assert.equal(item.y, Math.floor(index / 2) * 8);
+    assert.equal(item.h, 8);
+    assert.equal(item.minH, 4);
   }
 });
 test('mobile stacks every fixed widget without losing order', () => {

@@ -20,7 +20,7 @@ import { HeatmapSegmentDesign, segmentColors, segmentWidgetStyle } from './Heatm
 const WuDrawer = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => ({ default: m.WuDrawer })), { ssr: false });
 
 type SettingsTab = 'General' | 'Analytics' | 'Labels' | 'Design';
-export function AdvancedHeatmapWidget({ config, onChange, dashboardFilter, dashboardDesign }: { dashboardDesign?: DashboardDesign; config: AdvancedHeatmapConfig; onChange: (config: AdvancedHeatmapConfig) => void; dashboardFilter?: DashboardActiveFilter }) {
+export function AdvancedHeatmapWidget({ config, onChange, dashboardFilter, dashboardDesign, dragHandleClassName }: { dashboardDesign?: DashboardDesign; config: AdvancedHeatmapConfig; onChange: (config: AdvancedHeatmapConfig) => void; dashboardFilter?: DashboardActiveFilter; dragHandleClassName?: string }) {
   const questions = useMemo(() => adaptHeatmapQuestions(getAdvancedHeatmapQuestions(config.surveyId)), [config.surveyId]);
   const widgetRef = useRef<HTMLDivElement>(null);
   const [previewStyle, setPreviewStyle] = useState<CSSProperties>({});
@@ -41,7 +41,7 @@ export function AdvancedHeatmapWidget({ config, onChange, dashboardFilter, dashb
     setDraft({ ...structuredClone(config), labelGroups: [], base: 'respondents', ...(isMetricFilterActive(config) ? { filterType: 'Custom Metric' as const } : {}) }); setEditing(true); };
   const widgetStyle = config.mode === 'segments' ? segmentWidgetStyle(config,dashboardDesign) : config.designType === 'Widget' ? {'--advanced-title-color':config.themeColor??'#3f559a', '--dashboard-widget-font-family': config.fontFamily ?? 'Fira Sans', '--dashboard-widget-body-size': `${config.fontSize ?? 14}px`} as CSSProperties : {};
   return <div ref={widgetRef} data-analysis={config.mode} style={widgetStyle} className={styles.widgetFrame} data-show-name={config.showName !== false} data-testid="advanced-heatmap-widget">
-    <DashboardWidgetCard title={config.name === 'Advanced Heatmap Widget' ? 'Advanced Heatmap' : config.name} onOpenSettings={openSettings}>
+    <DashboardWidgetCard title={config.name === 'Advanced Heatmap Widget' ? 'Advanced Heatmap' : config.name} onOpenSettings={openSettings} dragHandleClassName={dragHandleClassName}>
     <HeatmapTable config={config} onChange={onChange} dashboardFilter={dashboardFilter} dashboardDesign={dashboardDesign} />
     <WuDrawer preventClickOutside side="right" open={editing} onOpenChange={setEditing} hideCloseButton className={`${styles.dialog} ${draft.mode === 'segments' ? styles.segmentDialog : ''}`} aria-labelledby={`settings-${config.id}`} aria-describedby={undefined}>
       <section data-analysis={draft.mode} data-show-name={draft.showName !== false} className={styles.settingsPreview} style={{...previewStyle,...(draft.mode === 'segments' ? segmentWidgetStyle(draft,dashboardDesign) : draft.designType === 'Widget' ? {'--advanced-title-color':draft.themeColor??'#3f559a','--dashboard-widget-font-family':draft.fontFamily??'Fira Sans','--dashboard-widget-body-size':`${draft.fontSize??14}px`} : {})}} aria-label="Widget preview">

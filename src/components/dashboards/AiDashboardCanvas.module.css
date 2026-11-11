@@ -24,8 +24,9 @@
 }
 
 /* react-resizable: hide default grip image; use wm-resize via custom handle */
-.gridItem :global(.react-resizable-handle-se) {
+.gridItem.gridItem > :global(.react-resizable-handle-se) {
   background-image: none;
+  opacity: 1;
   padding: 0;
   z-index: 30;
 }

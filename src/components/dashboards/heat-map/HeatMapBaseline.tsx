@@ -27,6 +27,7 @@ interface HeatMapBaselineProps {
   dashboardDesign?: DashboardDesign;
   dashboardFilter?: DashboardActiveFilter;
   embedded?: boolean;
+  dragHandleClassName?: string;
   storageKey?: string;
   readOnly?: boolean;
   initialName?: string;
@@ -35,7 +36,7 @@ interface HeatMapBaselineProps {
 function OverlayPortal({ children }: { children: ReactNode }) {
   return typeof document === 'undefined' ? null : createPortal(<div className={`${styles.page} ${styles.portalRoot}`}>{children}</div>, document.body);
 }
-export function HeatMapBaseline({ dashboardDesign, dashboardFilter, embedded = false, storageKey = BASELINE_STORAGE_KEY, readOnly = false, initialName, showWidgetHeader = true }: HeatMapBaselineProps) {
+export function HeatMapBaseline({ dashboardDesign, dashboardFilter, embedded = false, storageKey = BASELINE_STORAGE_KEY, readOnly = false, initialName, showWidgetHeader = true, dragHandleClassName }: HeatMapBaselineProps) {
   const widgetRef = useRef<HTMLElement>(null);
   const [settings, setSettings] = useState<HeatMapSettings>(() => ({ ...defaultHeatMapSettings(), ...(initialName ? { name: initialName } : {}) }));
   const [segments, setSegments] = useState<HeatMapSegment[]>(INITIAL_HEAT_MAP_SEGMENTS);
@@ -157,7 +158,7 @@ export function HeatMapBaseline({ dashboardDesign, dashboardFilter, embedded = f
   }
 
   const widget = <article ref={widgetRef} className={`${styles.widget} ${settingsOpen ? styles.settingsPreview : fullScreen ? styles.fullScreen : ''} ${!showWidgetHeader ? styles.bodyOnly : ''}`} aria-label="Heat Map Chart" style={{ fontFamily: design.fontFamily, fontSize: design.bodySize }}>
-        {showWidgetHeader && <header className={styles.widgetHeader}>{settings.showName ? <h2 style={{ color: design.themeColor, fontSize: design.titleSize }}>{settings.name}</h2> : <span />}<div>{!readOnly && <button aria-label="Highlighted insight" title="Highlighted insight" onClick={() => setInsightsOpen(true)}><span className="wm-lightbulb-outline" aria-hidden /></button>}{fullScreen && <button aria-label="Exit full screen" onClick={() => setFullScreen(false)}>↙</button>}{!readOnly && <button aria-label="Widget actions" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>⋮</button>}</div>
+        {showWidgetHeader && <header className={`${styles.widgetHeader} ${embedded && !settingsOpen && !fullScreen ? dragHandleClassName ?? '' : ''}`}>{settings.showName ? <h2 style={{ color: design.themeColor, fontSize: design.titleSize }}>{settings.name}</h2> : <span />}<div className="dashboard-widget-actions">{!readOnly && <button aria-label="Highlighted insight" title="Highlighted insight" onClick={() => setInsightsOpen(true)}><span className="wm-lightbulb-outline" aria-hidden /></button>}{fullScreen && <button aria-label="Exit full screen" onClick={() => setFullScreen(false)}>↙</button>}{!readOnly && <button aria-label="Widget actions" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>⋮</button>}</div>
         {menuOpen && <div className={styles.menu} role="menu">{['Edit', 'Settings', 'Full screen', 'Duplicate', 'Copy to', 'Download', 'Info', 'Delete'].map(action => <button role="menuitem" key={action} onClick={() => { setMenuOpen(false); if (action === 'Settings') setSettingsOpen(true); else if (action === 'Full screen') setFullScreen(true); else if (action === 'Edit') startEdit(); else if (action === 'Info') setInfoOpen(true); else if (action === 'Download') setDownloadMenu(true); else setNotice(`${action} is a production management action outside this local baseline. No remote widget was changed.`); }}>{action}</button>)}</div>}
         </header>}
         {settings.highlightedInsight && <div className={styles.insight}>Highlighted insight</div>}
