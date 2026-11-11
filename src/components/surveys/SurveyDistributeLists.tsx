@@ -8,9 +8,13 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { TableScrollWrap } from '@/components/ui/TableScrollWrap';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import {
+  CONTACT_LIST_SCOPE_LABELS,
   CONTACT_LISTS_STORAGE_KEY,
   INITIAL_CONTACT_LISTS,
+  isContactListAvailableForSurvey,
+  normalizeContactList,
   type ContactList,
+  type ContactListScope,
 } from '@/data/mock-survey-distribute';
 import styles from './SurveyDistributeLists.module.css';
 
@@ -27,7 +31,11 @@ const WuInput = dynamic(
   { ssr: false }
 );
 
-export function SurveyDistributeLists() {
+interface SurveyDistributeListsProps {
+  surveyId: number;
+}
+
+export function SurveyDistributeLists({ surveyId }: SurveyDistributeListsProps) {
   const { showToast } = useWuShowToast();
   const [lists, setLists] = usePersistedState<ContactList[]>(
     CONTACT_LISTS_STORAGE_KEY,
@@ -36,12 +44,27 @@ export function SurveyDistributeLists() {
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState('');
+  const [scope, setScope] = useState<ContactListScope>('global');
+
+  const visibleLists = useMemo(
+    () =>
+      lists
+        .map(normalizeContactList)
+        .filter((list) => isContactListAvailableForSurvey(list, surveyId)),
+    [lists, surveyId]
+  );
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return lists;
-    return lists.filter((list) => list.label.toLowerCase().includes(query));
-  }, [lists, search]);
+    if (!query) return visibleLists;
+    return visibleLists.filter((list) => list.label.toLowerCase().includes(query));
+  }, [visibleLists, search]);
+
+  function resetCreateForm(): void {
+    setCreating(false);
+    setName('');
+    setScope('global');
+  }
 
   function createList(): void {
     const label = name.trim();
@@ -58,11 +81,18 @@ export function SurveyDistributeLists() {
       label,
       contacts: 0,
       updated: 'Just now',
+      scope,
+      ...(scope === 'survey-specific' ? { surveyId } : {}),
     };
     setLists((current) => [created, ...current]);
-    setName('');
-    setCreating(false);
-    showToast({ message: `Created “${label}”`, variant: 'success' });
+    resetCreateForm();
+    showToast({
+      message:
+        scope === 'survey-specific'
+          ? `Created “${label}” (survey specific)`
+          : `Created “${label}” (global)`,
+      variant: 'success',
+    });
   }
 
   const columns: IWuTableColumnDef<ContactList>[] = [
@@ -70,6 +100,13 @@ export function SurveyDistributeLists() {
       accessorKey: 'label',
       header: 'List name',
       enableSorting: true,
+    },
+    {
+      accessorKey: 'scope',
+      header: 'Scope',
+      enableSorting: true,
+      cell: ({ row }) =>
+        CONTACT_LIST_SCOPE_LABELS[normalizeContactList(row.original).scope],
     },
     {
       accessorKey: 'contacts',
@@ -105,13 +142,17 @@ export function SurveyDistributeLists() {
       <div className={styles.intro}>
         <h1 className={styles.title}>Lists</h1>
         <p className={styles.lede}>
-          Contact lists are shared across surveys. Choose one when you compose an email.
+          Global lists work on any survey. Survey specific lists work only in this survey.
+          Choose one when you compose an email.
         </p>
       </div>
       <div className={styles.toolbar}>
         <WuButton
           Icon={<span className="wm-add" aria-hidden />}
-          onClick={() => setCreating(true)}
+          onClick={() => {
+            setCreating(true);
+            setScope('global');
+          }}
         >
           New list
         </WuButton>
@@ -130,32 +171,57 @@ export function SurveyDistributeLists() {
       </div>
       {creating ? (
         <form
-          className={styles.createRow}
+          className={styles.createForm}
           onSubmit={(event) => {
             event.preventDefault();
             createList();
           }}
         >
-          <WuInput
-            variant="outlined"
-            placeholder="List name"
-            aria-label="List name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-          <WuButton type="button" onClick={createList}>
-            Create list
-          </WuButton>
-          <WuButton
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              setCreating(false);
-              setName('');
-            }}
+          <div className={styles.createRow}>
+            <WuInput
+              variant="outlined"
+              placeholder="List name"
+              aria-label="List name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+            <WuButton type="button" onClick={createList}>
+              Create list
+            </WuButton>
+            <WuButton type="button" variant="secondary" onClick={resetCreateForm}>
+              Cancel
+            </WuButton>
+          </div>
+          <div
+            className={styles.scopeGroup}
+            role="radiogroup"
+            aria-label="List scope"
           >
-            Cancel
-          </WuButton>
+            <label className={styles.scopeOption}>
+              <input
+                type="radio"
+                name="list-scope"
+                checked={scope === 'global'}
+                onChange={() => setScope('global')}
+              />
+              <span className={styles.scopeCopy}>
+                <span className={styles.scopeLabel}>Global</span>
+                <span className={styles.scopeHint}>Works on any survey</span>
+              </span>
+            </label>
+            <label className={styles.scopeOption}>
+              <input
+                type="radio"
+                name="list-scope"
+                checked={scope === 'survey-specific'}
+                onChange={() => setScope('survey-specific')}
+              />
+              <span className={styles.scopeCopy}>
+                <span className={styles.scopeLabel}>Survey specific</span>
+                <span className={styles.scopeHint}>Works only in this survey</span>
+              </span>
+            </label>
+          </div>
         </form>
       ) : null}
       <TableScrollWrap className={styles.tableWrap}>
@@ -167,9 +233,9 @@ export function SurveyDistributeLists() {
           NoDataContent={
             <EmptyState
               icon="wm-contact-mail"
-              title={lists.length === 0 ? 'No lists yet' : 'No lists found'}
+              title={visibleLists.length === 0 ? 'No lists yet' : 'No lists found'}
               description={
-                lists.length === 0
+                visibleLists.length === 0
                   ? 'Create a list, then select it when you compose an email.'
                   : 'Try a different search.'
               }

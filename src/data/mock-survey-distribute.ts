@@ -23,11 +23,39 @@ export interface EmailListOption {
   label: string;
 }
 
+/** Global lists work on any survey; survey-specific lists only on their survey. */
+export type ContactListScope = 'global' | 'survey-specific';
+
 export interface ContactList {
   value: string;
   label: string;
   contacts: number;
   updated: string;
+  scope: ContactListScope;
+  /** Present when scope is survey-specific. */
+  surveyId?: number;
+}
+
+export const CONTACT_LIST_SCOPE_LABELS: Record<ContactListScope, string> = {
+  global: 'Global',
+  'survey-specific': 'Survey specific',
+};
+
+export function normalizeContactList(list: ContactList): ContactList {
+  return {
+    ...list,
+    scope: list.scope ?? 'global',
+  };
+}
+
+/** Global lists plus survey-specific lists owned by this survey. */
+export function isContactListAvailableForSurvey(
+  list: ContactList,
+  surveyId: number
+): boolean {
+  const normalized = normalizeContactList(list);
+  if (normalized.scope !== 'survey-specific') return true;
+  return normalized.surveyId === surveyId;
 }
 
 export const CONTACT_LISTS_STORAGE_KEY = 'distribute:contact-lists';
@@ -79,16 +107,79 @@ export const EMAIL_SIDEBAR_ITEMS: EmailSidebarItem[] = [
 ];
 
 export const INITIAL_CONTACT_LISTS: ContactList[] = [
-  { value: 'list-panel', label: 'Customer Experience Panel', contacts: 2410, updated: 'Oct 28, 2026' },
-  { value: 'list-newsletter', label: 'Monthly Newsletter Subscribers', contacts: 8640, updated: 'Oct 21, 2026' },
-  { value: 'list-beta', label: 'Product Beta Testers — West Region', contacts: 186, updated: 'Oct 12, 2026' },
-  { value: 'list-nps', label: 'NPS Follow-up Cohort', contacts: 940, updated: 'Sep 30, 2026' },
-  { value: 'list-alumni', label: 'Alumni Research Panel', contacts: 1522, updated: 'Sep 18, 2026' },
-  { value: 'list-enterprise', label: 'Enterprise Account Contacts', contacts: 318, updated: 'Sep 4, 2026' },
-  { value: 'list-healthcare', label: 'Healthcare Decision Makers', contacts: 705, updated: 'Aug 22, 2026' },
-  { value: 'list-students', label: 'Campus Student Ambassadors', contacts: 126, updated: 'Aug 9, 2026' },
-  { value: 'list-vip', label: 'VIP Loyalty Members', contacts: 84, updated: 'Jul 30, 2026' },
-  { value: 'list-churn', label: 'Churn Risk Outreach List', contacts: 412, updated: 'Jul 14, 2026' },
+  {
+    value: 'list-panel',
+    label: 'Customer Experience Panel',
+    contacts: 2410,
+    updated: 'Oct 28, 2026',
+    scope: 'global',
+  },
+  {
+    value: 'list-newsletter',
+    label: 'Monthly Newsletter Subscribers',
+    contacts: 8640,
+    updated: 'Oct 21, 2026',
+    scope: 'global',
+  },
+  {
+    value: 'list-beta',
+    label: 'Product Beta Testers — West Region',
+    contacts: 186,
+    updated: 'Oct 12, 2026',
+    scope: 'survey-specific',
+    surveyId: 16,
+  },
+  {
+    value: 'list-nps',
+    label: 'NPS Follow-up Cohort',
+    contacts: 940,
+    updated: 'Sep 30, 2026',
+    scope: 'global',
+  },
+  {
+    value: 'list-alumni',
+    label: 'Alumni Research Panel',
+    contacts: 1522,
+    updated: 'Sep 18, 2026',
+    scope: 'global',
+  },
+  {
+    value: 'list-enterprise',
+    label: 'Enterprise Account Contacts',
+    contacts: 318,
+    updated: 'Sep 4, 2026',
+    scope: 'survey-specific',
+    surveyId: 16,
+  },
+  {
+    value: 'list-healthcare',
+    label: 'Healthcare Decision Makers',
+    contacts: 705,
+    updated: 'Aug 22, 2026',
+    scope: 'global',
+  },
+  {
+    value: 'list-students',
+    label: 'Campus Student Ambassadors',
+    contacts: 126,
+    updated: 'Aug 9, 2026',
+    scope: 'survey-specific',
+    surveyId: 3,
+  },
+  {
+    value: 'list-vip',
+    label: 'VIP Loyalty Members',
+    contacts: 84,
+    updated: 'Jul 30, 2026',
+    scope: 'global',
+  },
+  {
+    value: 'list-churn',
+    label: 'Churn Risk Outreach List',
+    contacts: 412,
+    updated: 'Jul 14, 2026',
+    scope: 'global',
+  },
 ];
 
 export const MOCK_EMAIL_LISTS: EmailListOption[] = INITIAL_CONTACT_LISTS.map(
