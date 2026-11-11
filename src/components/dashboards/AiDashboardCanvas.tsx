@@ -15,7 +15,6 @@ import {
   GRID_ROW_HEIGHT,
   MOBILE_GRID_MARGIN,
   MOBILE_GRID_ROW_HEIGHT,
-  DRIVER_ANALYSIS_LAYOUT_W,
 } from '@/data/dashboard-grid-config';
 import {
   AI_DASHBOARD_GRID_COLS,
@@ -205,9 +204,10 @@ export function AiDashboardCanvas({
             i: widget.id,
             x: 0,
             y: nextY,
-            w: widget.type === 'driver-analysis' ? DRIVER_ANALYSIS_LAYOUT_W : AI_DASHBOARD_GRID_COLS,
+            w: widget.type === 'driver-analysis' ? 1 : AI_DASHBOARD_GRID_COLS,
             h: 1,
             minW: 1,
+            ...(widget.type === 'driver-analysis' ? { maxW: 1 } : {}),
             minH: 1,
           };
           nextY += 1;

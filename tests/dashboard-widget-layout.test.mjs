@@ -6,6 +6,7 @@ import { heatMapWidgetStorageKey, discardRetiredHeatMapCollections } from '../sr
 
 test('every default widget has one equal-width column and desktop rows are paired', () => {
   assert.equal(AI_DASHBOARD_WIDGETS.filter(widget => widget.type === 'heat-map').length, 1);
+  assert.equal(AI_DASHBOARD_WIDGETS.filter(widget => widget.type === 'driver-analysis').length, 1);
   assert.equal(AI_DASHBOARD_LAYOUT.length, AI_DASHBOARD_WIDGETS.length);
   for (let index = 0; index < AI_DASHBOARD_LAYOUT.length; index++) {
     const item = AI_DASHBOARD_LAYOUT[index];

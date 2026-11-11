@@ -62,6 +62,7 @@ export const AI_DASHBOARD_WIDGETS: AiWidgetConfig[] = [
   { id: 'w-response-timeline', type: 'response-timeline', title: 'Response Timeline' },
   { id: 'w-comments-wordcloud', type: 'wordcloud', title: 'Suggestions / comments' },
   { id: 'w-heat-map', type: 'heat-map', title: 'Heat Map Chart' },
+  { id: 'w-driver-analysis', type: 'driver-analysis', title: 'Key Driver Analysis' },
 ];
 
 /** Desktop column count — mobile uses a single column via AiDashboardCanvas. */
