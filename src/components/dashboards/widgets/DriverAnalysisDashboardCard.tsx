@@ -91,10 +91,18 @@ export function DriverAnalysisDashboardCard({
   const draftDrivers = choices.filter(choice => draftConfig?.drivers.some(driver => driver.id === choice.outcome.rowId))
     .map(choice => choice.outcome);
 
+  function openSettings(section: 'General' | 'Analytics') {
+    setDraft(scoring);
+    setDraftConfig(config);
+    setTab(section);
+    setOpen(true);
+  }
+
   return (<>
     <DashboardWidgetCard
       title={showName ? name : ''}
-      onOpenSettings={shared ? undefined : () => { setDraft(scoring); setDraftConfig(config); setTab('General'); setOpen(true); }}
+      onEdit={shared ? undefined : () => openSettings('Analytics')}
+      onOpenSettings={shared ? undefined : () => openSettings('General')}
       subtitle={`${outcome?.label ?? driverAnalysis?.primaryQuestionText ?? ''} · ${scoring?.name ?? 'Configuration required'}`}
       subtitleTitle={outcome?.label}
       dragHandleClassName={dragHandleClassName}

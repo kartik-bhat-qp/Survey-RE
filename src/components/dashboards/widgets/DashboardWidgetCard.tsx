@@ -28,6 +28,7 @@ const WuMenuItem = dynamic(
 interface DashboardWidgetCardProps {
   className?: string;
   style?: CSSProperties;
+  onEdit?: () => void;
   onOpenSettings?: () => void;
   onOpenFullscreen?: () => void;
   title: string;
@@ -50,6 +51,7 @@ interface DashboardWidgetCardProps {
 export function DashboardWidgetCard({
   className,
   style,
+  onEdit,
   onOpenSettings,
   onOpenFullscreen,
   title,
@@ -120,7 +122,11 @@ export function DashboardWidgetCard({
               </button>
             )}
           >
-            <WuMenuItem Icon={<span className="wm-edit" aria-hidden />} onSelect={() => showToast({ message: `Edit ${title}`, variant: 'info' })}>Edit</WuMenuItem>
+            <WuMenuItem Icon={<span className="wm-edit" aria-hidden />} onSelect={() => {
+              setMenuOpen(false);
+              if (onEdit) onEdit();
+              else showToast({ message: `Edit ${title}`, variant: 'info' });
+            }}>Edit</WuMenuItem>
             <WuMenuItem Icon={<span className="wm-settings" aria-hidden />} onSelect={() => { setMenuOpen(false); if (onOpenSettings) onOpenSettings(); else setSettingsOpen(true); }}>Settings</WuMenuItem>
             <WuMenuItem Icon={<span className="wm-open-in-full" aria-hidden />} onSelect={() => { setMenuOpen(false); if (onOpenFullscreen) onOpenFullscreen(); else showToast({ message: `${title} opened in full screen`, variant: 'success' }); }}>Full screen</WuMenuItem>
             <WuMenuItem Icon={<span className="wm-content-copy" aria-hidden />} onSelect={() => showToast({ message: `${title} duplicated`, variant: 'success' })}>Duplicate</WuMenuItem>
