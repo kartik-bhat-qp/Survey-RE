@@ -1,282 +1,138 @@
 .widget {
   container-type: inline-size;
-  display: flex;
-  flex-direction: column;
-  font-size: var(--dashboard-widget-body-size, 12px);
   height: 100%;
   min-height: 0;
   overflow: auto;
+  color: #29394d;
+  font-size: clamp(12px, var(--dashboard-widget-body-size, 13px), 17px);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
 }
 
-.panels {
+.summary {
   display: flex;
-  flex: 1;
-  gap: 14px;
-  min-height: 0;
-}
-
-/* ── Diagnose: quadrant ──────────────────────────────────────────────────── */
-
-.quadrantPane {
-  display: flex;
-  flex: 1 1 65%;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.plotRow {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-}
-
-.yAxis {
-  align-items: flex-end;
-  color: #909090;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  font-size: var(--dashboard-widget-body-size, 14px);
-  justify-content: space-between;
-  padding: 2px 4px 16px 0;
-  width: 30px;
-}
-
-.plotColumn {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.plot {
-  background: #fcfdfe;
-  border: 1px solid #e8e8e8;
-  flex: 1;
-  min-height: 0;
-  position: relative;
-}
-
-.splitHorizontal {
-  border-top: 1px dashed #cdd6e2;
-  left: 0;
-  position: absolute;
-  right: 0;
-}
-
-.splitVertical {
-  border-left: 1px dashed #cdd6e2;
-  bottom: 0;
-  position: absolute;
-  top: 0;
-}
-
-.quadrantLabel {
-  color: #8c9bb0;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.3px;
-  position: absolute;
-  text-transform: uppercase;
-}
-
-.quadrantTopLeft {
-  left: 5px;
-  top: 4px;
-}
-
-.quadrantTopRight {
-  right: 5px;
-  top: 4px;
-}
-
-.quadrantBottomLeft {
-  bottom: 4px;
-  left: 5px;
-}
-
-.quadrantBottomRight {
-  bottom: 4px;
-  right: 5px;
-}
-
-.dot {
   align-items: center;
-  display: flex;
-  gap: 4px;
-  position: absolute;
-  transform: translate(-50%, -50%);
-}
-
-.bubble {
-  border-radius: 50%;
-  display: block;
-  flex-shrink: 0;
-}
-
-.dotLabel {
-  color: #6b7684;
-  font-size: var(--dashboard-widget-body-size, 14px);
-  white-space: nowrap;
-}
-
-.xAxis {
-  color: #909090;
-  display: flex;
-  font-size: var(--dashboard-widget-body-size, 14px);
-  justify-content: space-between;
-  padding: 4px 2px 0;
-}
-
-.axisTitle {
-  color: #909090;
-  font-size: var(--dashboard-widget-body-size, 14px);
-  padding-top: 2px;
-  text-align: center;
-}
-
-.legend {
-  align-items: center;
-  color: #7f8a99;
-  display: flex;
-  font-size: var(--dashboard-widget-body-size, 14px);
-  gap: 12px;
   flex-wrap: wrap;
-  padding-top: 6px;
+  gap: 8px 18px;
+  padding: 0 0 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #e0e6ed;
 }
 
-.legendItem {
-  align-items: center;
-  display: inline-flex;
-  gap: 4px;
-}
-
-.legendSwatch {
-  border-radius: 50%;
-  height: 8px;
-  width: 8px;
-}
-
-.legendNote {
-  margin-left: auto;
-}
-
-/* ── Diagnose: driver table ──────────────────────────────────────────────── */
-
-.tablePane {
-  border-left: 1px solid #f0f0f0;
+.metric {
   display: flex;
-  flex: 0 1 35%;
-  flex-direction: column;
-  max-width: 340px;
-  min-width: 0;
-  padding-left: 12px;
+  align-items: baseline;
+  gap: 8px;
+  color: #17365e;
+  overflow-wrap: anywhere;
 }
 
-.tableScroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-}
+.metric span { font-weight: 600; }
+.metric strong { font-size: 1.85em; line-height: 1; letter-spacing: -.025em; }
+.sample { display: grid; border-left: 1px solid #d4dfe9; padding-left: 16px; line-height: 1.45; }
+.leading { display: grid; margin-left: auto; text-align: right; min-width: 0; overflow-wrap: anywhere; }
+.leading span { color: #566979; font-size: .9em; }
+.leading strong { color: #17365e; font-weight: 600; }
+.sample strong { font-weight: 500; }
+.sample span, .axisLabel, .xLabel, .legend, .method { color: #566979; font-size: .9em; }
 
-.driverRow {
-  align-items: center;
-  border-bottom: 1px solid #f6f6f6;
-  display: grid;
-  gap: 6px;
-  grid-template-columns: minmax(0, 1fr) 52px 40px 18px;
-  padding: 5px 0;
+.panels { display: grid; grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); gap: 22px; }
+.panels h4 { margin: 0 0 7px; color: #183451; font-size: 1.07em; font-weight: 600; }
+.mapPane, .tablePane { min-width: 0; }
+.tablePane { padding-left: 18px; border-left: 1px solid #e1e7ec; }
+.axisLabel { margin: 0 0 8px; }
+.chartArea { display: grid; grid-template-columns: 3.1em minmax(0, 1fr); margin-right: 14px; }
+.plot {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  height: clamp(140px, 17cqw, 245px);
+  background: #f7f9fb;
+  box-shadow: inset 0 0 0 1px #cbd6df;
+  border-radius: 3px;
 }
-
-.driverHead {
-  border-bottom: 1px solid #eee;
-  color: #909090;
-  font-size: var(--dashboard-widget-body-size, 14px);
-  font-weight: 500;
-  letter-spacing: 0.3px;
-  padding: 0 0 5px;
-  text-transform: uppercase;
+.bands {
+  position: absolute;
+  inset: 0 0 auto;
+  background: linear-gradient(to right, #fcf3df 50%, #e3f3ef 50%);
+  border: 1px solid #d4dfe4;
+  border-bottom: 1px dashed #96a8b6;
+  border-radius: 3px 3px 0 0;
 }
+.midline { position: absolute; inset: 0 auto 0 50%; border-left: 1px dashed #96a8b6; }
+.yTicks, .xTicks { position: relative; color: #627383; font-size: .83em; }
+.yTicks { grid-column: 1; grid-row: 1; }
+.yTicks span { position: absolute; right: 8px; transform: translateY(-50%); }
+.yTicks span:nth-child(2) { top: 50%; }
+.yTicks span:last-child { top: 100%; }
+.xTicks { grid-column: 2; height: 1.6em; }
+.xTicks span { position: absolute; top: 5px; transform: translateX(-50%); }
+.xTicks span:nth-child(2) { left: 50%; }
+.xTicks span:last-child { left: 100%; }
+.xLabel { text-align: center; padding: 5px 0 0 2.3em; }
 
-.driverRowActive {
-  background: #f4f8fd;
-}
+.widget [data-tone="amber"] { --ink: #8b4c0d; --tint: #faf0dc; }
+.widget [data-tone="teal"] { --ink: #106b65; --tint: #e1f2ee; }
+.widget [data-tone="slate"] { --ink: #4a6381; --tint: #eaf0f6; }
 
-.alignRight {
-  text-align: right;
-}
-
-.driverName {
-  align-items: center;
-  color: #3d4a5c;
-  display: flex;
-  font-size: var(--dashboard-widget-body-size, 14px);
-  gap: 6px;
-  min-width: 0;
-}
-
-.driverDot {
+.point, .rank {
+  display: inline-grid;
+  place-items: center;
   border-radius: 50%;
-  flex-shrink: 0;
-  height: 7px;
-  width: 7px;
-}
-
-.driverNameText {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.driverMetric {
-  color: #1b3380;
-  font-size: var(--dashboard-widget-body-size, 14px);
-  font-weight: 500;
-  text-align: right;
-}
-
-.driverCorr {
-  color: #6b7684;
-  font-size: var(--dashboard-widget-body-size, 14px);
-  text-align: right;
-}
-
-.sigYes,
-.sigNo {
-  font-size: 12px;
+  width: 1.72em;
+  height: 1.72em;
+  font: inherit;
+  font-size: .82em;
   font-weight: 600;
-  text-align: center;
+  line-height: 1;
+}
+.point {
+  position: absolute;
+  transform: translate(-50%, 50%);
+  color: white;
+  background: var(--ink);
+  box-shadow: 0 0 0 1.5px #fff;
+  padding: 0;
+  border: 0;
+  cursor: default;
+}
+.point[data-active="true"], .point:focus-visible { z-index: 2; outline: 2px solid var(--ink); outline-offset: 2px; }
+.legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px 15px; margin-top: 5px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend span::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: var(--ink); }
+
+.resultsTable { width: 100%; border-collapse: collapse; font-size: .95em; }
+.resultsTable th, .resultsTable td { padding: 2px 5px; text-align: right; vertical-align: middle; }
+.resultsTable th:first-child { text-align: left; }
+.resultsTable thead th { color: #516476; font-size: .92em; font-weight: 500; white-space: nowrap; background: #f1f5f8; }
+.resultsTable tbody tr { border-bottom: 1px solid #e8edf1; }
+.resultsTable tbody tr[data-active="true"] { background: #f2f7fa; }
+.resultsTable tbody th { font-weight: 400; width: 48%; }
+.resultsTable td { overflow-wrap: anywhere; }
+.resultsTable td:last-child, .importance { white-space: nowrap; }
+.importance { color: #173759; font-weight: 600; }
+.driverCell { display: flex; align-items: center; gap: 7px; overflow-wrap: anywhere; }
+.rank { width: 1.55em; height: 1.55em; flex: none; color: var(--ink); background: var(--tint); }
+.method { border-top: 1px solid #e0e6ed; padding-top: 7px; margin-top: 7px; }
+.method summary { cursor: pointer; color: #385b80; width: fit-content; }
+.method p { margin: 6px 0; max-width: 90ch; }
+
+@container (max-width: 750px) {
+  .leading { margin-left: 0; text-align: left; }
+  .panels { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .tablePane { border: 0; padding: 0; }
+  .plot { height: clamp(150px, 33cqw, 210px); }
 }
 
-.sigYes {
-  color: #2e7d32;
+@container (max-width: 380px) {
+  .point { width: 16px; height: 16px; font-size: 10px; }
+  .resultsTable { font-size: .87em; }
+  .resultsTable th, .resultsTable td { padding-inline: 3px; }
+  .driverCell { gap: 4px; }
+  .sample { padding-left: 8px; }
+  .summary { gap: 8px; }
 }
 
-.sigNo {
-  color: #b6c0cd;
-}
-
-.note {
-  color: #909090;
-  font-size: var(--dashboard-widget-body-size, 14px);
-  line-height: 1.4;
-  padding-top: 6px;
-}
-
-@container (max-width: 520px) {
-  .panels { flex-direction: column; overflow: auto; }
-  .quadrantPane { flex: none; min-height: 250px; }
-  .tablePane { flex: none; max-width: none; border-left: 0; border-top: 1px solid #f0f0f0; padding: 12px 0 0; }
-  .tableScroll { overflow: visible; }
-}
-
-.summary { padding: 0 0 8px; color: #454f5c; }
-.resultsTable { width: 100%; border-collapse: collapse; font: inherit; }
-.resultsTable td, .resultsTable th { padding: 4px; text-align: right; border-bottom: 1px solid #eee; }
-.resultsTable th:first-child, .resultsTable td:first-child { text-align: left; }
-.rankDot { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; color: #fff; background: #234693; font-size: 10px; }
-
-/* WickUI places its listbox under body, outside the settings dialog. */
 :global(body):has(.settingsDialog) > :global([data-radix-popper-content-wrapper]):has(:global([role="listbox"])) {
   z-index: 112 !important;
 }

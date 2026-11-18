@@ -100,17 +100,19 @@ export function ratingRange(question: DriverOutcome, scoring: KpiScoring) {
 export function preparedDriverData(config: DriverAnalysisWidgetConfig, scoring: KpiScoring) {
   const outcome = config.outcome;
   if (!outcome) return null;
-  const { base, extra } = driverSources(outcome.surveyId, outcome.rowId.startsWith('airline-') || config.airlineSample === true);
+  const airline = outcome.rowId.startsWith('airline-') || config.airlineSample === true;
+  const { base, extra } = driverSources(outcome.surveyId, airline);
   const sources = [...base, ...extra];
-  const catalog = driverCatalog(outcome.surveyId, outcome.rowId.startsWith('airline-') || config.airlineSample === true);
+  const catalog = driverCatalog(outcome.surveyId, airline);
   const questions = config.drivers.map(driver => catalog.find(choice => choice.outcome.rowId === driver.id)?.outcome);
   if (questions.some(question => !question)) return null;
   const driverQuestions = questions.filter((question): question is DriverOutcome => question !== undefined);
   const driverRules = driverQuestions.map(question => config.driverScoring?.[question.rowId] ?? driverDefaultScoring(question, 'mean'));
   const scoreByOption = new Map(sources.flatMap(q => q.options.map(o => [o.id, o.score] as const)));
   // Keep the original paired responses stable when adding new example questions.
-  const additionalResponses = createHeatmapResponses(extra);
-  const responses = createHeatmapResponses(base).map((response, i) => ({
+  const baseResponses = airline ? airlineDemoResponses(base) : createHeatmapResponses(base);
+  const additionalResponses = createHeatmapResponses(extra, baseResponses.length);
+  const responses = baseResponses.map((response, i) => ({
     ...response, answers: { ...response.answers, ...additionalResponses[i].answers },
   }));
   const rows: number[][] = [];
@@ -167,5 +169,43 @@ function airlineQuestions(names: string[]): HeatmapQuestion[] {
         return { id: `${id}:o${i}`, label: String(score), score };
       }),
     };
+  });
+}
+
+// Generate paired survey answers for the airline example. All displayed results are fitted from these answers.
+function airlineDemoResponses(questions: HeatmapQuestion[]) {
+  const profiles: Record<string, { center: number; weight: number }> = {
+    'On-time performance': { center: 2.6, weight: 1.05 },
+    'Cabin crew service': { center: 4.3, weight: 0.94 },
+    'Check-in & boarding': { center: 3.35, weight: 0.66 },
+    'Seat comfort': { center: 2.98, weight: 0.50 },
+    'Baggage handling': { center: 4.12, weight: 0.37 },
+    'Fare fairness': { center: 2.35, weight: 0.29 },
+    'Booking & app experience': { center: 3.85, weight: 0.30 },
+    'In-flight entertainment': { center: 3.50, weight: 0.15 },
+    'Food & beverage': { center: 2.74, weight: 0.10 },
+    'Loyalty program value': { center: 3.12, weight: 0.08 },
+  };
+  let seed = 731;
+  function random() {
+    seed = (Math.imul(1664525, seed) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  }
+  function variation() {
+    return (random() + random() + random() - 1.5) * 2;
+  }
+  const [primary, ...drivers] = questions;
+  return Array.from({ length: 240 }, (_, index) => {
+    const answers: Record<string, string[]> = {};
+    const trip = variation() * 0.34;
+    let recommend = 8.55 + variation() * 0.85;
+    for (const driver of drivers) {
+      const profile = profiles[driver.label];
+      const rating = Math.max(1, Math.min(5, Math.round(profile.center + variation() + trip)));
+      recommend += (rating - profile.center) * profile.weight;
+      if (random() >= 0.006) answers[driver.rows[0].id] = [driver.options[rating - 1].id];
+    }
+    answers[primary.rows[0].id] = [primary.options[Math.max(0, Math.min(10, Math.round(recommend)))].id];
+    return { id: `airline-demo-${index + 1}`, answers };
   });
 }
