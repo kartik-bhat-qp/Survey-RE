@@ -17,7 +17,6 @@ import {
   type AdvancedWidgetTypeId,
 } from '@/data/mock-advanced-widget-types';
 import {
-  resolvePickerSelection,
   type SurveyQuestion,
 } from '@/data/mock-survey-questions';
 import { AiDataSourceSelection } from '@/components/dashboards/AiDataSourceSelection';
@@ -32,7 +31,9 @@ import { HeatmapQuestionPicker, HeatmapAnalysisPicker } from './advanced-heatmap
 import type { BuiltWidget } from '@/data/ai-widget-builder';
 import builderStyles from './ai-builder/Builder.module.css';
 import styles from './AdvancedWidgetModal.module.css';
-import { TEXT_AI_KPI_METRICS, type TextAiKpiMetric } from '@/data/mock-text-ai-kpi-by-theme';
+import { validateKpiScoring, type KpiScoring } from '@/data/mock-text-ai-kpi-by-theme';
+import { driverCatalog, driverDefaultScoring } from '@/data/driver-scoring';
+import { DriverScoringFields } from './widgets/DriverScoringFields';
 
 type ModalStep =
   | AdvancedWidgetStep
@@ -44,41 +45,6 @@ type ModalStep =
   | 'primary-question'
   | 'driver-metric'
   | 'driver-question';
-
-/** One picker row chosen as a driver (parent question or matrix sub-row). */
-interface DriverQuestionSelection {
-  selectionId: number;
-  questionId: number;
-  code: string;
-  name: string;
-  matrixRows?: string[];
-}
-
-function toDriverSelections(
-  items: DriverQuestionSelection[]
-): NonNullable<AiWidgetConfig['driverAnalysis']>['drivers'] {
-  const drivers: NonNullable<AiWidgetConfig['driverAnalysis']>['drivers'] = [];
-
-  for (const item of items) {
-    if (item.matrixRows && item.matrixRows.length > 0) {
-      item.matrixRows.forEach((row, index) => {
-        drivers.push({
-          id: `${item.questionId}-row-${index}`,
-          code: item.code,
-          name: row,
-        });
-      });
-      continue;
-    }
-    drivers.push({
-      id: String(item.selectionId),
-      code: item.code,
-      name: item.name,
-    });
-  }
-
-  return drivers;
-}
 
 interface AdvancedWidgetModalProps {
   builtWidgets?: BuiltWidget[];
@@ -120,8 +86,30 @@ export function AdvancedWidgetModal({
     DEFAULT_ADVANCED_WIDGET_TYPE_ID
   );
   const [primaryQuestion, setPrimaryQuestion] = useState<SurveyQuestion | null>(null);
-  const [driverMetric, setDriverMetric] = useState<TextAiKpiMetric>('nps');
-  const [driverQuestions, setDriverQuestions] = useState<DriverQuestionSelection[]>([]);
+  const [scoring, setScoring] = useState<KpiScoring | null>(null);
+  const [driverQuestions, setDriverQuestions] = useState<number[]>([]);
+  const catalogue = useMemo(() => driverCatalog(surveyId), [surveyId]);
+  const primary = catalogue.find(item => item.pick.id === primaryQuestion?.id);
+  const selectionReasons: Record<number, string> = {};
+  for (const { pick, reason } of catalogue) {
+    if (reason) selectionReasons[pick.id] = reason;
+    else if (pick.matrixRows?.length && step === 'primary-question') selectionReasons[pick.id] = 'Expand the matrix and choose one outcome row.';
+    else if (step === 'driver-question' && pick.id === primaryQuestion?.id)
+      selectionReasons[pick.id] = 'This row is already the primary question.';
+  }
+  const checkedDrivers = new Set(driverQuestions);
+  for (const { pick } of catalogue.filter(item => item.pick.matrixRows?.length)) {
+    const children = catalogue.filter(item => item.pick.parentQuestionId === pick.id && !selectionReasons[item.pick.id]);
+    if (children.length && children.every(item => checkedDrivers.has(item.pick.id))) checkedDrivers.add(pick.id);
+  }
+  function toggleDriver(question: SurveyQuestion, checked: boolean) {
+    const ids = question.matrixRows?.length
+      ? catalogue.filter(item => item.pick.parentQuestionId === question.id && !selectionReasons[item.pick.id]).map(item => item.pick.id)
+      : [question.id];
+    setDriverQuestions(current => checked ? [...new Set([...current, ...ids])] : current.filter(id => !ids.includes(id)));
+  }
+  const disabledIds = Object.keys(selectionReasons).map(Number);
+  const scoringError = scoring && primary ? validateKpiScoring(scoring, primary.outcome.answers.map(a => a.score)) : 'Select a primary question.';
 
   const [heatmapSurvey, setHeatmapSurvey] = useState<SurveyListItem | null>(null);
   const [heatmapRows, setHeatmapRows] = useState<string[]>([]);
@@ -137,7 +125,7 @@ export function AdvancedWidgetModal({
     setWidgetName('');
     setSelectedTypeId(DEFAULT_ADVANCED_WIDGET_TYPE_ID);
     setPrimaryQuestion(null);
-    setDriverMetric('nps');
+    setScoring(null);
     setDriverQuestions([]);
   }, []);
 
@@ -172,63 +160,31 @@ export function AdvancedWidgetModal({
     }
   }
 
-  function finishDriverAnalysis(
-    primary: SurveyQuestion,
-    drivers: DriverQuestionSelection[]
-  ): void {
-    const name = widgetName.trim() || driverAnalysisWidgetTitle(primary);
-    const driverItems = toDriverSelections(drivers);
-    const driverCodes = [...new Set(driverItems.map((d) => d.code))].join(', ');
-    showToast({
-      message: `Widget "${name}" added · Primary: ${primary.code} · Drivers: ${driverCodes}`,
-      variant: 'success',
-    });
+  function finishDriverAnalysis(): void {
+    if (!primary || !scoring || scoringError || !driverQuestions.length) return;
+    const drivers = catalogue.filter(item => driverQuestions.includes(item.pick.id))
+      .map(({ pick, outcome }) => ({ id: outcome.rowId, code: pick.code, name: outcome.label }));
+    const title = widgetName.trim() || driverAnalysisWidgetTitle(primary.pick);
     onWidgetAdded?.({
-      id: `w-driver-analysis-${Date.now()}`,
-      type: 'driver-analysis',
-      title: name,
+      id: `w-driver-analysis-${Date.now()}`, type: 'driver-analysis', title,
       driverAnalysis: {
-        metric: driverMetric,
-        primaryQuestionCode: primary.code,
-        primaryQuestionText: primary.text,
-        drivers: driverItems,
+        metric: scoring.metric, scoring, outcome: primary.outcome,
+        primaryQuestionCode: primary.pick.code, primaryQuestionText: primary.outcome.label, drivers,
       },
     });
+    showToast({ message: `Widget "${title}" added`, variant: 'success' });
     handleClose();
   }
 
   function handlePrimaryQuestionSelect(question: SurveyQuestion): void {
-    const { question: resolved } = resolvePickerSelection(question);
-    setPrimaryQuestion(resolved);
-    setDriverMetric(resolved.type === 'NPS' ? 'nps' : 'mean');
-    setDriverQuestions([]);
-    setStep('driver-metric');
-  }
-
-  function handleDriverQuestionToggle(question: SurveyQuestion, selected: boolean): void {
-    const isSubRow = question.parentQuestionId !== undefined;
-    const item: DriverQuestionSelection = {
-      selectionId: question.id,
-      questionId: question.parentQuestionId ?? question.id,
-      code: question.code,
-      name: question.text,
-      matrixRows: isSubRow ? undefined : question.matrixRows,
-    };
-    setDriverQuestions((prev) => {
-      if (!selected) {
-        return prev.filter((q) => q.selectionId !== item.selectionId);
-      }
-      const withoutConflict = prev.filter((q) => {
-        if (q.selectionId === item.selectionId) return false;
-        if (isSubRow) {
-          // Drop whole-parent selection for this matrix.
-          return q.selectionId !== item.questionId;
-        }
-        // Selecting the parent replaces any prior parent or sub-row picks.
-        return q.questionId !== item.questionId;
-      });
-      return [...withoutConflict, item];
-    });
+    const entry = catalogue.find(item => item.pick.id === question.id);
+    if (!entry || selectionReasons[question.id]) return;
+    if (primaryQuestion?.id !== question.id) {
+      setScoring(driverDefaultScoring(entry.outcome, question.type === 'NPS' ? 'nps' : 'mean'));
+      setDriverQuestions(current => current.filter(id => id !== question.id));
+    }
+    setPrimaryQuestion(question);
+    setStep('driver-question');
   }
 
   function handleNext(): void {
@@ -257,17 +213,10 @@ export function AdvancedWidgetModal({
       return;
     }
     if (step === 'driver-question') {
-      if (!primaryQuestion || driverQuestions.length === 0) {
-        showToast({
-          message: 'Select at least one driver question',
-          variant: 'error',
-        });
-        return;
-      }
-      finishDriverAnalysis(primaryQuestion, driverQuestions);
+      if (driverQuestions.length) setStep('driver-metric');
       return;
     }
-    if (step === 'driver-metric') { setStep('driver-question'); return; }
+    if (step === 'driver-metric') { finishDriverAnalysis(); return; }
     if (step === 'chart') {
       setStep('details');
       return;
@@ -287,10 +236,10 @@ export function AdvancedWidgetModal({
     if (step === 'heatmap-questions') { setStep('heatmap-survey'); return; }
     if (step === 'heatmap-survey') { setStep('widget'); return; }
     if (step === 'driver-question') {
-      setStep('driver-metric');
+      setStep('primary-question');
       return;
     }
-    if (step === 'driver-metric') { setStep('primary-question'); return; }
+    if (step === 'driver-metric') { setStep('driver-question'); return; }
     if (step === 'primary-question') {
       setPrimaryQuestion(null);
       setStep('widget');
@@ -310,10 +259,10 @@ export function AdvancedWidgetModal({
   const isDriverQuestionFlow =
     step === 'primary-question' || step === 'driver-metric' || step === 'driver-question';
   const nextLabel =
-    step === 'heatmap-analysis' ? 'Create widget' : step === 'details' || step === 'driver-question' ? 'Finish' : 'Next';
+    step === 'heatmap-analysis' ? 'Create widget' : step === 'details' || step === 'driver-metric' ? 'Finish' : 'Next';
   const showNext =
     step !== 'heatmap-survey' && (!isDriverQuestionFlow || step === 'driver-question' || step === 'driver-metric');
-  const nextDisabled = (step === 'driver-question' && driverQuestions.length === 0) || ((step === 'heatmap-questions' || step === 'heatmap-analysis') && Boolean(heatmapSelectionError(heatmapQuestions, heatmapRows)));
+  const nextDisabled = (step === 'driver-metric' && Boolean(scoringError)) || (step === 'driver-question' && (driverQuestions.length === 0 || driverQuestions.length > 10)) || ((step === 'heatmap-questions' || step === 'heatmap-analysis') && Boolean(heatmapSelectionError(heatmapQuestions, heatmapRows)));
   const modalTitle =
     step === 'primary-question'
       ? 'Select primary question'
@@ -353,27 +302,22 @@ export function AdvancedWidgetModal({
         {step === 'primary-question' && (
           <WidgetQuestionSelection
             surveyId={surveyId}
+            unavailableQuestionIds={disabledIds} unavailableQuestionReasons={selectionReasons}
             selectedQuestionId={primaryQuestion?.id ?? null}
             onSelectQuestion={handlePrimaryQuestionSelect}
           />
         )}
         {step === 'driver-question' && (
           <WidgetQuestionSelection
+            toolbarContent={<span>{driverQuestions.length} of 10 drivers selected</span>}
             surveyId={surveyId}
             multiSelect
-            selectedQuestionIds={driverQuestions.map((q) => q.selectionId)}
-            excludeQuestionIds={primaryQuestion ? [primaryQuestion.id] : []}
-            onToggleQuestion={handleDriverQuestionToggle}
+            selectedQuestionIds={[...checkedDrivers]} onToggleQuestion={toggleDriver}
+            unavailableQuestionIds={disabledIds} unavailableQuestionReasons={selectionReasons}
           />
         )}
-        {step === 'driver-metric' && <div style={{ padding: 24, maxWidth: 560 }}>
-          <p style={{ marginBottom: 16 }}>Impact question: <strong>{primaryQuestion?.text}</strong></p>
-          <label style={{ display: 'grid', gap: 8 }}>Metric type
-            <select aria-label="Metric type" value={driverMetric} onChange={event => setDriverMetric(event.target.value as TextAiKpiMetric)} style={{ border: '1px solid #aaa', padding: 8, background: 'white' }}>
-              {TEXT_AI_KPI_METRICS.map(metric => <option key={metric.value} value={metric.value}>{metric.label}</option>)}
-            </select>
-          </label>
-          <p style={{ marginTop: 12, color: '#687585' }}>Metric selection is illustrative; the prototype uses sample results.</p>
+        {step === 'driver-metric' && primary && scoring && <div className={styles.scoringFields}>
+          <DriverScoringFields outcome={primary.outcome} value={scoring} onChange={setScoring} />
         </div>}
         {step === 'heatmap-survey' && <AiDataSourceSelection onSelectQuestionStack={stack=>{setSelectedStack(stack);setStep('stack-setup');}} selectedSurveyId={heatmapSurvey?.id ?? null} onSelectSurvey={survey => { if (survey.id !== heatmapSurvey?.id) setHeatmapRows([]); setHeatmapSurvey(survey); setStep('heatmap-questions'); }} />}
         {step === 'heatmap-questions' && <HeatmapQuestionPicker surveyId={heatmapSurvey?.id ?? surveyId} questions={heatmapQuestions} selected={heatmapRows} onChange={setHeatmapRows} />}
@@ -395,7 +339,13 @@ export function AdvancedWidgetModal({
 
       {step!=='stack-setup'&&step!=='stack-source'&&<WuModalFooter>
         <div className={styles.wizardFooter}>
-          {selectedTypeId === 'advanced-heatmap' ? <AddWidgetStepBreadcrumb chartLabel="Analysis" currentStep={step === 'heatmap-survey' ? 'survey' : step === 'heatmap-questions' ? 'question' : step === 'heatmap-analysis' ? 'chart' : 'widget'} onStepClick={target => setStep(target === 'survey' ? 'heatmap-survey' : target === 'question' ? 'heatmap-questions' : 'widget')} /> : <AdvancedWidgetStepBreadcrumb
+          {isDriverQuestionFlow ? <nav aria-label="Driver analysis setup" className={styles.driverSteps}>
+            {(['primary-question', 'driver-question', 'driver-metric'] as const).map((value, index, steps) =>
+              <button key={value} type="button" disabled={index >= steps.indexOf(step as typeof value)}
+                aria-current={value === step ? 'step' : undefined} onClick={() => setStep(value)}>
+                {['Primary question', 'Driver questions', 'Metric configuration'][index]}
+              </button>)}
+          </nav> : selectedTypeId === 'advanced-heatmap' ? <AddWidgetStepBreadcrumb chartLabel="Analysis" currentStep={step === 'heatmap-survey' ? 'survey' : step === 'heatmap-questions' ? 'question' : step === 'heatmap-analysis' ? 'chart' : 'widget'} onStepClick={target => setStep(target === 'survey' ? 'heatmap-survey' : target === 'question' ? 'heatmap-questions' : 'widget')} /> : <AdvancedWidgetStepBreadcrumb
             currentStep={breadcrumbStepFor(step)}
             onStepClick={handleBreadcrumbClick}
           />}

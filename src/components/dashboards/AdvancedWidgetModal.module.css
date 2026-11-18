@@ -84,3 +84,9 @@
 .modalTitle :global(h2) { font-size: 24px; line-height: 32px; font-weight: 400; }
 
 .analysisStep { height: auto; }
+
+.scoringFields { max-width: 600px; padding: 20px 24px; }
+.driverSteps { display: flex; align-items: center; gap: 12px; }
+.driverSteps button { background: transparent; border: 0; color: #2862a6; font: inherit; cursor: pointer; }
+.driverSteps button:disabled { color: #777; cursor: default; }
+.driverSteps button[aria-current=step] { color: #1b3380; font-weight: 600; }

@@ -96,30 +96,45 @@ export function getTextAiKpiOptions(id: TextAiKpiId): number[] {
   const field = TEXT_AI_KPI_DEFINITIONS.find(d => d.id === id)!;
   return Array.from({ length: field.scaleMax - field.scaleMin + 1 }, (_, i) => field.scaleMin + i);
 }
+export type KpiScoring = Pick<TextAiKpiConfig, 'name' | 'metric' | 'cesCalculation' | 'precision' | 'mappings'>;
+
+export function defaultKpiScoring(values: number[], metric: TextAiKpiMetric, name: string, cesCalculation: TextAiKpiConfig['cesCalculation'] = 'average'): KpiScoring {
+  const highest = Math.max(...values);
+  return {
+    name, metric, cesCalculation, precision: metric === 'mean' ? 2 : 1,
+    mappings: Object.fromEntries(values.map(value => {
+      if (metric === 'mean' || (metric === 'ces' && cesCalculation === 'average')) return [value, value];
+      if (metric === 'nps') return [value, value >= highest - 1 ? 'promoter' : value >= highest - 3 ? 'passive' : 'detractor'];
+      if (metric === 'csat') return [value, value >= highest - 1 ? 'satisfied' : 'dissatisfied'];
+      return [value, value >= highest - 1 ? 'easy' : value === highest - 2 ? 'neutral' : 'difficult'];
+    })),
+  };
+}
+
 export function defaultTextAiKpiConfig(questionId: TextAiKpiId = 'nps', metric?: TextAiKpiMetric, cesCalculation: TextAiKpiConfig['cesCalculation'] = 'average'): TextAiKpiConfig {
   const field = TEXT_AI_KPI_DEFINITIONS.find(d => d.id === questionId)!;
   const selected = metric ?? (field.id === 'ces' ? 'ces' : field.kind === 'nps' ? 'nps' : field.kind === 'top-box' ? 'csat' : 'mean');
-  const values = getTextAiKpiOptions(questionId);
-  return { name: selected === 'mean' ? field.label : selected.toUpperCase(), questionId, metric: selected, cesCalculation, precision: selected === 'mean' ? 2 : 1,
-    sourceType: 'survey', textQuestionId: 1,
-    mappings: Object.fromEntries(values.map(value => [value, selected === 'mean' || (selected === 'ces' && cesCalculation === 'average') ? value : selected === 'nps'
-      ? (value >= field.scaleMax - 1 ? 'promoter' : value >= field.scaleMax - 3 ? 'passive' : 'detractor')
-      : selected === 'csat' ? (value >= field.scaleMax - 1 ? 'satisfied' : 'dissatisfied')
-      : value >= field.scaleMax - 1 ? 'easy' : value === field.scaleMax - 2 ? 'neutral' : 'difficult'])) };
+  return { ...defaultKpiScoring(getTextAiKpiOptions(questionId), selected, selected === 'mean' ? field.label : selected.toUpperCase(), cesCalculation), questionId, sourceType: 'survey', textQuestionId: 1 };
 }
+
 export function validateTextAiKpiConfig(config: TextAiKpiConfig): string | null {
   if (!config.name.trim()) return 'Enter a KPI name.';
   if (!config.questionId) return 'Select a KPI question.';
+  return validateKpiScoring(config, getTextAiKpiOptions(config.questionId));
+}
+
+export function validateKpiScoring(config: KpiScoring, values: number[]): string | null {
+  if (!config.name.trim()) return 'Enter a KPI name.';
   const numeric = config.metric === 'mean' || (config.metric === 'ces' && (config.cesCalculation ?? 'average') === 'average');
   const allowed: TextAiKpiMapping[] = config.metric === 'nps' ? ['promoter', 'passive', 'detractor', 'exclude']
     : config.metric === 'csat' ? ['satisfied', 'dissatisfied', 'exclude'] : ['easy', 'neutral', 'difficult', 'exclude'];
-  const mappings = getTextAiKpiOptions(config.questionId).map(v => config.mappings[v]);
+  const mappings = values.map(v => config.mappings[v]);
   if (mappings.some(v => numeric ? v !== 'exclude' && (typeof v !== 'number' || !Number.isFinite(v)) : !allowed.includes(v))) return 'Configure every response option.';
   if (mappings.every(v => v === 'exclude')) return 'Include at least one response option.';
   if (!Number.isInteger(config.precision) || config.precision < 0 || config.precision > 5) return 'Select a valid decimal precision.';
   return null;
 }
-export function textAiKpiFormula(config: TextAiKpiConfig): string {
+export function textAiKpiFormula(config: KpiScoring): string {
   return config.metric === 'nps' ? '100 × (promoter responses − detractor responses) ÷ included responses. Passives count in the base.'
     : config.metric === 'csat' ? '100 × satisfied responses ÷ included responses.'
     : config.metric === 'ces' ? (config.cesCalculation === 'net-easy' ? '100 × (easy responses − difficult responses) ÷ included responses. Neutral responses count in the base.' : config.cesCalculation === 'percent-easy' ? '100 × easy responses ÷ included responses. Neutral and difficult responses count in the base.' : 'Sum of the configured effort scores ÷ included responses.')

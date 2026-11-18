@@ -183,7 +183,10 @@ export function DashboardDetailTabBar({
             globalInsightRefreshFailedWidgetIds={globalInsightRefreshFailedWidgetIds}
             lastAiInsightsRefreshAt={lastAiInsightsRefreshAt}
             onInsightsRefreshed={onInsightsRefreshed}
-            addedWidgets={addedWidgets?.filter(widget=>!widget.questionStack?.tabId||widget.questionStack.tabId===activeTab.id)}
+            addedWidgets={addedWidgets?.filter(widget => {
+              const tabId = widget.driverAnalysis?.tabId ?? widget.questionStack?.tabId;
+              return !tabId || tabId === activeTab.id;
+            })}
             dashboardName={dashboardName}
           />
         )}

@@ -117,7 +117,17 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
   const [dashboardDesign, setDashboardDesign] = useDashboardDesign(numericId);
   const designTypography = dashboardDesign.typography;
   const setDesignTypography = (typography: DesignTypographyOptions) => setDashboardDesign({ ...dashboardDesign, typography });
-  const [addedWidgets, setAddedWidgets] = useState<AiWidgetConfig[]>([]);
+  const driverListKey = `survey-re:dashboard:${numericId}:driver-widgets`;
+  const [addedWidgets, setAddedWidgets] = useState<AiWidgetConfig[]>(() => {
+    try {
+      const stored: unknown = JSON.parse(sessionStorage.getItem(driverListKey) ?? '[]');
+      return Array.isArray(stored) ? stored.filter(widget => widget?.type === 'driver-analysis' && widget.driverAnalysis?.outcome) : [];
+    } catch { return []; }
+  });
+  useEffect(() => {
+    try { sessionStorage.setItem(driverListKey, JSON.stringify(addedWidgets.filter(widget => widget.driverAnalysis))); }
+    catch { /* The dashboard remains usable in memory. */ }
+  }, [addedWidgets, driverListKey]);
   const [insightRefreshFrequency, setInsightRefreshFrequency] =
     useState<AiInsightRefreshFrequency>(() => {
       if (typeof window === 'undefined') return DEFAULT_AI_INSIGHT_REFRESH_FREQUENCY;
@@ -313,7 +323,10 @@ function DashboardDetailContent({ numericId }: { numericId: number }) {
         }
         onWidgetAdded={(widget) => {
           setHasAddedWidget(true);
-          if (widget) setAddedWidgets((current) => [...current, widget.questionStack ? {...widget,questionStack:{...widget.questionStack,tabId:activeWidgetTab}} : widget]);
+          if (widget?.driverAnalysis) {
+            const scoped = { ...widget, driverAnalysis: { ...widget.driverAnalysis, tabId: activeWidgetTab } };
+            setAddedWidgets(current => [...current, scoped]);
+          } else if (widget) setAddedWidgets((current) => [...current, widget.questionStack ? {...widget,questionStack:{...widget.questionStack,tabId:activeWidgetTab}} : widget]);
         }}
       />
 
