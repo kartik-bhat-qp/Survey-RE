@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { DriverAnalysisMode } from '@/data/mock-driver-analysis';
 import type { DriverAnalysisWidgetConfig } from '@/data/mock-ai-widgets';
 import { DashboardWidgetCard } from '@/components/dashboards/widgets/DashboardWidgetCard';
 import { DriverAnalysisWidget, SAMPLE_DRIVER_CONFIG } from '@/components/dashboards/widgets/DriverAnalysisWidget';
@@ -38,7 +37,6 @@ export function DriverAnalysisDashboardCard({
   driverAnalysis,
   widgetId,
 }: DriverAnalysisDashboardCardProps) {
-  const [mode, setMode] = useState<DriverAnalysisMode>('diagnose');
   const [saved] = useState(() => {
     try { return JSON.parse(sessionStorage.getItem(`driver-settings:${widgetId}`) ?? '{}') as { config?: DriverAnalysisWidgetConfig; metric?: TextAiKpiMetric; scoring?: KpiScoring; name?: string; showName?: boolean; filter?: string }; }
     catch { return {}; }
@@ -65,9 +63,13 @@ export function DriverAnalysisDashboardCard({
     setDraftConfig(nextConfig);
     setDraft(nextScoring);
     if (!nextConfig.outcome || !nextConfig.drivers.length || validateKpiScoring(nextScoring, nextConfig.outcome.answers.map(a => a.score))) return;
+    for (const driver of nextConfig.drivers) {
+      const question = choices.find(choice => choice.outcome.rowId === driver.id)?.outcome;
+      const rule = nextConfig.driverScoring?.[driver.id];
+      if (!question || (rule && validateKpiScoring(rule, question.answers.map(answer => answer.score)))) return;
+    }
     setConfig({ ...nextConfig, scoring: nextScoring, metric: nextScoring.metric });
     setScoring(nextScoring);
-    setMode('diagnose');
   }
 
   function changePrimary(id: string) {
@@ -86,29 +88,8 @@ export function DriverAnalysisDashboardCard({
   const [filter, setFilter] = useState(saved.filter ?? 'Dashboard');
   useEffect(() => { try { sessionStorage.setItem(`driver-settings:${widgetId}`, JSON.stringify({ config, metric: scoring?.metric, scoring, name, showName, filter })); } catch { /* Continue in memory. */ } }, [widgetId, config, scoring, name, showName, filter]);
 
-  const modeToggle = (
-    <div className={styles.modeToggle} role="tablist" aria-label="Driver analysis mode">
-      <button
-        type="button"
-        role="tab"
-        aria-selected={mode === 'diagnose'}
-        className={`${styles.modeBtn} ${mode === 'diagnose' ? styles.modeBtnActive : ''}`}
-        onClick={() => setMode('diagnose')}
-      >
-        Diagnose
-      </button>
-      <button
-        type="button"
-        role="tab"
-        aria-selected={mode === 'predict'}
-        disabled={!config || !scoring}
-        className={`${styles.modeBtn} ${mode === 'predict' ? styles.modeBtnActive : ''}`}
-        onClick={() => setMode('predict')}
-      >
-        Predict
-      </button>
-    </div>
-  );
+  const draftDrivers = choices.filter(choice => draftConfig?.drivers.some(driver => driver.id === choice.outcome.rowId))
+    .map(choice => choice.outcome);
 
   return (<>
     <DashboardWidgetCard
@@ -121,14 +102,13 @@ export function DriverAnalysisDashboardCard({
       insightCount={insightCount}
       onOpenInsights={onOpenInsights}
       showDiamond={showDiamond}
-      headerExtra={modeToggle}
       actions={actions}
     >
-      {config && scoring ? <DriverAnalysisWidget key={JSON.stringify([outcome?.rowId, config.drivers, scoring])} config={config} scoring={scoring} mode={mode} /> :
+      {config && scoring ? <DriverAnalysisWidget config={config} scoring={scoring} /> :
         <p>This widget needs a scored primary question and at least one driver.</p>}
     </DashboardWidgetCard>
     <Dialog.Root open={open} onOpenChange={setOpen}><Dialog.Portal><Dialog.Overlay className={panelStyles.overlay}/><Dialog.Content className={`${panelStyles.dialog} ${styles.settingsDialog}`} aria-describedby={undefined}>
-      <section className={panelStyles.preview}><header><h3>{showName ? name : ''}</h3></header>{config && scoring && <DriverAnalysisWidget config={config} scoring={scoring} mode="diagnose" />}</section>
+      <section className={panelStyles.preview}><header><h3>{showName ? name : ''}</h3></header>{config && scoring && <DriverAnalysisWidget config={config} scoring={scoring} />}</section>
       <aside className={panelStyles.panel}><header className={panelStyles.panelHeader}><Dialog.Title>Settings</Dialog.Title><Dialog.Close aria-label="Close widget settings">×</Dialog.Close></header>
         <div className={panelStyles.tabs} role="tablist" aria-label="Widget settings">{(['General', 'Analytics', 'Design'] as const).map(value => <button type="button" key={value} role="tab" aria-selected={tab === value} onClick={() => setTab(value)}>{value}</button>)}</div>
         <div className={panelStyles.panelBody} role="tabpanel">
@@ -141,8 +121,12 @@ export function DriverAnalysisDashboardCard({
               selected={draftConfig.drivers.map(driver => driver.id)}
               onChange={ids => updateAnalytics({ ...draftConfig, drivers: selectedDrivers(choices, ids) }, draft)} />
             {!draftConfig.drivers.length && <p role="alert">Select at least one driver to apply your changes.</p>}
-            <DriverScoringFields outcome={draftConfig.outcome} value={draft} showPrimary={false}
-              onChange={next => updateAnalytics(draftConfig, next)} />
+            <DriverScoringFields outcome={draftConfig.outcome} drivers={draftDrivers} primaryScoring={draft}
+              driverScoring={draftConfig.driverScoring ?? {}}
+              onPrimaryChange={next => updateAnalytics(draftConfig, next)}
+              onDriverChange={(id, rule) => updateAnalytics({
+                ...draftConfig, driverScoring: { ...draftConfig.driverScoring, [id]: rule },
+              }, draft)} />
           </>}
           {tab === 'Design' && <p>This widget uses the dashboard design.</p>}
         </div>

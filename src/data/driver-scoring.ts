@@ -84,13 +84,29 @@ export function outcomeValue(scoring: KpiScoring, score: number): number | undef
   return 0;
 }
 
+export function formatRating(value: number | null, scoring: KpiScoring) {
+  if (value === null) return '—';
+  const percent = scoring.metric === 'csat' || (scoring.metric === 'ces' && scoring.cesCalculation === 'percent-easy');
+  return value.toFixed(scoring.precision) + (percent ? '%' : '');
+}
+
+export function ratingRange(question: DriverOutcome, scoring: KpiScoring) {
+  if (scoring.metric === 'nps' || (scoring.metric === 'ces' && scoring.cesCalculation === 'net-easy')) return [-100, 100];
+  if (scoring.metric === 'csat' || (scoring.metric === 'ces' && scoring.cesCalculation === 'percent-easy')) return [0, 100];
+  const scores = question.answers.flatMap(answer => outcomeValue(scoring, answer.score) ?? []);
+  return [Math.min(...scores), Math.max(...scores)];
+}
+
 export function preparedDriverData(config: DriverAnalysisWidgetConfig, scoring: KpiScoring) {
   const outcome = config.outcome;
   if (!outcome) return null;
   const { base, extra } = driverSources(outcome.surveyId, outcome.rowId.startsWith('airline-') || config.airlineSample === true);
   const sources = [...base, ...extra];
-  const sourceByRow = new Map<string, HeatmapQuestion>();
-  for (const source of sources) for (const row of source.rows) sourceByRow.set(row.id, source);
+  const catalog = driverCatalog(outcome.surveyId, outcome.rowId.startsWith('airline-') || config.airlineSample === true);
+  const questions = config.drivers.map(driver => catalog.find(choice => choice.outcome.rowId === driver.id)?.outcome);
+  if (questions.some(question => !question)) return null;
+  const driverQuestions = questions.filter((question): question is DriverOutcome => question !== undefined);
+  const driverRules = driverQuestions.map(question => config.driverScoring?.[question.rowId] ?? driverDefaultScoring(question, 'mean'));
   const scoreByOption = new Map(sources.flatMap(q => q.options.map(o => [o.id, o.score] as const)));
   // Keep the original paired responses stable when adding new example questions.
   const additionalResponses = createHeatmapResponses(extra);
@@ -102,14 +118,17 @@ export function preparedDriverData(config: DriverAnalysisWidgetConfig, scoring: 
     const scoreAt = (rowId: string) => scoreByOption.get(response.answers[rowId]?.[0]);
     const raw = scoreAt(outcome.rowId);
     const y = raw === undefined ? undefined : outcomeValue(scoring, raw);
-    const xs = config.drivers.map(d => scoreAt(d.id));
+    const xs = driverQuestions.map((question, index) => {
+      const raw = scoreAt(question.rowId);
+      return raw === undefined ? undefined : outcomeValue(driverRules[index], raw);
+    });
     if (y !== undefined && xs.every((v): v is number => v !== undefined)) rows.push([y, ...xs]);
   }
-  const ranges = config.drivers.map(d => {
-    const options = sourceByRow.get(d.id)?.options.flatMap(o => o.score === undefined ? [] : [o.score]) ?? [];
-    return { min: Math.min(...options), max: Math.max(...options) };
-  });
-  return { rows, ranges, total: responses.length };
+  const ranges = driverQuestions.map((question, index) => ratingRange(question, driverRules[index]));
+  const means = [scoring, ...driverRules].map((_, index) =>
+    rows.length ? rows.reduce((sum, row) => sum + row[index], 0) / rows.length : null
+  );
+  return { rows, means, ranges, driverRules, total: responses.length };
 }
 
 /** Resolve pre-configuration widgets against their original survey codes and row labels. */

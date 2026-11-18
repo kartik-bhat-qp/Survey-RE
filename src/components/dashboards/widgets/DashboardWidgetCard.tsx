@@ -41,7 +41,7 @@ interface DashboardWidgetCardProps {
   showInsights?: boolean;
   insightCount?: number;
   onOpenInsights?: () => void;
-  /** Rendered before the insight / menu buttons (e.g. Diagnose / Predict). */
+  /** Rendered before the insight / menu buttons. */
   headerExtra?: ReactNode;
   actions?: ReactNode;
   shared?: boolean;

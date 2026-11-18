@@ -11,8 +11,6 @@ export const AIRLINE_DRIVER_NAMES = [
   'Loyalty program value',
 ];
 
-export type DriverAnalysisMode = 'diagnose' | 'predict';
-
 export const DRIVER_ANALYSIS_WIDGET_TITLE = 'NPS driver analysis';
 
 /** Compact subject used in the widget title, derived from the primary question. */

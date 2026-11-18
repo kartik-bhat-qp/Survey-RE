@@ -34,6 +34,7 @@ export interface DriverAnalysisWidgetConfig {
   outcome?: import('./driver-scoring').DriverOutcome;
   scoring?: import('./mock-text-ai-kpi-by-theme').KpiScoring;
   metric?: 'nps' | 'csat' | 'ces' | 'mean';
+  driverScoring?: Record<string, import('./mock-text-ai-kpi-by-theme').KpiScoring>;
   primaryQuestionCode: string;
   primaryQuestionText: string;
   /** Driver items from the selected driver questions (matrix rows expanded). */
