@@ -102,7 +102,7 @@ export function DriverAnalysisDashboardCard({
       {config && scoring ? <DriverAnalysisWidget key={JSON.stringify(scoring)} config={config} scoring={scoring} mode={mode} /> :
         <p>This saved selection has no supported score scale. Recreate the widget with scored questions.</p>}
     </DashboardWidgetCard>
-    <Dialog.Root open={open} onOpenChange={setOpen}><Dialog.Portal><Dialog.Overlay className={panelStyles.overlay}/><Dialog.Content className={panelStyles.dialog} aria-describedby={undefined}>
+    <Dialog.Root open={open} onOpenChange={setOpen}><Dialog.Portal><Dialog.Overlay className={panelStyles.overlay}/><Dialog.Content className={`${panelStyles.dialog} ${styles.settingsDialog}`} aria-describedby={undefined}>
       <section className={panelStyles.preview}><header><h3>{showName ? name : ''}</h3></header>{config && scoring && <DriverAnalysisWidget config={config} scoring={scoring} mode="diagnose" />}</section>
       <aside className={panelStyles.panel}><header className={panelStyles.panelHeader}><Dialog.Title>Settings</Dialog.Title><Dialog.Close aria-label="Close widget settings">×</Dialog.Close></header>
         <div className={panelStyles.tabs} role="tablist" aria-label="Widget settings">{(['General', 'Analytics', 'Design'] as const).map(value => <button type="button" key={value} role="tab" aria-selected={tab === value} onClick={() => setTab(value)}>{value}</button>)}</div>
