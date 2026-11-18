@@ -29,6 +29,7 @@ export type AiWidgetType =
 
 /** Driver-analysis selections captured when the widget is added. */
 export interface DriverAnalysisWidgetConfig {
+  metric?: 'nps' | 'csat' | 'ces' | 'mean';
   primaryQuestionCode: string;
   primaryQuestionText: string;
   /** Driver items from the selected driver questions (matrix rows expanded). */
