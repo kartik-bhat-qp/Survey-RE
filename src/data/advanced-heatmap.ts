@@ -125,10 +125,10 @@ export function adaptHeatmapQuestions(questions: SurveyQuestion[]): HeatmapQuest
     const rank = q.type === 'Rank order';
     const labels = q.type === 'NPS' ? Array.from({ length: 11 }, (_, i) => String(i)) : rank ? (q.options ?? []).map((_, i) => `Rank ${i + 1}`) : q.type === 'Text' ? ['Helpful service', 'Slow delivery', 'Good value', 'Needs improvement'] : q.options ?? [];
     // Only explicitly ordered rating scales receive default scores. Category IDs are never scores.
-    const rating = q.type === 'NPS' || rank || labels.join('|') === 'Poor|Average|Good|Excellent' || labels.join('|') === 'Very dissatisfied|Dissatisfied|Neutral|Satisfied|Very satisfied';
+    const rating = q.type === 'NPS' || q.type === 'CSAT' || q.type === 'CES' || Boolean(q.customScoreType) || rank || labels.join('|') === 'Poor|Average|Good|Excellent' || labels.join('|') === 'Very dissatisfied|Dissatisfied|Neutral|Satisfied|Very satisfied';
     return { id: String(q.id), code: q.code, label: q.text, type: q.type, multiple: q.type === 'Multiple Select', text: q.type === 'Text',
       rows: (q.matrixRows ?? (rank ? q.options : undefined) ?? [q.text]).map((label, i) => ({ id: `${q.id}:r${i}`, label })),
-      options: labels.map((label, i) => ({ id: `${q.id}:o${i}`, label, score: rating ? (q.type === 'NPS' ? i : i + 1) : undefined })),
+      options: labels.map((label, i) => ({ id: `${q.id}:o${i}`, label, score: q.answerScores ? q.answerScores[i] : rating ? (q.type === 'NPS' ? i : i + 1) : undefined })),
     };
   });
 }

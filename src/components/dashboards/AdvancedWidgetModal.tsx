@@ -10,15 +10,12 @@ import {
   AdvancedWidgetStepBreadcrumb,
   type AdvancedWidgetStep,
 } from '@/components/dashboards/AdvancedWidgetStepBreadcrumb';
-import { WidgetQuestionSelection } from '@/components/dashboards/WidgetQuestionSelection';
+import { DriverQuestionTable } from './widgets/DriverQuestionTable';
 import {
   ADVANCED_WIDGET_TYPES,
   DEFAULT_ADVANCED_WIDGET_TYPE_ID,
   type AdvancedWidgetTypeId,
 } from '@/data/mock-advanced-widget-types';
-import {
-  type SurveyQuestion,
-} from '@/data/mock-survey-questions';
 import { AiDataSourceSelection } from '@/components/dashboards/AiDataSourceSelection';
 import { DEFAULT_DASHBOARD_SURVEY, type SurveyListItem } from '@/data/mock-survey-folders';
 import type { AiWidgetConfig } from '@/data/mock-ai-widgets';
@@ -32,7 +29,7 @@ import type { BuiltWidget } from '@/data/ai-widget-builder';
 import builderStyles from './ai-builder/Builder.module.css';
 import styles from './AdvancedWidgetModal.module.css';
 import { validateKpiScoring, type KpiScoring } from '@/data/mock-text-ai-kpi-by-theme';
-import { driverCatalog, driverDefaultScoring } from '@/data/driver-scoring';
+import { driverCatalog, driverDefaultScoring, driverSurveyQuestions, selectedDrivers } from '@/data/driver-scoring';
 import { DriverScoringFields } from './widgets/DriverScoringFields';
 
 type ModalStep =
@@ -42,6 +39,7 @@ type ModalStep =
   | 'heatmap-survey'
   | 'heatmap-questions'
   | 'heatmap-analysis'
+  | 'driver-source'
   | 'primary-question'
   | 'driver-metric'
   | 'driver-question';
@@ -63,7 +61,7 @@ function breadcrumbStepFor(step: ModalStep): AdvancedWidgetStep {
   if (step === 'heatmap-survey') return 'chart';
   if (step === 'heatmap-questions') return 'chart';
   if (step === 'heatmap-analysis') return 'details';
-  if (step === 'primary-question') return 'chart';
+  if (step === 'driver-source' || step === 'primary-question') return 'chart';
   if (step === 'driver-metric') return 'chart';
   if (step === 'driver-question') return 'details';
   return step;
@@ -85,30 +83,14 @@ export function AdvancedWidgetModal({
   const [selectedTypeId, setSelectedTypeId] = useState<AdvancedWidgetTypeId>(
     DEFAULT_ADVANCED_WIDGET_TYPE_ID
   );
-  const [primaryQuestion, setPrimaryQuestion] = useState<SurveyQuestion | null>(null);
+  const [primaryQuestion, setPrimaryQuestion] = useState<string | null>(null);
   const [scoring, setScoring] = useState<KpiScoring | null>(null);
-  const [driverQuestions, setDriverQuestions] = useState<number[]>([]);
-  const catalogue = useMemo(() => driverCatalog(surveyId), [surveyId]);
-  const primary = catalogue.find(item => item.pick.id === primaryQuestion?.id);
-  const selectionReasons: Record<number, string> = {};
-  for (const { pick, reason } of catalogue) {
-    if (reason) selectionReasons[pick.id] = reason;
-    else if (pick.matrixRows?.length && step === 'primary-question') selectionReasons[pick.id] = 'Expand the matrix and choose one outcome row.';
-    else if (step === 'driver-question' && pick.id === primaryQuestion?.id)
-      selectionReasons[pick.id] = 'This row is already the primary question.';
-  }
-  const checkedDrivers = new Set(driverQuestions);
-  for (const { pick } of catalogue.filter(item => item.pick.matrixRows?.length)) {
-    const children = catalogue.filter(item => item.pick.parentQuestionId === pick.id && !selectionReasons[item.pick.id]);
-    if (children.length && children.every(item => checkedDrivers.has(item.pick.id))) checkedDrivers.add(pick.id);
-  }
-  function toggleDriver(question: SurveyQuestion, checked: boolean) {
-    const ids = question.matrixRows?.length
-      ? catalogue.filter(item => item.pick.parentQuestionId === question.id && !selectionReasons[item.pick.id]).map(item => item.pick.id)
-      : [question.id];
-    setDriverQuestions(current => checked ? [...new Set([...current, ...ids])] : current.filter(id => !ids.includes(id)));
-  }
-  const disabledIds = Object.keys(selectionReasons).map(Number);
+  const [driverQuestions, setDriverQuestions] = useState<string[]>([]);
+  const [driverSurvey, setDriverSurvey] = useState<SurveyListItem | null>(null);
+  const driverSurveyId = driverSurvey?.id;
+  const catalogue = useMemo(() => driverSurveyId === undefined ? [] : driverCatalog(driverSurveyId), [driverSurveyId]);
+  const surveyQuestions = useMemo(() => driverSurveyId === undefined ? [] : driverSurveyQuestions(driverSurveyId), [driverSurveyId]);
+  const primary = catalogue.find(item => item.outcome.rowId === primaryQuestion);
   const scoringError = scoring && primary ? validateKpiScoring(scoring, primary.outcome.answers.map(a => a.score)) : 'Select a primary question.';
 
   const [heatmapSurvey, setHeatmapSurvey] = useState<SurveyListItem | null>(null);
@@ -120,6 +102,7 @@ export function AdvancedWidgetModal({
     setStep('widget');
     setSelectedStack(null);
     setHeatmapSurvey(null);
+    setDriverSurvey(null);
     setHeatmapRows([]);
     setHeatmapMode('distribution');
     setWidgetName('');
@@ -152,7 +135,7 @@ export function AdvancedWidgetModal({
       if (selectedTypeId === 'advanced-heatmap') { setStep('heatmap-survey'); return; }
       if (selectedTypeId === 'driver-analysis') {
         setDriverQuestions([]);
-        setStep('primary-question');
+        setStep('driver-source');
         return;
       }
       setStep('chart');
@@ -162,29 +145,25 @@ export function AdvancedWidgetModal({
 
   function finishDriverAnalysis(): void {
     if (!primary || !scoring || scoringError || !driverQuestions.length) return;
-    const drivers = catalogue.filter(item => driverQuestions.includes(item.pick.id))
-      .map(({ pick, outcome }) => ({ id: outcome.rowId, code: pick.code, name: outcome.label }));
-    const title = widgetName.trim() || driverAnalysisWidgetTitle(primary.pick);
+    const drivers = selectedDrivers(catalogue, driverQuestions);
+    const title = widgetName.trim() || driverAnalysisWidgetTitle({ text: primary.outcome.label, type: primary.metric.toUpperCase() });
     onWidgetAdded?.({
       id: `w-driver-analysis-${Date.now()}`, type: 'driver-analysis', title,
       driverAnalysis: {
         metric: scoring.metric, scoring, outcome: primary.outcome,
-        primaryQuestionCode: primary.pick.code, primaryQuestionText: primary.outcome.label, drivers,
+        primaryQuestionCode: primary.code, primaryQuestionText: primary.outcome.label, drivers,
       },
     });
     showToast({ message: `Widget "${title}" added`, variant: 'success' });
     handleClose();
   }
 
-  function handlePrimaryQuestionSelect(question: SurveyQuestion): void {
-    const entry = catalogue.find(item => item.pick.id === question.id);
-    if (!entry || selectionReasons[question.id]) return;
-    if (primaryQuestion?.id !== question.id) {
-      setScoring(driverDefaultScoring(entry.outcome, question.type === 'NPS' ? 'nps' : 'mean'));
-      setDriverQuestions(current => current.filter(id => id !== question.id));
-    }
-    setPrimaryQuestion(question);
-    setStep('driver-question');
+  function selectPrimary(id: string) {
+    const entry = catalogue.find(item => item.outcome.rowId === id);
+    if (!entry || id === primaryQuestion) return;
+    setPrimaryQuestion(id);
+    setScoring(driverDefaultScoring(entry.outcome, entry.metric));
+    setDriverQuestions(current => current.filter(driver => driver !== id));
   }
 
   function handleNext(): void {
@@ -206,12 +185,13 @@ export function AdvancedWidgetModal({
       if (selectedTypeId === 'driver-analysis') {
         setPrimaryQuestion(null);
         setDriverQuestions([]);
-        setStep('primary-question');
+        setStep('driver-source');
         return;
       }
       setStep('chart');
       return;
     }
+    if (step === 'primary-question' && primary) { setStep('driver-question'); return; }
     if (step === 'driver-question') {
       if (driverQuestions.length) setStep('driver-metric');
       return;
@@ -240,9 +220,9 @@ export function AdvancedWidgetModal({
       return;
     }
     if (step === 'driver-metric') { setStep('driver-question'); return; }
+    if (step === 'driver-source') { setStep('widget'); return; }
     if (step === 'primary-question') {
-      setPrimaryQuestion(null);
-      setStep('widget');
+      setStep('driver-source');
       return;
     }
     if (step === 'details') {
@@ -257,13 +237,12 @@ export function AdvancedWidgetModal({
   }
 
   const isDriverQuestionFlow =
-    step === 'primary-question' || step === 'driver-metric' || step === 'driver-question';
+    step === 'driver-source' || step === 'primary-question' || step === 'driver-metric' || step === 'driver-question';
   const nextLabel =
     step === 'heatmap-analysis' ? 'Create widget' : step === 'details' || step === 'driver-metric' ? 'Finish' : 'Next';
-  const showNext =
-    step !== 'heatmap-survey' && (!isDriverQuestionFlow || step === 'driver-question' || step === 'driver-metric');
-  const nextDisabled = (step === 'driver-metric' && Boolean(scoringError)) || (step === 'driver-question' && (driverQuestions.length === 0 || driverQuestions.length > 10)) || ((step === 'heatmap-questions' || step === 'heatmap-analysis') && Boolean(heatmapSelectionError(heatmapQuestions, heatmapRows)));
-  const modalTitle =
+  const showNext = step !== 'heatmap-survey' && step !== 'driver-source';
+  const nextDisabled = (step === 'primary-question' && !primary) || (step === 'driver-metric' && Boolean(scoringError)) || (step === 'driver-question' && (driverQuestions.length === 0 || driverQuestions.length > 10)) || ((step === 'heatmap-questions' || step === 'heatmap-analysis') && Boolean(heatmapSelectionError(heatmapQuestions, heatmapRows)));
+  const modalTitle = step === 'driver-source' ? 'Select data source' :
     step === 'primary-question'
       ? 'Select primary question'
       : step === 'driver-metric' ? 'Configure impact metric'
@@ -299,23 +278,22 @@ export function AdvancedWidgetModal({
             onSelectType={setSelectedTypeId}
           />
         )}
-        {step === 'primary-question' && (
-          <WidgetQuestionSelection
-            surveyId={surveyId}
-            unavailableQuestionIds={disabledIds} unavailableQuestionReasons={selectionReasons}
-            selectedQuestionId={primaryQuestion?.id ?? null}
-            onSelectQuestion={handlePrimaryQuestionSelect}
-          />
-        )}
-        {step === 'driver-question' && (
-          <WidgetQuestionSelection
-            toolbarContent={<span>{driverQuestions.length} of 10 drivers selected</span>}
-            surveyId={surveyId}
-            multiSelect
-            selectedQuestionIds={[...checkedDrivers]} onToggleQuestion={toggleDriver}
-            unavailableQuestionIds={disabledIds} unavailableQuestionReasons={selectionReasons}
-          />
-        )}
+        {step === 'driver-source' && <AiDataSourceSelection selectedSurveyId={driverSurveyId ?? null}
+          initialFolderId={driverSurvey?.folderId}
+          onSelectSurvey={survey => {
+            if (survey.id !== driverSurveyId) {
+              setPrimaryQuestion(null);
+              setDriverQuestions([]);
+              setScoring(null);
+            }
+            setDriverSurvey(survey);
+            setStep('primary-question');
+          }} />}
+        {driverSurveyId !== undefined && (step === 'primary-question' || step === 'driver-question') && <DriverQuestionTable
+          key={`${driverSurveyId}-${step}`} surveyId={driverSurveyId} questions={surveyQuestions} choices={catalogue}
+          primary={primaryQuestion} multiple={step === 'driver-question'}
+          selected={step === 'driver-question' ? driverQuestions : primaryQuestion ? [primaryQuestion] : []}
+          onChange={ids => step === 'driver-question' ? setDriverQuestions(ids) : selectPrimary(ids[0])} />}
         {step === 'driver-metric' && primary && scoring && <div className={styles.scoringFields}>
           <DriverScoringFields outcome={primary.outcome} value={scoring} onChange={setScoring} />
         </div>}
@@ -340,10 +318,10 @@ export function AdvancedWidgetModal({
       {step!=='stack-setup'&&step!=='stack-source'&&<WuModalFooter>
         <div className={styles.wizardFooter}>
           {isDriverQuestionFlow ? <nav aria-label="Driver analysis setup" className={styles.driverSteps}>
-            {(['primary-question', 'driver-question', 'driver-metric'] as const).map((value, index, steps) =>
+            {(['driver-source', 'primary-question', 'driver-question', 'driver-metric'] as const).map((value, index, steps) =>
               <button key={value} type="button" disabled={index >= steps.indexOf(step as typeof value)}
                 aria-current={value === step ? 'step' : undefined} onClick={() => setStep(value)}>
-                {['Primary question', 'Driver questions', 'Metric configuration'][index]}
+                {['Data source', 'Primary question', 'Driver questions', 'Metric configuration'][index]}
               </button>)}
           </nav> : selectedTypeId === 'advanced-heatmap' ? <AddWidgetStepBreadcrumb chartLabel="Analysis" currentStep={step === 'heatmap-survey' ? 'survey' : step === 'heatmap-questions' ? 'question' : step === 'heatmap-analysis' ? 'chart' : 'widget'} onStepClick={target => setStep(target === 'survey' ? 'heatmap-survey' : target === 'question' ? 'heatmap-questions' : 'widget')} /> : <AdvancedWidgetStepBreadcrumb
             currentStep={breadcrumbStepFor(step)}

@@ -29,6 +29,7 @@ export type AiWidgetType =
 
 /** Driver-analysis selections captured when the widget is added. */
 export interface DriverAnalysisWidgetConfig {
+  airlineSample?: boolean;
   tabId?: string;
   outcome?: import('./driver-scoring').DriverOutcome;
   scoring?: import('./mock-text-ai-kpi-by-theme').KpiScoring;

@@ -9,7 +9,9 @@ import styles from './DriverAnalysisWidget.module.css';
 import panelStyles from './TimeSeriesDashboardCard.module.css';
 import * as Dialog from '@radix-ui/react-dialog';
 import { DriverScoringFields } from './DriverScoringFields';
-import { driverDefaultScoring, resolveDriverConfig } from '@/data/driver-scoring';
+import { DriverQuestionPicker } from './DriverQuestionPicker';
+import { HeatMapSelect } from '../heat-map/HeatMapSelect';
+import { driverCatalog, driverDefaultScoring, resolveDriverConfig, selectedDrivers } from '@/data/driver-scoring';
 import { DEFAULT_DASHBOARD_SURVEY } from '@/data/mock-survey-folders';
 import { TEXT_AI_KPI_METRICS, type TextAiKpiMetric, validateKpiScoring, type KpiScoring } from '@/data/mock-text-ai-kpi-by-theme';
 
@@ -38,12 +40,12 @@ export function DriverAnalysisDashboardCard({
 }: DriverAnalysisDashboardCardProps) {
   const [mode, setMode] = useState<DriverAnalysisMode>('diagnose');
   const [saved] = useState(() => {
-    try { return JSON.parse(sessionStorage.getItem(`driver-settings:${widgetId}`) ?? '{}') as { metric?: TextAiKpiMetric; scoring?: KpiScoring; name?: string; showName?: boolean; filter?: string }; }
+    try { return JSON.parse(sessionStorage.getItem(`driver-settings:${widgetId}`) ?? '{}') as { config?: DriverAnalysisWidgetConfig; metric?: TextAiKpiMetric; scoring?: KpiScoring; name?: string; showName?: boolean; filter?: string }; }
     catch { return {}; }
   });
-  const config = useMemo(() => driverAnalysis
+  const [config, setConfig] = useState(() => saved.config?.outcome ? saved.config : driverAnalysis
     ? resolveDriverConfig(driverAnalysis, driverAnalysis.outcome?.surveyId ?? DEFAULT_DASHBOARD_SURVEY.id, [])
-    : SAMPLE_DRIVER_CONFIG, [driverAnalysis]);
+    : SAMPLE_DRIVER_CONFIG);
   const outcome = config?.outcome;
   const [scoring, setScoring] = useState<KpiScoring | null>(() => {
     if (!outcome) return null;
@@ -54,12 +56,35 @@ export function DriverAnalysisDashboardCard({
     return driverDefaultScoring(outcome, metric);
   });
   const [draft, setDraft] = useState(scoring);
+  const [draftConfig, setDraftConfig] = useState(config);
+  const surveyId = outcome?.surveyId ?? DEFAULT_DASHBOARD_SURVEY.id;
+  const airline = Boolean(config?.airlineSample || outcome?.rowId.startsWith('airline-'));
+  const choices = useMemo(() => driverCatalog(surveyId, airline), [surveyId, airline]);
+
+  function updateAnalytics(nextConfig: DriverAnalysisWidgetConfig, nextScoring: KpiScoring) {
+    setDraftConfig(nextConfig);
+    setDraft(nextScoring);
+    if (!nextConfig.outcome || !nextConfig.drivers.length || validateKpiScoring(nextScoring, nextConfig.outcome.answers.map(a => a.score))) return;
+    setConfig({ ...nextConfig, scoring: nextScoring, metric: nextScoring.metric });
+    setScoring(nextScoring);
+    setMode('diagnose');
+  }
+
+  function changePrimary(id: string) {
+    const choice = choices.find(item => item.outcome.rowId === id);
+    if (!choice || id === draftConfig?.outcome?.rowId) return;
+    updateAnalytics({
+      ...draftConfig, airlineSample: airline, outcome: choice.outcome,
+      primaryQuestionCode: choice.code, primaryQuestionText: choice.outcome.label,
+      drivers: (draftConfig?.drivers ?? []).filter(driver => driver.id !== id),
+    }, driverDefaultScoring(choice.outcome, choice.metric));
+  }
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<'General' | 'Analytics' | 'Design'>('General');
   const [name, setName] = useState(saved.name ?? title);
   const [showName, setShowName] = useState(saved.showName ?? true);
   const [filter, setFilter] = useState(saved.filter ?? 'Dashboard');
-  useEffect(() => { try { sessionStorage.setItem(`driver-settings:${widgetId}`, JSON.stringify({ metric: scoring?.metric, scoring, name, showName, filter })); } catch { /* Continue in memory. */ } }, [widgetId, scoring, name, showName, filter]);
+  useEffect(() => { try { sessionStorage.setItem(`driver-settings:${widgetId}`, JSON.stringify({ config, metric: scoring?.metric, scoring, name, showName, filter })); } catch { /* Continue in memory. */ } }, [widgetId, config, scoring, name, showName, filter]);
 
   const modeToggle = (
     <div className={styles.modeToggle} role="tablist" aria-label="Driver analysis mode">
@@ -88,9 +113,9 @@ export function DriverAnalysisDashboardCard({
   return (<>
     <DashboardWidgetCard
       title={showName ? name : ''}
-      onOpenSettings={shared ? undefined : () => { setDraft(scoring); setTab('General'); setOpen(true); }}
+      onOpenSettings={shared ? undefined : () => { setDraft(scoring); setDraftConfig(config); setTab('General'); setOpen(true); }}
       subtitle={`${outcome?.label ?? driverAnalysis?.primaryQuestionText ?? ''} · ${scoring?.name ?? 'Configuration required'}`}
-      subtitleTitle={driverAnalysis?.primaryQuestionText}
+      subtitleTitle={outcome?.label}
       dragHandleClassName={dragHandleClassName}
       shared={shared}
       insightCount={insightCount}
@@ -99,23 +124,26 @@ export function DriverAnalysisDashboardCard({
       headerExtra={modeToggle}
       actions={actions}
     >
-      {config && scoring ? <DriverAnalysisWidget key={JSON.stringify(scoring)} config={config} scoring={scoring} mode={mode} /> :
-        <p>This saved selection has no supported score scale. Recreate the widget with scored questions.</p>}
+      {config && scoring ? <DriverAnalysisWidget key={JSON.stringify([outcome?.rowId, config.drivers, scoring])} config={config} scoring={scoring} mode={mode} /> :
+        <p>This widget needs a scored primary question and at least one driver.</p>}
     </DashboardWidgetCard>
     <Dialog.Root open={open} onOpenChange={setOpen}><Dialog.Portal><Dialog.Overlay className={panelStyles.overlay}/><Dialog.Content className={`${panelStyles.dialog} ${styles.settingsDialog}`} aria-describedby={undefined}>
       <section className={panelStyles.preview}><header><h3>{showName ? name : ''}</h3></header>{config && scoring && <DriverAnalysisWidget config={config} scoring={scoring} mode="diagnose" />}</section>
       <aside className={panelStyles.panel}><header className={panelStyles.panelHeader}><Dialog.Title>Settings</Dialog.Title><Dialog.Close aria-label="Close widget settings">×</Dialog.Close></header>
         <div className={panelStyles.tabs} role="tablist" aria-label="Widget settings">{(['General', 'Analytics', 'Design'] as const).map(value => <button type="button" key={value} role="tab" aria-selected={tab === value} onClick={() => setTab(value)}>{value}</button>)}</div>
         <div className={panelStyles.panelBody} role="tabpanel">
-          {tab === 'General' && <><label className={panelStyles.row}>Show widget name<input type="checkbox" checked={showName} onChange={event => setShowName(event.target.checked)} /></label><input className={panelStyles.name} aria-label="Widget name" value={name} onChange={event => setName(event.target.value)} /><h4>Filter options</h4><label className={panelStyles.field}>Filter type<select value={filter} onChange={event => setFilter(event.target.value)}>{['Dashboard', 'Widget', 'Combined', 'None'].map(option => <option key={option}>{option}</option>)}</select></label><p>Filter configuration is illustrative in this prototype.</p></>}
-          {tab === 'Analytics' && outcome && draft && <DriverScoringFields outcome={outcome} value={draft}
-            onChange={next => {
-              setDraft(next);
-              if (!validateKpiScoring(next, outcome.answers.map(a => a.score))) {
-                setScoring(next);
-                setMode('diagnose');
-              }
-            }} />}
+          {tab === 'General' && <><label className={panelStyles.row}>Show widget name<input type="checkbox" checked={showName} onChange={event => setShowName(event.target.checked)} /></label><input className={panelStyles.name} aria-label="Widget name" value={name} onChange={event => setName(event.target.value)} /><h4>Filter options</h4><div className={panelStyles.field}>Filter type<HeatMapSelect label="Filter type" value={filter} options={['Dashboard', 'Widget', 'Combined', 'None']} onChange={setFilter} /></div><p>Filter configuration is illustrative in this prototype.</p></>}
+          {tab === 'Analytics' && <DriverQuestionPicker choices={choices}
+            selected={draftConfig?.outcome ? [draftConfig.outcome.rowId] : []}
+            onChange={ids => changePrimary(ids[0])} />}
+          {tab === 'Analytics' && draftConfig?.outcome && draft && <>
+            <DriverQuestionPicker multiple choices={choices.filter(item => item.outcome.rowId !== draftConfig.outcome?.rowId)}
+              selected={draftConfig.drivers.map(driver => driver.id)}
+              onChange={ids => updateAnalytics({ ...draftConfig, drivers: selectedDrivers(choices, ids) }, draft)} />
+            {!draftConfig.drivers.length && <p role="alert">Select at least one driver to apply your changes.</p>}
+            <DriverScoringFields outcome={draftConfig.outcome} value={draft} showPrimary={false}
+              onChange={next => updateAnalytics(draftConfig, next)} />
+          </>}
           {tab === 'Design' && <p>This widget uses the dashboard design.</p>}
         </div>
       </aside>

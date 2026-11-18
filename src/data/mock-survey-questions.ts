@@ -5,6 +5,8 @@ export type SurveyQuestionType =
   | 'Matrix Uni choice'
   | 'Flex Matrix'
   | 'Text'
+  | 'CSAT'
+  | 'CES'
   | 'NPS'
   | 'Rank order';
 
@@ -14,6 +16,9 @@ export interface SurveyQuestion {
   code: string;
   text: string;
   type: SurveyQuestionType;
+  customScoreType?: 'nps' | 'csat';
+  /** Values in survey answer order, including reverse-scored scales. */
+  answerScores?: number[];
   /** Matrix logical rows shown when the expand control is toggled. */
   matrixRows?: string[];
   /** Parent question id when this row is an expanded matrix sub-row. */
@@ -181,7 +186,7 @@ export function getAdvancedHeatmapQuestions(surveyId: number): SurveyQuestion[] 
   ];
 }
 
-function subRowId(parentId: number, rowIndex: number): number {
+export function matrixPickerRowId(parentId: number, rowIndex: number): number {
   return parentId * 1000 + rowIndex + 1;
 }
 
@@ -206,7 +211,7 @@ export function flattenQuestionsForPicker(
     const subLabels = question.matrixRows ?? [];
     subLabels.forEach((label, index) => {
       rows.push({
-        id: subRowId(question.id, index),
+        id: matrixPickerRowId(question.id, index),
         surveyId: question.surveyId,
         code: question.code,
         text: label,
@@ -266,6 +271,8 @@ export interface EditorQuestionForCriteria {
   text: string;
   kind?: string;
   addQuestionTypeId?: string;
+  customScoreType?: SurveyQuestion['customScoreType'];
+  answerScores?: number[];
   inputKind?: string;
   options: { label: string }[];
   matrix?: {
@@ -385,6 +392,8 @@ function criteriaTypeFromEditor(question: EditorQuestionForCriteria): SurveyQues
   ) {
     return 'Matrix Uni choice';
   }
+  if (question.kind === 'csat' || typeId === 'csat') return 'CSAT';
+  if (question.kind === 'ces' || typeId === 'ces') return 'CES';
   if (question.kind === 'nps' || typeId === 'nps') return 'NPS';
   if (question.kind === 'rank-order' || typeId === 'rank-order') return 'Rank order';
   if (
@@ -459,6 +468,8 @@ export function toCriteriaQuestionsFromEditor(
         type,
         ...(matrixRows.length > 0 ? { matrixRows } : {}),
         options: criteriaOptionsFromEditor(question, type),
+        ...(question.customScoreType && { customScoreType: question.customScoreType }),
+        ...(question.answerScores && { answerScores: question.answerScores }),
         ...blockFields,
       },
     ];

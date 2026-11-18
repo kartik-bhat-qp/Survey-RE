@@ -7,6 +7,11 @@ import styles from './TextAiKpiSetupFields.module.css';
 
 const WuSelect = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => ({ default: m.WuSelect })), { ssr: false });
 // Match the precision choices in BI's Scoring Trend widget.
+const CES_CALCULATIONS: { value: NonNullable<KpiScoring['cesCalculation']>; label: string }[] = [
+  { value: 'average', label: 'Average score' },
+  { value: 'percent-easy', label: 'Percentage easy' },
+  { value: 'net-easy', label: 'Percentage easy − percentage difficult' },
+];
 const PRECISION_OPTIONS = [0, 1, 2, 3, 4, 5].map(value => ({ value, label: `${value} (${value === 0 ? '1' : (1 / 10 ** value).toFixed(value)})` }));
 
 const WuInput = dynamic(() => import('@npm-questionpro/wick-ui-lib').then(m => ({ default: m.WuInput })), { ssr: false });
@@ -56,6 +61,7 @@ export function KpiScoringFields({ value, answers, answerHeading = 'Response opt
     ? [{ value: 'detractor', label: 'Detractor' }, { value: 'passive', label: 'Passive' }, { value: 'promoter', label: 'Promoter' }]
     : value.metric === 'csat' ? [{ value: 'dissatisfied', label: 'Not satisfied' }, { value: 'satisfied', label: 'Satisfied' }]
     : [{ value: 'difficult', label: 'Difficult' }, { value: 'neutral', label: 'Neutral' }, { value: 'easy', label: 'Easy' }];
+  const classifications = [...categories, { value: 'exclude' as const, label: 'Exclude' }];
   return <>
     <div className={styles.field}><span id={`${id}-metric`}>Metric type</span>
       <WuSelect aria-labelledby={`${id}-metric`} disabled={!answers.length} variant="outlined" data={TEXT_AI_KPI_METRICS} accessorKey={{ value: 'value', label: 'label' }} value={TEXT_AI_KPI_METRICS.find(m => m.value === value.metric)} onSelect={option => {
@@ -65,17 +71,26 @@ export function KpiScoringFields({ value, answers, answerHeading = 'Response opt
         }
       }} />
     </div>
-    {value.metric === 'ces' && <label className={styles.field}>Calculation<select value={value.cesCalculation ?? 'average'} onChange={event => {
-      const cesCalculation = event.target.value as TextAiKpiConfig['cesCalculation'];
-      resetMappings('ces', cesCalculation);
-    }}><option value="average">Average score</option><option value="percent-easy">Percentage easy</option><option value="net-easy">Percentage easy − percentage difficult</option></select></label>}
+    {value.metric === 'ces' && <WuSelect Label="Calculation" aria-label="Calculation" labelPosition="top"
+      data={CES_CALCULATIONS} accessorKey={{ value: 'value', label: 'label' }} variant="outlined"
+      value={CES_CALCULATIONS.find(option => option.value === (value.cesCalculation ?? 'average'))}
+      onSelect={option => {
+        const choice = CES_CALCULATIONS.find(item => item.value === (option as { value?: string })?.value);
+        if (choice) resetMappings('ces', choice.value);
+      }} />}
     {answers.length > 0 && <>
       <div className={styles.mappingTitle}>Answer configuration</div>
       <p className={styles.formula}>{textAiKpiFormula(value)} Excluded answers are removed from the base.</p>
       <table className={styles.mapping}><thead><tr><th>{answerHeading}</th><th>{numeric ? 'Score' : 'Classification'}</th></tr></thead><tbody>
         {answers.map(({ score: answer, label }) => <tr key={answer}><td>{label}</td><td>
           {numeric ? <div className={styles.meanRow}><input type="number" step="any" aria-label={`Score for ${label}`} disabled={value.mappings[answer] === 'exclude'} value={typeof value.mappings[answer] === 'number' && Number.isFinite(value.mappings[answer]) ? value.mappings[answer] : ''} onChange={event => update({ mappings: { ...value.mappings, [answer]: event.target.value === '' ? NaN : Number(event.target.value) } })} /><label><input type="checkbox" checked={value.mappings[answer] === 'exclude'} onChange={event => update({ mappings: { ...value.mappings, [answer]: event.target.checked ? 'exclude' : answer } })} />Exclude</label></div>
-          : <select aria-label={`Classification for ${label}`} value={String(value.mappings[answer] ?? '')} onChange={event => update({ mappings: { ...value.mappings, [answer]: event.target.value as TextAiKpiMapping } })}>{[...categories, { value: 'exclude', label: 'Exclude' }].map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>}
+          : <WuSelect aria-label={`Classification for ${label}`} variant="outlined"
+              data={classifications} accessorKey={{ value: 'value', label: 'label' }}
+              value={classifications.find(option => option.value === value.mappings[answer])}
+              onSelect={option => {
+                const choice = classifications.find(item => item.value === (option as { value?: string })?.value);
+                if (choice) update({ mappings: { ...value.mappings, [answer]: choice.value } });
+              }} />}
         </td></tr>)}
       </tbody></table>
       <div className={styles.field}><span id={`${id}-precision`}>Decimal precision</span>

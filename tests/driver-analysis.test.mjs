@@ -26,3 +26,18 @@ test('configuration uses only the selected scale, supports explicit exclusions a
   assert.equal(validateKpiScoring(config,scale),null);
   assert.match(validateKpiScoring(config,[...scale,5]), /every/);
 });
+
+test('native and custom KPI questions use their defined scales independently of question wording', async () => {
+  const { adaptHeatmapQuestions } = await import('../src/data/advanced-heatmap.ts');
+  const base = { id: 1, surveyId: 9, code: 'Q1', text: 'Rate your experience' };
+  const sources = adaptHeatmapQuestions([
+    { ...base, type: 'NPS' },
+    { ...base, type: 'CES', options: ['Easy', 'Neutral', 'Difficult'], answerScores: [3, 2, 1] },
+    { ...base, type: 'CSAT', options: ['Low', 'High'] },
+    { ...base, type: 'Single Select', customScoreType: 'nps', options: ['Low', 'High'], answerScores: [0, 10] },
+    { ...base, type: 'Matrix Uni choice', customScoreType: 'csat', matrixRows: ['Delivery'], options: ['Low', 'High'] },
+    { ...base, type: 'Single Select', text: 'Would you recommend a color?', options: ['Red', 'Blue'] },
+  ]);
+  const scores = sources.map(source => source.options.map(option => option.score));
+  assert.deepEqual(scores, [Array.from({ length: 11 }, (_, i) => i), [3, 2, 1], [1, 2], [0, 10], [1, 2], [undefined, undefined]]);
+});

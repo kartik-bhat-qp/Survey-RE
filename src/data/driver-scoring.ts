@@ -1,6 +1,7 @@
 import { adaptHeatmapQuestions, createHeatmapResponses, type HeatmapQuestion } from './advanced-heatmap';
-import { flattenQuestionsForPicker, getQuestionsBySurvey } from './mock-survey-questions';
+import { getQuestionsBySurvey, type SurveyQuestion } from './mock-survey-questions';
 import { defaultKpiScoring, type KpiScoring, type TextAiKpiMetric } from './mock-text-ai-kpi-by-theme';
+import { AIRLINE_DRIVER_NAMES } from './mock-driver-analysis';
 import type { DriverAnalysisWidgetConfig } from './mock-ai-widgets';
 
 export interface DriverOutcome {
@@ -10,20 +11,64 @@ export interface DriverOutcome {
   answers: Array<{ score: number; label: string }>;
 }
 
-export function driverCatalog(surveyId: number) {
-  const questions = getQuestionsBySurvey(surveyId);
-  const sources = adaptHeatmapQuestions(questions);
-  const expanded = flattenQuestionsForPicker(questions, new Set(questions.map(q => q.id)));
-  return expanded.map(pick => {
-    const source = sources.find(q => q.id === String(pick.parentQuestionId ?? pick.id))!;
-    const index = pick.parentQuestionId === undefined ? 0 : questions.find(q => String(q.id) === source.id)!.matrixRows!.indexOf(pick.text);
-    const row = source.rows[index];
-    const answers = source.options.flatMap(option => option.score === undefined ? [] : [{ score: option.score, label: option.label }]);
-    const reason = !['NPS', 'Single Select', 'Matrix Uni choice'].includes(source.type) || answers.length !== source.options.length || answers.length < 2
-      ? 'Choose an ordered rating with defined scores.' : undefined;
-    const outcome: DriverOutcome = { surveyId, rowId: row.id, answers, label: pick.parentQuestionId === undefined ? pick.text : `${source.label} — ${pick.text}` };
-    return { pick, source, outcome, reason };
+export interface DriverQuestionChoice {
+  code: string;
+  outcome: DriverOutcome;
+  metric: TextAiKpiMetric;
+}
+
+const experienceQuestions: Omit<SurveyQuestion, 'id' | 'surveyId'>[] = [
+  { code: 'CSAT1', text: 'Overall service satisfaction', type: 'CSAT',
+    options: ['Very dissatisfied', 'Dissatisfied', 'Neutral', 'Satisfied', 'Very satisfied'] },
+  { code: 'CES1', text: 'Ease of resolving your request', type: 'CES',
+    options: ['Very difficult', 'Difficult', 'Somewhat difficult', 'Neutral', 'Somewhat easy', 'Easy', 'Very easy'] },
+  { code: 'R1', text: 'Likelihood of referring a colleague', type: 'Single Select', customScoreType: 'nps',
+    options: Array.from({ length: 11 }, (_, i) => String(i)), answerScores: Array.from({ length: 11 }, (_, i) => i) },
+  { code: 'R2', text: 'Rating of the most recent interaction', type: 'Single Select', customScoreType: 'csat',
+    options: ['Very low', 'Low', 'Neutral', 'High', 'Very high'] },
+];
+
+function driverExamples(surveyId: number): SurveyQuestion[] {
+  return experienceQuestions.map((question, i) => ({ ...question, surveyId, id: surveyId * 100 + 90 + i }));
+}
+
+export function driverSurveyQuestions(surveyId: number) {
+  return [...getQuestionsBySurvey(surveyId), ...driverExamples(surveyId)];
+}
+
+function driverSources(surveyId: number, airline: boolean) {
+  const survey = getQuestionsBySurvey(surveyId);
+  const extra = driverExamples(surveyId);
+  return {
+    base: airline ? airlineQuestions(AIRLINE_DRIVER_NAMES) : adaptHeatmapQuestions(survey),
+    extra: adaptHeatmapQuestions(extra),
+    metadata: [...survey, ...extra],
+  };
+}
+
+const nativeMetrics: Readonly<Partial<Record<string, TextAiKpiMetric>>> = {
+  NPS: 'nps', CES: 'ces', CSAT: 'csat',
+};
+
+export function driverCatalog(surveyId: number, airline = false): DriverQuestionChoice[] {
+  const { base, extra, metadata } = driverSources(surveyId, airline);
+  return [...base, ...extra].flatMap(source => {
+    const question = metadata.find(q => String(q.id) === source.id);
+    const metric = question?.customScoreType ?? nativeMetrics[source.type] ?? 'mean';
+    if (source.multiple || source.text || source.type === 'Rank order') return [];
+    const answers = source.options.flatMap(option => option.score !== undefined && Number.isFinite(option.score)
+      ? [{ score: option.score, label: option.label }] : []);
+    if (answers.length !== source.options.length || new Set(answers.map(a => a.score)).size < 2) return [];
+    return source.rows.map(row => ({
+      code: source.code, metric,
+      outcome: { surveyId, rowId: row.id, answers, label: row.label === source.label ? row.label : `${source.label} — ${row.label}` },
+    }));
   });
+}
+
+export function selectedDrivers(choices: DriverQuestionChoice[], ids: string[]) {
+  return choices.filter(({ outcome }) => ids.includes(outcome.rowId))
+    .map(({ code, outcome }) => ({ id: outcome.rowId, code, name: outcome.label }));
 }
 
 export function driverDefaultScoring(outcome: DriverOutcome, metric: TextAiKpiMetric) {
@@ -42,13 +87,16 @@ export function outcomeValue(scoring: KpiScoring, score: number): number | undef
 export function preparedDriverData(config: DriverAnalysisWidgetConfig, scoring: KpiScoring) {
   const outcome = config.outcome;
   if (!outcome) return null;
-  const sources = outcome.rowId === 'airline-0:r0'
-    ? airlineQuestions(config.drivers.map(d => d.name))
-    : adaptHeatmapQuestions(getQuestionsBySurvey(outcome.surveyId));
+  const { base, extra } = driverSources(outcome.surveyId, outcome.rowId.startsWith('airline-') || config.airlineSample === true);
+  const sources = [...base, ...extra];
   const sourceByRow = new Map<string, HeatmapQuestion>();
   for (const source of sources) for (const row of source.rows) sourceByRow.set(row.id, source);
   const scoreByOption = new Map(sources.flatMap(q => q.options.map(o => [o.id, o.score] as const)));
-  const responses = createHeatmapResponses(sources);
+  // Keep the original paired responses stable when adding new example questions.
+  const additionalResponses = createHeatmapResponses(extra);
+  const responses = createHeatmapResponses(base).map((response, i) => ({
+    ...response, answers: { ...response.answers, ...additionalResponses[i].answers },
+  }));
   const rows: number[][] = [];
   for (const response of responses) {
     const scoreAt = (rowId: string) => scoreByOption.get(response.answers[rowId]?.[0]);
@@ -67,23 +115,22 @@ export function preparedDriverData(config: DriverAnalysisWidgetConfig, scoring: 
 /** Resolve pre-configuration widgets against their original survey codes and row labels. */
 export function resolveDriverConfig(previous: DriverAnalysisWidgetConfig | undefined, surveyId: number, sampleNames: string[]): DriverAnalysisWidgetConfig | null {
   if (previous?.outcome) return previous;
-  const catalogue = driverCatalog(surveyId);
-  const eligible = catalogue.filter(item => !item.reason && !item.pick.matrixRows?.length);
+  const eligible = driverCatalog(surveyId);
   const primary = eligible.find(item => previous
-    ? item.pick.code === previous.primaryQuestionCode && item.pick.text === previous.primaryQuestionText
-    : item.pick.type === 'NPS');
+    ? item.code === previous.primaryQuestionCode && (item.outcome.label === previous.primaryQuestionText || item.outcome.label.endsWith(' — ' + previous.primaryQuestionText))
+    : item.metric === 'nps');
   if (!primary) return null;
   if (!previous) {
     const questions = airlineQuestions(sampleNames);
     const target = questions[0];
     return {
-      metric: 'nps', primaryQuestionCode: 'Q4', primaryQuestionText: target.label,
+      airlineSample: true, metric: 'nps', primaryQuestionCode: 'Q4', primaryQuestionText: target.label,
       outcome: { surveyId, rowId: target.rows[0].id, label: target.label, answers: target.options.map(o => ({ score: o.score!, label: o.label })) },
       drivers: questions.slice(1).map(q => ({ id: q.rows[0].id, code: q.code, name: q.label })),
     };
   }
   const drivers = previous.drivers.flatMap(d => {
-    const item = eligible.find(item => item.pick.code === d.code && item.pick.text === d.name);
+    const item = eligible.find(item => item.code === d.code && (item.outcome.label === d.name || item.outcome.label.endsWith(' — ' + d.name)));
     return item && item.outcome.rowId !== primary.outcome.rowId ? [{ ...d, id: item.outcome.rowId }] : [];
   });
   return drivers.length === previous.drivers.length ? { ...previous, outcome: primary.outcome, drivers } : null;

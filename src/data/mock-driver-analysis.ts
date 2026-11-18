@@ -18,7 +18,6 @@ export const DRIVER_ANALYSIS_WIDGET_TITLE = 'NPS driver analysis';
 /** Compact subject used in the widget title, derived from the primary question. */
 export function primaryQuestionSubject(text: string): string {
   const raw = text.replace(/\?+$/, '').trim();
-  if (/\brecommend\b/i.test(raw)) return 'NPS';
   if (/overall satisfaction/i.test(raw)) return 'Overall satisfaction';
   if (/\bsatisfaction\b/i.test(raw)) return 'Satisfaction';
 
@@ -40,8 +39,9 @@ export function driverAnalysisWidgetTitle(primary: {
   text: string;
   type?: string;
 }): string {
-  if (primary.type === 'NPS' || /\brecommend\b/i.test(primary.text)) {
+  if (primary.type === 'NPS') {
     return DRIVER_ANALYSIS_WIDGET_TITLE;
   }
+  if (primary.type === 'CSAT' || primary.type === 'CES') return `${primary.type} driver analysis`;
   return `${primaryQuestionSubject(primary.text)} driver analysis`;
 }
