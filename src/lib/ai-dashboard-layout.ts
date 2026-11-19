@@ -18,3 +18,10 @@ export function stackLayoutSingleColumn(layout: Layout): Layout {
       minH: 1,
     }));
 }
+
+/** Apply type constraints after restoring or interacting with a saved layout. */
+export function enforceFullWidthWidgets(layout: Layout, ids: ReadonlySet<string>, columns: number): Layout {
+  return layout.map(item => ids.has(item.i) ? {
+    ...item, x: 0, w: columns, minW: columns, maxW: columns, resizeHandles: ['s'],
+  } : item);
+}

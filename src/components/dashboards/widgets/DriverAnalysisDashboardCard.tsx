@@ -14,8 +14,13 @@ import { driverCatalog, driverDefaultScoring, resolveDriverConfig, selectedDrive
 import { DEFAULT_DASHBOARD_SURVEY } from '@/data/mock-survey-folders';
 import { TEXT_AI_KPI_METRICS, type TextAiKpiMetric, validateKpiScoring, type KpiScoring } from '@/data/mock-text-ai-kpi-by-theme';
 
+import type { DashboardDesign } from '@/data/dashboard-design';
+import type { AmChartTypography } from '@/components/charts/amcharts/theme';
+
 interface DriverAnalysisDashboardCardProps {
   title: string;
+  dashboardDesign?: DashboardDesign;
+  typography?: AmChartTypography;
   dragHandleClassName?: string;
   shared?: boolean;
   insightCount?: number;
@@ -28,6 +33,8 @@ interface DriverAnalysisDashboardCardProps {
 
 export function DriverAnalysisDashboardCard({
   title,
+  dashboardDesign,
+  typography,
   dragHandleClassName,
   shared = false,
   insightCount = 0,
@@ -62,12 +69,7 @@ export function DriverAnalysisDashboardCard({
   function updateAnalytics(nextConfig: DriverAnalysisWidgetConfig, nextScoring: KpiScoring) {
     setDraftConfig(nextConfig);
     setDraft(nextScoring);
-    if (!nextConfig.outcome || !nextConfig.drivers.length || validateKpiScoring(nextScoring, nextConfig.outcome.answers.map(a => a.score))) return;
-    for (const driver of nextConfig.drivers) {
-      const question = choices.find(choice => choice.outcome.rowId === driver.id)?.outcome;
-      const rule = nextConfig.driverScoring?.[driver.id];
-      if (!question || (rule && validateKpiScoring(rule, question.answers.map(answer => answer.score)))) return;
-    }
+    if (!nextConfig.outcome || !nextConfig.drivers.length || nextConfig.drivers.length > 10 || validateKpiScoring(nextScoring, nextConfig.outcome.answers.map(a => a.score))) return;
     setConfig({ ...nextConfig, scoring: nextScoring, metric: nextScoring.metric });
     setScoring(nextScoring);
   }
@@ -87,9 +89,6 @@ export function DriverAnalysisDashboardCard({
   const [showName, setShowName] = useState(saved.showName ?? true);
   const [filter, setFilter] = useState(saved.filter ?? 'Dashboard');
   useEffect(() => { try { sessionStorage.setItem(`driver-settings:${widgetId}`, JSON.stringify({ config, metric: scoring?.metric, scoring, name, showName, filter })); } catch { /* Continue in memory. */ } }, [widgetId, config, scoring, name, showName, filter]);
-
-  const draftDrivers = choices.filter(choice => draftConfig?.drivers.some(driver => driver.id === choice.outcome.rowId))
-    .map(choice => choice.outcome);
 
   function openSettings(section: 'General' | 'Analytics') {
     setDraft(scoring);
@@ -112,11 +111,11 @@ export function DriverAnalysisDashboardCard({
       showDiamond={showDiamond}
       actions={actions}
     >
-      {config && scoring ? <DriverAnalysisWidget config={config} scoring={scoring} /> :
+      {config && scoring ? <DriverAnalysisWidget config={config} scoring={scoring} dashboardDesign={dashboardDesign} typography={typography} /> :
         <p>This widget needs a scored primary question and at least one driver.</p>}
     </DashboardWidgetCard>
     <Dialog.Root open={open} onOpenChange={setOpen}><Dialog.Portal><Dialog.Overlay className={panelStyles.overlay}/><Dialog.Content className={`${panelStyles.dialog} ${styles.settingsDialog}`} aria-describedby={undefined}>
-      <section className={panelStyles.preview}><header><h3>{showName ? name : ''}</h3></header>{config && scoring && <DriverAnalysisWidget config={config} scoring={scoring} />}</section>
+      <section className={panelStyles.preview}><header><h3>{showName ? name : ''}</h3></header>{config && scoring && <DriverAnalysisWidget config={config} scoring={scoring} dashboardDesign={dashboardDesign} typography={typography} />}</section>
       <aside className={panelStyles.panel}><header className={panelStyles.panelHeader}><Dialog.Title>Settings</Dialog.Title><Dialog.Close aria-label="Close widget settings">×</Dialog.Close></header>
         <div className={panelStyles.tabs} role="tablist" aria-label="Widget settings">{(['General', 'Analytics', 'Design'] as const).map(value => <button type="button" key={value} role="tab" aria-selected={tab === value} onClick={() => setTab(value)}>{value}</button>)}</div>
         <div className={panelStyles.panelBody} role="tabpanel">
@@ -129,12 +128,8 @@ export function DriverAnalysisDashboardCard({
               selected={draftConfig.drivers.map(driver => driver.id)}
               onChange={ids => updateAnalytics({ ...draftConfig, drivers: selectedDrivers(choices, ids) }, draft)} />
             {!draftConfig.drivers.length && <p role="alert">Select at least one driver to apply your changes.</p>}
-            <DriverScoringFields outcome={draftConfig.outcome} drivers={draftDrivers} primaryScoring={draft}
-              driverScoring={draftConfig.driverScoring ?? {}}
-              onPrimaryChange={next => updateAnalytics(draftConfig, next)}
-              onDriverChange={(id, rule) => updateAnalytics({
-                ...draftConfig, driverScoring: { ...draftConfig.driverScoring, [id]: rule },
-              }, draft)} />
+            <DriverScoringFields outcome={draftConfig.outcome} primaryScoring={draft}
+              onPrimaryChange={next => updateAnalytics(draftConfig, next)} />
           </>}
           {tab === 'Design' && <p>This widget uses the dashboard design.</p>}
         </div>

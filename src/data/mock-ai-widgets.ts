@@ -34,7 +34,6 @@ export interface DriverAnalysisWidgetConfig {
   outcome?: import('./driver-scoring').DriverOutcome;
   scoring?: import('./mock-text-ai-kpi-by-theme').KpiScoring;
   metric?: 'nps' | 'csat' | 'ces' | 'mean';
-  driverScoring?: Record<string, import('./mock-text-ai-kpi-by-theme').KpiScoring>;
   primaryQuestionCode: string;
   primaryQuestionText: string;
   /** Driver items from the selected driver questions (matrix rows expanded). */
@@ -74,12 +73,25 @@ export const AI_DASHBOARD_WIDGETS: AiWidgetConfig[] = [
 /** Desktop column count — mobile uses a single column via AiDashboardCanvas. */
 export const AI_DASHBOARD_GRID_COLS = 12;
 
-/** Two equal-width desktop columns. Every widget occupies exactly one column. */
+/** Driver analysis spans the canvas; other widgets share two columns. */
 export function createDashboardLayout(widgets: readonly AiWidgetConfig[]): Layout {
-  return widgets.map((widget, index) => ({
-    i: widget.id, x: (index % 2) * DASHBOARD_DEFAULT_WIDGET_W, y: Math.floor(index / 2) * DASHBOARD_DEFAULT_WIDGET_H,
-    w: DASHBOARD_DEFAULT_WIDGET_W, h: DASHBOARD_DEFAULT_WIDGET_H, minW: 2, minH: 4,
-  }));
+  let x = 0;
+  let y = 0;
+  return widgets.map(widget => {
+    const fullWidth = widget.type === 'driver-analysis';
+    if (fullWidth && x) { x = 0; y += DASHBOARD_DEFAULT_WIDGET_H; }
+    const item = {
+      i: widget.id, x, y,
+      w: fullWidth ? AI_DASHBOARD_GRID_COLS : DASHBOARD_DEFAULT_WIDGET_W,
+      h: fullWidth ? 11 : DASHBOARD_DEFAULT_WIDGET_H,
+      minW: fullWidth ? AI_DASHBOARD_GRID_COLS : 2,
+      ...(fullWidth ? { maxW: AI_DASHBOARD_GRID_COLS, resizeHandles: ['s'] as ('s')[] } : {}),
+      minH: 4,
+    };
+    x += item.w;
+    if (x >= AI_DASHBOARD_GRID_COLS) { x = 0; y += item.h; }
+    return item;
+  });
 }
 export const AI_DASHBOARD_LAYOUT: Layout = createDashboardLayout(AI_DASHBOARD_WIDGETS);
 

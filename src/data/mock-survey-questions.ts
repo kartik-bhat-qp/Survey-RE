@@ -16,7 +16,7 @@ export interface SurveyQuestion {
   code: string;
   text: string;
   type: SurveyQuestionType;
-  customScoreType?: 'nps' | 'csat';
+  customScoreType?: 'nps' | 'csat' | 'ces';
   /** Values in survey answer order, including reverse-scored scales. */
   answerScores?: number[];
   /** Matrix logical rows shown when the expand control is toggled. */

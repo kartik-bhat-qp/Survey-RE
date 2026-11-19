@@ -1,23 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AI_DASHBOARD_WIDGETS, AI_DASHBOARD_LAYOUT, createDashboardLayout } from '../src/data/mock-ai-widgets.ts';
-import { stackLayoutSingleColumn } from '../src/lib/ai-dashboard-layout.ts';
+import { stackLayoutSingleColumn, enforceFullWidthWidgets } from '../src/lib/ai-dashboard-layout.ts';
 import { heatMapWidgetStorageKey, discardRetiredHeatMapCollections } from '../src/data/heat-map-baseline.ts';
 
-test('every default widget has one equal-width column and desktop rows are paired', () => {
-  assert.equal(AI_DASHBOARD_WIDGETS.filter(widget => widget.type === 'heat-map').length, 1);
-  assert.equal(AI_DASHBOARD_WIDGETS.filter(widget => widget.type === 'driver-analysis').length, 1);
+test('driver widgets fill a dedicated row while ordinary widgets retain their two-column layout', () => {
   assert.equal(AI_DASHBOARD_LAYOUT.length, AI_DASHBOARD_WIDGETS.length);
-  for (let index = 0; index < AI_DASHBOARD_LAYOUT.length; index++) {
-    const item = AI_DASHBOARD_LAYOUT[index];
-    assert.equal(item.i, AI_DASHBOARD_WIDGETS[index].id);
-    assert.equal(item.w, 6);
-    assert.equal(item.minW, 2);
-    assert.equal(item.x, (index % 2) * 6);
-    assert.equal(item.y, Math.floor(index / 2) * 8);
-    assert.equal(item.h, 8);
-    assert.equal(item.minH, 4);
+  const driver = AI_DASHBOARD_LAYOUT.find(item => item.i === 'w-driver-analysis');
+  assert.equal(driver.x, 0); assert.equal(driver.w, 12);
+  assert.equal(driver.minW, 12); assert.equal(driver.maxW, 12);
+  assert.deepEqual(driver.resizeHandles, ['s']);
+  for (const item of AI_DASHBOARD_LAYOUT.filter(item => item.i !== driver.i)) {
+    assert.equal(item.w, 6); assert.equal(item.minW, 2); assert.equal(item.h, 8);
   }
+  for (const item of AI_DASHBOARD_LAYOUT.filter(item => item.i !== driver.i)) {
+    assert.ok(item.y + item.h <= driver.y || item.y >= driver.y + driver.h);
+  }
+});
+test('a restored or resized driver is forced to full width without changing its height or other widgets', () => {
+  const previous = [{ i: 'driver', x: 6, y: 3, w: 4, h: 12 }, { i: 'ordinary', x: 0, y: 0, w: 3, h: 4 }];
+  const next = enforceFullWidthWidgets(previous, new Set(['driver']), 12);
+  assert.deepEqual([next[0].x, next[0].w, next[0].minW, next[0].maxW, next[0].h], [0,12,12,12,12]);
+  assert.equal(next[1], previous[1]); assert.equal(previous[0].w,4);
 });
 test('mobile stacks every fixed widget without losing order', () => {
   const desktop = createDashboardLayout(AI_DASHBOARD_WIDGETS);

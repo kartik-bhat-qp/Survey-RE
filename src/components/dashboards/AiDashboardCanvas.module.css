@@ -90,3 +90,5 @@
   width: 52px;
   z-index: 20;
 }
+
+.resizeHandle:global(.react-resizable-handle-s) { left: 50%; right: auto; transform: translateX(-50%); cursor: ns-resize; }

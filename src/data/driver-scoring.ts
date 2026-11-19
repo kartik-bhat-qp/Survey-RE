@@ -18,9 +18,9 @@ export interface DriverQuestionChoice {
 }
 
 const experienceQuestions: Omit<SurveyQuestion, 'id' | 'surveyId'>[] = [
-  { code: 'CSAT1', text: 'Overall service satisfaction', type: 'CSAT',
+  { code: 'CSAT1', text: 'Overall service satisfaction', type: 'Single Select', customScoreType: 'csat',
     options: ['Very dissatisfied', 'Dissatisfied', 'Neutral', 'Satisfied', 'Very satisfied'] },
-  { code: 'CES1', text: 'Ease of resolving your request', type: 'CES',
+  { code: 'CES1', text: 'Ease of resolving your request', type: 'Single Select', customScoreType: 'ces',
     options: ['Very difficult', 'Difficult', 'Somewhat difficult', 'Neutral', 'Somewhat easy', 'Easy', 'Very easy'] },
   { code: 'R1', text: 'Likelihood of referring a colleague', type: 'Single Select', customScoreType: 'nps',
     options: Array.from({ length: 11 }, (_, i) => String(i)), answerScores: Array.from({ length: 11 }, (_, i) => i) },
@@ -40,7 +40,9 @@ function driverSources(surveyId: number, airline: boolean) {
   const survey = getQuestionsBySurvey(surveyId);
   const extra = driverExamples(surveyId);
   return {
-    base: airline ? airlineQuestions(AIRLINE_DRIVER_NAMES) : adaptHeatmapQuestions(survey),
+    base: airline ? airlineQuestions(AIRLINE_DRIVER_NAMES) : adaptHeatmapQuestions(survey).map(source => ({
+      ...source, options: source.options.map((option, index) => ({ ...option, score: option.score ?? index + 1 })),
+    })),
     extra: adaptHeatmapQuestions(extra),
     metadata: [...survey, ...extra],
   };
@@ -107,7 +109,7 @@ export function preparedDriverData(config: DriverAnalysisWidgetConfig, scoring: 
   const questions = config.drivers.map(driver => catalog.find(choice => choice.outcome.rowId === driver.id)?.outcome);
   if (questions.some(question => !question)) return null;
   const driverQuestions = questions.filter((question): question is DriverOutcome => question !== undefined);
-  const driverRules = driverQuestions.map(question => config.driverScoring?.[question.rowId] ?? driverDefaultScoring(question, 'mean'));
+  const driverRules = driverQuestions.map(question => driverDefaultScoring(question, 'mean'));
   const scoreByOption = new Map(sources.flatMap(q => q.options.map(o => [o.id, o.score] as const)));
   // Keep the original paired responses stable when adding new example questions.
   const baseResponses = airline ? airlineDemoResponses(base) : createHeatmapResponses(base);

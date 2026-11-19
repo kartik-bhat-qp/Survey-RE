@@ -14,13 +14,13 @@ interface Props {
 
 export function DriverQuestionPicker({ choices, selected, multiple = false, onChange }: Props) {
   const label = multiple ? 'Driver questions' : 'Primary question';
-  const options = choices.map(({ code, outcome, metric }) => ({
+  const options = choices.map(({ code, outcome }) => ({
     value: outcome.rowId,
-    label: `${code} · ${outcome.label}${metric === 'mean' ? '' : ' (' + metric.toUpperCase() + ')'}`,
+    label: `${code} · ${outcome.label}`,
     disabled: multiple && selected.length >= 10 && !selected.includes(outcome.rowId),
   }));
   const current = options.filter(option => selected.includes(option.value));
-  return <WuCombobox
+  return <><WuCombobox
     Label={label} labelPosition="top" aria-label={label} variant="outlined" enableSearch
     multiple={multiple} data={options} accessorKey={{ value: 'value', label: 'label' }}
     placeholder={multiple ? 'Select up to 10 driver questions' : 'Select a primary question'}
@@ -30,5 +30,5 @@ export function DriverQuestionPicker({ choices, selected, multiple = false, onCh
       const ids = items.filter(Boolean).map(option => option.value);
       if (ids.length <= 10) queueMicrotask(() => onChange(ids));
     }}
-  />;
+  />{multiple && <p aria-live="polite">{selected.length} of 10 drivers selected. Each matrix row counts as one driver.</p>}</>;
 }

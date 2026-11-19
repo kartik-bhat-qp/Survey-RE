@@ -25,7 +25,11 @@ export function DriverQuestionTable({ surveyId, questions, choices, primary, sel
     idsByPicker.set(pickerId, available);
     if (!available.length) {
       reasons[pickerId] = multiple && ids.includes(primary ?? '')
-        ? 'Already selected as the primary question.' : 'Choose a question with an ordered score scale.';
+        ? 'Already selected as the primary question.' : questions.find(q => q.id === pickerId)?.type === 'Text'
+          ? 'Text questions need a numeric encoding rule before driver analysis.'
+          : questions.find(q => q.id === pickerId)?.type === 'Multiple Select'
+            ? 'Multiple Select questions need a rule for combining answers before driver analysis.'
+            : 'Choose a single-answer or rating question with at least two answer values.';
     } else if (available.every(id => selected.includes(id))) {
       checked.push(pickerId);
     } else if (multiple && new Set([...selected, ...available]).size > 10) {
@@ -51,6 +55,6 @@ export function DriverQuestionTable({ surveyId, questions, choices, primary, sel
     onSelectQuestion={q => onChange(idsByPicker.get(q.id) ?? [])}
     onToggleQuestion={(q, include) => {
       const ids = idsByPicker.get(q.id) ?? [];
-      onChange(include ? [...new Set([...selected, ...ids])] : selected.filter(id => !ids.includes(id)));
+      onChange(include ? [...new Set([...selected, ...ids])].slice(0, 10) : selected.filter(id => !ids.includes(id)));
     }} />;
 }

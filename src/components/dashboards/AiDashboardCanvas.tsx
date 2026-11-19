@@ -37,7 +37,7 @@ import type { AmChartTypography } from '@/components/charts/amcharts/theme';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
-import { stackLayoutSingleColumn } from '@/lib/ai-dashboard-layout';
+import { stackLayoutSingleColumn, enforceFullWidthWidgets } from '@/lib/ai-dashboard-layout';
 import { adaptHeatmapQuestions, createDefaultAdvancedHeatmap, type AdvancedHeatmapConfig } from '@/data/advanced-heatmap';
 import { getAdvancedHeatmapQuestions } from '@/data/mock-survey-questions';
 import { BuiltWidgetCard } from './ai-builder/BuiltWidgetCard';
@@ -76,14 +76,14 @@ const CHART_BODY_FONT_SIZE_BY_DESIGN_SIZE: Record<string, number> = {
 };
 
 function renderResizeHandle(
-  _axis: ResizeHandleAxis,
+  axis: ResizeHandleAxis,
   ref: React.Ref<HTMLSpanElement>
 ): React.ReactElement {
   return (
     <span
       ref={ref}
-      className={`react-resizable-handle react-resizable-handle-se ${styles.resizeHandle}`}
-      aria-label="Resize widget"
+      className={`react-resizable-handle react-resizable-handle-${axis} ${styles.resizeHandle}`}
+      aria-label={axis === 's' ? "Resize widget height" : "Resize widget"}
     >
       <span className="wm-resize" />
     </span>
@@ -172,6 +172,8 @@ export function AiDashboardCanvas({
   useEffect(() => {
     try { discardRetiredHeatMapCollections(window.localStorage); } catch { /* Read-only/blocked storage does not affect fixed widgets. */ }
   }, []);
+  const fullWidthIds = useMemo(() => new Set([...AI_DASHBOARD_WIDGETS, ...addedWidgets]
+    .filter(widget => widget.type === 'driver-analysis').map(widget => widget.id)), [addedWidgets]);
   const displayLayout = useMemo(() => {
     const layout = [...desktopLayout];
     for (const widget of [...advancedHeatmaps, ...builtWidgets]) {
@@ -180,8 +182,8 @@ export function AiDashboardCanvas({
         layout.push({ i: widget.id, x: 0, y: bottom, w: DASHBOARD_DEFAULT_WIDGET_W, h: DASHBOARD_DEFAULT_WIDGET_H, minW: 2, minH: 4 });
       }
     }
-    return isMobile ? stackLayoutSingleColumn(layout) : layout;
-  }, [isMobile, desktopLayout, advancedHeatmaps, builtWidgets]);
+    return isMobile ? stackLayoutSingleColumn(layout) : enforceFullWidthWidgets(layout, fullWidthIds, AI_DASHBOARD_GRID_COLS);
+  }, [isMobile, desktopLayout, advancedHeatmaps, builtWidgets, fullWidthIds]);
   const widgetById = useMemo(
     () =>
       new Map(
@@ -208,11 +210,11 @@ export function AiDashboardCanvas({
             x: 0,
             y: nextY,
             w: DASHBOARD_DEFAULT_WIDGET_W,
-            h: DASHBOARD_DEFAULT_WIDGET_H,
+            h: widget.type === 'driver-analysis' ? 11 : DASHBOARD_DEFAULT_WIDGET_H,
             minW: 2,
             minH: 4,
           };
-          nextY += DASHBOARD_DEFAULT_WIDGET_H;
+          nextY += item.h;
           return item;
         }),
       ];
@@ -236,9 +238,9 @@ export function AiDashboardCanvas({
   const handleLayoutChange = useCallback(
     (nextLayout: Layout) => {
       if (isMobile) return;
-      setDesktopLayout(nextLayout);
+      setDesktopLayout(enforceFullWidthWidgets(nextLayout, fullWidthIds, AI_DASHBOARD_GRID_COLS));
     },
-    [isMobile]
+    [isMobile, fullWidthIds]
   );
 
   const notifyChartsResize = useCallback(() => {
@@ -268,9 +270,10 @@ export function AiDashboardCanvas({
 
   const saveLayout = useCallback((layout: Layout) => {
     if (isMobile || readOnly) return;
-    setDesktopLayout(layout);
-    try { localStorage.setItem(layoutStorageKey, JSON.stringify(layout.map(({ i, x, y, w, h }) => ({ i, x, y, w, h })))); } catch { /* Layout remains available for this session. */ }
-  }, [isMobile, readOnly, layoutStorageKey]);
+    const constrained = enforceFullWidthWidgets(layout, fullWidthIds, AI_DASHBOARD_GRID_COLS);
+    setDesktopLayout(constrained);
+    try { localStorage.setItem(layoutStorageKey, JSON.stringify(constrained.map(({ i, x, y, w, h }) => ({ i, x, y, w, h })))); } catch { /* Layout remains available for this session. */ }
+  }, [isMobile, readOnly, layoutStorageKey, fullWidthIds]);
 
   useEffect(() => {
     const element = canvasRef.current;
@@ -480,6 +483,8 @@ export function AiDashboardCanvas({
                   insightCount={insightThreads[widget.id]?.items.length ?? 0}
                   onOpenInsights={readOnly ? undefined : () => setActiveInsightWidgetId(widget.id)}
                   driverAnalysis={widget.driverAnalysis}
+                  dashboardDesign={dashboardDesign}
+                  typography={chartTypography}
                 />
               ) : <>
               <DashboardWidgetCard

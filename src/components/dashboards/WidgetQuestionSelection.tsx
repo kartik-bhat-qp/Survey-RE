@@ -194,7 +194,7 @@ export function WidgetQuestionSelection({
       {
         accessorKey: 'type',
         header: 'Type',
-        cell: ({ row }) => <span>{row.original.type}</span>,
+        cell: ({ row }) => <span>{row.original.type === 'NPS' ? 'Net Promoter Score' : row.original.type === 'Rank order' ? 'Rank Order' : row.original.type}</span>,
         enableSorting: true,
         size: 140,
       },
