@@ -92,7 +92,7 @@ export function formatRating(value: number | null, scoring: KpiScoring) {
   return value.toFixed(scoring.precision) + (percent ? '%' : '');
 }
 
-export function ratingRange(question: DriverOutcome, scoring: KpiScoring) {
+export function ratingRange(question: DriverOutcome, scoring: KpiScoring): [number, number] {
   if (scoring.metric === 'nps' || (scoring.metric === 'ces' && scoring.cesCalculation === 'net-easy')) return [-100, 100];
   if (scoring.metric === 'csat' || (scoring.metric === 'ces' && scoring.cesCalculation === 'percent-easy')) return [0, 100];
   const scores = question.answers.flatMap(answer => outcomeValue(scoring, answer.score) ?? []);

@@ -1,8 +1,8 @@
 .widget {
   container-type: inline-size;
-  height: 100%;
+  height: auto;
   min-height: 0;
-  overflow: auto;
+  overflow: visible;
   color: #29394d;
   font-size: clamp(13px, var(--dashboard-widget-body-size, 13px), 17px);
   line-height: 1.35;
@@ -92,15 +92,47 @@
 .modeToggle button, .resetButton { padding: 7px 14px; border: 1px solid #bdcbd9; border-radius: 4px; background: white; color: #24496c; font: inherit; cursor: pointer; }
 .modeToggle button[aria-pressed="true"] { color: white; background: var(--driver-accent, #245b92); border-color: var(--driver-accent, #245b92); }
 .modeToggle button:focus-visible, .resetButton:focus-visible { outline: 2px solid #245b92; outline-offset: 2px; }
-.predictPanels { display: grid; grid-template-columns: minmax(180px, .7fr) minmax(0, 1.3fr); gap: 24px; }
-.predictCard { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 18px; border: 1px solid #d8e3ed; background: #f7fafc; border-radius: 6px; min-width: 0; overflow-wrap: anywhere; }
-.predictValue { font-size: 2.3em; color: #17365e; line-height: 1.2; }
-.predictCard p { margin: 4px 0; font-size: 13px; line-height: 1.5; }
-.resetButton { margin-top: 8px; }
-.scenarioControls { min-width: 0; }
-.scenarioControls h4 { margin: 0 0 12px; font-size: 15px; }
-.scenarioRow { display: grid; gap: 6px; padding: 10px 0; border-bottom: 1px solid #e0e6ed; }
-.scenarioName { overflow-wrap: anywhere; font-weight: 500; }
-.scenarioValues { font-size: 12px; color: #566979; }
-.scenarioRow input { width: 100%; min-width: 0; margin: 4px 0; accent-color: #245b92; }
-@container (max-width: 650px) { .predictPanels { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
+.predictPanels { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 24px; }
+.predictPane { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.predictCard { display: flex; flex-direction: column; gap: 10px; padding: 18px; background: #f7fafc; border: 1px solid #e0e7ef; border-radius: 4px; overflow-wrap: anywhere; }
+.predictLabel { color: #566979; font-size: 13px; font-weight: 500; }
+.predictValueRow { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; }
+.predictValue { font-size: 2.5em; color: #17365e; line-height: 1.15; }
+.predictLift { font-size: 14px; font-weight: 500; }
+.predictMeta, .predictionNote { color: #566979; font-size: 12px; line-height: 1.5; }
+.predictionNote { margin: 0; }
+.liftUp { color: #21734a; }
+.liftDown { color: #b43535; }
+.liftFlat { color: #66778a; }
+.npsScale { display: grid; gap: 8px; }
+.npsTicks { display: flex; justify-content: space-between; color: #566979; font-size: 12px; }
+.npsTrack { position: relative; height: 18px; background: #f7fafc; border: 1px solid #dbe3ed; margin-inline: 2px; }
+.npsZero { border-left: 1px dashed #a8b8cb; position: absolute; top: 0; bottom: 0; }
+.npsBaseMarker, .npsPredMarker { position: absolute; top: -3px; bottom: -3px; width: 2px; transform: translateX(-1px); background: #8296ad; }
+.npsPredMarker { background: var(--driver-accent, #245b92); }
+.npsBar { position: absolute; top: 3px; bottom: 3px; background: currentColor; opacity: .8; }
+.npsLegend { display: flex; gap: 18px; color: #566979; font-size: 12px; }
+.npsLegend span { display: flex; align-items: center; gap: 6px; }
+.npsLegend i { width: 12px; height: 2px; background: #8296ad; }
+.npsLegend span:last-child i { background: var(--driver-accent, #245b92); }
+.recommendation { border-top: 1px solid #e0e6ed; padding-top: 12px; overflow-wrap: anywhere; }
+.recommendation p { margin: 6px 0 0; line-height: 1.5; }
+.rangeWarning { margin: 0; color: #9b3c1d; }
+.resetButton { align-self: flex-start; display: flex; align-items: center; gap: 6px; }
+.simPane { min-width: 0; border-left: 1px solid #e0e6ed; padding-left: 20px; }
+.simRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, .65fr) minmax(70px, .3fr); gap: 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid #e5ebf1; }
+.simHead { color: #566979; font-size: 12px; font-weight: 500; padding-top: 0; }
+.simHead > :last-child { text-align: right; }
+.simDriver { display: flex; gap: 8px; align-items: center; min-width: 0; overflow-wrap: anywhere; }
+.simDriver small { display: block; color: #566979; font-size: 12px; margin-top: 4px; }
+.driverDot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink); flex: none; }
+.simSlider { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.simSlider input { accent-color: var(--driver-accent, #245b92); width: 100%; min-width: 0; margin: 0; cursor: pointer; }
+.simDelta { flex: none; width: 3.5em; text-align: right; font-size: 12px; color: #566979; }
+.simContrib { text-align: right; font-weight: 500; }
+.simPane > .predictionNote { margin-top: 14px; }
+@container (max-width: 750px) { .predictPanels { grid-template-columns: minmax(0, 1fr); gap: 22px; } .simPane { border: 0; padding: 0; } }
+@container (max-width: 380px) { .simRow { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 10px; } .simDriver { grid-column: 1 / -1; } .simHead { display: none; } }
+
+.settingsDialog > section { overflow-y: auto; }
+.settingsDialog > section > .widget { flex: none; }

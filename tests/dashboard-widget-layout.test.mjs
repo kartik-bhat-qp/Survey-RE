@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AI_DASHBOARD_WIDGETS, AI_DASHBOARD_LAYOUT, createDashboardLayout } from '../src/data/mock-ai-widgets.ts';
-import { stackLayoutSingleColumn, enforceFullWidthWidgets } from '../src/lib/ai-dashboard-layout.ts';
+import { stackLayoutSingleColumn, enforceFullWidthWidgets, contentHeightToGridRows } from '../src/lib/ai-dashboard-layout.ts';
 import { heatMapWidgetStorageKey, discardRetiredHeatMapCollections } from '../src/data/heat-map-baseline.ts';
 
 test('driver widgets fill a dedicated row while ordinary widgets retain their two-column layout', () => {
@@ -9,7 +9,7 @@ test('driver widgets fill a dedicated row while ordinary widgets retain their tw
   const driver = AI_DASHBOARD_LAYOUT.find(item => item.i === 'w-driver-analysis');
   assert.equal(driver.x, 0); assert.equal(driver.w, 12);
   assert.equal(driver.minW, 12); assert.equal(driver.maxW, 12);
-  assert.deepEqual(driver.resizeHandles, ['s']);
+  assert.deepEqual(driver.resizeHandles, []); assert.equal(driver.isResizable,false);
   for (const item of AI_DASHBOARD_LAYOUT.filter(item => item.i !== driver.i)) {
     assert.equal(item.w, 6); assert.equal(item.minW, 2); assert.equal(item.h, 8);
   }
@@ -41,4 +41,16 @@ test('retirement removes only obsolete dynamic heat-map records and keeps fixed 
   const storage = { get length() { return values.size; }, key(index) { return [...values.keys()][index] ?? null; }, removeItem(key) { values.delete(key); } };
   discardRetiredHeatMapCollections(storage);
   assert.deepEqual([...values.keys()], [fixed,'unrelated-app','survey-re:dashboard:2:sharing']);
+});
+
+
+test('automatic driver height replaces old allocations and stacks mobile widgets without overlap', () => {
+  const heights = { driver: contentHeightToGridRows(1100, 320, 12) };
+  const layout = [{i:'first',x:0,y:0,w:6,h:8},{i:'driver',x:6,y:8,w:6,h:4},{i:'last',x:0,y:16,w:6,h:8}];
+  const desktop = enforceFullWidthWidgets(layout,new Set(['driver']),12,{driver:contentHeightToGridRows(1100,45,20)});
+  assert.equal(desktop[1].h,18); assert.equal(desktop[1].isResizable,false);
+  assert.deepEqual(desktop[1].resizeHandles,[]);
+  const mobile = stackLayoutSingleColumn(desktop,heights);
+  assert.deepEqual(mobile.map(item=>[item.y,item.h]),[[0,1],[1,4],[5,1]]);
+  assert.equal(contentHeightToGridRows(500,45,20),8);
 });

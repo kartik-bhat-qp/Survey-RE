@@ -18,6 +18,7 @@ function solve(gram: number[][], rhs: number[], indices: number[]): number[] | n
   return a.map(row => row[a.length]);
 }
 
+/** Separate linear model used only for KPI-unit what-if estimates. */
 export function fitDriverModel(rows: number[][], count: number) {
   if (!count || count > 10) return { error: 'Select between one and ten drivers for this analysis.' } as const;
   if (rows.length <= count + 1) return { error: 'Too few complete responses to fit this model.' } as const;
@@ -29,30 +30,71 @@ export function fitDriverModel(rows: number[][], count: number) {
   const all = rhs.map((_, i) => i);
   const slopes = solve(gram, rhs, all);
   if (!slopes) return { error: 'These drivers overlap exactly. Remove a redundant driver.' } as const;
-  const subsetCount = 2 ** count;
-  const r2 = Array<number>(subsetCount).fill(0);
-  const sizes = Array<number>(subsetCount).fill(0);
-  for (let mask = 1; mask < subsetCount; mask++) {
-    const indices = all.filter(j => mask & (1 << j));
-    const beta = solve(gram, rhs, indices);
-    if (!beta) return { error: 'The selected drivers cannot be fitted reliably.' } as const;
-    r2[mask] = beta.reduce((sum, b, j) => sum + b * rhs[indices[j]], 0) / products[0][0];
-    sizes[mask] = indices.length;
-  }
-  const explained = r2[subsetCount - 1];
-  const factorial = [1];
-  for (let n = 1; n <= count; n++) factorial.push(n * factorial[n - 1]);
-  const drivers = all.map(j => {
-    let share = 0;
-    for (let mask = 0; mask < subsetCount; mask++) {
-      if (mask & (1 << j)) continue;
-      const k = sizes[mask];
-      const weight = factorial[k] * factorial[count - k - 1] / factorial[count];
-      share += weight * (r2[mask | (1 << j)] - r2[mask]);
-    }
-    return { index: j, mean: means[j + 1], slope: slopes[j],
-      importance: explained > 1e-10 ? Math.max(0, share / explained * 100) : null,
-      correlation: rhs[j] / Math.sqrt(products[0][0] * gram[j][j]) };
-  });
+  const explained = Math.max(0, Math.min(1, slopes.reduce((sum, beta, j) => sum + beta * rhs[j], 0) / products[0][0]));
+  const drivers = all.map(j => ({ index: j, mean: means[j + 1], slope: slopes[j] }));
   return { baseline: means[0], explained, drivers } as const;
+}
+
+/** Combine bounded driver shifts without changing the fitted model or observed baseline. */
+export function predictDriverScenario(
+  model: { baseline: number; drivers: { index: number; mean: number; slope: number }[] },
+  shifts: Readonly<Record<number, number>>,
+  ranges: readonly (readonly [number, number])[],
+) {
+  const drivers = model.drivers.map(driver => {
+    const [min, max] = ranges[driver.index];
+    const requested = shifts[driver.index] ?? 0;
+    const target = Math.max(min, Math.min(max, driver.mean + (Number.isFinite(requested) ? requested : 0)));
+    const shift = target - driver.mean;
+    return { ...driver, target, shift, contribution: driver.slope * shift };
+  });
+  const change = drivers.reduce((sum, driver) => sum + driver.contribution, 0);
+  return { drivers, change, estimate: model.baseline + change };
+}
+
+/** Average ranks for tied values; ranks are one-based. */
+export function averageRanks(values: number[]): number[] {
+  const order = values.map((value, index) => ({ value, index })).sort((a, b) => a.value - b.value);
+  const ranks = Array<number>(values.length);
+  for (let start = 0; start < order.length;) {
+    let end = start + 1;
+    while (end < order.length && order[end].value === order[start].value) end++;
+    const rank = (start + 1 + end) / 2;
+    for (let j = start; j < end; j++) ranks[order[j].index] = rank;
+    start = end;
+  }
+  return ranks;
+}
+
+/** Spearman rho is Pearson correlation of average ranks, including tied responses. */
+export function spearmanCorrelation(x: number[], y: number[]): number | null {
+  if (x.length !== y.length || x.length < 2 || [...x, ...y].some(value => !Number.isFinite(value))) return null;
+  const rx = averageRanks(x), ry = averageRanks(y);
+  const mean = (x.length + 1) / 2;
+  let covariance = 0, xx = 0, yy = 0;
+  for (let i = 0; i < x.length; i++) {
+    const dx = rx[i] - mean, dy = ry[i] - mean;
+    covariance += dx * dy; xx += dx * dx; yy += dy * dy;
+  }
+  if (!xx || !yy) return null;
+  return Math.max(-1, Math.min(1, covariance / Math.sqrt(xx * yy)));
+}
+
+/** Diagnose uses pairwise rank associations on one shared complete-case cohort. */
+export function analyzeSpearmanDrivers(rows: number[][], count: number) {
+  if (!count || count > 10) return { error: 'Select between one and ten drivers for this analysis.' } as const;
+  if (rows.length < 2) return { error: 'Too few complete responses to calculate Spearman correlation.' } as const;
+  if (rows.some(row => row.length !== count + 1 || row.some(value => !Number.isFinite(value))))
+    return { error: 'Analysis requires a valid numeric outcome and every selected driver.' } as const;
+  const outcomes = rows.map(row => row[0]);
+  if (new Set(outcomes).size < 2) return { error: 'The primary outcome is constant. Spearman correlation is unavailable.' } as const;
+  return {
+    baseline: outcomes.reduce((sum, value) => sum + value, 0) / rows.length,
+    drivers: Array.from({ length: count }, (_, index) => {
+      const values = rows.map(row => row[index + 1]);
+      const correlation = spearmanCorrelation(outcomes, values);
+      return { index, mean: values.reduce((sum, value) => sum + value, 0) / rows.length,
+        correlation, importance: correlation === null ? null : Math.abs(correlation) };
+    }),
+  } as const;
 }

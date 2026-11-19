@@ -85,7 +85,7 @@ export function createDashboardLayout(widgets: readonly AiWidgetConfig[]): Layou
       w: fullWidth ? AI_DASHBOARD_GRID_COLS : DASHBOARD_DEFAULT_WIDGET_W,
       h: fullWidth ? 11 : DASHBOARD_DEFAULT_WIDGET_H,
       minW: fullWidth ? AI_DASHBOARD_GRID_COLS : 2,
-      ...(fullWidth ? { maxW: AI_DASHBOARD_GRID_COLS, resizeHandles: ['s'] as ('s')[] } : {}),
+      ...(fullWidth ? { maxW: AI_DASHBOARD_GRID_COLS, isResizable: false, resizeHandles: [] } : {}),
       minH: 4,
     };
     x += item.w;

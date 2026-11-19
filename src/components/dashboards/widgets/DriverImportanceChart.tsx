@@ -54,7 +54,7 @@ export function DriverImportanceChart({ points, cutoff, yMax, active, onActive, 
       min: 0, max: 100, strictMinMax: true, maxPrecision: 0, renderer: xRenderer,
     }));
     const yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
-      min: 0, max: yMax, strictMinMax: true, maxPrecision: 0, numberFormat: "#'%'", renderer: yRenderer,
+      min: 0, max: yMax, strictMinMax: true, maxPrecision: 2, numberFormat: "0.0", renderer: yRenderer,
     }));
     xRenderer.grid.template.setAll({ stroke: am5.color('#cbd6df'), strokeOpacity: 0.3 });
     yRenderer.grid.template.setAll({ stroke: am5.color('#cbd6df'), strokeOpacity: 0.3 });

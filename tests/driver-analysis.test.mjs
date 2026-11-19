@@ -1,22 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fitDriverModel } from '../src/data/driver-model.ts';
+import { fitDriverModel, predictDriverScenario, averageRanks, spearmanCorrelation, analyzeSpearmanDrivers } from '../src/data/driver-model.ts';
 import { defaultKpiScoring, validateKpiScoring } from '../src/data/mock-text-ai-kpi-by-theme.ts';
 
 const rows = [-1, 0, 1].flatMap(x => [-1, 0, 1].map(z => [4 + 2*x - z, x, z]));
 const near = (a, b) => assert.ok(Math.abs(a-b) < 1e-9);
-test('a fitted outcome has stable relative importance and signed single-driver effects', () => {
+test('the separate prediction model has a stable baseline and signed single-driver effects', () => {
   const fit = fitDriverModel(rows, 2);
   near(fit.baseline, 4); near(fit.explained, 1);
-  near(fit.drivers[0].importance, 80); near(fit.drivers[1].importance, 20);
-  near(fit.drivers[1].slope, -1); assert.ok(fit.drivers[1].correlation < 0);
+  near(fit.drivers[0].slope, 2);
+  near(fit.drivers[1].slope, -1);
   const reversed = fitDriverModel(rows.map(([y,x,z]) => [y,z,x]), 2);
-  near(reversed.drivers[0].importance, fit.drivers[1].importance);
+  near(reversed.drivers[0].slope, fit.drivers[1].slope);
 });
 test('insufficient data, constant outcomes and overlapping predictors have distinct errors', () => {
   assert.match(fitDriverModel([], 1).error, /Too few/);
   assert.match(fitDriverModel(rows.map(([,x,z])=>[1,x,z]),2).error,/constant/);
   assert.match(fitDriverModel(rows.map(([y,x])=>[y,x,x]),2).error,/overlap/);
+});
+test('multiple driver shifts combine signed effects, respect source bounds and reset to baseline', () => {
+  const fit = fitDriverModel(rows, 2);
+  const ranges = [[-1, 1], [-1, 1]];
+  const scenario = predictDriverScenario(fit, {0:.5,1:-.5}, ranges);
+  near(scenario.change,1.5); near(scenario.estimate,5.5);
+  assert.deepEqual(scenario.drivers.map(d=>d.contribution),[1,.5]);
+  const bounded = predictDriverScenario(fit,{0:10,1:-10},ranges);
+  assert.deepEqual(bounded.drivers.map(d=>d.target),[1,-1]);
+  near(predictDriverScenario(fit,{},ranges).estimate,fit.baseline);
+  near(fit.baseline,4);
 });
 test('configuration uses only the selected scale, supports explicit exclusions and rejects a missing score', () => {
   const scale = [1,2,3,4];
@@ -78,4 +89,34 @@ test('single-answer choices remain selectable and driver scores stay numeric', a
   assert.ok(prepared.rows.every(row=>row[1]>=1 && row[1]<=5));
   const legacy = preparedDriverData({...config,driverScoring:{[predictor.outcome.rowId]:driverDefaultScoring(predictor.outcome,'csat')}},scoring);
   assert.deepEqual(legacy.rows,prepared.rows);
+});
+
+
+test('Spearman uses average ranks for ties and recognizes nonlinear monotonic association', () => {
+  assert.deepEqual(averageRanks([4, 2, 2, 1]), [4, 2.5, 2.5, 1]);
+  near(spearmanCorrelation([1,2,2,3],[1,2,3,4]), Math.sqrt(0.9));
+  near(spearmanCorrelation([1,2,3,4],[1,4,9,16]), 1);
+  near(spearmanCorrelation([1,2,3,4],[16,9,4,1]), -1);
+  near(spearmanCorrelation([1,2,3,4],[2,4,1,3]), 0);
+  assert.equal(spearmanCorrelation([1,1,1],[1,2,3]),null);
+  assert.equal(spearmanCorrelation([1],[2]),null);
+  assert.equal(spearmanCorrelation([1,2],[2,NaN]),null);
+});
+
+test('Spearman diagnosis remains valid for overlapping drivers that cannot support Predict', () => {
+  const duplicateRows = [[1,1,1],[2,2,2],[3,3,3],[4,4,4]];
+  const diagnosis = analyzeSpearmanDrivers(duplicateRows,2);
+  near(diagnosis.drivers[0].correlation,1); near(diagnosis.drivers[1].importance,1);
+  assert.match(fitDriverModel(duplicateRows,2).error,/overlap/);
+  const mixed = analyzeSpearmanDrivers([[1,1,7],[2,2,7],[3,3,7]],2);
+  near(mixed.drivers[0].correlation,1); assert.equal(mixed.drivers[1].correlation,null);
+  assert.equal(mixed.drivers[1].importance,null);
+});
+
+test('Spearman strengths retain direction separately and do not normalize to 100 percent', () => {
+  const result = analyzeSpearmanDrivers([[1,1,4],[2,2,3],[3,3,2],[4,4,1]],2);
+  near(result.drivers[0].importance,1);near(result.drivers[1].importance,1);
+  near(result.drivers[1].correlation,-1);
+  assert.match(analyzeSpearmanDrivers([],11).error,/one and ten/);
+  assert.match(analyzeSpearmanDrivers([[1,1],[1,2]],1).error,/constant/);
 });

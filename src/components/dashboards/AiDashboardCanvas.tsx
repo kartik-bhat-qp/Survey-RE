@@ -37,7 +37,7 @@ import type { AmChartTypography } from '@/components/charts/amcharts/theme';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useBiLicenseRestrictions } from '@/hooks/useBiLicenseRestrictions';
-import { stackLayoutSingleColumn, enforceFullWidthWidgets } from '@/lib/ai-dashboard-layout';
+import { stackLayoutSingleColumn, enforceFullWidthWidgets, contentHeightToGridRows } from '@/lib/ai-dashboard-layout';
 import { adaptHeatmapQuestions, createDefaultAdvancedHeatmap, type AdvancedHeatmapConfig } from '@/data/advanced-heatmap';
 import { getAdvancedHeatmapQuestions } from '@/data/mock-survey-questions';
 import { BuiltWidgetCard } from './ai-builder/BuiltWidgetCard';
@@ -159,6 +159,7 @@ export function AiDashboardCanvas({
   );
   const previousGlobalRefreshVersion = useRef(globalInsightRefreshVersion);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [driverHeights, setDriverHeights] = useState<Record<string, number>>({});
   const resizingLayout = useRef<Layout | null>(null);
   const previousAdvancedCount = useRef(advancedHeatmaps.length);
   useEffect(() => {
@@ -174,6 +175,29 @@ export function AiDashboardCanvas({
   }, []);
   const fullWidthIds = useMemo(() => new Set([...AI_DASHBOARD_WIDGETS, ...addedWidgets]
     .filter(widget => widget.type === 'driver-analysis').map(widget => widget.id)), [addedWidgets]);
+  // Observe natural card height, independent of its current grid allocation.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    let frame = 0;
+    const cards = [...fullWidthIds].flatMap(id => {
+      const element = [...canvas.querySelectorAll<HTMLElement>('[data-widget-id]')]
+        .find(node => node.dataset.widgetId === id)?.querySelector<HTMLElement>('article');
+      return element ? [{ id, element }] : [];
+    });
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const next = Object.fromEntries(cards.map(({ id, element }) => [id, Math.ceil(element.getBoundingClientRect().height)]));
+        setDriverHeights(current => Object.keys(next).length === Object.keys(current).length &&
+          Object.entries(next).every(([id, height]) => current[id] === height) ? current : next);
+      });
+    };
+    const observer = new ResizeObserver(measure);
+    cards.forEach(({ element }) => observer.observe(element));
+    measure();
+    return () => { cancelAnimationFrame(frame); observer.disconnect(); };
+  }, [fullWidthIds, isMobile]);
   const displayLayout = useMemo(() => {
     const layout = [...desktopLayout];
     for (const widget of [...advancedHeatmaps, ...builtWidgets]) {
@@ -182,8 +206,13 @@ export function AiDashboardCanvas({
         layout.push({ i: widget.id, x: 0, y: bottom, w: DASHBOARD_DEFAULT_WIDGET_W, h: DASHBOARD_DEFAULT_WIDGET_H, minW: 2, minH: 4 });
       }
     }
-    return isMobile ? stackLayoutSingleColumn(layout) : enforceFullWidthWidgets(layout, fullWidthIds, AI_DASHBOARD_GRID_COLS);
-  }, [isMobile, desktopLayout, advancedHeatmaps, builtWidgets, fullWidthIds]);
+    const heights = Object.fromEntries(Object.entries(driverHeights).map(([id, height]) => [id,
+      contentHeightToGridRows(height, isMobile ? MOBILE_GRID_ROW_HEIGHT : GRID_ROW_HEIGHT,
+        isMobile ? MOBILE_GRID_MARGIN[1] : GRID_MARGIN[1]),
+    ]));
+    return isMobile ? stackLayoutSingleColumn(enforceFullWidthWidgets(layout, fullWidthIds, 1), heights)
+      : enforceFullWidthWidgets(layout, fullWidthIds, AI_DASHBOARD_GRID_COLS, heights);
+  }, [isMobile, desktopLayout, advancedHeatmaps, builtWidgets, fullWidthIds, driverHeights]);
   const widgetById = useMemo(
     () =>
       new Map(
@@ -471,7 +500,7 @@ export function AiDashboardCanvas({
           if (!widget) return null;
 
           return (
-            <div key={widget.id} className={styles.gridItem} data-widget-id={widget.id}>
+            <div key={widget.id} className={`${styles.gridItem} ${widget.type === 'driver-analysis' ? styles.autoHeightGridItem : ''}`} data-widget-id={widget.id}>
               {widget.questionStack ? <DashboardWidgetCard title={widget.title} showInsights={false} shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle}><QuestionStackWidget config={widget.questionStack} dashboardFilter={dashboardFilter}/></DashboardWidgetCard> : !renderWidget && (widget.type === 'segment-trend' || widget.type === 'scoring-trend' || widget.type === 'response-timeline') ? <TimeSeriesDashboardCard key={`${dashboardId}:${dashboardTabId}:${widget.id}`} kind={widget.type} title={widget.title} widgetId={widget.id} dashboardDesign={dashboardDesign} selection={dashboardFilter?.dateSelection} dashboardFilter={dashboardFilter} dataSlicers={dataSlicers} typography={chartTypography} storageKey={`survey-re:time-series:${dashboardId}:${dashboardTabId}:${widget.id}`} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} readOnly={readOnly} onOpenInsights={readOnly ? undefined : () => setActiveInsightWidgetId(widget.id)} insightCount={insightThreads[widget.id]?.items.length ?? 0} /> : widget.type === 'heat-map' && !renderWidget ? <HeatMapBaseline dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} dashboardDesign={dashboardDesign} dashboardFilter={dashboardFilter} key={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} embedded readOnly={readOnly} initialName={widget.title} storageKey={heatMapWidgetStorageKey(dashboardId, dashboardTabId, widget.id)} /> : widget.type === 'wordcloud' ? <WordCloudDashboardCard shared={readOnly} dragHandleClassName={isMobile || readOnly ? undefined : styles.dragHandle} /> : widget.type === 'driver-analysis' ? (
                 <DriverAnalysisDashboardCard
                   key={`${dashboardId}:${dashboardTabId}:${widget.id}`}
