@@ -52,7 +52,7 @@ export interface TextAiDashboard {
 export const MOCK_TEXT_AI_DASHBOARDS: TextAiDashboard[] = [
   ...TEXT_AI_LANGUAGE_DEMOS.map((demo): TextAiDashboard => ({
     id: demo.id,
-    name: `${demo.title} (${demo.language.name})`,
+    name: `${demo.title} (${demo.outputLanguage.name})`,
     creationDate: '2026-11-23T09:00:00.000Z',
     commentCount: demo.comments.length,
     status: 'Completed',
@@ -63,7 +63,7 @@ export const MOCK_TEXT_AI_DASHBOARDS: TextAiDashboard[] = [
       dashboardLayout: 'Combined dashboard',
       dataSourceName: demo.title,
       dataSourceType: 'Survey',
-      outputLanguage: 'English (en)',
+      outputLanguage: `${demo.outputLanguage.name} (${demo.outputLanguage.code})`,
       questions: [{ code: 'Q1', text: demo.question, context: '' }],
       themeModelingPrompt: '',
     },

@@ -87,7 +87,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [hasTextViewer, setHasTextViewer] = useState(false);
-  const [showOriginalResponses, setShowOriginalResponses] = useState(true);
+  const [showTranslatedResponses, setShowTranslatedResponses] = useState(true);
   const [shareCanvas, setShareCanvas] = useState<TextAiSharedCanvasState | null>(null);
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
   const [addedTopicSegmentWidgets, setAddedTopicSegmentWidgets] = useState<
@@ -278,9 +278,9 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         processedResponseIds={processedResponseIds}
         hasSamplePendingResponses={!languageDemo}
         responseLanguage={languageDemo && hasTextViewer ? {
-          name: languageDemo.language.name,
-          showOriginal: showOriginalResponses,
-          onToggle: () => setShowOriginalResponses(previous => !previous),
+          name: languageDemo.outputLanguage.name,
+          showTranslation: showTranslatedResponses,
+          onToggle: () => setShowTranslatedResponses(previous => !previous),
         } : undefined}
         onProcessResponses={handleProcessResponses}
       />
@@ -299,7 +299,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         addedSubthemeTrendWidgets={addedSubthemeTrendWidgets}
         themePreferences={themePreferences}
         design={design}
-        showOriginalResponses={languageDemo ? showOriginalResponses : undefined}
+        showOriginalResponses={languageDemo ? !showTranslatedResponses : undefined}
         onShareStateChange={setShareCanvas}
         onTextViewerPresenceChange={setHasTextViewer}
       />

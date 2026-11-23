@@ -91,8 +91,7 @@ export function TextAiAnalysisWidgetCard({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const originalResponses = showOriginalResponses ?? true;
-  const language = widget.responseLanguage;
-  const responseLanguage = language && (originalResponses ? language.code : "en");
+  const outputLanguageCode = widget.outputLanguage?.code;
   const localPageSize = PAGE_SIZE_OPTIONS[3];
   const pageSize = settings
     ? (PAGE_SIZE_OPTIONS.find(
@@ -105,7 +104,12 @@ export function TextAiAnalysisWidgetCard({
   const filteredRows = useMemo(() => {
     const term = search.trim().toLowerCase();
     const sourceRows = limitTextAiWidgetItems(widget.rows, topN)
-      .filter((row) => matchesTextAiFilters(row, responseFilters))
+      .filter((row) => matchesTextAiFilters(
+        outputLanguageCode && row.translatedValue
+          ? { ...row, value: `${row.value}\n${row.translatedValue}` }
+          : row,
+        responseFilters,
+      ))
       .map((row) => originalResponses || !row.translatedValue ? row : {
         ...row,
         value: textAiSharedResponseValue(row, originalResponses),
@@ -124,7 +128,7 @@ export function TextAiAnalysisWidgetCard({
         row.insight.toLowerCase().includes(term) ||
         row.tags.some((tag) => tag.toLowerCase().includes(term)),
     );
-  }, [search, topN, widget.rows, responseFilters, s.dateOrder, originalResponses]);
+  }, [search, topN, widget.rows, responseFilters, s.dateOrder, originalResponses, outputLanguageCode]);
 
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSizeNum));
   const safePage = Math.min(page, pageCount - 1);
@@ -143,7 +147,9 @@ export function TextAiAnalysisWidgetCard({
         header: "Responses",
         enableSorting: true,
         cell: ({ row }) => (
-          <span className={styles.valueCell} lang={responseLanguage}>{row.original.value}</span>
+          <span className={styles.valueCell} lang={outputLanguageCode && (
+            !originalResponses && row.original.translatedValue ? outputLanguageCode : "en"
+          )}>{row.original.value}</span>
         ),
       },
       {
@@ -198,7 +204,7 @@ export function TextAiAnalysisWidgetCard({
         cell: ({ row }) => <span>{row.original.collectedOn ?? "—"}</span>,
       },
     ],
-    [s.highlightSentiment, responseLanguage],
+    [s.highlightSentiment, originalResponses, outputLanguageCode],
   );
   const visibleColumns = useMemo(
     () => s.columns.map((label) => columns[byColumn[label]]).filter(Boolean),

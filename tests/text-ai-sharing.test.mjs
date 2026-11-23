@@ -6,9 +6,9 @@ import { dashboardSharingStorageKey } from '../src/data/mock-shared-urls.ts';
 import { getTextAiLanguageDemo, TEXT_AI_LANGUAGE_DEMOS, textAiLanguageDemoRows, textAiLanguageDemoSummary } from '../src/data/mock-text-ai-language-demos.ts';
 
 test('shared Text Viewer selects the stored translation or the exact original response', () => {
-  const source = { id: 4, value: 'bessere Kommunikation', translatedValue: 'Better communication', tags: ['communication'] };
-  assert.equal(textAiSharedResponseValue(source, false), 'Better communication');
-  assert.equal(textAiSharedResponseValue(source, true), 'bessere Kommunikation');
+  const source = { id: 4, value: 'Better communication', translatedValue: 'bessere Kommunikation', tags: ['communication'] };
+  assert.equal(textAiSharedResponseValue(source, false), 'bessere Kommunikation');
+  assert.equal(textAiSharedResponseValue(source, true), 'Better communication');
   assert.equal(textAiSharedResponseValue({ value: 'English response' }, false), 'English response');
   assert.equal(textAiSharedResponseValue({ value: 'No translation', translatedValue: '' }, false), 'No translation');
   assert.deepEqual(source.tags, ['communication']);
@@ -22,8 +22,13 @@ test('TextAI previews are opt-in and use dashboard-scoped links and sharing sett
   assert.notEqual(textAiSharingStorageKey(42), dashboardSharingStorageKey(42));
 });
 
-test('language demos pair every original response with its English translation', () => {
-  assert.deepEqual(TEXT_AI_LANGUAGE_DEMOS.map(demo => demo.language.code), ['es', 'fr', 'de']);
+test('language demos pair English originals with translations in their assigned output language', () => {
+  assert.deepEqual(TEXT_AI_LANGUAGE_DEMOS.map(demo => demo.outputLanguage.code), ['es', 'fr', 'de']);
+  assert.deepEqual(TEXT_AI_LANGUAGE_DEMOS.map(demo => textAiLanguageDemoRows(demo)[0].value), [
+    'I could pay without creating an account. I finished my purchase in under two minutes.',
+    'The agent solved my problem on the first call and explained what to do next.',
+    'My laptop was ready on the first day, and all the important programs were already installed.',
+  ]);
   for (const demo of TEXT_AI_LANGUAGE_DEMOS) {
     assert.equal(getTextAiLanguageDemo(demo.id), demo);
     assert.ok(demo.comments.length > 1);
@@ -31,7 +36,7 @@ test('language demos pair every original response with its English translation',
     assert.equal(rows.length, demo.comments.length);
     rows.forEach((row, index) => {
       assert.equal(textAiSharedResponseValue(row, true), demo.comments[index].original);
-      assert.equal(textAiSharedResponseValue(row, false), demo.comments[index].english);
+      assert.equal(textAiSharedResponseValue(row, false), demo.comments[index].translation);
       assert.notEqual(row.value, row.translatedValue);
     });
     assert.equal(textAiLanguageDemoSummary(demo).question, demo.question);

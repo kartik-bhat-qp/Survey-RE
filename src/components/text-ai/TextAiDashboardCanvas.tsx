@@ -439,7 +439,7 @@ export function TextAiDashboardCanvas({
     id: 'language-viewer',
     question: languageDemo.question,
     rows: textAiLanguageDemoRows(languageDemo),
-    responseLanguage: languageDemo.language,
+    outputLanguage: languageDemo.outputLanguage,
   }] : adaptAnalysisWidgets(
     getTextAiDashboardWidgets(dashboardId),
     selectedQuestion,

@@ -28,7 +28,7 @@ export interface TextAiAnalysisWidget {
   id: string;
   question: string;
   rows: TextAiAnalysisRow[];
-  responseLanguage?: TextAiResponseLanguage;
+  outputLanguage?: TextAiResponseLanguage;
 }
 
 export function textAiSharedResponseValue(row: TextAiAnalysisRow, showOriginalResponses: boolean): string {

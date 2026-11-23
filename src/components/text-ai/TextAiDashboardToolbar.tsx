@@ -52,7 +52,7 @@ interface TextAiDashboardToolbarProps {
   segmentFilters?: TextAiSegmentFilterState;
   processedResponseIds?: string[];
   hasSamplePendingResponses?: boolean;
-  responseLanguage?: { name: string; showOriginal: boolean; onToggle: () => void };
+  responseLanguage?: { name: string; showTranslation: boolean; onToggle: () => void };
   onProcessResponses?: (filters: TextAiSegmentFilterState, responseIds: string[]) => void;
 }
 
@@ -197,9 +197,9 @@ export function TextAiDashboardToolbar({
               className={styles.iconButton}
               variant="iconOnly"
               size="sm"
-              aria-label={`Show original ${responseLanguage.name} responses`}
-              aria-pressed={responseLanguage.showOriginal}
-              title={responseLanguage.showOriginal ? 'Show English translations' : `Show original ${responseLanguage.name} responses`}
+              aria-label={`Show ${responseLanguage.name} translations`}
+              aria-pressed={responseLanguage.showTranslation}
+              title={responseLanguage.showTranslation ? 'Show original English responses' : `Show ${responseLanguage.name} translations`}
               onClick={responseLanguage.onToggle}
               Icon={<span className="wm-translate" aria-hidden />}
             />}
