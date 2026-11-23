@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { TextAiWidgetMenu } from '@/components/text-ai/TextAiWidgetMenu';
 import {
   TEXT_AI_SUBTHEME_TREND_PERIODS,
@@ -18,6 +18,7 @@ import styles from './TextAiSubthemeTrendWidget.module.css';
 interface TextAiSubthemeTrendWidgetProps {
   question: string;
   onDelete?: () => void;
+  readOnly?: boolean;
 }
 
 const CHART_WIDTH = 800;
@@ -66,6 +67,7 @@ function pointPosition(
 export function TextAiSubthemeTrendWidget({
   question,
   onDelete,
+  readOnly,
 }: TextAiSubthemeTrendWidgetProps) {
   const [display, setDisplay] = useState<TextAiWidgetDisplayState>(() =>
     createTextAiTrendWidgetDisplayState()
@@ -91,13 +93,14 @@ export function TextAiSubthemeTrendWidget({
     [hiddenSeriesIds, visibleSeries]
   );
 
-  useEffect(() => {
+  function changeDisplay(nextDisplay: TextAiWidgetDisplayState): void {
+    setDisplay(nextDisplay);
     setHiddenSeriesIds((current) => {
-      const validIds = new Set(visibleSeries.map((series) => series.id));
+      const validIds = new Set(applyTextAiWidgetDisplay(TEXT_AI_SUBTHEME_TREND_SERIES, nextDisplay).map((series) => series.id));
       const next = new Set([...current].filter((id) => validIds.has(id)));
       return next.size === current.size ? current : next;
     });
-  }, [visibleSeries]);
+  }
 
   function toggleSeriesVisibility(seriesId: string): void {
     setHiddenSeriesIds((current) => {
@@ -131,10 +134,11 @@ export function TextAiSubthemeTrendWidget({
         </div>
         <TextAiWidgetMenu
           widgetTitle={`${question} Sub-theme trend`}
+          preview={readOnly}
           topN={display.value === 'custom' ? DEFAULT_TEXT_AI_TREND_WIDGET_TOP_N : display.value}
           displayState={display}
           customItems={customItems}
-          onDisplayChange={setDisplay}
+          onDisplayChange={changeDisplay}
           onDelete={onDelete}
         />
       </header>

@@ -77,6 +77,7 @@
 
 .tableWrap {
   -webkit-overflow-scrolling: touch;
+  container-type: inline-size;
   flex: 1;
   min-height: 0;
   overflow: auto;
@@ -411,6 +412,67 @@
 .baseNote{font-size:11px;color:#74808c;padding:8px 16px;margin:0;border-top:1px solid #eee;}
 
 .parentHeading{background:#edf2f7!important;color:var(--dashboard-accent)!important;padding:10px 16px!important;text-align:left!important;font-weight:500;}
+
+.freezeFirstColumn {
+  --first-column-width: clamp(6rem, 36cqi, 18rem);
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table.freezeFirstColumn thead th,
+.table.freezeFirstColumn tbody td {
+  box-sizing: border-box;
+  border-inline-end: 0;
+  border-block-end: 0;
+}
+
+.table.freezeFirstColumn thead th:not(:first-child) {
+  width: auto;
+}
+
+.table.freezeFirstColumn thead th:first-child {
+  width: var(--first-column-width);
+}
+
+.freezeFirstColumn thead th:first-child,
+.freezeFirstColumn .topicCell,
+.freezeFirstColumn .subtopicCell {
+  inset-inline-start: 0;
+  position: sticky;
+  z-index: 2;
+}
+
+.table.freezeFirstColumn:not(.freezeOverall) thead th:first-child,
+.table.freezeFirstColumn:not(.freezeOverall) .topicCell,
+.table.freezeFirstColumn:not(.freezeOverall) .subtopicCell,
+.table.freezeFirstColumn.freezeOverall .overallColumn {
+  border-inline-end: 1px solid #d8dde6;
+}
+
+.table.freezeOverall:not(.tableOverallOnly) thead .overallColumn {
+  width: clamp(4.5rem, 25cqi, 7rem);
+}
+
+.freezeOverall .overallColumn {
+  inset-inline-start: var(--first-column-width);
+  position: sticky;
+  z-index: 1;
+}
+
+.freezeOverall tbody .overallColumn {
+  background: #fff;
+}
+
+.freezeOverall .subtopicRow:hover .overallColumn {
+  background: #f0f7fc;
+}
+
+.freezeFirstColumn .parentHeadingLabel {
+  display: inline-block;
+  inset-inline-start: 16px;
+  max-inline-size: calc(var(--first-column-width) - 2rem);
+  position: sticky;
+}
 
 button.percentage{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;}
 

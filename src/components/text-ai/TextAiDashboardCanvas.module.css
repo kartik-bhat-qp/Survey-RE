@@ -64,6 +64,11 @@
   user-select: none;
 }
 
+.sharedCanvas .gridItem :global(.text-ai-widget-drag-handle) {
+  cursor: default;
+  user-select: auto;
+}
+
 .gridItem:global(.react-draggable-dragging)
   :global(.text-ai-widget-drag-handle) {
   cursor: grabbing;

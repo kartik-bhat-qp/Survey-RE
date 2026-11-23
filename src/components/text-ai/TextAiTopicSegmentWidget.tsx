@@ -238,7 +238,7 @@ function TopicSegmentRow({
         )}
       </td>
       {showOverall ? (
-        <td>
+        <td className={styles.overallColumn}>
           <SegmentCell
             settings={settings}
             cell={row.overall}
@@ -553,18 +553,22 @@ export function TextAiTopicSegmentWidgetCard({
 
       <div className={styles.tableWrap}>
         <table
-          className={`${styles.table} ${overallOnly ? styles.tableOverallOnly : ""}`}
+          className={[
+            styles.table,
+            overallOnly && styles.tableOverallOnly,
+            s.freezeFirstColumn && styles.freezeFirstColumn,
+            s.freezeFirstColumn && s.freezeOverall && showOverall && styles.freezeOverall,
+          ].filter(Boolean).join(" ")}
         >
           <thead>
             <tr>
               <th>Theme</th>
               {showOverall ? (
                 <th
-                  className={
-                    showChiSquare && !activeSegments.has("overall")
-                      ? styles.columnHeaderDisabled
-                      : undefined
-                  }
+                  className={[
+                    styles.overallColumn,
+                    showChiSquare && !activeSegments.has("overall") && styles.columnHeaderDisabled,
+                  ].filter(Boolean).join(" ")}
                 >
                   <span className={styles.headerWithToggle}>
                     {showChiSquare ? (
@@ -633,7 +637,7 @@ export function TextAiTopicSegmentWidgetCard({
                         colSpan={visibleSegmentKeys.length + 1}
                         className={styles.parentHeading}
                       >
-                        {row.parentTopic}
+                        <span className={styles.parentHeadingLabel}>{row.parentTopic}</span>
                       </th>
                     </tr>
                   )}

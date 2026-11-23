@@ -5,6 +5,7 @@ import {
   defaultTextAiWidgetSettings,
   normalizeTextAiWidgetSettings,
   saveTextAiWidgetSettings,
+  TEXT_AI_WIDGET_SETTINGS_EVENT,
   type TextAiSettingsKind,
   type TextAiWidgetSettings,
 } from "@/data/text-ai-widget-settings";
@@ -66,6 +67,7 @@ export function useTextAiWidgetSettings(
         saved.current = next;
         setSettings(next);
         setError("");
+        if (persist) window.dispatchEvent(new CustomEvent(TEXT_AI_WIDGET_SETTINGS_EVENT));
       } catch {
         setError(
           "Settings could not be saved. Your last saved settings are unchanged.",

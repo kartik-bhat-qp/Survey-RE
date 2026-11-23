@@ -12,6 +12,7 @@
 }
 
 .content {
+  --sentiment-column-width: 14rem;
   color: #545e6b;
   display: flex;
   flex-direction: column;
@@ -23,22 +24,6 @@
   width: 100%;
 }
 
-.reviewHeading p {
-  color: #6b7280;
-  flex-shrink: 0;
-  font-size: 13px;
-  line-height: 20px;
-  margin: 0;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-}
-
-.field > span,
 .assignmentLabel {
   color: #545e6b;
   font-size: 12px;
@@ -54,26 +39,13 @@
   min-height: 0;
 }
 
-.reviewHeadingRow {
-  align-items: flex-end;
+.reviewControls {
+  align-items: center;
   display: flex;
+  flex-wrap: wrap;
   flex-shrink: 0;
-  gap: 16px;
+  gap: 4px 16px;
   justify-content: space-between;
-}
-
-.reviewHeading {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.reviewHeading h3 {
-  color: #253449;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 22px;
-  margin: 0;
 }
 
 .modalSelectAll {
@@ -111,6 +83,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .responseCard {
@@ -148,7 +121,8 @@
   align-items: flex-start;
   display: grid;
   gap: 20px;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) var(--sentiment-column-width);
+  padding-inline-end: 10px;
 }
 
 .responseIdentity {
@@ -178,16 +152,6 @@
   margin: 0;
 }
 
-.responseSentimentControl {
-  align-items: flex-end;
-  display: flex;
-  gap: 7px;
-}
-
-.responseSentimentField {
-  width: 14rem;
-}
-
 .subthemeAssignments {
   background: #fafbfc;
   border-radius: 2px;
@@ -202,7 +166,7 @@
   align-items: center;
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(0, 1fr) 14rem;
+  grid-template-columns: minmax(0, 1fr) var(--sentiment-column-width);
 }
 
 .subthemeName {
@@ -214,24 +178,13 @@
   white-space: nowrap;
 }
 
-.subthemeControl,
-.disabledSubthemeControl {
+.sentimentControl {
   display: block;
-  width: 14rem;
+  min-width: 0;
 }
 
-.disabledSubthemeControl {
-  border-radius: 3px;
-  cursor: help;
-}
-
-.disabledSubthemeControl:focus-visible {
-  outline: 2px solid #1686e4;
-  outline-offset: 2px;
-}
-
-.subthemeSelect {
-  width: 14rem;
+.sentimentSelect {
+  width: 100%;
 }
 
 .noSubthemes {
@@ -239,59 +192,36 @@
   font-size: 12px;
 }
 
-.bulkBar {
+.bulkRow {
   align-items: center;
-  background: #f7faff;
-  border: 1px solid #cbdcf7;
-  border-radius: 3px;
-  display: flex;
+  display: grid;
   flex-shrink: 0;
-  gap: 16px;
-  justify-content: space-between;
-  min-height: 58px;
-  padding: 9px 12px;
+  gap: 8px 16px;
+  grid-template-columns: minmax(0, 1fr) var(--sentiment-column-width);
+  overflow-y: auto;
+  padding-inline: 17px 27px;
+  scrollbar-gutter: stable;
 }
 
-.changeStats {
+.bulkDetails {
   align-items: center;
-  color: #697584;
+  color: #545e6b;
   display: flex;
   flex-wrap: wrap;
   font-size: 12px;
-  gap: 8px 16px;
+  gap: 2px 12px;
 }
 
-.changeStats span {
-  white-space: nowrap;
-}
-
-.changeStats strong {
-  color: #1b3380;
-  font-size: 14px;
+.bulkDetails strong {
+  color: #253449;
   font-weight: 600;
-  margin-right: 3px;
 }
 
-.bulkControls {
-  align-items: center;
-  display: flex;
-  flex-shrink: 0;
-  gap: 8px;
-}
-
-.bulkSentimentField {
-  display: block;
-  width: 14rem;
-}
-
-.srOnly {
-  clip: rect(0, 0, 0, 0);
-  clip-path: inset(50%);
-  height: 1px;
-  overflow: hidden;
-  position: absolute;
-  white-space: nowrap;
-  width: 1px;
+.confirmationMessage {
+  color: #253449;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
 }
 
 @media (max-width: 720px) {
@@ -300,28 +230,18 @@
     min-height: 24rem;
   }
 
-  .reviewHeadingRow,
-  .bulkBar {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
   .responseHeader,
-  .subthemeRow {
+  .subthemeRow,
+  .bulkRow {
     grid-template-columns: 1fr;
   }
 
-  .responseSentimentControl,
-  .bulkControls {
-    align-items: stretch;
+  .responseHeader {
+    padding-inline: 10px;
   }
 
-  .responseSentimentField,
-  .subthemeControl,
-  .disabledSubthemeControl,
-  .subthemeSelect,
-  .bulkSentimentField {
-    width: 100%;
+  .bulkRow {
+    padding-inline: 27px;
   }
 
   .subthemeAssignments {

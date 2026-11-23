@@ -904,7 +904,7 @@ export default function TextAiThemeConfigurationPage({
 
   const questionResponses = useMemo<TextAiSentimentEditableResponse[]>(
     () => {
-      const ordinaryResponses = Array.from({ length: questionVariant.responseCount }, (_, index) => {
+      const ordinaryResponses = Array.from({ length: questionVariant.responseCount }, (_, index): TextAiSentimentEditableResponse => {
         const sampleIndex = index % RAW_RESPONSES.length;
         const response = RAW_RESPONSES[sampleIndex];
         const responseId = index + 1;
@@ -928,26 +928,14 @@ export default function TextAiThemeConfigurationPage({
             tone: item.tone,
           };
         });
-        const edit =
-          responseSentimentEdits[`${selectedQuestionId}:${responseId}`];
         const assignmentKey = `${tagScope}${responseId}`;
         const assignedSubthemes = tagDrafts[assignmentKey]?.after ?? savedTagAssignments[assignmentKey] ?? (isCensoredDemo ? RESTAURANT_RESPONSES[index].subthemes : subthemes);
-        const editedSubthemes = assignedSubthemes.map((subtheme) => ({
-          ...subtheme,
-          label: codeFrameLabels.get(subtheme.id) ?? subtheme.label,
-          sentiment:
-            edit?.subthemeSentiments[subtheme.id] ?? subtheme.sentiment,
-        }));
         return {
           id: responseId,
           text: isCensoredDemo ? RESTAURANT_RESPONSES[index].text : questionVariant.responseTexts[sampleIndex] ?? response.text,
-          responseSentimentOverride: edit?.responseSentiment ?? null,
-          responseSentiment:
-            edit?.responseSentiment ??
-            (editedSubthemes.length === 1
-              ? editedSubthemes[0].sentiment
-              : 'neutral'),
-          subthemes: editedSubthemes,
+          responseSentimentOverride: null,
+          responseSentiment: assignedSubthemes.length === 1 ? assignedSubthemes[0].sentiment : 'neutral',
+          subthemes: assignedSubthemes,
         };
       });
       const assignments = { ...savedTagAssignments, ...Object.fromEntries(Object.entries(tagDrafts).map(([key, draft]) => [key, draft.after])) };
@@ -955,10 +943,23 @@ export default function TextAiThemeConfigurationPage({
       const examples = createConfigurationResponseExamples(ensureOutlierTheme(baseThemeGroups, true, censoredEnabled)).map(response => ({ ...response,
         subthemes: assignments[outlierResponseKey(selectedQuestionId, response.id)] ?? response.subthemes.filter(tag => codeFrameLabels.has(tag.id)),
       }));
-      return normalizeCensoredSentiments(applyCensoredClassificationPreference([...ordinaryResponses, ...[...extra, ...examples].map(response => ({ ...response,
-        subthemes: response.subthemes.map(tag => ({ ...tag, label: codeFrameLabels.get(tag.id) ?? tag.label,
-          sentiment: responseSentimentEdits[`${selectedQuestionId}:${response.id}`]?.subthemeSentiments[tag.id] ?? tag.sentiment })),
-      }))], censoredEnabled));
+      const responses = [...ordinaryResponses, ...extra, ...examples].map(response => {
+        const edit = responseSentimentEdits[`${selectedQuestionId}:${response.id}`];
+        const subthemes = response.subthemes.map(tag => ({
+          ...tag,
+          label: codeFrameLabels.get(tag.id) ?? tag.label,
+          sentiment: edit?.responseSentiment ?? edit?.subthemeSentiments[tag.id] ?? tag.sentiment,
+        }));
+        return {
+          ...response,
+          responseSentimentOverride: edit ? edit.responseSentiment : response.responseSentimentOverride,
+          responseSentiment: edit
+            ? edit.responseSentiment ?? (subthemes.length === 1 ? subthemes[0].sentiment : 'neutral')
+            : response.responseSentiment,
+          subthemes,
+        };
+      });
+      return normalizeCensoredSentiments(applyCensoredClassificationPreference(responses, censoredEnabled));
     },
     [
       dashboard?.syncedCensoredResponses,
@@ -1315,10 +1316,11 @@ export default function TextAiThemeConfigurationPage({
   function saveResponseSentiments(
     drafts: Record<number, TextAiSentimentDraft>
   ): void {
+    const changes = Object.entries(drafts);
     setResponseSentimentEdits((current) => ({
       ...current,
       ...Object.fromEntries(
-        Object.entries(drafts).map(([responseId, draft]) => [
+        changes.map(([responseId, draft]) => [
           `${selectedQuestionId}:${responseId}`,
           draft,
         ])
@@ -1327,8 +1329,8 @@ export default function TextAiThemeConfigurationPage({
     setSentimentEditorOpen(false);
     setSelectedResponseIds(new Set());
     setSentimentUpdateMessage(
-      `Sentiment updated for ${selectedResponses.length.toLocaleString()} ${
-        selectedResponses.length === 1 ? 'response' : 'responses'
+      `Sentiment updated for ${changes.length.toLocaleString()} ${
+        changes.length === 1 ? 'response' : 'responses'
       }.`
     );
   }

@@ -43,6 +43,7 @@ interface TextAiDashboardToolbarProps {
   name: string;
   onNameChange: (name: string) => void;
   onAddWidget?: () => void;
+  onShare?: () => void;
   onOpenSettings?: () => void;
   onOpenThemeConfiguration?: () => void;
   questions: TextAiDashboardQuestion[];
@@ -59,6 +60,7 @@ export function TextAiDashboardToolbar({
   responseFilter=EMPTY_TEXT_AI_FILTER, onResponseFilterChange,
   onNameChange,
   onAddWidget,
+  onShare,
   onOpenSettings,
   onOpenThemeConfiguration,
   questions,
@@ -200,7 +202,7 @@ export function TextAiDashboardToolbar({
               variant="iconOnly"
               size="sm"
               aria-label="Share dashboard"
-              onClick={() => showToast({ message: 'Share dashboard', variant: 'success' })}
+              onClick={onShare}
               Icon={<span className="wm-share" />}
             />
             <WuMenu

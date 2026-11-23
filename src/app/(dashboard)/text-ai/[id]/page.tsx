@@ -4,7 +4,7 @@ import { CENSORED_CONFIGURATION_EVENT, isCensoredSubthemesEnabled, syncCensoredR
 import { parseCodeFrames } from '@/data/text-ai-code-frame-drafts';
 import { MOCK_TEXT_AI_PENDING_RESPONSES } from '@/data/mock-text-ai-pending-responses';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import { EMPTY_TEXT_AI_FILTER, type TextAiResponseFilter } from '@/data/text-ai-widget-settings';
 import Link from 'next/link';
 import { DEFAULT_DASHBOARD_DESIGN, getTextAiDashboardDesign, saveTextAiDashboardDesign, type DashboardDesign } from '@/data/dashboard-design';
@@ -13,6 +13,9 @@ import { TextAiAddWidgetModal } from '@/components/text-ai/TextAiAddWidgetModal'
 import { TextAiDashboardCanvas } from '@/components/text-ai/TextAiDashboardCanvas';
 import { TextAiDashboardSettingsModal } from '@/components/text-ai/TextAiDashboardSettingsModal';
 import { TextAiDashboardToolbar } from '@/components/text-ai/TextAiDashboardToolbar';
+import { TextAiShareModal } from '@/components/text-ai/TextAiShareModal';
+import { useTextAiDashboardShare } from '@/hooks/useTextAiDashboardShare';
+import type { TextAiSharedCanvasState, TextAiSharedDashboard } from '@/data/text-ai-sharing';
 import type { TextAiAnalysisQuestion } from '@/data/mock-text-ai-questions';
 import type { TextAiWidgetChartTypeId } from '@/data/mock-text-ai-widget-chart-types';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -80,6 +83,9 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
     return saved;
   }
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [hasTextViewer, setHasTextViewer] = useState(false);
+  const [shareCanvas, setShareCanvas] = useState<TextAiSharedCanvasState | null>(null);
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
   const [addedTopicSegmentWidgets, setAddedTopicSegmentWidgets] = useState<
     TextAiTopicSegmentWidget[]
@@ -136,6 +142,18 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
       window.removeEventListener('storage', refreshPreferences);
     };
   }, [numericId]);
+
+  const questionIndex = availableQuestions.findIndex(question => question.id === selectedQuestion.id);
+  const censoredSubthemesEnabled = isCensoredSubthemesEnabled(dashboard);
+  const syncedCensoredResponses = dashboard?.syncedCensoredResponses;
+  const shareDashboard = useMemo<TextAiSharedDashboard | null>(() => collectionReady && shareCanvas ? ({
+    dashboardId: numericId, name, selectedQuestion, questionIndex, design, themePreferences,
+    responseFilter, widgets: addedWidgets, comparisons: addedTopicSegmentWidgets.map(({ id, question }) => ({ id, question })),
+    kpis: addedKpiWidgets, trends: addedSubthemeTrendWidgets, censoredSubthemesEnabled, syncedCensoredResponses,
+    canvas: shareCanvas,
+  }) : null, [addedKpiWidgets, addedSubthemeTrendWidgets, addedTopicSegmentWidgets, addedWidgets, censoredSubthemesEnabled,
+    collectionReady, design, name, numericId, questionIndex, responseFilter, selectedQuestion, shareCanvas, syncedCensoredResponses, themePreferences]);
+  const share = useTextAiDashboardShare(numericId, shareDashboard);
 
   if (!dashboard) {
     if (!wick) {
@@ -239,6 +257,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         name={name}
         onNameChange={setName}
         onAddWidget={() => setAddWidgetOpen(true)}
+        onShare={() => setShareOpen(true)}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenThemeConfiguration={() =>
           router.push(`/text-ai/${numericId}/theme-configuration`)
@@ -252,14 +271,12 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
       />
       {collectionError&&<p role="alert">{collectionError}</p>}
       <TextAiDashboardCanvas
-        syncedCensoredResponses={dashboard.syncedCensoredResponses}
-        censoredSubthemesEnabled={isCensoredSubthemesEnabled(dashboard)}
+        syncedCensoredResponses={syncedCensoredResponses}
+        censoredSubthemesEnabled={censoredSubthemesEnabled}
         dashboardId={numericId}
         dashboardFilter={responseFilter}
         selectedQuestion={selectedQuestion}
-        questionIndex={availableQuestions.findIndex(
-          (question) => question.id === selectedQuestion.id
-        )}
+        questionIndex={questionIndex}
         addedWidgets={addedWidgets}
         addedTopicSegmentWidgets={addedTopicSegmentWidgets}
         addedKpiWidgets={addedKpiWidgets}
@@ -267,7 +284,10 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         addedSubthemeTrendWidgets={addedSubthemeTrendWidgets}
         themePreferences={themePreferences}
         design={design}
+        onShareStateChange={setShareCanvas}
+        onTextViewerPresenceChange={setHasTextViewer}
       />
+      {shareOpen && <TextAiShareModal share={share} hasTextViewer={hasTextViewer} onClose={() => setShareOpen(false)} />}
       <TextAiDashboardSettingsModal
         dashboard={currentDashboard}
         design={design}

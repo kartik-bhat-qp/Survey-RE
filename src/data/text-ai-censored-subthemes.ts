@@ -207,18 +207,19 @@ export function getOutlierDashboardRows(responses: TextAiSentimentEditableRespon
   const visible = visibleCensoredResponses(normalizeCensoredSentiments(responses), showCensored);
   const groups = [...RESTAURANT_THEME_GROUPS.filter(group => group.id !== 'outlier'), OUTLIER_THEME_GROUP];
   const parentName = (id: string) => groups.find(group => group.id === id)?.name ?? 'Manually coded';
+  const keys = { 'very-negative': 'veryNegative', negative: 'negative', mixed: 'mixed', neutral: 'neutral', positive: 'positive', 'very-positive': 'veryPositive' } as const;
   const analysisRows: TextAiAnalysisRow[] = visible.map(response => ({
     id: response.id, value: response.text,
     topic: [...new Set(response.subthemes.map(tag => parentName(tag.id.split(':')[0])))].join(', ') || 'Untagged',
     subtopic: response.subthemes.map(tag => tag.label).join(', ') || 'Untagged',
     subtopicTone: !isCensoredResponse(response) && response.subthemes.some(tag => tag.sentiment === 'positive' || tag.sentiment === 'very-positive') ? 'positive' : 'neutral',
+    sentiment: keys[response.responseSentiment],
     insight: '', tags: response.subthemes.map(tag => tag.label), collectedOn: '2026-10-05',
   }));
   const included = visible.filter(response => response.subthemes.some(tag => tag.id.startsWith('outlier:')));
   if (!included.length && !showEmpty) return { sentimentRows: [], comparisonRows: [], analysisRows };
   const distribution = (rows: TextAiSentimentEditableResponse[], subthemeId?: string): TextAiSentimentDistribution => {
     const counts: TextAiSentimentDistribution = { veryNegative: 0, negative: 0, mixed: 0, neutral: 0, positive: 0, veryPositive: 0 };
-    const keys = { 'very-negative': 'veryNegative', negative: 'negative', mixed: 'mixed', neutral: 'neutral', positive: 'positive', 'very-positive': 'veryPositive' } as const;
     const tags = rows.flatMap(response => response.subthemes.filter(tag => subthemeId ? tag.id === subthemeId : tag.id.startsWith('outlier:')));
     for (const tag of tags) counts[keys[tag.sentiment]]++;
     for (const key of Object.keys(counts) as (keyof TextAiSentimentDistribution)[]) counts[key] = tags.length ? counts[key] / tags.length * 100 : 0;

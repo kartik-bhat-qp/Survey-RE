@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { useWickUILib } from '@/components/ui/useWickUILib';
 import styles from './TextAiUpdateSentimentModal.module.css';
 
@@ -37,6 +37,8 @@ export const TEXT_AI_SENTIMENT_OPTIONS: Array<{
 ];
 
 type SentimentOption = (typeof TEXT_AI_SENTIMENT_OPTIONS)[number];
+type SentimentSummary = TextAiAssignedSentiment | 'mixed';
+const MIXED_SENTIMENT_OPTION = { value: 'mixed', label: 'Mixed' } as const;
 
 export interface TextAiSentimentDraft {
   responseSentiment: TextAiAssignedSentiment | null;
@@ -51,8 +53,6 @@ interface TextAiUpdateSentimentModalProps {
 }
 
 const REVIEW_PAGE_SIZE = 10;
-const SUBTHEME_OVERRIDE_TOOLTIP =
-  'Reset response-level sentiment to apply sub-theme-level sentiment for this response.';
 
 export function getSentimentLabel(sentiment: TextAiAssignedSentiment): string {
   return (
@@ -94,6 +94,41 @@ function findSentimentOption(
   );
 }
 
+function summarizeSentiments(sentiments: SentimentSummary[]): SentimentSummary | null {
+  const unique = new Set(sentiments);
+  return unique.size > 1 ? 'mixed' : sentiments[0] ?? null;
+}
+
+function summarizeResponseSentiment(
+  response: TextAiSentimentEditableResponse,
+  draft: TextAiSentimentDraft
+): SentimentSummary {
+  const subthemeSentiments = response.subthemes.map(({ id, sentiment }) =>
+    draft.subthemeSentiments[id] ?? sentiment
+  );
+  return summarizeSentiments(subthemeSentiments) ?? draft.responseSentiment ?? response.responseSentiment;
+}
+
+function getSummaryOption(value: SentimentSummary | null) {
+  return value === 'mixed' ? MIXED_SENTIMENT_OPTION : findSentimentOption(value);
+}
+
+function assignResponseSentiment(
+  response: TextAiSentimentEditableResponse,
+  sentiment: TextAiAssignedSentiment
+): TextAiSentimentDraft {
+  return {
+    responseSentiment: sentiment,
+    subthemeSentiments: Object.fromEntries(
+      response.subthemes.map(({ id }) => [id, sentiment])
+    ),
+  };
+}
+
+function formatCount(count: number, noun: string): string {
+  return `${count.toLocaleString()} ${noun}${count === 1 ? '' : 's'}`;
+}
+
 export function TextAiUpdateSentimentModal({
   open,
   onOpenChange,
@@ -102,14 +137,18 @@ export function TextAiUpdateSentimentModal({
 }: TextAiUpdateSentimentModalProps) {
   const wick = useWickUILib();
   const initialDrafts = useMemo(() => buildDrafts(responses), [responses]);
-  const [bulkSentiment, setBulkSentiment] = useState<SentimentOption | null>(null);
+  const confirmationDescriptionId = useId();
   const [reviewPage, setReviewPage] = useState(0);
   const [drafts, setDrafts] = useState<Record<number, TextAiSentimentDraft>>(
     () => initialDrafts
   );
   const [bulkSelectedResponseIds, setBulkSelectedResponseIds] = useState<Set<number>>(
-    () => new Set(responses.map((response) => response.id))
+    () => new Set()
   );
+  const [bulkChangedResponseIds, setBulkChangedResponseIds] = useState<Set<number>>(
+    () => new Set()
+  );
+  const [confirmingBulkSave, setConfirmingBulkSave] = useState(false);
 
   const reviewPageCount = Math.max(
     1,
@@ -135,24 +174,39 @@ export function TextAiUpdateSentimentModal({
   const someResponsesSelected =
     bulkSelectedResponseIds.size > 0 && !allResponsesSelected;
   const bulkChangeEnabled = bulkSelectedResponseIds.size > 1;
+  const bulkSummary = useMemo(() => {
+    if (!bulkChangeEnabled) return null;
+    const selectedSentiments = responses
+      .filter(({ id }) => bulkSelectedResponseIds.has(id))
+      .map(response => summarizeResponseSentiment(
+        response,
+        drafts[response.id] ?? initialDrafts[response.id]
+      ));
+    return summarizeSentiments(selectedSentiments);
+  }, [bulkChangeEnabled, bulkSelectedResponseIds, drafts, initialDrafts, responses]);
 
-  const changeStats = useMemo(() => {
+  const { changedDrafts, subthemeChanges, selectedSubthemeChanges, hasBulkChanges } = useMemo(() => {
+    const changedDrafts: Record<number, TextAiSentimentDraft> = {};
     let subthemeChanges = 0;
+    let selectedSubthemeChanges = 0;
+    let hasBulkChanges = false;
     responses.forEach((response) => {
       const initial = initialDrafts[response.id];
       const current = drafts[response.id];
-      if (!initial || !current) return;
-      response.subthemes.forEach((subtheme) => {
-        if (
-          initial.subthemeSentiments[subtheme.id] !==
-          current.subthemeSentiments[subtheme.id]
-        ) {
-          subthemeChanges += 1;
-        }
-      });
+      if (!current || current === initial) return;
+      const changes = response.subthemes.filter(({ id }) =>
+        initial.subthemeSentiments[id] !== current.subthemeSentiments[id]
+      ).length;
+      subthemeChanges += changes;
+      if (bulkSelectedResponseIds.has(response.id)) selectedSubthemeChanges += changes;
+      if (changes || initial.responseSentiment !== current.responseSentiment) {
+        changedDrafts[response.id] = current;
+        if (bulkChangedResponseIds.has(response.id)) hasBulkChanges = true;
+      }
     });
-    return { subthemeChanges };
-  }, [drafts, initialDrafts, responses]);
+    return { changedDrafts, subthemeChanges, selectedSubthemeChanges, hasBulkChanges };
+  }, [bulkChangedResponseIds, bulkSelectedResponseIds, drafts, initialDrafts, responses]);
+  const responseChanges = Object.keys(changedDrafts).length;
 
   if (!open || !wick) return null;
 
@@ -163,7 +217,6 @@ export function TextAiUpdateSentimentModal({
     WuModalFooter,
     WuModalHeader,
     WuSelect,
-    WuTooltip,
   } = wick;
 
   function toggleResponseSelection(responseId: number): void {
@@ -187,27 +240,7 @@ export function TextAiUpdateSentimentModal({
   ): void {
     setDrafts((current) => ({
       ...current,
-      [response.id]: {
-        ...current[response.id],
-        responseSentiment: sentiment,
-        subthemeSentiments: Object.fromEntries(
-          response.subthemes.map((subtheme) => [subtheme.id, sentiment])
-        ),
-      },
-    }));
-  }
-
-  function resetResponseSentiment(
-    response: TextAiSentimentEditableResponse
-  ): void {
-    setDrafts((current) => ({
-      ...current,
-      [response.id]: {
-        responseSentiment: null,
-        subthemeSentiments: Object.fromEntries(
-          response.subthemes.map((subtheme) => [subtheme.id, subtheme.sentiment])
-        ),
-      },
+      [response.id]: assignResponseSentiment(response, sentiment),
     }));
   }
 
@@ -216,47 +249,55 @@ export function TextAiUpdateSentimentModal({
     subthemeId: string,
     sentiment: TextAiAssignedSentiment
   ): void {
-    setDrafts((current) => ({
-      ...current,
-      [responseId]: {
-        ...current[responseId],
-        subthemeSentiments: {
-          ...current[responseId]?.subthemeSentiments,
-          [subthemeId]: sentiment,
-        },
-      },
-    }));
-  }
-
-  function applyBulkSentiment(): void {
-    if (!bulkSentiment || !bulkChangeEnabled) return;
     setDrafts((current) => {
-      const next = { ...current };
-      responses.forEach((response) => {
-        if (!bulkSelectedResponseIds.has(response.id)) return;
-        next[response.id] = {
-          ...next[response.id],
-          responseSentiment: bulkSentiment.value,
-          subthemeSentiments: Object.fromEntries(
-            response.subthemes.map((subtheme) => [
-              subtheme.id,
-              bulkSentiment.value,
-            ])
-          ),
-        };
-      });
-      return next;
+      const draft = current[responseId] ?? initialDrafts[responseId];
+      if (draft.subthemeSentiments[subthemeId] === sentiment) return current;
+      return {
+        ...current,
+        [responseId]: {
+          responseSentiment: null,
+          subthemeSentiments: {
+            ...draft.subthemeSentiments,
+            [subthemeId]: sentiment,
+          },
+        },
+      };
     });
   }
 
+  function updateBulkSentiment(sentiment: TextAiAssignedSentiment): void {
+    const affectedResponses = responses.filter(response =>
+      bulkSelectedResponseIds.has(response.id) &&
+      summarizeResponseSentiment(response, drafts[response.id] ?? initialDrafts[response.id]) !== sentiment
+    );
+    if (affectedResponses.length === 0) return;
+
+    setDrafts(current => ({
+      ...current,
+      ...Object.fromEntries(affectedResponses.map(response => [
+        response.id, assignResponseSentiment(response, sentiment),
+      ])),
+    }));
+    setBulkChangedResponseIds(current => new Set([
+      ...current, ...affectedResponses.map(({ id }) => id),
+    ]));
+  }
+
+  function reviewSave(): void {
+    if (hasBulkChanges) {
+      setConfirmingBulkSave(true);
+    } else {
+      onSave(changedDrafts);
+    }
+  }
+
   return (
+    <>
       <WuModal open onOpenChange={onOpenChange} size="lg" className={styles.modal}>
       <WuModalHeader className={styles.modalTitle}>Update sentiment</WuModalHeader>
       <WuModalContent className={styles.content}>
-        <section className={styles.reviewSection} aria-labelledby="review-sentiment-heading">
-          <div className={styles.reviewHeadingRow}>
-            <div className={styles.reviewHeading}>
-              <h3 id="review-sentiment-heading">Review individual assignments</h3>
+        <section className={styles.reviewSection} aria-label="Response assignments">
+          <div className={styles.reviewControls}>
               <label className={styles.modalSelectAll}>
                 <input
                   type="checkbox"
@@ -270,7 +311,6 @@ export function TextAiUpdateSentimentModal({
                   Select all ({responses.length.toLocaleString()} responses)
                 </span>
               </label>
-            </div>
             <nav className={styles.reviewPagination} aria-label="Selected responses pages">
               <span>
                 {reviewStart.toLocaleString()}–{reviewEnd.toLocaleString()} of{' '}
@@ -306,7 +346,6 @@ export function TextAiUpdateSentimentModal({
           >
             {reviewResponses.map((response) => {
               const draft = drafts[response.id] ?? initialDrafts[response.id];
-              const hasResponseOverride = draft.responseSentiment !== null;
               const responseSelected = bulkSelectedResponseIds.has(response.id);
               return (
                 <article
@@ -316,7 +355,7 @@ export function TextAiUpdateSentimentModal({
                   }`}
                   onClick={() => toggleResponseSelection(response.id)}
                   onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
+                    if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
                       event.preventDefault();
                       toggleResponseSelection(response.id);
                     }
@@ -343,37 +382,23 @@ export function TextAiUpdateSentimentModal({
                       </div>
                     </div>
                     <div
-                      className={styles.responseSentimentControl}
+                      className={styles.sentimentControl}
                       onClick={(event) => event.stopPropagation()}
                     >
-                      <label
-                        className={`${styles.field} ${styles.responseSentimentField}`}
-                      >
-                        <span>Response sentiment</span>
-                        <WuSelect
-                          data={TEXT_AI_SENTIMENT_OPTIONS}
-                          accessorKey={{ value: 'value', label: 'label' }}
-                          value={findSentimentOption(draft.responseSentiment)}
-                          placeholder="Select sentiment"
-                          onSelect={(option) => {
-                            if (option && !Array.isArray(option)) {
-                              updateResponseSentiment(
-                                response,
-                                (option as SentimentOption).value
-                              );
-                            }
-                          }}
-                          variant="outlined"
-                        />
-                      </label>
-                      <WuButton
-                        variant="link"
-                        size="sm"
-                        disabled={!hasResponseOverride}
-                        onClick={() => resetResponseSentiment(response)}
-                      >
-                        Reset
-                      </WuButton>
+                      <WuSelect
+                        aria-label={`Response ${response.id} sentiment`}
+                        data={TEXT_AI_SENTIMENT_OPTIONS}
+                        accessorKey={{ value: 'value', label: 'label' }}
+                        value={getSummaryOption(summarizeResponseSentiment(response, draft))}
+                        placeholder="Select sentiment"
+                        onSelect={(option) => {
+                          if (option && !Array.isArray(option)) {
+                            updateResponseSentiment(response, (option as SentimentOption).value);
+                          }
+                        }}
+                        variant="outlined"
+                        className={styles.sentimentSelect}
+                      />
                     </div>
                   </div>
 
@@ -385,49 +410,30 @@ export function TextAiUpdateSentimentModal({
                       response.subthemes.map((subtheme) => {
                         const sentiment =
                           draft.subthemeSentiments[subtheme.id] ?? subtheme.sentiment;
-                        const subthemeSelect = (
-                          <WuSelect
-                            aria-label={`${subtheme.label} sentiment`}
-                            data={TEXT_AI_SENTIMENT_OPTIONS}
-                            accessorKey={{ value: 'value', label: 'label' }}
-                            value={findSentimentOption(sentiment)}
-                            disabled={hasResponseOverride}
-                            onSelect={(option) => {
-                              if (option && !Array.isArray(option)) {
-                                updateSubthemeSentiment(
-                                  response.id,
-                                  subtheme.id,
-                                  (option as SentimentOption).value
-                                );
-                              }
-                            }}
-                            variant="outlined"
-                            className={styles.subthemeSelect}
-                          />
-                        );
                         return (
                           <div className={styles.subthemeRow} key={subtheme.id}>
                             <span className={styles.subthemeName}>{subtheme.label}</span>
                             <span
-                              className={styles.subthemeControl}
+                              className={styles.sentimentControl}
                               onClick={(event) => event.stopPropagation()}
                             >
-                              {hasResponseOverride ? (
-                                <WuTooltip
-                                  content={SUBTHEME_OVERRIDE_TOOLTIP}
-                                  position="top"
-                                >
-                                  <span
-                                    className={styles.disabledSubthemeControl}
-                                    tabIndex={0}
-                                    title={SUBTHEME_OVERRIDE_TOOLTIP}
-                                  >
-                                    {subthemeSelect}
-                                  </span>
-                                </WuTooltip>
-                              ) : (
-                                subthemeSelect
-                              )}
+                              <WuSelect
+                                aria-label={`${subtheme.label} sentiment`}
+                                data={TEXT_AI_SENTIMENT_OPTIONS}
+                                accessorKey={{ value: 'value', label: 'label' }}
+                                value={findSentimentOption(sentiment)}
+                                onSelect={(option) => {
+                                  if (option && !Array.isArray(option)) {
+                                    updateSubthemeSentiment(
+                                      response.id,
+                                      subtheme.id,
+                                      (option as SentimentOption).value
+                                    );
+                                  }
+                                }}
+                                variant="outlined"
+                                className={styles.sentimentSelect}
+                              />
                             </span>
                           </div>
                         );
@@ -442,49 +448,62 @@ export function TextAiUpdateSentimentModal({
           </div>
         </section>
 
-        <section className={styles.bulkBar} aria-label="Bulk sentiment change">
-          <div className={styles.changeStats} aria-live="polite">
-            <span>
-              <strong>{bulkSelectedResponseIds.size.toLocaleString()}</strong> selected
-            </span>
-            <span>
-              <strong>{changeStats.subthemeChanges.toLocaleString()}</strong> sub-theme
-              changes
-            </span>
+        {bulkChangeEnabled && (
+          <div className={styles.bulkRow}>
+            <div className={styles.bulkDetails}>
+              <strong>Bulk update sentiment</strong>
+              <span aria-live="polite">
+                {formatCount(bulkSelectedResponseIds.size, 'response')} selected ·{' '}
+                {formatCount(selectedSubthemeChanges, 'sub-theme change')}
+              </span>
+            </div>
+            <WuSelect
+              aria-label="Bulk update sentiment"
+              data={TEXT_AI_SENTIMENT_OPTIONS}
+              accessorKey={{ value: 'value', label: 'label' }}
+              value={getSummaryOption(bulkSummary)}
+              placeholder="Select sentiment"
+              onSelect={(option) => {
+                if (option && !Array.isArray(option)) {
+                  updateBulkSentiment((option as SentimentOption).value);
+                }
+              }}
+              variant="outlined"
+              className={styles.sentimentSelect}
+            />
           </div>
-          <div className={styles.bulkControls}>
-            <label className={styles.bulkSentimentField}>
-              <span className={styles.srOnly}>Bulk sentiment</span>
-              <WuSelect
-                aria-label="Bulk sentiment"
-                data={TEXT_AI_SENTIMENT_OPTIONS}
-                accessorKey={{ value: 'value', label: 'label' }}
-                value={bulkSentiment}
-                placeholder="Select sentiment"
-                disabled={!bulkChangeEnabled}
-                onSelect={(option) => {
-                  if (option && !Array.isArray(option)) {
-                    setBulkSentiment(option as SentimentOption);
-                  }
-                }}
-                variant="outlined"
-              />
-            </label>
-            <WuButton
-              disabled={!bulkChangeEnabled || !bulkSentiment}
-              onClick={applyBulkSentiment}
-            >
-              Apply
-            </WuButton>
-          </div>
-        </section>
+        )}
       </WuModalContent>
       <WuModalFooter>
         <WuButton variant="secondary" onClick={() => onOpenChange(false)}>
           Cancel
         </WuButton>
-        <WuButton onClick={() => onSave(drafts)}>Save changes</WuButton>
+        <WuButton
+          disabled={responseChanges === 0}
+          onClick={reviewSave}
+        >
+          Save changes
+        </WuButton>
       </WuModalFooter>
     </WuModal>
+    <WuModal
+      open={confirmingBulkSave}
+      onOpenChange={setConfirmingBulkSave}
+      size="sm"
+      aria-describedby={confirmationDescriptionId}
+    >
+      <WuModalHeader className={styles.modalTitle}>Confirm bulk sentiment update</WuModalHeader>
+      <WuModalContent>
+        <p id={confirmationDescriptionId} className={styles.confirmationMessage}>
+          Saving will update sentiment for <strong>{formatCount(responseChanges, 'response')}</strong>{' '}
+          and change <strong>{formatCount(subthemeChanges, 'sub-theme assignment')}</strong>.
+        </p>
+      </WuModalContent>
+      <WuModalFooter>
+        <WuButton variant="secondary" onClick={() => setConfirmingBulkSave(false)}>Back</WuButton>
+        <WuButton onClick={() => onSave(changedDrafts)}>Confirm update</WuButton>
+      </WuModalFooter>
+    </WuModal>
+    </>
   );
 }

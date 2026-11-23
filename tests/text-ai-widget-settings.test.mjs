@@ -40,6 +40,25 @@ test("malformed persisted configuration cannot remove the response column or cre
   for (const v of [null, [], 1, "x"])
     assert.deepEqual(normalize(v, "gauge", "Name"), defaults("gauge", "Name"));
 });
+test("comparison widgets retain an Overall freeze only when both prerequisite settings are enabled", () => {
+  for (const kind of ["comparative-chart", "subtheme-comparative-chart"]) {
+    const initial = normalize({ showOverall: true }, kind, "Comparison");
+    assert.equal(initial.freezeFirstColumn, false);
+    assert.equal(initial.freezeOverall, false);
+
+    const frozen = normalize({
+      ...initial,
+      segments: ["male"],
+      freezeFirstColumn: true,
+      freezeOverall: true,
+    }, kind, "Comparison");
+    assert.equal(frozen.freezeOverall, true);
+    assert.equal(normalize({ ...frozen, freezeFirstColumn: false }, kind, "Comparison").freezeOverall, false);
+    const hidden = normalize({ ...frozen, showOverall: false }, kind, "Comparison");
+    assert.equal(hidden.freezeFirstColumn, true);
+    assert.equal(hidden.freezeOverall, false);
+  }
+});
 test("settings persist independently by dashboard and widget; failed save leaves original untouched", () => {
   const data = new Map();
   const storage = {

@@ -58,6 +58,8 @@ export interface TextAiWidgetSettings {
   maximum: number;
   tooltip: "On hover" | "Always" | "None";
   showOverall: boolean;
+  freezeFirstColumn: boolean;
+  freezeOverall: boolean;
   segments: string[];
   statTesting: boolean;
   showParent: boolean;
@@ -121,6 +123,8 @@ export function defaultTextAiWidgetSettings(
     maximum: 2,
     tooltip: "On hover",
     showOverall: true,
+    freezeFirstColumn: false,
+    freezeOverall: false,
     segments:
       kind === "subtheme-comparative-chart"
         ? []
@@ -258,6 +262,7 @@ export function normalizeTextAiWidgetSettings(
       ),
     ];
   if (!result.showOverall && !result.segments.length) result.showOverall = true;
+  result.freezeOverall = result.freezeOverall && result.freezeFirstColumn && result.showOverall;
   if (typeof input.accent === "string" && /^#[0-9a-f]{6}$/i.test(input.accent))
     result.accent = input.accent;
   if (
@@ -293,6 +298,7 @@ export function normalizeTextAiResponseFilter(
 export function textAiWidgetSettingsKey(dashboard: number, widget: string) {
   return `text-ai-widget-settings:v1:${dashboard}:${encodeURIComponent(widget)}`;
 }
+export const TEXT_AI_WIDGET_SETTINGS_EVENT = 'text-ai-widget-settings-changed';
 export function activeTextAiFilters(
   settings: TextAiWidgetSettings,
   dashboard: TextAiResponseFilter,

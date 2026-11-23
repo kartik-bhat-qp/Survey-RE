@@ -11,9 +11,10 @@ import { StandardLoader } from "@/components/ui/StandardLoader";
 import { TextAiEmergingBadge } from "@/components/text-ai/TextAiEmergingBadge";
 import { TextAiWidgetMenu } from "@/components/text-ai/TextAiWidgetMenu";
 import { useWickUILib } from "@/components/ui/useWickUILib";
-import type {
-  TextAiAnalysisRow,
-  TextAiAnalysisWidget,
+import {
+  textAiSharedResponseValue,
+  type TextAiAnalysisRow,
+  type TextAiAnalysisWidget,
 } from "@/data/mock-text-ai-widget-data";
 import {
   DEFAULT_TEXT_AI_WIDGET_TOP_N,
@@ -45,6 +46,7 @@ const PAGE_SIZE_OPTIONS = [
 interface TextAiAnalysisWidgetProps extends TextAiWidgetSettingsProps {
   widget: TextAiAnalysisWidget;
   onDelete?: () => void;
+  showOriginalResponses?: boolean;
 }
 
 function SubtopicPill({
@@ -78,6 +80,7 @@ export function TextAiAnalysisWidgetCard({
   onOpenSettings,
   responseFilters = EMPTY_RESPONSE_FILTERS,
   preview,
+  showOriginalResponses,
 }: TextAiAnalysisWidgetProps) {
   const s =
     settings ?? defaultTextAiWidgetSettings("text-viewer", widget.question);
@@ -100,6 +103,10 @@ export function TextAiAnalysisWidgetCard({
     const term = search.trim().toLowerCase();
     const sourceRows = limitTextAiWidgetItems(widget.rows, topN)
       .filter((row) => matchesTextAiFilters(row, responseFilters))
+      .map((row) => showOriginalResponses === undefined ? row : {
+        ...row,
+        value: textAiSharedResponseValue(row, showOriginalResponses),
+      })
       .sort((a, b) =>
         s.dateOrder === "Newest first"
           ? (b.collectedOn ?? "").localeCompare(a.collectedOn ?? "")
@@ -114,7 +121,7 @@ export function TextAiAnalysisWidgetCard({
         row.insight.toLowerCase().includes(term) ||
         row.tags.some((tag) => tag.toLowerCase().includes(term)),
     );
-  }, [search, topN, widget.rows, responseFilters, s.dateOrder]);
+  }, [search, topN, widget.rows, responseFilters, s.dateOrder, showOriginalResponses]);
 
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSizeNum));
   const safePage = Math.min(page, pageCount - 1);

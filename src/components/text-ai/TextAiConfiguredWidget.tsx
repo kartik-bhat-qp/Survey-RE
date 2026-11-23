@@ -18,6 +18,7 @@ import {
 import { getTextAiTypographyCssVars } from "@/components/text-ai/text-ai-typography";
 import {
   activeTextAiFilters,
+  normalizeTextAiWidgetSettings,
   textAiWidgetSettingsKey,
   TEXT_AI_VIEWER_COLUMNS,
   type TextAiResponseFilter,
@@ -98,6 +99,7 @@ export function TextAiConfiguredWidget({
   sections = [],
   children,
   readOnly = false,
+  sharedSettings,
   kpiBinding,
 }: {
   dashboardId: number;
@@ -112,6 +114,7 @@ export function TextAiConfiguredWidget({
   sections?: string[];
   children: ReactElement<TextAiWidgetSettingsProps>;
   readOnly?: boolean;
+  sharedSettings?: unknown;
   kpiBinding?: { config: TextAiKpiConfig; onChange: (config: TextAiKpiConfig) => void };
 }) {
   const key = textAiWidgetSettingsKey(dashboardId, widgetId);
@@ -120,12 +123,12 @@ export function TextAiConfiguredWidget({
     kind,
     title,
     readOnly,
-    kind !== "kpi-by-theme",
+    !readOnly && kind !== "kpi-by-theme",
   );
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("General");
   const id = useId();
-  const s = settings;
+  const s = readOnly ? normalizeTextAiWidgetSettings(sharedSettings, kind, title) : settings;
   const effectiveDesign: DashboardDesign =
     s.designScope === "Widget"
       ? {
@@ -251,7 +254,12 @@ export function TextAiConfiguredWidget({
       </div>
     );
   }
-  function toggle(label: string, field: keyof TextAiWidgetSettings) {
+  function toggle(
+    label: string,
+    field: keyof TextAiWidgetSettings,
+    disabled = false,
+    descriptionId?: string,
+  ) {
     return (
       <div className={styles.row}>
         <span>{label}</span>
@@ -260,6 +268,8 @@ export function TextAiConfiguredWidget({
           role="switch"
           aria-label={label}
           aria-checked={Boolean(s[field])}
+          aria-describedby={descriptionId}
+          disabled={disabled}
           className={styles.toggle}
           onClick={() => update({ [field]: !s[field] })}
         >
@@ -412,6 +422,17 @@ export function TextAiConfiguredWidget({
       {isComparison && (
         <>
           {toggle("Show Overall", "showOverall")}
+          {toggle("Freeze first column", "freezeFirstColumn")}
+          {toggle(
+            "Freeze Overall",
+            "freezeOverall",
+            !s.freezeFirstColumn || !s.showOverall,
+            `${id}-freeze-overall-help`,
+          )}
+          <p className={styles.note} id={`${id}-freeze-overall-help`}>
+            Freeze the first column to keep theme and sub-theme names visible as you scroll.
+            Overall can be frozen when it is visible and the first column is frozen.
+          </p>
           <fieldset className={styles.picker}>
             <legend>Comparison slicers</legend>
             {[

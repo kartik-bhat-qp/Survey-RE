@@ -1,4 +1,5 @@
 import type { IWuSelectOption } from '@npm-questionpro/wick-ui-lib';
+import type { TextAiSentimentBucket } from './mock-text-ai-subtheme-stackbar';
 
 export type TextAiSubtopicTone = 'neutral' | 'positive';
 
@@ -7,11 +8,13 @@ export interface TextAiAnalysisRow {
   collectedOn?: string;
   id: number;
   value: string;
+  translatedValue?: string;
   topic: string;
   topicEmerging?: boolean;
   subtopic: string;
   subtopicEmerging?: boolean;
   subtopicTone: TextAiSubtopicTone;
+  sentiment?: TextAiSentimentBucket;
   insight: string;
   tags: string[];
 }
@@ -20,6 +23,10 @@ export interface TextAiAnalysisWidget {
   id: string;
   question: string;
   rows: TextAiAnalysisRow[];
+}
+
+export function textAiSharedResponseValue(row: TextAiAnalysisRow, showOriginalResponses: boolean): string {
+  return showOriginalResponses ? row.value : row.translatedValue || row.value;
 }
 
 export const TEXT_AI_PENDING_NEW_COMMENTS = 240;
@@ -90,6 +97,8 @@ const SARTORIS_IMPROVEMENT_ROWS: TextAiAnalysisRow[] = [
     id: 4,
     value:
       'bessere Kommunikation in der Abteilung, mehr Transparenz bei strategischen Entscheidungen und schnellere Rückmeldungen von Führungskräften',
+    translatedValue:
+      'Better communication within the department, more transparency in strategic decisions, and faster feedback from managers',
     topic: 'Outlier Parent Topic',
     subtopic: 'N/A',
     subtopicTone: 'neutral',

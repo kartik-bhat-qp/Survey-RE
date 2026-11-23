@@ -19,11 +19,12 @@ const WuSelect = dynamic(
 interface TextAiSummaryWidgetCardProps extends TextAiWidgetSettingsProps {
   widget: TextAiSummaryWidget;
   onDelete?: () => void;
+  readOnly?: boolean;
 }
 
 export function TextAiSummaryWidgetCard({
   widget,
-  onDelete, settings, onSettingsChange, onOpenSettings, preview,
+  onDelete, settings, onSettingsChange, onOpenSettings, preview, readOnly,
 }: TextAiSummaryWidgetCardProps) {
   const reportBodyRef = useRef<HTMLDivElement>(null);
   const s=settings??defaultTextAiWidgetSettings('text-summary',widget.question);
@@ -43,7 +44,7 @@ export function TextAiSummaryWidgetCard({
       <header className={`${styles.cardHeader} text-ai-widget-drag-handle`}>
         <div className={styles.cardHeaderMain}>
           <h2 className={styles.cardTitle}>{s.showName?s.name:''}</h2>
-          <div className={styles.summaryTypeControl}>
+          {!readOnly && <div className={styles.summaryTypeControl}>
             <WuSelect
               data={widget.summaryTypes}
               accessorKey={{ value: 'id', label: 'label' }}
@@ -56,7 +57,7 @@ export function TextAiSummaryWidgetCard({
               className={styles.summaryTypeSelect}
               aria-label="Summary type"
             />
-          </div>
+          </div>}
         </div>
         <TextAiWidgetMenu
           widgetTitle={widget.question}
