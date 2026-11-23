@@ -80,8 +80,7 @@ export function TextAiShareModal({ dashboardId, dashboard, sharing, onChange, ha
         {sharing.password && !enterPassword && <button type="button" className={styles.textButton}
           onClick={() => setEnterPassword(true)}>Change password</button>}
         {hasTextViewer && <div className={styles.settingRow}>
-          <div className={styles.showSetting}><span>Show</span>
-            <span id="text-ai-share-language-label">Responses in original language</span></div>
+          <span id="text-ai-share-language-label">Show responses in original language</span>
           <WuToggle aria-labelledby="text-ai-share-language-label" checked={sharing.showOriginalResponses}
             onChange={value => onChange({ ...sharing, showOriginalResponses: value })} />
         </div>}
