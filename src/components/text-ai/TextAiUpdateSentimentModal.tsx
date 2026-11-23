@@ -174,21 +174,26 @@ export function TextAiUpdateSentimentModal({
   const someResponsesSelected =
     bulkSelectedResponseIds.size > 0 && !allResponsesSelected;
   const bulkChangeEnabled = bulkSelectedResponseIds.size > 1;
+  const bulkSelectedResponses = useMemo(
+    () => responses.filter(({ id }) => bulkSelectedResponseIds.has(id)),
+    [bulkSelectedResponseIds, responses]
+  );
+  const selectedSubthemeCount = bulkSelectedResponses.reduce(
+    (count, response) => count + response.subthemes.length,
+    0
+  );
   const bulkSummary = useMemo(() => {
     if (!bulkChangeEnabled) return null;
-    const selectedSentiments = responses
-      .filter(({ id }) => bulkSelectedResponseIds.has(id))
-      .map(response => summarizeResponseSentiment(
-        response,
-        drafts[response.id] ?? initialDrafts[response.id]
-      ));
+    const selectedSentiments = bulkSelectedResponses.map(response => summarizeResponseSentiment(
+      response,
+      drafts[response.id] ?? initialDrafts[response.id]
+    ));
     return summarizeSentiments(selectedSentiments);
-  }, [bulkChangeEnabled, bulkSelectedResponseIds, drafts, initialDrafts, responses]);
+  }, [bulkChangeEnabled, bulkSelectedResponses, drafts, initialDrafts]);
 
-  const { changedDrafts, subthemeChanges, selectedSubthemeChanges, hasBulkChanges } = useMemo(() => {
+  const { changedDrafts, subthemeChanges, hasBulkChanges } = useMemo(() => {
     const changedDrafts: Record<number, TextAiSentimentDraft> = {};
     let subthemeChanges = 0;
-    let selectedSubthemeChanges = 0;
     let hasBulkChanges = false;
     responses.forEach((response) => {
       const initial = initialDrafts[response.id];
@@ -198,14 +203,13 @@ export function TextAiUpdateSentimentModal({
         initial.subthemeSentiments[id] !== current.subthemeSentiments[id]
       ).length;
       subthemeChanges += changes;
-      if (bulkSelectedResponseIds.has(response.id)) selectedSubthemeChanges += changes;
       if (changes || initial.responseSentiment !== current.responseSentiment) {
         changedDrafts[response.id] = current;
         if (bulkChangedResponseIds.has(response.id)) hasBulkChanges = true;
       }
     });
-    return { changedDrafts, subthemeChanges, selectedSubthemeChanges, hasBulkChanges };
-  }, [bulkChangedResponseIds, bulkSelectedResponseIds, drafts, initialDrafts, responses]);
+    return { changedDrafts, subthemeChanges, hasBulkChanges };
+  }, [bulkChangedResponseIds, drafts, initialDrafts, responses]);
   const responseChanges = Object.keys(changedDrafts).length;
 
   if (!open || !wick) return null;
@@ -266,8 +270,7 @@ export function TextAiUpdateSentimentModal({
   }
 
   function updateBulkSentiment(sentiment: TextAiAssignedSentiment): void {
-    const affectedResponses = responses.filter(response =>
-      bulkSelectedResponseIds.has(response.id) &&
+    const affectedResponses = bulkSelectedResponses.filter(response =>
       summarizeResponseSentiment(response, drafts[response.id] ?? initialDrafts[response.id]) !== sentiment
     );
     if (affectedResponses.length === 0) return;
@@ -308,7 +311,9 @@ export function TextAiUpdateSentimentModal({
                   onChange={(event) => toggleAllResponses(event.target.checked)}
                 />
                 <span>
-                  Select all ({responses.length.toLocaleString()} responses)
+                  Select all ({bulkSelectedResponses.length.toLocaleString()} of{' '}
+                  {formatCount(responses.length, 'response')},{' '}
+                  {formatCount(selectedSubthemeCount, 'sub-theme')} selected)
                 </span>
               </label>
             <nav className={styles.reviewPagination} aria-label="Selected responses pages">
@@ -374,12 +379,7 @@ export function TextAiUpdateSentimentModal({
                         onClick={(event) => event.stopPropagation()}
                         onChange={() => toggleResponseSelection(response.id)}
                       />
-                      <div>
-                        <span className={styles.responseId}>
-                          Response {response.id.toLocaleString()}
-                        </span>
-                        <p>{response.text}</p>
-                      </div>
+                      <p>{response.text}</p>
                     </div>
                     <div
                       className={styles.sentimentControl}
@@ -450,13 +450,7 @@ export function TextAiUpdateSentimentModal({
 
         {bulkChangeEnabled && (
           <div className={styles.bulkRow}>
-            <div className={styles.bulkDetails}>
-              <strong>Bulk update sentiment</strong>
-              <span aria-live="polite">
-                {formatCount(bulkSelectedResponseIds.size, 'response')} selected ·{' '}
-                {formatCount(selectedSubthemeChanges, 'sub-theme change')}
-              </span>
-            </div>
+            <span className={styles.bulkLabel}>Bulk update</span>
             <WuSelect
               aria-label="Bulk update sentiment"
               data={TEXT_AI_SENTIMENT_OPTIONS}

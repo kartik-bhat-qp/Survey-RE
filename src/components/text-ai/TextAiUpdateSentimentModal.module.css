@@ -12,19 +12,30 @@
 }
 
 .content {
+  --bulk-row-spacing: 12px;
+  --review-controls-spacing: 10px;
   --sentiment-column-width: 14rem;
   color: #545e6b;
   display: flex;
   flex-direction: column;
   font-family: 'Fira Sans', sans-serif;
-  gap: 12px;
+  gap: var(--bulk-row-spacing);
   height: min(68vh, 42rem);
   min-height: 28rem;
   overflow: hidden;
   width: 100%;
 }
 
-.assignmentLabel {
+.modal .content {
+  padding-block-start: var(--review-controls-spacing);
+}
+
+.content:has(.bulkRow) {
+  padding-block-end: var(--bulk-row-spacing);
+}
+
+.assignmentLabel,
+.bulkLabel {
   color: #545e6b;
   font-size: 12px;
   font-weight: 500;
@@ -35,7 +46,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--review-controls-spacing);
   min-height: 0;
 }
 
@@ -136,20 +147,12 @@
   margin-top: 2px;
 }
 
-.responseId {
-  color: #1b3380;
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 18px;
-  margin-bottom: 2px;
-}
-
 .responseIdentity p {
   color: #253449;
   font-size: 13px;
   line-height: 20px;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .subthemeAssignments {
@@ -187,6 +190,13 @@
   width: 100%;
 }
 
+/* The menu is portaled outside the modal, where other WickUI menus fit their options. */
+body:has(.sentimentSelect[aria-expanded='true'])
+  :global([data-radix-popper-content-wrapper] .wu-select-content[data-state='open']) {
+  min-width: var(--radix-dropdown-menu-trigger-width) !important;
+  width: var(--radix-dropdown-menu-trigger-width) !important;
+}
+
 .noSubthemes {
   color: #8a929b;
   font-size: 12px;
@@ -199,22 +209,13 @@
   gap: 8px 16px;
   grid-template-columns: minmax(0, 1fr) var(--sentiment-column-width);
   overflow-y: auto;
+  padding-block: 6px;
   padding-inline: 17px 27px;
   scrollbar-gutter: stable;
 }
 
-.bulkDetails {
-  align-items: center;
-  color: #545e6b;
-  display: flex;
-  flex-wrap: wrap;
-  font-size: 12px;
-  gap: 2px 12px;
-}
-
-.bulkDetails strong {
-  color: #253449;
-  font-weight: 600;
+.bulkLabel {
+  justify-self: end;
 }
 
 .confirmationMessage {
@@ -242,6 +243,10 @@
 
   .bulkRow {
     padding-inline: 27px;
+  }
+
+  .bulkLabel {
+    justify-self: start;
   }
 
   .subthemeAssignments {
