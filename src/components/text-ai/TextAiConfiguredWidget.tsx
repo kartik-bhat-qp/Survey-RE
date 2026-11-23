@@ -18,7 +18,6 @@ import {
 import { getTextAiTypographyCssVars } from "@/components/text-ai/text-ai-typography";
 import {
   activeTextAiFilters,
-  normalizeTextAiWidgetSettings,
   textAiWidgetSettingsKey,
   TEXT_AI_VIEWER_COLUMNS,
   type TextAiResponseFilter,
@@ -99,7 +98,6 @@ export function TextAiConfiguredWidget({
   sections = [],
   children,
   readOnly = false,
-  sharedSettings,
   kpiBinding,
 }: {
   dashboardId: number;
@@ -114,7 +112,6 @@ export function TextAiConfiguredWidget({
   sections?: string[];
   children: ReactElement<TextAiWidgetSettingsProps>;
   readOnly?: boolean;
-  sharedSettings?: unknown;
   kpiBinding?: { config: TextAiKpiConfig; onChange: (config: TextAiKpiConfig) => void };
 }) {
   const key = textAiWidgetSettingsKey(dashboardId, widgetId);
@@ -123,12 +120,12 @@ export function TextAiConfiguredWidget({
     kind,
     title,
     readOnly,
-    !readOnly && kind !== "kpi-by-theme",
+    kind !== "kpi-by-theme",
   );
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("General");
   const id = useId();
-  const s = readOnly ? normalizeTextAiWidgetSettings(sharedSettings, kind, title) : settings;
+  const s = settings;
   const effectiveDesign: DashboardDesign =
     s.designScope === "Widget"
       ? {

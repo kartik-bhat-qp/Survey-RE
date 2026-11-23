@@ -3,11 +3,14 @@
 import { useState } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { useWickUILib } from '@/components/ui/useWickUILib';
-import type { useTextAiDashboardShare } from '@/hooks/useTextAiDashboardShare';
+import { textAiSharePath, type TextAiSharingState } from '@/data/text-ai-sharing';
 import styles from './TextAiSharing.module.css';
 
-export function TextAiShareModal({ share, hasTextViewer, onClose }: {
-  share: ReturnType<typeof useTextAiDashboardShare>;
+export function TextAiShareModal({ dashboardId, dashboard, sharing, onChange, hasTextViewer, onClose }: {
+  dashboardId: number;
+  dashboard: TextAiSharingState['dashboard'];
+  sharing: TextAiSharingState;
+  onChange: (settings: TextAiSharingState) => void;
   hasTextViewer: boolean;
   onClose: () => void;
 }) {
@@ -18,8 +21,8 @@ export function TextAiShareModal({ share, hasTextViewer, onClose }: {
 
   if (!wick) return null;
   const { WuButton, WuInput, WuModal, WuModalContent, WuModalHeader, WuToggle } = wick;
-  const { busy, ready, settings, link, error, update } = share;
-  const shareUrl = link ? new URL(link, window.location.origin).href : null;
+  const shareUrl = new URL(textAiSharePath(dashboardId), window.location.origin).href;
+  const enabled = sharing.enabled && !!sharing.dashboard;
 
   async function copy(url: string, showError = true) {
     try {
@@ -30,10 +33,10 @@ export function TextAiShareModal({ share, hasTextViewer, onClose }: {
     }
   }
 
-  async function setSharing(enabled: boolean) {
-    const url = await update({ enabled });
-    if (enabled && url) await copy(url, false);
-    if (!enabled) { setEnterPassword(false); setPassword(''); }
+  function setSharing(nextEnabled: boolean) {
+    onChange({ ...sharing, enabled: nextEnabled, dashboard: nextEnabled ? dashboard : null });
+    if (nextEnabled) void copy(shareUrl, false);
+    else { setEnterPassword(false); setPassword(''); }
   }
 
   return <WuModal open onOpenChange={open => { if (!open) onClose(); }}
@@ -42,48 +45,47 @@ export function TextAiShareModal({ share, hasTextViewer, onClose }: {
     <WuModalContent className={styles.modalContent}>
       <div className={styles.settingRow}>
         <span id="text-ai-enable-share-label">Enable dashboard sharing</span>
-        <WuToggle aria-labelledby="text-ai-enable-share-label" checked={!!settings?.enabled}
-          disabled={!ready || busy} onChange={value => { void setSharing(value); }} />
+        <WuToggle aria-labelledby="text-ai-enable-share-label" checked={enabled}
+          disabled={!dashboard} onChange={setSharing} />
       </div>
-      {shareUrl && <>
+      {enabled && <>
         <div className={styles.linkRow}>
           <a href={shareUrl} target="_blank" rel="noreferrer">{shareUrl}</a>
           <WuButton variant="iconOnly" size="sm" aria-label="Copy link" Icon={<span className="wm-link" aria-hidden />}
-            disabled={busy} onClick={async () => {
-              const url = await update({});
-              if (url) await copy(url);
-            }} />
+            onClick={() => { void copy(shareUrl); }} />
         </div>
         <div className={styles.settingRow}>
           <span id="text-ai-share-password-label">Enable password</span>
-          <WuToggle aria-labelledby="text-ai-share-password-label" checked={!!settings?.passwordEnabled || enterPassword}
-            disabled={busy} onChange={value => {
+          <WuToggle aria-labelledby="text-ai-share-password-label" checked={!!sharing.password || enterPassword}
+            onChange={value => {
               if (value) setEnterPassword(true);
               else {
                 setEnterPassword(false);
                 setPassword('');
-                if (settings?.passwordEnabled) void update({ password: null });
+                onChange({ ...sharing, password: '' });
               }
             }} />
         </div>
-        {enterPassword && <form className={styles.passwordSettings} onSubmit={async event => {
+        {enterPassword && <form className={styles.passwordSettings} onSubmit={event => {
           event.preventDefault();
-          if (await update({ password })) { setEnterPassword(false); setPassword(''); }
+          if (!password.trim()) return;
+          onChange({ ...sharing, password });
+          setEnterPassword(false);
+          setPassword('');
         }}>
           <WuInput aria-label="Shared dashboard password" placeholder="Enter password" type="password"
             autoComplete="new-password" value={password} maxLength={128} onInput={event => setPassword(event.currentTarget.value)} />
-          <WuButton type="submit" size="sm" disabled={!password.trim() || busy}>Save</WuButton>
+          <WuButton type="submit" size="sm" disabled={!password.trim()}>Save</WuButton>
         </form>}
-        {settings?.passwordEnabled && !enterPassword && <button type="button" className={styles.textButton}
-          disabled={busy} onClick={() => setEnterPassword(true)}>Change password</button>}
+        {sharing.password && !enterPassword && <button type="button" className={styles.textButton}
+          onClick={() => setEnterPassword(true)}>Change password</button>}
         {hasTextViewer && <div className={styles.settingRow}>
           <div className={styles.showSetting}><span>Show</span>
             <span id="text-ai-share-language-label">Responses in original language</span></div>
-          <WuToggle aria-labelledby="text-ai-share-language-label" checked={!!settings?.showOriginalResponses}
-            disabled={busy} onChange={value => { void update({ showOriginalResponses: value }); }} />
+          <WuToggle aria-labelledby="text-ai-share-language-label" checked={sharing.showOriginalResponses}
+            onChange={value => onChange({ ...sharing, showOriginalResponses: value })} />
         </div>}
       </>}
-      {error && <p className={styles.error} role="alert">{error}</p>}
     </WuModalContent>
   </WuModal>;
 }

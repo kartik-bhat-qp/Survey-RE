@@ -298,7 +298,6 @@ export function normalizeTextAiResponseFilter(
 export function textAiWidgetSettingsKey(dashboard: number, widget: string) {
   return `text-ai-widget-settings:v1:${dashboard}:${encodeURIComponent(widget)}`;
 }
-export const TEXT_AI_WIDGET_SETTINGS_EVENT = 'text-ai-widget-settings-changed';
 export function activeTextAiFilters(
   settings: TextAiWidgetSettings,
   dashboard: TextAiResponseFilter,

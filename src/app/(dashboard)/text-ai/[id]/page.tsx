@@ -147,13 +147,13 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const censoredSubthemesEnabled = isCensoredSubthemesEnabled(dashboard);
   const syncedCensoredResponses = dashboard?.syncedCensoredResponses;
   const shareDashboard = useMemo<TextAiSharedDashboard | null>(() => collectionReady && shareCanvas ? ({
-    dashboardId: numericId, name, selectedQuestion, questionIndex, design, themePreferences,
+    name, selectedQuestion, questionIndex,
     responseFilter, widgets: addedWidgets, comparisons: addedTopicSegmentWidgets.map(({ id, question }) => ({ id, question })),
     kpis: addedKpiWidgets, trends: addedSubthemeTrendWidgets, censoredSubthemesEnabled, syncedCensoredResponses,
     canvas: shareCanvas,
   }) : null, [addedKpiWidgets, addedSubthemeTrendWidgets, addedTopicSegmentWidgets, addedWidgets, censoredSubthemesEnabled,
-    collectionReady, design, name, numericId, questionIndex, responseFilter, selectedQuestion, shareCanvas, syncedCensoredResponses, themePreferences]);
-  const share = useTextAiDashboardShare(numericId, shareDashboard);
+    collectionReady, name, questionIndex, responseFilter, selectedQuestion, shareCanvas, syncedCensoredResponses]);
+  const [sharing, setSharing] = useTextAiDashboardShare(numericId);
 
   if (!dashboard) {
     if (!wick) {
@@ -257,7 +257,10 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         name={name}
         onNameChange={setName}
         onAddWidget={() => setAddWidgetOpen(true)}
-        onShare={() => setShareOpen(true)}
+        onShare={() => {
+          if (sharing.enabled && shareDashboard) setSharing(current => ({ ...current, dashboard: shareDashboard }));
+          setShareOpen(true);
+        }}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenThemeConfiguration={() =>
           router.push(`/text-ai/${numericId}/theme-configuration`)
@@ -287,7 +290,8 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         onShareStateChange={setShareCanvas}
         onTextViewerPresenceChange={setHasTextViewer}
       />
-      {shareOpen && <TextAiShareModal share={share} hasTextViewer={hasTextViewer} onClose={() => setShareOpen(false)} />}
+      {shareOpen && <TextAiShareModal dashboardId={numericId} dashboard={shareDashboard} sharing={sharing}
+        onChange={setSharing} hasTextViewer={hasTextViewer} onClose={() => setShareOpen(false)} />}
       <TextAiDashboardSettingsModal
         dashboard={currentDashboard}
         design={design}

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import { TextAiConfiguredWidget } from './TextAiConfiguredWidget';
-import { EMPTY_TEXT_AI_FILTER, textAiWidgetSettingsKey, TEXT_AI_WIDGET_SETTINGS_EVENT, type TextAiResponseFilter, type TextAiSettingsKind, type TextAiWidgetSettingsProps } from '@/data/text-ai-widget-settings';
+import { EMPTY_TEXT_AI_FILTER, type TextAiResponseFilter, type TextAiSettingsKind, type TextAiWidgetSettingsProps } from '@/data/text-ai-widget-settings';
 import { TEXT_AI_SUBTHEME_STACKBAR_ROWS, type TextAiSentimentBucket } from '@/data/mock-text-ai-subtheme-stackbar';
 import type { ReactNode } from 'react';
 import ReactGridLayout, {
@@ -366,12 +366,10 @@ export function TextAiDashboardCanvas({
   const [isPositioning, setIsPositioning] = useState(false);
   const [removedWidgetIds, setRemovedWidgetIds] = useState<Set<string>>(() => new Set(sharedCanvas?.removedWidgetIds));
   const [deleteError,setDeleteError]=useState('');
-  const [outlierAssignments, setOutlierAssignments] = useState<TagAssignments>(sharedCanvas?.assignments ?? {});
+  const [outlierAssignments, setOutlierAssignments] = useState<TagAssignments>({});
   const [outlierLoadError, setOutlierLoadError] = useState('');
   const [sharedFilters, setSharedFilters] = useState(EMPTY_TEXT_AI_SHARE_FILTERS);
-  const [widgetSettingsRevision, setWidgetSettingsRevision] = useState(0);
   useEffect(() => {
-    if (readOnly) return;
     const refresh = () => {
       try {
         const raw = localStorage.getItem(`bi-stats-text-ai-configuration-v2:${dashboardId}`);
@@ -383,7 +381,7 @@ export function TextAiDashboardCanvas({
     refresh();
     window.addEventListener(CENSORED_CONFIGURATION_EVENT, refresh); window.addEventListener('storage', refresh);
     return () => { window.removeEventListener(CENSORED_CONFIGURATION_EVENT, refresh); window.removeEventListener('storage', refresh); };
-  }, [dashboardId, readOnly]);
+  }, [dashboardId]);
   useEffect(()=>{
     if (readOnly) return;
     try{const ids=JSON.parse(localStorage.getItem(`text-ai-removed-widgets:${dashboardId}`)??'[]');
@@ -391,12 +389,6 @@ export function TextAiDashboardCanvas({
       if(Array.isArray(ids))setRemovedWidgetIds(new Set(ids.filter((v:unknown)=>typeof v==='string')));
     }catch{/* Ignore corrupt removal records. */}
   },[dashboardId, readOnly]);
-  useEffect(() => {
-    if (!onShareStateChange) return;
-    const refresh = () => setWidgetSettingsRevision((previous) => previous + 1);
-    window.addEventListener(TEXT_AI_WIDGET_SETTINGS_EVENT, refresh);
-    return () => window.removeEventListener(TEXT_AI_WIDGET_SETTINGS_EVENT, refresh);
-  }, [onShareStateChange]);
   const isApproved = (name: string, candidate: boolean) =>
     !candidate || themePreferences.approvedEmergingNames.includes(name);
   const isEmerging = (name: string, candidate: boolean | undefined) =>
@@ -503,7 +495,7 @@ export function TextAiDashboardCanvas({
         content: (
           <TextAiConfiguredWidget dashboardId={dashboardId} widgetId={id} kind="kpi-by-theme"
             title={widget.name ?? 'Impact on KPI'} design={design} dashboardFilter={dashboardFilter}
-            readOnly={readOnly} sharedSettings={sharedCanvas?.widgetSettings[id]}
+            readOnly={readOnly}
             kpiBinding={{ config: widget.config ?? defaultTextAiKpiConfig(widget.kpiId), onChange: config => onKpiChange?.(widget.id, config) }}>
           <TextAiKpiByThemeWidget
             key={widget.id}
@@ -615,7 +607,7 @@ export function TextAiDashboardCanvas({
     const items=kind.includes('comparative')?rows.map(row=>({id:row.id,label:row.topic})):approvedStackRows.map(row=>({id:row.id,label:row.label}));
     const subthemes=approvedStackRows.flatMap(parent=>parent.subthemes.filter(row=>isApproved(row.label,Boolean(parent.emerging||row.emerging))).map(row=>({id:row.id,label:`${parent.label} / ${row.label}`,parentId:parent.id})));
     const identity=addedWidgets.some(w=>w.id===entry.id)||visibleAddedTopicSegmentWidgets.some(w=>`topic-segment-${w.id}`===entry.id)?entry.id:`${entry.id}:${selectedQuestion.id}`;
-    return {...entry,content:<TextAiConfiguredWidget key={identity} dashboardId={dashboardId} widgetId={identity} kind={kind} title={title} design={design} dashboardFilter={dashboardFilter} readOnly={readOnly} sharedSettings={sharedCanvas?.widgetSettings[identity]} items={items} parents={approvedStackRows.map(row=>({id:row.id,label:row.label}))} subthemes={subthemes} sections={[...new Set(element.props.widget?.summaryTypes?.flatMap(v=>v.sections.map(section=>section.heading))??[])]}>{element}</TextAiConfiguredWidget>};
+    return {...entry,content:<TextAiConfiguredWidget key={identity} dashboardId={dashboardId} widgetId={identity} kind={kind} title={title} design={design} dashboardFilter={dashboardFilter} readOnly={readOnly} items={items} parents={approvedStackRows.map(row=>({id:row.id,label:row.label}))} subthemes={subthemes} sections={[...new Set(element.props.widget?.summaryTypes?.flatMap(v=>v.sections.map(section=>section.heading))??[])]}>{element}</TextAiConfiguredWidget>};
   }
   const canvasWidgets = allCanvasWidgets.map(configureWidget).filter(
     (widget) => !removedWidgetIds.has(widget.id)
@@ -627,19 +619,8 @@ export function TextAiDashboardCanvas({
     sharedCanvas?.layout.length ? sharedCanvas.layout.map(item => ({ ...item, isDraggable: false, isResizable: false })) : createInitialLayout(canvasWidgets)
   );
   useEffect(() => {
-    if (!onShareStateChange) return;
-    const widgetSettings: Record<string, unknown> = {};
-    const prefix = textAiWidgetSettingsKey(dashboardId, '');
-    try {
-      for (let index = 0; index < localStorage.length; index += 1) {
-        const key = localStorage.key(index);
-        if (!key?.startsWith(prefix)) continue;
-        const value = localStorage.getItem(key);
-        if (value) widgetSettings[decodeURIComponent(key.slice(prefix.length))] = JSON.parse(value);
-      }
-    } catch { /* The renderer uses its defaults when saved settings are unavailable. */ }
-    onShareStateChange({ removedWidgetIds: [...removedWidgetIds], layout: desktopLayout, assignments: outlierAssignments, widgetSettings });
-  }, [dashboardId, desktopLayout, onShareStateChange, outlierAssignments, removedWidgetIds, widgetSettingsRevision]);
+    onShareStateChange?.({ removedWidgetIds: [...removedWidgetIds], layout: desktopLayout });
+  }, [desktopLayout, onShareStateChange, removedWidgetIds]);
 
   useEffect(() => {
     // Grid layout is the external state owned by react-grid-layout; reconcile it

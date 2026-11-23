@@ -176,34 +176,41 @@ export function TextAiDashboardToolbar({
             </div>
           </div>
 
-          <div className={styles.actions}>
+          <div className={styles.actions} role="group" aria-label="TextAI dashboard actions">
             <WuButton
-              variant="iconOnly"
+              className={styles.filterButton}
+              variant="link"
               size="sm"
               aria-label="Filter dashboard"
+              aria-expanded={responseFilterOpen}
               onClick={() => setResponseFilterOpen(value=>!value)}
-              Icon={<span className="wm-filter-alt" />}
-            />
+              Icon={<span className="wm-filter-alt" aria-hidden />}
+            >
+              Filter
+            </WuButton>
             <WuButton
+              className={styles.iconButton}
               variant="iconOnly"
               size="sm"
               aria-label="Export CSV"
               onClick={() => showToast({ message: 'CSV export started', variant: 'success' })}
-              Icon={<span className="wm-csv" />}
+              Icon={<span className="wm-download" aria-hidden />}
             />
             <WuButton
+              className={styles.iconButton}
               variant="iconOnly"
               size="sm"
               aria-label="AI insights"
               onClick={() => showToast({ message: 'AI insights', variant: 'success' })}
-              Icon={<span className="wc-ai" />}
+              Icon={<span className="wc-ai" aria-hidden />}
             />
             <WuButton
+              className={styles.iconButton}
               variant="iconOnly"
               size="sm"
               aria-label="Share dashboard"
               onClick={onShare}
-              Icon={<span className="wm-share" />}
+              Icon={<span className={styles.shareGlyph} aria-hidden />}
             />
             <WuMenu
               open={settingsMenuOpen}
@@ -215,11 +222,12 @@ export function TextAiDashboardToolbar({
               Trigger={
                 <WuTooltip content="Dashboard settings" position="bottom">
                   <WuButton
+                    className={styles.iconButton}
                     variant="iconOnly"
                     size="sm"
                     aria-label="Dashboard settings menu"
                     aria-expanded={settingsMenuOpen}
-                    Icon={<span className="wm-settings" />}
+                    Icon={<span className="wm-settings" aria-hidden />}
                   />
                 </WuTooltip>
               }
@@ -236,7 +244,7 @@ export function TextAiDashboardToolbar({
               </WuMenuItem>
               <WuMenuItem
                 className={styles.settingsMenuItem}
-                Icon={<span className="wm-table-edit" aria-hidden />}
+                Icon={<span className="wm-category" aria-hidden />}
                 onSelect={() => {
                   setSettingsMenuOpen(false);
                   onOpenThemeConfiguration?.();
@@ -247,8 +255,9 @@ export function TextAiDashboardToolbar({
             </WuMenu>
             <WuButton
               className={styles.addWidgetBtn}
+              size="sm"
               onClick={onAddWidget}
-              Icon={<span className="wm-add-2" />}
+              Icon={<span className="wm-add-2" aria-hidden />}
             >
               Add widget
             </WuButton>

@@ -15,7 +15,7 @@ npm run dev
 
 Open a TextAI dashboard and select **Share dashboard**. Enable sharing to copy a read-only link. The popup also offers password protection and, when a Text Viewer widget is present, an option to show responses in their original language.
 
-Local links are stored under `.runtime/text-ai-shares`. Set `TEXT_AI_SHARE_STORAGE_DIR` to use a different persistent directory on a standalone server. On Vercel, connect a private Blob store and set `BLOB_READ_WRITE_TOKEN` so links work across function instances and can be revoked. Use a dedicated private store for the prototype.
+Like BI sharing, TextAI sharing is a browser-local preview. Open the copied link in the same browser profile and at the same app address to use the saved settings and optional password prompt.
 
 ## Building Features
 
