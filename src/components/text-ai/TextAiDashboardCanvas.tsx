@@ -357,7 +357,7 @@ export function TextAiDashboardCanvas({
   addedSubthemeTrendWidgets = [],
   themePreferences,
   sharedCanvas,
-  showOriginalResponses = false,
+  showOriginalResponses,
   onShareStateChange,
   onTextViewerPresenceChange,
 }: TextAiDashboardCanvasProps) {
@@ -480,7 +480,7 @@ export function TextAiDashboardCanvas({
   function renderAddedWidget(widget: TextAiAddedWidget): TextAiCanvasWidget {
     const onDelete = () => removeWidget(widget.id);
     const question = widget.question;
-    if (widget.chartType === 'text-viewer') return { id: widget.id, kind: 'analysis', content: <TextAiAnalysisWidgetCard widget={filteredAnalysisWidget({ ...analysisWidgets[0], id: widget.id, question })} showOriginalResponses={readOnly ? showOriginalResponses : undefined} onDelete={onDelete} /> };
+    if (widget.chartType === 'text-viewer') return { id: widget.id, kind: 'analysis', content: <TextAiAnalysisWidgetCard widget={filteredAnalysisWidget({ ...analysisWidgets[0], id: widget.id, question })} showOriginalResponses={showOriginalResponses} onDelete={onDelete} /> };
     if (widget.chartType === 'text-summary') return { id: widget.id, kind: 'summary', content: <TextAiSummaryWidgetCard widget={{ ...summaryWidgets[0], id: widget.id, question }} onDelete={onDelete} readOnly={readOnly} /> };
     if (widget.chartType === 'subtheme-stacked-bar') return { id: widget.id, kind: 'subtheme-stackbar', content: <TextAiSubthemeStackbarWidget question={question} themePreferences={themePreferences} rows={stackRows} onDelete={onDelete} /> };
     if (widget.chartType === 'subtheme-comparative-chart') {
@@ -490,7 +490,7 @@ export function TextAiDashboardCanvas({
     }
     return { id: widget.id, kind: 'overview', content: <TextAiOverviewWidget kind={widget.chartType as TextAiOverviewKind} question={question} themePreferences={themePreferences} rows={stackRows} onDelete={onDelete} /> };
   }
-  const defaultExtraWidgets: TextAiAddedWidget[] = languageDemo ? [] : ['gauge', 'theme-stacked-bar', 'bubble-chart', 'trend-line', 'subtheme-comparative-chart'].map(chartType => ({ id: `default-${chartType}`, chartType: chartType as TextAiWidgetChartTypeId, question: selectedQuestion.text }));
+  const defaultExtraWidgets: TextAiAddedWidget[] = ['gauge', 'theme-stacked-bar', 'bubble-chart', 'trend-line', 'subtheme-comparative-chart'].map(chartType => ({ id: `default-${chartType}`, chartType: chartType as TextAiWidgetChartTypeId, question: selectedQuestion.text }));
 
   const allCanvasWidgets: TextAiCanvasWidget[] = [
     ...addedWidgets.map(renderAddedWidget),
@@ -546,7 +546,7 @@ export function TextAiDashboardCanvas({
         ),
       };
     }),
-    ...(languageDemo ? [] : visibleTopicSegmentWidgets).map((widget) => {
+    ...visibleTopicSegmentWidgets.map((widget) => {
       const id = `topic-segment-${widget.id}`;
       return {
         id,
@@ -560,7 +560,7 @@ export function TextAiDashboardCanvas({
         ),
       };
     }),
-    ...(languageDemo ? [] : [{
+    {
       id: 'subtheme-stackbar',
       kind: 'subtheme-stackbar' as const,
       content: (
@@ -571,7 +571,7 @@ export function TextAiDashboardCanvas({
           rows={stackRows}
         />
       ),
-    }]),
+    },
     ...defaultExtraWidgets.map(renderAddedWidget),
     ...approvedAnalysisWidgets.map((widget, index) => {
       const id = `analysis-${index}`;
@@ -582,7 +582,7 @@ export function TextAiDashboardCanvas({
           <TextAiAnalysisWidgetCard
             key={widget.id}
             widget={filteredAnalysisWidget(widget)}
-            showOriginalResponses={readOnly ? showOriginalResponses : undefined}
+            showOriginalResponses={showOriginalResponses}
             onDelete={() => removeWidget(id)}
           />
         ),

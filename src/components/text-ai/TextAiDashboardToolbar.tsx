@@ -52,6 +52,7 @@ interface TextAiDashboardToolbarProps {
   segmentFilters?: TextAiSegmentFilterState;
   processedResponseIds?: string[];
   hasSamplePendingResponses?: boolean;
+  responseLanguage?: { name: string; showOriginal: boolean; onToggle: () => void };
   onProcessResponses?: (filters: TextAiSegmentFilterState, responseIds: string[]) => void;
 }
 
@@ -70,6 +71,7 @@ export function TextAiDashboardToolbar({
   segmentFilters,
   processedResponseIds,
   hasSamplePendingResponses = true,
+  responseLanguage,
   onProcessResponses,
 }: TextAiDashboardToolbarProps) {
   const wick = useWickUILib();
@@ -191,6 +193,16 @@ export function TextAiDashboardToolbar({
             >
               Filter
             </WuButton>
+            {responseLanguage && <WuButton
+              className={styles.iconButton}
+              variant="iconOnly"
+              size="sm"
+              aria-label={`Show original ${responseLanguage.name} responses`}
+              aria-pressed={responseLanguage.showOriginal}
+              title={responseLanguage.showOriginal ? 'Show English translations' : `Show original ${responseLanguage.name} responses`}
+              onClick={responseLanguage.onToggle}
+              Icon={<span className="wm-translate" aria-hidden />}
+            />}
             <WuButton
               className={styles.iconButton}
               variant="iconOnly"

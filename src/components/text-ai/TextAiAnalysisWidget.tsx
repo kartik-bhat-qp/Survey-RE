@@ -90,8 +90,7 @@ export function TextAiAnalysisWidgetCard({
   );
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const [showOriginal, setShowOriginal] = useState(true);
-  const originalResponses = showOriginalResponses ?? showOriginal;
+  const originalResponses = showOriginalResponses ?? true;
   const language = widget.responseLanguage;
   const responseLanguage = language && (originalResponses ? language.code : "en");
   const localPageSize = PAGE_SIZE_OPTIONS[3];
@@ -247,21 +246,6 @@ export function TextAiAnalysisWidgetCard({
           className={styles.searchInput}
         />
         <div className={styles.paginationBar}>
-          {language && !preview && showOriginalResponses === undefined && (
-            <WuButton
-              className={styles.languageButton}
-              variant="iconOnly"
-              size="sm"
-              aria-label={`Show original ${language.name} responses`}
-              aria-pressed={showOriginal}
-              title={showOriginal ? "Show English translations" : `Show original ${language.name} responses`}
-              onClick={() => {
-                setShowOriginal(previous => !previous);
-                setPage(0);
-              }}
-              Icon={<span className="wm-translate" aria-hidden />}
-            />
-          )}
           <WuButton
             variant="iconOnly"
             size="sm"

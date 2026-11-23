@@ -35,7 +35,7 @@ import {
   createTextAiComparativeChartWidget,
   type TextAiTopicSegmentWidget,
 } from '@/data/mock-text-ai-topic-segment-widget';
-import { defaultTextAiKpiConfig, type TextAiKpiConfig, type TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
+import { createDefaultTextAiKpiWidget, type TextAiKpiConfig, type TextAiKpiWidgetInstance } from '@/data/mock-text-ai-kpi-by-theme';
 import type { TextAiSubthemeTrendWidgetInstance } from '@/data/mock-text-ai-subtheme-trend';
 import {
   getTextAiThemePreferences,
@@ -60,7 +60,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const router = useRouter();
   const wick = useWickUILib();
   const dashboard = getTextAiDashboardById(numericId);
-  const isLanguageDemo = !!getTextAiLanguageDemo(numericId);
+  const languageDemo = getTextAiLanguageDemo(numericId);
   const initialQuestions = resolveDashboardQuestions(numericId, dashboard?.questions);
   const [responseFilter,setResponseFilter]=useState<TextAiResponseFilter>({...EMPTY_TEXT_AI_FILTER});
   const [name, setName] = useState(dashboard?.name ?? 'Untitled');
@@ -87,6 +87,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [hasTextViewer, setHasTextViewer] = useState(false);
+  const [showOriginalResponses, setShowOriginalResponses] = useState(true);
   const [shareCanvas, setShareCanvas] = useState<TextAiSharedCanvasState | null>(null);
   const [addWidgetOpen, setAddWidgetOpen] = useState(false);
   const [addedTopicSegmentWidgets, setAddedTopicSegmentWidgets] = useState<
@@ -95,7 +96,10 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const [addedWidgets, setAddedWidgets] = useState<TextAiAddedWidget[]>([]);
   const [addedKpiWidgets, setAddedKpiWidgets] = useState<
     TextAiKpiWidgetInstance[]
-  >(() => isLanguageDemo ? [] : [{ id: 'default-impact-kpi', question: initialQuestions[0].text, name: 'Impact on KPI', config: { ...defaultTextAiKpiConfig(), sourceType: dashboard?.creationPreferences?.dataSourceType.toLowerCase().includes('dataset') ? 'dataset' : 'survey' } }]);
+  >(() => [createDefaultTextAiKpiWidget(
+    initialQuestions[0].text,
+    dashboard?.creationPreferences?.dataSourceType.toLowerCase().includes('dataset') ? 'dataset' : 'survey',
+  )]);
   const [addedSubthemeTrendWidgets, setAddedSubthemeTrendWidgets] = useState<
     TextAiSubthemeTrendWidgetInstance[]
   >([]);
@@ -272,7 +276,12 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         onQuestionChange={setSelectedQuestion}
         segmentFilters={segmentFilters}
         processedResponseIds={processedResponseIds}
-        hasSamplePendingResponses={!isLanguageDemo}
+        hasSamplePendingResponses={!languageDemo}
+        responseLanguage={languageDemo && hasTextViewer ? {
+          name: languageDemo.language.name,
+          showOriginal: showOriginalResponses,
+          onToggle: () => setShowOriginalResponses(previous => !previous),
+        } : undefined}
         onProcessResponses={handleProcessResponses}
       />
       {collectionError&&<p role="alert">{collectionError}</p>}
@@ -290,6 +299,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         addedSubthemeTrendWidgets={addedSubthemeTrendWidgets}
         themePreferences={themePreferences}
         design={design}
+        showOriginalResponses={languageDemo ? showOriginalResponses : undefined}
         onShareStateChange={setShareCanvas}
         onTextViewerPresenceChange={setHasTextViewer}
       />

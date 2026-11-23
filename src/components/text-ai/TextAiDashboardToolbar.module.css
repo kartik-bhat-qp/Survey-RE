@@ -97,6 +97,7 @@
 }
 
 .iconButton :global(.wm-download),
+.iconButton :global(.wm-translate),
 .iconButton :global(.wc-ai),
 .iconButton :global(.wm-settings) {
   font-size: 16px;
@@ -116,6 +117,7 @@
 
 .actions .iconButton:hover,
 .actions .filterButton:hover,
+.actions [aria-pressed='true'].iconButton,
 .actions [aria-expanded='true'].iconButton,
 .actions [aria-expanded='true'].filterButton {
   background: #f0f5fc;
@@ -312,6 +314,7 @@
 
   .actions {
     flex: 1 1 100%;
+    flex-wrap: wrap;
     gap: 2px;
     justify-content: flex-end;
     padding-right: 0;

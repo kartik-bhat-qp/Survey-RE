@@ -117,6 +117,15 @@ export function defaultTextAiKpiConfig(questionId: TextAiKpiId = 'nps', metric?:
   return { ...defaultKpiScoring(getTextAiKpiOptions(questionId), selected, selected === 'mean' ? field.label : selected.toUpperCase(), cesCalculation), questionId, sourceType: 'survey', textQuestionId: 1 };
 }
 
+export function createDefaultTextAiKpiWidget(question: string, sourceType: TextAiKpiSourceType = 'survey'): TextAiKpiWidgetInstance {
+  return {
+    id: 'default-impact-kpi',
+    question,
+    name: 'Impact on KPI',
+    config: { ...defaultTextAiKpiConfig(), sourceType },
+  };
+}
+
 export function validateTextAiKpiConfig(config: TextAiKpiConfig): string | null {
   if (!config.name.trim()) return 'Enter a KPI name.';
   if (!config.questionId) return 'Select a KPI question.';

@@ -9,6 +9,8 @@ import { useTextAiDashboardShare } from '@/hooks/useTextAiDashboardShare';
 import { getTextAiDashboardDesign } from '@/data/dashboard-design';
 import { getTextAiThemePreferences } from '@/data/text-ai-theme-preferences';
 import { createTextAiComparativeChartWidget } from '@/data/mock-text-ai-topic-segment-widget';
+import { createDefaultTextAiKpiWidget } from '@/data/mock-text-ai-kpi-by-theme';
+import { getTextAiLanguageDemo } from '@/data/mock-text-ai-language-demos';
 import type { TextAiSharingState } from '@/data/text-ai-sharing';
 import gateStyles from '@/components/dashboards/SharedDashboardViewer.module.css';
 import styles from './TextAiSharing.module.css';
@@ -45,6 +47,12 @@ function ViewerContent({ dashboardId, dashboard, password, showOriginalResponses
     </main>;
   }
 
+  // Older language-demo links were saved before the default KPI widget was included.
+  const defaultKpi = getTextAiLanguageDemo(dashboardId) && createDefaultTextAiKpiWidget(dashboard.selectedQuestion.text);
+  const kpiWidgets = defaultKpi && !dashboard.kpis.some(widget => widget.id === defaultKpi.id)
+    ? [...dashboard.kpis, defaultKpi]
+    : dashboard.kpis;
+
   return <>
     <header className={styles.viewerHeader}><h1>{dashboard.name}</h1></header>
     <main className={styles.viewerCanvas}>
@@ -58,7 +66,7 @@ function ViewerContent({ dashboardId, dashboard, password, showOriginalResponses
         questionIndex={dashboard.questionIndex}
         addedWidgets={dashboard.widgets}
         addedTopicSegmentWidgets={dashboard.comparisons.map(({ id, question }) => ({ ...createTextAiComparativeChartWidget(question), id }))}
-        addedKpiWidgets={dashboard.kpis}
+        addedKpiWidgets={kpiWidgets}
         addedSubthemeTrendWidgets={dashboard.trends}
         themePreferences={getTextAiThemePreferences(dashboardId)}
         sharedCanvas={dashboard.canvas}

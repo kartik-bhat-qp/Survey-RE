@@ -57,11 +57,6 @@
   gap: 4px;
 }
 
-.paginationBar .languageButton[aria-pressed='true'] {
-  background: #edf5ff;
-  color: #176fbe;
-}
-
 .pageRange {
   color: #545e6b;
   font-size: calc(var(--dashboard-widget-body-size, 13px) * 0.9231);
