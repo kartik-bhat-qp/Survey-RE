@@ -51,6 +51,7 @@ interface TextAiDashboardToolbarProps {
   onQuestionChange: (question: TextAiDashboardQuestion) => void;
   segmentFilters?: TextAiSegmentFilterState;
   processedResponseIds?: string[];
+  hasSamplePendingResponses?: boolean;
   onProcessResponses?: (filters: TextAiSegmentFilterState, responseIds: string[]) => void;
 }
 
@@ -68,6 +69,7 @@ export function TextAiDashboardToolbar({
   onQuestionChange,
   segmentFilters,
   processedResponseIds,
+  hasSamplePendingResponses = true,
   onProcessResponses,
 }: TextAiDashboardToolbarProps) {
   const wick = useWickUILib();
@@ -82,9 +84,10 @@ export function TextAiDashboardToolbar({
     () => ({ ...(segmentFilters ?? createDefaultSegmentFilterState()), responseExclusions: undefined })
   );
   const pendingResponses = useMemo(() => {
+    if (!hasSamplePendingResponses) return [];
     const processed = new Set(processedResponseIds ?? []);
     return MOCK_PENDING_RESPONSES.filter((response) => !processed.has(response.id));
-  }, [processedResponseIds]);
+  }, [hasSamplePendingResponses, processedResponseIds]);
   const processingSummary = useMemo(() => getTextAiSegmentResponseSummary(draftSegmentFilters, pendingResponses), [draftSegmentFilters, pendingResponses]);
   function handleNameBlur(): void {
     const trimmed = nameState.trim();

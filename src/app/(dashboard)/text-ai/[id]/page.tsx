@@ -3,6 +3,7 @@ import type { TextAiAddedWidget } from '@/components/text-ai/TextAiDashboardCanv
 import { CENSORED_CONFIGURATION_EVENT, isCensoredSubthemesEnabled, syncCensoredResponses } from '@/data/text-ai-censored-subthemes';
 import { parseCodeFrames } from '@/data/text-ai-code-frame-drafts';
 import { MOCK_TEXT_AI_PENDING_RESPONSES } from '@/data/mock-text-ai-pending-responses';
+import { getTextAiLanguageDemo } from '@/data/mock-text-ai-language-demos';
 
 import { use, useEffect, useMemo, useState } from 'react';
 import { EMPTY_TEXT_AI_FILTER, type TextAiResponseFilter } from '@/data/text-ai-widget-settings';
@@ -59,6 +60,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const router = useRouter();
   const wick = useWickUILib();
   const dashboard = getTextAiDashboardById(numericId);
+  const isLanguageDemo = !!getTextAiLanguageDemo(numericId);
   const initialQuestions = resolveDashboardQuestions(numericId, dashboard?.questions);
   const [responseFilter,setResponseFilter]=useState<TextAiResponseFilter>({...EMPTY_TEXT_AI_FILTER});
   const [name, setName] = useState(dashboard?.name ?? 'Untitled');
@@ -93,7 +95,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
   const [addedWidgets, setAddedWidgets] = useState<TextAiAddedWidget[]>([]);
   const [addedKpiWidgets, setAddedKpiWidgets] = useState<
     TextAiKpiWidgetInstance[]
-  >(() => [{ id: 'default-impact-kpi', question: initialQuestions[0].text, name: 'Impact on KPI', config: { ...defaultTextAiKpiConfig(), sourceType: dashboard?.creationPreferences?.dataSourceType.toLowerCase().includes('dataset') ? 'dataset' : 'survey' } }]);
+  >(() => isLanguageDemo ? [] : [{ id: 'default-impact-kpi', question: initialQuestions[0].text, name: 'Impact on KPI', config: { ...defaultTextAiKpiConfig(), sourceType: dashboard?.creationPreferences?.dataSourceType.toLowerCase().includes('dataset') ? 'dataset' : 'survey' } }]);
   const [addedSubthemeTrendWidgets, setAddedSubthemeTrendWidgets] = useState<
     TextAiSubthemeTrendWidgetInstance[]
   >([]);
@@ -270,6 +272,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         onQuestionChange={setSelectedQuestion}
         segmentFilters={segmentFilters}
         processedResponseIds={processedResponseIds}
+        hasSamplePendingResponses={!isLanguageDemo}
         onProcessResponses={handleProcessResponses}
       />
       {collectionError&&<p role="alert">{collectionError}</p>}

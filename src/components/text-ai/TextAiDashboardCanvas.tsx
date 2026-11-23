@@ -12,6 +12,7 @@ import ReactGridLayout, {
 } from 'react-grid-layout/legacy';
 import { TextAiOverviewWidget, type TextAiOverviewKind } from './TextAiOverviewWidget';
 import type { TextAiWidgetChartTypeId } from '@/data/mock-text-ai-widget-chart-types';
+import { getTextAiLanguageDemo, textAiLanguageDemoRows, textAiLanguageDemoSummary } from '@/data/mock-text-ai-language-demos';
 import { TextAiAnalysisWidgetCard } from '@/components/text-ai/TextAiAnalysisWidget';
 import { TextAiKpiByThemeWidget } from '@/components/text-ai/TextAiKpiByThemeWidget';
 import { TextAiSubthemeStackbarWidget } from '@/components/text-ai/TextAiSubthemeStackbarWidget';
@@ -361,6 +362,7 @@ export function TextAiDashboardCanvas({
   onTextViewerPresenceChange,
 }: TextAiDashboardCanvasProps) {
   const readOnly = !!sharedCanvas;
+  const languageDemo = getTextAiLanguageDemo(dashboardId);
   const designStyle = { ...getTextAiTypographyCssVars(design.typography), ...getDashboardDesignColorVars(design) };
   const isMobile = useIsMobile();
   const [isPositioning, setIsPositioning] = useState(false);
@@ -422,7 +424,7 @@ export function TextAiDashboardCanvas({
       return matching?.length ? [{ ...row, subtopics: matching }] : [];
     });
   }
-  const summaryWidgets = adaptSummaryWidgets(
+  const summaryWidgets = languageDemo ? [textAiLanguageDemoSummary(languageDemo)] : adaptSummaryWidgets(
     getTextAiSummaryWidgets(dashboardId),
     selectedQuestion,
     questionFactor,
@@ -433,7 +435,12 @@ export function TextAiDashboardCanvas({
     selectedQuestion,
     questionFactor
   ).map(widget => ({ ...widget, rows: [...widget.rows, ...outlierData.comparisonRows] }));
-  const analysisWidgets = adaptAnalysisWidgets(
+  const analysisWidgets: TextAiAnalysisWidget[] = languageDemo ? [{
+    id: 'language-viewer',
+    question: languageDemo.question,
+    rows: textAiLanguageDemoRows(languageDemo),
+    responseLanguage: languageDemo.language,
+  }] : adaptAnalysisWidgets(
     getTextAiDashboardWidgets(dashboardId),
     selectedQuestion,
     questionIndex
@@ -483,7 +490,7 @@ export function TextAiDashboardCanvas({
     }
     return { id: widget.id, kind: 'overview', content: <TextAiOverviewWidget kind={widget.chartType as TextAiOverviewKind} question={question} themePreferences={themePreferences} rows={stackRows} onDelete={onDelete} /> };
   }
-  const defaultExtraWidgets: TextAiAddedWidget[] = ['gauge', 'theme-stacked-bar', 'bubble-chart', 'trend-line', 'subtheme-comparative-chart'].map(chartType => ({ id: `default-${chartType}`, chartType: chartType as TextAiWidgetChartTypeId, question: selectedQuestion.text }));
+  const defaultExtraWidgets: TextAiAddedWidget[] = languageDemo ? [] : ['gauge', 'theme-stacked-bar', 'bubble-chart', 'trend-line', 'subtheme-comparative-chart'].map(chartType => ({ id: `default-${chartType}`, chartType: chartType as TextAiWidgetChartTypeId, question: selectedQuestion.text }));
 
   const allCanvasWidgets: TextAiCanvasWidget[] = [
     ...addedWidgets.map(renderAddedWidget),
@@ -539,7 +546,7 @@ export function TextAiDashboardCanvas({
         ),
       };
     }),
-    ...visibleTopicSegmentWidgets.map((widget) => {
+    ...(languageDemo ? [] : visibleTopicSegmentWidgets).map((widget) => {
       const id = `topic-segment-${widget.id}`;
       return {
         id,
@@ -553,7 +560,7 @@ export function TextAiDashboardCanvas({
         ),
       };
     }),
-    {
+    ...(languageDemo ? [] : [{
       id: 'subtheme-stackbar',
       kind: 'subtheme-stackbar' as const,
       content: (
@@ -564,7 +571,7 @@ export function TextAiDashboardCanvas({
           rows={stackRows}
         />
       ),
-    },
+    }]),
     ...defaultExtraWidgets.map(renderAddedWidget),
     ...approvedAnalysisWidgets.map((widget, index) => {
       const id = `analysis-${index}`;
@@ -601,7 +608,8 @@ export function TextAiDashboardCanvas({
     if(entry.kind==='kpi-by-theme'||entry.kind==='subtheme-trend') return entry;
     const element=entry.content as ReactElement<TextAiWidgetSettingsProps & {kind?:TextAiOverviewKind;question?:string;widget?:TextAiTopicSegmentWidget & TextAiSummaryWidget}>;
     const kind:TextAiSettingsKind=entry.kind==='overview'?element.props.kind! : entry.kind==='analysis'?'text-viewer':entry.kind==='summary'?'text-summary':entry.kind==='subtheme-stackbar'?'subtheme-stacked-bar':entry.kind==='subtheme-comparative'?'subtheme-comparative-chart':'comparative-chart';
-    const title=element.props.question??element.props.widget?.question??selectedQuestion.text;
+    const demoTitle = languageDemo && (entry.id === 'analysis-0' ? 'Text Viewer' : entry.id === 'summary-language-summary' ? 'Text Summary' : undefined);
+    const title=demoTitle??element.props.question??element.props.widget?.question??selectedQuestion.text;
     const rows=element.props.widget?.rows??[];
     const approvedStackRows=stackRows.filter(row=>isApproved(row.label,Boolean(row.emerging)));
     const items=kind.includes('comparative')?rows.map(row=>({id:row.id,label:row.topic})):approvedStackRows.map(row=>({id:row.id,label:row.label}));
@@ -668,7 +676,7 @@ export function TextAiDashboardCanvas({
   }
 
   const viewerFilters = readOnly && <TextAiSharedFilters filters={sharedFilters} onChange={setSharedFilters}
-    themes={allStackRows.filter(row => isApproved(row.label, Boolean(row.emerging)))}
+    themes={languageDemo ? [] : allStackRows.filter(row => isApproved(row.label, Boolean(row.emerging)))}
     responses={hasTextViewer ? approvedAnalysisWidgets.flatMap(widget => widget.rows) : []} />;
 
   if (isMobile) {

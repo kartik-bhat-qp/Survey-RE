@@ -90,6 +90,10 @@ export function TextAiAnalysisWidgetCard({
   );
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [showOriginal, setShowOriginal] = useState(true);
+  const originalResponses = showOriginalResponses ?? showOriginal;
+  const language = widget.responseLanguage;
+  const responseLanguage = language && (originalResponses ? language.code : "en");
   const localPageSize = PAGE_SIZE_OPTIONS[3];
   const pageSize = settings
     ? (PAGE_SIZE_OPTIONS.find(
@@ -103,9 +107,9 @@ export function TextAiAnalysisWidgetCard({
     const term = search.trim().toLowerCase();
     const sourceRows = limitTextAiWidgetItems(widget.rows, topN)
       .filter((row) => matchesTextAiFilters(row, responseFilters))
-      .map((row) => showOriginalResponses === undefined ? row : {
+      .map((row) => originalResponses || !row.translatedValue ? row : {
         ...row,
-        value: textAiSharedResponseValue(row, showOriginalResponses),
+        value: textAiSharedResponseValue(row, originalResponses),
       })
       .sort((a, b) =>
         s.dateOrder === "Newest first"
@@ -121,7 +125,7 @@ export function TextAiAnalysisWidgetCard({
         row.insight.toLowerCase().includes(term) ||
         row.tags.some((tag) => tag.toLowerCase().includes(term)),
     );
-  }, [search, topN, widget.rows, responseFilters, s.dateOrder, showOriginalResponses]);
+  }, [search, topN, widget.rows, responseFilters, s.dateOrder, originalResponses]);
 
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSizeNum));
   const safePage = Math.min(page, pageCount - 1);
@@ -140,7 +144,7 @@ export function TextAiAnalysisWidgetCard({
         header: "Responses",
         enableSorting: true,
         cell: ({ row }) => (
-          <span className={styles.valueCell}>{row.original.value}</span>
+          <span className={styles.valueCell} lang={responseLanguage}>{row.original.value}</span>
         ),
       },
       {
@@ -195,7 +199,7 @@ export function TextAiAnalysisWidgetCard({
         cell: ({ row }) => <span>{row.original.collectedOn ?? "—"}</span>,
       },
     ],
-    [s.highlightSentiment],
+    [s.highlightSentiment, responseLanguage],
   );
   const visibleColumns = useMemo(
     () => s.columns.map((label) => columns[byColumn[label]]).filter(Boolean),
@@ -243,6 +247,21 @@ export function TextAiAnalysisWidgetCard({
           className={styles.searchInput}
         />
         <div className={styles.paginationBar}>
+          {language && !preview && showOriginalResponses === undefined && (
+            <WuButton
+              className={styles.languageButton}
+              variant="iconOnly"
+              size="sm"
+              aria-label={`Show original ${language.name} responses`}
+              aria-pressed={showOriginal}
+              title={showOriginal ? "Show English translations" : `Show original ${language.name} responses`}
+              onClick={() => {
+                setShowOriginal(previous => !previous);
+                setPage(0);
+              }}
+              Icon={<span className="wm-translate" aria-hidden />}
+            />
+          )}
           <WuButton
             variant="iconOnly"
             size="sm"

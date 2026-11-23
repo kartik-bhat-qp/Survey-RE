@@ -3,6 +3,11 @@ import type { TextAiSentimentBucket } from './mock-text-ai-subtheme-stackbar';
 
 export type TextAiSubtopicTone = 'neutral' | 'positive';
 
+export interface TextAiResponseLanguage {
+  code: string;
+  name: string;
+}
+
 export interface TextAiAnalysisRow {
   /** Synthetic collected date for this prototype response fixture. */
   collectedOn?: string;
@@ -23,6 +28,7 @@ export interface TextAiAnalysisWidget {
   id: string;
   question: string;
   rows: TextAiAnalysisRow[];
+  responseLanguage?: TextAiResponseLanguage;
 }
 
 export function textAiSharedResponseValue(row: TextAiAnalysisRow, showOriginalResponses: boolean): string {
