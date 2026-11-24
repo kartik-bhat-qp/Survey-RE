@@ -18,7 +18,17 @@ export type CustomProfileFieldId =
   | 'department'
   | 'job-title'
   | 'membership-tier'
-  | 'region';
+  | 'region'
+  | 'service-satisfaction'
+  | 'price-perception'
+  | 'overall-satisfaction'
+  | 'quality-rating'
+  | 'brand-perception'
+  | 'support-experience'
+  | 'likelihood-to-recommend-our-products-to-friends-family-and-colleagues';
+
+/** Matrix row id → mapped profile field. Rows without an entry are unmapped. */
+export type RowProfileFieldMap = Record<string, CustomProfileFieldId>;
 
 export interface QuestionCommunitySettings {
   communityId: CommunityIdSelection;
@@ -50,7 +60,24 @@ export const CUSTOM_PROFILE_FIELD_OPTIONS: {
   { value: 'job-title', label: 'Job Title' },
   { value: 'membership-tier', label: 'Membership Tier' },
   { value: 'region', label: 'Region' },
+  { value: 'service-satisfaction', label: 'Service Satisfaction' },
+  { value: 'price-perception', label: 'Price Perception' },
+  { value: 'overall-satisfaction', label: 'Overall Satisfaction' },
+  { value: 'quality-rating', label: 'Quality Rating' },
+  { value: 'brand-perception', label: 'Brand Perception' },
+  { value: 'support-experience', label: 'Support Experience' },
+  {
+    value: 'likelihood-to-recommend-our-products-to-friends-family-and-colleagues',
+    label: 'Likelihood to recommend our products to friends, family and colleagues',
+  },
 ];
+
+export function countMappedRows(
+  rowIds: readonly string[],
+  mapping: RowProfileFieldMap
+): number {
+  return rowIds.filter((rowId) => Boolean(mapping[rowId])).length;
+}
 
 export function isCommunityMappingActive(
   settings: Pick<QuestionCommunitySettings, 'communityId' | 'customProfileFieldId'>
@@ -91,5 +118,21 @@ export function getLinkedCommunityDisplay(
   return {
     communityLabel: community.label,
     profileFieldLabel: profileField.label,
+  };
+}
+
+/** Breadcrumb for matrix questions, where each row maps to its own profile field. */
+export function getMatrixLinkedCommunityDisplay(
+  communityId: CommunityIdSelection,
+  rowIds: readonly string[],
+  mapping: RowProfileFieldMap
+): LinkedCommunityDisplay | null {
+  if (!communityId) return null;
+  const community = COMMUNITY_SETTINGS_OPTIONS.find((option) => option.value === communityId);
+  const mapped = countMappedRows(rowIds, mapping);
+  if (!community?.value || mapped === 0) return null;
+  return {
+    communityLabel: community.label,
+    profileFieldLabel: `${mapped} of ${rowIds.length} rows mapped`,
   };
 }

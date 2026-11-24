@@ -1,6 +1,7 @@
 import {
   DEFAULT_QUESTION_COMMUNITY_SETTINGS,
   type QuestionCommunitySettings,
+  type RowProfileFieldMap,
 } from '@/data/mock-question-communities';
 
 export type MultiPointLayout = 'matrix' | 'cards-carousel';
@@ -48,6 +49,7 @@ export interface MultiPointScalesSettings {
   scaleType: MultiPointScaleType;
   communityId: QuestionCommunitySettings['communityId'];
   customProfileFieldId: QuestionCommunitySettings['customProfileFieldId'];
+  rowProfileFieldIds: RowProfileFieldMap;
 }
 
 export const DEFAULT_MULTI_POINT_SETTINGS: MultiPointScalesSettings = {
@@ -68,6 +70,7 @@ export const DEFAULT_MULTI_POINT_SETTINGS: MultiPointScalesSettings = {
   reportLabel: '',
   scaleType: 'undefined',
   ...DEFAULT_QUESTION_COMMUNITY_SETTINGS,
+  rowProfileFieldIds: {},
 };
 
 /** Defaults applied when adding a new Basic Matrix (Multi-Point Scales) question. */

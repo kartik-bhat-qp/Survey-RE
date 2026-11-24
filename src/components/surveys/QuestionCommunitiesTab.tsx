@@ -2,6 +2,10 @@
 
 import dynamic from 'next/dynamic';
 import {
+  MatrixRowProfileFieldMapping,
+  type MatrixRowProfileFieldMappingProps,
+} from '@/components/surveys/MatrixRowProfileFieldMapping';
+import {
   COMMUNITY_MAPPING_AUTO_SELECT_CONFLICT_MESSAGE,
   COMMUNITY_SETTINGS_OPTIONS,
   CUSTOM_PROFILE_FIELD_OPTIONS,
@@ -25,6 +29,8 @@ export interface QuestionCommunitiesTabProps {
   customProfileFieldId: CustomProfileFieldId;
   onCommunityChange: (communityId: CommunityIdSelection) => void;
   onCustomProfileFieldChange: (fieldId: CustomProfileFieldId) => void;
+  /** Matrix questions map each row to its own profile field instead of one field per question. */
+  rowMapping?: Omit<MatrixRowProfileFieldMappingProps, 'disabled'>;
   disabled?: boolean;
   disabledReason?: string;
 }
@@ -34,6 +40,7 @@ export function QuestionCommunitiesTab({
   customProfileFieldId,
   onCommunityChange,
   onCustomProfileFieldChange,
+  rowMapping,
   disabled = false,
   disabledReason = COMMUNITY_MAPPING_AUTO_SELECT_CONFLICT_MESSAGE,
 }: QuestionCommunitiesTabProps) {
@@ -68,23 +75,33 @@ export function QuestionCommunitiesTab({
         </WuTooltip>
       </div>
 
-      <div className={styles.field}>
-        <span className={styles.fieldLabel}>Question Text</span>
-        <WuTooltip content={disabled ? disabledReason : undefined} position="top">
-          <div className={styles.selectWrap}>
-            <WuSelect
-              data={CUSTOM_PROFILE_FIELD_OPTIONS}
-              accessorKey={{ value: 'value', label: 'label' }}
-              value={profileFieldValue}
-              onSelect={(item) =>
-                onCustomProfileFieldChange((item as { value: CustomProfileFieldId }).value)
-              }
-              variant="outlined"
-              disabled={disabled}
-            />
-          </div>
-        </WuTooltip>
-      </div>
+      {rowMapping ? (
+        communityId ? (
+          <MatrixRowProfileFieldMapping {...rowMapping} disabled={disabled} />
+        ) : (
+          <p className={styles.placeholder}>
+            Select a community to map each row to a profile field.
+          </p>
+        )
+      ) : (
+        <div className={styles.field}>
+          <span className={styles.fieldLabel}>Question Text</span>
+          <WuTooltip content={disabled ? disabledReason : undefined} position="top">
+            <div className={styles.selectWrap}>
+              <WuSelect
+                data={CUSTOM_PROFILE_FIELD_OPTIONS}
+                accessorKey={{ value: 'value', label: 'label' }}
+                value={profileFieldValue}
+                onSelect={(item) =>
+                  onCustomProfileFieldChange((item as { value: CustomProfileFieldId }).value)
+                }
+                variant="outlined"
+                disabled={disabled}
+              />
+            </div>
+          </WuTooltip>
+        </div>
+      )}
     </div>
   );
 }

@@ -164,6 +164,7 @@ import {
 } from '@/data/mock-question-settings';
 import {
   getLinkedCommunityDisplay,
+  getMatrixLinkedCommunityDisplay,
   type LinkedCommunityDisplay,
 } from '@/data/mock-question-communities';
 import {
@@ -4534,7 +4535,13 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
                     const captchaSettings = getCaptchaSettings(questionKey);
                     const questionSettings = getQuestionSettings(question, questionKey);
                     const linkedCommunity = isMultiPoint
-                      ? getLinkedCommunityDisplay(multiPointSettings)
+                      ? question.matrix?.rows.length
+                        ? getMatrixLinkedCommunityDisplay(
+                            multiPointSettings.communityId,
+                            question.matrix.rows.map((row) => row.id),
+                            multiPointSettings.rowProfileFieldIds
+                          )
+                        : getLinkedCommunityDisplay(multiPointSettings)
                       : getLinkedCommunityDisplay(questionSettings);
                     const deepDiveConfig = isDeepDive
                       ? readDeepDiveFollowUpQuestionConfig(question)
@@ -5637,6 +5644,7 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
             settings={getMultiPointSettings(settingsQuestionKey)}
             onChange={(next) => handleMultiPointSettingsChange(settingsQuestionKey, next)}
             onClose={() => setSettingsTarget(null)}
+            matrixRows={settingsQuestion.matrix?.rows}
             dynamicTextCommentsEnabled={
               logicByQuestionKey[settingsQuestionKey] != null &&
               isDynamicTextCommentsConfigured(

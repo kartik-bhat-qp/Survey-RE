@@ -22,6 +22,7 @@ import {
   type MultiPointScalesSettings,
   type MultiPointVideoOption,
 } from '@/data/mock-multi-point-settings';
+import type { SurveyMatrixRow } from '@/data/mock-survey-detail';
 import panelStyles from './QuestionSettingsPanel.module.css';
 import styles from './MultiPointScalesSettingsPanel.module.css';
 import { QuestionCommunitiesTab } from '@/components/surveys/QuestionCommunitiesTab';
@@ -49,6 +50,7 @@ export interface MultiPointScalesSettingsPanelProps {
   onClose: () => void;
   /** When true, Cards carousel cannot be selected (mutual with Dynamic Text/Comments). */
   dynamicTextCommentsEnabled?: boolean;
+  matrixRows?: SurveyMatrixRow[];
 }
 
 function FieldLabel({
@@ -133,6 +135,7 @@ export function MultiPointScalesSettingsPanel({
   onChange,
   onClose,
   dynamicTextCommentsEnabled = false,
+  matrixRows,
 }: MultiPointScalesSettingsPanelProps) {
   const { showToast } = useWuShowToast();
   const [activeTab, setActiveTab] = useState<SettingsTab>('metadata');
@@ -524,11 +527,22 @@ export function MultiPointScalesSettingsPanel({
               onCommunityChange={(communityId) =>
                 patch({
                   communityId,
-                  ...(communityId === '' ? { customProfileFieldId: '' as const } : {}),
+                  ...(communityId === ''
+                    ? { customProfileFieldId: '' as const, rowProfileFieldIds: {} }
+                    : {}),
                 })
               }
               onCustomProfileFieldChange={(customProfileFieldId) =>
                 patch({ customProfileFieldId })
+              }
+              rowMapping={
+                matrixRows && matrixRows.length > 0
+                  ? {
+                      rows: matrixRows,
+                      mapping: settings.rowProfileFieldIds,
+                      onChange: (rowProfileFieldIds) => patch({ rowProfileFieldIds }),
+                    }
+                  : undefined
               }
             />
           )}
