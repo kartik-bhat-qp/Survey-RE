@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { CommunitySend } from '@/components/communities/CommunitySend';
 import { CommunitySettingsPage } from '@/components/communities/CommunitySettingsPage';
 import { getCommunityHome, type CommunityListItem } from '@/data/mock-communities';
 import styles from './CommunityInterior.module.css';
@@ -49,6 +50,31 @@ export function CommunityInterior({ community }: { community: CommunityListItem 
     }
   }
 
+  const portal = (
+    <div className={styles.portal}>
+      <button
+        type="button"
+        className={styles.portalMenu}
+        onClick={() => showToast({ message: 'Portal Link', variant: 'success' })}
+      >
+        Portal Link
+        <span className="wm-expand-more" aria-hidden />
+      </button>
+      <input className={styles.portalUrl} readOnly value={home.portalUrl} aria-label="Portal link" />
+      <button type="button" className={styles.portalIcon} aria-label="Copy portal link" onClick={() => void copyPortalLink()}>
+        <span className="wm-content-copy" aria-hidden />
+      </button>
+      <button
+        type="button"
+        className={styles.portalIcon}
+        aria-label="Open portal link"
+        onClick={() => window.open(home.portalUrl, '_blank', 'noopener,noreferrer')}
+      >
+        <span className="wm-open-in-new" aria-hidden />
+      </button>
+    </div>
+  );
+
   return (
     <div className={styles.page}>
       <div className={styles.primary} role="tablist" aria-label="Community">
@@ -83,32 +109,13 @@ export function CommunityInterior({ community }: { community: CommunityListItem 
               </button>
             ))}
           </nav>
-          <div className={styles.portal}>
-            <button
-              type="button"
-              className={styles.portalMenu}
-              onClick={() => showToast({ message: 'Portal Link', variant: 'success' })}
-            >
-              Portal Link
-              <span className="wm-expand-more" aria-hidden />
-            </button>
-            <input className={styles.portalUrl} readOnly value={home.portalUrl} aria-label="Portal link" />
-            <button type="button" className={styles.portalIcon} aria-label="Copy portal link" onClick={() => void copyPortalLink()}>
-              <span className="wm-content-copy" aria-hidden />
-            </button>
-            <button
-              type="button"
-              className={styles.portalIcon}
-              aria-label="Open portal link"
-              onClick={() => window.open(home.portalUrl, '_blank', 'noopener,noreferrer')}
-            >
-              <span className="wm-open-in-new" aria-hidden />
-            </button>
-          </div>
+          {portal}
         </div>
       ) : null}
 
-      <div className={styles.content}>
+      {area === 'send' ? <CommunitySend community={community} portal={portal} /> : null}
+
+      <div className={area === 'send' ? styles.hidden : styles.content}>
         {area === 'community' && section === 'dashboard' ? (
           <CommunityDashboard community={community} />
         ) : null}
@@ -126,7 +133,7 @@ export function CommunityInterior({ community }: { community: CommunityListItem 
             }
           />
         ) : null}
-        {area !== 'community' ? (
+        {area !== 'community' && area !== 'send' ? (
           <SectionPlaceholder
             label={AREAS.find((item) => item.id === area)?.label ?? 'Community'}
             onOpen={() =>

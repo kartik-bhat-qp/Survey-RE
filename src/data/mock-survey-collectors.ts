@@ -434,7 +434,7 @@ export function mergeCollectorOptions(
   stored?: Partial<CollectorOptions> | null
 ): CollectorOptions {
   const legacy = stored as
-    | (Partial<CollectorOptions> & {
+    | (Omit<Partial<CollectorOptions>, 'endpage'> & {
         endpage?: EndpageMode | 'redirect' | 'custom';
         endpageRedirect?: string;
         endpageCustom?: string;
