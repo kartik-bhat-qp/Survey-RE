@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { AnalyticsOverview } from '@/components/surveys/analytics2/AnalyticsOverview';
+import { AnalyticsRespondentIntegrity } from '@/components/surveys/analytics2/AnalyticsRespondentIntegrity';
 import {
   AnalyticsComparison,
   AnalyticsConsolidate,
@@ -137,6 +138,7 @@ export function SurveyAnalyticsHub({ detail }: SurveyAnalyticsHubProps) {
     }
     if (screen === 'weighting') return <AnalyticsWeighting onAction={toast} />;
     if (screen === 'quality') return <AnalyticsQuality onAction={toast} />;
+    if (screen === 'integrity') return <AnalyticsRespondentIntegrity onAction={toast} />;
     if (screen === 'deviceaudit') return <AnalyticsDeviceAudit onAction={toast} />;
     if (screen === 'exportdata') return <AnalyticsExport onAction={toast} />;
     if (screen === 'importdata') return <AnalyticsImport onAction={toast} />;

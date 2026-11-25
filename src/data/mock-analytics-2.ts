@@ -20,6 +20,7 @@ export type Analytics2ScreenId =
   | 'filters'
   | 'weighting'
   | 'quality'
+  | 'integrity'
   | 'deviceaudit'
   | 'exportdata'
   | 'importdata'
@@ -83,6 +84,7 @@ export const ANALYTICS_2_NAV: Analytics2NavSection[] = [
       { id: 'filters', label: 'Data Filters', icon: 'wm-filter-alt' },
       { id: 'weighting', label: 'Weighting & Balancing', icon: 'wm-balance' },
       { id: 'quality', label: 'Data Quality', icon: 'wm-verified' },
+      { id: 'integrity', label: 'Respondent Integrity', icon: 'wm-verified-user' },
       { id: 'deviceaudit', label: 'Device Audit', icon: 'wm-devices' },
     ],
   },
@@ -121,6 +123,7 @@ export const ANALYTICS_2_SCREEN_LABELS: Record<Analytics2ScreenId, string> = {
   filters: 'Data Filters',
   weighting: 'Weighting & Balancing',
   quality: 'Data Quality',
+  integrity: 'Respondent Integrity',
   deviceaudit: 'Device Audit',
   exportdata: 'Export Data',
   importdata: 'Import Data',
