@@ -6,12 +6,11 @@ import { useWickUILib } from '@/components/ui/useWickUILib';
 import { textAiSharePath, type TextAiSharingState } from '@/data/text-ai-sharing';
 import styles from './TextAiSharing.module.css';
 
-export function TextAiShareModal({ dashboardId, dashboard, sharing, onChange, hasTextViewer, onClose }: {
+export function TextAiShareModal({ dashboardId, dashboard, sharing, onChange, onClose }: {
   dashboardId: number;
   dashboard: TextAiSharingState['dashboard'];
   sharing: TextAiSharingState;
   onChange: (settings: TextAiSharingState) => void;
-  hasTextViewer: boolean;
   onClose: () => void;
 }) {
   const wick = useWickUILib();
@@ -79,11 +78,6 @@ export function TextAiShareModal({ dashboardId, dashboard, sharing, onChange, ha
         </form>}
         {sharing.password && !enterPassword && <button type="button" className={styles.textButton}
           onClick={() => setEnterPassword(true)}>Change password</button>}
-        {hasTextViewer && <div className={styles.settingRow}>
-          <span id="text-ai-share-language-label">Show responses in original language</span>
-          <WuToggle aria-labelledby="text-ai-share-language-label" checked={sharing.showOriginalResponses}
-            onChange={value => onChange({ ...sharing, showOriginalResponses: value })} />
-        </div>}
       </>}
     </WuModalContent>
   </WuModal>;

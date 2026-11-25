@@ -304,7 +304,7 @@ function TextAiDashboardDetailContent({ numericId }: { numericId: number }) {
         onTextViewerPresenceChange={setHasTextViewer}
       />
       {shareOpen && <TextAiShareModal dashboardId={numericId} dashboard={shareDashboard} sharing={sharing}
-        onChange={setSharing} hasTextViewer={hasTextViewer} onClose={() => setShareOpen(false)} />}
+        onChange={setSharing} onClose={() => setShareOpen(false)} />}
       <TextAiDashboardSettingsModal
         dashboard={currentDashboard}
         design={design}

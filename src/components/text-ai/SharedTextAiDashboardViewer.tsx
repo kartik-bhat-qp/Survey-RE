@@ -15,11 +15,10 @@ import type { TextAiSharingState } from '@/data/text-ai-sharing';
 import gateStyles from '@/components/dashboards/SharedDashboardViewer.module.css';
 import styles from './TextAiSharing.module.css';
 
-function ViewerContent({ dashboardId, dashboard, password, showOriginalResponses }: {
+function ViewerContent({ dashboardId, dashboard, password }: {
   dashboardId: number;
   dashboard: NonNullable<TextAiSharingState['dashboard']>;
   password: string;
-  showOriginalResponses: boolean;
 }) {
   const wick = useWickUILib();
   const [enteredPassword, setEnteredPassword] = useState('');
@@ -70,7 +69,6 @@ function ViewerContent({ dashboardId, dashboard, password, showOriginalResponses
         addedSubthemeTrendWidgets={dashboard.trends}
         themePreferences={getTextAiThemePreferences(dashboardId)}
         sharedCanvas={dashboard.canvas}
-        showOriginalResponses={showOriginalResponses}
       />
     </main>
     <footer className={styles.footer}>Powered by <a href="https://www.questionpro.com/" rel="noreferrer" target="_blank">QuestionPro</a></footer>
@@ -88,6 +86,6 @@ export function SharedTextAiDashboardViewer({ dashboardId }: { dashboardId: numb
         <p>Enable sharing for this TextAI dashboard in this browser.</p>
       </main>
       : <ViewerContent key={sharing.password} dashboardId={dashboardId} dashboard={sharing.dashboard}
-        password={sharing.password} showOriginalResponses={sharing.showOriginalResponses} />}
+        password={sharing.password} />}
   </div>;
 }

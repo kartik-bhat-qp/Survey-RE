@@ -20,11 +20,16 @@ export function matchesSharedTextAiResponse(row: TextAiAnalysisRow, filters: Tex
     (!filters.sentiment || (row.sentiment ?? row.subtopicTone) === filters.sentiment);
 }
 
-export function TextAiSharedFilters({ filters, onChange, themes, responses }: {
+export function TextAiSharedFilters({ filters, onChange, themes, responses, responseLanguage }: {
   filters: TextAiShareFilters;
   onChange: (filters: TextAiShareFilters) => void;
   themes: TextAiThemeSentimentRow[];
   responses: TextAiAnalysisRow[];
+  responseLanguage?: {
+    showOriginal: boolean;
+    onChange: (showOriginal: boolean) => void;
+    outputLanguage?: string;
+  };
 }) {
   const themeOptions = [...new Set([
     ...themes.map((row) => row.label),
@@ -54,5 +59,14 @@ export function TextAiSharedFilters({ filters, onChange, themes, responses }: {
         {Object.entries(TEXT_AI_SHARE_SENTIMENTS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
       </select>
     </label>
+    {responseLanguage && <label>
+      <span className="wm-translate" aria-hidden />
+      Response language
+      <select value={responseLanguage.showOriginal ? 'original' : 'translated'}
+        onChange={(event) => responseLanguage.onChange(event.target.value === 'original')}>
+        <option value="translated">{responseLanguage.outputLanguage ? `${responseLanguage.outputLanguage} (translation)` : 'Translated responses'}</option>
+        <option value="original">{responseLanguage.outputLanguage ? 'English (original)' : 'Original responses'}</option>
+      </select>
+    </label>}
   </section>;
 }

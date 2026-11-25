@@ -16,7 +16,7 @@ test('shared Text Viewer selects the stored translation or the exact original re
 
 test('TextAI previews are opt-in and use dashboard-scoped links and sharing settings', () => {
   assert.equal(DEFAULT_TEXT_AI_SHARING.enabled, false);
-  assert.equal(DEFAULT_TEXT_AI_SHARING.showOriginalResponses, false);
+  assert.equal(Object.hasOwn(DEFAULT_TEXT_AI_SHARING, 'showOriginalResponses'), false);
   assert.equal(textAiSharePath(42), '/text-ai/42/shared');
   assert.notEqual(textAiSharingStorageKey(42), textAiSharingStorageKey(43));
   assert.notEqual(textAiSharingStorageKey(42), dashboardSharingStorageKey(42));

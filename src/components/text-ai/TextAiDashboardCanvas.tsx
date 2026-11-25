@@ -371,6 +371,8 @@ export function TextAiDashboardCanvas({
   const [outlierAssignments, setOutlierAssignments] = useState<TagAssignments>({});
   const [outlierLoadError, setOutlierLoadError] = useState('');
   const [sharedFilters, setSharedFilters] = useState(EMPTY_TEXT_AI_SHARE_FILTERS);
+  const [viewerShowsOriginalResponses, setViewerShowsOriginalResponses] = useState(false);
+  const displayOriginalResponses = readOnly ? viewerShowsOriginalResponses : showOriginalResponses;
   useEffect(() => {
     const refresh = () => {
       try {
@@ -480,7 +482,7 @@ export function TextAiDashboardCanvas({
   function renderAddedWidget(widget: TextAiAddedWidget): TextAiCanvasWidget {
     const onDelete = () => removeWidget(widget.id);
     const question = widget.question;
-    if (widget.chartType === 'text-viewer') return { id: widget.id, kind: 'analysis', content: <TextAiAnalysisWidgetCard widget={filteredAnalysisWidget({ ...analysisWidgets[0], id: widget.id, question })} showOriginalResponses={showOriginalResponses} onDelete={onDelete} /> };
+    if (widget.chartType === 'text-viewer') return { id: widget.id, kind: 'analysis', content: <TextAiAnalysisWidgetCard widget={filteredAnalysisWidget({ ...analysisWidgets[0], id: widget.id, question })} showOriginalResponses={displayOriginalResponses} onDelete={onDelete} /> };
     if (widget.chartType === 'text-summary') return { id: widget.id, kind: 'summary', content: <TextAiSummaryWidgetCard widget={{ ...summaryWidgets[0], id: widget.id, question }} onDelete={onDelete} readOnly={readOnly} /> };
     if (widget.chartType === 'subtheme-stacked-bar') return { id: widget.id, kind: 'subtheme-stackbar', content: <TextAiSubthemeStackbarWidget question={question} themePreferences={themePreferences} rows={stackRows} onDelete={onDelete} /> };
     if (widget.chartType === 'subtheme-comparative-chart') {
@@ -582,7 +584,7 @@ export function TextAiDashboardCanvas({
           <TextAiAnalysisWidgetCard
             key={widget.id}
             widget={filteredAnalysisWidget(widget)}
-            showOriginalResponses={showOriginalResponses}
+            showOriginalResponses={displayOriginalResponses}
             onDelete={() => removeWidget(id)}
           />
         ),
@@ -675,9 +677,20 @@ export function TextAiDashboardCanvas({
     notifyWidgetResize();
   }
 
+  const sharedResponseRows = readOnly && hasTextViewer ? [
+    ...approvedAnalysisWidgets.flatMap((widget, index) => removedWidgetIds.has(`analysis-${index}`) ? [] : widget.rows),
+    ...(addedWidgets.some(widget => widget.chartType === 'text-viewer' && !removedWidgetIds.has(widget.id))
+      ? analysisWidgets[0]?.rows ?? [] : []),
+  ] : [];
+  const hasTranslatedResponses = sharedResponseRows.some(row => row.translatedValue && row.translatedValue !== row.value);
   const viewerFilters = readOnly && <TextAiSharedFilters filters={sharedFilters} onChange={setSharedFilters}
     themes={languageDemo ? [] : allStackRows.filter(row => isApproved(row.label, Boolean(row.emerging)))}
-    responses={hasTextViewer ? approvedAnalysisWidgets.flatMap(widget => widget.rows) : []} />;
+    responses={sharedResponseRows}
+    responseLanguage={hasTranslatedResponses ? {
+      showOriginal: viewerShowsOriginalResponses,
+      onChange: setViewerShowsOriginalResponses,
+      outputLanguage: languageDemo?.outputLanguage.name,
+    } : undefined} />;
 
   if (isMobile) {
     return (

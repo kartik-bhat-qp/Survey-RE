@@ -27,14 +27,12 @@ export interface TextAiSharedDashboard {
 export interface TextAiSharingState {
   enabled: boolean;
   password: string;
-  showOriginalResponses: boolean;
   dashboard: TextAiSharedDashboard | null;
 }
 
 export const DEFAULT_TEXT_AI_SHARING: TextAiSharingState = {
   enabled: false,
   password: '',
-  showOriginalResponses: false,
   dashboard: null,
 };
 
