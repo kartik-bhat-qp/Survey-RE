@@ -1,5 +1,3 @@
-import { subMinutes } from 'date-fns';
-
 export type CommunityInvitationStatus =
   | 'Delivery successful'
   | 'Scheduled'
@@ -30,7 +28,7 @@ export const COMMUNITY_INVITATIONS: CommunityInvitation[] = [
   {
     id: 'inv-res-test',
     surveyName: 'res test',
-    sentAt: subMinutes(new Date(), 24).toISOString(),
+    sentAt: new Date(Date.now() - 24 * 60 * 1000).toISOString(),
     status: 'Delivery successful',
     invitedEmail: INVITED,
     initialSent: 1,

@@ -2,12 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import {
-  differenceInMinutes,
-  format,
-  formatDistanceToNowStrict,
-  parseISO,
-} from 'date-fns';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { DateRangeCalendar } from '@/components/dashboards/SharedDashboardDateFilter';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -19,6 +13,7 @@ import {
   type CommunityInvitation,
   type CommunityInvitationStatus,
 } from '@/data/mock-community-invitation-history';
+import { formatRelativeDate } from '@/data/mock-utils';
 import styles from './CommunityInvitationHistory.module.css';
 
 const WuButton = dynamic(
@@ -63,24 +58,39 @@ interface CommunityInvitationHistoryProps {
 const MENU_ITEM_CLASS =
   'flex w-full items-center justify-start gap-2 rounded-[2px] px-3 py-2 text-left text-[13px] font-normal text-[#3c4654] hover:bg-[#f4f6f8]';
 
+function pad2(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+function asDate(value: string): Date {
+  return new Date(value.includes('T') ? value : `${value}T00:00:00`);
+}
+
 function todayKey(): string {
-  return format(new Date(), 'yyyy-MM-dd');
+  const now = new Date();
+  return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
 }
 
 function formatInvitationDate(sentAt: string): string {
-  const date = parseISO(sentAt);
-  if (date.getTime() <= Date.now() && differenceInMinutes(new Date(), date) < 60) {
-    return formatDistanceToNowStrict(date, { addSuffix: true });
+  const date = asDate(sentAt);
+  const diffMinutes = Math.round((Date.now() - date.getTime()) / 60000);
+  if (date.getTime() <= Date.now() && diffMinutes < 60) {
+    return formatRelativeDate(date);
   }
-  return format(date, 'MM/dd/yyyy');
+  return `${pad2(date.getMonth() + 1)}/${pad2(date.getDate())}/${date.getFullYear()}`;
 }
 
 function formatRangeLabel(isoDate: string): string {
-  return format(parseISO(isoDate), 'MMM dd, yyyy');
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+  }).format(asDate(isoDate));
 }
 
 function dateKey(sentAt: string): string {
-  return format(parseISO(sentAt), 'yyyy-MM-dd');
+  const date = asDate(sentAt);
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 }
 
 function completionLabel(row: CommunityInvitation): string {
@@ -177,7 +187,7 @@ export function CommunityInvitationHistory({
       if (sort.key === 'surveyName' || sort.key === 'status') {
         result = a[sort.key].localeCompare(b[sort.key]);
       } else if (sort.key === 'sentAt') {
-        result = parseISO(a.sentAt).getTime() - parseISO(b.sentAt).getTime();
+        result = asDate(a.sentAt).getTime() - asDate(b.sentAt).getTime();
       } else {
         result = a[sort.key] - b[sort.key];
       }
