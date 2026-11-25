@@ -4,7 +4,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
+import { CollectorEndpageThankYouMessages } from '@/components/surveys/CollectorEndpageThankYouMessages';
 import {
+  CUSTOM_VARIABLE_OPTIONS,
   DEFAULT_COLLECTOR_LANDING,
   type CollectorLandingPage,
   type CollectorOptions,
@@ -15,12 +17,16 @@ const WuButton = dynamic(
   () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuButton })),
   { ssr: false }
 );
+const WuSelect = dynamic(
+  () => import('@npm-questionpro/wick-ui-lib').then((m) => ({ default: m.WuSelect })),
+  { ssr: false }
+);
 
 const BASIC_SECTIONS = [
   'landing',
-  'thank-you',
   'endpages',
-  'copy',
+  'redirects',
+  'review',
   'multiple',
   'editing',
   'anonymous',
@@ -94,75 +100,14 @@ export function CollectorOptionsPanel({
         </AccordionCard>
 
         <AccordionCard
-          title="Custom thank you"
-          open={open.has('thank-you')}
-          onToggle={() => toggle('thank-you')}
-        >
-          <p className={styles.lede}>
-            Show a custom thank-you message to people who complete your survey.
-          </p>
-          <RadioGroup
-            name="thank-you"
-            value={options.thankYou}
-            onChange={(thankYou) => onChange({ thankYou })}
-            options={[
-              { value: 'default', label: 'Use the default thank-you message' },
-              { value: 'custom', label: 'Show a custom thank-you message' },
-            ]}
-          />
-          {options.thankYou === 'custom' ? (
-            <label className={styles.field}>
-              <span>Thank-you message</span>
-              <textarea
-                className={styles.textarea}
-                rows={3}
-                value={options.thankYouMessage}
-                onChange={(event) => onChange({ thankYouMessage: event.target.value })}
-              />
-            </label>
-          ) : null}
-        </AccordionCard>
-
-        <AccordionCard
           title="Survey endpages"
           open={open.has('endpages')}
           onToggle={() => toggle('endpages')}
         >
           <p className={styles.lede}>
-            Choose the page people see when they complete your survey.
+            Configure the thank-you page people see when they complete your survey.
           </p>
-          <RadioGroup
-            name="endpage"
-            value={options.endpage}
-            onChange={(endpage) => onChange({ endpage })}
-            options={[
-              { value: 'thank-you', label: 'Thank-you page' },
-              { value: 'redirect', label: 'Redirect to a website' },
-              { value: 'custom', label: 'Custom end page' },
-            ]}
-          />
-          {options.endpage === 'redirect' ? (
-            <label className={styles.field}>
-              <span>Website address</span>
-              <input
-                className={styles.control}
-                type="url"
-                value={options.endpageRedirect}
-                onChange={(event) => onChange({ endpageRedirect: event.target.value })}
-              />
-            </label>
-          ) : null}
-          {options.endpage === 'custom' ? (
-            <label className={styles.field}>
-              <span>End page message</span>
-              <textarea
-                className={styles.textarea}
-                rows={3}
-                value={options.endpageCustom}
-                onChange={(event) => onChange({ endpageCustom: event.target.value })}
-              />
-            </label>
-          ) : null}
+          <CollectorEndpageThankYouMessages surveyId={surveyId} />
           <button
             type="button"
             className={styles.textLink}
@@ -175,19 +120,52 @@ export function CollectorOptionsPanel({
         </AccordionCard>
 
         <AccordionCard
-          title="Send copy of responses"
-          open={open.has('copy')}
-          onToggle={() => toggle('copy')}
+          title="Redirects"
+          open={open.has('redirects')}
+          onToggle={() => toggle('redirects')}
+        >
+          <p className={styles.lede}>
+            Send people to a website when they leave this survey.
+          </p>
+          <RadioGroup
+            name="redirect"
+            value={options.redirect}
+            onChange={(redirect) => onChange({ redirect })}
+            options={[
+              { value: 'none', label: 'None' },
+              { value: 'website', label: 'Redirect to a website' },
+            ]}
+          />
+          {options.redirect === 'website' ? (
+            <label className={styles.field}>
+              <span>Website address</span>
+              <input
+                className={styles.control}
+                type="url"
+                value={options.redirectWebsiteAddress}
+                onChange={(event) =>
+                  onChange({ redirectWebsiteAddress: event.target.value })
+                }
+              />
+            </label>
+          ) : null}
+        </AccordionCard>
+
+        <AccordionCard
+          title="Review response"
+          open={open.has('review')}
+          onToggle={() => toggle('review')}
         >
           <RadioGroup
-            name="response-copy"
-            value={options.responseCopy}
-            onChange={(responseCopy) => onChange({ responseCopy })}
+            name="review-response"
+            value={options.reviewResponse}
+            onChange={(reviewResponse) => onChange({ reviewResponse })}
             options={[
-              { value: 'none', label: 'Do not send respondents a copy of their responses' },
+              { value: 'none', label: 'Do not show respondents their responses' },
+              { value: 'review', label: 'Let respondents review their responses' },
               {
-                value: 'email-request',
-                label: 'Let respondents request a copy of their answers via email',
+                value: 'review-and-edit',
+                label: 'Let respondents review and edit their responses',
               },
             ]}
           />
@@ -218,14 +196,28 @@ export function CollectorOptionsPanel({
             ]}
           />
           {options.multiple === 'custom-variable' ? (
-            <label className={styles.field}>
-              <span>Custom variable</span>
-              <input
-                className={styles.control}
-                value={options.customVariable}
-                onChange={(event) => onChange({ customVariable: event.target.value })}
-              />
-            </label>
+            <div className={styles.field}>
+              <span id="custom-variable-label">Custom variable</span>
+              <div className={styles.selectWrap}>
+                <WuSelect
+                  data={CUSTOM_VARIABLE_OPTIONS}
+                  accessorKey={{ value: 'value', label: 'label' }}
+                  value={
+                    CUSTOM_VARIABLE_OPTIONS.find(
+                      (option) => option.value === options.customVariable
+                    ) ?? CUSTOM_VARIABLE_OPTIONS[0]
+                  }
+                  onSelect={(item) => {
+                    const selected = item as { value: string } | null;
+                    if (!selected) return;
+                    onChange({ customVariable: selected.value });
+                  }}
+                  maxHeight={280}
+                  variant="outlined"
+                  aria-labelledby="custom-variable-label"
+                />
+              </div>
+            </div>
           ) : null}
         </AccordionCard>
 

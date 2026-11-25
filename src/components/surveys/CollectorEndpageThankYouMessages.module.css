@@ -1,0 +1,68 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.messageSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.messageHeader {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+}
+
+.messageLabel {
+  color: #404040;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.messageHeaderSpacer {
+  flex: 1;
+}
+
+.helpBtn,
+.previewBtn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #1b87e6;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 1rem;
+  height: 1.25rem;
+  justify-content: center;
+  padding: 0;
+  width: 1.25rem;
+}
+
+.previewBtn {
+  color: #67727e;
+  font-size: 1.125rem;
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.helpBtn:hover {
+  color: #156fb8;
+}
+
+.previewBtn:hover,
+.previewBtn:focus-visible {
+  background: #f3f4f6;
+  border-radius: 4px;
+  color: #1b87e6;
+  outline: none;
+}
+
+.messageEditor :global(.ProseMirror),
+.messageEditor :global([contenteditable='true']) {
+  min-height: 6rem;
+}

@@ -42,8 +42,9 @@ export interface CollectorMessage {
 export type RecurrenceMode = 'off' | 'schedule';
 export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly';
 export type ThankYouMode = 'default' | 'custom';
-export type EndpageMode = 'thank-you' | 'redirect' | 'custom';
-export type ResponseCopyMode = 'none' | 'email-request';
+export type EndpageMode = 'thank-you';
+export type RedirectMode = 'none' | 'website';
+export type ReviewResponseMode = 'none' | 'review' | 'review-and-edit';
 export type MultipleResponsesMode = 'allow' | 'once' | 'custom-variable';
 export type ResponseEditingMode = 'until-complete' | 'after-complete' | 'no-page-back';
 export type AnonymousMode = 'anonymous' | 'include-ip';
@@ -69,9 +70,9 @@ export interface CollectorOptions {
   thankYou: ThankYouMode;
   thankYouMessage: string;
   endpage: EndpageMode;
-  endpageRedirect: string;
-  endpageCustom: string;
-  responseCopy: ResponseCopyMode;
+  redirect: RedirectMode;
+  redirectWebsiteAddress: string;
+  reviewResponse: ReviewResponseMode;
   multiple: MultipleResponsesMode;
   customVariable: string;
   editing: ResponseEditingMode;
@@ -381,6 +382,16 @@ export const DEFAULT_COLLECTOR_LANDING: CollectorLandingPage = {
     'Take this survey powered by QuestionPro. Create your own surveys for free.',
 };
 
+export interface CustomVariableOption {
+  value: string;
+  label: string;
+}
+
+export const CUSTOM_VARIABLE_OPTIONS: CustomVariableOption[] = Array.from(
+  { length: 255 },
+  (_, index) => ({ value: `custom${index + 1}`, label: `Custom ${index + 1}` })
+);
+
 export const DEFAULT_CLOSED_MESSAGE =
   'This collector is no longer accepting responses.';
 
@@ -393,11 +404,11 @@ export const DEFAULT_COLLECTOR_OPTIONS: CollectorOptions = {
   thankYou: 'default',
   thankYouMessage: 'Thank you for helping improve SNAP in Texas.',
   endpage: 'thank-you',
-  endpageRedirect: 'https://www.questionpro.com',
-  endpageCustom: 'Thanks for taking the time to share your feedback.',
-  responseCopy: 'none',
+  redirect: 'none',
+  redirectWebsiteAddress: 'https://www.questionpro.com',
+  reviewResponse: 'none',
   multiple: 'once',
-  customVariable: 'respondent_id',
+  customVariable: 'custom1',
   editing: 'until-complete',
   anonymous: 'include-ip',
   instantResults: 'hide',
@@ -422,9 +433,47 @@ export function collectorOptionsStorageKey(surveyId: number): string {
 export function mergeCollectorOptions(
   stored?: Partial<CollectorOptions> | null
 ): CollectorOptions {
+  const legacy = stored as
+    | (Partial<CollectorOptions> & {
+        endpage?: EndpageMode | 'redirect' | 'custom';
+        endpageRedirect?: string;
+        endpageCustom?: string;
+        responseCopy?: 'none' | 'email-request';
+      })
+    | null
+    | undefined;
+
+  const legacyEndpage = legacy?.endpage;
+  const legacyRedirect = legacy?.redirect as RedirectMode | 'panel' | undefined;
+  const migratedRedirect: RedirectMode =
+    legacyRedirect === 'website' || legacyRedirect === 'none'
+      ? legacyRedirect
+      : legacyEndpage === 'redirect'
+        ? 'website'
+        : DEFAULT_COLLECTOR_OPTIONS.redirect;
+  const migratedWebsite =
+    legacy?.redirectWebsiteAddress ??
+    legacy?.endpageRedirect ??
+    DEFAULT_COLLECTOR_OPTIONS.redirectWebsiteAddress;
+  const migratedReviewResponse: ReviewResponseMode =
+    legacy?.reviewResponse === 'none' ||
+    legacy?.reviewResponse === 'review' ||
+    legacy?.reviewResponse === 'review-and-edit'
+      ? legacy.reviewResponse
+      : DEFAULT_COLLECTOR_OPTIONS.reviewResponse;
+
   return {
     ...DEFAULT_COLLECTOR_OPTIONS,
     ...stored,
+    endpage: 'thank-you',
+    redirect: migratedRedirect,
+    redirectWebsiteAddress: migratedWebsite,
+    reviewResponse: migratedReviewResponse,
+    customVariable: CUSTOM_VARIABLE_OPTIONS.some(
+      (option) => option.value === stored?.customVariable
+    )
+      ? (stored?.customVariable as string)
+      : DEFAULT_COLLECTOR_OPTIONS.customVariable,
     landing: {
       ...DEFAULT_COLLECTOR_LANDING,
       ...stored?.landing,
