@@ -20,6 +20,7 @@ interface SurveySettingsRichTextProps {
   onChange: (value: string) => void;
   ariaLabel: string;
   toolbarPosition?: 'top' | 'bottom';
+  className?: string;
 }
 
 function toDefaultHtml(value: string): string {
@@ -34,6 +35,7 @@ export function SurveySettingsRichText({
   onChange,
   ariaLabel,
   toolbarPosition = 'top',
+  className,
 }: SurveySettingsRichTextProps) {
   const [isHtml, setIsHtml] = useState(false);
   const [ready, setReady] = useState(false);
@@ -80,7 +82,7 @@ export function SurveySettingsRichText({
         setIsHtml={setIsHtml}
         htmlSource={HtmlSource}
         toolbarPosition={toolbarPosition}
-        className={styles.editor}
+        className={[styles.editor, className].filter(Boolean).join(' ')}
       />
     </div>
   );
