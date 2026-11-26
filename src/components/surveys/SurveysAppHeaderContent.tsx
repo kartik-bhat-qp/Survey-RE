@@ -61,7 +61,11 @@ export function SurveysAppHeaderContent() {
     return (
       <div className={styles.editorBar}>
         <SurveyEditorBreadcrumb survey={survey} editorTitle={detail.editorTitle} />
-        <SurveysHeaderActions compact />
+        <SurveysHeaderActions
+          compact
+          surveyId={survey.id}
+          surveyName={survey.name}
+        />
       </div>
     );
   }

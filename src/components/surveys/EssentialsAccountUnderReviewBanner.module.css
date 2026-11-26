@@ -47,6 +47,10 @@
   text-underline-offset: 0.125rem;
 }
 
+.seeWhyLink {
+  font-weight: 600;
+}
+
 .supportLink:hover {
   opacity: 0.85;
 }

@@ -9,6 +9,7 @@ import { HeaderDataCenter } from '@/components/header/HeaderDataCenter';
 import { SurveyFooterBrandSync } from '@/components/surveys/SurveyFooterBrandSync';
 import { SurveysAppHeaderContent } from '@/components/surveys/SurveysAppHeaderContent';
 import { EssentialsAccountUnderReviewBanner } from '@/components/surveys/EssentialsAccountUnderReviewBanner';
+import { SuspendedAccountGate } from '@/components/surveys/SuspendedAccountGate';
 import { useSurveyFooterBrand } from '@/components/surveys/useSurveyFooterBrand';
 import { useMounted } from '@/hooks/useMounted';
 import { formatSurveySuiteFooterCopy } from '@/lib/survey-suite-footer-brand';
@@ -35,36 +36,38 @@ export function ResearchSuiteShell({ children }: { children: React.ReactNode }) 
   const { showToast } = useWuShowToast();
 
   return (
-    <div className={styles.shell}>
-      {mounted ? (
-        <Suspense fallback={null}>
-          <SurveyFooterBrandSync />
-        </Suspense>
-      ) : null}
-      {mounted ? <WuToast /> : null}
-      <header className={styles.header}>
+    <SuspendedAccountGate>
+      <div className={styles.shell}>
         {mounted ? (
-          <WuAppHeader
-            productName="Surveys"
-            categories={MOCK_HEADER_CATEGORIES}
-            brandColor={HEADER_BRAND_COLOR}
-            user={MOCK_HEADER_USER}
-            DataCenter={<HeaderDataCenter />}
-            onLogout={() => showToast({ message: 'Logged out', variant: 'success' })}
-          >
-            <AppHeaderContent>
-              <SurveysAppHeaderContent />
-            </AppHeaderContent>
-          </WuAppHeader>
-        ) : (
-          <div className={styles.headerPlaceholder} aria-hidden />
-        )}
-      </header>
-      <div className={styles.body}>
-        {mounted ? <EssentialsAccountUnderReviewBanner /> : null}
-        <div className={styles.content}>{children}</div>
-        <GlobalFooter copy={footerCopy} />
+          <Suspense fallback={null}>
+            <SurveyFooterBrandSync />
+          </Suspense>
+        ) : null}
+        {mounted ? <WuToast /> : null}
+        <header className={styles.header}>
+          {mounted ? (
+            <WuAppHeader
+              productName="Surveys"
+              categories={MOCK_HEADER_CATEGORIES}
+              brandColor={HEADER_BRAND_COLOR}
+              user={MOCK_HEADER_USER}
+              DataCenter={<HeaderDataCenter />}
+              onLogout={() => showToast({ message: 'Logged out', variant: 'success' })}
+            >
+              <AppHeaderContent>
+                <SurveysAppHeaderContent />
+              </AppHeaderContent>
+            </WuAppHeader>
+          ) : (
+            <div className={styles.headerPlaceholder} aria-hidden />
+          )}
+        </header>
+        <div className={styles.body}>
+          {mounted ? <EssentialsAccountUnderReviewBanner /> : null}
+          <div className={styles.content}>{children}</div>
+          <GlobalFooter copy={footerCopy} />
+        </div>
       </div>
-    </div>
+    </SuspendedAccountGate>
   );
 }

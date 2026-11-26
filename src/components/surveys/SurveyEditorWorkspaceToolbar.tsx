@@ -14,7 +14,10 @@ import {
 } from '@/components/surveys/PublishLicenseConflictModal';
 import { useSurveyFooterBrand } from '@/components/surveys/useSurveyFooterBrand';
 import { useSurveyWorkspaceSections } from '@/components/surveys/SurveyWorkspaceSectionsContext';
-import { useEssentialsSurveyReviewing } from '@/hooks/useEssentialsAccountUnderReview';
+import {
+  usePhishingScanReviewing,
+  usePublishSendPaused,
+} from '@/hooks/usePhishingPublishHold';
 import {
   collectSurveyLicenseConflicts,
   getUserPlanLicense,
@@ -38,10 +41,10 @@ import { deliverReviewRequestEmail } from '@/data/mock-survey-reviewer-inbox';
 import { getSurveyById } from '@/data/get-survey-by-id';
 import { isAiLensSurvey, MOCK_AI_LENS_FINDINGS, summarizeAiLensFindings } from '@/data/mock-ai-lens';
 import {
-  ESSENTIALS_SURVEY_REVIEWING_TOOLTIP,
-  essentialsPublishShouldBeBlocked,
-  runEssentialsPhishingReview,
-} from '@/data/mock-essentials-phishing-review';
+  PHISHING_ACCOUNT_REVIEW_COPY,
+  PHISHING_SCAN_TOOLTIP,
+  runPublishRiskScan,
+} from '@/data/mock-phishing-publish-hold';
 import { SendSurveyForReviewModal } from '@/components/surveys/SendSurveyForReviewModal';
 import styles from './SurveyEditorWorkspaceToolbar.module.css';
 
@@ -159,17 +162,32 @@ export function SurveyEditorWorkspaceToolbar({
   const [licenseModalOpen, setLicenseModalOpen] = useState(false);
   const [licenseModalView, setLicenseModalView] =
     useState<PublishLicenseModalView>('conflicts');
-  const [licenseConflicts, setLicenseConflicts] = useState<SurveyLicenseConflict[]>([]);
   const [draftConfirmOpen, setDraftConfirmOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const surveyReviewing = useEssentialsSurveyReviewing();
+  const surveyReviewing = usePhishingScanReviewing();
+  const publishSendPaused = usePublishSendPaused();
   const requiresApproval = surveyHasApprovalTab(surveyId);
 
-  const blockEssentialsPublish = useCallback((): boolean => {
-    if (!essentialsPublishShouldBeBlocked(sections, surveyId)) return false;
+  /** Returns true when publish should abort (scan started or account locked). */
+  const blockPhishingPublish = useCallback((): boolean => {
+    if (publishSendPaused) {
+      setLicenseModalOpen(false);
+      showToast({ message: PHISHING_ACCOUNT_REVIEW_COPY, variant: 'error' });
+      return true;
+    }
+    const survey = getSurveyById(surveyId);
+    const surveyName = survey?.name ?? `Survey ${surveyId}`;
     setLicenseModalOpen(false);
-    return runEssentialsPhishingReview(showToast);
-  }, [sections, showToast, surveyId]);
+    return runPublishRiskScan({
+      sections,
+      surveyId,
+      surveyName,
+      onComplete: (result) => {
+        if (result.tier === 'low') return;
+        showToast({ message: PHISHING_ACCOUNT_REVIEW_COPY, variant: 'error' });
+      },
+    });
+  }, [publishSendPaused, sections, showToast, surveyId]);
 
   useEffect(() => {
     if (!requiresApproval) return;
@@ -188,18 +206,22 @@ export function SurveyEditorWorkspaceToolbar({
     return subscribeSurveyApprovalState(surveyId, applyStatus);
   }, [requiresApproval, surveyId]);
 
-  useEffect(() => {
-    if (!licenseModalOpen || licenseModalView !== 'conflicts') return;
-    const nextConflicts = collectSurveyLicenseConflicts(
-      sections,
-      getUserPlanLicense(footerBrand),
-      logicByQuestionKey
-    );
-    setLicenseConflicts(nextConflicts);
-    if (nextConflicts.length === 0) {
-      setLicenseModalView('publish-confirm');
-    }
-  }, [sections, logicByQuestionKey, licenseModalOpen, licenseModalView, footerBrand]);
+  const licenseConflicts = useMemo(
+    () =>
+      collectSurveyLicenseConflicts(
+        sections,
+        getUserPlanLicense(footerBrand),
+        logicByQuestionKey
+      ),
+    [sections, logicByQuestionKey, footerBrand]
+  );
+
+  const effectiveLicenseModalView: PublishLicenseModalView =
+    licenseModalOpen &&
+    licenseModalView === 'conflicts' &&
+    licenseConflicts.length === 0
+      ? 'publish-confirm'
+      : licenseModalView;
 
   const handleLicenseModalOpenChange = useCallback((open: boolean) => {
     setLicenseModalOpen(open);
@@ -209,12 +231,12 @@ export function SurveyEditorWorkspaceToolbar({
   }, []);
 
   const handleConfirmPublish = useCallback(() => {
-    if (blockEssentialsPublish()) return;
+    if (blockPhishingPublish()) return;
     setMode('publish');
     setLicenseModalOpen(false);
     setLicenseModalView('conflicts');
     showToast({ message: 'Survey published', variant: 'success' });
-  }, [blockEssentialsPublish, showToast]);
+  }, [blockPhishingPublish, showToast]);
 
   const handleDeleteLicensedQuestion = useCallback(
     (conflict: SurveyLicenseConflict) => {
@@ -309,7 +331,7 @@ export function SurveyEditorWorkspaceToolbar({
 
     if (next === 'publish') {
       if (requiresApproval) return;
-      if (blockEssentialsPublish()) return;
+      if (blockPhishingPublish()) return;
 
       if (isAiLensSurvey(surveyId)) {
         const summary = summarizeAiLensFindings(MOCK_AI_LENS_FINDINGS);
@@ -331,13 +353,11 @@ export function SurveyEditorWorkspaceToolbar({
         logicByQuestionKey
       );
       if (conflicts.length > 0) {
-        setLicenseConflicts(conflicts);
         setLicenseModalView('conflicts');
         setLicenseModalOpen(true);
         return;
       }
 
-      setLicenseConflicts([]);
       setLicenseModalView('publish-confirm');
       setLicenseModalOpen(true);
       return;
@@ -378,12 +398,10 @@ export function SurveyEditorWorkspaceToolbar({
         logicByQuestionKey
       );
       if (conflicts.length > 0) {
-        setLicenseConflicts(conflicts);
         setLicenseModalView('conflicts');
         setLicenseModalOpen(true);
         return;
       }
-      setLicenseConflicts([]);
       setLicenseModalView('publish-confirm');
       setLicenseModalOpen(true);
     };
@@ -457,26 +475,16 @@ export function SurveyEditorWorkspaceToolbar({
   );
 
   const previewButton = (
-    <WuTooltip
-      content={surveyReviewing ? ESSENTIALS_SURVEY_REVIEWING_TOOLTIP : 'Preview survey'}
-      position="bottom"
-    >
+    <WuTooltip content="Preview survey" position="bottom">
       <button
         type="button"
-        className={`${styles.previewBtn} ${surveyReviewing ? styles.previewBtnReviewing : ''}`}
-        aria-label={surveyReviewing ? ESSENTIALS_SURVEY_REVIEWING_TOOLTIP : 'Preview survey'}
-        aria-busy={surveyReviewing}
-        disabled={surveyReviewing}
+        className={styles.previewBtn}
+        aria-label="Preview survey"
         onClick={() => {
-          if (surveyReviewing) return;
           showToast({ message: 'Preview survey', variant: 'success' });
         }}
       >
-        {surveyReviewing ? (
-          <WuLoader variant="spinner" size="sm" color="#ffffff" aria-hidden />
-        ) : (
-          <span className="wm-visibility" aria-hidden />
-        )}
+        <span className="wm-visibility" aria-hidden />
       </button>
     </WuTooltip>
   );
@@ -524,11 +532,31 @@ export function SurveyEditorWorkspaceToolbar({
               Trigger={
                 <button
                   type="button"
-                  className={`${styles.statusTrigger} ${statusTriggerClass(mode)}`}
-                  aria-label="Survey status"
+                  className={`${styles.statusTrigger} ${statusTriggerClass(mode)} ${
+                    surveyReviewing ? styles.previewBtnReviewing : ''
+                  }`}
+                  aria-label={
+                    surveyReviewing
+                      ? PHISHING_SCAN_TOOLTIP
+                      : publishSendPaused
+                        ? 'Publish (paused)'
+                        : 'Survey status'
+                  }
+                  aria-busy={surveyReviewing}
+                  disabled={surveyReviewing}
                 >
-                  <span className={styles.statusDot} aria-hidden />
-                  <span className={styles.statusLabel}>{statusLabel(mode)}</span>
+                  {surveyReviewing ? (
+                    <WuLoader variant="spinner" size="sm" color="#ffffff" aria-hidden />
+                  ) : (
+                    <span className={styles.statusDot} aria-hidden />
+                  )}
+                  <span className={styles.statusLabel}>
+                    {surveyReviewing
+                      ? 'Checking…'
+                      : publishSendPaused
+                        ? 'Publish (paused)'
+                        : statusLabel(mode)}
+                  </span>
                   <span className={`wm-arrow-drop-down ${styles.statusChevron}`} aria-hidden />
                 </button>
               }
@@ -536,15 +564,20 @@ export function SurveyEditorWorkspaceToolbar({
               {STATUS_OPTIONS.map((option) => {
                 const selected = mode === option.value;
                 const publishLocked = option.value === 'publish' && requiresApproval;
+                const phishingPaused = option.value === 'publish' && publishSendPaused;
                 return (
                   <WuMenuItem
                     key={option.value}
                     className={`${styles.statusMenuItem} ${
                       selected ? styles.statusMenuItemSelected : ''
-                    } ${publishLocked ? styles.statusMenuItemLocked : ''}`}
+                    } ${publishLocked || phishingPaused ? styles.statusMenuItemLocked : ''}`}
                     onSelect={() => {
                       if (publishLocked) {
                         showToast({ message: APPROVAL_PUBLISH_TOOLTIP, variant: 'info' });
+                        return;
+                      }
+                      if (phishingPaused) {
+                        showToast({ message: PHISHING_ACCOUNT_REVIEW_COPY, variant: 'error' });
                         return;
                       }
                       selectMode(option.value);
@@ -557,12 +590,17 @@ export function SurveyEditorWorkspaceToolbar({
                     <span className={styles.statusMenuCopy}>
                       <span className={styles.statusMenuTitle}>
                         {option.label}
+                        {phishingPaused ? ' (paused)' : ''}
                         {selected ? (
                           <span className={`wm-check ${styles.statusMenuCheck}`} aria-hidden />
                         ) : null}
                       </span>
                       <span className={styles.statusMenuHint}>
-                        {publishLocked ? APPROVAL_PUBLISH_TOOLTIP : option.description}
+                        {publishLocked
+                          ? APPROVAL_PUBLISH_TOOLTIP
+                          : phishingPaused
+                            ? PHISHING_ACCOUNT_REVIEW_COPY
+                            : option.description}
                       </span>
                     </span>
                   </WuMenuItem>
@@ -584,7 +622,7 @@ export function SurveyEditorWorkspaceToolbar({
       </WuSecondaryNavbar>
       <PublishLicenseConflictModal
         open={licenseModalOpen}
-        view={licenseModalView}
+        view={effectiveLicenseModalView}
         onOpenChange={handleLicenseModalOpenChange}
         conflicts={licenseConflicts}
         onDeleteQuestion={handleDeleteLicensedQuestion}

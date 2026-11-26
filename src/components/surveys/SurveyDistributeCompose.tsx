@@ -42,12 +42,8 @@ import {
   RESEARCH_AGENT_DISTRIBUTE_BASE_CONTEXT_TOKENS,
   type SurveyAiGenerationResult,
 } from '@/data/mock-survey-ai-agent';
-import {
-  ESSENTIALS_SURVEY_REVIEWING_TOOLTIP,
-  essentialsMessageShouldBeBlocked,
-  runEssentialsPhishingReview,
-} from '@/data/mock-essentials-phishing-review';
-import { useEssentialsSurveyReviewing } from '@/hooks/useEssentialsAccountUnderReview';
+import { PHISHING_ACCOUNT_REVIEW_COPY } from '@/data/mock-phishing-publish-hold';
+import { usePublishSendPaused } from '@/hooks/usePhishingPublishHold';
 import styles from './SurveyDistributeCompose.module.css';
 
 const WuSelect = dynamic(
@@ -116,21 +112,17 @@ export function SurveyEmailComposePanel({
   const smsSegmentUsage = useMemo(() => getSmsSegmentUsage(smsBody), [smsBody]);
   const bodyIsHtml = useMemo(() => composeBodyHasRenderableHtml(body), [body]);
   const bodyContainsBlob = useMemo(() => composeHtmlContainsUnsupportedBlob(body), [body]);
-  const messageReviewing = useEssentialsSurveyReviewing();
+  const publishSendPaused = usePublishSendPaused();
   const sendDisabledReason = bodyContainsBlob
     ? COMPOSE_BLOB_UNSUPPORTED_MESSAGE
-    : messageReviewing
-      ? ESSENTIALS_SURVEY_REVIEWING_TOOLTIP
+    : publishSendPaused
+      ? PHISHING_ACCOUNT_REVIEW_COPY
       : undefined;
 
-  function blockEssentialsPhishingMessage(): boolean {
-    const messageParts = [
-      emailEnabled ? subject : '',
-      emailEnabled ? body : '',
-      smsEnabled ? smsBody : '',
-    ];
-    if (!essentialsMessageShouldBeBlocked(messageParts)) return false;
-    return runEssentialsPhishingReview(showToast);
+  function blockHighPauseSend(): boolean {
+    if (!publishSendPaused) return false;
+    showToast({ message: PHISHING_ACCOUNT_REVIEW_COPY, variant: 'error' });
+    return true;
   }
 
   function notifyIfBlobUnsupported(content: string): boolean {
@@ -159,7 +151,7 @@ export function SurveyEmailComposePanel({
       return;
     }
 
-    if (blockEssentialsPhishingMessage()) return;
+    if (blockHighPauseSend()) return;
 
     if (!selectedList && recipientEmails.length === 0) {
       showToast({ message: 'Add at least one list or email address', variant: 'error' });
@@ -183,7 +175,7 @@ export function SurveyEmailComposePanel({
       return;
     }
 
-    if (blockEssentialsPhishingMessage()) return;
+    if (blockHighPauseSend()) return;
 
     showToast({ message: 'Schedule invitation', variant: 'info' });
   }
@@ -550,7 +542,7 @@ export function SurveyEmailComposePanel({
                       className={styles.sendBtn}
                       onClick={handleSend}
                       disabled={Boolean(sendDisabledReason)}
-                      aria-busy={messageReviewing}
+                      aria-busy={publishSendPaused}
                     >
                       Send
                     </button>
@@ -563,7 +555,7 @@ export function SurveyEmailComposePanel({
                       className={styles.scheduleBtn}
                       onClick={handleSchedule}
                       disabled={Boolean(sendDisabledReason)}
-                      aria-busy={messageReviewing}
+                      aria-busy={publishSendPaused}
                     >
                       Schedule
                     </button>

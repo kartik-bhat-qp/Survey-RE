@@ -1,10 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
-import { useEssentialsAccountActionsLocked } from '@/hooks/useEssentialsAccountUnderReview';
-import { ESSENTIALS_ACCOUNT_LOCKED_TOAST } from '@/data/mock-essentials-phishing-review';
+import { getSurveyEditorPhaseFromPathname } from '@/components/surveys/survey-editor-navigation';
+import {
+  getPhishingScanDelayMs,
+  resetPhishingHoldState,
+  simulateAiPhishingCheck,
+} from '@/data/mock-phishing-publish-hold';
+import { usePhishingScanReviewing, usePublishSendPaused } from '@/hooks/usePhishingPublishHold';
+import { setSurveyFooterBrand } from '@/lib/survey-suite-footer-brand';
 import styles from './SurveysHeaderBar.module.css';
 
 const WuAppHeaderSearch = dynamic(
@@ -25,10 +32,48 @@ const WuMenuItem = dynamic(
   { ssr: false }
 );
 
-export function SurveysHeaderActions({ compact }: { compact?: boolean }) {
+interface SurveysHeaderActionsProps {
+  compact?: boolean;
+  /** When set, Admin can trigger Simulate AI Check for this survey only. */
+  surveyId?: number;
+  surveyName?: string;
+}
+
+export function SurveysHeaderActions({
+  compact,
+  surveyId,
+  surveyName,
+}: SurveysHeaderActionsProps) {
   const router = useRouter();
+  const pathname = usePathname() ?? '';
   const { showToast } = useWuShowToast();
-  const accountLocked = useEssentialsAccountActionsLocked();
+  const reviewing = usePhishingScanReviewing();
+  const paused = usePublishSendPaused();
+  const [simulating, setSimulating] = useState(false);
+  const onEditSection =
+    typeof surveyId === 'number' &&
+    getSurveyEditorPhaseFromPathname(pathname, surveyId) === 'edit';
+  /** Prototype scan is Edit-section only (not Distribute / Analytics). */
+  const canSimulateAiCheck = onEditSection;
+
+  function handleSimulateAiCheck(): void {
+    if (!canSimulateAiCheck || simulating || reviewing) return;
+    setSimulating(true);
+    showToast({ message: 'Running AI risk check…', variant: 'info' });
+    simulateAiPhishingCheck({ surveyId, surveyName });
+    window.setTimeout(() => {
+      setSimulating(false);
+      showToast({
+        message: 'Publish and send paused — open See Why on the banner, or go to Verification.',
+        variant: 'success',
+      });
+    }, getPhishingScanDelayMs() + 50);
+  }
+
+  function handleClearSimulation(): void {
+    resetPhishingHoldState();
+    showToast({ message: 'AI check simulation cleared', variant: 'info' });
+  }
 
   return (
     <div className={compact ? `${styles.bar} ${styles.barCompact}` : styles.bar}>
@@ -76,16 +121,36 @@ export function SurveysHeaderActions({ compact }: { compact?: boolean }) {
           >
             BI Lite
           </WuMenuItem>
+          <WuMenuItem onSelect={() => router.push('/surveys/create')}>
+            New survey creation flow
+          </WuMenuItem>
           <WuMenuItem
             onSelect={() => {
-              if (accountLocked) {
-                showToast({ message: ESSENTIALS_ACCOUNT_LOCKED_TOAST, variant: 'error' });
-                return;
-              }
-              router.push('/surveys/create');
+              setSurveyFooterBrand('essentials');
+              showToast({
+                message: 'Footer brand set to Essentials (phishing publish scan on)',
+                variant: 'success',
+              });
             }}
           >
-            New survey creation flow
+            Demo: Essentials brand
+          </WuMenuItem>
+          {canSimulateAiCheck ? (
+            <WuMenuItem
+              disabled={simulating || reviewing}
+              onSelect={handleSimulateAiCheck}
+            >
+              {simulating || reviewing ? 'Simulating…' : 'Simulate AI Check'}
+            </WuMenuItem>
+          ) : null}
+          {canSimulateAiCheck && paused ? (
+            <WuMenuItem onSelect={handleClearSimulation}>Clear AI Check simulation</WuMenuItem>
+          ) : null}
+          <WuMenuItem onSelect={() => router.push('/account/verification')}>
+            Verification
+          </WuMenuItem>
+          <WuMenuItem onSelect={() => router.push('/cxperts/users/demo')}>
+            CX review (admin)
           </WuMenuItem>
           <WuMenuItem onSelect={() => router.push('/signup')}>
             Sign up free

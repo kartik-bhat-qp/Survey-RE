@@ -75,10 +75,7 @@ import {
   isAiLensSurvey,
   type AiLensFocusQuestionDetail,
 } from '@/data/mock-ai-lens';
-import {
-  ESSENTIALS_ACCOUNT_LOCKED_TOAST,
-  essentialsAccountActionsLocked,
-} from '@/data/mock-essentials-phishing-review';
+import { PHISHING_FOCUS_QUESTION_EVENT } from '@/data/mock-phishing-publish-hold';
 import { generatedSurveyToSections } from '@/lib/ai-survey-generation';
 import { requestAiSurveyGeneration } from '@/lib/request-ai-survey-generation';
 import {
@@ -1534,6 +1531,33 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
     window.addEventListener(AI_LENS_FOCUS_QUESTION_EVENT, onFocusQuestion);
     return () => window.removeEventListener(AI_LENS_FOCUS_QUESTION_EVENT, onFocusQuestion);
   }, [detail.survey.id, toast]);
+
+  useEffect(() => {
+    function onPhishingFocus(event: Event): void {
+      const custom = event as CustomEvent<{ questionId?: string }>;
+      const questionId = custom.detail?.questionId;
+      if (!questionId) return;
+
+      for (const section of sections) {
+        if (!section.questions.some((question) => question.id === questionId)) continue;
+        const questionKey = `${section.id}:${questionId}`;
+        setSelectedQuestionKey(questionKey);
+        window.setTimeout(() => {
+          const el = document.getElementById(`survey-question-${section.id}-${questionId}`);
+          el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const focusable =
+            el?.querySelector<HTMLElement>(
+              '[contenteditable="true"], textarea, input, button, [tabindex]:not([tabindex="-1"])'
+            ) ?? el;
+          focusable?.focus?.({ preventScroll: true });
+        }, 80);
+        return;
+      }
+    }
+
+    window.addEventListener(PHISHING_FOCUS_QUESTION_EVENT, onPhishingFocus);
+    return () => window.removeEventListener(PHISHING_FOCUS_QUESTION_EVENT, onPhishingFocus);
+  }, [sections]);
 
   useEffect(() => {
     setSelectedQuestionKey(null);
@@ -3286,10 +3310,6 @@ export function SurveyEditorCanvas({ detail }: SurveyEditorCanvasProps) {
       typeLabel: string,
       typeId: string
     ) => {
-      if (essentialsAccountActionsLocked()) {
-        showToast({ message: ESSENTIALS_ACCOUNT_LOCKED_TOAST, variant: 'error' });
-        return;
-      }
       if (typeId === 'select-one') {
         const ts = Date.now();
         const newId = `q-new-${ts}`;

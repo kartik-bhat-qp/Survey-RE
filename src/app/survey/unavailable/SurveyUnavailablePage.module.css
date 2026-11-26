@@ -1,0 +1,46 @@
+.page {
+  align-items: center;
+  background: #f8fafc;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  max-width: 24rem;
+  padding: 2rem 1.75rem;
+  text-align: center;
+  width: 100%;
+}
+
+.icon {
+  color: #6b7280;
+  display: inline-block;
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.title {
+  color: #111827;
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.body {
+  color: #4b5563;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.meta {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  margin: 1rem 0 0;
+}

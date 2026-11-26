@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useWuShowToast } from '@npm-questionpro/wick-ui-lib';
 import { setSurveyFooterBrand } from '@/lib/survey-suite-footer-brand';
-import { writeEssentialsAccountUnderReview } from '@/data/mock-essentials-phishing-review';
+import { resetPhishingHoldState } from '@/data/mock-phishing-publish-hold';
 import { QuestionProLogo } from '@/components/signup/QuestionProLogo';
 import { SignupAiHighlights } from '@/components/signup/SignupAiHighlights';
 import { SignupFeatureCarousel } from '@/components/signup/SignupFeatureCarousel';
@@ -94,8 +94,8 @@ export default function SignupPage() {
   const [showEmailForm, setShowEmailForm] = useState(false);
 
   useEffect(() => {
-    // New signup starts a clean Essentials account (clears any prior under-review lock).
-    writeEssentialsAccountUnderReview(false);
+    // New signup starts a clean Essentials account (clears prior hold state).
+    resetPhishingHoldState();
   }, []);
 
   function updateField<K extends keyof SignupFormState>(key: K, value: SignupFormState[K]) {
@@ -116,7 +116,7 @@ export default function SignupPage() {
       return;
     }
     showToast({ message: 'Account created, welcome to QuestionPro!', variant: 'success' });
-    writeEssentialsAccountUnderReview(false);
+    resetPhishingHoldState();
     setSurveyFooterBrand('essentials');
     router.push('/surveys/create');
   }
