@@ -3,16 +3,22 @@
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { IntegrityOutcomeResponsesModal } from '@/components/surveys/analytics2/IntegrityOutcomeResponsesModal';
 import {
   INTEGRITY_FLAG_COUNTS,
   INTEGRITY_FLAGS,
+  INTEGRITY_OUTCOME_BARS,
   INTEGRITY_RISK_LABELS,
   INTEGRITY_SCORE_DISTRIBUTION,
   INTEGRITY_SUMMARY,
   RESPONDENT_INTEGRITY_RECORDS,
   formatCompletionTime,
+  getFlagDrilldown,
   getIntegrityFlagLabel,
+  getOutcomeDrilldown,
+  getScoreRangeDrilldown,
   type IntegrityFlagId,
+  type IntegrityResponsesDrilldown,
   type IntegrityResponseStatus,
   type IntegrityRiskLevel,
 } from '@/data/mock-respondent-integrity';
@@ -59,6 +65,7 @@ export function AnalyticsRespondentIntegrity({
   const [riskFilter, setRiskFilter] = useState<RiskFilter>('all');
   const [flagFilter, setFlagFilter] = useState<IntegrityFlagId | ''>('');
   const [search, setSearch] = useState('');
+  const [drilldown, setDrilldown] = useState<IntegrityResponsesDrilldown | null>(null);
   const [statusById, setStatusById] = useState<Record<string, IntegrityResponseStatus>>(() =>
     Object.fromEntries(RESPONDENT_INTEGRITY_RECORDS.map((row) => [row.responseId, row.status]))
   );
@@ -66,6 +73,7 @@ export function AnalyticsRespondentIntegrity({
   const summary = INTEGRITY_SUMMARY;
   const maxBucket = Math.max(...INTEGRITY_SCORE_DISTRIBUTION.map((bucket) => bucket.count));
   const maxFlag = Math.max(...INTEGRITY_FLAG_COUNTS.map((flag) => flag.count));
+  const maxOutcome = Math.max(...INTEGRITY_OUTCOME_BARS.map((bar) => bar.count));
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -110,17 +118,15 @@ export function AnalyticsRespondentIntegrity({
     setSearch('');
   }
 
-  function openRespondentsForFlag(flagId: IntegrityFlagId): void {
-    setFlagFilter((current) => (current === flagId ? '' : flagId));
-    setTab('respondents');
+  function openScoreRangeModal(range: string): void {
+    const next = getScoreRangeDrilldown(range);
+    if (next) setDrilldown(next);
   }
 
-  const tiles = [
-    { value: `${summary.averageScore}/100`, label: 'Avg. integrity score', icon: 'wm-verified', accent: true },
-    { value: formatNumber(summary.high), label: `High risk · ${pct(summary.high, summary.analyzed)}`, icon: 'wm-gpp-bad' },
-    { value: formatNumber(summary.medium), label: `Medium risk · ${pct(summary.medium, summary.analyzed)}`, icon: 'wm-report-problem' },
-    { value: formatNumber(summary.autoTerminated), label: 'Auto-terminated', icon: 'wm-block' },
-  ];
+  function openFlagModal(flagId: IntegrityFlagId): void {
+    const next = getFlagDrilldown(flagId);
+    if (next) setDrilldown(next);
+  }
 
   return (
     <div className={hubStyles.screen}>
@@ -163,33 +169,22 @@ export function AnalyticsRespondentIntegrity({
 
       {tab === 'overview' ? (
         <>
-          <div className={`${hubStyles.statRow} ${styles.statRow}`}>
-            {tiles.map((tile) => (
-              <div
-                key={tile.label}
-                className={
-                  tile.accent ? `${hubStyles.statTile} ${hubStyles.statAccent}` : hubStyles.statTile
-                }
-              >
-                <div className={hubStyles.statValue}>{tile.value}</div>
-                <div className={hubStyles.statLabel}>
-                  <span className={tile.icon} aria-hidden />
-                  <span>{tile.label}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
           <div className={hubStyles.splitEqual}>
             <section className={hubStyles.card}>
               <div className={hubStyles.cardHeader}>
                 <h2 className={hubStyles.cardTitle}>Integrity score distribution</h2>
-                <span className={hubStyles.muted}>Higher is more trustworthy</span>
+                <span className={hubStyles.muted}>Click a bar to open respondents</span>
               </div>
               <div className={styles.chartBody}>
                 <div className={styles.columns}>
                   {INTEGRITY_SCORE_DISTRIBUTION.map((bucket) => (
-                    <div key={bucket.range} className={styles.column}>
+                    <button
+                      key={bucket.range}
+                      type="button"
+                      className={styles.column}
+                      onClick={() => openScoreRangeModal(bucket.range)}
+                      aria-label={`View integrity score ${bucket.range}: ${formatNumber(bucket.count)} responses`}
+                    >
                       <span className={styles.columnValue}>{formatNumber(bucket.count)}</span>
                       <div className={styles.columnTrack}>
                         <div
@@ -198,7 +193,7 @@ export function AnalyticsRespondentIntegrity({
                         />
                       </div>
                       <span className={styles.columnLabel}>{bucket.range}</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
                 <div className={styles.legend}>
@@ -220,17 +215,14 @@ export function AnalyticsRespondentIntegrity({
               <ul className={styles.flagList}>
                 {INTEGRITY_FLAG_COUNTS.map((item) => {
                   const def = INTEGRITY_FLAGS.find((flag) => flag.id === item.id);
-                  const active = flagFilter === item.id;
                   return (
                     <li key={item.id}>
                       <WuTooltip content={def?.description} position="top">
                         <button
                           type="button"
-                          className={
-                            active ? `${styles.flagRow} ${styles.flagRowActive}` : styles.flagRow
-                          }
-                          aria-pressed={active}
-                          onClick={() => openRespondentsForFlag(item.id)}
+                          className={styles.flagRow}
+                          onClick={() => openFlagModal(item.id)}
+                          aria-label={`View ${def?.label}: ${item.count} responses`}
                         >
                           <span className={styles.flagLabel}>{def?.label}</span>
                           <span className={styles.flagTrack}>
@@ -248,6 +240,44 @@ export function AnalyticsRespondentIntegrity({
               </ul>
             </section>
           </div>
+
+          <section className={hubStyles.card}>
+            <div className={hubStyles.cardHeader}>
+              <h2 className={hubStyles.cardTitle}>Responses vs completes vs quality terminates</h2>
+              <span className={hubStyles.muted}>
+                Completes {pct(summary.totalCompletes, summary.totalResponses)} · Terminates{' '}
+                {pct(summary.terminates, summary.totalResponses)} · Quality terminates{' '}
+                {pct(summary.qualityTerminates, summary.totalResponses)}
+              </span>
+            </div>
+            <div className={styles.chartBody}>
+              <ul className={styles.hBarList} aria-label="Response outcome comparison">
+                {INTEGRITY_OUTCOME_BARS.map((bar) => (
+                  <li key={bar.id}>
+                    <button
+                      type="button"
+                      className={styles.hBarRow}
+                      onClick={() => setDrilldown(getOutcomeDrilldown(bar.id))}
+                      aria-label={`View ${bar.label}: ${formatNumber(bar.count)} responses`}
+                    >
+                      <span className={styles.hBarLabel}>{bar.label}</span>
+                      <div className={styles.hBarTrack}>
+                        <div
+                          className={styles.hBarFill}
+                          style={{
+                            width: `${Math.max(2, (bar.count / maxOutcome) * 100)}%`,
+                            background: bar.color,
+                          }}
+                        />
+                      </div>
+                      <span className={styles.hBarValue}>{formatNumber(bar.count)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+
         </>
       ) : (
         <section className={hubStyles.card}>
@@ -423,6 +453,12 @@ export function AnalyticsRespondentIntegrity({
           </div>
         </section>
       )}
+
+      <IntegrityOutcomeResponsesModal
+        drilldown={drilldown}
+        onClose={() => setDrilldown(null)}
+        onOpenResponse={(responseId) => onAction(`Opening response ${responseId}`)}
+      />
     </div>
   );
 }

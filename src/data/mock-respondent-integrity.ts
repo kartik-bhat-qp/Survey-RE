@@ -2,6 +2,14 @@ export type IntegrityRiskLevel = 'high' | 'medium' | 'low';
 
 export type IntegrityResponseStatus = 'included' | 'excluded';
 
+export type IntegrityOutcomeId =
+  | 'responses'
+  | 'completes'
+  | 'terminates'
+  | 'quality-terminates';
+
+export type IntegrityOutcomeKind = 'complete' | 'terminate' | 'quality-terminate' | 'incomplete';
+
 export type IntegrityFlagId =
   | 'speeding'
   | 'straight-lining'
@@ -31,6 +39,7 @@ export interface RespondentIntegrityRecord {
   collector: string;
   submittedAt: string;
   status: IntegrityResponseStatus;
+  outcome: IntegrityOutcomeKind;
 }
 
 export const INTEGRITY_FLAGS: IntegrityFlagDef[] = [
@@ -90,14 +99,48 @@ export const INTEGRITY_SUMMARY = {
   low: 1548,
   autoTerminated: 37,
   excluded: 18,
+  totalResponses: 2684,
+  totalCompletes: 1823,
+  terminates: 186,
+  qualityTerminates: 94,
 };
 
-export const INTEGRITY_SCORE_DISTRIBUTION: { range: string; count: number; risk: IntegrityRiskLevel }[] = [
-  { range: '0–20', count: 22, risk: 'high' },
-  { range: '21–40', count: 42, risk: 'high' },
-  { range: '41–60', count: 211, risk: 'medium' },
-  { range: '61–80', count: 486, risk: 'low' },
-  { range: '81–100', count: 1062, risk: 'low' },
+export const INTEGRITY_OUTCOME_BARS: {
+  id: IntegrityOutcomeId;
+  label: string;
+  count: number;
+  color: string;
+}[] = [
+  { id: 'responses', label: 'Total responses', count: 2684, color: '#94c7f1' },
+  { id: 'completes', label: 'Total completes', count: 1823, color: '#1b87e6' },
+  { id: 'terminates', label: 'Terminates', count: 186, color: '#f6c177' },
+  {
+    id: 'quality-terminates',
+    label: 'Quality terminates',
+    count: 94,
+    color: '#ef9a9a',
+  },
+];
+
+export const INTEGRITY_OUTCOME_LABELS: Record<IntegrityOutcomeKind, string> = {
+  complete: 'Complete',
+  terminate: 'Terminated',
+  'quality-terminate': 'Quality terminate',
+  incomplete: 'Incomplete',
+};
+
+export const INTEGRITY_SCORE_DISTRIBUTION: {
+  range: string;
+  min: number;
+  max: number;
+  count: number;
+  risk: IntegrityRiskLevel;
+}[] = [
+  { range: '0–20', min: 0, max: 20, count: 22, risk: 'high' },
+  { range: '21–40', min: 21, max: 40, count: 42, risk: 'high' },
+  { range: '41–60', min: 41, max: 60, count: 211, risk: 'medium' },
+  { range: '61–80', min: 61, max: 80, count: 486, risk: 'low' },
+  { range: '81–100', min: 81, max: 100, count: 1062, risk: 'low' },
 ];
 
 export const INTEGRITY_FLAG_COUNTS: { id: IntegrityFlagId; count: number }[] = [
@@ -123,6 +166,7 @@ export const RESPONDENT_INTEGRITY_RECORDS: RespondentIntegrityRecord[] = [
     collector: 'Public web link — HHSC site',
     submittedAt: '2026-11-23T09:14:00+05:30',
     status: 'included',
+    outcome: 'quality-terminate',
   },
   {
     responseId: 'R-104377',
@@ -134,6 +178,7 @@ export const RESPONDENT_INTEGRITY_RECORDS: RespondentIntegrityRecord[] = [
     collector: 'Panel — Cint US Gen Pop',
     submittedAt: '2026-11-23T08:52:00+05:30',
     status: 'excluded',
+    outcome: 'quality-terminate',
   },
   {
     responseId: 'R-104361',
@@ -146,6 +191,7 @@ export const RESPONDENT_INTEGRITY_RECORDS: RespondentIntegrityRecord[] = [
     collector: 'Email invitation — Wave 2',
     submittedAt: '2026-11-22T21:30:00+05:30',
     status: 'included',
+    outcome: 'quality-terminate',
   },
   {
     responseId: 'R-104355',
@@ -158,6 +204,20 @@ export const RESPONDENT_INTEGRITY_RECORDS: RespondentIntegrityRecord[] = [
     collector: 'Public web link — HHSC site',
     submittedAt: '2026-11-22T18:05:00+05:30',
     status: 'included',
+    outcome: 'quality-terminate',
+  },
+  {
+    responseId: 'R-104348',
+    respondent: 'diego.fernandez@meridian-logistics.es',
+    score: 29,
+    risk: 'high',
+    flags: ['speeding', 'bot-suspected'],
+    completionSeconds: 38,
+    country: 'Spain',
+    collector: 'Panel — Cint US Gen Pop',
+    submittedAt: '2026-11-22T17:22:00+05:30',
+    status: 'included',
+    outcome: 'quality-terminate',
   },
   {
     responseId: 'R-104340',
@@ -170,6 +230,7 @@ export const RESPONDENT_INTEGRITY_RECORDS: RespondentIntegrityRecord[] = [
     collector: 'SMS invitation',
     submittedAt: '2026-11-22T14:47:00+05:30',
     status: 'included',
+    outcome: 'complete',
   },
   {
     responseId: 'R-104333',
@@ -180,6 +241,7 @@ export const RESPONDENT_INTEGRITY_RECORDS: RespondentIntegrityRecord[] = [
     collector: 'Panel — Cint US Gen Pop',
     submittedAt: '2026-11-22T11:20:00+05:30',
     status: 'included',
+    outcome: 'complete',
   },
   {
     responseId: 'R-104319',
@@ -192,6 +254,7 @@ export const RESPONDENT_INTEGRITY_RECORDS: RespondentIntegrityRecord[] = [
     collector: 'Email invitation — Wave 2',
     submittedAt: '2026-11-21T19:02:00+05:30',
     status: 'included',
+    outcome: 'complete',
   },
   {
     responseId: 'R-104302',
@@ -204,6 +267,7 @@ export const RESPONDENT_INTEGRITY_RECORDS: RespondentIntegrityRecord[] = [
     collector: 'WhatsApp invitation',
     submittedAt: '2026-11-21T16:38:00+05:30',
     status: 'included',
+    outcome: 'complete',
   },
   {
     responseId: 'R-104288',
@@ -216,6 +280,7 @@ export const RESPONDENT_INTEGRITY_RECORDS: RespondentIntegrityRecord[] = [
     collector: 'Public web link — HHSC site',
     submittedAt: '2026-11-21T10:11:00+05:30',
     status: 'included',
+    outcome: 'complete',
   },
   {
     responseId: 'R-104271',
@@ -228,6 +293,7 @@ export const RESPONDENT_INTEGRITY_RECORDS: RespondentIntegrityRecord[] = [
     collector: 'Email invitation — Wave 2',
     submittedAt: '2026-11-20T22:45:00+05:30',
     status: 'included',
+    outcome: 'complete',
   },
   {
     responseId: 'R-104265',
@@ -240,6 +306,7 @@ export const RESPONDENT_INTEGRITY_RECORDS: RespondentIntegrityRecord[] = [
     collector: 'Manual data entry',
     submittedAt: '2026-11-20T15:09:00+05:30',
     status: 'included',
+    outcome: 'complete',
   },
   {
     responseId: 'R-104250',
@@ -252,6 +319,97 @@ export const RESPONDENT_INTEGRITY_RECORDS: RespondentIntegrityRecord[] = [
     collector: 'Public web link — HHSC site',
     submittedAt: '2026-11-20T09:56:00+05:30',
     status: 'included',
+    outcome: 'complete',
+  },
+  {
+    responseId: 'R-104241',
+    respondent: 'liam.otoole@greenfield.ie',
+    score: 71,
+    risk: 'low',
+    flags: [],
+    completionSeconds: 98,
+    country: 'Ireland',
+    collector: 'Email invitation — Wave 2',
+    submittedAt: '2026-11-20T08:14:00+05:30',
+    status: 'included',
+    outcome: 'terminate',
+  },
+  {
+    responseId: 'R-104236',
+    respondent: 'noura.alrashid@gulfinsights.sa',
+    score: 64,
+    risk: 'low',
+    flags: [],
+    completionSeconds: 74,
+    country: 'Saudi Arabia',
+    collector: 'SMS invitation',
+    submittedAt: '2026-11-19T21:40:00+05:30',
+    status: 'included',
+    outcome: 'terminate',
+  },
+  {
+    responseId: 'R-104228',
+    score: 55,
+    risk: 'medium',
+    flags: [],
+    completionSeconds: 51,
+    country: 'Brazil',
+    collector: 'Public web link — HHSC site',
+    submittedAt: '2026-11-19T18:05:00+05:30',
+    status: 'included',
+    outcome: 'terminate',
+  },
+  {
+    responseId: 'R-104219',
+    respondent: 'mei.chen@pacific-ops.sg',
+    score: 68,
+    risk: 'low',
+    flags: [],
+    completionSeconds: 112,
+    country: 'Singapore',
+    collector: 'Panel — Cint US Gen Pop',
+    submittedAt: '2026-11-19T14:28:00+05:30',
+    status: 'included',
+    outcome: 'terminate',
+  },
+  {
+    responseId: 'R-104210',
+    respondent: 'andreas.mueller@rheinwerk.de',
+    score: 73,
+    risk: 'low',
+    flags: [],
+    completionSeconds: 89,
+    country: 'Germany',
+    collector: 'WhatsApp invitation',
+    submittedAt: '2026-11-19T11:02:00+05:30',
+    status: 'included',
+    outcome: 'terminate',
+  },
+  {
+    responseId: 'R-104201',
+    respondent: 'fatima.benali@atlaspanel.ma',
+    score: 44,
+    risk: 'medium',
+    flags: ['proxy-vpn'],
+    completionSeconds: 67,
+    country: 'Morocco',
+    collector: 'Email invitation — Wave 2',
+    submittedAt: '2026-11-18T23:17:00+05:30',
+    status: 'included',
+    outcome: 'incomplete',
+  },
+  {
+    responseId: 'R-104192',
+    respondent: 'kyle.thompson@harborcity.edu',
+    score: 81,
+    risk: 'low',
+    flags: [],
+    completionSeconds: 145,
+    country: 'United States',
+    collector: 'Public web link — HHSC site',
+    submittedAt: '2026-11-18T16:44:00+05:30',
+    status: 'included',
+    outcome: 'incomplete',
   },
 ];
 
@@ -263,4 +421,75 @@ export function formatCompletionTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const rest = seconds % 60;
   return minutes > 0 ? `${minutes} min ${rest} s` : `${rest} s`;
+}
+
+export function getIntegrityOutcomeBar(id: IntegrityOutcomeId) {
+  return INTEGRITY_OUTCOME_BARS.find((bar) => bar.id === id) ?? INTEGRITY_OUTCOME_BARS[0];
+}
+
+/** Sample rows shown when drilling into an outcome bar. */
+export function getResponsesForOutcome(
+  outcomeId: IntegrityOutcomeId
+): RespondentIntegrityRecord[] {
+  if (outcomeId === 'responses') return RESPONDENT_INTEGRITY_RECORDS;
+  if (outcomeId === 'completes') {
+    return RESPONDENT_INTEGRITY_RECORDS.filter((row) => row.outcome === 'complete');
+  }
+  if (outcomeId === 'terminates') {
+    return RESPONDENT_INTEGRITY_RECORDS.filter((row) => row.outcome === 'terminate');
+  }
+  return RESPONDENT_INTEGRITY_RECORDS.filter((row) => row.outcome === 'quality-terminate');
+}
+
+export function getResponsesForScoreRange(
+  min: number,
+  max: number
+): RespondentIntegrityRecord[] {
+  return RESPONDENT_INTEGRITY_RECORDS.filter(
+    (row) => row.score >= min && row.score <= max
+  );
+}
+
+export function getResponsesForFlag(
+  flagId: IntegrityFlagId
+): RespondentIntegrityRecord[] {
+  return RESPONDENT_INTEGRITY_RECORDS.filter((row) => row.flags.includes(flagId));
+}
+
+export interface IntegrityResponsesDrilldown {
+  title: string;
+  total: number;
+  rows: RespondentIntegrityRecord[];
+}
+
+export function getOutcomeDrilldown(outcomeId: IntegrityOutcomeId): IntegrityResponsesDrilldown {
+  const bar = getIntegrityOutcomeBar(outcomeId);
+  return {
+    title: bar.label,
+    total: bar.count,
+    rows: getResponsesForOutcome(outcomeId),
+  };
+}
+
+export function getScoreRangeDrilldown(
+  range: string
+): IntegrityResponsesDrilldown | null {
+  const bucket = INTEGRITY_SCORE_DISTRIBUTION.find((item) => item.range === range);
+  if (!bucket) return null;
+  return {
+    title: `Integrity score ${bucket.range}`,
+    total: bucket.count,
+    rows: getResponsesForScoreRange(bucket.min, bucket.max),
+  };
+}
+
+export function getFlagDrilldown(flagId: IntegrityFlagId): IntegrityResponsesDrilldown | null {
+  const flag = INTEGRITY_FLAGS.find((item) => item.id === flagId);
+  const count = INTEGRITY_FLAG_COUNTS.find((item) => item.id === flagId)?.count ?? 0;
+  if (!flag) return null;
+  return {
+    title: flag.label,
+    total: count,
+    rows: getResponsesForFlag(flagId),
+  };
 }
